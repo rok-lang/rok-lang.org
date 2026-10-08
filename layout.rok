@@ -1,0 +1,167 @@
+// Page chrome: header with nav and search, chapter sidebar, prev / next
+// pager, footer.
+
+use pkg::Page;
+use pkg::Site;
+use pkg::markdown::esc;
+
+/// `../` once per directory level of `out`, back to the site root.
+pub fn root_of(out: str) -> str {
+    let n = 0usize;
+    for c in out.chars() {
+        if c == '/' { n += 1; }
+    }
+    "../".repeat(n)
+}
+
+pub fn dir_of(p: str) -> str {
+    if let k: usize = p.rfind("/") { return p[:k]; }
+    ""
+}
+
+pub fn readme_of(dir: str) -> str {
+    if dir.is_empty() { "README.md" } else { dir + "/README.md" }
+}
+
+fn is_readme(src: str) -> bool { src == "README.md" || src.ends_with("/README.md") }
+
+/// Relative href from the page at `from` to the site path `to`.
+pub fn rel(from: str, to: str) -> str {
+    let a: List<str> = List::new();
+    for s in dir_of(from).split("/") {
+        if !s.is_empty() { a.push(s); }
+    }
+    let b: List<str> = List::new();
+    for s in to.split("/") { b.push(s); }
+    let c = 0usize;
+    while c < a.len() && c + 1 < b.len() && a[c] == b[c] { c += 1; }
+    let out = StrBuf::new();
+    for _ in c..a.len() { out.push_str("../"); }
+    for k in c..b.len() {
+        if k > c { out.push('/'); }
+        out.push_str(b[k]);
+    }
+    out.to_str()
+}
+
+fn find(pages: List<Page>, src: str) -> usize | none {
+    for k in 0..pages.len() {
+        if pages[k].src == src { return k; }
+    }
+    none
+}
+
+fn toc(p: Page) -> str {
+    let out = StrBuf::new();
+    for h in p.heads {
+        if h.level == 2 { out.push_str(f"<li><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>"); }
+    }
+    if out.is_empty() { return ""; }
+    f"<ul class=\"toc\">{out.to_str()}</ul>"
+}
+
+/// The pages of the current chapter (directory): its index, its files
+/// and its sub-chapters, with the current page's sections under it.
+pub fn sidebar(pages: List<Page>, idx: usize) -> str {
+    let p = pages[idx];
+    let d = p.dir;
+    let out = StrBuf::new();
+    if !d.is_empty() {
+        if let up: usize = find(pages, readme_of(dir_of(d))) {
+            out.push_str(f"<a class=\"up\" href=\"{rel(p.out, pages[up].out)}\">← {esc(pages[up].title)}</a>");
+        }
+    }
+    if let h: usize = find(pages, readme_of(d)) {
+        let cur = if h == idx { " class=\"cur\"" } else { "" };
+        out.push_str(f"<p class=\"side-title\"><a{cur} href=\"{rel(p.out, pages[h].out)}\">{esc(pages[h].title)}</a></p>");
+        if h == idx { out.push_str(toc(p)); }
+    }
+    out.push_str("<ul class=\"pages\">");
+    for k in 0..pages.len() {
+        let q = pages[k];
+        let file = q.dir == d && !is_readme(q.src);
+        let sub = is_readme(q.src) && q.dir != d && dir_of(q.dir) == d;
+        if !file && !sub { continue; }
+        if k == idx {
+            out.push_str(f"<li class=\"cur\"><a aria-current=\"page\" href=\"{rel(p.out, q.out)}\">{esc(q.title)}</a>{toc(q)}</li>");
+        } else {
+            out.push_str(f"<li><a href=\"{rel(p.out, q.out)}\">{esc(q.title)}</a></li>");
+        }
+    }
+    out.push_str("</ul>");
+    out.to_str()
+}
+
+/// Sections of a standalone page.
+pub fn page_toc(p: Page) -> str {
+    f"<p class=\"side-title\"><a class=\"cur\" href=\"#\">{esc(p.title)}</a></p>{toc(p)}"
+}
+
+pub fn pager(pages: List<Page>, idx: usize) -> str {
+    let p = pages[idx];
+    let out = StrBuf::new();
+    out.push_str("<nav class=\"pager\" aria-label=\"이전 / 다음\">");
+    if idx > 0 {
+        let q = pages[idx - 1];
+        out.push_str(f"<a class=\"prev\" href=\"{rel(p.out, q.out)}\"><small>이전</small>{esc(q.title)}</a>");
+    }
+    if idx + 1 < pages.len() {
+        let q = pages[idx + 1];
+        out.push_str(f"<a class=\"next\" href=\"{rel(p.out, q.out)}\"><small>다음</small>{esc(q.title)}</a>");
+    }
+    out.push_str("</nav>");
+    out.to_str()
+}
+
+fn nav_item(root: str, href: str, label: str, on: bool) -> str {
+    let cur = if on { " aria-current=\"page\"" } else { "" };
+    f"<a href=\"{root}{href}\"{cur}>{label}</a>"
+}
+
+pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) -> str {
+    let root = root_of(out);
+    let tools = out.starts_with("spec/refs-lang/009-tools/");
+    let nav = StrBuf::new();
+    nav.push_str(nav_item(root, "start.html", "시작하기", out == "start.html"));
+    nav.push_str(nav_item(root, "spec/refs-lang/index.html", "언어 참조", out.starts_with("spec/refs-lang/") && !tools));
+    nav.push_str(nav_item(root, "spec/refs-standard-libraries/index.html", "표준 라이브러리", out.starts_with("spec/refs-standard-libraries/")));
+    nav.push_str(nav_item(root, "spec/refs-lang/009-tools/index.html", "도구", tools));
+    nav.push_str(f"<a href=\"{esc(site.packages)}\">패키지 ↗</a>");
+    let full = if out == "index.html" { site.title + " — " + site.tagline } else { title + " — " + site.title };
+    let aside = if side.is_empty() {
+        ""
+    } else {
+        f"<aside class=\"side\"><details open><summary>목차</summary>{side}</details></aside>"
+    };
+    let kind = if out == "index.html" { "home" } else if side.is_empty() { "doc wide" } else { "doc" };
+    f"<!doctype html>
+<html lang=\"ko\">
+<head>
+<meta charset=\"utf-8\">
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+<title>{esc(full)}</title>
+<link rel=\"stylesheet\" href=\"{root}style.css\">
+<link rel=\"icon\" href=\"{root}logo.png\">
+</head>
+<body class=\"{kind}\" data-root=\"{root}\">
+<header class=\"top\">
+<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.png\" alt=\"\" width=\"28\" height=\"28\">{esc(site.title)}</a>
+<nav class=\"main-nav\">{nav.to_str()}</nav>
+<div class=\"search\"><input id=\"q\" type=\"search\" placeholder=\"문서 검색 ( / )\" aria-label=\"문서 검색\" autocomplete=\"off\"><ul id=\"results\" hidden></ul></div>
+</header>
+<div class=\"wrap\">
+{aside}<main>
+<article>
+{body}</article>
+{pager}
+</main>
+</div>
+<footer>
+<p>사양 텍스트 © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/deed.ko\">CC BY 4.0</a> · <a href=\"{esc(site.spec_repo)}\">사양 저장소</a> · <a href=\"{esc(site.packages)}\">패키지</a></p>
+<p>이 사이트는 rok 으로 작성한 정적 사이트 생성기로 만들었습니다.</p>
+</footer>
+<script src=\"{root}search.js\" defer></script>
+</body>
+</html>
+"
+}
