@@ -842,6 +842,15 @@ fn renders_blocks() {
 }
 
 #[test]
+fn highlights_fstring_holes() {
+    let s = |t: str| f"<span class=\"s\">{t}</span>";
+    let same = s("f\"{") + "s.split(" + s("\" \"") + ")" + s("}\"");
+    expect(html_of("```rok\nf\"{s.split(\" \")}\"\n```\n").contains(same), "same quote");
+    let nested = s("f\"{") + s("f\"{") + "x" + s(":&gt;{") + "w" + s("}") + s("}\"") + s("} {{y}}\"");
+    expect(html_of("```rok\nf\"{f\"{x:>{w}}\"} {{y}}\"\n```\n").contains(nested), "nested");
+}
+
+#[test]
 fn renders_inlines() {
     expect(html_of("snake_case_name and i*, u*") == "<p>snake_case_name and i*, u*</p>\n", "case 6");
     expect(html_of("[a `b`](x.md#y) <https://e.org> a < b & c &lt;") == "<p><a href=\"x.md#y\">a <code>b</code></a> <a href=\"https://e.org\">https://e.org</a> a &lt; b &amp; c &lt;</p>\n", "case 7");

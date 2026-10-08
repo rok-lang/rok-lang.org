@@ -68,13 +68,84 @@ fn quote_end(cs: List<char>, i: usize, q: char) -> usize {
 pub fn rok(src: str) -> str {
     let cs: List<char> = List::new();
     for c in src.chars() { cs.push(c); }
-    let n = cs.len();
     let out = StrBuf::with_capacity(src.len() * 2);
-    let i = 0usize;
+    code(out, cs, 0, false);
+    out.to_str()
+}
+
+/// An f-string from its `f` at `i`: text as a string span, hole code
+/// highlighted as code (it may reuse the quote and nest f-strings).
+/// Returns its end.
+fn fstr(out: StrBuf, cs: List<char>, i: usize) -> usize {
+    let n = cs.len();
+    let triple = i + 3 < n && cs[i + 2] == '"' && cs[i + 3] == '"';
+    let k = if triple { i + 4 } else { i + 2 };
+    let run = i;
+    while k < n {
+        let c = cs[k];
+        let nx = if k + 1 < n { cs[k + 1] } else { ' ' };
+        if c == '\\' || ((c == '{' || c == '}') && nx == c) {
+            k += 2;
+        } else if c == '"' && (!triple || (k + 2 < n && nx == '"' && cs[k + 2] == '"')) {
+            let e = if triple { k + 3 } else { k + 1 };
+            emit(out, "s", cs, run, e);
+            return e;
+        } else if c == '{' {
+            emit(out, "s", cs, run, k + 1);
+            k = hole(out, cs, k + 1);
+            run = k;
+            if k < n { k += 1; }
+        } else {
+            k += 1;
+        }
+    }
+    emit(out, "s", cs, run, n);
+    n
+}
+
+/// Hole code from `i`, then its spec (with nested `{..}` / `${..}`
+/// holes) as a string span. Returns the index of the closing `}`.
+fn hole(out: StrBuf, cs: List<char>, i: usize) -> usize {
+    let n = cs.len();
+    let k = code(out, cs, i, true);
+    if k >= n || cs[k] != ':' { return k; }
+    let run = k;
+    while k < n && cs[k] != '}' && cs[k] != '"' {
+        let nx = if k + 1 < n { cs[k + 1] } else { ' ' };
+        if cs[k] == '$' && nx == '$' {
+            k += 2;
+        } else if cs[k] == '{' || (cs[k] == '$' && nx == '{') {
+            let open = if cs[k] == '$' { k + 2 } else { k + 1 };
+            emit(out, "s", cs, run, open);
+            k = hole(out, cs, open);
+            run = k;
+            if k < n { k += 1; }
+        } else {
+            k += 1;
+        }
+    }
+    emit(out, "s", cs, run, k);
+    k
+}
+
+/// Highlight code from `start`. In a hole, stop at its closing `}` or
+/// spec `:` (bracket depth 0) and return where; else run to the end.
+fn code(out: StrBuf, cs: List<char>, start: usize, in_hole: bool) -> usize {
+    let n = cs.len();
+    let i = start;
+    let depth = 0;
     while i < n {
         let c = cs[i];
         let nx = if i + 1 < n { cs[i + 1] } else { ' ' };
-        if c == '/' && nx == '/' {
+        if in_hole && depth == 0 && (c == '}' || (c == ':' && nx != ':')) {
+            return i;
+        }
+        if c == '(' || c == '[' || c == '{' { depth += 1; }
+        if c == ')' || c == ']' || c == '}' { depth -= 1; }
+        if c == ':' && nx == ':' {
+            out.push_str("::");
+            i += 2;
+        } else if c == '/' && nx == '/' {
             let k = i;
             while k < n && cs[k] != '\n' { k += 1; }
             emit(out, "c", cs, i, k);
@@ -126,7 +197,9 @@ pub fn rok(src: str) -> str {
             let w = StrBuf::new();
             for j in i..k { w.push(cs[j]); }
             let word = w.to_str();
-            if k < n && cs[k] == '"' && (word == "f" || word == "r" || word == "b") {
+            if k < n && cs[k] == '"' && word == "f" {
+                i = fstr(out, cs, i);
+            } else if k < n && cs[k] == '"' && (word == "r" || word == "b") {
                 let e = quote_end(cs, k, '"');
                 emit(out, "s", cs, i, e);
                 i = e;
@@ -145,5 +218,5 @@ pub fn rok(src: str) -> str {
             i += 1;
         }
     }
-    out.to_str()
+    n
 }

@@ -95,4 +95,4 @@ println("Hello, world!");
 
 ## 패키지
 
-rok 패키지는 [packages.rok-lang.org](https://packages.rok-lang.org) 에서 찾을 수 있게 될 예정입니다. 지금은 `rok add <name> --path <dir>` 이나 `--git <url>` 로 의존성을 추가합니다.
+rok 패키지(stone)는 [rokstones.io](https://rokstones.io) 에서 찾을 수 있게 될 예정입니다. 지금은 `rok add <name> --path <dir>` 이나 `--git <url>` 로 의존성을 추가합니다.

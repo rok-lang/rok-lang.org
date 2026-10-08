@@ -120,4 +120,4 @@ jupyter lab
 - [언어 참조](spec/refs-lang/index.html) — 0장부터 차례로 읽도록 짜여 있습니다.
 - [표준 라이브러리](spec/refs-standard-libraries/index.html) — `bare` / `core` / `std` 계층.
 - [도구](spec/refs-lang/009-tools/index.html) — `rokc`, `rok`, JIT, 디버그 도구.
-- [패키지](https://packages.rok-lang.org) — rok 패키지 저장소 (준비 중).
+- [rokstones.io](https://rokstones.io) — rok 패키지(stone) 레지스트리 (준비 중).

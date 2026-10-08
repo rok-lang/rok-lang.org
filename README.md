@@ -49,7 +49,7 @@ python3 -m http.server -d public 8000
 | `tagline`     | 첫 페이지 제목에 붙는 문구 |
 | `spec`        | 사양의 언어 디렉토리 (기본 `../rok-lang/spec/ko`) |
 | `spec_repo`, `spec_branch` | 사양 디렉토리 밖을 가리키는 링크 (`../LICENSE` 등) 가 향할 저장소 |
-| `packages`    | 패키지 사이트 주소 (`https://packages.rok-lang.org`) |
+| `packages`    | 패키지 사이트 주소 (`https://rokstones.io`) |
 | `out`         | 출력 디렉토리 (기본 `public`) |
 
 ## 구조
