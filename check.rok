@@ -1,0 +1,164 @@
+// Code checks for the site's own pages: every ```rok block compiles and
+// runs, and its stdout matches the ```output block right after it.
+//
+//   ```rok          build and run (the default)
+//   ```rok build    build only (servers, stdin readers, endless loops)
+//   ```rok norun    not checked (fragments, REPL sessions)
+
+use rok::std::fs;
+use rok::std::process::{Command, ExitStatus, Stdio};
+use rok::std::thread;
+use rok::core::par;
+use rok::core::task::time::{Duration, Instant};
+
+pub struct Snippet {
+    /// Page source (`pages/learn/03-functions.md`).
+    pub page: str;
+    /// 1-based line of the opening fence.
+    pub line: usize;
+    pub code: str;
+    /// `run`, `build` or `norun`.
+    pub mode: str;
+    pub expect: str | none;
+}
+
+fn fence_len(t: str) -> usize {
+    let n = 0usize;
+    for c in t.chars() {
+        if c != '`' { break; }
+        n += 1;
+    }
+    n
+}
+
+/// The ```rok blocks of `text`, with their expected output.
+pub fn extract(page: str, text: str) -> List<Snippet> {
+    let lines: List<str> = List::new();
+    for l in text.lines() { lines.push(l); }
+    let out: List<Snippet> = List::new();
+    let i = 0usize;
+    while i < lines.len() {
+        let t = lines[i].trim_start();
+        let n = fence_len(t);
+        if n < 3 {
+            i += 1;
+            continue;
+        }
+        let info: List<str> = List::new();
+        for w in t[n:].split_whitespace() { info.push(w); }
+        let start = i;
+        let body = StrBuf::new();
+        i += 1;
+        while i < lines.len() && !(fence_len(lines[i].trim_start()) >= n && lines[i].trim()[n:].trim().is_empty()) {
+            body.push_str(lines[i]);
+            body.push('\n');
+            i += 1;
+        }
+        i += 1;
+        if info.len() == 0 || info[0] != "rok" { continue; }
+        let mode = if info.len() > 1 { info[1] } else { "run" };
+        let s = Snippet { page: page, line: start + 1, code: body.to_str(), mode: mode, expect: none };
+        // An ```output block after blank lines only.
+        let j = i;
+        while j < lines.len() && lines[j].trim().is_empty() { j += 1; }
+        if j < lines.len() && lines[j].trim() == "```output" {
+            let exp = StrBuf::new();
+            j += 1;
+            while j < lines.len() && lines[j].trim() != "```" {
+                exp.push_str(lines[j]);
+                exp.push('\n');
+                j += 1;
+            }
+            s.expect = exp.to_str();
+            i = j + 1;
+        }
+        out.push(s);
+    }
+    out
+}
+
+fn file_name(s: Snippet) -> str {
+    let base = s.page.replace("pages/", "").replace(".md", "").replace("/", "-");
+    f"{base}-L{s.line}"
+}
+
+/// Run `rokc` with `args` (outputs into `dir/<name>.out` / `.err`); exit
+/// status, or `none` after `limit`.
+fn run(rokc: str, args: List<str>, dir: str, name: str, limit: Duration) throws -> bool | none {
+    let child = try Command::new(rokc)
+        .args(args)
+        .stdin(Stdio::Null)
+        .stdout(Stdio::File(try fs::File::create(f"{dir}/{name}.out")))
+        .stderr(Stdio::File(try fs::File::create(f"{dir}/{name}.err")))
+        .spawn();
+    let t0 = Instant::now();
+    loop {
+        if let st: ExitStatus = try child.try_wait() { return st.success(); }
+        if t0.elapsed() > limit {
+            try child.kill();
+            try child.wait();
+            return none;
+        }
+        thread::sleep(Duration::ms(20));
+    }
+}
+
+fn first_lines(s: str, n: usize) -> str {
+    let out = StrBuf::new();
+    let k = 0usize;
+    for l in s.lines() {
+        if k == n { out.push_str("    ...\n"); break; }
+        out.push_str("    " + l + "\n");
+        k += 1;
+    }
+    out.to_str()
+}
+
+/// Check one snippet; a failure report, or `""`.
+fn check_one(rokc: str, dir: str, s: Snippet) -> str {
+    let at = f"{s.page}:{s.line}";
+    try check_snippet(rokc, dir, s, at) catch e { f"{at}: {e}\n" }
+}
+
+fn check_snippet(rokc: str, dir: str, s: Snippet, at: str) throws -> str {
+    let name = file_name(s);
+    let src = f"{dir}/{name}.rok";
+    try fs::write(src, s.code);
+    let cmd = if s.mode == "build" { "build" } else { "run" };
+    let ok = try run(rokc, ["-q", cmd, src, "--target-dir", f"{dir}/{name}.target"], dir, name, Duration::sec(60));
+    let out = try fs::read_to_str(f"{dir}/{name}.out");
+    let err = try fs::read_to_str(f"{dir}/{name}.err");
+    if !(ok is bool) { return f"{at}: timed out\n"; }
+    if !(ok ?? false) { return f"{at}: {cmd} failed\n{first_lines((err + out).replace(dir + "/", ""), 12)}"; }
+    if let e: str = s.expect {
+        if out.trim_end() != e.trim_end() {
+            return f"{at}: output differs\n  expected:\n{first_lines(e, 12)}  got:\n{first_lines(out, 12)}";
+        }
+    }
+    ""
+}
+
+/// Check `snips` in parallel; the failure reports.
+pub fn check_all(rokc: str, dir: str, snips: List<Snippet>) throws -> List<str> {
+    try fs::create_dir_all(dir);
+    let todo: List<Snippet> = List::new();
+    for s in snips {
+        if s.mode != "norun" { todo.push(s); }
+    }
+    let reports = par::map(todo, |s: Snippet| check_one(rokc, dir, s));
+    let bad: List<str> = List::new();
+    for r in reports {
+        if !r.is_empty() { bad.push(r); }
+    }
+    bad
+}
+
+#[test]
+fn extracts_blocks() {
+    let md = "# t\n\n```rok\nprintln(\"a\");\n```\n\n```output\na\n```\n\n````rok build\nlet s = \"```\";\n````\n\n```rok norun\nx\n```\n\n```bash\nls\n```\n";
+    let ss = extract("p.md", md);
+    assert(ss.len() == 3, "three rok blocks");
+    assert(ss[0].mode == "run" && ss[0].line == 3 && (ss[0].expect ?? "") == "a\n", "run + output");
+    assert(ss[1].mode == "build" && ss[1].code == "let s = \"```\";\n", "longer fence");
+    assert(ss[2].mode == "norun" && ss[2].expect is none, "norun");
+}

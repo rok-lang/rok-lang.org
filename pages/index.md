@@ -4,7 +4,7 @@
 # rok
 
 <div class="lead">언어는 작게, 라이브러리는 풍부하게.<br>정적 타입, 닫힌 합 타입, AOT 컴파일, 그리고 REPL 과 Jupyter 까지.</div>
-<div class="cta"><a class="primary" href="start.html">시작하기</a><a href="spec/refs-lang/index.html">언어 참조</a><a href="spec/refs-standard-libraries/index.html">표준 라이브러리</a></div>
+<div class="cta"><a class="primary" href="learn/01-getting-started.html">시작하기</a><a href="learn/index.html">rok 배우기</a><a href="examples/index.html">예제</a><a href="spec/refs-lang/index.html">언어 참조</a><a href="std/index.html">API</a></div>
 </div>
 
 ## rok 은
@@ -56,18 +56,36 @@ fn main() {
 }
 ```
 
+```output
+area = 3.14
+area = 6.00
+grace at 1
+port 8080
+```
+
 한 줄짜리 스크립트도 그대로 실행됩니다.
 
 ```rok
 println("Hello, world!");
 ```
 
+```output
+Hello, world!
+```
+
 <div class="cards">
 <div class="card">
 
-### 설치
+### rok 배우기
 
-툴체인을 소스에서 빌드하고 `rok new` 로 첫 패키지를 만듭니다. [시작하기](start.html)
+설치, 값과 타입부터 에러 처리, 모듈, 동시성, IO, FFI, 도구까지 열여섯 장. 모든 코드가 실행됩니다. [rok 배우기](learn/index.html)
+
+</div>
+<div class="card">
+
+### 예제
+
+CLI 도구, 파일 처리, TCP 에코 서버, 병렬 map, 인터프리터 같은 완성된 작은 프로그램들. [예제](examples/index.html)
 
 </div>
 <div class="card">
@@ -81,18 +99,18 @@ println("Hello, world!");
 
 ### 표준 라이브러리
 
-`bare` / `core` / `std` 세 계층. 컬렉션, 문자열, `fs`, `net`, `process`, RokON. [표준 라이브러리](spec/refs-standard-libraries/index.html)
+`bare` / `core` / `std` 세 계층의 [사양](spec/refs-standard-libraries/index.html) 과, 소스에서 뽑은 [API 목록](std/index.html).
 
 </div>
 <div class="card">
 
 ### 도구
 
-`rokc` 컴파일러, `rok` 패키지 도구, REPL, Jupyter 커널, 디버그 도구. [도구](spec/refs-lang/009-tools/index.html)
+`rokc` 컴파일러, `rok` 패키지 도구, REPL, Jupyter 커널, LSP, 디버그 도구. [도구](spec/refs-lang/009-tools/index.html)
 
 </div>
 </div>
 
 ## 패키지
 
-rok 패키지(stone)는 [rokstones.io](https://rokstones.io) 에서 찾을 수 있게 될 예정입니다. 지금은 `rok add <name> --path <dir>` 이나 `--git <url>` 로 의존성을 추가합니다.
+rok 패키지는 stone 이라고 부릅니다. [rokstones.io](https://rokstones.io) 레지스트리의 stone 은 `rok add <name>` 으로, 로컬 경로나 git 저장소는 `rok add <name> --path <dir>` / `--git <url>` 로 의존성에 더합니다. 자세한 내용은 [모듈과 패키지](learn/11-modules-packages.html) 에 있습니다.

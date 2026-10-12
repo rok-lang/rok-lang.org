@@ -1,9 +1,15 @@
-// rok-lang.org: renders the rok spec (Korean markdown) and the site's own
-// pages into a static site, then checks every internal link.
+// rok-lang.org: renders the rok spec (Korean markdown), the site's own
+// pages and the standard library API into a static site, then checks
+// every internal link.
 //
-//   rok run            build into `out` (site.rokon)
-//   rok run -- check   build, and exit 1 on a broken link
+//   rok run                  build into `out` (site.rokon)
+//   rok run -- check         build; run the pages' code blocks; exit 1 on
+//                            a broken link or a failing block
+//   rok run -- code [filter] only run the code blocks (of pages whose
+//                            path contains `filter`)
 
+mod apidoc;
+mod check;
 mod highlight;
 mod layout;
 mod markdown;
@@ -25,6 +31,8 @@ pub struct Site {
     pub spec_repo: str;
     pub spec_branch: str = "main";
     pub packages: str;
+    /// The standard library sources (`bare/`, `core/`, `std/`).
+    pub library: str = "../rok-lang/impl/library";
     pub out: str = "public";
 }
 
@@ -224,10 +232,53 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
 
 // ---- build ----
 
+/// `pages/**.md`, sorted (each directory's `index.md` first).
+fn page_sources() throws -> List<str> {
+    let srcs: List<str> = List::new();
+    for entry in fs::walk("pages") {
+        let e = try entry.get();
+        let p = e.path().as_str();
+        if e.is_file() && p.ends_with(".md") { srcs.push(p["pages/".len():]); }
+    }
+    for k in 0..srcs.len() { srcs[k] = srcs[k].replace("index.md", "README.md"); }
+    sort_sources(srcs);
+    for k in 0..srcs.len() { srcs[k] = srcs[k].replace("README.md", "index.md"); }
+    srcs
+}
+
+fn code_check(filter: str) throws -> List<str> {
+    let snips: List<check::Snippet> = List::new();
+    for src in try page_sources() {
+        let page = "pages/" + src;
+        if !page.contains(filter) { continue; }
+        snips.extend(check::extract(page, try fs::read_to_str(page)));
+    }
+    let rokc = try env::var("ROKC") catch _ { "rokc" };
+    // Outside this package: `rokc run` looks upward for a `main.rok`.
+    let bad = try check::check_all(rokc, env::temp_dir().as_str() + "/rok-lang.org-snippets", snips);
+    let run = 0usize;
+    for s in snips {
+        if s.mode != "norun" { run += 1; }
+    }
+    for b in bad { eprint(f"code block: {b}"); }
+    println(f"{run} code blocks checked ({snips.len() - run} norun), {bad.len()} failing");
+    bad
+}
+
 fn main() throws {
     let t0 = Instant::now();
     let args = env::args();
-    let strict = args.len() > 1 && args[1] == "check";
+    let mode = if args.len() > 1 { args[1] } else { "" };
+    if mode == "code" {
+        let bad = try code_check(if args.len() > 2 { args[2] } else { "" });
+        if bad.len() > 0 { env::exit(1); }
+        return;
+    }
+    if mode != "" && mode != "check" {
+        eprintln("usage: rok run [-- check | -- code [filter]]");
+        env::exit(2);
+    }
+    let strict = mode == "check";
     let site: Site = try rokon::from_str(try fs::read_to_str("site.rokon"));
     let spec = norm(site.spec);
     if site.spec.starts_with("/") { spec = "/" + spec; }
@@ -257,21 +308,48 @@ fn main() throws {
         files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(pages, k), p.html, layout::pager(pages, k)));
     }
 
-    // The site's own pages: `pages/<name>.md` → `<name>.html`.
+    // The site's own pages: `pages/x.md` → `x.html`; a directory
+    // (`pages/learn/`) is a chapter with its own sidebar and pager.
     let own: List<Page> = List::new();
-    for name in ["index", "start"] {
-        let doc = markdown::render(try fs::read_to_str(f"pages/{name}.md"), |h| h);
-        let p = Page { src: "", out: name + ".html", dir: "", title: doc.title, html: doc.html, heads: doc.headings };
-        let side = if name == "index" { "" } else { layout::page_toc(p) };
-        files.insert(p.out, layout::page(site, p.out, p.title, side, p.html, ""));
-        own.push(p);
+    for src in try page_sources() {
+        let doc = markdown::render(try fs::read_to_str("pages/" + src), |h| h);
+        let key = src.replace("index.md", "README.md");
+        own.push(Page { src: key, out: src.replace(".md", ".html"), dir: dir_of(src), title: doc.title, html: doc.html, heads: doc.headings });
     }
+    for k in 0..own.len() {
+        let p = own[k];
+        if p.dir.is_empty() {
+            let side = if p.out == "index.html" { "" } else { layout::page_toc(p) };
+            files.insert(p.out, layout::page(site, p.out, p.title, side, p.html, ""));
+            continue;
+        }
+        let group: List<Page> = List::new();
+        let at = 0usize;
+        for q in own {
+            if q.dir == p.dir {
+                if q.out == p.out { at = group.len(); }
+                group.push(q);
+            }
+        }
+        let body = if at == 0 { p.html + layout::contents(group) } else { p.html };
+        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(group, at), body, layout::pager(group, at)));
+    }
+
+    // Standard library API: `std/<tier>/<module>.html`.
+    let api: List<Page> = List::new();
+    let mods = try apidoc::collect(site.library);
+    for m in mods {
+        let (html, heads) = apidoc::body(m, mods);
+        files.insert(m.out, layout::page(site, m.out, m.path, apidoc::sidebar(m, mods, heads), html, ""));
+        api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads });
+    }
+    files.insert("std/index.html", layout::page(site, "std/index.html", "표준 라이브러리 API", "", apidoc::index(mods), ""));
 
     // Search index: every page and its `##` / `###` sections.
     let idx = StrBuf::new();
     idx.push('[');
     let first = true;
-    for group in [own, pages] {
+    for group in [own, pages, api] {
         for p in group {
             if p.out == "index.html" { continue; }
             if !first { idx.push_str(",\n"); }
@@ -302,6 +380,10 @@ fn main() throws {
 
     let bad = check(files, statics);
     for b in bad { eprintln(f"broken link: {b}"); }
-    println(f"{pages.len()} spec pages + {own.len()} site pages → {out_root}/ ({files.len()} html), {bad.len()} broken links, {t0.elapsed():?}");
-    if strict && bad.len() > 0 { env::exit(1); }
+    println(f"{pages.len()} spec pages + {own.len()} site pages + {api.len()} API pages → {out_root}/ ({files.len()} html), {bad.len()} broken links, {t0.elapsed():?}");
+    if strict {
+        let failing = try code_check("");
+        println(f"checked in {t0.elapsed():?}");
+        if bad.len() > 0 || failing.len() > 0 { env::exit(1); }
+    }
 }

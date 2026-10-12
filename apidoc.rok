@@ -1,0 +1,678 @@
+// Standard library API pages (`/std/`) from the library sources: one page
+// per public module of `bare` / `core` / `std`, listing its `pub` items
+// with their `///` docs. Signatures are shown as written.
+//
+// The source is scanned, not compiled: comments, strings and chars are
+// masked out first, so item boundaries are found by bracket depth alone.
+
+use rok::std::fs;
+use pkg::highlight;
+use pkg::markdown;
+use pkg::markdown::{Heading, esc};
+use pkg::layout::rel;
+
+pub struct Member {
+    pub name: str;
+    pub sig: str;
+    pub doc: str;
+}
+
+pub struct Item {
+    /// `fn`, `struct`, `enum`, `trait`, `type`, `const`, `static`, `use`.
+    pub kind: str;
+    pub name: str;
+    pub sig: str;
+    pub doc: str;
+    /// Fields, variants, trait items, inherent methods.
+    pub members: List<Member>;
+    /// `impl Trait for Self` headers.
+    pub traits: List<str>;
+}
+
+pub struct Module {
+    /// `rok::core::collections::list`.
+    pub path: str;
+    /// Site path (`std/core/collections/list.html`).
+    pub out: str;
+    pub doc: str;
+    pub items: List<Item>;
+    /// Inherent impls of types not declared here (`impl str`), by type.
+    pub impls: List<Item>;
+    pub children: List<str>;
+}
+
+// ---- masking ----
+
+/// `src` with comments, strings and chars blanked (newlines kept).
+fn mask(cs: List<char>) -> List<char> {
+    let out: List<char> = List::new();
+    for c in cs { out.push(c); }
+    let i = 0usize;
+    let n = cs.len();
+    while i < n {
+        let c = cs[i];
+        let nx = if i + 1 < n { cs[i + 1] } else { ' ' };
+        if c == '/' && nx == '/' {
+            let k = i;
+            while k < n && cs[k] != '\n' { k += 1; }
+            blank(out, i, k);
+            i = k;
+        } else if c == '/' && nx == '*' {
+            let k = i + 2;
+            let depth = 1;
+            while k < n && depth > 0 {
+                if cs[k] == '/' && k + 1 < n && cs[k + 1] == '*' {
+                    depth += 1;
+                    k += 1;
+                } else if cs[k] == '*' && k + 1 < n && cs[k + 1] == '/' {
+                    depth -= 1;
+                    k += 1;
+                }
+                k += 1;
+            }
+            blank(out, i, k);
+            i = k;
+        } else if c == '"' || ((c == 'f' || c == 'r' || c == 'b' || c == 'c') && (nx == '"' || (c == 'r' && nx == '#')) && (i == 0 || !is_ident(cs[i - 1]))) {
+            let k = str_end(cs, i);
+            blank(out, i, k);
+            i = k;
+        } else if c == '\'' {
+            let k = char_end(cs, i);
+            blank(out, i, k);
+            i = if k > i { k } else { i + 1 };
+        } else {
+            i += 1;
+        }
+    }
+    out
+}
+
+fn is_ident(c: char) -> bool { c.is_alphanumeric() || c == '_' }
+
+fn blank(out: List<char>, a: usize, b: usize) {
+    for k in a..b {
+        if out[k] != '\n' { out[k] = ' '; }
+    }
+}
+
+/// End of the char literal at `i`, or `i` if it is not one.
+fn char_end(cs: List<char>, i: usize) -> usize {
+    let n = cs.len();
+    let k = i + 1;
+    if k < n && cs[k] == '\\' { k += 2; } else { k += 1; }
+    while k < n && k < i + 12 && cs[k] != '\'' && cs[k] != '\n' { k += 1; }
+    if k < n && cs[k] == '\'' { k + 1 } else { i }
+}
+
+/// End of the string literal at `i` (`"`, `f"`, `r#"`, `f"""` ..).
+fn str_end(cs: List<char>, i: usize) -> usize {
+    let n = cs.len();
+    let k = i;
+    let fmt = cs[k] == 'f';
+    let raw = cs[k] == 'r';
+    if cs[k] != '"' { k += 1; }
+    let hashes = 0usize;
+    while k < n && cs[k] == '#' {
+        hashes += 1;
+        k += 1;
+    }
+    let triple = k + 2 < n && cs[k + 1] == '"' && cs[k + 2] == '"';
+    k += if triple { 3 } else { 1 };
+    while k < n {
+        let c = cs[k];
+        if c == '\\' && !raw {
+            k += 2;
+        } else if c == '"' && (!triple || (k + 2 < n && cs[k + 1] == '"' && cs[k + 2] == '"')) {
+            let e = k + (if triple { 3 } else { 1 });
+            let h = 0usize;
+            while h < hashes && e < n && cs[e] == '#' {
+                h += 1;
+                e += 1;
+            }
+            if h == hashes { return e; }
+            k += 1;
+        } else if fmt && c == '{' && k + 1 < n && cs[k + 1] == '{' {
+            k += 2;
+        } else if fmt && c == '{' {
+            k = hole_end(cs, k + 1);
+        } else {
+            k += 1;
+        }
+    }
+    n
+}
+
+/// End of an f-string hole's code from `i` (after its `}`); strings in
+/// it may reuse the quote.
+fn hole_end(cs: List<char>, i: usize) -> usize {
+    let n = cs.len();
+    let k = i;
+    let depth = 0;
+    while k < n {
+        let c = cs[k];
+        if c == '"' || ((c == 'f' || c == 'r') && k + 1 < n && cs[k + 1] == '"' && !is_ident(cs[k - 1])) {
+            k = str_end(cs, k);
+            continue;
+        }
+        if c == '{' { depth += 1; }
+        if c == '}' {
+            if depth == 0 { return k + 1; }
+            depth -= 1;
+        }
+        k += 1;
+    }
+    n
+}
+
+// ---- item scanning ----
+
+struct Scan {
+    src: List<char>;
+    m: List<char>;
+}
+
+fn text(cs: List<char>, a: usize, b: usize) -> str {
+    let out = StrBuf::new();
+    for k in a..b { out.push(cs[k]); }
+    out.to_str()
+}
+
+/// Matching close of the bracket at `i`.
+fn close_of(m: List<char>, i: usize) -> usize {
+    let depth = 0;
+    let k = i;
+    while k < m.len() {
+        let c = m[k];
+        if c == '(' || c == '[' || c == '{' { depth += 1; }
+        if c == ')' || c == ']' || c == '}' {
+            depth -= 1;
+            if depth == 0 { return k; }
+        }
+        k += 1;
+    }
+    m.len()
+}
+
+/// One declaration in a body: `[start, head_end)` is its header (up to
+/// its `{`, `;` or `,`), `body` the `{..}` range if any.
+struct Decl {
+    start: usize;
+    head_end: usize;
+    body_start: usize;
+    body_end: usize;
+}
+
+/// The declarations in `m[a..b]`, split at `;` / `,` / a closing `}`.
+fn decls(m: List<char>, a: usize, b: usize) -> List<Decl> {
+    let out: List<Decl> = List::new();
+    let i = a;
+    while i < b {
+        while i < b && (m[i].is_whitespace() || m[i] == ';' || m[i] == ',') { i += 1; }
+        if i >= b { break; }
+        let start = i;
+        let k = i;
+        let bs = 0usize;
+        let be = 0usize;
+        let body = false;
+        // `#[..]` attributes belong to the declaration.
+        while k < b {
+            let c = m[k];
+            if c == '#' && k + 1 < b && m[k + 1] == '[' {
+                k = close_of(m, k + 1) + 1;
+                continue;
+            }
+            if c == '(' || c == '[' {
+                k = close_of(m, k) + 1;
+                continue;
+            }
+            if c == '{' {
+                bs = k;
+                be = close_of(m, k);
+                k = be + 1;
+                // `= expr { .. }` initializers run on to their `;`.
+                if !head_has(m, start, bs, '=') {
+                    body = true;
+                    break;
+                }
+                continue;
+            }
+            if c == ';' || c == ',' { break; }
+            k += 1;
+        }
+        let head_end = if body { bs } else { k };
+        if !body {
+            bs = 0;
+            be = 0;
+        }
+        out.push(Decl { start: start, head_end: head_end, body_start: bs, body_end: be });
+        i = k + 1;
+    }
+    out
+}
+
+fn head_has(m: List<char>, a: usize, b: usize, c: char) -> bool {
+    let depth = 0;
+    for k in a..b {
+        let x = m[k];
+        if x == '(' || x == '[' || x == '<' { depth += 1; }
+        if x == ')' || x == ']' || x == '>' { depth -= 1; }
+        if x == c && depth == 0 && !(k + 1 < b && m[k + 1] == '=') && !(k > 0 && (m[k - 1] == '=' || m[k - 1] == '!' || m[k - 1] == '<' || m[k - 1] == '>')) { return true; }
+    }
+    false
+}
+
+/// The `///` lines right above `start` (through attribute lines).
+fn doc_above(src: List<char>, start: usize) -> str {
+    let lines: List<str> = List::new();
+    let e = start;
+    while e > 0 && src[e - 1] != '\n' { e -= 1; }
+    while e > 0 {
+        let b = e - 1;
+        let a = b;
+        while a > 0 && src[a - 1] != '\n' { a -= 1; }
+        let l = text(src, a, b).trim();
+        if l.starts_with("///") && !l.starts_with("////") {
+            let t = l[3:];
+            lines.push(if t.starts_with(" ") { t[1:] } else { t });
+        } else if !l.starts_with("#[") {
+            break;
+        }
+        e = a;
+    }
+    let out = StrBuf::new();
+    let k = lines.len();
+    while k > 0 {
+        k -= 1;
+        out.push_str(lines[k]);
+        out.push('\n');
+    }
+    out.to_str()
+}
+
+/// Words of a masked header after its attributes.
+fn words(m: List<char>, a: usize, b: usize) -> List<str> {
+    let out: List<str> = List::new();
+    let k = a;
+    while k < b {
+        if m[k] == '#' && k + 1 < b && m[k + 1] == '[' {
+            k = close_of(m, k + 1) + 1;
+            continue;
+        }
+        if is_ident(m[k]) {
+            let j = k;
+            while j < b && is_ident(m[j]) { j += 1; }
+            out.push(text(m, k, j));
+            k = j;
+        } else {
+            if m[k] == '(' && out.len() > 0 && out[out.len() - 1] == "pub" {
+                // `pub(pkg)`: keep the restriction as one word.
+                let j = close_of(m, k);
+                out[out.len() - 1] = "pub" + text(m, k, j + 1);
+                k = j + 1;
+                continue;
+            }
+            if !m[k].is_whitespace() { out.push(text(m, k, k + 1)); }
+            k += 1;
+        }
+    }
+    out
+}
+
+/// Header text from the original source, attributes dropped, lines
+/// dedented, trailing `{` / `;` / `,` gone.
+fn sig(s: Scan, d: Decl) -> str {
+    let a = d.start;
+    while a < d.head_end && s.m[a] == '#' {
+        a = close_of(s.m, a + 1) + 1;
+        while a < d.head_end && s.m[a].is_whitespace() { a += 1; }
+    }
+    let col = 0usize;
+    let k = a;
+    while k > 0 && s.src[k - 1] != '\n' {
+        k -= 1;
+        col += 1;
+    }
+    let out = StrBuf::new();
+    let first = true;
+    for l in text(s.src, a, d.head_end).trim_end().lines() {
+        if !first { out.push('\n'); }
+        let t = l;
+        if !first {
+            let cut = 0usize;
+            for c in l.chars() {
+                if c != ' ' || cut == col { break; }
+                cut += 1;
+            }
+            t = l[cut:];
+        }
+        out.push_str(t);
+        first = false;
+    }
+    out.to_str().trim_end()
+}
+
+fn kind_of(ws: List<str>) -> (str, str, bool) {
+    // (kind, name, public)
+    let public = ws.len() > 0 && (ws[0] == "pub" || ws[0] == "pub(shy)");
+    let k = 0usize;
+    while k < ws.len() && (ws[k].starts_with("pub") || ws[k] == "async" || ws[k] == "unsafe" || ws[k] == "const" && k + 1 < ws.len() && ws[k + 1] == "fn") { k += 1; }
+    if k >= ws.len() { return ("", "", false); }
+    let kind = ws[k];
+    let name = if k + 1 < ws.len() { ws[k + 1] } else { "" };
+    if kind == "extern" && k + 1 < ws.len() && ws[k + 1] == "fn" { return ("fn", if k + 2 < ws.len() { ws[k + 2] } else { "" }, public); }
+    (kind, name, public)
+}
+
+/// Members of a struct / enum / trait / impl body.
+fn members(s: Scan, d: Decl, kind: str, trait_impl: bool) -> List<Member> {
+    let out: List<Member> = List::new();
+    if d.body_start == 0 || trait_impl { return out; }
+    for m in decls(s.m, d.body_start + 1, d.body_end) {
+        let ws = words(s.m, m.start, m.head_end);
+        if ws.len() == 0 { continue; }
+        let (k, _name, public) = kind_of(ws);
+        let keep = if kind == "enum" {
+            true
+        } else if kind == "trait" {
+            k == "fn" || k == "type" || k == "const"
+        } else if kind == "impl" {
+            public && (k == "fn" || k == "const" || k == "type")
+        } else {
+            public
+        };
+        if keep { out.push(Member { name: member_name(ws), sig: sig(s, m), doc: doc_above(s.src, m.start) }); }
+    }
+    out
+}
+
+/// The declared name: the first word that is not a modifier.
+fn member_name(ws: List<str>) -> str {
+    for w in ws {
+        if w.starts_with("pub") || w == "async" || w == "unsafe" || w == "const" || w == "fn" || w == "type" || w == "static" { continue; }
+        return w;
+    }
+    ""
+}
+
+/// Type name of an `impl` header's words (after `for` if any).
+fn impl_target(ws: List<str>) -> (str, bool) {
+    let k = 0usize;
+    let depth = 0;
+    let for_at = 0usize;
+    while k < ws.len() {
+        if ws[k] == "<" { depth += 1; }
+        if ws[k] == ">" { depth -= 1; }
+        if ws[k] == "for" && depth == 0 { for_at = k; }
+        k += 1;
+    }
+    // Skip `impl` and its `<..>` parameters.
+    let i = if for_at > 0 { for_at + 1 } else { 1 };
+    if for_at == 0 && i < ws.len() && ws[i] == "<" {
+        let depth = 0;
+        while i < ws.len() {
+            if ws[i] == "<" { depth += 1; }
+            if ws[i] == ">" {
+                depth -= 1;
+                if depth == 0 { i += 1; break; }
+            }
+            i += 1;
+        }
+    }
+    (if i < ws.len() { ws[i] } else { "" }, for_at > 0)
+}
+
+/// Child module names declared `pub mod x;`.
+fn scan(path: str, out: str, src_text: str) -> Module {
+    let src: List<char> = List::new();
+    for c in src_text.chars() { src.push(c); }
+    let s = Scan { src: src, m: mask(src) };
+    let md = Module { path: path, out: out, doc: lead_doc(src_text), items: List::new(), impls: List::new(), children: List::new() };
+    let by_name: Dict<str, usize> = Dict::new();
+    let impls: List<Decl> = List::new();
+    for d in decls(s.m, 0, s.m.len()) {
+        let ws = words(s.m, d.start, d.head_end);
+        let (kind, name, public) = kind_of(ws);
+        if kind == "impl" {
+            impls.push(d);
+            continue;
+        }
+        if !public { continue; }
+        if kind == "mod" {
+            md.children.push(name);
+            continue;
+        }
+        let k = if kind == "union" { "struct" } else { kind };
+        if !(k == "fn" || k == "struct" || k == "enum" || k == "trait" || k == "type" || k == "const" || k == "static" || k == "use") { continue; }
+        let it = Item { kind: k, name: if k == "use" { sig(s, d)["pub use ".len():] } else { name }, sig: sig(s, d), doc: doc_above(s.src, d.start), members: members(s, d, k, false), traits: List::new() };
+        if k != "use" { by_name.insert(name, md.items.len()); }
+        md.items.push(it);
+    }
+    for d in impls {
+        let ws = words(s.m, d.start, d.head_end);
+        let (ty, is_trait) = impl_target(ws);
+        let target = if let i: usize = by_name.get(ty) {
+            md.items[i]
+        } else {
+            let found: Item | none = none;
+            for it in md.impls {
+                if it.name == ty { found = it; }
+            }
+            if let it: Item = found {
+                it
+            } else {
+                let it = Item { kind: "impl", name: ty, sig: "", doc: "", members: List::new(), traits: List::new() };
+                md.impls.push(it);
+                it
+            }
+        };
+        if is_trait {
+            target.traits.push(sig(s, d));
+        } else {
+            target.members.extend(members(s, d, "impl", false));
+        }
+    }
+    // Foreign types with only trait impls are noise.
+    let kept: List<Item> = List::new();
+    for it in md.impls {
+        if it.members.len() > 0 { kept.push(it); }
+    }
+    md.impls = kept;
+    md
+}
+
+/// The file's leading comment block (`//` or `//!`).
+fn lead_doc(src: str) -> str {
+    let out = StrBuf::new();
+    for l in src.lines() {
+        let t = l.trim();
+        if !t.starts_with("//") { break; }
+        let body = if t.starts_with("//!") { t[3:] } else { t[2:] };
+        out.push_str(if body.starts_with(" ") { body[1:] } else { body });
+        out.push('\n');
+    }
+    out.to_str()
+}
+
+// ---- collection ----
+
+/// Every public module of the tier `tier` under `lib` (DFS order).
+fn walk(lib: str, tier: str, file: str, path: str, out: str, mods: List<Module>) throws {
+    let m = scan(path, out, try fs::read_to_str(lib + "/" + file));
+    mods.push(m);
+    let dir = if file.ends_with("/lib.rok") { file[:file.len() - "lib.rok".len()] } else { file[:file.len() - ".rok".len()] + "/" };
+    let base = out[:out.len() - ".html".len()];
+    if base.ends_with("/index") { base = base[:base.len() - "/index".len()]; }
+    for c in m.children {
+        let f = dir + c + ".rok";
+        if !fs::exists(lib + "/" + f) {
+            f = dir + c + "/mod.rok";
+            if !fs::exists(lib + "/" + f) { continue; }
+        }
+        try walk(lib, tier, f, path + "::" + c, base + "/" + c + ".html", mods);
+    }
+}
+
+pub fn collect(lib: str) throws -> List<Module> {
+    let mods: List<Module> = List::new();
+    for tier in ["bare", "core", "std"] {
+        try walk(lib, tier, tier + "/lib.rok", "rok::" + tier, f"std/{tier}/index.html", mods);
+    }
+    mods
+}
+
+// ---- rendering ----
+
+fn md(text: str) -> str {
+    if text.trim().is_empty() { return ""; }
+    markdown::render(text, |h| h).html
+}
+
+fn summary(doc: str) -> str {
+    let t = doc.trim().replace("\n", " ");
+    if let k: usize = t.find(". ") { return t[:k + 1]; }
+    t
+}
+
+fn anchor(it: Item) -> str { it.kind + "." + it.name }
+
+const KINDS: [(str, str); 8] = [
+    ("use", "다시 내보내기"), ("struct", "구조체"), ("enum", "열거형"), ("trait", "트레잇"),
+    ("type", "타입 별칭"), ("fn", "함수"), ("const", "상수"), ("static", "정적 변수"),
+];
+
+fn item_html(it: Item, id: str, title: str, heads: List<Heading>, path: str) -> str {
+    let out = StrBuf::new();
+    out.push_str(f"<section class=\"api-item\" id=\"{esc(id)}\"><h3><a href=\"#{esc(id)}\">{esc(title)}</a></h3>");
+    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{highlight::rok(it.sig)}</code></pre>"); }
+    out.push_str(md(it.doc));
+    if it.members.len() > 0 {
+        out.push_str("<ul class=\"members\">");
+        for m in it.members {
+            let mid = it.name + "." + m.name;
+            out.push_str(f"<li id=\"{esc(mid)}\"><pre><code>{highlight::rok(m.sig)}</code></pre>{md(m.doc)}</li>");
+            if m.sig.contains("fn ") { heads.push(Heading { level: 3, id: mid, text: f"{path}::{it.name}::{m.name}" }); }
+        }
+        out.push_str("</ul>");
+    }
+    if it.traits.len() > 0 {
+        out.push_str("<details class=\"impls\"><summary>트레잇 구현 ");
+        out.push_str(f"{it.traits.len()}</summary><ul>");
+        for t in it.traits { out.push_str(f"<li><code>{highlight::rok(t)}</code></li>"); }
+        out.push_str("</ul></details>");
+    }
+    out.push_str("</section>");
+    out.to_str()
+}
+
+/// A module page's body and its section headings (for search / TOC).
+pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
+    let heads: List<Heading> = List::new();
+    let out = StrBuf::new();
+    out.push_str("<h1><code>");
+    let parts = segs(m.path);
+    let acc = "";
+    for k in 0..parts.len() {
+        acc = if k == 0 { parts[0] } else { acc + "::" + parts[k] };
+        if k > 0 { out.push_str("::"); }
+        let link = "";
+        if let t: Module = find(mods, acc) {
+            if k + 1 < parts.len() { link = rel(m.out, t.out); }
+        }
+        if link.is_empty() {
+            out.push_str(esc(parts[k]));
+        } else {
+            out.push_str(f"<a href=\"{link}\">{esc(parts[k])}</a>");
+        }
+    }
+    out.push_str("</code></h1>");
+    out.push_str(md(m.doc));
+    if m.children.len() > 0 {
+        out.push_str("<h2 id=\"modules\">모듈</h2><ul class=\"api-list\">");
+        heads.push(Heading { level: 2, id: "modules", text: "모듈" });
+        for c in m.children {
+            if let cm: Module = find(mods, m.path + "::" + c) {
+                out.push_str(f"<li><a href=\"{rel(m.out, cm.out)}\"><code>{esc(c)}</code></a> <span>{esc(summary(cm.doc))}</span></li>");
+            }
+        }
+        out.push_str("</ul>");
+    }
+    for (kind, label) in KINDS {
+        let its: List<Item> = List::new();
+        for it in m.items {
+            if it.kind == kind { its.push(it); }
+        }
+        if its.len() == 0 { continue; }
+        out.push_str(f"<h2 id=\"{kind}\">{label}</h2>");
+        heads.push(Heading { level: 2, id: kind, text: label });
+        for it in its {
+            if kind != "use" { heads.push(Heading { level: 3, id: anchor(it), text: m.path + "::" + it.name }); }
+            out.push_str(item_html(it, anchor(it), it.name, heads, m.path));
+        }
+    }
+    if m.impls.len() > 0 {
+        out.push_str("<h2 id=\"impl\">구현</h2>");
+        heads.push(Heading { level: 2, id: "impl", text: "구현" });
+        for it in m.impls {
+            heads.push(Heading { level: 3, id: "impl." + it.name, text: "impl " + it.name });
+            out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m.path));
+        }
+    }
+    (out.to_str(), heads)
+}
+
+fn segs(path: str) -> List<str> {
+    let out: List<str> = List::new();
+    for p in path.split("::") { out.push(p); }
+    out
+}
+
+fn find(mods: List<Module>, path: str) -> Module | none {
+    for m in mods {
+        if m.path == path { return m; }
+    }
+    none
+}
+
+/// Sidebar: the modules of `m`'s tier, the current one with its items.
+pub fn sidebar(m: Module, mods: List<Module>, heads: List<Heading>) -> str {
+    let tier = segs(m.path)[1];
+    let root = "rok::" + tier;
+    let out = StrBuf::new();
+    out.push_str(f"<a class=\"up\" href=\"{rel(m.out, "std/index.html")}\">← 표준 라이브러리 API</a>");
+    out.push_str("<ul class=\"pages\">");
+    for q in mods {
+        if q.path != root && !q.path.starts_with(root + "::") { continue; }
+        let qs = segs(q.path);
+        let depth = qs.len() - 2;
+        let label = if depth == 0 { q.path } else { qs[depth + 1] };
+        let pad = if depth > 1 { f" style=\"padding-left:{(depth - 1) * 12}px\"" } else { "" };
+        if q.path == m.path {
+            out.push_str(f"<li class=\"cur\"{pad}><a aria-current=\"page\" href=\"{rel(m.out, q.out)}\">{esc(label)}</a><ul class=\"toc\">");
+            for h in heads {
+                if h.level == 2 { out.push_str(f"<li><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>"); }
+            }
+            out.push_str("</ul></li>");
+        } else {
+            out.push_str(f"<li{pad}><a href=\"{rel(m.out, q.out)}\">{esc(label)}</a></li>");
+        }
+    }
+    out.push_str("</ul>");
+    out.to_str()
+}
+
+/// `/std/index.html`: the tiers and their modules.
+pub fn index(mods: List<Module>) -> str {
+    let out = StrBuf::new();
+    out.push_str("<h1>표준 라이브러리 API</h1>");
+    out.push_str("<p>표준 라이브러리 소스 (<code>library/</code>) 의 공개 항목과 문서 주석으로 만든 API 목록입니다. 동작과 보장의 정의는 <a href=\"../spec/refs-standard-libraries/index.html\">표준 라이브러리 사양</a> 에 있습니다. 문서 주석은 영어입니다.</p>");
+    for (tier, what) in [("bare", "포인터, 메모리, FFI 같은 최하위 계층"), ("core", "컬렉션, 숫자, 반복자, 포맷, 동기화, 태스크. 모든 코드에 자동으로 들어옵니다"), ("std", "파일, 네트워크, 시간, 스레드, 프로세스, 환경, RokON")] {
+        out.push_str(f"<h2 id=\"{tier}\"><code>rok::{tier}</code></h2><p>{what}.</p><ul class=\"api-list\">");
+        for q in mods {
+            if q.path == "rok::" + tier || q.path.starts_with("rok::" + tier + "::") {
+                out.push_str(f"<li><a href=\"{rel("std/index.html", q.out)}\"><code>{esc(q.path)}</code></a> <span>{esc(summary(q.doc))}</span></li>");
+            }
+        }
+        out.push_str("</ul>");
+    }
+    out.to_str()
+}

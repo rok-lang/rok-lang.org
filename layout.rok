@@ -3,7 +3,7 @@
 
 use pkg::Page;
 use pkg::Site;
-use pkg::markdown::esc;
+use pkg::markdown::{esc, strip_tags};
 
 /// `../` once per directory level of `out`, back to the site root.
 pub fn root_of(out: str) -> str {
@@ -92,6 +92,34 @@ pub fn sidebar(pages: List<Page>, idx: usize) -> str {
     out.to_str()
 }
 
+/// First paragraph of a page's HTML (its summary), tags and all.
+fn lead(html: str) -> str {
+    if let a: usize = html.find("<p>") {
+        if let b: usize = html[a:].find("</p>") { return html[a + 3:a + b]; }
+    }
+    ""
+}
+
+/// A section index's list of its pages (after the index itself):
+/// cards for `examples/`, a numbered list otherwise.
+pub fn contents(group: List<Page>) -> str {
+    let p = group[0];
+    let cards = p.out.starts_with("examples/");
+    let out = StrBuf::new();
+    out.push_str(if cards { "<div class=\"cards\">" } else { "<ol class=\"chapters\">" });
+    for k in 1..group.len() {
+        let q = group[k];
+        let href = rel(p.out, q.out);
+        if cards {
+            out.push_str(f"<a class=\"card\" href=\"{href}\"><h3>{esc(q.title)}</h3><p>{esc(strip_tags(lead(q.html)))}</p></a>");
+        } else {
+            out.push_str(f"<li><a href=\"{href}\">{esc(q.title)}</a><p>{lead(q.html)}</p></li>");
+        }
+    }
+    out.push_str(if cards { "</div>" } else { "</ol>" });
+    out.to_str()
+}
+
 /// Sections of a standalone page.
 pub fn page_toc(p: Page) -> str {
     f"<p class=\"side-title\"><a class=\"cur\" href=\"#\">{esc(p.title)}</a></p>{toc(p)}"
@@ -122,9 +150,11 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
     let root = root_of(out);
     let tools = out.starts_with("spec/refs-lang/009-tools/");
     let nav = StrBuf::new();
-    nav.push_str(nav_item(root, "start.html", "시작하기", out == "start.html"));
+    nav.push_str(nav_item(root, "learn/index.html", "배우기", out.starts_with("learn/")));
+    nav.push_str(nav_item(root, "examples/index.html", "예제", out.starts_with("examples/")));
     nav.push_str(nav_item(root, "spec/refs-lang/index.html", "언어 참조", out.starts_with("spec/refs-lang/") && !tools));
     nav.push_str(nav_item(root, "spec/refs-standard-libraries/index.html", "표준 라이브러리", out.starts_with("spec/refs-standard-libraries/")));
+    nav.push_str(nav_item(root, "std/index.html", "API", out.starts_with("std/")));
     nav.push_str(nav_item(root, "spec/refs-lang/009-tools/index.html", "도구", tools));
     nav.push_str(f"<a href=\"{esc(site.packages)}\">패키지 ↗</a>");
     let full = if out == "index.html" { site.title + " — " + site.tagline } else { title + " — " + site.title };
