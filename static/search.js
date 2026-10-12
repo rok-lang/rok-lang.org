@@ -10,6 +10,27 @@
   const side = document.querySelector(".side details");
   if (side && matchMedia("(max-width: 860px)").matches) side.open = false;
 
+  // Spec language switch: carry the current section over to the other
+  // edition (data-sec pairs this page's heading ids with the other's).
+  const sw = document.querySelector(".lang-switch[data-sec]");
+  const other = sw && sw.querySelector("a[hreflang]");
+  if (other) {
+    const ids = sw.dataset.sec.split(" ");
+    const map = {};
+    for (let i = 0; i + 1 < ids.length; i += 2) map[ids[i]] = ids[i + 1];
+    other.addEventListener("click", () => {
+      let id = decodeURIComponent(location.hash.slice(1));
+      if (!map[id]) {
+        id = "";
+        for (const h of document.querySelectorAll("article [id]")) {
+          if (h.getBoundingClientRect().top > 80) break;
+          if (map[h.id]) id = h.id;
+        }
+      }
+      other.href = other.href.split("#")[0] + (map[id] ? "#" + map[id] : "");
+    });
+  }
+
   const load = () =>
     index ? Promise.resolve(index)
       : fetch(root + "search-index.json").then((r) => r.json()).then((d) => (index = d));
@@ -53,7 +74,7 @@
     if (!hits.length) {
       const li = document.createElement("li");
       li.className = "empty";
-      li.textContent = "결과 없음";
+      li.textContent = "No results";
       box.append(li);
     }
     box.hidden = false;

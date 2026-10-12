@@ -1,10 +1,10 @@
-# 4. 제어 흐름
+# 4. Control Flow
 
-이 장에서는 분기 (`if`, `match`) 와 반복 (`while`, `for`, `loop`), 그리고 값을 꺼내며 분기하는 `let else`, `is` 검사, 분해를 다룹니다. rok 에서 `if`, `match`, `loop` 는 모두 값을 내는 식이라는 점이 핵심입니다.
+This chapter covers branching (`if`, `match`), looping (`while`, `for`, `loop`), and `let else`, `is` checks, and destructuring for branching while extracting values. The key point is that `if`, `match`, and `loop` in rok are all expressions that produce values.
 
-## `if` 는 식이다
+## `if` is an expression
 
-`if` 의 조건에는 괄호가 필요 없고, 본체는 항상 중괄호로 씁니다. 각 분기의 마지막 식이 `if` 전체의 값이 되므로 삼항 연산자가 따로 없습니다.
+The condition of an `if` needs no parentheses, and the body is always written in braces. The last expression of each branch becomes the value of the whole `if`, so there is no separate ternary operator.
 
 ```rok
 let temp = 23;
@@ -22,11 +22,11 @@ println(f"{temp} degrees: {feel}");
 23 degrees: mild
 ```
 
-값으로 쓸 때는 모든 분기가 같은 타입이어야 합니다. 서로 다른 타입을 섞으려면 받는 변수에 `i32 | str` 같은 합 타입을 명시합니다.
+When used as a value, all branches must have the same type. To mix different types, annotate the receiving variable with a sum type such as `i32 | str`.
 
-## `match` 와 패턴
+## `match` and patterns
 
-`match` 는 값을 위에서부터 패턴과 비교해 처음 맞는 가지를 실행합니다. 리터럴, `|` 로 묶은 여러 패턴, 범위 (`4..=9`), 바인딩 (`k @ 패턴`), 가드 (`if 조건`), 와일드카드 `_` 를 쓸 수 있습니다.
+`match` compares a value against patterns from top to bottom and runs the first arm that matches. You can use literals, several patterns joined with `|`, ranges (`4..=9`), bindings (`k @ pattern`), guards (`if condition`), and the wildcard `_`.
 
 ```rok
 fn describe(n: i32) -> str {
@@ -52,7 +52,7 @@ for n in [0, 2, 7, -5, 42] {
 42: large
 ```
 
-컴파일러는 모든 경우가 처리되었는지 검사합니다. `i32` 는 값이 너무 많으므로 마지막에 `_` 가 필요합니다. 튜플도 패턴으로 분해하며 맞출 수 있습니다.
+The compiler checks that every case is handled. `i32` has too many values to list, so a final `_` is required. Tuples can also be destructured and matched with patterns.
 
 ```rok
 fn locate(p: (i32, i32)) -> str {
@@ -78,9 +78,9 @@ on the diagonal
 somewhere else
 ```
 
-## 합 타입 다루기: 타입 패턴, `is`, `let else`
+## Working with sum types: type patterns, `is`, `let else`
 
-값이 여러 타입 중 하나일 수 있으면 (`i32 | str | none`) **타입 검사 패턴** `이름: 타입` 으로 나눕니다. 맞는 가지 안에서 이름은 그 타입으로 좁혀집니다.
+When a value can be one of several types (`i32 | str | none`), split on it with a **type-test pattern** `name: Type`. Inside the matching arm, the name is narrowed to that type.
 
 ```rok
 fn show(v: i32 | str | none) -> str {
@@ -105,9 +105,9 @@ str hi
 nothing
 ```
 
-타입만 확인하려면 `값 is 타입` 을 씁니다. 결과는 `bool` 이고, `if` 조건에서 지역 변수를 검사하면 본체 안 (그리고 `&&` 뒤쪽) 에서 그 타입으로 좁혀집니다.
+To only check the type, use `value is Type`. The result is a `bool`, and when an `if` condition tests a local variable, the variable is narrowed to that type inside the body (and to the right of `&&`).
 
-`let 패턴 = 식 else { ... };` 는 패턴이 맞으면 변수를 만들고, 맞지 않으면 `else` 블록으로 빠져나갑니다. `else` 블록은 반드시 `return`, `break`, `continue`, `throw` 등으로 끝나야 합니다. "없으면 일찍 끝내기" 를 들여쓰기 없이 쓸 수 있습니다.
+`let pattern = expr else { ... };` binds variables if the pattern matches and otherwise exits through the `else` block. The `else` block must end with `return`, `break`, `continue`, `throw`, or similar. This lets you write "bail out early if missing" without extra indentation.
 
 ```rok
 fn first_even(xs: List<i32>) -> i32 | none {
@@ -138,11 +138,11 @@ first even is 8, half is 4
 no even number
 ```
 
-한 경우만 처리하고 나머지는 넘어가려면 `if let n: i32 = 식 { ... }` 도 쓸 수 있습니다.
+To handle just one case and skip the rest, you can also write `if let n: i32 = expr { ... }`.
 
-## `while` 과 `for`
+## `while` and `for`
 
-`while` 은 조건이 참인 동안 반복합니다. `for` 는 범위, 리스트, 반복자의 원소를 하나씩 꺼냅니다. `a..b` 는 `b` 를 포함하지 않고, `a..=b` 는 포함합니다. `continue` 는 다음 반복으로, `break` 는 반복 밖으로 갑니다.
+`while` repeats as long as the condition is true. `for` takes elements one at a time from a range, list, or iterator. `a..b` excludes `b`; `a..=b` includes it. `continue` moves to the next iteration, and `break` leaves the loop.
 
 ```rok
 let i = 0;
@@ -171,7 +171,7 @@ for (idx, name) in ["ada", "grace"].iter().enumerate() {
 1: grace
 ```
 
-`while let` 은 패턴이 맞는 동안 반복합니다. `pop()` 은 `T | none` 을 돌려주므로, 빌 때까지 꺼내는 코드가 간단해집니다.
+`while let` repeats as long as the pattern matches. `pop()` returns `T | none`, which makes draining a list until it is empty simple.
 
 ```rok
 let stack = [1, 2, 3];
@@ -185,9 +185,9 @@ println("");
 3 2 1 
 ```
 
-## `loop` 와 값을 든 `break`
+## `loop` and `break` with a value
 
-`loop` 는 `break` 할 때까지 무한히 반복합니다. `break 값` 으로 빠져나가면 그 값이 `loop` 식의 결과입니다. 끝나는 시점에 결과가 정해지는 계산에 알맞습니다.
+`loop` repeats forever until a `break`. If you exit with `break value`, that value is the result of the `loop` expression. This suits computations whose result is determined at the moment they finish.
 
 ```rok
 let n = 27;
@@ -204,9 +204,9 @@ println(f"Collatz(27) reaches 1 in {total} steps");
 Collatz(27) reaches 1 in 111 steps
 ```
 
-## 라벨
+## Labels
 
-중첩된 반복에서 바깥 반복을 직접 끝내려면 `'이름:` 라벨을 붙이고 `break '이름` 이나 `continue '이름` 을 씁니다. `loop` 와 블록에 붙인 라벨은 값도 들고 나갈 수 있습니다.
+To end an outer loop directly from a nested one, attach a `'name:` label and use `break 'name` or `continue 'name`. Labels on `loop`s and blocks can also carry a value out.
 
 ```rok
 let pair = 'search: loop {
@@ -232,9 +232,9 @@ println(f"{checked}");
 100
 ```
 
-## 분해
+## Destructuring
 
-`let` 과 `for` 의 왼쪽에는 언제나 맞는 (반증 불가능한) 패턴을 둘 수 있습니다. 튜플을 중첩해 풀거나, `..` 로 나머지를 묶거나, `_` 로 버립니다.
+The left side of `let` and `for` can be any pattern that always matches (an irrefutable pattern). Unpack nested tuples, collect the rest with `..`, or discard with `_`.
 
 ```rok
 let ((a, b), c) = ((1, 2), 3);
@@ -254,17 +254,17 @@ for (x, y) in points {
 (3, 4) -> 7
 ```
 
-## 정리
+## Summary
 
-- `if`, `match`, `loop`, 블록은 값을 내는 식입니다. 분기는 같은 타입이어야 합니다.
-- `match` 는 리터럴, `|`, 범위, `@` 바인딩, 가드, 타입 검사 패턴을 지원하고 완전성을 검사합니다.
-- `is` 는 타입 검사, `let ... else` 와 `if let` / `while let` 은 패턴이 맞을 때만 진행합니다.
-- `for x in a..b` / `a..=b` 로 범위를, `.iter().enumerate()` 로 인덱스와 함께 반복합니다.
-- `break 값` 과 `'라벨:` 로 중첩 반복을 빠져나오며 결과를 돌려줄 수 있습니다.
+- `if`, `match`, `loop`, and blocks are expressions that produce values. Branches must have the same type.
+- `match` supports literals, `|`, ranges, `@` bindings, guards, and type-test patterns, and checks exhaustiveness.
+- `is` tests a type; `let ... else`, `if let`, and `while let` proceed only when the pattern matches.
+- `for x in a..b` / `a..=b` iterates over ranges; `.iter().enumerate()` iterates with indices.
+- `break value` and `'label:` let you exit nested loops and return a result.
 
-## 더 알아보기
+## Further reading
 
-- [`if` 표현식](../spec/refs-lang/003-expressions/310-if-expression.html), [`match` 표현식](../spec/refs-lang/003-expressions/312-match-expression.html), [패턴](../spec/refs-lang/003-expressions/311-patterns.html)
-- [루프 표현식](../spec/refs-lang/003-expressions/313-loop-expressions.html), [범위 표현식](../spec/refs-lang/003-expressions/307-range-expressions.html), [라벨 블록](../spec/refs-lang/003-expressions/309-block-expressions.html)
-- [분해 대입](../spec/refs-lang/003-expressions/315-destructuring.html), [`let-else`](../spec/refs-lang/003-expressions/316-let-else.html)
-- [`is` 와 슬롯의 타입 검사](../spec/refs-lang/002-types/202-any-slot.html), [합 타입](../spec/refs-lang/002-types/206-sum-types.html)
+- [`if` expressions](../spec/refs-lang/003-expressions/310-if-expression.html), [`match` expressions](../spec/refs-lang/003-expressions/312-match-expression.html), [patterns](../spec/refs-lang/003-expressions/311-patterns.html)
+- [Loop expressions](../spec/refs-lang/003-expressions/313-loop-expressions.html), [range expressions](../spec/refs-lang/003-expressions/307-range-expressions.html), [labeled blocks](../spec/refs-lang/003-expressions/309-block-expressions.html)
+- [Destructuring assignment](../spec/refs-lang/003-expressions/315-destructuring.html), [`let-else`](../spec/refs-lang/003-expressions/316-let-else.html)
+- [`is` and type tests on slots](../spec/refs-lang/002-types/202-any-slot.html), [sum types](../spec/refs-lang/002-types/206-sum-types.html)

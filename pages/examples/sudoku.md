@@ -1,8 +1,8 @@
-# 스도쿠 풀이
+# Sudoku solver
 
-고정 크기 배열로 판을 표현하고, 빈칸마다 가능한 숫자를 넣어 보는 백트래킹으로 스도쿠를 풉니다.
+Solve a sudoku with backtracking over a fixed-size array board, trying each candidate digit in every empty cell.
 
-## 코드
+## Code
 
 ```rok
 // A 9x9 board; 0 marks an empty cell.
@@ -114,10 +114,10 @@ solved after 4208 placements:
 3 4 5 | 2 8 6 | 1 7 9
 ```
 
-## 살펴보기
+## Walkthrough
 
-- 판은 `[[u8; 9]; 9]` 고정 크기 배열입니다. 크기가 타입에 들어 있어 별도 할당 없이 `cells[r][c]` 로 바로 읽고 씁니다 ([값과 타입](../learn/02-values-and-types.html)).
-- `solve` 는 `ref self` 로 판을 제자리에서 고치고, `ref steps` 로 호출한 쪽의 카운터를 함께 늘립니다. 호출하는 쪽도 `board.solve(ref steps)` 처럼 `ref` 를 적어 값이 바뀐다는 사실이 보입니다 ([4.7 `ref` 키워드](../spec/refs-lang/004-functions/407-ref-keyword.html), [함수](../learn/03-functions.html)).
-- 백트래킹의 핵심은 세 줄입니다. 숫자를 넣고(`self.cells[r][c] = d`), 재귀로 나머지를 풀어 보고, 실패하면 빈칸으로 되돌립니다. 첫 빈칸에서 1~9 가 모두 막히면 `false` 를 돌려 바로 위 단계가 다른 숫자를 시도합니다.
-- 리터럴 범위 `0..9` 의 기본 타입은 `i32` 이므로, `usize` 인자로 넘길 반복 변수는 `0usize..9` 처럼 접미사로 타입을 정합니다 ([1.6 숫자 리터럴](../spec/refs-lang/001-lexical/106-numeric-literals.html)).
-- 퍼즐 문자열에서는 숫자와 `.` 만 읽고 공백과 줄바꿈은 건너뛰므로, 판을 보기 좋게 끊어 적을 수 있습니다 ([문자열](../learn/09-strings.html)).
+- The board is a fixed-size array `[[u8; 9]; 9]`. The size is part of the type, so `cells[r][c]` reads and writes directly with no separate allocation ([Values and types](../learn/02-values-and-types.html)).
+- `solve` fixes the board in place through `ref self` and bumps the caller's counter through `ref steps`. The caller writes `ref` too, `board.solve(ref steps)`, so it is visible that the value changes ([4.7 The `ref` keyword](../spec/refs-lang/004-functions/407-ref-keyword.html), [Functions](../learn/03-functions.html)).
+- The heart of backtracking is three lines: place a digit (`self.cells[r][c] = d`), recursively try to solve the rest, and clear the cell again on failure. If all of 1–9 fail in the first empty cell, `false` returns and the level above tries another digit.
+- The literal range `0..9` defaults to `i32`, so a loop variable passed as a `usize` argument gets its type from a suffix: `0usize..9` ([1.6 Numeric literals](../spec/refs-lang/001-lexical/106-numeric-literals.html)).
+- The puzzle string reader takes only digits and `.` and skips spaces and newlines, so the board can be laid out readably ([Strings](../learn/09-strings.html)).

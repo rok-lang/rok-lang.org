@@ -1,5 +1,5 @@
-// rok-lang.org: renders the rok spec (Korean markdown), the site's own
-// pages and the standard library API into a static site, then checks
+// rok-lang.org: renders the rok spec (English at `spec/`, Korean at
+// `ko/spec/`), the site's own pages and the standard library API into a static site, then checks
 // every internal link.
 //
 //   rok run                  build into `out` (site.rokon)
@@ -10,23 +10,23 @@
 
 mod apidoc;
 mod check;
-mod highlight;
 mod layout;
-mod markdown;
 
 use rok::std::env;
 use rok::std::fs;
 use rok::std::rokon;
 use rok::core::task::time::Instant;
-use markdown::Heading;
+use rok_markdown::Heading;
 use layout::{dir_of, rel};
 
 #[derive(Rokon)]
 pub struct Site {
     pub title: str;
     pub tagline: str;
-    /// The spec's language directory (`spec/ko`), relative to this file.
-    pub spec: str = "../rok-lang/spec/ko";
+    /// The spec's English edition (`spec/en`), relative to this file.
+    pub spec: str = "../rok-lang/spec/en";
+    /// The Korean edition (`spec/ko`), rendered under `ko/`; `""` for none.
+    pub spec_ko: str = "";
     /// Where links that leave the spec directory point (`../LICENSE`).
     pub spec_repo: str;
     pub spec_branch: str = "main";
@@ -87,8 +87,9 @@ fn last_seg(p: str) -> str {
     t
 }
 
-/// The `href` for a spec link written in `src_dir`, from the page `out`.
-fn spec_link(site: Site, href: str, src_dir: str, out: str) -> str {
+/// The `href` for a link written in `src_dir` of the edition in `spec`
+/// (output under `prefix`), from the page `out`.
+fn spec_link(site: Site, spec: str, prefix: str, href: str, src_dir: str, out: str) -> str {
     if href.starts_with("#") || href.contains("://") || href.starts_with("mailto:") { return href; }
     let path = href;
     let frag = "";
@@ -99,7 +100,7 @@ fn spec_link(site: Site, href: str, src_dir: str, out: str) -> str {
     let target = norm(join(src_dir, path));
     if target == ".." || target.starts_with("../") {
         // Outside the language directory: the spec repository.
-        let in_repo = norm(last_seg(site.spec) + "/" + target);
+        let in_repo = norm(last_seg(spec) + "/" + target);
         return f"{site.spec_repo}/blob/{site.spec_branch}/{in_repo}{frag}";
     }
     let file = if target.ends_with(".md") {
@@ -109,7 +110,93 @@ fn spec_link(site: Site, href: str, src_dir: str, out: str) -> str {
     } else {
         target
     };
-    rel(out, out_of(file)) + frag
+    rel(out, prefix + out_of(file)) + frag
+}
+
+/// `"3.11.4. Patterns"` → `"3.11.4."`; `""` if unnumbered.
+fn sec_no(t: str) -> str {
+    let w = t;
+    if let k: usize = t.find(" ") { w = t[:k]; }
+    if !w.ends_with(".") { return ""; }
+    let first = true;
+    for c in w.chars() {
+        let ok = if first { c >= '0' && c <= '9' } else { (c >= '0' && c <= '9') || c == '.' || (c >= 'a' && c <= 'z') };
+        if !ok { return ""; }
+        first = false;
+    }
+    w
+}
+
+/// Heading ids of `a` paired with those of `b` as `"a1 b1 a2 b2 ..."`:
+/// by position when the outlines match, else by section number (an
+/// unnumbered heading goes to its numbered section).
+fn sec_map(a: List<Heading>, b: List<Heading>) -> str {
+    let same = a.len() == b.len();
+    for k in 0..a.len() {
+        if !same { break; }
+        if sec_no(a[k].text) != sec_no(b[k].text) { same = false; }
+    }
+    let by: Dict<str, str> = Dict::new();
+    for h in b {
+        let n = sec_no(h.text);
+        if !n.is_empty() && (by.get(n) ?? "").is_empty() { by.insert(n, h.id); }
+    }
+    let out = StrBuf::new();
+    let last = "";
+    for k in 0..a.len() {
+        let n = sec_no(a[k].text);
+        if !n.is_empty() { last = by.get(n) ?? ""; }
+        let to = if same { b[k].id } else { last };
+        if to.is_empty() { continue; }
+        if !out.is_empty() { out.push(' '); }
+        out.push_str(a[k].id + " " + to);
+    }
+    out.to_str()
+}
+
+/// EN / 한국어 switch for spec page `p`, linking to the same page of the
+/// other edition (`others`); search.js carries the reader's section over.
+fn lang_switch(p: Page, others: List<Page>, ko: bool) -> str {
+    if others.len() == 0 { return ""; }
+    let q = others[0];
+    let sec = "";
+    for o in others {
+        if o.src == p.src {
+            q = o;
+            sec = sec_map(p.heads, o.heads);
+        }
+    }
+    let href = rel(p.out, q.out);
+    let en = if ko { f"<a href=\"{href}\" hreflang=\"en\" lang=\"en\">EN</a>" } else { "<span aria-current=\"true\">EN</span>" };
+    let kr = if ko { "<span aria-current=\"true\">한국어</span>" } else { f"<a href=\"{href}\" hreflang=\"ko\" lang=\"ko\">한국어</a>" };
+    f"<nav class=\"lang-switch\" aria-label=\"Language\" data-sec=\"{rok_markdown::esc(sec)}\">{en}<span aria-hidden=\"true\"> · </span>{kr}</nav>\n"
+}
+
+fn spec_root(dir: str) -> str {
+    let d = norm(dir);
+    if dir.starts_with("/") { d = "/" + d; }
+    d
+}
+
+/// The spec edition in `spec`, rendered under `prefix` (`""`, `"ko/"`).
+fn spec_pages(site: Site, spec: str, prefix: str, ko: bool) throws -> List<Page> {
+    let srcs: List<str> = List::new();
+    for entry in fs::walk(spec) {
+        let e = try entry.get();
+        let p = e.path().as_str();
+        if e.is_file() && p.ends_with(".md") { srcs.push(p[spec.len() + 1:]); }
+    }
+    sort_sources(srcs);
+    let pages: List<Page> = List::new();
+    for src in srcs {
+        let out = prefix + out_of(src);
+        let dir = dir_of(src);
+        let text = try fs::read_to_str(spec + "/" + src);
+        let doc = layout::md(text, |h| spec_link(site, spec, prefix, h, dir, out), ko);
+        let title = if doc.title.is_empty() { src } else { doc.title };
+        pages.push(Page { src: src, out: out, dir: dir, title: title, html: doc.html, heads: doc.headings });
+    }
+    pages
 }
 
 // ---- small helpers ----
@@ -280,39 +367,26 @@ fn main() throws {
     }
     let strict = mode == "check";
     let site: Site = try rokon::from_str(try fs::read_to_str("site.rokon"));
-    let spec = norm(site.spec);
-    if site.spec.starts_with("/") { spec = "/" + spec; }
     let out_root = site.out;
 
-    let srcs: List<str> = List::new();
-    for entry in fs::walk(spec) {
-        let e = try entry.get();
-        let p = e.path().as_str();
-        if e.is_file() && p.ends_with(".md") { srcs.push(p[spec.len() + 1:]); }
-    }
-    sort_sources(srcs);
-
-    let pages: List<Page> = List::new();
-    for src in srcs {
-        let out = out_of(src);
-        let dir = dir_of(src);
-        let text = try fs::read_to_str(spec + "/" + src);
-        let doc = markdown::render(text, |h| spec_link(site, h, dir, out));
-        let title = if doc.title.is_empty() { src } else { doc.title };
-        pages.push(Page { src: src, out: out, dir: dir, title: title, html: doc.html, heads: doc.headings });
-    }
+    let pages = try spec_pages(site, spec_root(site.spec), "", false);
+    let ko_pages: List<Page> = if site.spec_ko.is_empty() { List::new() } else { try spec_pages(site, spec_root(site.spec_ko), "ko/", true) };
 
     let files: Dict<str, str> = Dict::new();
     for k in 0..pages.len() {
         let p = pages[k];
-        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(pages, k), p.html, layout::pager(pages, k)));
+        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(pages, k), lang_switch(p, ko_pages, false) + p.html, layout::pager(pages, k)));
+    }
+    for k in 0..ko_pages.len() {
+        let p = ko_pages[k];
+        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(ko_pages, k), lang_switch(p, pages, true) + p.html, layout::pager(ko_pages, k)));
     }
 
     // The site's own pages: `pages/x.md` → `x.html`; a directory
     // (`pages/learn/`) is a chapter with its own sidebar and pager.
     let own: List<Page> = List::new();
     for src in try page_sources() {
-        let doc = markdown::render(try fs::read_to_str("pages/" + src), |h| h);
+        let doc = layout::md(try fs::read_to_str("pages/" + src), |h| h, false);
         let key = src.replace("index.md", "README.md");
         own.push(Page { src: key, out: src.replace(".md", ".html"), dir: dir_of(src), title: doc.title, html: doc.html, heads: doc.headings });
     }
@@ -343,9 +417,10 @@ fn main() throws {
         files.insert(m.out, layout::page(site, m.out, m.path, apidoc::sidebar(m, mods, heads), html, ""));
         api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads });
     }
-    files.insert("std/index.html", layout::page(site, "std/index.html", "표준 라이브러리 API", "", apidoc::index(mods), ""));
+    files.insert("std/index.html", layout::page(site, "std/index.html", "Standard library API", "", apidoc::index(mods), ""));
 
-    // Search index: every page and its `##` / `###` sections.
+    // Search index: every page and its `##` / `###` sections (the
+    // English spec only).
     let idx = StrBuf::new();
     idx.push('[');
     let first = true;
@@ -380,7 +455,7 @@ fn main() throws {
 
     let bad = check(files, statics);
     for b in bad { eprintln(f"broken link: {b}"); }
-    println(f"{pages.len()} spec pages + {own.len()} site pages + {api.len()} API pages → {out_root}/ ({files.len()} html), {bad.len()} broken links, {t0.elapsed():?}");
+    println(f"{pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} site pages + {api.len()} API pages → {out_root}/ ({files.len()} html), {bad.len()} broken links, {t0.elapsed():?}");
     if strict {
         let failing = try code_check("");
         println(f"checked in {t0.elapsed():?}");

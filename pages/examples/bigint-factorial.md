@@ -1,8 +1,8 @@
-# 큰 정수와 팩토리얼
+# Big integers and factorials
 
-임의 정밀도 정수 `int` 로 100!, 피보나치 300 번째 항, 128 비트를 넘는 거듭제곱을 계산하고 `i64` 가 어디서 넘치는지 확인합니다.
+Compute 100!, the 300th Fibonacci number and powers beyond 128 bits with the arbitrary-precision `int`, and find where `i64` overflows.
 
-## 코드
+## Code
 
 ```rok
 // n! as an arbitrary-precision `int`.
@@ -79,10 +79,10 @@ gcd(100!, 2^200) = 2^97
 100! / 98! = 9900
 ```
 
-## 살펴보기
+## Walkthrough
 
-- `int` 는 크기 제한이 없는 정수입니다. 작은 값은 `i64` 하나로 들고 있다가 넘치면 자릿수 배열로 넘어가므로, 작은 수에서는 고정 폭 정수와 비슷하게 빠릅니다 ([2.1.2 `int`](../spec/refs-standard-libraries/200-core/201-numbers.html#212-int--무한-정밀도-정수), [`Int`](../std/core/num/bigint.html#struct.Int)).
-- `int` 와 `i64` 를 섞어 계산하지 않습니다. `int::from(k)` 처럼 명시적으로 바꿔야 하며, 이 규칙 덕분에 어느 연산이 넘칠 수 있는지 코드에서 바로 보입니다 ([2.1.6 산술 결과 타입](../spec/refs-standard-libraries/200-core/201-numbers.html#216-산술-결과-타입)).
-- `i64` 쪽은 `checked_mul` 이 넘치면 `none` 을 돌려줍니다. 뒤에 붙인 `?` 가 `none` 을 그대로 함수 밖으로 돌려보내므로, `factorial_i64` 는 결과를 `i64 | none` 으로 알려 줍니다 ([합 타입](../learn/05-sum-types.html)).
-- `i64` 범위를 넘는 정수 리터럴도 `int` 슬롯에서는 그대로 쓸 수 있습니다 (`let big: int = 123_456_...`).
-- `int` 는 `Display` 를 구현하므로 `f"{x}"` 로 10 진 문자열을 얻고, 문자열 슬라이스 `text[:20]`, `text[-10:]` 로 앞뒤만 잘라 보여 줍니다 ([문자열](../learn/09-strings.html)).
+- `int` is an integer with no size limit. Small values are held in a single `i64` and switch to a digit array only when they overflow, so for small numbers it is about as fast as a fixed-width integer ([2.1.2 `int`](../spec/refs-standard-libraries/200-core/201-numbers.html#212-int--arbitrary-precision-integer), [`Int`](../std/core/num/bigint.html#struct.Int)).
+- `int` and `i64` don't mix in arithmetic. You convert explicitly, as in `int::from(k)`, so the code shows at a glance which operations can overflow ([2.1.6 arithmetic result types](../spec/refs-standard-libraries/200-core/201-numbers.html#216-arithmetic-result-types)).
+- On the `i64` side, `checked_mul` returns `none` on overflow. The trailing `?` returns that `none` straight out of the function, so `factorial_i64` reports its result as `i64 | none` ([Sum types](../learn/05-sum-types.html)).
+- Integer literals beyond the `i64` range can be written directly in an `int` slot (`let big: int = 123_456_...`).
+- `int` implements `Display`, so `f"{x}"` gives its decimal string, and the string slices `text[:20]` and `text[-10:]` show just the beginning and end ([Strings](../learn/09-strings.html)).

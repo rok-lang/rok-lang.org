@@ -1,8 +1,8 @@
-# JSON 파서
+# JSON parser
 
-열거형으로 JSON 값을 표현하고, 글자 단위 재귀 하강 파서가 오류 위치를 담아 `throws` 로 알리며, 들여쓰기한 형태로 다시 출력합니다.
+JSON values as an enum, a character-level recursive-descent parser that reports error positions with `throws`, and an indenting pretty printer.
 
-## 코드
+## Code
 
 ```rok
 // A small JSON parser: recursive descent over chars, errors with positions, pretty printer.
@@ -192,10 +192,10 @@ fn main() {
 -         -> bad number '-' at offset 0
 ```
 
-## 살펴보기
+## Walkthrough
 
-- JSON 값은 변형 여섯 개짜리 열거형 `Json` 입니다. 배열과 객체는 자기 자신을 담는 `List<Json>` 과 `OrderedDict<str, Json>` 이고, 객체는 키 순서를 지키려고 `OrderedDict` 를 씁니다 ([합 타입](../learn/05-sum-types.html), [구조체, 열거형, 트레잇](../learn/06-structs-enums-traits.html)).
-- 파서는 위치 `pos` 를 가진 구조체이고, 위치를 옮기는 메서드는 `ref self` 입니다. 메서드가 끝나면(에러를 던질 때도) 바뀐 `self` 가 호출한 쪽에 되써집니다 ([4.7.5 메서드 receiver](../spec/refs-lang/004-functions/407-ref-keyword.html#475-메서드-receiver-의-예외)).
-- 입력이 끝났는지는 `let c: char = self.peek() else { throw ...; };` 로 확인합니다. `peek()` 가 `char | none` 을 돌려주므로 `let-else` 가 `none` 일 때 바로 빠져나가고, 그 아래에서는 `c` 가 `char` 입니다 ([3.16 `let-else`](../spec/refs-lang/003-expressions/316-let-else.html#3161-형태)).
-- 오류는 메시지와 위치를 담은 `ParseError` 하나로 던집니다. 숫자 파싱처럼 표준 라이브러리가 던진 에러는 `catch _ { throw ParseError { ... }; }` 로 위치가 있는 에러로 바꿉니다 ([에러 처리](../learn/10-errors.html)).
-- 출력은 재귀 함수 `pretty` 가 문자열을 만들어 돌려줍니다. 배열과 객체는 각 원소를 먼저 문자열로 만든 뒤 `block` 이 들여쓰기와 쉼표를 붙이고, 문자열 값은 `{s:?}` (Debug) 로 따옴표와 이스케이프를 붙입니다 ([문자열](../learn/09-strings.html)).
+- A JSON value is the six-variant enum `Json`. Arrays and objects hold themselves recursively as `List<Json>` and `OrderedDict<str, Json>`; objects use `OrderedDict` to keep key order ([Sum types](../learn/05-sum-types.html), [Structs, enums and traits](../learn/06-structs-enums-traits.html)).
+- The parser is a struct holding the position `pos`, and the methods that advance it take `ref self`. When such a method returns (or throws), the updated `self` is written back to the caller ([4.7.5 method receivers](../spec/refs-lang/004-functions/407-ref-keyword.html#475-exception-for-method-receivers)).
+- End of input is checked with `let c: char = self.peek() else { throw ...; };`. `peek()` returns `char | none`, so `let-else` leaves on `none`, and below it `c` is a `char` ([3.16 `let-else`](../spec/refs-lang/003-expressions/316-let-else.html#3161-form)).
+- Every error is a single `ParseError` carrying a message and a position. Errors thrown by the standard library, such as a failed number parse, are turned into positioned errors with `catch _ { throw ParseError { ... }; }` ([Errors](../learn/10-errors.html)).
+- Output is built by the recursive function `pretty`, which returns a string. For arrays and objects each element is rendered first, then `block` adds indentation and commas; string values use `{s:?}` (Debug) for quotes and escapes ([Strings](../learn/09-strings.html)).

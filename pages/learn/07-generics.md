@@ -1,10 +1,10 @@
-# 7. 제네릭
+# 7. Generics
 
-같은 로직을 여러 타입에 쓰고 싶을 때 제네릭을 씁니다. rok 의 제네릭은 호출된 구체 타입마다 따로 컴파일되므로 (단형화), 손으로 타입별 함수를 쓴 것과 같은 속도로 돕니다.
+Use generics when you want the same logic to work for many types. rok generics are compiled separately for each concrete type they're called with (monomorphization), so they run as fast as hand-written per-type functions.
 
-## 제네릭 함수
+## Generic functions
 
-함수 이름 뒤 `<T>` 에 타입 매개변수를 선언하고, 매개변수와 반환 타입에서 씁니다. 호출할 때는 보통 타입을 적지 않아도 컴파일러가 인자에서 추론합니다.
+Declare type parameters in `<T>` after the function name and use them in the parameter and return types. At the call site you usually don't write the type; the compiler infers it from the arguments.
 
 ```rok
 fn first_or<T>(xs: List<T>, fallback: T) -> T {
@@ -23,11 +23,11 @@ a
 1.5
 ```
 
-한 호출 안에서 `T` 는 한 타입입니다. `first_or([1, 2], "x")` 처럼 서로 다른 타입을 넘기면 컴파일 에러입니다.
+Within one call, `T` is a single type. Passing different types, as in `first_or([1, 2], "x")`, is a compile error.
 
-## 트레잇 바운드
+## Trait bounds
 
-바운드 없는 `T` 로는 값을 옮기는 일밖에 할 수 없습니다. 비교하거나 더하려면 `T: Ord` 처럼 **바운드** 로 필요한 트레잇을 요구합니다. 여러 개는 `+` 로 잇습니다. 컴파일러는 제네릭 본체를 바운드만 보고 검사하므로, 어떤 타입으로 호출하든 본체가 깨지지 않습니다.
+With an unbounded `T`, all you can do is move values around. To compare or add them, require the needed traits with a **bound** such as `T: Ord`. Join multiple bounds with `+`. The compiler checks a generic body against its bounds alone, so the body cannot break no matter which type it's called with.
 
 ```rok
 fn largest<T: Ord>(xs: List<T>) -> T? {
@@ -50,7 +50,7 @@ println(f"{largest(none_here):?}");
 none
 ```
 
-`T: Zero` 이면 `T::zero()` 처럼 타입 매개변수 위의 정적 메서드도 부를 수 있습니다.
+With `T: Zero`, you can also call static methods on the type parameter, such as `T::zero()`.
 
 ```rok
 fn sum<T: Zero + Add<Output = T>>(xs: List<T>) -> T {
@@ -66,9 +66,9 @@ println(f"{sum([1, 2, 3])} {sum([0.5, 0.25])}");
 6 0.75
 ```
 
-## `where` 절
+## `where` clauses
 
-바운드가 길어지면 시그니처 끝의 `where` 로 옮기면 읽기 쉽습니다. 의미는 같습니다.
+When bounds get long, moving them to a `where` clause at the end of the signature makes it easier to read. The meaning is the same.
 
 ```rok
 fn join_all<T>(xs: List<T>, sep: str) -> str
@@ -92,9 +92,9 @@ println(join_all([true, false], " / "));
 true / false
 ```
 
-## 제네릭 구조체와 impl
+## Generic structs and impl
 
-구조체와 enum 도 타입 매개변수를 가질 수 있습니다. 메서드를 붙일 때는 `impl<A, B> Pair<A, B>` 처럼 `impl` 에도 매개변수를 선언합니다.
+Structs and enums can take type parameters too. When adding methods, declare the parameters on the `impl` as well, as in `impl<A, B> Pair<A, B>`.
 
 ```rok
 struct Pair<A, B> { first: A; second: B; }
@@ -114,9 +114,9 @@ println(f"{q.first} {q.second}");
 one 1
 ```
 
-## 연관 타입
+## Associated types
 
-트레잇이 구현마다 다른 타입을 하나 정하게 하려면 **연관 타입** `type Item;` 을 둡니다. 트레잇 안에서는 그냥 `Item` 으로, 바깥의 제네릭 코드에서는 `C::Item` 으로 가리킵니다. 표준 `Iterator` 가 이 방식입니다 (다음 장).
+To let each implementation of a trait pick one type, declare an **associated type** `type Item;`. Inside the trait, refer to it as plain `Item`; in generic code outside, as `C::Item`. The standard `Iterator` works this way (next chapter).
 
 ```rok
 trait Container {
@@ -142,11 +142,11 @@ println(f"{first_of(s):?} {s.get(5):?}");
 "Dune" none
 ```
 
-타입 매개변수로 두지 않고 연관 타입으로 두는 이유는, 한 타입에 대해 `Item` 이 딱 하나로 정해지기 때문입니다. 쓰는 쪽은 `Shelf` 의 원소 타입을 따로 적을 필요가 없습니다.
+It is an associated type rather than a type parameter because `Item` is fixed to exactly one type for a given implementor. Users don't need to spell out `Shelf`'s element type.
 
-## const 제네릭
+## Const generics
 
-타입 대신 컴파일 타임 **값** 을 매개변수로 받을 수도 있습니다. 고정 길이 배열 `[T; N]` 의 길이처럼, 값이 타입의 일부가 되는 경우에 씁니다.
+A parameter can also be a compile-time **value** instead of a type. Use this when a value is part of a type, like the length of a fixed-size array `[T; N]`.
 
 ```rok
 fn total<const N: usize>(a: [i32; N]) -> i32 {
@@ -164,27 +164,27 @@ println(f"{total(a)} {a.len()} {z:?}");
 10 4 [0.5, 0.5, 0.5]
 ```
 
-`const` 매개변수는 정수, `bool`, `char` 만 될 수 있습니다.
+`const` parameters can only be integers, `bool`, or `char`.
 
-## 제네릭과 `any`
+## Generics and `any`
 
-제네릭은 정적입니다. 반대로 실행 중에 담긴 값의 타입이 바뀌어도 되는 슬롯이 필요하면 `any` 라고 **명시** 합니다. `any` 값은 `is` 로 좁혀서 씁니다. 동적 디스패치 비용은 `any` 라고 적은 자리에만 생깁니다.
+Generics are static. When you instead need a slot whose value's type may change at runtime, write `any` **explicitly**. Narrow `any` values with `is` before use. Dynamic dispatch costs appear only where you wrote `any`.
 
 ```rok
 let v: any = 1;
 println(f"{v is i32}");
 v = "text";
 if v is str {
-    println(f"이제 문자열, 길이 {v.len()}");
+    println(f"now a string, length {v.len()}");
 }
 ```
 
 ```output
 true
-이제 문자열, 길이 4
+now a string, length 4
 ```
 
-사양에서는 매개변수 타입을 생략한 함수 `fn show_sum(x, y)` 를 `any` 가 아니라 암묵 제네릭으로 정의합니다. 본체의 쓰임에서 바운드를 추론하고, 호출 지점마다 단형화합니다.
+The spec defines a function with omitted parameter types, `fn show_sum(x, y)`, as an implicit generic, not as `any`. Bounds are inferred from how the body uses the parameters, and the function is monomorphized at each call site.
 
 ```rok norun
 fn show_sum(x, y) { println(f"{x + y}"); }   // implicit generic: T: Add<U>
@@ -194,20 +194,20 @@ show_sum(1.5, 2.0);   // 3.5
 ```
 
 > [!NOTE]
-> 현재 툴체인은 타입을 생략한 매개변수를 `any` 로 다루어 위 예제가 컴파일되지 않습니다. 그동안은 `fn show_sum<T: Add<Output = T> + Display>(x: T, y: T)` 처럼 바운드를 적어 주세요.
+> The current toolchain treats parameters with omitted types as `any`, so the example above does not compile. Until that changes, write the bounds out, as in `fn show_sum<T: Add<Output = T> + Display>(x: T, y: T)`.
 
-## 정리
+## Summary
 
-- `fn f<T>(..)`, `struct S<A, B>`, `impl<A, B> S<A, B>` 로 제네릭을 선언합니다. 타입 인자는 대개 추론됩니다.
-- 바운드 `T: Ord + Clone` 이 본체에서 쓸 수 있는 연산을 정합니다. 길면 `where` 절로 옮깁니다.
-- 연관 타입 `type Item;` 은 구현마다 하나로 정해지는 타입이며, 바깥에서는 `C::Item` 으로 씁니다.
-- `const N: usize` 로 값을 타입 매개변수로 받을 수 있습니다.
-- 제네릭은 정적 (단형화), `any` 는 명시한 자리에만 생기는 동적 슬롯입니다.
+- Declare generics with `fn f<T>(..)`, `struct S<A, B>`, and `impl<A, B> S<A, B>`. Type arguments are usually inferred.
+- Bounds like `T: Ord + Clone` determine which operations the body may use. Move long ones to a `where` clause.
+- An associated type `type Item;` is fixed to one type per implementation and is written `C::Item` from outside.
+- `const N: usize` takes a value as a type parameter.
+- Generics are static (monomorphized); `any` is a dynamic slot that exists only where you write it.
 
-## 더 알아보기
+## Learn more
 
-- [2.10. 제네릭](../spec/refs-lang/002-types/210-generics.html): [2.10.3. 트레잇 바운드](../spec/refs-lang/002-types/210-generics.html#2103-트레잇-바운드), [2.10.4. where 절](../spec/refs-lang/002-types/210-generics.html#2104-where-절), [2.10.7. 점진과의 결합](../spec/refs-lang/002-types/210-generics.html#2107-점진과의-결합)
-- [2.8.3. 연관 타입](../spec/refs-lang/002-types/208-trait.html#283-연관-타입-associated-type)
-- [2.11. `const` 제네릭](../spec/refs-lang/002-types/211-const-generics.html)
-- [2.2. `any` 슬롯](../spec/refs-lang/002-types/202-any-slot.html)
-- 다음 장: [8. 컬렉션과 반복자](08-collections-iterators.html)
+- [2.10. Generics](../spec/refs-lang/002-types/210-generics.html): [2.10.3. Trait bounds](../spec/refs-lang/002-types/210-generics.html#2103-trait-bounds), [2.10.4. where clauses](../spec/refs-lang/002-types/210-generics.html#2104-where-clauses), [2.10.7. Interaction with gradual typing](../spec/refs-lang/002-types/210-generics.html#2107-combination-with-gradual-typing)
+- [2.8.3. Associated types](../spec/refs-lang/002-types/208-trait.html#283-associated-types)
+- [2.11. `const` generics](../spec/refs-lang/002-types/211-const-generics.html)
+- [2.2. The `any` slot](../spec/refs-lang/002-types/202-any-slot.html)
+- Next chapter: [8. Collections and Iterators](08-collections-iterators.html)

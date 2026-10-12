@@ -1,8 +1,8 @@
-# CSV 보고서
+# CSV report
 
-작은 판매 CSV 를 임시 파일에 쓰고 한 줄씩 다시 읽어, 지역별로 집계한 표를 폭과 정렬을 맞춰 출력합니다.
+Write a small sales CSV to a temporary file, read it back line by line, and print a per-region summary table with aligned columns.
 
-## 코드
+## Code
 
 ```rok
 // Write a small sales CSV, read it back line by line, and print a per-region report.
@@ -118,10 +118,10 @@ south   |      2|    10|    77.47|   7.75
 total   |      7|    70|   267.46|
 ```
 
-## 살펴보기
+## Walkthrough
 
-- 파일은 `env::temp_dir()` 아래에 만들고, `main` 의 `finally` 에서 지웁니다. 집계 중에 에러가 나도 임시 파일은 남지 않습니다 ([파일과 입출력](../learn/13-io.html), [`env::temp_dir`](../std/std/env.html#fn.temp_dir)).
-- 쓰기는 `BufWriter`, 읽기는 `BufReader` 로 감쌉니다. `r.lines()` 의 각 항목은 `Result<str, IoError>` 이므로 `try item.get()` 으로 꺼내 읽기 에러를 그대로 전파합니다 ([`BufReader`](../std/std/io.html#struct.BufReader), [`fs`](../std/std/fs.html)).
-- 형식이 틀린 줄은 `parse_row` 가 `RowError` 로 던지고, 호출하는 쪽은 `catch` 블록에서 경고를 찍고 `continue` 로 다음 줄로 넘어갑니다. 한 줄 때문에 보고서 전체가 실패하지 않습니다 ([에러 처리](../learn/10-errors.html)).
-- 집계는 `Dict<str, Group>` 입니다. `groups.get(region) ?? Group {}` 으로 꺼내거나 새로 만들고, 갱신한 값을 `groups[region] = g` 로 다시 넣습니다. `Group` 의 필드는 모두 기본값이 있어 `Group {}` 만으로 0 에서 시작합니다 ([컬렉션과 반복자](../learn/08-collections-iterators.html)).
-- 표는 format spec 으로 맞춥니다. `{name:<8}` 은 왼쪽 정렬, `{g.revenue:>9.2}` 는 폭 9 에 소수 둘째 자리, `{"":-<8}` 은 빈 문자열을 `-` 로 채워 구분선을 만듭니다 ([2.10.8 정렬과 폭](../spec/refs-standard-libraries/200-core/210-fmt.html#2108-align--fill--width--precision)).
+- The file is created under `env::temp_dir()` and removed in the `finally` of `main`, so no temporary file is left behind even if summarizing fails ([Files and I/O](../learn/13-io.html), [`env::temp_dir`](../std/std/env.html#fn.temp_dir)).
+- Writing goes through a `BufWriter` and reading through a `BufReader`. Each item of `r.lines()` is a `Result<str, IoError>`, so `try item.get()` takes the line out and propagates read errors ([`BufReader`](../std/std/io.html#struct.BufReader), [`fs`](../std/std/fs.html)).
+- `parse_row` throws a `RowError` for a malformed row; the caller prints a warning in its `catch` block and moves on with `continue`. One bad line does not sink the whole report ([Errors](../learn/10-errors.html)).
+- The totals are a `Dict<str, Group>`. `groups.get(region) ?? Group {}` fetches an entry or starts a new one, and `groups[region] = g` stores the updated value back. Every field of `Group` has a default, so `Group {}` alone starts at zero ([Collections and iterators](../learn/08-collections-iterators.html)).
+- Format specs line up the table: `{name:<8}` left-aligns, `{g.revenue:>9.2}` uses width 9 and two decimals, and `{"":-<8}` fills an empty string with `-` to draw the rule ([2.10.8 align and width](../spec/refs-standard-libraries/200-core/210-fmt.html#2108-align--fill--width--precision)).

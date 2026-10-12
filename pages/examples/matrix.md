@@ -1,8 +1,8 @@
-# 행렬 연산
+# Matrix operations
 
-연산자 트레잇과 인덱스 트레잇을 구현해 `a * b`, `a .* b`, `m[(i, j)]` 처럼 쓰는 작은 행렬 타입을 만듭니다.
+A small matrix type that implements the operator and index traits, so you can write `a * b`, `a .* b` and `m[(i, j)]`.
 
-## 코드
+## Code
 
 ```rok
 // A dense row-major matrix of f64.
@@ -158,13 +158,13 @@ A * 0.5 =
 A * I == A: true
 ```
 
-## 살펴보기
+## Walkthrough
 
-- rok 의 모든 연산자는 트레잇 메서드 호출입니다. `impl Add for Matrix` 를 쓰면 `a + a` 가 `Add::add(a, a)` 로 desugar 됩니다 ([3.1 연산자 디스패치](../spec/refs-lang/003-expressions/301-operator-dispatch.html), [`Add`](../std/core/ops.html#trait.Add), [`Mul`](../std/core/ops.html#trait.Mul)).
-- 같은 연산자를 오른쪽 타입만 바꿔 여러 번 구현할 수 있습니다. `impl Mul for Matrix` 는 행렬 곱이고, `impl Mul<f64> for Matrix` 는 스칼라 배입니다. 컴파일러가 두 피연산자의 타입으로 impl 을 고릅니다.
-- `.*` 같은 점-접두 연산자는 원소별 연산을 위한 별개의 트레잇 패밀리([`DotMul`](../std/core/ops.html#trait.DotMul))로 desugar 되므로, 행렬 곱 `*` 과 아다마르 곱 `.*` 을 함께 둘 수 있습니다 ([3.3 브로드캐스트 연산자](../spec/refs-lang/003-expressions/303-broadcast-operators.html)).
-- 읽기 `m[(i, j)]` 는 [`Index`](../std/core/index.html#trait.Index), 쓰기 `m[(i, j)] = v` 는 [`IndexSet`](../std/core/index.html#trait.IndexSet) 으로 갑니다. 쓰기 전용 메서드는 `ref self` 로 자기 자신을 고칩니다 ([3.6 인덱싱과 슬라이싱](../spec/refs-lang/003-expressions/306-indexing-and-slicing.html)).
-- `impl Display for Matrix` 덕분에 f-string 의 `{a}` 가 행렬을 그대로 찍습니다. 각 원소는 `{x:6.1}` 로 폭과 정밀도를 맞춥니다 ([구조체, 열거형, 트레잇](../learn/06-structs-enums-traits.html)).
+- Every operator in rok is a trait method call. With `impl Add for Matrix`, `a + a` desugars to `Add::add(a, a)` ([3.1 Operator dispatch](../spec/refs-lang/003-expressions/301-operator-dispatch.html), [`Add`](../std/core/ops.html#trait.Add), [`Mul`](../std/core/ops.html#trait.Mul)).
+- The same operator can be implemented several times with different right-hand types. `impl Mul for Matrix` is the matrix product and `impl Mul<f64> for Matrix` is scalar multiplication; the compiler picks the impl from the operand types.
+- Dot-prefixed operators such as `.*` desugar to a separate trait family for element-wise operations ([`DotMul`](../std/core/ops.html#trait.DotMul)), so the matrix product `*` and the Hadamard product `.*` can live side by side ([3.3 Broadcast operators](../spec/refs-lang/003-expressions/303-broadcast-operators.html)).
+- Reading `m[(i, j)]` goes through [`Index`](../std/core/index.html#trait.Index) and writing `m[(i, j)] = v` through [`IndexSet`](../std/core/index.html#trait.IndexSet). The write method takes `ref self` to modify the matrix in place ([3.6 Indexing and slicing](../spec/refs-lang/003-expressions/306-indexing-and-slicing.html)).
+- Thanks to `impl Display for Matrix`, `{a}` in an f-string prints the whole matrix. Each element uses `{x:6.1}` for width and precision ([Structs, enums and traits](../learn/06-structs-enums-traits.html)).
 
 > [!NOTE]
-> 명세는 `m[i, j]` 를 `Index<(usize, usize)>` 호출로 desugar 하지만, 현재 툴체인은 콤마 인덱스를 아직 튜플로 묶지 않습니다. 그래서 이 예제는 튜플을 직접 넘기는 `m[(i, j)]` 형태를 씁니다.
+> The spec desugars `m[i, j]` to an `Index<(usize, usize)>` call, but the current toolchain does not yet group comma indices into a tuple. This example therefore passes the tuple explicitly: `m[(i, j)]`.

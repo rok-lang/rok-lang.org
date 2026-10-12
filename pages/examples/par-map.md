@@ -1,8 +1,8 @@
-# 병렬 map / reduce
+# Parallel map / reduce
 
-`rok::core::par` 의 `map`, `reduce`, `filter`, `join` 으로 소수 세기를 여러 코어에 나누고, 순차 계산과 결과가 같은지 확인합니다.
+Split prime counting across cores with `map`, `reduce`, `filter` and `join` from `rok::core::par`, and check the result against a sequential count.
 
-## 코드
+## Code
 
 ```rok
 // Count primes in parallel with rok::core::par and check against a sequential count.
@@ -95,17 +95,17 @@ twin prime pairs below 100000: 1224, largest gap: 72
 sequential: 148933, parallel: 148933, match: true
 ```
 
-## 살펴보기
+## Walkthrough
 
-- `par::map` 은 항목을 덩어리로 나눠 스레드 풀에서 동시에 처리하지만, 결과 리스트의 순서는 입력 순서 그대로입니다. 그래서 `counts[i]` 가 `starts[i]` 구간의 답입니다 ([2.19.1 핵심 API](../spec/refs-standard-libraries/200-core/219-par.html#2191-핵심-api), [`par::map`](../std/core/par.html#fn.map)).
-- `par::reduce` 는 덩어리마다 먼저 접은 뒤 그 결과를 다시 접습니다. 묶는 순서가 바뀌어도 같은 답이 나오도록 함수는 결합 법칙을 지켜야 합니다. 덧셈은 지키고, 뺄셈은 지키지 않습니다 ([`par::reduce`](../std/core/par.html#fn.reduce)).
-- `par::filter` 도 순서를 지킵니다. 백만 근처의 소수가 오름차순으로 나옵니다.
-- `par::join` 은 서로 관계없는 두 계산을 동시에 돌리고 두 결과를 튜플로 돌려줍니다 ([동시성](../learn/12-concurrency.html)).
-- 병렬 버전과 순차 버전의 답을 비교하는 것은 병렬화한 코드를 검증하는 가장 간단한 방법입니다. 걸린 시간은 기계마다 다르므로 출력에 넣지 않았습니다.
+- `par::map` splits the items into chunks processed at the same time on the thread pool, but the result list keeps the input order, so `counts[i]` is the answer for the block starting at `starts[i]` ([2.19.1 core API](../spec/refs-standard-libraries/200-core/219-par.html#2191-core-api), [`par::map`](../std/core/par.html#fn.map)).
+- `par::reduce` folds each chunk first and then folds the chunk results. The function must be associative so that regrouping gives the same answer: addition is, subtraction is not ([`par::reduce`](../std/core/par.html#fn.reduce)).
+- `par::filter` keeps the order as well, so the primes around one million come out ascending.
+- `par::join` runs two unrelated computations at once and returns both results as a tuple ([Concurrency](../learn/12-concurrency.html)).
+- Comparing the parallel and sequential answers is the simplest way to check parallelized code. Timings vary from machine to machine, so they are not part of the output.
 
-## 실행하기
+## Running it
 
-병렬 실행의 이득을 보려면 최적화 빌드로 시간을 재 봅니다.
+To see the speedup, time an optimized build.
 
 ```bash
 rokc build --release par.rok -o par

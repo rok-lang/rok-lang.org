@@ -1,10 +1,10 @@
-# 3. 함수
+# 3. Functions
 
-이 장에서는 함수를 선언하고 부르는 방법, 기본값과 이름 있는 인자, 그리고 값처럼 주고받는 클로저를 다룹니다. rok 에서는 함수 본체도 블록 식이라서, 마지막 식이 곧 반환값이 됩니다.
+This chapter covers declaring and calling functions, default values and named arguments, and closures you can pass around as values. In rok, a function body is also a block expression, so its last expression is the return value.
 
-## 선언과 반환값
+## Declarations and return values
 
-`fn 이름(매개변수: 타입, ...) -> 반환 타입 { 본체 }` 로 선언합니다. 본체의 마지막 식 (세미콜론이 없는 식) 이 반환값이고, 중간에 빠져나갈 때만 `return` 을 씁니다.
+Declare a function with `fn name(param: Type, ...) -> ReturnType { body }`. The last expression of the body (one without a semicolon) is the return value; use `return` only to exit early.
 
 ```rok
 fn add(a: i32, b: i32) -> i32 {
@@ -32,12 +32,12 @@ println(f"17 = 5 * {q} + {r}");
 17 = 5 * 3 + 2
 ```
 
-값을 여러 개 돌려줄 때는 튜플로 묶고 받는 쪽에서 분해합니다.
+To return several values, group them in a tuple and destructure it at the call site.
 
-반환 타입과 매개변수 타입은 생략할 수도 있습니다. 반환 타입을 생략하면 마지막 식의 타입으로 추론하고 (마지막이 `;` 로 끝나면 `()`), 매개변수 타입을 생략하면 그 매개변수는 제네릭이 되어 호출하는 타입마다 따로 컴파일됩니다.
+Return and parameter types can be omitted. An omitted return type is inferred from the last expression (`()` if it ends with `;`). An untyped parameter makes the function generic, compiled separately for each argument type it is called with.
 
 > [!NOTE]
-> 현재 툴체인은 생략한 반환 타입을 언제나 `()` 로, 타입 없는 매개변수를 `any` 로 다루어 아래 예제가 컴파일되지 않습니다. 당분간은 타입을 적어 주세요 (`fn id<T>(x: T) -> T` 처럼 제네릭을 명시하면 됩니다).
+> The current toolchain always treats an omitted return type as `()` and an untyped parameter as `any`, so the example below does not compile. For now, write the types (or make the generic explicit, as in `fn id<T>(x: T) -> T`).
 
 ```rok norun
 fn double(x: i32) { x * 2 }   // return type inferred: i32
@@ -45,7 +45,7 @@ fn id(x) { x }                // generic: fn id<T>(x: T) -> T
 println(f"{double(4)} {id("hi")}");
 ```
 
-블록 `{ ... }` 은 함수 본체가 아닌 곳에서도 식입니다. 임시 변수를 블록 안에 가두고 결과만 꺼낼 때 유용합니다.
+A block `{ ... }` is an expression outside function bodies too. It is handy for keeping temporaries inside the block and taking out only the result.
 
 ```rok
 let area = {
@@ -60,9 +60,9 @@ println(f"{area}");
 12
 ```
 
-## 기본값과 이름 있는 인자
+## Default values and named arguments
 
-매개변수에 `= 값` 으로 기본값을 줄 수 있고, 호출할 때 `이름: 값` 으로 인자를 지정할 수 있습니다. 위치 인자가 먼저, 이름 있는 인자가 뒤에 옵니다.
+A parameter can have a default value with `= value`, and a call can pass arguments by name with `name: value`. Positional arguments come first, named arguments after.
 
 ```rok
 fn greet(name: str, greeting: str = "Hello", punct: str = "!") -> str {
@@ -80,7 +80,7 @@ Hello, rok?
 Hi, Ada!
 ```
 
-기본값은 리터럴이나 `const` 처럼 컴파일 타임에 정해지는 값만 쓸 수 있습니다. 개수가 정해지지 않은 인자는 `...T` 로 받습니다. 본체에서는 읽기 전용 슬라이스입니다.
+Default values must be known at compile time, such as literals or `const`s. A variable number of arguments is taken with `...T`; inside the body it is a read-only slice.
 
 ```rok
 fn sum(xs: ...i32) -> i32 {
@@ -98,9 +98,9 @@ println(f"{sum()} {sum(1, 2, 3)}");
 0 6
 ```
 
-## 클로저
+## Closures
 
-클로저는 이름 없는 함수 값입니다. `|매개변수| 식` 또는 `|매개변수| { 블록 }` 으로 씁니다. 매개변수 타입은 문맥에서 추론되지만, 문맥이 없으면 적어 줍니다.
+A closure is an anonymous function value, written `|params| expr` or `|params| { block }`. Parameter types are inferred from context; without context, write them out.
 
 ```rok
 let double = |x: i32| x * 2;
@@ -117,7 +117,7 @@ println(describe(10));
 10 is 5 * 2
 ```
 
-클로저는 주변 변수를 **값으로 복사해** 캡처합니다. 클로저를 만든 뒤 바깥 변수가 바뀌어도 클로저는 만들 때의 값을 기억합니다. 바깥 변수 자체를 바꾸고 싶으면 `[ref 이름]` 캡처 리스트로 참조 캡처를 명시합니다.
+Closures capture surrounding variables **by copying their values**. If an outer variable changes after the closure is created, the closure still remembers the value from creation time. To modify the outer variable itself, request a by-reference capture with a `[ref name]` capture list.
 
 ```rok
 let count = 0;
@@ -136,11 +136,11 @@ snapshot: 1
 count: 12
 ```
 
-값 캡처한 변수에 대입하려 하면 컴파일러가 `[ref count]` 를 붙이라고 알려 줍니다. 다만 `List` 같은 힙 객체는 변수가 객체를 가리키는 참조이므로, 값 캡처로도 `push` 처럼 객체 자체를 바꿀 수는 있습니다.
+If you try to assign to a variable captured by value, the compiler tells you to add `[ref count]`. Heap objects such as `List` are different: the variable is a reference to the object, so even a by-value capture can mutate the object itself, for example with `push`.
 
-## 함수 타입
+## Function types
 
-함수와 클로저는 `fn(매개변수 타입) -> 반환 타입` 타입의 값입니다. 변수에 담고, 인자로 넘기고, 반환하고, 리스트에 넣을 수 있습니다.
+Functions and closures are values of type `fn(ParamTypes) -> ReturnType`. You can store them in variables, pass them as arguments, return them, and put them in lists.
 
 ```rok
 fn apply(f: fn(i32) -> i32, x: i32) -> i32 {
@@ -166,11 +166,11 @@ for op in ops {
 42
 ```
 
-`make_adder` 가 돌려준 클로저는 `n` 을 캡처한 채로 살아남습니다.
+The closure returned by `make_adder` stays alive with `n` captured.
 
-## 트레일링 클로저
+## Trailing closures
 
-마지막 인자가 클로저면 괄호 밖으로 뺄 수 있습니다. 매개변수가 있으면 `f(인자) |x| { ... }`, 없으면 `f(인자) { ... }` 입니다. 반복이나 자원 관리 같은 패턴이 언어 구문처럼 읽힙니다.
+If the last argument is a closure, it can be moved outside the parentheses: `f(args) |x| { ... }` with parameters, `f(args) { ... }` without. Patterns such as iteration and resource management then read like built-in syntax.
 
 ```rok
 fn repeat(times: i32, body: fn(i32)) {
@@ -201,9 +201,9 @@ sum: 6
 6 [2, 4]
 ```
 
-## 메서드 미리 보기
+## A preview of methods
 
-`impl` 블록 안의 함수가 메서드입니다. 첫 매개변수가 `self` 면 `값.메서드()` 로 부르고, `self` 가 없으면 `타입::함수()` 로 부르는 정적 메서드입니다. 메서드 안에서 필드를 바꾸려면 `ref self` 로 받습니다. 구조체와 메서드는 뒤 장에서 자세히 다룹니다.
+Functions inside an `impl` block are methods. If the first parameter is `self`, call it as `value.method()`; without `self`, it is a static method called as `Type::function()`. To modify fields inside a method, take `ref self`. Structs and methods are covered in detail in a later chapter.
 
 ```rok
 struct Counter { n: i32 }
@@ -224,12 +224,12 @@ println(f"{c.get()}");
 2
 ```
 
-## 중첩 함수와 진입점
+## Nested functions and the entry point
 
-함수 안에 함수를 선언할 수 있습니다. 중첩 함수는 그 블록 안에서만 보이고, 클로저와 달리 바깥 변수를 캡처하지 **않습니다**. 바깥 상태가 필요 없는 도우미를 숨길 때 씁니다.
+You can declare a function inside a function. A nested function is visible only within its block and, unlike a closure, does **not** capture outer variables. Use it to hide helpers that need no outer state.
 
 > [!NOTE]
-> 중첩 함수는 현재 툴체인에서 아직 파싱되지 않습니다. 당분간은 모듈 최상위 함수나 클로저를 쓰세요.
+> The current toolchain does not parse nested functions yet. For now, use module-level functions or closures.
 
 ```rok norun
 fn hypot_sq(a: i32, b: i32) -> i32 {
@@ -239,7 +239,7 @@ fn hypot_sq(a: i32, b: i32) -> i32 {
 println(f"{hypot_sq(3, 4)}");
 ```
 
-프로그램의 시작점은 `main.rok` 의 최상위 문장 또는 `fn main()` 입니다. 최상위 문장은 컴파일러가 만든 암묵 `main` 의 본체가 되므로, 최상위 `let` 변수는 **지역 변수**입니다. 따라서 다른 함수 본체에서는 보이지 않습니다. 함수가 그 값을 써야 하면 인자로 넘기거나, 클로저로 캡처합니다.
+A program starts at the top-level statements of `main.rok` or at `fn main()`. Top-level statements become the body of an implicit `main` generated by the compiler, so top-level `let` variables are **local variables** and are not visible inside other function bodies. If a function needs such a value, pass it as an argument or capture it in a closure.
 
 ```rok
 let base = 100;
@@ -256,19 +256,19 @@ println(f"{shifted(1)} {scale(base, 3)}");
 101 300
 ```
 
-## 정리
+## Summary
 
-- 함수 본체의 마지막 식이 반환값입니다. `return` 은 일찍 빠져나갈 때 씁니다.
-- 매개변수에 기본값을 주고, 호출할 때 `이름: 값` 으로 지정할 수 있습니다. `...T` 는 가변 인자입니다.
-- 클로저 `|x| 식` 은 기본으로 값을 복사해 캡처하고, `[ref x]` 로 참조 캡처를 명시합니다.
-- 함수 값의 타입은 `fn(A) -> R` 입니다. 마지막 인자 클로저는 트레일링 형태로 쓸 수 있습니다.
-- 최상위 `let` 은 암묵 `main` 의 지역 변수라 다른 함수에서 보이지 않습니다.
+- The last expression of a function body is its return value. Use `return` to exit early.
+- Parameters can have default values, and calls can name arguments with `name: value`. `...T` takes variadic arguments.
+- A closure `|x| expr` captures by copying values by default; `[ref x]` requests a by-reference capture.
+- A function value has type `fn(A) -> R`. A closure in the last argument position can be written in trailing form.
+- A top-level `let` is a local of the implicit `main`, so other functions cannot see it.
 
-다음 장 [4. 제어 흐름](04-control-flow.html) 에서 `if`, `match`, 반복문을 다룹니다.
+The next chapter, [4. Control Flow](04-control-flow.html), covers `if`, `match`, and loops.
 
-## 더 알아보기
+## Further reading
 
-- [함수 선언](../spec/refs-lang/004-functions/401-function-declaration.html), [매개변수](../spec/refs-lang/004-functions/402-parameters.html), [반환](../spec/refs-lang/004-functions/403-return.html)
-- [함수 타입](../spec/refs-lang/004-functions/404-function-type.html), [클로저](../spec/refs-lang/004-functions/405-closure.html), [캡처 의미론](../spec/refs-lang/004-functions/406-capture-semantics.html)
-- [트레일링 클로저](../spec/refs-lang/004-functions/408-trailing-closure.html), [메서드](../spec/refs-lang/004-functions/409-method.html), [중첩 함수](../spec/refs-lang/004-functions/410-nested-functions.html)
-- [진입점](../spec/refs-lang/004-functions/416-entry-point.html), [블록 표현식](../spec/refs-lang/003-expressions/309-block-expressions.html)
+- [Function declarations](../spec/refs-lang/004-functions/401-function-declaration.html), [parameters](../spec/refs-lang/004-functions/402-parameters.html), [return](../spec/refs-lang/004-functions/403-return.html)
+- [Function types](../spec/refs-lang/004-functions/404-function-type.html), [closures](../spec/refs-lang/004-functions/405-closure.html), [capture semantics](../spec/refs-lang/004-functions/406-capture-semantics.html)
+- [Trailing closures](../spec/refs-lang/004-functions/408-trailing-closure.html), [methods](../spec/refs-lang/004-functions/409-method.html), [nested functions](../spec/refs-lang/004-functions/410-nested-functions.html)
+- [Entry point](../spec/refs-lang/004-functions/416-entry-point.html), [block expressions](../spec/refs-lang/003-expressions/309-block-expressions.html)

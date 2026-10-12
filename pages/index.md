@@ -1,24 +1,24 @@
 <div class="hero">
-<img src="logo.png" alt="rok 로고">
+<img src="logo.png" alt="rok logo">
 
 # rok
 
-<div class="lead">언어는 작게, 라이브러리는 풍부하게.<br>정적 타입, 닫힌 합 타입, AOT 컴파일, 그리고 REPL 과 Jupyter 까지.</div>
-<div class="cta"><a class="primary" href="learn/01-getting-started.html">시작하기</a><a href="learn/index.html">rok 배우기</a><a href="examples/index.html">예제</a><a href="spec/refs-lang/index.html">언어 참조</a><a href="std/index.html">API</a></div>
+<div class="lead">A small language with a rich library.<br>Static types, closed sum types, AOT compilation, plus a REPL and Jupyter.</div>
+<div class="cta"><a class="primary" href="learn/01-getting-started.html">Get started</a><a href="learn/index.html">Learn rok</a><a href="examples/index.html">Examples</a><a href="spec/refs-lang/index.html">Language reference</a><a href="std/index.html">API</a></div>
 </div>
 
-## rok 은
+## What is rok
 
-rok 은 "하고 싶은 모든 것을 할 수 있는 언어 하나" 를 목표로 하는 프로그래밍 언어입니다. 설계는 두 슬로건을 따릅니다.
+rok is a programming language that aims to be "one language for everything you want to do". Its design follows two slogans.
 
-- **언어는 작게, 라이브러리는 풍부하게.** 숫자 의미론, 형 변환, 컬렉션, 입출력, 동시성처럼 언어의 느낌을 정하는 요소 대부분이 표준 라이브러리에 있습니다.
-- **통제 속의 자유.** 정적 타입, 닫힌 합 타입, 트레잇-as-타입 금지, 묵시적 승급 금지, AOT-only 컴파일로 길을 좁히는 대신, 그 안의 코드는 예측 가능해집니다.
+- **A small language, a rich library.** Most of what defines how a language feels (numeric semantics, conversions, collections, IO, concurrency) lives in the standard library.
+- **Freedom within control.** Static types, closed sum types, no traits-as-types, no implicit promotion, and AOT-only compilation narrow the paths you can take; in exchange, the code within them is predictable.
 
-자세한 동기와 철학은 [사양 소개](spec/index.html) 에 있습니다.
+The full motivation and philosophy are in the [spec introduction](spec/index.html).
 
-## 한눈에 보기
+## At a glance
 
-합 타입과 `match`, `T | none` 과 `??`, 그리고 `throws` / `try` / `catch` 로 드러나는 에러 흐름입니다.
+Sum types and `match`, `T | none` and `??`, and error flow made explicit with `throws` / `try` / `catch`.
 
 ```rok
 enum Shape {
@@ -63,7 +63,7 @@ grace at 1
 port 8080
 ```
 
-한 줄짜리 스크립트도 그대로 실행됩니다.
+A one-line script runs as is.
 
 ```rok
 println("Hello, world!");
@@ -76,41 +76,41 @@ Hello, world!
 <div class="cards">
 <div class="card">
 
-### rok 배우기
+### Learn rok
 
-설치, 값과 타입부터 에러 처리, 모듈, 동시성, IO, FFI, 도구까지 열여섯 장. 모든 코드가 실행됩니다. [rok 배우기](learn/index.html)
-
-</div>
-<div class="card">
-
-### 예제
-
-CLI 도구, 파일 처리, TCP 에코 서버, 병렬 map, 인터프리터 같은 완성된 작은 프로그램들. [예제](examples/index.html)
+Sixteen chapters, from installation and values and types to error handling, modules, concurrency, IO, FFI, and tools. Every code sample runs. [Learn rok](learn/index.html)
 
 </div>
 <div class="card">
 
-### 언어 참조
+### Examples
 
-어휘 구조부터 타입, 표현식, 모듈, 메타 시스템, 런타임, ABI 까지 열 개의 장. [언어 참조](spec/refs-lang/index.html)
-
-</div>
-<div class="card">
-
-### 표준 라이브러리
-
-`bare` / `core` / `std` 세 계층의 [사양](spec/refs-standard-libraries/index.html) 과, 소스에서 뽑은 [API 목록](std/index.html).
+Small complete programs: CLI tools, file processing, a TCP echo server, parallel map, an interpreter, and more. [Examples](examples/index.html)
 
 </div>
 <div class="card">
 
-### 도구
+### Language reference
 
-`rokc` 컴파일러, `rok` 패키지 도구, REPL, Jupyter 커널, LSP, 디버그 도구. [도구](spec/refs-lang/009-tools/index.html)
+Ten chapters, from lexical structure through types, expressions, modules, the meta system, the runtime, and the ABI. [Language reference](spec/refs-lang/index.html)
+
+</div>
+<div class="card">
+
+### Standard library
+
+The [specification](spec/refs-standard-libraries/index.html) of the three tiers `bare` / `core` / `std`, and the [API listing](std/index.html) generated from the sources.
+
+</div>
+<div class="card">
+
+### Tools
+
+The `rokc` compiler, the `rok` package tool, the REPL, the Jupyter kernel, the LSP server, and debugging tools. [Tools](spec/refs-lang/009-tools/index.html)
 
 </div>
 </div>
 
-## 패키지
+## Packages
 
-rok 패키지는 stone 이라고 부릅니다. [rokstones.io](https://rokstones.io) 레지스트리의 stone 은 `rok add <name>` 으로, 로컬 경로나 git 저장소는 `rok add <name> --path <dir>` / `--git <url>` 로 의존성에 더합니다. 자세한 내용은 [모듈과 패키지](learn/11-modules-packages.html) 에 있습니다.
+rok packages are called stones. Add a stone from the [rokstones.io](https://rokstones.io) registry as a dependency with `rok add <name>`, or a local path or git repository with `rok add <name> --path <dir>` / `--git <url>`. See [Modules and Packages](learn/11-modules-packages.html) for details.

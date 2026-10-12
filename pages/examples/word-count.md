@@ -1,8 +1,8 @@
-# 단어 세기
+# Word count
 
-텍스트의 줄, 단어, 글자 수를 세고 `Dict` 와 정렬로 가장 자주 나오는 단어 다섯 개를 뽑습니다.
+Count the lines, words and characters of a text, then use a `Dict` and sorting to pick the five most frequent words.
 
-## 코드
+## Code
 
 ```rok
 // Count lines, words and chars, then list the most frequent words.
@@ -93,10 +93,10 @@ chars  147
 5. day     2 ##
 ```
 
-## 살펴보기
+## Walkthrough
 
-- 세는 일은 `str` 의 반복자가 맡습니다. `lines()` 가 줄을, `split_whitespace()` 가 단어를 하나씩 내주고, `count()` 가 개수를 셉니다. 글자 수는 바이트 수(`len()`)가 아니라 `char_count()` 입니다 ([문자열](../learn/09-strings.html), [`str` 메서드](../std/core/str.html#impl.str)).
-- `normalize` 는 `StrBuf` 에 글자를 하나씩 쌓아 문장 부호를 떼고 소문자로 바꿉니다. 그래서 `"Dog,"` 와 `"dog."` 가 같은 단어로 셉니다 ([`StrBuf`](../std/core/str.html#struct.StrBuf)).
-- 빈도표는 `Dict<str, i32>` 입니다. `counts.get(w)` 는 키가 없으면 `none` 을 돌려주므로 `?? 0` 으로 기본값을 붙인 뒤 `counts[w] = ...` 로 씁니다 ([컬렉션과 반복자](../learn/08-collections-iterators.html), [`Dict`](../std/core/collections/dict.html#struct.Dict)).
-- `Dict` 의 순회 순서는 정해져 있지 않으므로, 출력 전에 `(단어, 횟수)` 튜플 리스트로 옮겨 `sort_by` 로 정렬합니다. 횟수가 같으면 단어 순으로 정렬해 결과가 늘 같게 나옵니다 ([`List::sort_by`](../std/core/collections/list.html#List.sort_by)).
-- 표는 f-string 의 format spec 으로 맞춥니다. `{w:<6}` 은 왼쪽 정렬, `{c:>2}` 는 오른쪽 정렬입니다 ([2.10.8 정렬과 폭](../spec/refs-standard-libraries/200-core/210-fmt.html#2108-align--fill--width--precision)).
+- Iterators on `str` do the counting. `lines()` yields lines, `split_whitespace()` yields words, and `count()` counts them. The character count is `char_count()`, not the byte length `len()` ([Strings](../learn/09-strings.html), [`str` methods](../std/core/str.html#impl.str)).
+- `normalize` builds the word in a `StrBuf` one character at a time, dropping punctuation and lowercasing, so `"Dog,"` and `"dog."` count as the same word ([`StrBuf`](../std/core/str.html#struct.StrBuf)).
+- The frequency table is a `Dict<str, i32>`. `counts.get(w)` returns `none` for a missing key, so `?? 0` supplies the default before `counts[w] = ...` writes the new count ([Collections and iterators](../learn/08-collections-iterators.html), [`Dict`](../std/core/collections/dict.html#struct.Dict)).
+- `Dict` iteration order is unspecified, so the pairs are copied into a list of `(word, count)` tuples and sorted with `sort_by`. Ties are broken alphabetically, so the output is always the same ([`List::sort_by`](../std/core/collections/list.html#List.sort_by)).
+- The table is aligned with f-string format specs: `{w:<6}` left-aligns, `{c:>2}` right-aligns ([2.10.8 align and width](../spec/refs-standard-libraries/200-core/210-fmt.html#2108-align--fill--width--precision)).

@@ -1,8 +1,8 @@
-# 자식 프로세스
+# Child processes
 
-`rok::std::process::Command` 로 `echo`, 셸 파이프라인, `tr` 같은 외부 프로그램을 실행하고 출력, 종료 코드, 환경 변수, 표준 입력을 다룹니다.
+Run external programs such as `echo`, a shell pipeline and `tr` with `rok::std::process::Command`, and work with their output, exit codes, environment variables and standard input.
 
-## 코드
+## Code
 
 ```rok
 use rok::std::process::{Command, Stdio, Output};
@@ -81,11 +81,11 @@ spawn failed: NotFound
 ok=false
 ```
 
-## 살펴보기
+## Walkthrough
 
-- [`Command`](../std/std/process.html#struct.Command) 는 빌더입니다. `args`, `env`, `current_dir`, `stdin` 같은 메서드가 갱신된 명령을 돌려주므로 한 줄로 이어 쓰고, 마지막에 `output()`, `status()`, `spawn()` 중 하나로 실행합니다 ([3.7.1 `Command` builder](../spec/refs-standard-libraries/300-std/307-process.html#371-command-builder)).
-- `output()` 은 자식이 끝날 때까지 기다리며 stdout 과 stderr 를 모두 모아 [`Output`](../std/std/process.html#struct.Output) 으로 돌려줍니다. 두 파이프를 함께 비우므로 한쪽이 가득 차 멈추는 일이 없습니다. 바이트는 `str::from_utf8` 로 문자열로 바꿉니다.
-- 파이프(`|`)는 rok 이 아니라 `sh -c` 가 처리합니다. 셸 문법이 필요할 때 가장 간단한 방법입니다.
-- `env` 는 자식에게만 변수를 더하고, `env_clear` 는 상속받은 환경을 모두 비웁니다. 부모 프로세스의 환경은 바뀌지 않습니다.
-- `spawn()` 은 기다리지 않고 [`Child`](../std/std/process.html#struct.Child) 를 돌려줍니다. `Stdio::Piped` 로 연 `stdin` 에 쓰고 `close()` 로 EOF 를 보낸 뒤 `stdout` 을 읽고 `wait()` 합니다.
-- 실행 파일이 없으면 `IoError` 가 던져집니다. `try ... catch e { ... }` 로 그 자리에서 받아 기본값으로 바꿀 수 있습니다 ([3.14 에러 제어 흐름](../spec/refs-lang/003-expressions/314-error-control-flow.html), [에러 처리](../learn/10-errors.html)).
+- [`Command`](../std/std/process.html#struct.Command) is a builder. Methods such as `args`, `env`, `current_dir` and `stdin` return the updated command, so calls chain on one line, ending with one of `output()`, `status()` or `spawn()` ([3.7.1 `Command` builder](../spec/refs-standard-libraries/300-std/307-process.html#371-command-builder)).
+- `output()` waits for the child to finish and collects both stdout and stderr into an [`Output`](../std/std/process.html#struct.Output). It drains both pipes together, so the child never stalls on a full pipe. `str::from_utf8` turns the bytes into a string.
+- The pipe (`|`) is handled by `sh -c`, not by rok. It is the simplest option when you need shell syntax.
+- `env` adds a variable for the child only, and `env_clear` empties the inherited environment. The parent's environment does not change.
+- `spawn()` returns a [`Child`](../std/std/process.html#struct.Child) without waiting. Write to the `stdin` opened with `Stdio::Piped`, send EOF with `close()`, then read `stdout` and `wait()`.
+- A missing executable throws an `IoError`. `try ... catch e { ... }` catches it on the spot and substitutes a default ([3.14 Error control flow](../spec/refs-lang/003-expressions/314-error-control-flow.html), [Errors](../learn/10-errors.html)).

@@ -1,8 +1,8 @@
-# 은행 계좌 이체
+# Bank transfers
 
-여러 스레드가 `Mutex` 로 보호한 계좌들 사이에서 동시에 돈을 옮기고, `Atomic` 카운터로 통계를 모은 뒤 전체 금액이 변하지 않았는지 확인합니다.
+Several threads move money between accounts guarded by `Mutex`, collect statistics in `Atomic` counters, and finally check that the total never changed.
 
-## 코드
+## Code
 
 ```rok
 // Threads move money between accounts; locks keep the total constant.
@@ -24,15 +24,20 @@ impl Rng {
 }
 
 struct Bank {
-    accounts: List<Mutex<i64>>;
+    // A fixed array, not a List: a List is a shared mutable handle and is
+    // not `Sync`, so threads may not share one. The array's elements are
+    // `Mutex` handles, which are.
+    accounts: [Mutex<i64>; 5];
     moved: Atomic<i64>;
     rejected: Atomic<i64>;
 }
 
 impl Bank {
     fn new() -> Bank {
-        let accounts: List<Mutex<i64>> = [];
-        for _ in 0..ACCOUNTS { accounts.push(Mutex::new(START)); }
+        let accounts: [Mutex<i64>; 5] = [
+            Mutex::new(START), Mutex::new(START), Mutex::new(START), Mutex::new(START),
+            Mutex::new(START),
+        ];
         Bank { accounts: accounts, moved: Atomic::new(0i64), rejected: Atomic::new(0i64) }
     }
 
@@ -88,8 +93,8 @@ fn main() {
     let after = bank.total();
     println(f"{THREADS} threads attempted {attempted} transfers");
     println(f"money moved: {bank.moved.load() > 0}, some rejected for lack of funds: {bank.rejected.load() > 0}");
-    for (i, m) in bank.accounts.iter().enumerate() {
-        using g = m.lock() {
+    for i in 0..ACCOUNTS {
+        using g = bank.accounts[i].lock() {
             let ok = if g.get() >= 0 { "ok" } else { "NEGATIVE" };
             println(f"account {i}: balance {ok}");
         }
@@ -109,10 +114,10 @@ account 4: balance ok
 total before 5000, after 5000, invariant holds: true
 ```
 
-## 살펴보기
+## Walkthrough
 
-- 계좌마다 `Mutex<i64>` 를 하나씩 둡니다. 잠금은 `using g = m.lock() { ... }` 으로 잡고, 블록을 벗어나면 가드가 해제됩니다. 가드의 값은 `get()` / `set()` 으로 읽고 씁니다 ([동시성](../learn/12-concurrency.html), [3.17 `using`](../spec/refs-lang/003-expressions/317-using-expression.html), [`Mutex`](../std/core/sync.html#struct.Mutex)).
-- 이체는 두 계좌를 함께 잠가야 합니다. 두 스레드가 A→B 와 B→A 를 동시에 하면서 서로 반대 순서로 잠그면 영원히 기다릴 수 있으므로, 언제나 번호가 작은 계좌부터 잠급니다.
-- 옮긴 금액과 거절 횟수처럼 서로 독립된 카운터는 잠금 없이 `Atomic<i64>` 의 `fetch_add` 로 셉니다 ([`Atomic`](../std/core/sync.html#struct.Atomic), [2.16 sync](../spec/refs-standard-libraries/200-core/216-sync.html)).
-- 스레드마다 시드가 다른 작은 의사 난수 생성기를 씁니다. 곱셈이 넘쳐도 패닉하지 않도록 `wrapping_mul` / `wrapping_add` 를 씁니다.
-- 스레드 실행 순서에 따라 각 계좌의 잔액은 매번 달라지지만, 이체가 원자적이면 총액은 늘 같습니다. 출력에는 이렇게 순서와 무관한 사실만 담습니다.
+- Each account is its own `Mutex<i64>`, kept in a fixed array. A `List` would not compile here: lists are shared mutable handles and are not `Sync`, so a thread closure may not capture one ([4.6.9](../spec/refs-lang/004-functions/406-capture-semantics.html)). The lock is taken with `using g = m.lock() { ... }` and released when the block ends; the guarded value is read and written with `get()` / `set()` ([Concurrency](../learn/12-concurrency.html), [3.17 `using`](../spec/refs-lang/003-expressions/317-using-expression.html), [`Mutex`](../std/core/sync.html#struct.Mutex)).
+- A transfer must lock both accounts. If two threads ran A→B and B→A at the same time and locked in opposite order, they could wait for each other forever, so the lower-numbered account is always locked first.
+- Independent counters, such as the amount moved and the number of rejections, are counted without a lock using `fetch_add` on `Atomic<i64>` ([`Atomic`](../std/core/sync.html#struct.Atomic), [2.16 sync](../spec/refs-standard-libraries/200-core/216-sync.html)).
+- Each thread uses a tiny pseudo-random generator with its own seed; `wrapping_mul` / `wrapping_add` keep multiplication overflow from panicking.
+- The balance of each account depends on how the threads interleave, but if transfers are atomic the total is always the same. The output contains only facts that do not depend on that order.

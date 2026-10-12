@@ -6,9 +6,8 @@
 // masked out first, so item boundaries are found by bracket depth alone.
 
 use rok::std::fs;
-use pkg::highlight;
-use pkg::markdown;
-use pkg::markdown::{Heading, esc};
+use rok_markdown::{Heading, esc};
+use pkg::layout;
 use pkg::layout::rel;
 
 pub struct Member {
@@ -524,7 +523,7 @@ pub fn collect(lib: str) throws -> List<Module> {
 
 fn md(text: str) -> str {
     if text.trim().is_empty() { return ""; }
-    markdown::render(text, |h| h).html
+    layout::md(text, |h| h, false).html
 }
 
 fn summary(doc: str) -> str {
@@ -536,28 +535,28 @@ fn summary(doc: str) -> str {
 fn anchor(it: Item) -> str { it.kind + "." + it.name }
 
 const KINDS: [(str, str); 8] = [
-    ("use", "다시 내보내기"), ("struct", "구조체"), ("enum", "열거형"), ("trait", "트레잇"),
-    ("type", "타입 별칭"), ("fn", "함수"), ("const", "상수"), ("static", "정적 변수"),
+    ("use", "Re-exports"), ("struct", "Structs"), ("enum", "Enums"), ("trait", "Traits"),
+    ("type", "Type aliases"), ("fn", "Functions"), ("const", "Constants"), ("static", "Statics"),
 ];
 
 fn item_html(it: Item, id: str, title: str, heads: List<Heading>, path: str) -> str {
     let out = StrBuf::new();
     out.push_str(f"<section class=\"api-item\" id=\"{esc(id)}\"><h3><a href=\"#{esc(id)}\">{esc(title)}</a></h3>");
-    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{highlight::rok(it.sig)}</code></pre>"); }
+    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{rok_syntax::highlight_rok(it.sig)}</code></pre>"); }
     out.push_str(md(it.doc));
     if it.members.len() > 0 {
         out.push_str("<ul class=\"members\">");
         for m in it.members {
             let mid = it.name + "." + m.name;
-            out.push_str(f"<li id=\"{esc(mid)}\"><pre><code>{highlight::rok(m.sig)}</code></pre>{md(m.doc)}</li>");
+            out.push_str(f"<li id=\"{esc(mid)}\"><pre><code>{rok_syntax::highlight_rok(m.sig)}</code></pre>{md(m.doc)}</li>");
             if m.sig.contains("fn ") { heads.push(Heading { level: 3, id: mid, text: f"{path}::{it.name}::{m.name}" }); }
         }
         out.push_str("</ul>");
     }
     if it.traits.len() > 0 {
-        out.push_str("<details class=\"impls\"><summary>트레잇 구현 ");
+        out.push_str("<details class=\"impls\"><summary>Trait implementations ");
         out.push_str(f"{it.traits.len()}</summary><ul>");
-        for t in it.traits { out.push_str(f"<li><code>{highlight::rok(t)}</code></li>"); }
+        for t in it.traits { out.push_str(f"<li><code>{rok_syntax::highlight_rok(t)}</code></li>"); }
         out.push_str("</ul></details>");
     }
     out.push_str("</section>");
@@ -587,8 +586,8 @@ pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
     out.push_str("</code></h1>");
     out.push_str(md(m.doc));
     if m.children.len() > 0 {
-        out.push_str("<h2 id=\"modules\">모듈</h2><ul class=\"api-list\">");
-        heads.push(Heading { level: 2, id: "modules", text: "모듈" });
+        out.push_str("<h2 id=\"modules\">Modules</h2><ul class=\"api-list\">");
+        heads.push(Heading { level: 2, id: "modules", text: "Modules" });
         for c in m.children {
             if let cm: Module = find(mods, m.path + "::" + c) {
                 out.push_str(f"<li><a href=\"{rel(m.out, cm.out)}\"><code>{esc(c)}</code></a> <span>{esc(summary(cm.doc))}</span></li>");
@@ -610,8 +609,8 @@ pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
         }
     }
     if m.impls.len() > 0 {
-        out.push_str("<h2 id=\"impl\">구현</h2>");
-        heads.push(Heading { level: 2, id: "impl", text: "구현" });
+        out.push_str("<h2 id=\"impl\">Implementations</h2>");
+        heads.push(Heading { level: 2, id: "impl", text: "Implementations" });
         for it in m.impls {
             heads.push(Heading { level: 3, id: "impl." + it.name, text: "impl " + it.name });
             out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m.path));
@@ -638,7 +637,7 @@ pub fn sidebar(m: Module, mods: List<Module>, heads: List<Heading>) -> str {
     let tier = segs(m.path)[1];
     let root = "rok::" + tier;
     let out = StrBuf::new();
-    out.push_str(f"<a class=\"up\" href=\"{rel(m.out, "std/index.html")}\">← 표준 라이브러리 API</a>");
+    out.push_str(f"<a class=\"up\" href=\"{rel(m.out, "std/index.html")}\">← Standard library API</a>");
     out.push_str("<ul class=\"pages\">");
     for q in mods {
         if q.path != root && !q.path.starts_with(root + "::") { continue; }
@@ -663,9 +662,9 @@ pub fn sidebar(m: Module, mods: List<Module>, heads: List<Heading>) -> str {
 /// `/std/index.html`: the tiers and their modules.
 pub fn index(mods: List<Module>) -> str {
     let out = StrBuf::new();
-    out.push_str("<h1>표준 라이브러리 API</h1>");
-    out.push_str("<p>표준 라이브러리 소스 (<code>library/</code>) 의 공개 항목과 문서 주석으로 만든 API 목록입니다. 동작과 보장의 정의는 <a href=\"../spec/refs-standard-libraries/index.html\">표준 라이브러리 사양</a> 에 있습니다. 문서 주석은 영어입니다.</p>");
-    for (tier, what) in [("bare", "포인터, 메모리, FFI 같은 최하위 계층"), ("core", "컬렉션, 숫자, 반복자, 포맷, 동기화, 태스크. 모든 코드에 자동으로 들어옵니다"), ("std", "파일, 네트워크, 시간, 스레드, 프로세스, 환경, RokON")] {
+    out.push_str("<h1>Standard library API</h1>");
+    out.push_str("<p>API listing generated from the public items and doc comments of the standard library sources (<code>library/</code>). Behavior and guarantees are defined in the <a href=\"../spec/refs-standard-libraries/index.html\">standard library specification</a>.</p>");
+    for (tier, what) in [("bare", "The lowest layer: pointers, memory, FFI"), ("core", "Collections, numbers, iterators, formatting, synchronization, tasks. Available to all code automatically"), ("std", "Files, networking, time, threads, processes, environment, RokON")] {
         out.push_str(f"<h2 id=\"{tier}\"><code>rok::{tier}</code></h2><p>{what}.</p><ul class=\"api-list\">");
         for q in mods {
             if q.path == "rok::" + tier || q.path.starts_with("rok::" + tier + "::") {

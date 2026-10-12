@@ -1,10 +1,10 @@
-# 2. 값과 타입
+# 2. Values and Types
 
-이 장에서는 변수를 선언하는 `let`, 숫자와 문자열 같은 기본 타입, 그리고 여러 값을 묶는 튜플과 리스트를 다룹니다. rok 은 정적 타입 언어이지만 대부분의 타입은 추론되므로 직접 적을 일이 많지 않습니다.
+This chapter covers `let` for declaring variables, basic types such as numbers and strings, and tuples and lists for grouping values. rok is statically typed, but most types are inferred, so you rarely write them out.
 
-## `let` 과 재할당
+## `let` and reassignment
 
-`let` 으로 새 변수를 만들고, 이미 있는 변수에 다시 쓸 때는 `let` 없이 `=` 만 씁니다. 변수는 기본으로 바꿀 수 있습니다 (`mut` 같은 표시가 없습니다).
+`let` creates a new variable; to write to an existing variable, use `=` without `let`. Variables are mutable by default (there is no `mut` marker).
 
 ```rok
 let name = "rok";
@@ -18,17 +18,17 @@ println(f"{name}: {count}");
 rok: 2
 ```
 
-새 선언과 재할당이 문법으로 구분되기 때문에, 오타가 조용히 새 변수를 만드는 일이 없습니다. 선언한 적 없는 이름에 대입하면 컴파일 에러입니다.
+Because declaration and reassignment are syntactically distinct, a typo never silently creates a new variable. Assigning to a name that was never declared is a compile error.
 
 ```text
 error: [type] main.rok:2:1: `coutn` is not declared. Use `let` to introduce a new binding
 ```
 
-몇 가지 규칙이 더 있습니다.
+A few more rules:
 
-- 초기값은 반드시 있어야 합니다. `let x;` 는 에러입니다. 값이 아직 없다면 `let x: i32 | none = none;` 처럼 "없음" 을 명시합니다.
-- 같은 스코프에서 같은 이름을 다시 `let` 으로 선언할 수 없습니다 (Rust 식 shadowing 이 없습니다). 안쪽 블록의 `let` 은 바깥과 별개의 변수를 만듭니다.
-- 변수의 타입은 선언할 때 정해지고 바뀌지 않습니다. `i32` 변수에 문자열을 대입하면 에러입니다.
+- An initial value is required. `let x;` is an error. If there is no value yet, state the absence explicitly: `let x: i32 | none = none;`.
+- You cannot redeclare the same name with `let` in the same scope (there is no Rust-style shadowing). A `let` in an inner block creates a separate variable from the outer one.
+- A variable's type is fixed at declaration and never changes. Assigning a string to an `i32` variable is an error.
 
 ```rok
 let a = 1;
@@ -45,9 +45,9 @@ inner a = 10
 outer a = 1
 ```
 
-## 숫자 타입과 리터럴
+## Numeric types and literals
 
-정수는 `i8` `i16` `i32` `i64` `isize` 와 부호 없는 `u8` `u16` `u32` `u64` `usize`, 실수는 `f32` `f64` 입니다. 리터럴 뒤에 타입 이름을 붙이면 그 타입이 되고, 접미사가 없으면 **기대 타입**을 따릅니다. 기대 타입이 없을 때의 기본값은 정수 `i32`, 실수 `f64` 입니다.
+Integers are `i8` `i16` `i32` `i64` `isize` and the unsigned `u8` `u16` `u32` `u64` `usize`; floating-point numbers are `f32` `f64`. A literal with a type-name suffix has that type; without a suffix it follows the **expected type**. With no expected type, integers default to `i32` and floats to `f64`.
 
 ```rok
 let a = 42;            // i32
@@ -67,17 +67,17 @@ println(f"{7 / 2} {-7 / 2} {7.0 / 2.0}");
 3 -3 3.5
 ```
 
-`_` 는 자릿수 구분자이고, `0x` / `0b` / `0o` 는 16 / 2 / 8 진수입니다. 정수 나눗셈은 0 쪽으로 자릅니다. 리터럴이 타입의 범위를 벗어나면 (`let x: u8 = 256;`) 컴파일 에러입니다.
+`_` is a digit separator, and `0x` / `0b` / `0o` mean hexadecimal / binary / octal. Integer division truncates toward zero. A literal outside its type's range (`let x: u8 = 256;`) is a compile error.
 
-## 암묵 변환은 없다: `as`
+## No implicit conversions: `as`
 
-rok 은 서로 다른 숫자 타입을 자동으로 섞지 않습니다. `i32` 와 `i64` 를 더하면 에러가 납니다.
+rok never mixes different numeric types automatically. Adding an `i32` and an `i64` is an error.
 
 ```text
 error: [type] main.rok:3:12: operator `+` cannot be applied to `i32` and `i64`
 ```
 
-조용한 정밀도 손실을 막기 위한 설계입니다. 변환은 직접 적습니다. `as` 는 항상 성공하지만 값이 잘리거나 바뀔 수 있고, `.into()` 는 값을 잃지 않는 변환에만 쓸 수 있습니다.
+This is by design, to prevent silent loss of precision. You write conversions explicitly. `as` always succeeds but may truncate or change the value; `.into()` is only allowed for lossless conversions.
 
 ```rok
 let x: i32 = 10;
@@ -94,7 +94,7 @@ println(f"{2.9 as i32} {300 as u8} {x as f64 / 4.0}");
 2 44 2.5
 ```
 
-`2.9 as i32` 는 소수점 아래를 버리고, `300 as u8` 은 하위 8비트만 남깁니다. 실패할 수 있는 변환은 `.try_into::<T>()` 를 씁니다. 에러를 던지는 함수이므로 `try?` 와 함께 쓰면 실패 시 `none` 을 얻습니다.
+`2.9 as i32` drops the fractional part, and `300 as u8` keeps only the low 8 bits. For conversions that can fail, use `.try_into::<T>()`. It is a throwing function, so combined with `try?` it gives `none` on failure.
 
 ```rok
 let small: i64 = 300;
@@ -109,7 +109,7 @@ println(f"{a ?? 0} {b ?? 0}");
 
 ## bool, char, str
 
-`bool` 은 `true` / `false` 이고 `&&`, `||`, `!` 로 조합합니다. `char` 는 유니코드 문자 하나이며 작은따옴표로 씁니다. `str` 은 UTF-8 문자열이고 큰따옴표로 씁니다.
+`bool` is `true` / `false`, combined with `&&`, `||`, and `!`. `char` is a single Unicode character, written in single quotes. `str` is a UTF-8 string, written in double quotes.
 
 ```rok
 let ok = 3 < 5 && !false;
@@ -132,11 +132,11 @@ tab:	end
 raw: C:\path\n
 ```
 
-`len()` 은 바이트 수입니다. 문자 수가 필요하면 `char_count()` 를 씁니다. `r"..."` 는 이스케이프를 처리하지 않는 원시 문자열입니다. `str` 의 다른 메서드 (`trim`, `split`, `replace`, `parse` 등) 는 [표준 라이브러리 문서](../std/core/str.html) 에 있습니다.
+The Hangul syllable `'가'` (U+AC00, code point 44032) shows that a `char` holds any Unicode character, not just ASCII. `len()` counts bytes; use `char_count()` when you need the number of characters. `r"..."` is a raw string that does not process escapes. Other `str` methods (`trim`, `split`, `replace`, `parse`, and so on) are in the [standard library docs](../std/core/str.html).
 
-## 튜플, 배열, 리스트
+## Tuples, arrays, and lists
 
-**튜플**은 타입이 다른 값 몇 개를 묶습니다. `.0`, `.1` 로 꺼내거나 `let` 으로 분해합니다.
+A **tuple** groups a few values of different types. Access them with `.0`, `.1`, or destructure with `let`.
 
 ```rok
 let p = (1, "one", true);
@@ -150,7 +150,7 @@ println(f"{word} = {n}");
 one = 1
 ```
 
-`[...]` 리터럴은 기본으로 **`List`** 입니다. 길이가 늘어나는 리스트이고, 같은 리스트를 가리키는 모든 변수가 변경을 함께 봅니다. `List` 는 `{}` 로 출력할 수 없으므로 Debug 형식 `{:?}` 을 씁니다.
+A `[...]` literal is a **`List`** by default. It is a growable list, and every variable that refers to the same list sees changes to it. A `List` cannot be printed with `{}`, so use the Debug format `{:?}`.
 
 ```rok
 let names = ["ada", "grace"];
@@ -166,7 +166,7 @@ println(f"{empty.is_empty()}");
 true
 ```
 
-변수 타입이 `[T; N]` 이면 같은 리터럴이 길이가 고정된 **배열**이 됩니다. 크기가 컴파일 타임에 정해지므로 행렬이나 버퍼처럼 모양이 정해진 데이터에 씁니다.
+If the variable's type is `[T; N]`, the same literal becomes a fixed-length **array**. Its size is known at compile time, so use it for fixed-shape data such as matrices and buffers.
 
 ```rok
 let grid: [[i32; 2]; 2] = [[1, 2], [3, 4]];
@@ -177,11 +177,11 @@ println(f"{grid:?} {grid[1][0]} {grid.len()}");
 [[1, 2], [3, 4]] 3 2
 ```
 
-빈 리스트처럼 원소에서 타입을 알 수 없을 때는 `let xs: List<i32> = [];` 처럼 타입을 적어 줍니다.
+When the element type can't be inferred from the elements, as with an empty list, write the type: `let xs: List<i32> = [];`.
 
-## 큰 정수: `int`
+## Big integers: `int`
 
-`i32` 같은 고정 폭 타입은 빠르지만 범위가 있습니다. 범위 걱정 없이 정확한 정수가 필요하면 `int` 를 씁니다. 작은 값은 고정 폭처럼 저장되고, 커지면 자동으로 큰 정수로 바뀝니다. `int` 는 타입을 적은 곳에서만 생기며, 고정 폭 타입과 섞으려면 역시 명시 변환이 필요합니다.
+Fixed-width types like `i32` are fast but have a range. When you need exact integers without worrying about range, use `int`. Small values are stored like fixed-width integers and automatically switch to big integers as they grow. An `int` only arises where the type is written out, and mixing it with fixed-width types also requires explicit conversion.
 
 ```rok
 let big: int = 1;
@@ -195,9 +195,9 @@ println(f"2^100 = {big}");
 2^100 = 1267650600228229401496703205376
 ```
 
-## 상수
+## Constants
 
-`const` 는 컴파일 타임에 정해지는 값입니다. `let` 과 달리 타입을 반드시 적고, 모듈 최상위에도 둘 수 있습니다. 쓰는 자리마다 값이 그대로 들어갑니다.
+`const` is a value fixed at compile time. Unlike `let`, the type must be written, and it can appear at the top level of a module. The value is inlined at every use.
 
 ```rok
 const MAX_USERS: i32 = 100;
@@ -214,20 +214,20 @@ println(f"{GREETING}: {capacity_left(42)} seats left");
 welcome: 58 seats left
 ```
 
-## 정리
+## Summary
 
-- `let` 은 새 선언, `=` 는 재할당입니다. 같은 스코프에서 재선언은 금지이고 초기값은 필수입니다.
-- 접미사 없는 리터럴은 기대 타입을 따르며 기본값은 `i32` / `f64` 입니다.
-- 숫자 타입끼리 자동 변환은 없습니다. `as`, `.into()`, `.try_into::<T>()` 중 하나를 씁니다.
-- `[...]` 는 `List` 이고, `[T; N]` 타입이면 고정 배열입니다. `List` 는 `{:?}` 로 출력합니다.
-- 범위 제한 없는 정수는 `int`, 컴파일 타임 상수는 `const` 입니다.
+- `let` declares, `=` reassigns. Redeclaring in the same scope is forbidden, and an initial value is required.
+- Unsuffixed literals follow the expected type, defaulting to `i32` / `f64`.
+- There is no automatic conversion between numeric types. Use `as`, `.into()`, or `.try_into::<T>()`.
+- `[...]` is a `List`; with a `[T; N]` type it is a fixed array. Print a `List` with `{:?}`.
+- `int` is an unbounded integer; `const` is a compile-time constant.
 
-다음 장 [3. 함수](03-functions.html) 에서 함수와 클로저를 다룹니다.
+The next chapter, [3. Functions](03-functions.html), covers functions and closures.
 
-## 더 알아보기
+## Further reading
 
-- [변수 선언](../spec/refs-lang/005-modules/501-variable-declaration.html), [`const`](../spec/refs-lang/005-modules/502-const.html)
-- [숫자 리터럴](../spec/refs-lang/001-lexical/106-numeric-literals.html), [문자열 리터럴](../spec/refs-lang/001-lexical/107-string-literals.html), [문자 리터럴](../spec/refs-lang/001-lexical/108-character-literals.html)
-- [형 변환](../spec/refs-lang/002-types/214-cast-and-conversion.html), [타입 표현식](../spec/refs-lang/002-types/201-type-expressions.html)
-- [숫자 타입과 `int`](../spec/refs-standard-libraries/200-core/201-numbers.html), [형식 문자열 출력](../spec/refs-standard-libraries/200-core/210-fmt.html)
-- 표준 라이브러리 API: [`str`](../std/core/str.html), [`List`](../std/core/collections/list.html)
+- [Variable declarations](../spec/refs-lang/005-modules/501-variable-declaration.html), [`const`](../spec/refs-lang/005-modules/502-const.html)
+- [Numeric literals](../spec/refs-lang/001-lexical/106-numeric-literals.html), [string literals](../spec/refs-lang/001-lexical/107-string-literals.html), [character literals](../spec/refs-lang/001-lexical/108-character-literals.html)
+- [Casts and conversions](../spec/refs-lang/002-types/214-cast-and-conversion.html), [type expressions](../spec/refs-lang/002-types/201-type-expressions.html)
+- [Numeric types and `int`](../spec/refs-standard-libraries/200-core/201-numbers.html), [formatted output](../spec/refs-standard-libraries/200-core/210-fmt.html)
+- Standard library API: [`str`](../std/core/str.html), [`List`](../std/core/collections/list.html)

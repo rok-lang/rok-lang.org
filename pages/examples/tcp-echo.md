@@ -1,8 +1,8 @@
-# TCP 에코 서버
+# TCP echo server
 
-한 프로그램 안에서 `127.0.0.1` 의 빈 포트에 에코 서버를 띄우고, 클라이언트가 줄 단위로 보낸 메시지의 메아리를 받은 뒤 깔끔하게 종료합니다.
+One program starts an echo server on a free `127.0.0.1` port, has clients send lines and read back the echoes, and then shuts everything down cleanly.
 
-## 코드
+## Code
 
 ```rok
 // A line-based TCP echo server and its clients in one program.
@@ -80,10 +80,10 @@ client 3: closed
 server echoed 6 lines and stopped
 ```
 
-## 살펴보기
+## Walkthrough
 
-- `TcpListener::bind` 에 포트 0 을 주면 운영체제가 빈 포트를 고르고, `local_addr()` 로 실제 주소를 알아냅니다. 다른 프로그램과 포트가 겹칠 걱정이 없습니다 ([3.2 net](../spec/refs-standard-libraries/300-std/302-net.html), [`TcpListener`](../std/std/net.html#struct.TcpListener)).
-- 서버 스레드는 연결마다 처리 스레드를 하나씩 띄우고, 모두 `join` 해 처리한 줄 수를 합칩니다. 클로저는 `listener` 와 `conn` 을 캡처해 다른 스레드로 가져갑니다 ([동시성](../learn/12-concurrency.html), [`thread::spawn`](../std/std/thread.html#fn.spawn)).
-- 줄 단위로 읽으려고 소켓을 `try_clone()` 해 `BufReader` 로 감쌉니다. 읽기는 복제본으로, 쓰기는 원본으로 합니다 ([`BufReader`](../std/std/io.html#struct.BufReader)).
-- 종료 순서가 중요합니다. 클라이언트는 다 보낸 뒤 `shutdown(Shutdown::Write)` 로 "더 보낼 것 없음" 을 알리고, 서버의 `lines()` 는 그 신호를 끝으로 받아 반복을 마칩니다. 서버가 두 핸들을 모두 닫으면 클라이언트의 `read_line()` 이 빈 문자열을 돌려줍니다.
-- 블로킹 API 대신 `accept_async` / `read_async` 와 태스크로도 같은 서버를 만들 수 있습니다 ([3.2.0 공통 규칙](../spec/refs-standard-libraries/300-std/302-net.html#320-공통-규칙)).
+- Binding `TcpListener` to port 0 lets the OS choose a free port, and `local_addr()` reports the actual address, so there is no clash with other programs ([3.2 net](../spec/refs-standard-libraries/300-std/302-net.html), [`TcpListener`](../std/std/net.html#struct.TcpListener)).
+- The server thread starts one handler thread per connection, then `join`s them all and adds up the lines served. The closures capture `listener` and `conn` and carry them to the other threads ([Concurrency](../learn/12-concurrency.html), [`thread::spawn`](../std/std/thread.html#fn.spawn)).
+- To read line by line, the socket is `try_clone()`d and wrapped in a `BufReader`: reads go through the clone, writes through the original ([`BufReader`](../std/std/io.html#struct.BufReader)).
+- Shutdown order matters. After sending everything, the client calls `shutdown(Shutdown::Write)` to say "nothing more", and the server's `lines()` ends its loop on that signal. Once the server closes both handles, the client's `read_line()` returns an empty string.
+- The same server can be written with `accept_async` / `read_async` and tasks instead of the blocking API ([3.2.0 common rules](../spec/refs-standard-libraries/300-std/302-net.html#320-common-rules)).

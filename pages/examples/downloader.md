@@ -1,8 +1,8 @@
-# 동시 다운로더
+# Concurrent downloader
 
-네트워크 대신 `task::sleep` 으로 지연을 흉내 낸 자원을 워커 태스크 풀이 나눠 받아 가져오고, 결과를 채널로 모아 정렬된 보고서를 출력합니다.
+A pool of worker tasks shares out simulated resources (latency faked with `task::sleep` instead of a network), results come back over a channel, and a sorted report is printed.
 
-## 코드
+## Code
 
 ```rok
 // A "concurrent downloader": a pool of worker tasks fetches simulated resources.
@@ -113,10 +113,10 @@ style.css          29696 B
 6/8 downloaded, 176128 bytes total
 ```
 
-## 살펴보기
+## Walkthrough
 
-- 채널은 여러 송신자와 하나의 수신자(mpsc)를 가집니다. `Receiver` 는 복제할 수 없으므로 워커 여럿이 작업 채널 하나를 나눠 읽지 않습니다. 대신 쉬는 워커가 `ready` 채널로 자기 번호를 알리고, 디스패처가 그 워커 전용 채널로 URL 을 보냅니다 ([2.17.4 multi-producer](../spec/refs-standard-libraries/200-core/217-channel.html#2174-multi-producer), [`channel`](../std/core/channel.html#fn.channel)).
-- 송신자는 `clone()` 으로 워커마다 하나씩 나눠 주고, 각자 끝날 때 `close()` 합니다. 모든 송신자가 닫혀야 `for await r in done_rx` 가 끝나므로, `main` 도 원본 `done_tx` 를 일찍 닫습니다 ([동시성](../learn/12-concurrency.html)).
-- `await job_rx.recv_async()` 는 값이 올 때까지 스레드가 아니라 태스크만 멈춥니다. 채널이 닫혀 `none` 이 오면 `let-else` 의 `break` 로 워커 루프를 빠져나갑니다.
-- `task::timeout` 은 정해진 시간 안에 태스크가 끝나지 않으면 `TimeoutError` 를 던집니다. 시간 초과가 태스크를 멈추지는 않으므로 `t.cancel()` 로 직접 취소합니다 ([`task::timeout`](../std/core/task.html#fn.timeout), [2.18.1 핵심 API](../spec/refs-standard-libraries/200-core/218-task.html#2181-핵심-api)).
-- 결과가 도착하는 순서는 실행할 때마다 다를 수 있으므로, 출력 전에 URL 순으로 정렬해 보고서가 늘 같게 나옵니다.
+- Channels have many senders and one receiver (mpsc). A `Receiver` cannot be cloned, so the workers do not share one job channel. Instead an idle worker announces its number on the `ready` channel, and the dispatcher sends a URL on that worker's own channel ([2.17.4 multi-producer](../spec/refs-standard-libraries/200-core/217-channel.html#2174-multi-producer), [`channel`](../std/core/channel.html#fn.channel)).
+- Each worker gets its own sender via `clone()` and `close()`s it when done. `for await r in done_rx` ends only once every sender is closed, so `main` closes its original `done_tx` early ([Concurrency](../learn/12-concurrency.html)).
+- `await job_rx.recv_async()` suspends the task, not the thread, until a value arrives. When the channel closes it yields `none`, and the `break` in the `let-else` leaves the worker loop.
+- `task::timeout` throws `TimeoutError` if the task does not finish in time. A timeout does not stop the task, so it is cancelled explicitly with `t.cancel()` ([`task::timeout`](../std/core/task.html#fn.timeout), [2.18.1 core API](../spec/refs-standard-libraries/200-core/218-task.html#2181-core-api)).
+- Results may arrive in a different order on every run, so they are sorted by URL before printing and the report is always the same.

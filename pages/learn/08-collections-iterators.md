@@ -1,10 +1,10 @@
-# 8. 컬렉션과 반복자
+# 8. Collections and Iterators
 
-프로그램 대부분은 값 여러 개를 모으고, 훑고, 바꾸는 일입니다. 이 장에서는 표준 컬렉션 (`List`, `Dict`, `Set` 과 그 친척들), 슬라이싱, 그리고 이들을 하나로 이어 주는 `Iterator` 를 배웁니다.
+Most programs collect, traverse, and transform many values. This chapter covers the standard collections (`List`, `Dict`, `Set`, and their relatives), slicing, and the `Iterator` that ties them together.
 
 ## List
 
-`[1, 2, 3]` 은 동적 배열 `List<T>` 입니다. 인덱스는 0 부터, 음수 인덱스는 끝에서부터 셉니다. 범위 밖 `xs[i]` 는 panic 이므로, 없을 수 있는 자리는 `T | none` 을 돌려주는 `get` 으로 읽습니다.
+`[1, 2, 3]` is a dynamic array, `List<T>`. Indices start at 0, and negative indices count from the end. An out-of-range `xs[i]` panics, so read positions that may not exist with `get`, which returns `T | none`.
 
 ```rok
 let xs = [5, 3, 8, 1];
@@ -28,7 +28,7 @@ println(f"{xs:?} first={xs.first():?}");
 [0, 3, 5, 7] first=0
 ```
 
-`List`, `Dict`, `Set` 은 **참조 핸들** 입니다. `let ys = xs;` 나 함수 인자 전달은 같은 컬렉션을 공유하고, 독립된 사본이 필요하면 `clone()` 을 부릅니다.
+`List`, `Dict`, and `Set` are **reference handles**. `let ys = xs;` and passing as a function argument share the same collection; call `clone()` when you need an independent copy.
 
 ```rok
 let xs = [1, 2];
@@ -43,9 +43,9 @@ println(f"{xs:?} {copy:?}");
 [1, 2, 3] [1, 2, 99]
 ```
 
-## 슬라이싱
+## Slicing
 
-`xs[start:end:step]` 은 Python 과 같은 의미입니다. 경계는 길이에 맞춰 잘리므로 슬라이싱은 범위 때문에 panic 하지 않습니다. `List` 를 자르면 원본 버퍼를 가리키는 `Slice<T>` 뷰가 나오고, 독립된 리스트가 필요하면 `to_list()` 로 복사합니다.
+`xs[start:end:step]` means the same as in Python. Bounds are clamped to the length, so slicing never panics on range. Slicing a `List` yields a `Slice<T>` view into the original buffer; copy it with `to_list()` when you need an independent list.
 
 ```rok
 let xs = [10, 20, 30, 40, 50];
@@ -62,9 +62,9 @@ println(f"{part.len()} {part[0]} {part.to_list():?}");
 3 20 [20, 30, 40]
 ```
 
-## Dict 와 Set
+## Dict and Set
 
-`{"키": 값}` 은 해시 맵 `Dict<K, V>`, `{1, 2}` 는 해시 집합 `Set<T>` 입니다. 빈 `{}` 는 블록이므로 빈 컬렉션은 `Dict::new()` / `Set::new()` 로 만듭니다. `d[k]` 는 키가 없으면 panic, `d.get(k)` 는 `V | none` 입니다.
+`{"key": value}` is a hash map, `Dict<K, V>`, and `{1, 2}` is a hash set, `Set<T>`. An empty `{}` is a block, so create empty collections with `Dict::new()` / `Set::new()`. `d[k]` panics if the key is missing; `d.get(k)` returns `V | none`.
 
 ```rok
 let ages: Dict<str, i32> = {"kim": 30, "lee": 25};
@@ -90,11 +90,11 @@ true 2 4
 ```
 
 > [!WARNING]
-> `Dict` 와 `Set` 의 순회 순서는 정해져 있지 않습니다. 순서가 중요하면 삽입 순서를 지키는 `OrderedDict` / `OrderedSet` 을 씁니다.
+> The iteration order of `Dict` and `Set` is unspecified. When order matters, use `OrderedDict` / `OrderedSet`, which preserve insertion order.
 
 ## OrderedDict, OrderedSet, Deque
 
-`OrderedDict` 와 `OrderedSet` 은 넣은 순서대로 돕니다. `Deque` 는 양 끝에서 넣고 빼는 큐입니다.
+`OrderedDict` and `OrderedSet` iterate in insertion order. `Deque` is a queue you can push to and pop from at both ends.
 
 ```rok
 let od: OrderedDict<str, i32> = OrderedDict::new();
@@ -123,9 +123,9 @@ apple=2
 0 2 [1]
 ```
 
-## 반복자와 어댑터
+## Iterators and adapters
 
-`for x in 컬렉션` 은 `Iterator` 를 돕니다. 컬렉션의 `iter()` 가 돌려주는 반복자에는 `map`, `filter`, `enumerate`, `zip`, `take`, `skip`, `rev`, `step_by`, `chain` 같은 **어댑터** 를 이어 붙일 수 있습니다. 어댑터는 게으릅니다. `collect`, `sum`, `fold`, `count` 처럼 값을 실제로 소비하는 메서드가 불릴 때 비로소 돕니다.
+`for x in collection` drives an `Iterator`. On the iterator returned by a collection's `iter()`, you can chain **adapters** such as `map`, `filter`, `enumerate`, `zip`, `take`, `skip`, `rev`, `step_by`, and `chain`. Adapters are lazy: they run only when a method that actually consumes the values, such as `collect`, `sum`, `fold`, or `count`, is called.
 
 ```rok
 let xs = [1, 2, 3, 4, 5, 6];
@@ -158,11 +158,11 @@ println(f"{back:?} {uniq.len()}");
 [6, 5] 2
 ```
 
-`collect` 는 받는 쪽의 타입 (`List<i32>`, `Set<i32>`, ...) 에 맞춰 모읍니다. 그래서 `let` 에 타입을 적어 줍니다.
+`collect` builds whatever the receiving type is (`List<i32>`, `Set<i32>`, ...), which is why the `let` carries a type annotation.
 
-## 직접 만드는 반복자: `Iterator` 와 `yield`
+## Writing your own iterators: `Iterator` and `yield`
 
-`Iterator` 트레잇은 연관 타입 `Item` 과 메서드 `next(ref self) -> Item | none` 하나만 요구합니다. 나머지 어댑터는 모두 기본 메서드로 따라옵니다.
+The `Iterator` trait requires only the associated type `Item` and one method, `next(ref self) -> Item | none`. All the adapters come along as default methods.
 
 ```rok
 struct Countdown { n: i32; }
@@ -188,7 +188,7 @@ for v in (Countdown { n: 5 }).filter(|v| v % 2 == 1) { println(f"{v}"); }
 1
 ```
 
-상태를 손으로 관리하기 번거로우면 **제너레이터** 를 씁니다. `yield fn` 은 본체에서 `yield 값;` 으로 하나씩 내보내는 함수이고, 호출 결과는 반복자 (`GenIter<T>`) 입니다. 끝없이 도는 제너레이터도 `take` 로 필요한 만큼만 꺼내면 됩니다. 식 자리에서는 `yield { ... }` 블록으로 바로 만들 수도 있습니다.
+When managing state by hand gets tedious, use a **generator**. A `yield fn` is a function whose body emits values one at a time with `yield value;`, and calling it returns an iterator (`GenIter<T>`). Even an infinite generator is fine: take only as many values as you need with `take`. In expression position, you can also create one directly with a `yield { ... }` block.
 
 ```rok
 yield fn fib() -> i64 {
@@ -215,9 +215,9 @@ println("");
 1 4 9 16
 ```
 
-## 브로드캐스트 연산자 (미리보기)
+## Broadcast operators (preview)
 
-`.+`, `.*`, `.>` 처럼 점이 붙은 연산자는 원소별 (element-wise) 연산입니다. 각각 `DotAdd`, `DotMul`, `DotGt` 같은 트레잇으로 desugar 되므로, 내 타입에 구현하면 바로 쓸 수 있습니다.
+Dotted operators such as `.+`, `.*`, and `.>` are element-wise operations. They desugar to traits such as `DotAdd`, `DotMul`, and `DotGt`, so implementing those for your type makes the operators available right away.
 
 ```rok
 struct Vec { xs: List<f64>; }
@@ -246,7 +246,7 @@ println(f"{c.xs:?}");
 [21, 42, 63]
 ```
 
-사양은 `List` 와 고정 배열에 이 연산자들을, 그리고 함수 뒤에 점을 붙여 모든 원소에 적용하는 `f.(xs)` 를 표준으로 정의합니다.
+The spec defines these operators for `List` and fixed-size arrays as standard, along with `f.(xs)`, which applies a function to every element by adding a dot after it.
 
 ```rok norun
 let a = [1.0, 2.0, 3.0];
@@ -257,21 +257,21 @@ let r = f64::sqrt.(a);       // [1.0, 1.414..., 1.732...]
 ```
 
 > [!NOTE]
-> 현재 툴체인에는 `List` 의 `Dot*` 구현과 `f.(x)` 문법이 아직 없어 위 예제는 동작하지 않습니다. 그동안은 `a.iter().map(...)` 을 쓰세요.
+> The current toolchain does not yet have the `Dot*` implementations for `List` or the `f.(x)` syntax, so the example above does not work. Use `a.iter().map(...)` in the meantime.
 
-## 정리
+## Summary
 
-- `List` 는 `push` / `pop` / `insert` / `remove` / `sort` / `get` 을, `Dict` 는 `d[k]` / `get` / `entry` 를, `Set` 은 집합 연산을 제공합니다.
-- 컬렉션은 참조 핸들입니다. 사본이 필요하면 `clone()` 을 부릅니다.
-- `xs[a:b:s]` 슬라이싱은 Python 과 같고 panic 하지 않습니다. 결과는 `Slice<T>` 뷰입니다.
-- 순서가 필요하면 `OrderedDict` / `OrderedSet`, 양 끝 큐는 `Deque` 입니다.
-- `iter()` 뒤에 어댑터를 잇고 `collect` / `sum` / `fold` 로 소비합니다. `next` 하나만 구현하면 내 타입도 반복자가 됩니다.
-- `yield fn` 과 `yield { }` 로 반복자를 간단히 만듭니다.
+- `List` provides `push` / `pop` / `insert` / `remove` / `sort` / `get`, `Dict` provides `d[k]` / `get` / `entry`, and `Set` provides set operations.
+- Collections are reference handles. Call `clone()` when you need a copy.
+- `xs[a:b:s]` slicing works like Python and never panics. The result is a `Slice<T>` view.
+- For ordering, use `OrderedDict` / `OrderedSet`; for a double-ended queue, `Deque`.
+- Chain adapters after `iter()` and consume with `collect` / `sum` / `fold`. Implement just `next` and your own type becomes an iterator.
+- `yield fn` and `yield { }` make iterators easy to write.
 
-## 더 알아보기
+## Learn more
 
-- [stdlib 2.9. 컬렉션](../spec/refs-standard-libraries/200-core/209-collections.html), [참조 핸들](../spec/refs-standard-libraries/200-core/209-collections.html#참조-핸들)
-- [3.6. 인덱싱과 슬라이싱](../spec/refs-lang/003-expressions/306-indexing-and-slicing.html)
-- [stdlib 2.7. iter](../spec/refs-standard-libraries/200-core/207-iter.html), [4.11. 제너레이터](../spec/refs-lang/004-functions/411-generators.html)
-- [3.3. 브로드캐스트 연산자](../spec/refs-lang/003-expressions/303-broadcast-operators.html), [stdlib 2.6. broadcast](../spec/refs-standard-libraries/200-core/206-broadcast.html)
+- [stdlib 2.9. Collections](../spec/refs-standard-libraries/200-core/209-collections.html), [Reference handles](../spec/refs-standard-libraries/200-core/209-collections.html#reference-handles)
+- [3.6. Indexing and slicing](../spec/refs-lang/003-expressions/306-indexing-and-slicing.html)
+- [stdlib 2.7. iter](../spec/refs-standard-libraries/200-core/207-iter.html), [4.11. Generators](../spec/refs-lang/004-functions/411-generators.html)
+- [3.3. Broadcast operators](../spec/refs-lang/003-expressions/303-broadcast-operators.html), [stdlib 2.6. broadcast](../spec/refs-standard-libraries/200-core/206-broadcast.html)
 - API: [`List`](../std/core/collections/list.html#struct.List), [`Dict`](../std/core/collections/dict.html#struct.Dict), [`Set`](../std/core/collections/set.html#struct.Set), [`OrderedDict`](../std/core/collections/ordered_dict.html#struct.OrderedDict), [`OrderedSet`](../std/core/collections/ordered_set.html#struct.OrderedSet), [`Deque`](../std/core/collections/deque.html#struct.Deque), [`Slice`](../std/core/collections/slice.html#struct.Slice), [`Iterator`](../std/core/iter.html#trait.Iterator), [`GenIter`](../std/core/iter.html#struct.GenIter)

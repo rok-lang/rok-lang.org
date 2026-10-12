@@ -1,12 +1,12 @@
-# 10. 에러 처리
+# 10. Error Handling
 
-파일이 없거나 입력이 잘못된 것처럼 실패할 수 있는 일은 어디에나 있습니다. rok 의 에러 모델은 하나입니다. 던질 수 있는 함수는 시그니처에 `throws` 를 적고, 부르는 쪽은 그 호출을 `try` 로 표시합니다. 그래서 에러가 흐를 수 있는 지점이 코드에 모두 드러납니다.
+Things that can fail, like a missing file or bad input, are everywhere. rok has a single error model. A function that can throw writes `throws` in its signature, and the caller marks that call with `try`. As a result, every point where an error can flow is visible in the code.
 
-## `throws` 와 `throw`
+## `throws` and `throw`
 
-함수가 던질 수 있는 에러 타입은 매개변수 괄호 뒤, 반환 타입 앞에 `throws (E)` 로 적습니다. 여러 종류면 합 타입 `throws (A | B)` 를 씁니다. 본체에서는 `throw` 로 에러 값을 던집니다.
+The error type a function can throw is written as `throws (E)` after the parameter list and before the return type. For several kinds, use a sum type: `throws (A | B)`. In the body, `throw` throws an error value.
 
-에러 타입은 보통 struct 나 enum 이고, `Display` 와 `Debug` 를 갖춘 뒤 `Error` 트레잇을 구현합니다.
+An error type is usually a struct or enum that has `Display` and `Debug` and then implements the `Error` trait.
 
 ```rok
 #[derive(Debug)]
@@ -37,11 +37,11 @@ error: negative value: -5
 42 0
 ```
 
-`throws` 없는 함수 밖으로는 에러가 나갈 수 없습니다. 위의 `main` 은 `throws` 가 아니므로 두 호출 모두 그 자리에서 `catch` 로 처리했습니다.
+An error cannot escape a function without `throws`. The `main` above is not `throws`, so both calls handle the error on the spot with `catch`.
 
-## `try`: 호출 지점 표시와 전파
+## `try`: marking call sites and propagating
 
-`throws` 함수를 부를 때는 반드시 `try` 를 붙입니다. 에러가 나면 가장 가까운 `catch` 로 가고, 없으면 둘러싼 함수로 전파됩니다. 이때 둘러싼 함수도 그 에러를 `throws` 해야 합니다.
+You must put `try` on every call to a `throws` function. If an error occurs, control goes to the nearest `catch`; if there is none, the error propagates to the enclosing function. In that case the enclosing function must also `throws` that error.
 
 ```rok
 #[derive(Debug)]
@@ -80,17 +80,17 @@ TooBig { limit: 100 }
 -1
 ```
 
-`try` 는 오른쪽 식 전체를 덮습니다. `try a(b())` 는 두 호출을 함께 표시하고, `try { .. }` 는 블록 안의 호출을 모두 덮습니다. 프로그램의 top-level 문은 암묵적으로 `throws` 인 `main` 이라서, 스크립트에서는 `try` 만 붙여도 에러가 프로그램 밖으로 나가 종료 코드 1 로 끝납니다.
+`try` covers the entire expression to its right. `try a(b())` marks both calls together, and `try { .. }` covers every call inside the block. A program's top-level statements form an implicitly `throws` `main`, so in a script just adding `try` lets the error leave the program, which then exits with code 1.
 
-## `try?` 와 `try!`
+## `try?` and `try!`
 
-에러를 전파하지 않고 그 자리에서 다른 형태로 바꾸는 두 변형이 있습니다.
+Two variants turn the error into something else on the spot instead of propagating it.
 
-| 형태     | 에러가 나면                 |
-|----------|-----------------------------|
-| `try e`  | 가장 가까운 `catch` 또는 전파 |
-| `try? e` | 에러를 버리고 `none`        |
-| `try! e` | panic (프로그램 버그로 취급) |
+| Form     | On error                              |
+|----------|---------------------------------------|
+| `try e`  | Nearest `catch`, or propagate         |
+| `try? e` | Discard the error and yield `none`    |
+| `try! e` | Panic (treated as a program bug)      |
 
 ```rok
 fn parse_port(s: str) -> i32 {
@@ -107,11 +107,11 @@ println(f"{n}");
 42
 ```
 
-`try?` 결과에 `??` 를 이으려면 위처럼 괄호로 범위를 닫습니다. `try!` 는 "여기서 실패하면 버그" 라고 확신할 때만 씁니다.
+To chain `??` onto a `try?` result, close its scope with parentheses as above. Use `try!` only when you are certain that "failing here is a bug".
 
-## `catch`: 패턴으로 골라 받기
+## `catch`: selecting by pattern
 
-`catch` 는 식 뒤에 붙는 후위 절입니다. 위에서부터 차례로 패턴을 검사해 처음 맞는 블록을 실행하고, 그 블록의 값이 식 전체의 값이 됩니다. `e: T` 는 타입으로 골라 받는 패턴이며, 그 가지 안에서 `e` 는 그 타입으로 좁혀집니다.
+`catch` is a postfix clause attached to an expression. Patterns are tested from top to bottom, the first matching block runs, and that block's value becomes the value of the whole expression. `e: T` is a pattern that selects by type, and inside that branch `e` is narrowed to that type.
 
 ```rok
 #[derive(Debug)]
@@ -153,7 +153,7 @@ missing: b
 invalid: empty key
 ```
 
-`catch` 뒤에는 어떤 패턴이든 올 수 있으므로, struct 패턴으로 필드를 바로 꺼내는 것도 사양상 가능합니다.
+Any pattern can follow `catch`, so the spec also allows a struct pattern that pulls out fields directly.
 
 ```rok norun
 try lookup(key)
@@ -161,11 +161,11 @@ catch NotFound { key } { println(f"missing: {key}"); 0 }
 ```
 
 > [!NOTE]
-> `catch` 의 struct 패턴은 현재 툴체인에서 아직 파싱되지 않습니다. 지금은 위 예처럼 `e: NotFound` 로 받아 `e.key` 를 씁니다.
+> Struct patterns in `catch` are not yet parsed by the current toolchain. For now, bind with `e: NotFound` as in the earlier example and use `e.key`.
 
-`lookup` 은 에러 종류가 `NotFound | Invalid` 로 닫혀 있으므로, 두 타입을 모두 덮은 `describe` 는 더 이상 던지지 않는 함수가 됩니다. 컴파일러가 이것을 검사합니다.
+The error kinds of `lookup` are closed as `NotFound | Invalid`, so `describe`, which covers both types, becomes a function that no longer throws. The compiler checks this.
 
-`throws (E)` 대신 타입 없이 `throws` 라고만 쓰면 `Error` 를 구현한 어떤 에러든 던질 수 있습니다 (`throws (any Error)` 의 줄임). 공개 API 처럼 에러 종류를 닫아 두기 어려울 때 씁니다. 받는 쪽은 `catch e` 나 `catch e: any Error` 로 모두 받습니다.
+If you write just `throws` with no type instead of `throws (E)`, the function can throw any error that implements `Error` (short for `throws (any Error)`). Use it when it is hard to close the set of error kinds, as in a public API. The receiver catches everything with `catch e` or `catch e: any Error`.
 
 ```rok
 fn read_age(s: str) throws -> i32 {
@@ -189,11 +189,11 @@ x -> -1
 ```
 
 > [!NOTE]
-> 사양 ([4.14.3](../spec/refs-lang/004-functions/414-throws.html#4143-untyped-throws)) 은 untyped `throws` 의 에러도 `catch e: ValueError` 처럼 구체 타입으로 좁혀 받을 수 있다고 정합니다. 현재 툴체인에서는 이 가지가 실행되지 않으므로, 지금은 `catch e` 로 받아 처리하세요.
+> The spec ([4.14.3](../spec/refs-lang/004-functions/414-throws.html#4143-untyped-throws)) says errors from an untyped `throws` can also be narrowed to a concrete type, as in `catch e: ValueError`. The current toolchain does not execute such a branch, so for now catch them with `catch e`.
 
-## 블록 형태와 `finally`
+## Block form and `finally`
 
-여러 단계를 한 번에 감싸려면 `try { .. } catch .. { .. }` 형태를 씁니다. `finally` 블록은 정상 종료, 에러, `return` 등 어떻게 빠져나가든 마지막에 실행됩니다.
+To wrap several steps at once, use the `try { .. } catch .. { .. }` form. A `finally` block runs last no matter how control leaves: normal completion, an error, `return`, and so on.
 
 ```rok
 fn half(n: i32) throws -> i32 {
@@ -224,9 +224,9 @@ done with 6
 result 0
 ```
 
-## `rethrows`: 받은 함수만큼만 던지기
+## `rethrows`: throwing only as much as the argument does
 
-함수를 인자로 받는 고차 함수는 `rethrows` 로 선언할 수 있습니다. 넘긴 함수가 던지지 않으면 호출에 `try` 가 필요 없고, 던지는 함수를 넘길 때만 `try` 를 붙입니다.
+A higher-order function that takes a function as an argument can be declared `rethrows`. If the function passed in does not throw, the call needs no `try`; you add `try` only when passing a throwing function.
 
 ```rok
 fn apply_all(xs: List<i32>, f: fn(i32) throws -> i32) rethrows -> List<i32> {
@@ -255,9 +255,9 @@ println(f"{bad:?}");
 []
 ```
 
-## `using`: 자원 정리
+## `using`: cleaning up resources
 
-GC 가 메모리는 회수하지만 파일, 소켓, 락 같은 자원은 정해진 시점에 닫아야 합니다. `using x = 획득식 { .. }` 은 블록을 어떻게 빠져나가든 (정상, `return`, 에러 전파) `x` 의 `Drop::drop` 을 부릅니다. 여러 자원은 쉼표로 잇고, 거꾸로 된 순서로 정리됩니다.
+The GC reclaims memory, but resources such as files, sockets, and locks must be closed at a definite point. `using x = acquire_expr { .. }` calls `x`'s `Drop::drop` however the block is exited (normally, via `return`, or by error propagation). Multiple resources are separated by commas and cleaned up in reverse order.
 
 ```rok
 struct Conn { name: str; }
@@ -290,11 +290,11 @@ close db
 work failed: query failed
 ```
 
-`using` 은 식이라서 `let text = using f = try fs::open(path) { try f.read_to_end() };` 처럼 값을 돌려줄 수도 있습니다. 일반 `let` 바인딩은 스코프를 벗어나도 `drop` 되지 않는다는 점을 기억하세요. 결정적인 정리가 필요하면 `using` 을 씁니다.
+`using` is an expression, so it can also produce a value, as in `let text = using f = try fs::open(path) { try f.read_to_end() };`. Remember that ordinary `let` bindings are not `drop`ped when they go out of scope. When you need deterministic cleanup, use `using`.
 
-## 에러와 panic
+## Errors and panics
 
-`throws` 의 에러는 "일어날 수 있는 실패" 입니다. 반면 범위를 벗어난 인덱스, 0 으로 나누기, `try!` 의 실패, `panic(..)` 호출은 **panic** 이며 프로그램 버그로 봅니다. panic 은 `catch` 로 잡을 수 없고, 메시지를 stderr 에 쓰고 종료 코드 101 로 끝납니다. `finally` 와 `using` 의 정리도 실행되지 않습니다.
+An error from `throws` is "a failure that can happen". By contrast, an out-of-range index, division by zero, a failed `try!`, or a call to `panic(..)` is a **panic**, which is treated as a program bug. A panic cannot be caught with `catch`; it writes a message to stderr and exits with code 101. Cleanup in `finally` and `using` does not run either.
 
 ```rok build
 let xs = [1, 2, 3];
@@ -307,7 +307,7 @@ thread 'main' panicked at main.rok:3:12:
 List index out of bounds
 ```
 
-에러를 값으로 담아 두어야 할 때 (여러 결과를 모아 두거나 나중에 처리할 때) 만 `Result<T, E>` 를 씁니다. 규칙은 "던지면 `throws`, 담아 두면 `Result`" 입니다.
+Use `Result<T, E>` only when you need to hold an error as a value (to collect several results or handle them later). The rule is: "if you throw it, `throws`; if you keep it, `Result`".
 
 ```rok
 fn half(n: i32) throws -> i32 {
@@ -326,18 +326,18 @@ for n in [4, 5] {
 5: ok=false value=-1
 ```
 
-## 정리
+## Summary
 
-- 던질 수 있는 함수는 `throws (E)` (또는 `throws`) 를 적고 `throw` 로 던집니다.
-- 호출은 `try` 로 표시합니다. 잡지 않은 에러는 둘러싼 함수로 전파됩니다.
-- `try?` 는 에러를 `none` 으로, `try!` 는 panic 으로 바꿉니다.
-- `catch` 는 패턴으로 골라 받는 식이고, `finally` 는 언제나 실행됩니다.
-- `rethrows` 는 받은 함수가 던질 때만 던집니다.
-- 자원은 `using` 으로 묶으면 어떻게 빠져나가든 정리됩니다.
-- panic 은 잡을 수 없는 버그 신호입니다. 에러를 값으로 담아야 할 때만 `Result` 를 씁니다.
+- A function that can throw declares `throws (E)` (or `throws`) and throws with `throw`.
+- Calls are marked with `try`. An uncaught error propagates to the enclosing function.
+- `try?` turns an error into `none`; `try!` turns it into a panic.
+- `catch` is an expression that selects by pattern, and `finally` always runs.
+- `rethrows` throws only when the function it received throws.
+- Resources bound with `using` are cleaned up however the block is exited.
+- A panic is an uncatchable bug signal. Use `Result` only when you need to hold an error as a value.
 
-## 더 알아보기
+## Further reading
 
-- 사양: [에러 제어 흐름](../spec/refs-lang/003-expressions/314-error-control-flow.html), [`throws` 시그니처](../spec/refs-lang/004-functions/414-throws.html), [`using` 표현식](../spec/refs-lang/003-expressions/317-using-expression.html), [panic 과 fatal 에러](../spec/refs-lang/003-expressions/314-error-control-flow.html#3148-panic-과-fatal-에러)
-- 표준 라이브러리 사양: [error](../spec/refs-standard-libraries/200-core/214-error.html)
+- Spec: [Error control flow](../spec/refs-lang/003-expressions/314-error-control-flow.html), [`throws` signatures](../spec/refs-lang/004-functions/414-throws.html), [`using` expressions](../spec/refs-lang/003-expressions/317-using-expression.html), [Panics and fatal errors](../spec/refs-lang/003-expressions/314-error-control-flow.html#3148-panics-and-fatal-errors)
+- Standard library spec: [error](../spec/refs-standard-libraries/200-core/214-error.html)
 - API: [`Error`](../std/core/error.html#trait.Error), [`ValueError`](../std/core/error.html#struct.ValueError), [`Result`](../std/core/error.html#enum.Result), [`Drop`](../std/core/marker.html#trait.Drop)

@@ -1,8 +1,8 @@
-# RokON 설정 파일
+# RokON configuration
 
-`#[derive(Rokon)]` 구조체로 RokON 설정을 읽어 기본값을 채우고, 검증하고, 고친 뒤 다시 RokON 으로 씁니다.
+Read a RokON configuration into `#[derive(Rokon)]` structs with defaults filled in, validate it, change it and write it back as RokON.
 
-## 코드
+## Code
 
 ```rok
 // Load a server configuration from RokON, validate it, change it and write it back.
@@ -133,10 +133,10 @@ Config {
 round trip: true
 ```
 
-## 살펴보기
+## Walkthrough
 
-- `#[derive(Rokon)]` 하나로 구조체와 열거형이 RokON 과 오갑니다. 중첩 구조체(`Listen`), 열거형(`Level`), `List`, `OrderedDict`, `Tls | none` 이 모두 그대로 대응합니다 ([RokON](../learn/15-rokon.html), [3.9.2 rok 타입과의 대응](../spec/refs-standard-libraries/300-std/309-rokon.html#392-rok-타입과의-대응)).
-- 문서에 없는 필드는 구조체의 기본값(`workers: i32 = 4`)으로, 기본값도 없는 `T | none` 필드는 `none` 으로 채워집니다. `listen: { port: 9000 }` 처럼 타입 이름 없이 적은 중첩 값도 읽힙니다.
-- `rokon::from_str` 은 모르는 필드나 타입이 맞지 않는 값을 `RokonError` 로 던지며, 메시지에 `줄:열` 위치가 붙습니다. 오타(`wokers`)가 조용히 무시되지 않습니다 ([`rokon::from_str`](../std/std/rokon.html#fn.from_str)).
-- 형식 검사를 통과한 뒤의 규칙(포트 0 금지, 워커 수 범위)은 `validate` 가 따로 모아 한꺼번에 보고합니다. `T | none` 값이 비었는지는 `c.tls is none` 으로 확인합니다.
-- `rokon::to_string` 은 정규 형식으로 씁니다. 기본값으로 채운 필드도 모두 적히므로 다시 읽으면 같은 값이 됩니다. 사전 순서를 지키려고 `Dict` 대신 `OrderedDict` 를 썼습니다 ([`rokon::to_string`](../std/std/rokon.html#fn.to_string)).
+- A single `#[derive(Rokon)]` makes structs and enums convert to and from RokON. A nested struct (`Listen`), an enum (`Level`), `List`, `OrderedDict` and `Tls | none` all map directly ([RokON](../learn/15-rokon.html), [3.9.2 mapping to rok types](../spec/refs-standard-libraries/300-std/309-rokon.html#392-correspondence-with-rok-types)).
+- Fields missing from the document take the struct's default (`workers: i32 = 4`); a `T | none` field without a default becomes `none`. Nested values written without a type name, like `listen: { port: 9000 }`, are accepted too.
+- `rokon::from_str` throws a `RokonError` for an unknown field or a value of the wrong type, with a `line:col` position in the message. A typo such as `wokers` is not silently ignored ([`rokon::from_str`](../std/std/rokon.html#fn.from_str)).
+- Rules beyond the format (port must not be 0, worker count in range) are collected by `validate` and reported together. Whether a `T | none` value is empty is checked with `c.tls is none`.
+- `rokon::to_string` writes the canonical form. Fields filled from defaults are written out too, so reading the output gives the same value back. `OrderedDict` is used instead of `Dict` to keep the key order ([`rokon::to_string`](../std/std/rokon.html#fn.to_string)).

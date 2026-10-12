@@ -1,8 +1,8 @@
-# 작은 Lisp 인터프리터
+# A small Lisp interpreter
 
-토크나이저, 재귀 하강 파서, 환경을 들고 다니는 평가기로 `define`, `if`, `lambda` 와 클로저를 지원하는 작은 Lisp 를 만들고, 실행 중 에러는 `throws` 로 전달합니다.
+Build a small Lisp with a tokenizer, a recursive-descent parser and an evaluator that carries an environment, supporting `define`, `if`, `lambda` and closures, with runtime errors reported through `throws`.
 
-## 코드
+## Code
 
 ```rok
 // A tiny Lisp: integers, define, if, lambda with closures.
@@ -182,13 +182,13 @@ for src in program {
   => error: missing `)`
 ```
 
-## 살펴보기
+## Walkthrough
 
-- 프로그램과 값은 하나의 열거형 `Value` 로 표현합니다. 코드도 데이터도 같은 모양이라는 Lisp 의 성질 덕분에 파서는 `Value` 를 만들고 평가기는 `Value` 를 받아 `Value` 를 돌려줍니다 ([합 타입](../learn/05-sum-types.html), [구조체, 열거형, 트레잇](../learn/06-structs-enums-traits.html)).
-- 파서는 `ref pos: usize` 로 읽은 위치를 호출한 쪽과 공유합니다. 괄호 안을 읽을 때 자기 자신을 다시 부르는 전형적인 재귀 하강 파서입니다 ([4.7 `ref` 키워드](../spec/refs-lang/004-functions/407-ref-keyword.html)).
-- 정수가 아닌 토큰은 기호입니다. `try? tok.parse::<i64>()` 가 파싱 에러를 `none` 으로 바꿔 주므로 `match` 두 갈래로 나눌 수 있습니다 ([3.14.3 `try?` 와 `try!`](../spec/refs-lang/003-expressions/314-error-control-flow.html#3143-try-와-try)).
-- 실행 중 에러는 `LispError` 를 `throw` 하고, 각 함수는 `throws (LispError)` 로 그 사실을 시그니처에 드러냅니다. 맨 아래 `try { ... } catch e: LispError { ... }` 가 한 줄의 에러를 받아 메시지로 바꾸므로, 다음 줄은 계속 실행됩니다 ([에러 처리](../learn/10-errors.html)).
-- `lambda` 는 만들어질 때의 `Env` 를 붙잡아 둡니다. `Dict` 는 공유되는 참조이므로 `make-adder` 가 돌려준 함수는 `k` 를 기억하고, `fact` 는 자기 자신이 나중에 정의되어도 찾을 수 있습니다.
+- Programs and values share one enum, `Value`. Because Lisp code and data have the same shape, the parser produces `Value`s and the evaluator takes a `Value` and returns a `Value` ([Sum types](../learn/05-sum-types.html), [Structs, enums and traits](../learn/06-structs-enums-traits.html)).
+- The parser shares its read position with the caller through `ref pos: usize`. It is a classic recursive-descent parser that calls itself to read inside parentheses ([4.7 the `ref` keyword](../spec/refs-lang/004-functions/407-ref-keyword.html)).
+- Any token that isn't an integer is a symbol. `try? tok.parse::<i64>()` turns the parse error into `none`, so a two-armed `match` separates the cases ([3.14.3 `try?` and `try!`](../spec/refs-lang/003-expressions/314-error-control-flow.html#3143-try-and-try)).
+- Runtime errors `throw` a `LispError`, and each function states this in its signature with `throws (LispError)`. The `try { ... } catch e: LispError { ... }` at the bottom turns one line's error into a message, so the next line still runs ([Errors](../learn/10-errors.html)).
+- A `lambda` captures the `Env` it was created in. `Dict` is a shared reference, so the function returned by `make-adder` remembers `k`, and `fact` can find itself even though it is defined afterwards.
 
 > [!NOTE]
-> 명세대로라면 `let Value::Sym(name) = items[1] else { throw ...; };` 같은 [let-else](../spec/refs-lang/003-expressions/316-let-else.html) 로 더 짧게 쓸 수 있지만, 현재 툴체인은 열거형 변형 패턴의 let-else 를 아직 파싱하지 못해 `match` 로 풀어 썼습니다. 또 자기 자신을 직접 품는 열거형(`Lambda(..., Value, ...)`)이 컴파일러를 멈추게 하므로 람다 본체는 `List<Value>` 에 담았습니다.
+> Per the spec, this could be shortened with a [let-else](../spec/refs-lang/003-expressions/316-let-else.html) such as `let Value::Sym(name) = items[1] else { throw ...; };`, but the current toolchain cannot parse let-else with enum variant patterns yet, so it is spelled out with `match`. Also, an enum that contains itself directly (`Lambda(..., Value, ...)`) makes the compiler stop, so lambda bodies are kept in a `List<Value>`.

@@ -1,8 +1,8 @@
-# 명령줄 도구
+# Command-line tool
 
-`grep` 을 닮은 작은 도구 `mgrep` 으로 명령줄 인자를 직접 파싱해 구조체에 담고, `--help` 와 잘못된 인자를 `throws` 로 처리합니다.
+`mgrep`, a small `grep`-like tool, parses its command-line arguments by hand into a struct and handles `--help` and bad arguments with `throws`.
 
-## 코드
+## Code
 
 ```rok
 // mgrep: print the lines of FILEs that contain PATTERN.
@@ -131,7 +131,7 @@ fn main() -> i32 {
 }
 ```
 
-인자 없이 실행하면 내장 예시 인자 몇 벌로 차례로 실행해 보입니다.
+Run without arguments, it tries a few built-in sample invocations in turn.
 
 ```output
 $ mgrep --help
@@ -157,17 +157,17 @@ mgrep: option '--max' needs a value
 (try --help)
 ```
 
-## 살펴보기
+## Walkthrough
 
-- `env::args()` 는 프로그램 이름을 `[0]` 에 담은 `List<str>` 입니다. 그래서 `1..argv.len()` 만 옮겨 담습니다 ([`env::args`](../std/std/env.html#fn.args)).
-- 옵션은 필드 기본값이 있는 `Options` 구조체에 모읍니다. `Options { pattern: "" }` 처럼 기본값이 있는 필드는 생략할 수 있습니다 ([구조체, 열거형, 트레잇](../learn/06-structs-enums-traits.html), [2.3.3 필드 기본값](../spec/refs-lang/002-types/203-struct.html#233-필드-기본값)).
-- `match a { "-i" | "--ignore-case" => ... }` 처럼 문자열 리터럴 패턴을 `|` 로 묶어 짧은 옵션과 긴 옵션을 한 번에 받습니다. 대입은 식이 아니라 문장이므로 팔 본체를 `{ ...; }` 블록으로 감쌉니다 ([제어 흐름](../learn/04-control-flow.html)).
-- 잘못된 인자는 `ArgError` 열거형으로 던집니다. `run` 은 `throws (ArgError | IoError)` 로 두 종류를 모두 내보내고, `main` 은 타입별 `catch` 로 나누어 종료 코드(2 와 1)를 정합니다 ([에러 처리](../learn/10-errors.html), [3.14.4 `catch`](../spec/refs-lang/003-expressions/314-error-control-flow.html#3144-catch-후위-처리-식)).
-- `-m` 의 숫자는 `parse::<usize>()` 로 읽고, 실패하면 `catch _ { throw ...; }` 로 더 친절한 에러로 바꿉니다. `opts.max` 는 `usize | none` 이라 비교할 때 `?? usize::MAX` 로 기본값을 줍니다.
+- `env::args()` is a `List<str>` with the program name at `[0]`, so only `1..argv.len()` is copied ([`env::args`](../std/std/env.html#fn.args)).
+- The options live in an `Options` struct with field defaults. Fields that have a default can be left out, as in `Options { pattern: "" }` ([Structs, enums and traits](../learn/06-structs-enums-traits.html), [2.3.3 field defaults](../spec/refs-lang/002-types/203-struct.html#233-field-default-values)).
+- String literal patterns joined with `|`, as in `match a { "-i" | "--ignore-case" => ... }`, accept the short and long form at once. Assignment is a statement, not an expression, so those arm bodies are wrapped in a `{ ...; }` block ([Control flow](../learn/04-control-flow.html)).
+- Bad arguments are thrown as the `ArgError` enum. `run` declares `throws (ArgError | IoError)`, and `main` uses one `catch` per type to choose the exit code (2 or 1) ([Errors](../learn/10-errors.html), [3.14.4 `catch`](../spec/refs-lang/003-expressions/314-error-control-flow.html#3144-catch-postfix-handling-expression)).
+- The number after `-m` is read with `parse::<usize>()`; on failure, `catch _ { throw ...; }` turns it into a friendlier error. `opts.max` is `usize | none`, so the comparison supplies a default with `?? usize::MAX`.
 
-## 실행하기
+## Running it
 
-실제 파일을 검색하려면 실행 파일로 빌드해 인자를 넘깁니다.
+To search real files, build an executable and pass arguments.
 
 ```bash
 rokc build mgrep.rok -o mgrep

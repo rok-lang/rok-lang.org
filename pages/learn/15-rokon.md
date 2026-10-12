@@ -1,10 +1,10 @@
 # 15. RokON
 
-이 장에서는 rok 의 데이터 형식 RokON (Rok Object Notation) 으로 설정 파일을 읽고 쓰는 방법을 배웁니다. RokON 은 따로 문법을 새로 배울 필요가 없습니다. rok 소스에 값을 적는 리터럴 문법을 그대로 파일에 적기 때문입니다. 패키지 매니페스트 `rok.rokon` 도 이 형식입니다.
+This chapter shows how to read and write configuration files in RokON (Rok Object Notation), rok's data format. There is no new syntax to learn: a RokON file uses the same literal syntax you write values with in rok source. The package manifest `rok.rokon` uses this format too.
 
-## 형식 한눈에 보기
+## The format at a glance
 
-파일 하나에는 값 하나가 들어갑니다. 보통은 struct 하나입니다.
+A file holds one value, usually a single struct.
 
 ```rokon
 // app.rokon
@@ -19,19 +19,19 @@ Config {
 }
 ```
 
-| 형태 | 예 |
+| Form | Example |
 |------|----|
-| 기본 값 | `none`, `true`, `42`, `0xff`, `3.14`, `'a'`, `"text"` |
-| 리스트 / 튜플 | `[1, 2, 3]`, `("x", 1)` |
-| dict | `{ "k": 1, "j": 2 }` (키는 값) |
+| Basic values | `none`, `true`, `42`, `0xff`, `3.14`, `'a'`, `"text"` |
+| List / tuple | `[1, 2, 3]`, `("x", 1)` |
+| dict | `{ "k": 1, "j": 2 }` (keys are values) |
 | struct | `Point { x: 1, y: 2 }`, `Pair(1, 2)` |
-| enum 변형 | `Mode::Fast`, `Shape::Circle(1.0)`, `Shape::Rect { w: 2, h: 3 }` |
+| enum variant | `Mode::Fast`, `Shape::Circle(1.0)`, `Shape::Rect { w: 2, h: 3 }` |
 
-`//` 주석과 끝에 붙는 쉼표를 쓸 수 있습니다. 반대로 변수, 연산자, 함수 호출, f-string 같은 "코드" 는 쓸 수 없습니다. RokON 은 실행되지 않는 순수한 데이터입니다.
+`//` comments and trailing commas are allowed. "Code" such as variables, operators, function calls, and f-strings is not. RokON is pure data that never executes.
 
-## `#[derive(Rokon)]` 과 `from_str` / `to_string`
+## `#[derive(Rokon)]` with `from_str` / `to_string`
 
-struct 나 enum 에 `#[derive(Rokon)]` 을 붙이면 `rok::std::rokon` 의 `from_str` 로 읽고 `to_string` 으로 쓸 수 있습니다. 읽을 타입은 변수의 타입 표기로 정합니다.
+Put `#[derive(Rokon)]` on a struct or enum and you can read it with `from_str` and write it with `to_string` from `rok::std::rokon`. The variable's type annotation decides which type is read.
 
 ```rok
 use rok::std::rokon;
@@ -89,17 +89,17 @@ Config {
 }
 ```
 
-중첩된 struct, 리스트, enum 이 모두 같은 방식으로 읽힙니다. 두 번째 서버처럼 필드가 빠지면 다음 규칙을 따릅니다.
+Nested structs, lists, and enums are all read the same way. When a field is missing, as in the second server, these rules apply:
 
-- 필드에 `= 기본값` 이 있으면 그 값 (`port: u16 = 80`).
-- 타입이 `T | none` 이면 `none` (`tls`).
-- 그 밖에는 에러.
+- If the field has a `= default`, that value (`port: u16 = 80`).
+- If the type is `T | none`, `none` (`tls`).
+- Otherwise, an error.
 
-`to_string` 은 **정규 형식** 으로 씁니다. 들여쓰기는 4칸이고, 100칸 안에 들어가면 한 줄, 넘으면 원소마다 한 줄에 끝 쉼표를 붙입니다. 정규 형식을 다시 읽으면 같은 값이 됩니다.
+`to_string` writes the **canonical form**: 4-space indentation, one line if it fits in 100 columns, otherwise one element per line with a trailing comma. Reading the canonical form back yields the same value.
 
-## enum, 튜플 struct, Dict
+## Enums, tuple structs, Dict
 
-enum 의 변형은 언제나 `Enum::Variant` 처럼 전체 경로로 적습니다. 튜플 struct 는 `Name(a, b)` 로 적습니다. 표준 컬렉션과 튜플은 derive 없이 바로 읽힙니다.
+Enum variants are always written with their full path, like `Enum::Variant`. Tuple structs are written `Name(a, b)`. Standard collections and tuples are read directly, without a derive.
 
 ```rok
 use rok::std::rokon;
@@ -145,11 +145,11 @@ primes: [2, 3, 5]
 ```
 
 > [!TIP]
-> `Dict` 와 `Set` 은 해시 순서로 쓰여서 `to_string` 결과의 순서가 실행마다 같다는 보장이 없습니다. 파일에 쓸 때 순서를 지키려면 `OrderedDict` / `OrderedSet` 을 씁니다.
+> `Dict` and `Set` are written in hash order, so the order of `to_string` output is not guaranteed to be the same across runs. To keep the order when writing to a file, use `OrderedDict` / `OrderedSet`.
 
-## 잘못된 입력과 에러
+## Bad input and errors
 
-`from_str` 은 문제가 생기면 `RokonError` 를 던집니다. 메시지는 `줄:칸: 설명` 모양이라 사람이 바로 파일에서 위치를 찾을 수 있습니다.
+`from_str` throws `RokonError` when something is wrong. Messages have the form `line:column: description`, so a person can find the spot in the file right away.
 
 ```rok
 use rok::std::rokon;
@@ -182,11 +182,11 @@ error: 1:31: unknown field `user` in Server
 error: 1:1: expected Server, found `Client { .. }`
 ```
 
-모르는 필드도 에러라는 점에 주의합니다. 오타 난 설정 키를 조용히 무시하지 않기 위해서입니다.
+Note that an unknown field is also an error, so a misspelled configuration key is never silently ignored.
 
-## 타입 없이 읽기: `Value`
+## Reading without a type: `Value`
 
-구조를 미리 모르는 데이터는 `rokon::parse` 로 `Value` enum 으로 읽습니다. `Value` 는 `None`, `Int`, `Str`, `List`, `Dict`, `Struct`, `Variant` 같은 변형을 가지며, `kind()` 는 종류 이름을 돌려줍니다.
+Data whose structure you don't know in advance can be read into the `Value` enum with `rokon::parse`. `Value` has variants such as `None`, `Int`, `Str`, `List`, `Dict`, `Struct`, and `Variant`, and `kind()` returns the name of the kind.
 
 ```rok
 use rok::std::rokon;
@@ -211,11 +211,11 @@ struct Site
   draft: bool = false
 ```
 
-## 설정 파일 읽고 쓰기
+## Reading and writing configuration files
 
-13장의 `fs` 와 합치면 설정 파일을 다룰 수 있습니다. 이 사이트를 만드는 프로그램도 똑같이 합니다. 사이트 저장소의 `site.rokon` 을 `#[derive(Rokon)] struct Site` 로 읽고, 기본값이 있는 필드는 파일에서 생략할 수 있습니다.
+Combined with `fs` from Chapter 13, this handles configuration files. The program that builds this site does exactly that: it reads `site.rokon` from the site repository into a `#[derive(Rokon)] struct Site`, and fields with defaults can be omitted from the file.
 
-아래 예제는 임시 파일에 설정을 쓰고, 읽고, 고쳐서 다시 씁니다. `load` 는 `IoError` 와 `RokonError` 를 둘 다 던질 수 있고, 호출하는 쪽에서 종류별로 잡습니다.
+The example below writes a configuration to a temporary file, reads it, modifies it, and writes it back. `load` can throw both `IoError` and `RokonError`, and the caller catches each kind separately.
 
 ```rok
 use rok::std::fs;
@@ -268,18 +268,18 @@ bad config: 1:15: expected str, found integer
 missing: NotFound
 ```
 
-`to_string` 으로 다시 쓰면 주석이 사라진다는 점도 보입니다. 사람이 고치는 파일은 프로그램이 덮어쓰지 않는 편이 좋습니다. `rok fmt` 는 `.rokon` 파일의 들여쓰기만 맞추고 주석과 배치는 그대로 둡니다.
+Notice also that rewriting with `to_string` drops comments. Files that people edit are better left for programs not to overwrite. `rok fmt` only fixes indentation in `.rokon` files and leaves comments and layout alone.
 
-## 정리
+## Summary
 
-- RokON 은 rok 리터럴 문법 그대로의 데이터 형식이며, 확장자는 `.rokon` 입니다.
-- `#[derive(Rokon)]` 을 붙이고 `rokon::from_str` 으로 읽고 `rokon::to_string` 으로 씁니다.
-- 빠진 필드는 `= 기본값`, `T | none` 이면 `none`, 아니면 에러입니다. 모르는 필드도 에러입니다.
-- 에러 메시지는 `줄:칸: 설명` 입니다.
-- 구조를 모르면 `rokon::parse` 로 `Value` 를 받습니다.
-- 순서가 중요한 맵은 `OrderedDict` 를 씁니다.
+- RokON is a data format that uses rok literal syntax as is; the file extension is `.rokon`.
+- Add `#[derive(Rokon)]`, read with `rokon::from_str`, write with `rokon::to_string`.
+- A missing field takes its `= default`, or `none` if its type is `T | none`; otherwise it is an error. Unknown fields are errors too.
+- Error messages have the form `line:column: description`.
+- If you don't know the structure, use `rokon::parse` to get a `Value`.
+- Use `OrderedDict` for maps whose order matters.
 
-## 더 알아보기
+## Further reading
 
-- 명세: [3.9 RokON](../spec/refs-standard-libraries/300-std/309-rokon.html), [필드 기본값](../spec/refs-lang/002-types/203-struct.html#233-필드-기본값), [rok.rokon 매니페스트](../spec/refs-lang/009-tools/910-rok-frontend.html)
+- Spec: [3.9 RokON](../spec/refs-standard-libraries/300-std/309-rokon.html), [Field defaults](../spec/refs-lang/002-types/203-struct.html#233-field-default-values), [The rok.rokon manifest](../spec/refs-lang/009-tools/910-rok-frontend.html)
 - API: [rok::std::rokon](../std/std/rokon.html)

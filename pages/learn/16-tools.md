@@ -1,8 +1,8 @@
-# 16. 도구
+# 16. Tools
 
-마지막 장에서는 코드를 쓰는 동안 곁에 두는 도구들을 둘러봅니다. 포매터, 린터, 테스트와 벤치마크, 문서 생성, 편집기 지원(LSP), REPL 과 Jupyter, 그리고 컴파일러 안을 들여다보는 디버그 옵션입니다. 모두 `rok` 명령 하나에서 시작합니다.
+This final chapter tours the tools you keep at hand while writing code: the formatter, the linter, tests and benchmarks, documentation generation, editor support (LSP), the REPL and Jupyter, and debug options for looking inside the compiler. All of them start from the single `rok` command.
 
-이 장의 출력은 아래 패키지에서 실제로 실행한 결과입니다. `rok new mathx` 로 만든 뒤 `main.rok` 를 이렇게 바꿨습니다.
+The output in this chapter comes from actually running the package below. It was created with `rok new mathx`, and `main.rok` was changed to this:
 
 ```rok build
 //! Small math helpers.
@@ -42,11 +42,11 @@ fn fib_20() {
 }
 ```
 
-## `rok test`: 테스트
+## `rok test`: tests
 
-`#[test]` 를 붙인 함수가 테스트입니다. 테스트 함수는 일반 빌드에는 들어가지 않고, `rok test` 가 모아서 따로 빌드합니다. 검사는 `assert`, `assert_eq`, `assert_ne` 로 하고, 실패하면 panic 합니다. 마지막 인자로 메시지를 붙일 수 있습니다.
+A function marked `#[test]` is a test. Test functions are left out of normal builds; `rok test` collects them and builds them separately. Checks use `assert`, `assert_eq`, and `assert_ne`, which panic on failure. You can pass a message as the last argument.
 
-각 테스트는 자기 프로세스에서 실행되므로, 하나가 panic 해도 나머지는 계속 실행됩니다. 위 패키지의 `fib_wrong` 은 일부러 틀리게 만든 테스트입니다.
+Each test runs in its own process, so if one panics the rest keep running. `fib_wrong` in the package above is deliberately wrong.
 
 ```text
 $ rok test
@@ -73,7 +73,7 @@ failures:
 test result: FAILED. 2 passed; 1 failed; 0 filtered out; finished in 0.22s
 ```
 
-실패가 있으면 종료 코드는 1 이라서 CI 에서 그대로 쓸 수 있습니다. 인자로 이름의 일부(또는 `^`, `$`, `.*` 정도의 작은 정규식)를 주면 그 테스트만 실행합니다.
+If anything fails, the exit code is 1, so it works in CI as is. Passing part of a name (or a small regex using `^`, `$`, `.*`) as an argument runs only the matching tests.
 
 ```text
 $ rok test gcd
@@ -86,11 +86,11 @@ test gcd_works ... ok
 test result: ok. 1 passed; 0 failed; 2 filtered out; finished in 0.22s
 ```
 
-성공한 테스트의 출력도 보려면 `--show-output`, 동시에 도는 테스트 수를 정하려면 `--threads=N` 을 씁니다.
+Use `--show-output` to also see output from passing tests, and `--threads=N` to set how many tests run concurrently.
 
-## `rok bench`: 벤치마크
+## `rok bench`: benchmarks
 
-`#[bench]` 함수는 `rok bench` 가 최적화 빌드(`-O2`)로 여러 번 불러 호출 한 번의 평균 시간을 잽니다. 숫자는 기계마다, 실행마다 다릅니다.
+`rok bench` calls each `#[bench]` function many times in an optimized build (`-O2`) and measures the average time per call. The numbers vary by machine and by run.
 
 ```text
 $ rok bench
@@ -103,13 +103,13 @@ bench fib_20 ... bench:       34,204 ns/iter (+/- 1,712)
 bench result: ok. 1 measured; 0 failed; 0 filtered out; finished in 0.36s
 ```
 
-`--iters=N` 은 표본 하나에서 부르는 횟수, `--samples=N` 은 표본 수입니다. 필터는 `rok test` 와 같습니다.
+`--iters=N` is the number of calls per sample, and `--samples=N` is the number of samples. Filters work as in `rok test`.
 
-## `rok fmt`: 포매터
+## `rok fmt`: the formatter
 
-`rok fmt` 는 패키지의 `.rok` 와 `.rokon` 파일을 표준 포맷으로 고칩니다. rok 의 포매터는 일부러 보수적입니다. **줄 안의 토큰과 간격, 주석은 건드리지 않고** 들여쓰기(괄호 깊이마다 4칸), 줄 끝 공백, 연속된 빈 줄만 정리합니다. 그래서 포매터가 코드의 뜻이나 사람이 맞춘 정렬을 바꿀 일이 없습니다.
+`rok fmt` rewrites the package's `.rok` and `.rokon` files into the standard format. rok's formatter is deliberately conservative: it **leaves tokens, spacing within a line, and comments alone**, and only fixes indentation (4 spaces per bracket depth), trailing whitespace, and runs of blank lines. So the formatter never changes the meaning of code or alignment a person set up by hand.
 
-들여쓰기가 흐트러지고 탭과 줄 끝 공백이 섞인 `fib` 를 `--check` 로 검사하면, 파일은 그대로 두고 바뀔 줄을 보여 준 뒤 종료 코드 1 로 끝납니다. CI 에 넣기 좋은 모드입니다.
+Checking a `fib` with messed-up indentation, mixed tabs, and trailing whitespace using `--check` leaves the file untouched, shows the lines that would change, and exits with code 1. This mode is a good fit for CI.
 
 ```text
 $ rok fmt --check
@@ -125,11 +125,11 @@ $ rok fmt --check
 $
 ```
 
-`--check` 없이 실행하면 조용히 파일을 고칩니다. 편집기에서 저장할 때마다 실행해 두면 편합니다.
+Without `--check`, it quietly fixes the files. Running it on every save in your editor is convenient.
 
-## `rok lint` 와 `rok check`
+## `rok lint` and `rok check`
 
-`rok lint` 는 컴파일은 하지 않고, 타입 검사와 린트만 돌립니다. 위에서 남겨 둔 `let unused = 1;` 이 걸립니다.
+`rok lint` does not compile; it runs only type checking and lints. It catches the `let unused = 1;` left in above.
 
 ```text
 $ rok lint
@@ -144,13 +144,13 @@ warning: [lint] main.rok:11:5: unused variable `unused`
     Finished in 0.38s
 ```
 
-모든 린트의 기본 수준은 `warn` 입니다. 수준은 세 곳에서 바꿀 수 있고, 뒤의 것이 이깁니다.
+Every lint defaults to `warn`. The level can be changed in three places, and later ones win:
 
-1. `rok.rokon` 의 `lints` 필드: `lints: { "unused": "deny", "dead_code": "allow" }`
-2. 명령줄의 `-A` / `-W` / `-D` (allow / warn / deny)
-3. 소스의 속성: 항목에 `#[allow(dead_code)]`, 파일 머리에 `#![deny(unused)]`
+1. The `lints` field in `rok.rokon`: `lints: { "unused": "deny", "dead_code": "allow" }`
+2. `-A` / `-W` / `-D` (allow / warn / deny) on the command line
+3. Attributes in source: `#[allow(dead_code)]` on an item, `#![deny(unused)]` at the top of a file
 
-이름에는 린트 하나(`unused_variables`) 대신 그룹(`unused`, `nonstandard_style`, `all`)도 쓸 수 있습니다. `deny` 린트가 하나라도 걸리면 종료 코드는 1 입니다.
+Instead of a single lint (`unused_variables`), you can name a group (`unused`, `nonstandard_style`, `all`). If any `deny` lint fires, the exit code is 1.
 
 ```text
 $ rok lint -D unused
@@ -165,7 +165,7 @@ error: [lint] main.rok:11:5: unused variable `unused`
     Finished in 0.31s
 ```
 
-전체 목록은 `rokc lint --list` 로 봅니다. `rok check` 는 여기에 코드 생성까지 더해 확인하지만, 링크나 실행 파일은 만들지 않습니다. 빌드보다 빨라서 "컴파일은 되나?" 를 볼 때 씁니다.
+See the full list with `rokc lint --list`. `rok check` goes further and also runs code generation, but does not link or produce an executable. It is faster than a build, so use it to answer "does it compile?"
 
 ```text
 $ rok check
@@ -178,11 +178,11 @@ error: [type] main.rok:2:1: mismatched types: `let s` expects `str`, found `i32`
     Finished in 0.32s
 ```
 
-도구에서 읽기 좋게 하려면 `--message-format=json` 을 붙입니다. 진단마다 JSON 한 줄이 나옵니다.
+For machine-readable output, add `--message-format=json`. Each diagnostic is printed as one line of JSON.
 
-## `rok doc`: 문서 주석과 API 문서
+## `rok doc`: doc comments and API docs
 
-`///` 는 바로 아래 항목의 문서, `//!` 는 그 주석이 든 모듈(파일) 자체의 문서입니다. 위 패키지의 첫 줄 `//! Small math helpers.` 가 모듈 설명이 되고, `gcd` 와 `fib` 위의 `///` 가 함수 설명이 됩니다. 문서 텍스트에는 제목, 목록, 인라인 코드, 코드 블록, 링크 같은 markdown 을 쓸 수 있습니다.
+`///` documents the item directly below it, and `//!` documents the module (file) containing the comment. In the package above, the first line `//! Small math helpers.` becomes the module description, and the `///` above `gcd` and `fib` become the function descriptions. Doc text can use markdown such as headings, lists, inline code, code blocks, and links.
 
 ```text
 $ rok doc
@@ -191,13 +191,13 @@ $ rok doc
    Generated ./target/doc/index.html
 ```
 
-`target/doc/` 에 패키지와 의존 패키지의 공개(`pub`) 항목 HTML 과 검색 색인이 생깁니다. 이 사이트의 [표준 라이브러리 API](../std/core/index.html) 도 같은 방식으로 라이브러리 소스의 문서 주석에서 만든 것입니다.
+`target/doc/` gets HTML for the public (`pub`) items of the package and its dependencies, plus a search index. This site's [standard library API](../std/core/index.html) is generated the same way, from doc comments in the library source.
 
-## 편집기: `rokls`
+## Editors: `rokls`
 
-`rokls` 는 LSP (Language Server Protocol) 서버입니다. 진단, hover, 정의로 이동, 문서 심볼, 자동 완성, 포맷을 제공합니다. `rok lsp`, `rokc lsp` 도 같은 서버입니다. 표준 입출력으로 통신하므로, LSP 를 지원하는 편집기라면 실행 명령만 알려 주면 됩니다.
+`rokls` is an LSP (Language Server Protocol) server. It provides diagnostics, hover, go to definition, document symbols, completion, and formatting. `rok lsp` and `rokc lsp` are the same server. It communicates over standard IO, so any editor with LSP support only needs to be told the command to run.
 
-Neovim (0.11 이상) 이라면 `init.lua` 에 다음을 넣습니다.
+For Neovim (0.11 or later), add this to `init.lua`:
 
 ```text
 vim.filetype.add({ extension = { rok = "rok", rokon = "rokon" } })
@@ -209,7 +209,7 @@ vim.lsp.config("rokls", {
 vim.lsp.enable("rokls")
 ```
 
-Helix 라면 `languages.toml` 에 다음을 넣습니다.
+For Helix, add this to `languages.toml`:
 
 ```text
 [language-server.rokls]
@@ -223,11 +223,11 @@ roots = ["rok.rokon"]
 language-servers = ["rokls"]
 ```
 
-VS Code 처럼 다른 편집기에서도 범용 LSP 클라이언트 확장에 `rokls` 를 등록하면 됩니다. `rokls` 가 `PATH` 에 있어야 합니다.
+In other editors such as VS Code, register `rokls` with a generic LSP client extension. `rokls` must be on your `PATH`.
 
-## REPL 과 Jupyter
+## REPL and Jupyter
 
-1장에서 본 REPL (`rok` 또는 `rok repl`) 을 조금 더 알아봅니다. 셀은 한 번씩 실행되고, 최상위 `let` 과 `fn` / `struct` 정의는 다음 셀로 이어집니다. 식 셀과 `let` 셀은 `타입: 값` 을 보여 줍니다. 일반 소스와 달리 같은 이름을 다시 `let` 할 수 있고, `fn` 을 다시 정의하면 바뀝니다. 에러가 난 셀은 아무 흔적도 남기지 않습니다.
+A closer look at the REPL (`rok` or `rok repl`) from Chapter 1. Each cell runs once, and top-level `let` bindings and `fn` / `struct` definitions carry over to later cells. Expression cells and `let` cells show `type: value`. Unlike regular source, you can `let` the same name again, and redefining an `fn` replaces it. A cell that errors leaves no trace.
 
 ```text
 $ rok repl
@@ -243,27 +243,27 @@ i32: 42
 > :quit
 ```
 
-| 명령 | 하는 일 |
+| Command | What it does |
 |------|---------|
-| `:type 식` | 실행하지 않고 타입만 출력 |
-| `:reset` | 모든 셀을 잊고 처음부터 |
-| `:add 이름 --path 경로` | 의존성을 현재 환경에 추가 |
-| `:help`, `:quit` | 도움말, 종료 |
+| `:type expr` | Print the type without evaluating |
+| `:reset` | Forget all cells and start over |
+| `:add name --path path` | Add a dependency to the current session |
+| `:help`, `:quit` | Help, quit |
 
-`rok repl --package 경로` 는 라이브러리 패키지를 붙이고 `use 이름::*;` 를 넣은 채로 시작합니다. 라이브러리를 만들면서 함수를 바로 불러 보기 좋습니다.
+`rok repl --package path` starts with a library package attached and `use name::*;` already in place. Handy for trying out functions while building a library.
 
-같은 셀 엔진을 Jupyter 노트북에서도 쓸 수 있습니다. 커널을 한 번 등록하면 Jupyter, VS Code 노트북 등에서 `rok` 커널을 고를 수 있습니다.
+The same cell engine is available in Jupyter notebooks. Register the kernel once, and you can pick the `rok` kernel in Jupyter, VS Code notebooks, and so on.
 
 ```text
 $ rok jupyter install
    Installed kernel `rok` (/Users/me/Library/Jupyter/kernels/rok/kernel.json)
 ```
 
-macOS 는 `~/Library/Jupyter`, 그 밖에는 `~/.local/share/jupyter` 아래에 설치되며, `JUPYTER_DATA_DIR` 로 위치를 바꿀 수 있습니다.
+It is installed under `~/Library/Jupyter` on macOS and `~/.local/share/jupyter` elsewhere; `JUPYTER_DATA_DIR` changes the location.
 
-## 컴파일러 들여다보기
+## Looking inside the compiler
 
-빌드 단계별 시간이 궁금하면 `-v` 를 붙입니다.
+To see how long each build stage takes, add `-v`.
 
 ```text
 $ rok build -v
@@ -274,7 +274,7 @@ $ rok build -v
     Finished in 0.41s
 ```
 
-`--emit` 은 중간 결과물을 `target/debug/build/` 에 씁니다. 종류는 `ast`, `hir`, `mir`, `mlir`, `llvmir`, `asm`, `obj`, `expanded` (메타 확장 결과) 입니다.
+`--emit` writes intermediate artifacts to `target/debug/build/`. The kinds are `ast`, `hir`, `mir`, `mlir`, `llvmir`, `asm`, `obj`, and `expanded` (the result of meta expansion).
 
 ```text
 $ rok emit --emit=llvmir
@@ -286,7 +286,7 @@ define i32 @_Y2cfee941__square_(i32 %0) {
 define void @_Y2cfee941__main_() {
 ```
 
-`_Y` 로 시작하는 이름은 rok 의 맹글링된 심볼입니다. 디버거나 프로파일러에서 이런 이름을 만나면 `rokc demangle` 로 풉니다.
+Names starting with `_Y` are rok's mangled symbols. When you meet one in a debugger or profiler, decode it with `rokc demangle`.
 
 ```text
 $ rokc demangle _Y2cfee941__square_
@@ -296,19 +296,19 @@ name:     square
 generics: (none)
 ```
 
-`-g` 로 빌드하면 DWARF 디버그 정보가 들어가서 `lldb` / `gdb` 에서 소스 줄 단위로 따라갈 수 있습니다.
+Building with `-g` includes DWARF debug info, so you can step through source lines in `lldb` / `gdb`.
 
-## 정리
+## Summary
 
-- `rok test` / `rok bench` 는 `#[test]` / `#[bench]` 함수를 따로 빌드해 실행합니다. 테스트마다 프로세스가 따로입니다.
-- `rok fmt` 는 들여쓰기와 공백 줄만 정리합니다. CI 에서는 `rok fmt --check`.
-- `rok lint` 는 린트, `rok check` 는 코드 생성까지 확인합니다. 수준은 `rok.rokon` < `-A/-W/-D` < 소스 속성 순으로 정해집니다.
-- `///` 와 `//!` 문서 주석으로 `rok doc` 이 `target/doc/` 에 HTML 을 만듭니다.
-- 편집기에는 `rokls` 를 LSP 서버로 등록합니다.
-- REPL 은 `:type` / `:reset` / `:add`, 노트북은 `rok jupyter install`.
-- 문제를 파고들 때는 `-v`, `--emit`, `rokc demangle`, `-g`.
+- `rok test` / `rok bench` build and run `#[test]` / `#[bench]` functions separately. Each test gets its own process.
+- `rok fmt` only fixes indentation and blank lines. In CI, use `rok fmt --check`.
+- `rok lint` runs lints; `rok check` goes as far as code generation. Lint levels resolve in the order `rok.rokon` < `-A/-W/-D` < source attributes.
+- From `///` and `//!` doc comments, `rok doc` generates HTML in `target/doc/`.
+- Register `rokls` as the LSP server in your editor.
+- The REPL has `:type` / `:reset` / `:add`; for notebooks, `rok jupyter install`.
+- To dig into problems: `-v`, `--emit`, `rokc demangle`, `-g`.
 
-## 더 알아보기
+## Further reading
 
-- 명세: [rokc CLI](../spec/refs-lang/009-tools/901-rokc-cli.html), [표준 포맷](../spec/refs-lang/009-tools/901-rokc-cli.html#9111-표준-포맷-rokc-fmt), [린트 제어](../spec/refs-lang/006-meta-system/602-built-in-attributes.html#629-allow--deny--warn-린트-제어), [rok front-end](../spec/refs-lang/009-tools/910-rok-frontend.html), [JIT 셀과 REPL](../spec/refs-lang/009-tools/907-jit-cells.html), [Jupyter](../spec/refs-lang/009-tools/908-jupyter-integration.html), [디버그 도구](../spec/refs-lang/009-tools/909-debug-tools.html), [심볼 맹글링](../spec/refs-lang/009-tools/905-symbol-mangling.html)
-- API: [rok::core 의 assert 함수들](../std/core/panic.html)
+- Spec: [rokc CLI](../spec/refs-lang/009-tools/901-rokc-cli.html), [Standard format](../spec/refs-lang/009-tools/901-rokc-cli.html#9111-standard-format-rokc-fmt), [Lint control](../spec/refs-lang/006-meta-system/602-built-in-attributes.html#629-allow--deny--warn-lint-control), [rok front-end](../spec/refs-lang/009-tools/910-rok-frontend.html), [JIT cells and the REPL](../spec/refs-lang/009-tools/907-jit-cells.html), [Jupyter](../spec/refs-lang/009-tools/908-jupyter-integration.html), [Debug tools](../spec/refs-lang/009-tools/909-debug-tools.html), [Symbol mangling](../spec/refs-lang/009-tools/905-symbol-mangling.html)
+- API: [assert functions in rok::core](../std/core/panic.html)

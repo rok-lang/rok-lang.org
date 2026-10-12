@@ -1,18 +1,20 @@
 # rok-lang.org
 
-rok 언어 문서 사이트입니다. 사이트 생성기 자체도 rok 으로 작성했습니다. 사양 저장소의 한국어 마크다운 (`spec/ko`) 을 읽어 언어 참조와 표준 라이브러리 참조를 만들고, 구현 저장소의 표준 라이브러리 소스 (`impl/library`) 에서 API 목록 (`/std/`) 을 뽑고, 이 저장소의 `pages/` 에 있는 랜딩, 안내서 (`/learn/`), 예제 (`/examples/`) 를 더해 `public/` 에 정적 사이트를 씁니다.
+The documentation site for the rok language. The site generator itself is written in rok. It reads both editions of the spec repository, English (`spec/en`, rendered at `/spec/`) and Korean (`spec/ko`, rendered at `/ko/spec/`), to build the language reference and the standard library reference, extracts the API listing (`/std/`) from the standard library sources of the implementation repository (`impl/library`), adds the landing page, the guide (`/learn/`), and the examples (`/examples/`) from this repository's `pages/`, and writes a static site to `public/`.
 
-## 빌드
+## Build
 
-준비물은 rok 툴체인 (`rok`, `rokc`) 과 `rok-lang` 저장소 (사양과 표준 라이브러리 소스) 입니다. 기본 설정은 두 저장소가 나란히 있다고 가정합니다.
+You need the rok toolchain (`rok`, `rokc`) and the `rok-lang` repository (spec and standard library sources). The default configuration assumes the repositories sit side by side.
 
 ```
 Works/
-├── rok-lang/          # impl/ (툴체인, impl/library 표준 라이브러리), spec/ko/ (사양)
-└── rok-lang.org/      # 이 저장소
+├── rok-lang/          # impl/ (toolchain, impl/library standard library), spec/en/ + spec/ko/ (spec)
+├── stones/rok-markdown/   # markdown renderer stone (path dependency)
+├── stones/rok-syntax/     # rok / RokON highlighter stone (path dependency)
+└── rok-lang.org/      # this repository
 ```
 
-툴체인이 없으면 먼저 빌드합니다.
+If you have no toolchain, build it first.
 
 ```bash
 cd ../rok-lang/impl
@@ -20,71 +22,72 @@ cargo build --release
 export PATH="$PWD/target/release:$PATH"
 ```
 
-그다음 이 저장소에서 실행합니다.
+Then, in this repository:
 
 ```bash
-rok run                      # public/ 에 사이트 생성 (사양 + 안내서 + 예제 + API)
-rok run -- check             # 생성 + 코드 블록 실행; 깨진 링크나 실패한 블록이 있으면 종료 코드 1
-rok run -- code [filter]     # 코드 블록만 실행 (경로에 filter 가 든 페이지만), public/ 은 건드리지 않음
-rok test                     # 마크다운 렌더러 테스트
+rok run                      # generate the site in public/ (spec + guide + examples + API)
+rok run -- check             # generate + run code blocks; exit code 1 on broken links or failed blocks
+rok run -- code [filter]     # run code blocks only (pages whose path contains filter); leaves public/ alone
+rok test                     # code block extraction tests
 ```
 
-빌드가 끝나면 페이지 수, 깨진 링크 수, 걸린 시간을 출력합니다. 링크 검사는 매번 생성된 HTML 을 다시 읽어 모든 `href` / `src` 의 대상 파일과 `#앵커` 가 있는지 확인합니다. 생성만은 1–5 초, `check` 는 코드 블록 수백 개를 병렬로 컴파일하고 실행하므로 머신에 따라 1–3 분쯤 걸립니다.
+When the build finishes it prints the page count, the broken link count, and the elapsed time. The link check re-reads the generated HTML every time and verifies that the target file and `#anchor` of every `href` / `src` exist. Generation alone takes 1–5 seconds; `check` compiles and runs hundreds of code blocks in parallel and takes about 1–3 minutes depending on the machine.
 
-### 코드 블록 검사
+### Code block checks
 
-`pages/` 아래 모든 마크다운의 ` ```rok ` 블록은 하나하나가 독립된 프로그램으로 컴파일되고 실행됩니다 (`rokc run <블록>.rok`, 시스템 임시 디렉토리의 `rok-lang.org-snippets/` 에서). info 문자열의 두 번째 단어로 동작을 바꿉니다.
+Every ` ```rok ` block in the markdown under `pages/` is compiled and run as a standalone program (`rokc run <block>.rok`, in `rok-lang.org-snippets/` under the system temp directory). The second word of the info string changes the behavior.
 
-| 블록 | 검사 |
-|------|------|
-| ` ```rok `        | 컴파일하고 실행. 종료 코드 0 이어야 함 |
-| ` ```rok build `  | 컴파일만 (서버, 표준 입력을 읽는 프로그램 등) |
-| ` ```rok norun `  | 검사하지 않음 (조각 코드, 툴체인 버그로 아직 안 도는 예) |
+| Block | Check |
+|-------|-------|
+| ` ```rok `        | Compile and run; must exit with code 0 |
+| ` ```rok build `  | Compile only (servers, programs that read stdin, and so on) |
+| ` ```rok norun `  | Not checked (fragments, examples blocked by toolchain bugs) |
 
-실행 블록 바로 뒤의 ` ```output ` 블록은 기대 표준 출력입니다. 줄 끝 공백을 빼고 정확히 같아야 합니다. 페이지에서는 코드 아래 "출력" 상자로 보입니다. 표준 입력은 비어 있고 인자는 없으며, 블록마다 60 초 제한이 있습니다. 툴체인은 `ROKC` 환경 변수, 없으면 `PATH` 의 `rokc` 입니다.
+A ` ```output ` block right after a run block is the expected stdout. It must match exactly, ignoring trailing whitespace. On the page it shows as an "Output" box below the code. Stdin is empty, there are no arguments, and each block has a 60-second limit. The toolchain is taken from the `ROKC` environment variable, or `rokc` on `PATH`.
 
-### 표준 라이브러리 API
+### Standard library API
 
-`site.rokon` 의 `library` (기본 `../rok-lang/impl/library`) 에서 `bare` / `core` / `std` 의 `lib.rok` 부터 `pub mod` 를 따라가며 모듈마다 한 페이지 (`std/<계층>/<모듈 경로>.html`) 를 만듭니다. `pub` 항목의 시그니처를 쓰인 그대로 보여 주고, 바로 위의 `///` 주석을 문서로, 파일 첫 주석 덩어리를 모듈 설명으로 씁니다. 구조체 / enum / 트레잇 / 고유 `impl` 의 멤버와 트레잇 구현 목록도 붙습니다. 항목과 메서드는 검색 색인에 들어갑니다.
+Starting from `lib.rok` of `bare` / `core` / `std` under `library` in `site.rokon` (default `../rok-lang/impl/library`), the generator follows `pub mod` and builds one page per module (`std/<tier>/<module path>.html`). It shows the signatures of `pub` items as written, uses the `///` comment right above as documentation, and uses the file's first comment block as the module description. Members of structs / enums / traits / inherent `impl`s and the list of trait implementations are included. Items and methods go into the search index.
 
-`rokc doc` 을 쓰지 않는 이유: `rokc doc` 은 사용자 패키지와 `--extern` 의존성만 문서로 만들고 `rok::` 표준 라이브러리는 빼며, 표준 라이브러리는 사용자 패키지로 컴파일되지 않습니다 (lang 슬롯, 타입 키워드, `rok::core` 경로). 그래서 `apidoc.rok` 이 소스를 직접 훑습니다 (주석 / 문자열을 가린 뒤 괄호 깊이로 항목 경계를 찾음).
+Why not `rokc doc`: `rokc doc` documents only the user package and `--extern` dependencies and skips the `rok::` standard library, and the standard library does not compile as a user package (lang slots, type keywords, `rok::core` paths). So `apidoc.rok` scans the sources directly (it masks comments / strings, then finds item boundaries by bracket depth).
 
-## 미리 보기
+## Preview
 
-검색 색인 (`search-index.json`) 을 `fetch` 로 읽기 때문에 `file://` 이 아니라 로컬 서버로 엽니다.
+The search index (`search-index.json`) is loaded with `fetch`, so open the site through a local server rather than `file://`.
 
 ```bash
 python3 -m http.server -d public 8000
 # http://localhost:8000
 ```
 
-## 설정
+## Configuration
 
-`site.rokon` (RokON) 에서 바꿉니다.
+Edit `site.rokon` (RokON).
 
-| 필드          | 뜻 |
-|---------------|----|
-| `title`       | 사이트 이름 |
-| `tagline`     | 첫 페이지 제목에 붙는 문구 |
-| `spec`        | 사양의 언어 디렉토리 (기본 `../rok-lang/spec/ko`) |
-| `spec_repo`, `spec_branch` | 사양 디렉토리 밖을 가리키는 링크 (`../LICENSE` 등) 가 향할 저장소 |
-| `packages`    | 패키지 사이트 주소 (`https://rokstones.io`) |
-| `library`     | 표준 라이브러리 소스 디렉토리 (기본 `../rok-lang/impl/library`) |
-| `out`         | 출력 디렉토리 (기본 `public`) |
+| Field         | Meaning |
+|---------------|---------|
+| `title`       | Site name |
+| `tagline`     | Phrase appended to the home page title |
+| `spec`        | English edition of the spec (default `../rok-lang/spec/en`), rendered at `spec/` |
+| `spec_ko`     | Korean edition (`../rok-lang/spec/ko`), rendered at `ko/spec/`; `""` for none |
+| `spec_repo`, `spec_branch` | Repository that links pointing outside the spec directory (`../LICENSE`, etc.) resolve to |
+| `packages`    | Package site URL (`https://rokstones.io`) |
+| `library`     | Standard library source directory (default `../rok-lang/impl/library`) |
+| `out`         | Output directory (default `public`) |
 
-## 구조
+## Layout
 
-| 파일 | 내용 |
-|------|------|
-| `main.rok`      | 설정 읽기, 사양 / 페이지 수집, 페이지 생성, 검색 색인, 정적 파일 복사, 링크 검사 |
-| `check.rok`     | 코드 블록 추출과 병렬 컴파일 / 실행 / 출력 비교 |
-| `apidoc.rok`    | 표준 라이브러리 소스에서 API 페이지 생성 |
-| `markdown.rok`  | CommonMark 부분집합 + GFM 표 / 취소선 / 콜아웃 렌더러, GitHub 호환 헤딩 id |
-| `highlight.rok` | ` ```rok ` / ` ```rokon ` 코드 블록 하이라이터 |
-| `layout.rok`    | 페이지 틀: 헤더, 내비게이션, 장 사이드바와 목차, 이전 / 다음, 차례, 푸터 |
-| `pages/`        | 랜딩 (`index.md`), 안내서 (`learn/`), 예제 (`examples/`) |
-| `static/`       | `style.css` (라이트 / 다크), `search.js`, 로고 |
+| File | Contents |
+|------|----------|
+| `main.rok`      | Reads the configuration, collects spec / pages, generates pages, builds the search index, copies static files, checks links |
+| `check.rok`     | Code block extraction and parallel compile / run / output comparison |
+| `apidoc.rok`    | API pages from the standard library sources |
+| `layout.rok`    | Page frame: header, navigation, chapter sidebar and table of contents, previous / next, contents listing, footer; markdown options |
+| `pages/`        | Landing page (`index.md`), guide (`learn/`), examples (`examples/`) |
+| `static/`       | `style.css` (light / dark), `search.js`, logo |
 
-사양 파일은 `x/README.md` → `spec/x/index.html`, `x/foo.md` → `spec/x/foo.html` 로 옮겨지며, 본문의 `.md` 링크는 생성된 `.html` 상대 경로로 바뀝니다. 앵커는 GitHub 와 같은 규칙으로 만들기 때문에 사양의 `#...` 링크가 그대로 맞습니다.
+Markdown rendering (a CommonMark subset + GFM tables / strikethrough / callouts / footnotes, GitHub-compatible heading ids) and ` ```rok ` / ` ```rokon ` highlighting are handled by the stones [`rok-markdown`](https://github.com/rok-lang/rok-markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) (path dependencies in `rok.rokon`). They become version dependencies once published to rokstones.io.
 
-`pages/x.md` 는 `x.html` 이 됩니다. 하위 디렉토리 (`pages/learn/`) 는 하나의 장으로 묶여 사이드바와 이전 / 다음이 붙고, 그 `index.md` 뒤에는 디렉토리의 페이지 차례가 자동으로 붙습니다 (각 페이지 제목과 첫 문단; `examples/` 는 카드). 페이지는 파일 이름 순서입니다.
+Spec files map as `x/README.md` → `spec/x/index.html` and `x/foo.md` → `spec/x/foo.html`, and `.md` links in the text are rewritten to relative paths of the generated `.html`. Anchors follow GitHub's rules, so the spec's `#...` links work unchanged. The Korean edition goes under `ko/` (`ko/spec/x/foo.html`) with `lang="ko"` and Korean callout titles; everything else is English. Every spec page carries an EN / 한국어 switch to the same page of the other edition; `search.js` carries the reader's section over, pairing headings by position when the two outlines match and by section number otherwise. The search index covers the English spec only.
+
+`pages/x.md` becomes `x.html`. A subdirectory (`pages/learn/`) is grouped into one chapter with a sidebar and previous / next links, and a contents listing of the directory's pages (each page's title and first paragraph; cards for `examples/`) is appended after its `index.md`. Pages are ordered by file name.

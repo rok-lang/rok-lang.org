@@ -1,17 +1,17 @@
-# 5. 합 타입과 none
+# 5. Sum Types and none
 
-값이 "이것 아니면 저것" 일 때 rok 은 `A | B` 처럼 타입을 `|` 로 이어 씁니다. 이 장에서는 합 타입과, 그중 가장 자주 쓰는 "값이 없을 수도 있음" 인 `T | none` 을 다루는 도구들을 익힙니다.
+When a value is "either this or that", rok joins the types with `|`, as in `A | B`. This chapter covers sum types and the tools for working with the most common one, `T | none`, which means "there may be no value".
 
-## 합 타입 `A | B`
+## Sum types `A | B`
 
-합 타입의 값은 적힌 항 중 정확히 하나에 속합니다. 어느 항인지는 값이 태그로 기억하므로, `match` 에서 타입 검사 패턴 `이름: 타입` 으로 꺼낼 수 있습니다.
+A value of a sum type belongs to exactly one of the listed variants. The value carries a tag recording which one, so `match` can extract it with a type-test pattern `name: Type`.
 
 ```rok
 fn describe(v: i32 | str | bool) -> str {
     match v {
-        n: i32 => f"정수 {n}",
-        s: str => f"문자열 {s}",
-        b: bool => f"참거짓 {b}",
+        n: i32 => f"integer {n}",
+        s: str => f"string {s}",
+        b: bool => f"boolean {b}",
     }
 }
 
@@ -21,14 +21,14 @@ println(describe(true));
 ```
 
 ```output
-정수 42
-문자열 rok
-참거짓 true
+integer 42
+string rok
+boolean true
 ```
 
-합 타입은 **닫혀** 있습니다. 컴파일러가 가능한 항을 모두 알기 때문에, 위 `match` 에서 `bool` 분기를 빼면 "모든 경우를 다루지 않았다" 는 컴파일 에러가 납니다. 새 항을 추가하면 손봐야 할 곳을 컴파일러가 알려 주는 셈입니다.
+Sum types are **closed**. The compiler knows every possible variant, so removing the `bool` arm from the `match` above is a compile error saying not all cases are handled. When you add a new variant, the compiler points you to every place that needs updating.
 
-합 타입은 집합처럼 동작합니다. `i32 | str` 과 `str | i32` 는 같은 타입이고, `i32 | i32` 는 그냥 `i32` 입니다. 긴 합에는 `type` 으로 이름을 붙일 수 있습니다.
+Sum types behave like sets. `i32 | str` and `str | i32` are the same type, and `i32 | i32` is just `i32`. Long sums can be named with `type`.
 
 ```rok
 type Number = i32 | f64;
@@ -47,9 +47,9 @@ println(f"{half(7)} {half(1.5)}");
 3.5 0.75
 ```
 
-## `none` 과 `T?`
+## `none` and `T?`
 
-`none` 은 "값 없음" 을 뜻하는 리터럴입니다. 다른 언어의 `Option<T>` / `null` 자리를 rok 에서는 합 타입 `T | none` 이 맡고, 줄여서 `T?` 라고 씁니다. 별도의 `Some(..)` 포장이 없으므로 값은 그대로 돌려주면 됩니다.
+`none` is the literal for "no value". Where other languages use `Option<T>` or `null`, rok uses the sum type `T | none`, written `T?` for short. There is no `Some(..)` wrapper, so you return the value as is.
 
 ```rok
 fn find(xs: List<i32>, target: i32) -> usize? {
@@ -69,37 +69,37 @@ println(f"{find(xs, 7):?}");
 none
 ```
 
-표준 라이브러리도 같은 관례를 따릅니다. `List::get`, `Dict::get`, `List::pop` 처럼 실패할 수 있는 조회는 모두 `T | none` 을 돌려줍니다.
+The standard library follows the same convention. Lookups that can fail, such as `List::get`, `Dict::get`, and `List::pop`, all return `T | none`.
 
 > [!TIP]
-> `T | none` 은 공짜에 가깝습니다. `bool`, 포인터, 필드 없는 `enum` 처럼 쓰지 않는 비트 패턴이 있는 타입은 그 자리에 `none` 을 넣어 태그 없이 저장합니다 ([niche 최적화](../spec/refs-lang/002-types/207-niche-optimization.html)). 그래서 `bool?` 은 1 바이트입니다.
+> `T | none` is nearly free. For types with unused bit patterns, such as `bool`, pointers, and field-less `enum`s, `none` is stored in one of those patterns with no separate tag ([niche optimization](../spec/refs-lang/002-types/207-niche-optimization.html)). That is why `bool?` is 1 byte.
 
-## `is` 로 좁히기
+## Narrowing with `is`
 
-`x is T` 는 값이 지금 `T` 항인지 검사하는 `bool` 식입니다. `if` 조건에서 지역 변수를 검사하면, 그 분기 안에서는 변수가 `T` 로 **좁혀져** 바로 `T` 의 연산을 쓸 수 있습니다. `&&` 로 이어진 뒤쪽 조건에서도 마찬가지입니다.
+`x is T` is a `bool` expression that tests whether the value is currently the `T` variant. When an `if` condition tests a local variable, the variable is **narrowed** to `T` inside that branch, so you can use `T`'s operations directly. The same holds for later conditions joined with `&&`.
 
 ```rok
 let v: i32 | str = 7;
 if v is i32 && v > 5 {
-    println(f"큰 수: {v + 1}");
+    println(f"big number: {v + 1}");
 }
 
 let w: i32 | str = "hello";
 if w is str {
-    println(f"글자 수: {w.len()}");
+    println(f"length: {w.len()}");
 }
 println(f"{w is i32}");
 ```
 
 ```output
-큰 수: 8
-글자 수: 5
+big number: 8
+length: 5
 false
 ```
 
-## `if let` 과 `match`
+## `if let` and `match`
 
-검사와 동시에 값을 새 이름으로 받고 싶으면 `if let 이름: T = 식` 을 씁니다. `match` 에서는 `none` 을 리터럴 패턴으로 적습니다.
+To test and bind the value to a new name at the same time, use `if let name: T = expr`. In `match`, write `none` as a literal pattern.
 
 ```rok
 fn lookup(id: i32) -> str? {
@@ -107,28 +107,28 @@ fn lookup(id: i32) -> str? {
 }
 
 if let name: str = lookup(1) {
-    println(f"찾음: {name}");
+    println(f"found: {name}");
 } else {
-    println("없음");
+    println("not found");
 }
 
 for id in [1, 2] {
     match lookup(id) {
         name: str => println(f"{id} → {name}"),
-        none => println(f"{id} → (없음)"),
+        none => println(f"{id} → (none)"),
     }
 }
 ```
 
 ```output
-찾음: kim
+found: kim
 1 → kim
-2 → (없음)
+2 → (none)
 ```
 
-## 기본값 `??` 와 체이닝 `?.`
+## Defaults with `??` and chaining with `?.`
 
-매번 `match` 를 쓰기는 번거롭습니다. `a ?? b` 는 `a` 가 `none` 이면 `b` 를, 아니면 `a` 의 값을 돌려줍니다. `x?.field` 와 `x?.method()` 는 `x` 가 `none` 이면 전체가 `none` 이 되고, 값이 있을 때만 접근합니다. 둘을 이으면 "있으면 꺼내고 없으면 기본값" 이 한 줄이 됩니다.
+Writing `match` every time gets tedious. `a ?? b` returns `b` if `a` is `none`, and `a`'s value otherwise. `x?.field` and `x?.method()` evaluate to `none` when `x` is `none`, and only perform the access when there is a value. Combined, "take it if present, otherwise use a default" fits on one line.
 
 ```rok
 struct User { name: str; nick: str?; }
@@ -151,11 +151,11 @@ anonymous
 90 0
 ```
 
-`?.` 는 단축 평가입니다. 좌변이 `none` 이면 뒤의 메서드는 아예 호출되지 않습니다.
+`?.` short-circuits. If the left side is `none`, the method after it is never called.
 
-## 후위 `?`: none 이면 바로 반환
+## Postfix `?`: return early on none
 
-함수 안에서 여러 단계의 `T | none` 을 차례로 풀어야 할 때는 후위 `?` 를 씁니다. `e?` 는 `e` 의 값을 꺼내고, `none` 이면 둘러싼 함수에서 곧바로 `none` 을 반환합니다. 그래서 함수의 반환 타입에 `none` 이 들어 있어야 합니다.
+When a function has to unwrap several `T | none` values in sequence, use postfix `?`. `e?` extracts the value of `e`, and if it is `none`, immediately returns `none` from the enclosing function. The function's return type must therefore include `none`.
 
 ```rok
 struct User { name: str; nick: str?; }
@@ -177,23 +177,23 @@ none
 none
 ```
 
-`?` 는 `T | none` 전용입니다. 에러를 전파하는 수단이 아니며, 에러는 `throws` / `try` 로 다룹니다 ([에러 제어 흐름](../spec/refs-lang/003-expressions/314-error-control-flow.html)).
+`?` works only on `T | none`. It is not a way to propagate errors; errors are handled with `throws` / `try` ([error control flow](../spec/refs-lang/003-expressions/314-error-control-flow.html)).
 
 > [!NOTE]
-> 컬렉션에 `none` 자체를 담으면 (`List<i32?>`) `get` 의 결과는 "원소 없음" 과 "저장된 none" 을 구별하는 두 층 optional `(i32 | none)?` 이 됩니다. `??`, `?.`, `?` 는 바깥 층에만 작용합니다. 자세한 규칙은 [중첩 optional](../spec/refs-lang/002-types/206-sum-types.html#중첩-optional) 을 보세요.
+> If a collection stores `none` itself (`List<i32?>`), the result of `get` is a two-level optional `(i32 | none)?` that distinguishes "no element" from "a stored none". `??`, `?.`, and `?` act only on the outer level. See [nested optionals](../spec/refs-lang/002-types/206-sum-types.html#nested-optional) for the full rules.
 
-## 정리
+## Summary
 
-- `A | B` 는 닫힌 합 타입입니다. 항의 순서와 중복은 의미가 없고, `match` 는 모든 항을 다뤄야 합니다.
-- 값이 없을 수 있으면 `T | none`, 줄여서 `T?` 를 씁니다. 값은 포장 없이 그대로 반환합니다.
-- `x is T` 는 검사이자 좁히기입니다. `if let x: T = ...` 와 `match` 의 `n: T` / `none` 패턴으로 값을 꺼냅니다.
-- `??` 는 기본값, `?.` 는 none 이면 건너뛰는 접근, 후위 `?` 는 none 이면 함수에서 바로 반환합니다.
-- niche 최적화 덕분에 많은 `T?` 는 `T` 와 크기가 같습니다.
+- `A | B` is a closed sum type. Variant order and duplicates don't matter, and `match` must handle every variant.
+- When a value may be absent, use `T | none`, or `T?` for short. Return the value as is, without wrapping.
+- `x is T` both tests and narrows. Extract values with `if let x: T = ...` and with the `n: T` / `none` patterns in `match`.
+- `??` supplies a default, `?.` skips the access on none, and postfix `?` returns from the function on none.
+- Thanks to niche optimization, many `T?` types are the same size as `T`.
 
-## 더 알아보기
+## Learn more
 
-- [2.6. 합 타입](../spec/refs-lang/002-types/206-sum-types.html), [2.1.5a. optional 타입 `T?`](../spec/refs-lang/002-types/201-type-expressions.html#215a-optional-타입-t)
-- [2.2.6. 좁히기](../spec/refs-lang/002-types/202-any-slot.html#226-좁히기-narrowing), [3.10.5. `if let`](../spec/refs-lang/003-expressions/310-if-expression.html#3105-if-let-패턴-매칭과의-결합), [3.11. 패턴](../spec/refs-lang/003-expressions/311-patterns.html)
-- [3.8. 옵셔널 체이닝과 null 합체](../spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing.html), [3.14.10. `?` 연산자](../spec/refs-lang/003-expressions/314-error-control-flow.html#31410--연산자--none-조기-반환)
-- [2.7. niche 최적화](../spec/refs-lang/002-types/207-niche-optimization.html)
-- 다음 장: [6. 구조체, enum, 트레잇](06-structs-enums-traits.html)
+- [2.6. Sum types](../spec/refs-lang/002-types/206-sum-types.html), [2.1.5a. Optional type `T?`](../spec/refs-lang/002-types/201-type-expressions.html#215a-optional-types-t)
+- [2.2.6. Narrowing](../spec/refs-lang/002-types/202-any-slot.html#226-narrowing), [3.10.5. `if let`](../spec/refs-lang/003-expressions/310-if-expression.html#3105-if-let-combining-with-pattern-matching), [3.11. Patterns](../spec/refs-lang/003-expressions/311-patterns.html)
+- [3.8. Optional chaining and null coalescing](../spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing.html), [3.14.10. The `?` operator](../spec/refs-lang/003-expressions/314-error-control-flow.html#31410-the--operator--early-return-of-none)
+- [2.7. Niche optimization](../spec/refs-lang/002-types/207-niche-optimization.html)
+- Next chapter: [6. Structs, Enums, and Traits](06-structs-enums-traits.html)

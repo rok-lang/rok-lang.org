@@ -1,8 +1,8 @@
-# C 라이브러리 호출
+# Calling a C library
 
-`extern "C"` 블록으로 libc 의 `strlen`, `getpid`, `getenv`, `snprintf`, `qsort` 를 선언하고, `rok::bare` 의 포인터와 할당 함수로 C 메모리를 직접 다룹니다.
+Declare libc's `strlen`, `getpid`, `getenv`, `snprintf` and `qsort` in an `extern "C"` block, and manage C memory directly with the pointer and allocation functions of `rok::bare`.
 
-## 코드
+## Code
 
 ```rok
 use rok::bare::alloc::{Layout, LayoutError, alloc, dealloc};
@@ -46,7 +46,7 @@ extern "C" fn descending(a: ConstPtr<i32>, b: ConstPtr<i32>) -> i32 {
 fn main() throws (LayoutError) {
     // str arguments arrive in C as NUL-terminated char*.
     println(f"strlen(\"hello, rok\") = {unsafe { strlen("hello, rok") }}");
-    println(f"strlen(\"한글\") = {unsafe { strlen("한글") }} bytes");
+    println(f"strlen(\"naïve\") = {unsafe { strlen("naïve") }} bytes");
 
     let pid = unsafe { getpid() };
     println(f"getpid() > 0: {pid > 0}, matches process::id(): {pid as u32 == rok::std::process::id()}");
@@ -78,7 +78,7 @@ fn main() throws (LayoutError) {
 
 ```output
 strlen("hello, rok") = 10
-strlen("한글") = 6 bytes
+strlen("naïve") = 6 bytes
 getpid() > 0: true, matches process::id(): true
 ROK_FFI_DEMO = set from C
 ROK_FFI_MISSING = (unset)
@@ -86,11 +86,11 @@ snprintf wrote 21 bytes: pi    |   42|0003.142
 qsort descending: [88, 56, 42, 21, 19, 7, 3]
 ```
 
-## 살펴보기
+## Walkthrough
 
-- `extern "C" { ... }` 안에는 본체 없는 시그니처만 적습니다. 이렇게 선언한 함수는 묵시적으로 `unsafe` 이므로 호출은 항상 `unsafe { ... }` 안에서 합니다 ([5.9 `extern` 블록](../spec/refs-lang/005-modules/509-extern-block.html), [4.15 unsafe](../spec/refs-lang/004-functions/415-unsafe.html)).
-- `str` 매개변수는 C 쪽에 NUL 로 끝나는 `char*` 로 넘어갑니다. 그래서 `strlen("한글")` 은 글자 수가 아닌 UTF-8 바이트 수 6 을 돌려줍니다 ([5.9.4 FFI 호환 타입](../spec/refs-lang/005-modules/509-extern-block.html#594-ffi-호환-타입)).
-- NULL 이 될 수 있는 C 포인터는 [`CPtr`](../std/bare/ptr.html#struct.CPtr) 로 받습니다. `as_ptr()` 가 NULL 이면 `none` 을 주므로, `?` 하나로 `getenv` 를 `str | none` 을 돌려주는 안전한 함수로 감쌀 수 있습니다 ([합 타입](../learn/05-sum-types.html)).
-- 메모리는 [`Layout`](../std/bare/alloc.html#struct.Layout) 과 `alloc` / `dealloc` 으로 직접 할당하고, [`ManyPtr`](../std/bare/ptr.html#struct.ManyPtr) 의 `read(i)` / `write(i, v)` 로 C 배열처럼 접근합니다. GC 가 관리하지 않으므로 해제도 직접 합니다.
-- `extern "C" fn descending` 은 C ABI 로 컴파일되는 rok 함수입니다. 이 값을 `qsort` 에 함수 포인터로 넘기면 C 가 정렬 중에 rok 코드를 다시 부릅니다 ([5.9.10 `extern fn` 정의](../spec/refs-lang/005-modules/509-extern-block.html#5910-extern-fn-정의-외부에-노출)).
-- `snprintf` 같은 가변 인자 함수는 시그니처 끝에 `...` 을 적어 선언합니다. 더 자세한 내용은 [FFI 장](../learn/14-ffi.html) 을 참고하세요.
+- An `extern "C" { ... }` block holds only signatures without bodies. Functions declared there are implicitly `unsafe`, so every call goes inside `unsafe { ... }` ([5.9 `extern` blocks](../spec/refs-lang/005-modules/509-extern-block.html), [4.15 unsafe](../spec/refs-lang/004-functions/415-unsafe.html)).
+- A `str` parameter is passed to C as a NUL-terminated `char*`. That is why `strlen("naïve")` returns 6, the UTF-8 byte count, not the 5 characters ([5.9.4 FFI-compatible types](../spec/refs-lang/005-modules/509-extern-block.html#594-ffi-compatible-types)).
+- A C pointer that may be NULL is received as a [`CPtr`](../std/bare/ptr.html#struct.CPtr). `as_ptr()` gives `none` for NULL, so a single `?` wraps `getenv` into a safe function returning `str | none` ([Sum types](../learn/05-sum-types.html)).
+- Memory is allocated by hand with [`Layout`](../std/bare/alloc.html#struct.Layout) and `alloc` / `dealloc`, and accessed like a C array through [`ManyPtr`](../std/bare/ptr.html#struct.ManyPtr)'s `read(i)` / `write(i, v)`. The GC does not manage it, so you free it yourself.
+- `extern "C" fn descending` is a rok function compiled with the C ABI. Passed to `qsort` as a function pointer, it lets C call back into rok code while sorting ([5.9.10 defining `extern fn`](../spec/refs-lang/005-modules/509-extern-block.html#5910-extern-fn-definitions-exposed-externally)).
+- Variadic functions such as `snprintf` are declared with `...` at the end of the signature. See the [FFI chapter](../learn/14-ffi.html) for more.
