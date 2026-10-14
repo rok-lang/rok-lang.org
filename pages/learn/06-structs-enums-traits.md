@@ -131,7 +131,7 @@ cat (9 lives): meow
 
 ## Automatic implementations with derive
 
-Mechanical implementations such as comparison, hashing, and debug output are generated with `#[derive(...)]`. The built-in derives are `Clone`, `Copy`, `Debug`, `Default`, `PartialEq`, `Eq`, `PartialOrd`, `Ord`, and `Hash`; the standard library adds `Rokon` for RokON serialization.
+Mechanical implementations such as comparison, hashing, and debug output are generated with `#[derive(...)]`. The built-in derives are `Clone`, `Copy`, `Debug`, `Default`, `PartialEq`, `Eq`, `PartialOrd`, `Ord`, and `Hash`; the standard library adds `Rokon` for ROKON serialization.
 
 ```rok
 use rok::std::rokon;
@@ -250,5 +250,5 @@ v = (11, 22)
 - [2.8. `trait`](../spec/refs-lang/002-types/208-trait.html), [2.9. `impl`](../spec/refs-lang/002-types/209-impl.html), [4.9. Methods](../spec/refs-lang/004-functions/409-method.html)
 - [6.2.1. `#[derive(...)]`](../spec/refs-lang/006-meta-system/602-built-in-attributes.html#621-derive-automatic-trait-implementation)
 - [2.12. Trait-as-type ban](../spec/refs-lang/002-types/212-trait-as-type-banned.html), [2.2.10. `any Trait`](../spec/refs-lang/002-types/202-any-slot.html#2210-constrained-any-any-trait)
-- [3.1. Operator dispatch](../spec/refs-lang/003-expressions/301-operator-dispatch.html), API: [`Add`](../std/core/ops.html#trait.Add), [`Display`](../std/core/fmt.html#trait.Display), [RokON](../std/std/rokon.html)
+- [3.1. Operator dispatch](../spec/refs-lang/003-expressions/301-operator-dispatch.html), API: [`Add`](../std/core/ops.html#trait.Add), [`Display`](../std/core/fmt.html#trait.Display), [ROKON](../std/std/rokon.html)
 - Next chapter: [7. Generics](07-generics.html)

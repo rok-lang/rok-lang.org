@@ -10,12 +10,12 @@ const H: usize = 8;
 
 // A grid of cells on a torus: the edges wrap around.
 struct Grid {
-    cells: [[bool; 10]; 8];
+    cells: [[bool; W]; H];
 }
 
 impl Grid {
     fn parse(rows: List<str>) -> Grid {
-        let cells = [[false; 10]; 8];
+        let cells = [[false; W]; H];
         for (y, row) in rows.iter().enumerate() {
             for (x, c) in row.chars().enumerate() {
                 cells[y][x] = c == '#';
@@ -39,7 +39,7 @@ impl Grid {
     }
 
     fn step(self) -> Grid {
-        let next = [[false; 10]; 8];
+        let next = [[false; W]; H];
         for y in 0..H {
             for x in 0..W {
                 next[y][x] = match (self.alive(x, y), self.neighbours(x, y)) {
@@ -146,11 +146,8 @@ a lone glider comes back after 160 generations
 
 ## Walkthrough
 
-- The grid is a fixed-size 2D array `[[bool; 10]; 8]`. Arrays carry their size in the type and need no separate allocation; they are built with the repeat form `[[false; 10]; 8]` and compared whole with `==` / `!=` ([Values and types](../learn/02-values-and-types.html)).
+- The grid is a fixed-size 2D array `[[bool; W]; H]` (10×8). Arrays carry their size in the type and need no separate allocation; they are built with the repeat form `[[false; W]; H]` and compared whole with `==` / `!=` ([Values and types](../learn/02-values-and-types.html)).
 - Neighbors are counted with `(x + W - 1) % W` instead of `x - 1`. This avoids `usize` subtraction going below zero and makes the edges wrap to the opposite side.
 - The survival rule is a single `match` on the `(alive, neighbors)` tuple. Patterns can be combined with `|`, as in `(true, 2) | (true, 3)` ([3.12 match](../spec/refs-lang/003-expressions/312-match-expression.html), [Control flow](../learn/04-control-flow.html)).
 - `impl Display for Grid` writes one character at a time with `Formatter::write_char`, so `f"{grid}"` draws the grid ([`Formatter`](../std/core/fmt.html#struct.Formatter), [Structs, enums and traits](../learn/06-structs-enums-traits.html)).
 - A glider moves one cell diagonally every 4 generations, keeping its shape. On a 10×8 torus it needs lcm(10, 8) = 40 moves to return to its starting place, which takes 160 generations.
-
-> [!NOTE]
-> Array lengths written with constants in struct field types, as in `[[bool; W]; H]`, are not supported by the current toolchain yet, so the lengths are written as literals.

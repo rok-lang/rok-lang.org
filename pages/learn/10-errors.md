@@ -153,19 +153,37 @@ missing: b
 invalid: empty key
 ```
 
-Any pattern can follow `catch`, so the spec also allows a struct pattern that pulls out fields directly.
+Any pattern can follow `catch`, so a struct pattern can pull out fields directly.
 
-```rok norun
-try lookup(key)
-catch NotFound { key } { println(f"missing: {key}"); 0 }
+```rok
+#[derive(Debug)]
+struct NotFound { key: str; }
+impl Display for NotFound {
+    fn fmt(self, ref f: Formatter) throws (FmtError) { try f.write_str(f"no key {self.key}"); }
+}
+impl Error for NotFound {}
+
+fn lookup(key: str) throws (NotFound) -> i32 {
+    if key != "a" { throw NotFound { key: key }; }
+    1
+}
+
+for key in ["a", "b"] {
+    let n = try lookup(key)
+    catch NotFound { key } { println(f"missing: {key}"); 0 };
+    println(f"{n}");
+}
 ```
 
-> [!NOTE]
-> Struct patterns in `catch` are not yet parsed by the current toolchain. For now, bind with `e: NotFound` as in the earlier example and use `e.key`.
+```output
+1
+missing: b
+0
+```
 
 The error kinds of `lookup` are closed as `NotFound | Invalid`, so `describe`, which covers both types, becomes a function that no longer throws. The compiler checks this.
 
-If you write just `throws` with no type instead of `throws (E)`, the function can throw any error that implements `Error` (short for `throws (any Error)`). Use it when it is hard to close the set of error kinds, as in a public API. The receiver catches everything with `catch e` or `catch e: any Error`.
+If you write just `throws` with no type instead of `throws (E)`, the function can throw any error that implements `Error` (short for `throws (any Error)`). Use it when it is hard to close the set of error kinds, as in a public API. The receiver catches everything with `catch e` or `catch e: any Error`, or narrows to a concrete type first, as in `catch e: ValueError` ([4.14.3](../spec/refs-lang/004-functions/414-throws.html#4143-untyped-throws)).
 
 ```rok
 fn read_age(s: str) throws -> i32 {
@@ -175,7 +193,9 @@ fn read_age(s: str) throws -> i32 {
 }
 
 for s in ["30", "x", "-1"] {
-    let age = try read_age(s) catch e: any Error { println(f"  {e}"); -1 };
+    let age = try read_age(s)
+    catch e: ValueError { println(f"  {e.msg}"); -1 }
+    catch e { println(f"  {e}"); -1 };
     println(f"{s} -> {age}");
 }
 ```
@@ -187,9 +207,6 @@ x -> -1
   age -1 is negative
 -1 -> -1
 ```
-
-> [!NOTE]
-> The spec ([4.14.3](../spec/refs-lang/004-functions/414-throws.html#4143-untyped-throws)) says errors from an untyped `throws` can also be narrowed to a concrete type, as in `catch e: ValueError`. The current toolchain does not execute such a branch, so for now catch them with `catch e`.
 
 ## Block form and `finally`
 

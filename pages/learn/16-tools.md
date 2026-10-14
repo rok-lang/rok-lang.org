@@ -1,8 +1,8 @@
 # 16. Tools
 
-This final chapter tours the tools you keep at hand while writing code: the formatter, the linter, tests and benchmarks, documentation generation, editor support (LSP), the REPL and Jupyter, and debug options for looking inside the compiler. All of them start from the single `rok` command.
+This chapter tours the tools you keep at hand while writing code: the formatter, the linter, tests and benchmarks, documentation generation, editor support (LSP), the REPL and Jupyter, and debug options for looking inside the compiler. All of them start from the single `rok` command.
 
-The output in this chapter comes from actually running the package below. It was created with `rok new mathx`, and `main.rok` was changed to this:
+The output in this chapter comes from actually running the package below. It was created with `rok new mathx`, and `src/main.rok` was changed to this:
 
 ```rok build
 //! Small math helpers.
@@ -61,7 +61,7 @@ test fib_wrong ... FAILED
 failures:
 
 ---- fib_wrong ----
-thread 'main' panicked at main.rok:29:5:
+thread 'main' panicked at src/main.rok:29:5:
 assertion `left == right` failed: deliberately wrong
   left: 5
  right: 6
@@ -113,7 +113,7 @@ Checking a `fib` with messed-up indentation, mixed tabs, and trailing whitespace
 
 ```text
 $ rok fmt --check
-Diff in ./main.rok:
+Diff in ./src/main.rok:
 +   10     if n < 2 { return n; }
 +   11     let unused = 1;
 +   12     fib(n - 1) + fib(n - 2)
@@ -134,7 +134,7 @@ Without `--check`, it quietly fixes the files. Running it on every save in your 
 ```text
 $ rok lint
     Checking mathx (.)
-warning: [lint] main.rok:11:5: unused variable `unused`
+warning: [lint] src/main.rok:11:5: unused variable `unused`
    |
 11 |     let unused = 1;
    |     ^
@@ -155,7 +155,7 @@ Instead of a single lint (`unused_variables`), you can name a group (`unused`, `
 ```text
 $ rok lint -D unused
     Checking mathx (.)
-error: [lint] main.rok:11:5: unused variable `unused`
+error: [lint] src/main.rok:11:5: unused variable `unused`
    |
 11 |     let unused = 1;
    |     ^
@@ -170,7 +170,7 @@ See the full list with `rokc lint --list`. `rok check` goes further and also run
 ```text
 $ rok check
     Checking hello (.)
-error: [type] main.rok:2:1: mismatched types: `let s` expects `str`, found `i32`
+error: [type] src/main.rok:2:1: mismatched types: `let s` expects `str`, found `i32`
   |
 2 | let s: str = square(7);
   | ^
@@ -312,3 +312,4 @@ Building with `-g` includes DWARF debug info, so you can step through source lin
 
 - Spec: [rokc CLI](../spec/refs-lang/009-tools/901-rokc-cli.html), [Standard format](../spec/refs-lang/009-tools/901-rokc-cli.html#9111-standard-format-rokc-fmt), [Lint control](../spec/refs-lang/006-meta-system/602-built-in-attributes.html#629-allow--deny--warn-lint-control), [rok front-end](../spec/refs-lang/009-tools/910-rok-frontend.html), [JIT cells and the REPL](../spec/refs-lang/009-tools/907-jit-cells.html), [Jupyter](../spec/refs-lang/009-tools/908-jupyter-integration.html), [Debug tools](../spec/refs-lang/009-tools/909-debug-tools.html), [Symbol mangling](../spec/refs-lang/009-tools/905-symbol-mangling.html)
 - API: [assert functions in rok::core](../std/core/panic.html)
+- Next chapter: [17. Conditional Compilation](17-conditional-compilation.html)

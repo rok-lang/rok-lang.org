@@ -104,8 +104,15 @@ println(f"sum = {counter.load()}, items = {items:?}");
 sum = 15, items = [10, 20, 30, 40, 50]
 ```
 
-> [!WARNING]
-> If you just store the guard in a variable, as in `let g = m.lock();`, the lock is never released and the next `lock()` waits forever. Always bind guards with `using`.
+Only `using` releases a guard, so the compiler refuses a guard that nothing releases: binding it with a plain `let` (or `if let`), or dropping the result of `lock()` on the floor. The same holds for the `read()` / `write()` guards of `RwLock`.
+
+```rok norun
+let g = m.lock();
+```
+
+```text
+error[E200]: `g` holds a `MutexGuard` that is never released: only `using` releases a lock guard, so bind it with `using g = .. { .. }` (stdlib 2.16.3)
+```
 
 ## `async` and tasks
 
@@ -131,6 +138,23 @@ println(await f);
 not started waiting yet
 item-3
 ```
+
+`await` is a prefix operator that binds as tightly as `-` or `!`: it applies to the call right after it, and the rest of the expression works on the result. `await answer() == 42` compares the awaited value; it does not await a comparison.
+
+```rok
+async fn answer() -> i32 { 42 }
+
+println(f"{await answer() == 42} {await answer() + 1}");
+let r = try await task::timeout(Duration::ms(50), task::spawn(answer()));
+println(f"{r}");
+```
+
+```output
+true 43
+42
+```
+
+As the last line shows, `try await f()` reads left to right: await the future, then propagate its error.
 
 If the top-level statements contain an `await`, the whole program runs as an `async fn main`, so you can use `await` directly in a script. You cannot use `await` in the body of an ordinary `fn`.
 
@@ -199,11 +223,11 @@ fn is_prime(n: i32) -> bool {
     true
 }
 
-let squares = par::map(1..=8, |x: i32| x * x);
+let squares = par::map(1..=8, |x| x * x);
 println(f"{squares:?}");
 
 let count = Atomic::new(0);
-par::for_each(1..=10000, |n: i32| {
+par::for_each(1..=10000, |n| {
     if is_prime(n) { count.fetch_add(1); }
 });
 println(f"primes below 10000: {count.load()}");
@@ -218,9 +242,6 @@ println(f"{evens:?} {total}");
 primes below 10000: 1229
 [2, 4, 6] 10
 ```
-
-> [!NOTE]
-> In the spec, `par::map` / `par::for_each` infer the closure parameter type from the input. The current toolchain does not infer it yet, so write the type explicitly as in `|x: i32|` above.
 
 `reduce` folds each chunk separately and then combines the results, so you must pass an associative function (`+`, `max`, and so on) for the result to be deterministic.
 
@@ -273,13 +294,13 @@ The `Stream` trait has combinators such as `map`, `filter`, `take`, and `throttl
 
 - `thread::spawn` starts an OS thread; get its result with `try h.join()`.
 - Create channels with `channel()`, and `close()` each `Sender` yourself once it is done sending.
-- Protect shared values with `Atomic` or `Mutex`, and bind `Mutex` guards with `using`.
-- Use `async fn` / `await` and `task::spawn` / `task::join` to run wait-heavy work concurrently.
+- Protect shared values with `Atomic` or `Mutex`. Lock guards must be bound with `using`; anything else is a compile error.
+- `await` is a prefix operator on the call after it (`await f() == x` compares the result). Use `async fn` / `await` and `task::spawn` / `task::join` to run wait-heavy work concurrently.
 - For data-parallel computation, `par::map`, `par::for_each`, `par::join`, and `par::scope` keep things simple.
 - Create and consume streams with `async yield fn` and `for await`.
 
 ## Further reading
 
-- Spec: [Async (`async` / `await`)](../spec/refs-lang/004-functions/412-async.html), [Streams](../spec/refs-lang/004-functions/413-stream.html), [`using`](../spec/refs-lang/003-expressions/317-using-expression.html)
+- Spec: [Async (`async` / `await`)](../spec/refs-lang/004-functions/412-async.html), [Operator precedence](../spec/refs-lang/003-expressions/302-precedence-and-associativity.html), [Streams](../spec/refs-lang/004-functions/413-stream.html), [`using`](../spec/refs-lang/003-expressions/317-using-expression.html)
 - Standard library spec: [sync](../spec/refs-standard-libraries/200-core/216-sync.html), [channel](../spec/refs-standard-libraries/200-core/217-channel.html), [task](../spec/refs-standard-libraries/200-core/218-task.html), [par](../spec/refs-standard-libraries/200-core/219-par.html)
 - API: [`thread::spawn`](../std/std/thread.html#fn.spawn), [`task::spawn`](../std/core/task.html#fn.spawn), [`task::join`](../std/core/task.html#fn.join), [`channel`](../std/core/channel.html#fn.channel), [`Mutex`](../std/core/sync.html#struct.Mutex), [`Atomic`](../std/core/sync.html#struct.Atomic), [`par::map`](../std/core/par.html#fn.map), [`par::scope`](../std/core/par.html#fn.scope)

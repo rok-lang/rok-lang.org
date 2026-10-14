@@ -97,6 +97,25 @@ length: 5
 false
 ```
 
+Inside the narrowed branch you can still assign to the variable. A value of the narrowed type keeps the narrowing; a value of another member of the declared type ends it, and from there to the end of the branch the variable has its declared type again.
+
+```rok
+let v: i32 | str = 5;
+if v is i32 {
+    v = v + 1;              // still i32
+    println(f"{v * 2}");
+    v = "six";              // ends the narrowing: v is i32 | str again
+    println(f"{v is str} {v:?}");
+}
+```
+
+```output
+12
+true "six"
+```
+
+After `v = "six"`, writing `v + 1` would be a type error, because `+` is not defined on `i32 | str`.
+
 ## `if let` and `match`
 
 To test and bind the value to a new name at the same time, use `if let name: T = expr`. In `match`, write `none` as a literal pattern.

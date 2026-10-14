@@ -16,7 +16,7 @@ use rok::std::env;
 use rok::std::fs;
 use rok::std::rokon;
 use rok::core::task::time::Instant;
-use rok_markdown::Heading;
+use markdown::Heading;
 use layout::{dir_of, rel};
 
 #[derive(Rokon)]
@@ -24,15 +24,15 @@ pub struct Site {
     pub title: str;
     pub tagline: str;
     /// The spec's English edition (`spec/en`), relative to this file.
-    pub spec: str = "../rok-lang/spec/en";
+    pub spec: str = "../spec/en";
     /// The Korean edition (`spec/ko`), rendered under `ko/`; `""` for none.
     pub spec_ko: str = "";
     /// Where links that leave the spec directory point (`../LICENSE`).
     pub spec_repo: str;
     pub spec_branch: str = "main";
     pub packages: str;
-    /// The standard library sources (`bare/`, `core/`, `std/`).
-    pub library: str = "../rok-lang/impl/library";
+    /// The standard library sources (`bare/src/`, `core/src/`, `std/src/`).
+    pub library: str = "../rok/library";
     pub out: str = "public";
 }
 
@@ -169,7 +169,7 @@ fn lang_switch(p: Page, others: List<Page>, ko: bool) -> str {
     let href = rel(p.out, q.out);
     let en = if ko { f"<a href=\"{href}\" hreflang=\"en\" lang=\"en\">EN</a>" } else { "<span aria-current=\"true\">EN</span>" };
     let kr = if ko { "<span aria-current=\"true\">한국어</span>" } else { f"<a href=\"{href}\" hreflang=\"ko\" lang=\"ko\">한국어</a>" };
-    f"<nav class=\"lang-switch\" aria-label=\"Language\" data-sec=\"{rok_markdown::esc(sec)}\">{en}<span aria-hidden=\"true\"> · </span>{kr}</nav>\n"
+    f"<nav class=\"lang-switch\" aria-label=\"Language\" data-sec=\"{markdown::esc(sec)}\">{en}<span aria-hidden=\"true\"> · </span>{kr}</nav>\n"
 }
 
 fn spec_root(dir: str) -> str {
@@ -341,7 +341,7 @@ fn code_check(filter: str) throws -> List<str> {
         snips.extend(check::extract(page, try fs::read_to_str(page)));
     }
     let rokc = try env::var("ROKC") catch _ { "rokc" };
-    // Outside this package: `rokc run` looks upward for a `main.rok`.
+    // Outside this package: `rokc run` looks upward for a package.
     let bad = try check::check_all(rokc, env::temp_dir().as_str() + "/rok-lang.org-snippets", snips);
     let run = 0usize;
     for s in snips {
@@ -350,6 +350,21 @@ fn code_check(filter: str) throws -> List<str> {
     for b in bad { eprint(f"code block: {b}"); }
     println(f"{run} code blocks checked ({snips.len() - run} norun), {bad.len()} failing");
     bad
+}
+
+/// `site.rokon`, with the fields of `site.local.rokon` (git-ignored,
+/// for a machine whose checkouts are not siblings) laid over it.
+fn load_site() throws -> Site {
+    let base = try rokon::parse(try fs::read_to_str("site.rokon"));
+    if fs::exists("site.local.rokon") {
+        let local = try rokon::parse(try fs::read_to_str("site.local.rokon"));
+        if let rokon::Value::Struct { name, fields } = base {
+            if let rokon::Value::Struct { name: n, fields: over } = local {
+                for (k, v) in over.entries() { fields.insert(k, v); }
+            }
+        }
+    }
+    try rokon::decode(base, "site.rokon")
 }
 
 fn main() throws {
@@ -366,7 +381,7 @@ fn main() throws {
         env::exit(2);
     }
     let strict = mode == "check";
-    let site: Site = try rokon::from_str(try fs::read_to_str("site.rokon"));
+    let site = try load_site();
     let out_root = site.out;
 
     let pages = try spec_pages(site, spec_root(site.spec), "", false);
@@ -451,6 +466,11 @@ fn main() throws {
         try fs::create_dir_all(dir_of(out_root + "/" + name));
         try fs::copy(e.path(), out_root + "/" + name);
         statics.insert(name);
+    }
+    // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
+    for f in ["install.sh", "install.ps1"] {
+        try fs::copy(site.library + "/../" + f, out_root + "/" + f);
+        statics.insert(f);
     }
 
     let bad = check(files, statics);

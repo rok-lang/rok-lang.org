@@ -124,6 +124,52 @@ one long line
 
 As in the last example, a `\` at the end of a line removes both the newline and the leading whitespace of the next line. This rule does not apply in raw strings either ([1.7.2](../spec/refs-lang/001-lexical/107-string-literals.html#172-raw-strings)).
 
+## Byte strings `b"..."`
+
+Protocols and file formats speak bytes, not text. A byte string `b"..."` is a fixed array `[u8; N]` of its bytes. Write ASCII directly and anything else as `\xHH` (any value `\x00`–`\xFF`). Where a `Slice<u8>` is expected, the same literal is a view of that array, so it can be passed straight to functions that take bytes.
+
+```rok
+let magic = b"\x7FELF";                  // [u8; 4]
+println(f"{magic.len()} {magic:?}");
+
+fn starts_with(data: Slice<u8>, prefix: Slice<u8>) -> bool {
+    data.len() >= prefix.len() && data[:prefix.len()] == prefix
+}
+println(f"{starts_with(b"\x7FELF\x02\x01", b"\x7FELF")}");
+
+let req: Slice<u8> = b"GET / HTTP/1.1\r\n";
+println(f"{req[:3]:?} {try! str::from_utf8(req[:3])}");
+```
+
+```output
+4 [127, 69, 76, 70]
+true
+[71, 69, 84] GET
+```
+
+A non-ASCII character written directly in a byte string, or an escape above `\xFF`, is a compile error; line continuation is not supported.
+
+## Embedding files: `include_str!` / `include_bytes!`
+
+To ship a template, a test fixture or an icon inside the executable, embed the file at compile time. `include_str!("path")` is the file's contents as a `str`, and `include_bytes!("path")` its bytes as a `[u8; N]`, like a byte string. The path is relative to the source file that contains the call, and the result is a constant, so it can initialize a `const` or `static`.
+
+```text
+app/
+└── src/
+    ├── main.rok
+    └── page.html        // <h1>{title}</h1>
+```
+
+```rok norun
+// app/src/main.rok
+const PAGE: str = include_str!("page.html");
+static LOGO: [u8; 1406] = include_bytes!("logo.png");
+
+print(PAGE.replace("{title}", "Hello"));
+```
+
+A missing file is a compile error, and so is a file that is not valid UTF-8 for `include_str!`. Editing the included file rebuilds what uses it.
+
 ## f-string holes
 
 Any expression can go inside the `{ }` of an `f"..."`. The rules are the same as Python 3.12 (PEP 701): you can reuse the outer quote character inside a hole, and f-strings can be nested. To write a literal brace, use `{{` and `}}`.
@@ -219,12 +265,13 @@ Width and alignment (`{p:>10}`) apply to the whole output written by `fmt`. Once
 - `str` is immutable UTF-8. `len()` and slicing work in bytes; handle characters with `chars()`.
 - Build strings piece by piece in a `StrBuf` and take them out with `to_str()`. Literals are not joined automatically; join them with `+`.
 - Raw strings `r"..."` and `r#"..."#` do not process escapes.
+- `b"..."` is a `[u8; N]` (or a `Slice<u8>` where one is expected). `include_str!` / `include_bytes!` embed a file at compile time.
 - An f-string hole takes any expression, including the same quote character as is. `{{` and `}}` are literal braces.
 - Specifiers such as `:.2`, `:>8`, `:x`, and `:?` set the format, and `${..}` makes them dynamic.
 - Implement `Display` for your own types and derive `Debug`.
 
 ## Further reading
 
-- Spec: [String literals and f-strings](../spec/refs-lang/001-lexical/107-string-literals.html), [Character literals](../spec/refs-lang/001-lexical/108-character-literals.html)
+- Spec: [String literals and f-strings](../spec/refs-lang/001-lexical/107-string-literals.html), [Character literals](../spec/refs-lang/001-lexical/108-character-literals.html), [Byte strings](../spec/refs-lang/001-lexical/107-string-literals.html#175-byte-strings), [File embedding](../spec/refs-lang/006-meta-system/611-include.html)
 - Standard library spec: [fmt](../spec/refs-standard-libraries/200-core/210-fmt.html), [Strings](../spec/refs-standard-libraries/200-core/215-string.html)
 - API: [`str` methods](../std/core/str.html#impl.str), [`StrBuf`](../std/core/str.html#struct.StrBuf), [`Display`](../std/core/fmt.html#trait.Display), [`Formatter`](../std/core/fmt.html#struct.Formatter)

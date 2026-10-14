@@ -64,7 +64,7 @@ fn eval(x: Value, env: Env) throws (LispError) -> Value {
     let head = match items[0] { Value::Sym(s) => s, _ => "" };
     match head {
         "define" => {
-            let name = match items[1] { Value::Sym(s) => s, _ => { throw err("define needs a name"); } };
+            let Value::Sym(name) = items[1] else { throw err("define needs a name"); };
             let v = try eval(items[2], env);
             env.frames[env.frames.len() - 1].insert(name, v);
             return v;
@@ -108,10 +108,7 @@ fn arith(op: str, args: List<Value>) throws (LispError) -> Value {
 }
 
 fn apply(f: Value, args: List<Value>) throws (LispError) -> Value {
-    let (params, body, captured) = match f {
-        Value::Lambda(p, b, c) => (p, b, c),
-        _ => { throw err(f"{show(f)} is not a function"); },
-    };
+    let Value::Lambda(params, body, captured) = f else { throw err(f"{show(f)} is not a function"); };
     if params.len() != args.len() { throw err(f"expected {params.len()} arguments, got {args.len()}"); }
     let frame: Dict<str, Value> = Dict::new();   // on top of the captured scopes
     for i in 0..params.len() { frame.insert(params[i], args[i]); }
@@ -186,9 +183,9 @@ for src in program {
 
 - Programs and values share one enum, `Value`. Because Lisp code and data have the same shape, the parser produces `Value`s and the evaluator takes a `Value` and returns a `Value` ([Sum types](../learn/05-sum-types.html), [Structs, enums and traits](../learn/06-structs-enums-traits.html)).
 - The parser shares its read position with the caller through `ref pos: usize`. It is a classic recursive-descent parser that calls itself to read inside parentheses ([4.7 the `ref` keyword](../spec/refs-lang/004-functions/407-ref-keyword.html)).
-- Any token that isn't an integer is a symbol. `try? tok.parse::<i64>()` turns the parse error into `none`, so a two-armed `match` separates the cases ([3.14.3 `try?` and `try!`](../spec/refs-lang/003-expressions/314-error-control-flow.html#3143-try-and-try)).
+- Any token that isn't an integer is a symbol. `try? tok.parse::<i64>()` turns the parse error into `none`, so a two-armed `match` separates the cases ([3.14.3 `try?` and `try!`](../spec/refs-lang/003-expressions/314-error-control-flow.html#3143-try-and-try)). Where only one variant is acceptable, a [let-else](../spec/refs-lang/003-expressions/316-let-else.html) such as `let Value::Sym(name) = items[1] else { throw ...; };` binds it or leaves the function.
 - Runtime errors `throw` a `LispError`, and each function states this in its signature with `throws (LispError)`. The `try { ... } catch e: LispError { ... }` at the bottom turns one line's error into a message, so the next line still runs ([Errors](../learn/10-errors.html)).
 - A `lambda` captures the `Env` it was created in. `Dict` is a shared reference, so the function returned by `make-adder` remembers `k`, and `fact` can find itself even though it is defined afterwards.
 
 > [!NOTE]
-> Per the spec, this could be shortened with a [let-else](../spec/refs-lang/003-expressions/316-let-else.html) such as `let Value::Sym(name) = items[1] else { throw ...; };`, but the current toolchain cannot parse let-else with enum variant patterns yet, so it is spelled out with `match`. Also, an enum that contains itself directly (`Lambda(..., Value, ...)`) makes the compiler stop, so lambda bodies are kept in a `List<Value>`.
+> An enum that contains itself directly (`Lambda(..., Value, ...)`) makes the compiler stop, so lambda bodies are kept in a `List<Value>`.

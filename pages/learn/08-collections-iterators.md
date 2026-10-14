@@ -248,16 +248,18 @@ println(f"{c.xs:?}");
 
 The spec defines these operators for `List` and fixed-size arrays as standard, along with `f.(xs)`, which applies a function to every element by adding a dot after it.
 
-```rok norun
+```rok
 let a = [1.0, 2.0, 3.0];
 let b = [10.0, 20.0, 30.0];
 let c = a .+ b;              // [11.0, 22.0, 33.0]
 let d = a .* 2.0;            // [2.0, 4.0, 6.0]
 let r = f64::sqrt.(a);       // [1.0, 1.414..., 1.732...]
+println(f"{c:?} {d:?} {r:?}");
 ```
 
-> [!NOTE]
-> The current toolchain does not yet have the `Dot*` implementations for `List` or the `f.(x)` syntax, so the example above does not work. Use `a.iter().map(...)` in the meantime.
+```output
+[11, 22, 33] [2, 4, 6] [1, 1.4142135623730951, 1.7320508075688772]
+```
 
 ## Summary
 

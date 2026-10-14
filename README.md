@@ -1,23 +1,34 @@
 # rok-lang.org
 
-The documentation site for the rok language. The site generator itself is written in rok. It reads both editions of the spec repository, English (`spec/en`, rendered at `/spec/`) and Korean (`spec/ko`, rendered at `/ko/spec/`), to build the language reference and the standard library reference, extracts the API listing (`/std/`) from the standard library sources of the implementation repository (`impl/library`), adds the landing page, the guide (`/learn/`), and the examples (`/examples/`) from this repository's `pages/`, and writes a static site to `public/`.
+The documentation site for the rok language. The site generator itself is written in rok. It reads both editions of the spec repository, English (`spec/en`, rendered at `/spec/`) and Korean (`spec/ko`, rendered at `/ko/spec/`), to build the language reference and the standard library reference, extracts the API listing (`/std/`) from the standard library sources of the implementation repository (`rok/library`), adds the landing page, the guide (`/learn/`), and the examples (`/examples/`) from this repository's `pages/`, and writes a static site to `public/`.
 
 ## Build
 
-You need the rok toolchain (`rok`, `rokc`) and the `rok-lang` repository (spec and standard library sources). The default configuration assumes the repositories sit side by side.
+You need the rok toolchain (`rok`, `rokc`), the spec, and the standard library sources. Clone [rok-lang/rok](https://github.com/rok-lang/rok) and [rok-lang/spec](https://github.com/rok-lang/spec) next to this repository; the stones [markdown](https://github.com/rok-lang/markdown) and [rok-syntax](https://github.com/rok-lang/rok-syntax) are path dependencies under `../stones/` (see `rok.rokon`).
 
 ```
-Works/
-├── rok-lang/          # impl/ (toolchain, impl/library standard library), spec/en/ + spec/ko/ (spec)
-├── stones/rok-markdown/   # markdown renderer stone (path dependency)
-├── stones/rok-syntax/     # rok / RokON highlighter stone (path dependency)
-└── rok-lang.org/      # this repository
+./
+├── rok/                   # toolchain; rok/library is the standard library
+├── spec/                  # spec/en/ + spec/ko/
+├── stones/markdown/   # markdown renderer stone
+├── stones/rok-syntax/     # rok / ROKON highlighter stone
+└── rok-lang.org/          # this repository
+```
+
+If your checkouts live elsewhere, put the paths in `site.local.rokon` (git-ignored). Its fields are laid over `site.rokon`:
+
+```rokon
+{
+    spec: "/path/to/spec/en",
+    spec_ko: "/path/to/spec/ko",
+    library: "/path/to/rok/library",
+}
 ```
 
 If you have no toolchain, build it first.
 
 ```bash
-cd ../rok-lang/impl
+cd ../rok
 cargo build --release
 export PATH="$PWD/target/release:$PATH"
 ```
@@ -47,9 +58,9 @@ A ` ```output ` block right after a run block is the expected stdout. It must ma
 
 ### Standard library API
 
-Starting from `lib.rok` of `bare` / `core` / `std` under `library` in `site.rokon` (default `../rok-lang/impl/library`), the generator follows `pub mod` and builds one page per module (`std/<tier>/<module path>.html`). It shows the signatures of `pub` items as written, uses the `///` comment right above as documentation, and uses the file's first comment block as the module description. Members of structs / enums / traits / inherent `impl`s and the list of trait implementations are included. Items and methods go into the search index.
+Starting from `src/lib.rok` of `bare` / `core` / `std` under `library` in `site.rokon` (default `../rok/library`), the generator follows `pub mod` and builds one page per module (`std/<tier>/<module path>.html`). It shows the signatures of `pub` items as written, uses the `///` comment right above as documentation, and uses the file's first comment block as the module description. Members of structs / enums / traits / inherent `impl`s and the list of trait implementations are included. Items and methods go into the search index.
 
-Why not `rokc doc`: `rokc doc` documents only the user package and `--extern` dependencies and skips the `rok::` standard library, and the standard library does not compile as a user package (lang slots, type keywords, `rok::core` paths). So `apidoc.rok` scans the sources directly (it masks comments / strings, then finds item boundaries by bracket depth).
+Why not `rokc doc`: `rokc doc` documents only the user package and `--extern` dependencies and skips the `rok::` standard library, and the standard library does not compile as a user package (lang slots, type keywords, `rok::core` paths). So `src/apidoc.rok` scans the sources directly (it masks comments / strings, then finds item boundaries by bracket depth).
 
 ## Preview
 
@@ -62,31 +73,31 @@ python3 -m http.server -d public 8000
 
 ## Configuration
 
-Edit `site.rokon` (RokON).
+Edit `site.rokon` (ROKON); `site.local.rokon`, if present, overrides its fields.
 
 | Field         | Meaning |
 |---------------|---------|
 | `title`       | Site name |
 | `tagline`     | Phrase appended to the home page title |
-| `spec`        | English edition of the spec (default `../rok-lang/spec/en`), rendered at `spec/` |
-| `spec_ko`     | Korean edition (`../rok-lang/spec/ko`), rendered at `ko/spec/`; `""` for none |
+| `spec`        | English edition of the spec (default `../spec/en`), rendered at `spec/` |
+| `spec_ko`     | Korean edition (`../spec/ko`), rendered at `ko/spec/`; `""` for none |
 | `spec_repo`, `spec_branch` | Repository that links pointing outside the spec directory (`../LICENSE`, etc.) resolve to |
 | `packages`    | Package site URL (`https://rokstones.io`) |
-| `library`     | Standard library source directory (default `../rok-lang/impl/library`) |
+| `library`     | Standard library source directory (default `../rok/library`); `install.sh` and `install.ps1` next to it are served at `/install.sh` and `/install.ps1` |
 | `out`         | Output directory (default `public`) |
 
 ## Layout
 
 | File | Contents |
 |------|----------|
-| `main.rok`      | Reads the configuration, collects spec / pages, generates pages, builds the search index, copies static files, checks links |
-| `check.rok`     | Code block extraction and parallel compile / run / output comparison |
-| `apidoc.rok`    | API pages from the standard library sources |
-| `layout.rok`    | Page frame: header, navigation, chapter sidebar and table of contents, previous / next, contents listing, footer; markdown options |
+| `src/main.rok`   | Reads the configuration, collects spec / pages, generates pages, builds the search index, copies static files, checks links |
+| `src/check.rok`  | Code block extraction and parallel compile / run / output comparison |
+| `src/apidoc.rok` | API pages from the standard library sources |
+| `src/layout.rok` | Page frame: header, navigation, chapter sidebar and table of contents, previous / next, contents listing, footer; markdown options |
 | `pages/`        | Landing page (`index.md`), guide (`learn/`), examples (`examples/`) |
 | `static/`       | `style.css` (light / dark), `search.js`, logo |
 
-Markdown rendering (a CommonMark subset + GFM tables / strikethrough / callouts / footnotes, GitHub-compatible heading ids) and ` ```rok ` / ` ```rokon ` highlighting are handled by the stones [`rok-markdown`](https://github.com/rok-lang/rok-markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) (path dependencies in `rok.rokon`). They become version dependencies once published to rokstones.io.
+Markdown rendering (a CommonMark subset + GFM tables / strikethrough / callouts / footnotes, GitHub-compatible heading ids) and ` ```rok ` / ` ```rokon ` highlighting are handled by the stones [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) (path dependencies in `rok.rokon`). They become version dependencies once published to rokstones.io.
 
 Spec files map as `x/README.md` → `spec/x/index.html` and `x/foo.md` → `spec/x/foo.html`, and `.md` links in the text are rewritten to relative paths of the generated `.html`. Anchors follow GitHub's rules, so the spec's `#...` links work unchanged. The Korean edition goes under `ko/` (`ko/spec/x/foo.html`) with `lang="ko"` and Korean callout titles; everything else is English. Every spec page carries an EN / 한국어 switch to the same page of the other edition; `search.js` carries the reader's section over, pairing headings by position when the two outlines match and by section number otherwise. The search index covers the English spec only.
 

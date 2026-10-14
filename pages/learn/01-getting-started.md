@@ -24,7 +24,7 @@ curl -fsSL https://rok-lang.org/install.sh | sh
 > There is no published release yet. For now, build a toolchain archive from source and install it with the same script. This requires a Rust toolchain (`rustup`).
 >
 > ```bash
-> cd rok-lang/impl
+> git clone https://github.com/rok-lang/rok && cd rok
 > ./dist.sh                                  # dist/rok-<version>-<triple>.tar.gz
 > sh install.sh --archive dist/rok-*.tar.gz  # into ~/.rok
 > ```
@@ -79,7 +79,7 @@ rok toolchain install 0.2.0 --from rok-0.2.0-aarch64-apple-darwin.tar.gz
 If you are working on the compiler, you can use the build output directly without installing.
 
 ```bash
-cd rok-lang/impl
+git clone https://github.com/rok-lang/rok && cd rok
 cargo build --release
 export PATH="$PWD/target/release:$PATH"
 ```
@@ -97,13 +97,13 @@ cd hello
      Created executable package (hello)
 ```
 
-There are two source files. The manifest `rok.rokon` holds the package name, version, and dependencies.
+There are two files. The manifest `rok.rokon` holds the package name, version, and dependencies.
 
 ```rokon
 Package { name: "hello", version: "0.1.0", deps: {} }
 ```
 
-`main.rok` is a single line that prints a greeting.
+The source lives in `src/`; `src/main.rok` is a single line that prints a greeting.
 
 ```rok
 println("Hello, world!");
@@ -126,11 +126,11 @@ rok run
 Hello, world!
 ```
 
-The top-level statements in `main.rok` run from top to bottom and form the program. Function and type declarations can go anywhere between top-level statements. Other common commands are `rok build` (build only), `rok check` (type check only), `rok test`, and `rok fmt`.
+The top-level statements in `src/main.rok` run from top to bottom and form the program. Function and type declarations can go anywhere between top-level statements. Other common commands are `rok build` (build only), `rok check` (type check only), `rok test`, and `rok fmt`.
 
 ## A slightly bigger program
 
-Change `main.rok` to the following and run `rok run` again.
+Change `src/main.rok` to the following and run `rok run` again.
 
 ```rok
 let names = ["ada", "grace", "linus"];
@@ -208,8 +208,8 @@ List<i32>
 ## Summary
 
 - Install into `~/.rok` with `curl -fsSL https://rok-lang.org/install.sh | sh` and add `~/.rok/bin` to `PATH`.
-- `rok new name` creates `rok.rokon` and `main.rok`; `rok run` builds and runs.
-- The top-level statements of `main.rok` are the program. You can also use `fn main()`.
+- `rok new name` creates `rok.rokon` and `src/main.rok`; `rok run` builds and runs.
+- The top-level statements of `src/main.rok` are the program. You can also use `fn main()`.
 - `rok run file.rok` runs a script; `rok` alone starts the REPL.
 
 The next chapter, [2. Values and Types](02-values-and-types.html), covers variables and basic types.

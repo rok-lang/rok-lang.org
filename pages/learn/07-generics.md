@@ -66,6 +66,42 @@ println(f"{sum([1, 2, 3])} {sum([0.5, 0.25])}");
 6 0.75
 ```
 
+### The body is checked against its bounds
+
+A generic body is type-checked once, on its own, before any call is looked at. Inside it, `T` supports only what its bounds promise, plus what every type supports: moving, storing into `any`, forming `T | none`, and `is`. Forgetting a bound is an error in the body, even if every call passes a type that would work.
+
+```rok norun
+fn double<T>(x: T) -> T { x + x }
+```
+
+```text
+error[E200]: operator `+` on `T` needs a `Add` bound on `T` (spec 2.10.9)
+  --> main.rok:1:27
+   |
+ 1 | fn double<T>(x: T) -> T { x + x }
+   |                           ^^^^^
+```
+
+With the bound added, the same body compiles for every type that has `Add`. The operations that need no bound work without one.
+
+```rok
+fn double<T: Add<T, Output = T>>(x: T) -> T { x + x }
+fn keep<T>(x: T, yes: bool) -> T | none { if yes { x } else { none } }
+fn boxed<T>(x: T) -> any { x }
+
+println(f"{double(21)} {double(1.5)}");
+println(f"{keep("a", true):?} {keep(1, false):?}");
+println(f"{boxed(3) is i32}");
+```
+
+```output
+42 3
+"a" none
+true
+```
+
+Because of this rule, a library's generic function that compiles for you compiles for everyone who calls it; an error never surfaces at a distant call site. Trait default methods are checked the same way, with `Self` known only through the trait. A function with untyped parameters (an implicit generic, below) is the exception.
+
 ## `where` clauses
 
 When bounds get long, moving them to a `where` clause at the end of the signature makes it easier to read. The meaning is the same.
@@ -186,15 +222,17 @@ now a string, length 4
 
 The spec defines a function with omitted parameter types, `fn show_sum(x, y)`, as an implicit generic, not as `any`. Bounds are inferred from how the body uses the parameters, and the function is monomorphized at each call site.
 
-```rok norun
+```rok
 fn show_sum(x, y) { println(f"{x + y}"); }   // implicit generic: T: Add<U>
 
 show_sum(1, 2);       // 3
 show_sum(1.5, 2.0);   // 3.5
 ```
 
-> [!NOTE]
-> The current toolchain treats parameters with omitted types as `any`, so the example above does not compile. Until that changes, write the bounds out, as in `fn show_sum<T: Add<Output = T> + Display>(x: T, y: T)`.
+```output
+3
+3.5
+```
 
 ## Summary
 
@@ -206,7 +244,7 @@ show_sum(1.5, 2.0);   // 3.5
 
 ## Learn more
 
-- [2.10. Generics](../spec/refs-lang/002-types/210-generics.html): [2.10.3. Trait bounds](../spec/refs-lang/002-types/210-generics.html#2103-trait-bounds), [2.10.4. where clauses](../spec/refs-lang/002-types/210-generics.html#2104-where-clauses), [2.10.7. Interaction with gradual typing](../spec/refs-lang/002-types/210-generics.html#2107-combination-with-gradual-typing)
+- [2.10. Generics](../spec/refs-lang/002-types/210-generics.html): [2.10.3. Trait bounds](../spec/refs-lang/002-types/210-generics.html#2103-trait-bounds), [2.10.4. where clauses](../spec/refs-lang/002-types/210-generics.html#2104-where-clauses), [2.10.9. Body checking](../spec/refs-lang/002-types/210-generics.html#2109-body-checking), [2.10.7. Interaction with gradual typing](../spec/refs-lang/002-types/210-generics.html#2107-combination-with-gradual-typing)
 - [2.8.3. Associated types](../spec/refs-lang/002-types/208-trait.html#283-associated-types)
 - [2.11. `const` generics](../spec/refs-lang/002-types/211-const-generics.html)
 - [2.2. The `any` slot](../spec/refs-lang/002-types/202-any-slot.html)

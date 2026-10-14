@@ -120,17 +120,18 @@ In a real package, modules are split into files. Declaring a module without a bo
 ```text
 geom/
 ├── rok.rokon
-├── lib.rok          // mod shapes;
-├── shapes.rok       // shapes module body, declares mod circle;
-└── shapes/
-    └── circle.rok   // shapes::circle
+└── src/
+    ├── lib.rok          // mod shapes;
+    ├── shapes.rok       // shapes module body, declares mod circle;
+    └── shapes/
+        └── circle.rok   // shapes::circle
 ```
 
-The package root module is `main.rok` for an executable and `lib.rok` for a library. Executable top-level statements may appear only in `main.rok`; other modules contain only items.
+A package's sources live in `src/`. The package root module is `src/main.rok` for an executable and `src/lib.rok` for a library. Executable top-level statements may appear only in `src/main.rok`; other modules contain only items.
 
 ## Packages and `rok.rokon`
 
-`rok new` creates a package. With `--lib`, it creates a library package. The manifest `rok.rokon` is in [RokON](../spec/refs-standard-libraries/300-std/309-rokon.html) format.
+`rok new` creates a package: `src/main.rok` for an executable, or with `--lib`, `src/lib.rok` holding an example function and one `#[test]`. The manifest `rok.rokon` is in [ROKON](../spec/refs-standard-libraries/300-std/309-rokon.html) format.
 
 ```bash
 rok new --lib geom
@@ -145,7 +146,7 @@ rok new app
 Let's create two modules in `geom`. If you re-export a submodule's items from the package root with `pub use`, users do not need to know the internal structure.
 
 ```rok norun
-// geom/lib.rok
+// geom/src/lib.rok
 mod shapes;
 
 pub use shapes::Circle;
@@ -158,7 +159,7 @@ pub fn area_sum(cs: List<Circle>) -> f64 {
 ```
 
 ```rok norun
-// geom/shapes.rok
+// geom/src/shapes.rok
 pub struct Circle { pub r: f64; }
 
 impl Circle {
@@ -180,7 +181,7 @@ Package { name: "app", version: "0.1.0", deps: {
 ```
 
 ```rok norun
-// app/main.rok
+// app/src/main.rok
 use geom::{Circle, area_sum};
 
 println(f"{area_sum([Circle { r: 1.0 }, Circle { r: 2.0 }])}");
@@ -215,12 +216,7 @@ Package { name: "app", version: "0.1.0", deps: {
 } }
 ```
 
-To publish your own library, use `rok publish`. By default it is a dry run that only shows what would be published, and the package must be a `lib.rok` package at the root of a clean git repository. A package with path or git dependencies cannot be published.
-
-```bash
-rok publish             # dry run: prints the index entry
-rok publish --commit    # adds it to the index checkout
-```
+A library can offer **features** that its users turn on and off, and you can publish your own library as a stone with `rok login` and `rok publish`. Both are covered in [chapter 18](18-features-and-stones.html), together with the stones the rok project maintains (`json`, `toml`, `http`, `markdown`).
 
 ## Single-file scripts and environments
 
@@ -261,7 +257,7 @@ A directory with a `rok.rokon` is itself an environment, so inside a package the
 - Items are private by default. Widen their scope with `pub(sub)`, `pub(pkg)`, and `pub`.
 - `mod x;` maps to `x.rok` (and `x/`). The root is `main.rok` or `lib.rok`.
 - Create packages with `rok new [--lib]` and add dependencies (path, git, stone) with `rok add`. Commit `rok.lock`.
-- Work with stones on rokstones.io using `rok search` / `rok add name@^1.2` / `rok publish`.
+- Work with stones on rokstones.io using `rok search` / `rok add name@^1.2`; features and publishing are in [chapter 18](18-features-and-stones.html).
 - Scripts use a `//! ```rokon` manifest; shared dependencies use `rok env`.
 
 ## Further reading

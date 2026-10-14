@@ -227,10 +227,9 @@ println(f"{unsafe { pow(2.0, 10.0) }}");
 
 To select a static library, write `#[link(name = "foo", kind = "static")]`.
 
-> [!NOTE]
-> The current toolchain does not yet pass `#[link]` to the linker. libc and libm are always linked, so the example above runs, but code using another library, like the one below, still fails to link.
+libc and libm are always linked. Any other library needs `#[link]`, like zlib below.
 
-```rok norun
+```rok
 #[link("z")]
 extern "C" {
     fn zlibVersion() -> str;

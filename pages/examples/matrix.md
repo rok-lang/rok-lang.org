@@ -1,6 +1,6 @@
 # Matrix operations
 
-A small matrix type that implements the operator and index traits, so you can write `a * b`, `a .* b` and `m[(i, j)]`.
+A small matrix type that implements the operator and index traits, so you can write `a * b`, `a .* b` and `m[i, j]`.
 
 ## Code
 
@@ -22,27 +22,27 @@ impl Matrix {
     fn from_rows(rows: List<List<f64>>) -> Matrix {
         let m = Matrix::zeros(rows.len(), rows[0].len());
         for i in 0..m.rows {
-            for j in 0..m.cols { m[(i, j)] = rows[i][j]; }
+            for j in 0..m.cols { m[i, j] = rows[i][j]; }
         }
         m
     }
 
     fn identity(n: usize) -> Matrix {
         let m = Matrix::zeros(n, n);
-        for i in 0..n { m[(i, i)] = 1.0; }
+        for i in 0..n { m[i, i] = 1.0; }
         m
     }
 
     fn transpose(self) -> Matrix {
         let t = Matrix::zeros(self.cols, self.rows);
         for i in 0..self.rows {
-            for j in 0..self.cols { t[(j, i)] = self[(i, j)]; }
+            for j in 0..self.cols { t[j, i] = self[i, j]; }
         }
         t
     }
 }
 
-// m[(i, j)] reads an element ...
+// m[i, j] reads an element ...
 impl Index<(usize, usize)> for Matrix {
     type Output = f64;
     fn index(self, idx: (usize, usize)) -> f64 {
@@ -50,7 +50,7 @@ impl Index<(usize, usize)> for Matrix {
     }
 }
 
-// ... and m[(i, j)] = v writes one.
+// ... and m[i, j] = v writes one.
 impl IndexSet<(usize, usize)> for Matrix {
     type Value = f64;
     fn index_set(ref self, idx: (usize, usize), value: f64) {
@@ -74,8 +74,8 @@ impl Mul for Matrix {
         for i in 0..self.rows {
             for j in 0..rhs.cols {
                 let sum = 0.0;
-                for k in 0..self.cols { sum += self[(i, k)] * rhs[(k, j)]; }
-                out[(i, j)] = sum;
+                for k in 0..self.cols { sum += self[i, k] * rhs[k, j]; }
+                out[i, j] = sum;
             }
         }
         out
@@ -107,7 +107,7 @@ impl Display for Matrix {
         for i in 0..self.rows {
             try f.write_str("[");
             for j in 0..self.cols {
-                try f.write_str(f"{self[(i, j)]:6.1}");
+                try f.write_str(f"{self[i, j]:6.1}");
             }
             try f.write_str(" ]\n");
         }
@@ -163,8 +163,5 @@ A * I == A: true
 - Every operator in rok is a trait method call. With `impl Add for Matrix`, `a + a` desugars to `Add::add(a, a)` ([3.1 Operator dispatch](../spec/refs-lang/003-expressions/301-operator-dispatch.html), [`Add`](../std/core/ops.html#trait.Add), [`Mul`](../std/core/ops.html#trait.Mul)).
 - The same operator can be implemented several times with different right-hand types. `impl Mul for Matrix` is the matrix product and `impl Mul<f64> for Matrix` is scalar multiplication; the compiler picks the impl from the operand types.
 - Dot-prefixed operators such as `.*` desugar to a separate trait family for element-wise operations ([`DotMul`](../std/core/ops.html#trait.DotMul)), so the matrix product `*` and the Hadamard product `.*` can live side by side ([3.3 Broadcast operators](../spec/refs-lang/003-expressions/303-broadcast-operators.html)).
-- Reading `m[(i, j)]` goes through [`Index`](../std/core/index.html#trait.Index) and writing `m[(i, j)] = v` through [`IndexSet`](../std/core/index.html#trait.IndexSet). The write method takes `ref self` to modify the matrix in place ([3.6 Indexing and slicing](../spec/refs-lang/003-expressions/306-indexing-and-slicing.html)).
+- Comma indices are grouped into a tuple, so reading `m[i, j]` goes through [`Index<(usize, usize)>`](../std/core/index.html#trait.Index) and writing `m[i, j] = v` through [`IndexSet`](../std/core/index.html#trait.IndexSet). The write method takes `ref self` to modify the matrix in place ([3.6 Indexing and slicing](../spec/refs-lang/003-expressions/306-indexing-and-slicing.html)).
 - Thanks to `impl Display for Matrix`, `{a}` in an f-string prints the whole matrix. Each element uses `{x:6.1}` for width and precision ([Structs, enums and traits](../learn/06-structs-enums-traits.html)).
-
-> [!NOTE]
-> The spec desugars `m[i, j]` to an `Index<(usize, usize)>` call, but the current toolchain does not yet group comma indices into a tuple. This example therefore passes the tuple explicitly: `m[(i, j)]`.

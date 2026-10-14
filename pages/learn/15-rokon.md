@@ -1,6 +1,6 @@
-# 15. RokON
+# 15. ROKON
 
-This chapter shows how to read and write configuration files in RokON (Rok Object Notation), rok's data format. There is no new syntax to learn: a RokON file uses the same literal syntax you write values with in rok source. The package manifest `rok.rokon` uses this format too.
+This chapter shows how to read and write configuration files in ROKON (Rok Object Notation), rok's data format. There is no new syntax to learn: a ROKON file uses the same literal syntax you write values with in rok source. The package manifest `rok.rokon` uses this format too.
 
 ## The format at a glance
 
@@ -27,7 +27,7 @@ Config {
 | struct | `Point { x: 1, y: 2 }`, `Pair(1, 2)` |
 | enum variant | `Mode::Fast`, `Shape::Circle(1.0)`, `Shape::Rect { w: 2, h: 3 }` |
 
-`//` comments and trailing commas are allowed. "Code" such as variables, operators, function calls, and f-strings is not. RokON is pure data that never executes.
+`//` comments and trailing commas are allowed. "Code" such as variables, operators, function calls, and f-strings is not. ROKON is pure data that never executes.
 
 ## `#[derive(Rokon)]` with `from_str` / `to_string`
 
@@ -177,7 +177,7 @@ check(r#"Client { host: "h", port: 22 }"#);
 ok: h:22
 error: 1:1: missing field `port` in Server
 error: 1:27: integer 70000 is out of range for u16
-error: 1:16: bare identifier `h` is not allowed in RokON (strings are quoted, variants are written `Enum::h`)
+error: 1:16: bare identifier `h` is not allowed in ROKON (strings are quoted, variants are written `Enum::h`)
 error: 1:31: unknown field `user` in Server
 error: 1:1: expected Server, found `Client { .. }`
 ```
@@ -228,7 +228,7 @@ use rok::std::io::IoError;
 struct Site {
     title: str;
     tagline: str;
-    spec: str = "../rok-lang/spec/ko";
+    spec: str = "../spec/ko";
     out: str = "public";
 }
 
@@ -258,12 +258,7 @@ try load(path) catch e: IoError { println(f"missing: {e.kind():?}"); };
 
 ```output
 rok -> public
-Site {
-    title: "rok",
-    tagline: "small language, rich library",
-    spec: "../rok-lang/spec/ko",
-    out: "dist",
-}
+Site { title: "rok", tagline: "small language, rich library", spec: "../spec/ko", out: "dist" }
 bad config: 1:15: expected str, found integer
 missing: NotFound
 ```
@@ -272,7 +267,7 @@ Notice also that rewriting with `to_string` drops comments. Files that people ed
 
 ## Summary
 
-- RokON is a data format that uses rok literal syntax as is; the file extension is `.rokon`.
+- ROKON is a data format that uses rok literal syntax as is; the file extension is `.rokon`.
 - Add `#[derive(Rokon)]`, read with `rokon::from_str`, write with `rokon::to_string`.
 - A missing field takes its `= default`, or `none` if its type is `T | none`; otherwise it is an error. Unknown fields are errors too.
 - Error messages have the form `line:column: description`.
@@ -281,5 +276,5 @@ Notice also that rewriting with `to_string` drops comments. Files that people ed
 
 ## Further reading
 
-- Spec: [3.9 RokON](../spec/refs-standard-libraries/300-std/309-rokon.html), [Field defaults](../spec/refs-lang/002-types/203-struct.html#233-field-default-values), [The rok.rokon manifest](../spec/refs-lang/009-tools/910-rok-frontend.html)
+- Spec: [3.9 ROKON](../spec/refs-standard-libraries/300-std/309-rokon.html), [Field defaults](../spec/refs-lang/002-types/203-struct.html#233-field-default-values), [The rok.rokon manifest](../spec/refs-lang/009-tools/910-rok-frontend.html)
 - API: [rok::std::rokon](../std/std/rokon.html)
