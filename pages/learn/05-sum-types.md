@@ -71,8 +71,8 @@ none
 
 The standard library follows the same convention. Lookups that can fail, such as `List::get`, `Dict::get`, and `List::pop`, all return `T | none`.
 
-> [!TIP]
-> `T | none` is nearly free. For types with unused bit patterns, such as `bool`, pointers, and field-less `enum`s, `none` is stored in one of those patterns with no separate tag ([niche optimization](../spec/refs-lang/002-types/207-niche-optimization.html)). That is why `bool?` is 1 byte.
+> [!NOTE]
+> Advanced: `T | none` is nearly free. For types with unused bit patterns, such as `bool`, pointers, and field-less `enum`s, `none` is stored in one of those patterns with no separate tag ([niche optimization](../spec/refs-lang/002-types/207-niche-optimization.html)). That is why `bool?` is 1 byte.
 
 ## Narrowing with `is`
 
@@ -145,6 +145,34 @@ found: kim
 2 → (none)
 ```
 
+## `let else`: bail out early
+
+`let pattern = expr else { ... };` binds the name if the pattern matches and otherwise runs the `else` block, which must leave the scope with `return`, `break`, `continue`, or `throw`. This lets you write "bail out early if missing" without extra indentation, and after it the name has the narrowed type.
+
+```rok
+fn first_even(xs: List<i32>) -> i32 | none {
+    for x in xs {
+        if x % 2 == 0 { return x; }
+    }
+    none
+}
+
+fn report(xs: List<i32>) -> str {
+    let n: i32 = first_even(xs) else {
+        return "no even number";
+    };
+    f"first even is {n}, half is {n / 2}"
+}
+
+println(report([1, 3, 8, 10]));
+println(report([1, 3]));
+```
+
+```output
+first even is 8, half is 4
+no even number
+```
+
 ## Defaults with `??` and chaining with `?.`
 
 Writing `match` every time gets tedious. `a ?? b` returns `b` if `a` is `none`, and `a`'s value otherwise. `x?.field` and `x?.method()` evaluate to `none` when `x` is `none`, and only perform the access when there is a value. Combined, "take it if present, otherwise use a default" fits on one line.
@@ -199,20 +227,19 @@ none
 `?` works only on `T | none`. It is not a way to propagate errors; errors are handled with `throws` / `try` ([error control flow](../spec/refs-lang/003-expressions/314-error-control-flow.html)).
 
 > [!NOTE]
-> If a collection stores `none` itself (`List<i32?>`), the result of `get` is a two-level optional `(i32 | none)?` that distinguishes "no element" from "a stored none". `??`, `?.`, and `?` act only on the outer level. See [nested optionals](../spec/refs-lang/002-types/206-sum-types.html#nested-optional) for the full rules.
+> Advanced: if a collection stores `none` itself (`List<i32?>`), the result of `get` is a two-level optional `(i32 | none)?` that distinguishes "no element" from "a stored none". `??`, `?.`, and `?` act only on the outer level. See [nested optionals](../spec/refs-lang/002-types/206-sum-types.html#nested-optional) for the full rules.
 
 ## Summary
 
 - `A | B` is a closed sum type. Variant order and duplicates don't matter, and `match` must handle every variant.
 - When a value may be absent, use `T | none`, or `T?` for short. Return the value as is, without wrapping.
-- `x is T` both tests and narrows. Extract values with `if let x: T = ...` and with the `n: T` / `none` patterns in `match`.
+- `x is T` both tests and narrows. Extract values with `if let x: T = ...`, `let x: T = ... else { return .. };`, and the `n: T` / `none` patterns in `match`.
 - `??` supplies a default, `?.` skips the access on none, and postfix `?` returns from the function on none.
-- Thanks to niche optimization, many `T?` types are the same size as `T`.
 
 ## Learn more
 
 - [2.6. Sum types](../spec/refs-lang/002-types/206-sum-types.html), [2.1.5a. Optional type `T?`](../spec/refs-lang/002-types/201-type-expressions.html#215a-optional-types-t)
-- [2.2.6. Narrowing](../spec/refs-lang/002-types/202-any-slot.html#226-narrowing), [3.10.5. `if let`](../spec/refs-lang/003-expressions/310-if-expression.html#3105-if-let-combining-with-pattern-matching), [3.11. Patterns](../spec/refs-lang/003-expressions/311-patterns.html)
+- [2.2.6. Narrowing](../spec/refs-lang/002-types/202-any-slot.html#226-narrowing), [3.10.5. `if let`](../spec/refs-lang/003-expressions/310-if-expression.html#3105-if-let-combining-with-pattern-matching), [3.16. `let-else`](../spec/refs-lang/003-expressions/316-let-else.html), [3.11. Patterns](../spec/refs-lang/003-expressions/311-patterns.html)
 - [3.8. Optional chaining and null coalescing](../spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing.html), [3.14.10. The `?` operator](../spec/refs-lang/003-expressions/314-error-control-flow.html#31410-the--operator--early-return-of-none)
 - [2.7. Niche optimization](../spec/refs-lang/002-types/207-niche-optimization.html)
 - Next chapter: [6. Structs, Enums, and Traits](06-structs-enums-traits.html)

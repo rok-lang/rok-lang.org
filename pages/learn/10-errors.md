@@ -2,89 +2,78 @@
 
 Things that can fail, like a missing file or bad input, are everywhere. rok has a single error model. A function that can throw writes `throws` in its signature, and the caller marks that call with `try`. As a result, every point where an error can flow is visible in the code.
 
-## `throws` and `throw`
+## `throws`, `throw`, and `try`
 
-The error type a function can throw is written as `throws (E)` after the parameter list and before the return type. For several kinds, use a sum type: `throws (A | B)`. In the body, `throw` throws an error value.
+Write `throws` after the parameter list, before `->`. In the body, `throw` throws an error value. For most code the standard library's `ValueError { msg }` is all you need; you don't have to define an error type.
 
-An error type is usually a struct or enum that has `Display` and `Debug` and then implements the `Error` trait.
-
-```rok
-#[derive(Debug)]
-struct NegativeError { value: i32; }
-
-impl Display for NegativeError {
-    fn fmt(self, ref f: Formatter) throws (FmtError) {
-        try f.write_str(f"negative value: {self.value}");
-    }
-}
-
-impl Error for NegativeError {}
-
-fn double(n: i32) throws (NegativeError) -> i32 {
-    if n < 0 { throw NegativeError { value: n }; }
-    n * 2
-}
-
-fn main() {
-    let a = try double(21) catch _ { 0 };
-    let b = try double(-5) catch e { println(f"error: {e}"); 0 };
-    println(f"{a} {b}");
-}
-```
-
-```output
-error: negative value: -5
-42 0
-```
-
-An error cannot escape a function without `throws`. The `main` above is not `throws`, so both calls handle the error on the spot with `catch`.
-
-## `try`: marking call sites and propagating
-
-You must put `try` on every call to a `throws` function. If an error occurs, control goes to the nearest `catch`; if there is none, the error propagates to the enclosing function. In that case the enclosing function must also `throws` that error.
+You must put `try` on every call to a function that throws. If the call fails, the error goes to the nearest `catch`; if there is none, it propagates out of the enclosing function, which must then be `throws` too.
 
 ```rok
-#[derive(Debug)]
-struct TooBig { limit: i32; }
-
-impl Display for TooBig {
-    fn fmt(self, ref f: Formatter) throws (FmtError) {
-        try f.write_str(f"over the limit {self.limit}");
-    }
-}
-
-impl Error for TooBig {}
-
-fn check(n: i32) throws (TooBig) -> i32 {
-    if n > 100 { throw TooBig { limit: 100 }; }
+fn parse_age(s: str) throws -> i32 {
+    let n: i32 = try s.parse();
+    if n < 0 { throw ValueError { msg: f"age {n} is negative" }; }
     n
 }
 
-fn total(xs: List<i32>) throws (TooBig) -> i32 {
+fn total_age(xs: List<str>) throws -> i32 {
     let sum = 0;
     for x in xs {
-        sum += try check(x);
+        sum += try parse_age(x);     // an error leaves total_age here
     }
     sum
 }
 
-fn main() {
-    println(f"{try total([1, 2, 3]) catch _ { -1 }}");
-    println(f"{try total([1, 500, 3]) catch e { println(f"{e:?}"); -1 }}");
-}
+println(f"{try total_age(["30", "12"])}");
+let t = try total_age(["30", "-1"]) catch e { println(f"error: {e}"); 0 };
+println(f"{t}");
 ```
 
 ```output
-6
-TooBig { limit: 100 }
--1
+42
+error: age -1 is negative
+0
 ```
 
-`try` covers the entire expression to its right. `try a(b())` marks both calls together, and `try { .. }` covers every call inside the block. A program's top-level statements form an implicitly `throws` `main`, so in a script just adding `try` lets the error leave the program, which then exits with code 1.
+`catch e { .. }` handles the error on the spot, and its block's value is used instead. `try` covers the entire expression to its right: `try a(b())` marks both calls together, and `try { .. }` covers every call inside the block.
 
-## `try?` and `try!`
+A plain `throws` means the function can throw any error type (short for `throws (any Error)`); `s.parse()` throws a `ParseError`, and `parse_age` passes it on unchanged. Listing the exact error types is covered [below](#your-own-error-types).
 
-Two variants turn the error into something else on the spot instead of propagating it.
+### Errors at the top of a script
+
+A program's top-level statements form an implicit `main` that `throws`. So in a script, `try` alone is enough: an error nobody catches ends the program with a message on stderr and exit code 1.
+
+```rok build
+let n: i32 = try "abc".parse();
+println(f"{n}");
+```
+
+```text
+$ rok run
+error: `main` returned an uncaught error: cannot parse "abc": invalid digit
+  --> src/main.rok:1:18
+$ echo $?
+1
+```
+
+An explicit `fn main()` that is not `throws` must handle every error itself; write `fn main() throws { .. }` to let them out.
+
+## `try?` and `??`: a default instead of an error
+
+Often you just want a fallback value. `try? e` discards the error and yields `none`, and `??` replaces `none` with a default. Close the `try?` with parentheses before `??`.
+
+```rok
+fn parse_port(s: str) -> i32 {
+    (try? s.parse::<i32>()) ?? 8080
+}
+
+println(f"{parse_port("3000")} {parse_port("abc")}");
+```
+
+```output
+3000 8080
+```
+
+To ignore an error on purpose, write `let _ = try? f();`. `try! e` turns an error into a panic; use it only when failing there would be a bug.
 
 | Form     | On error                              |
 |----------|---------------------------------------|
@@ -93,97 +82,25 @@ Two variants turn the error into something else on the spot instead of propagati
 | `try! e` | Panic (treated as a program bug)      |
 
 ```rok
-fn parse_port(s: str) -> i32 {
-    (try? s.parse::<i32>()) ?? 8080
+fn save(n: i32) throws {
+    if n < 0 { throw ValueError { msg: "negative" }; }
+    println(f"saved {n}");
 }
 
-println(f"{parse_port("3000")} {parse_port("abc")}");
+let _ = try? save(1);
+let _ = try? save(-1);         // the error is dropped
 let n: i32 = try! "42".parse();
 println(f"{n}");
 ```
 
 ```output
-3000 8080
+saved 1
 42
 ```
 
-To chain `??` onto a `try?` result, close its scope with parentheses as above. Use `try!` only when you are certain that "failing here is a bug".
+## `catch`: selecting by type
 
-## `catch`: selecting by pattern
-
-`catch` is a postfix clause attached to an expression. Patterns are tested from top to bottom, the first matching block runs, and that block's value becomes the value of the whole expression. `e: T` is a pattern that selects by type, and inside that branch `e` is narrowed to that type.
-
-```rok
-#[derive(Debug)]
-struct NotFound { key: str; }
-impl Display for NotFound {
-    fn fmt(self, ref f: Formatter) throws (FmtError) { try f.write_str(f"no key {self.key}"); }
-}
-impl Error for NotFound {}
-
-#[derive(Debug)]
-struct Invalid { reason: str; }
-impl Display for Invalid {
-    fn fmt(self, ref f: Formatter) throws (FmtError) { try f.write_str(self.reason); }
-}
-impl Error for Invalid {}
-
-fn lookup(key: str) throws (NotFound | Invalid) -> i32 {
-    if key == "" { throw Invalid { reason: "empty key" }; }
-    if key != "a" { throw NotFound { key: key }; }
-    1
-}
-
-fn describe(key: str) -> str {
-    try f"found {lookup(key)}"
-    catch e: NotFound { f"missing: {e.key}" }
-    catch e: Invalid { f"invalid: {e}" }
-}
-
-fn main() {
-    for k in ["a", "b", ""] {
-        println(describe(k));
-    }
-}
-```
-
-```output
-found 1
-missing: b
-invalid: empty key
-```
-
-Any pattern can follow `catch`, so a struct pattern can pull out fields directly.
-
-```rok
-#[derive(Debug)]
-struct NotFound { key: str; }
-impl Display for NotFound {
-    fn fmt(self, ref f: Formatter) throws (FmtError) { try f.write_str(f"no key {self.key}"); }
-}
-impl Error for NotFound {}
-
-fn lookup(key: str) throws (NotFound) -> i32 {
-    if key != "a" { throw NotFound { key: key }; }
-    1
-}
-
-for key in ["a", "b"] {
-    let n = try lookup(key)
-    catch NotFound { key } { println(f"missing: {key}"); 0 };
-    println(f"{n}");
-}
-```
-
-```output
-1
-missing: b
-0
-```
-
-The error kinds of `lookup` are closed as `NotFound | Invalid`, so `describe`, which covers both types, becomes a function that no longer throws. The compiler checks this.
-
-If you write just `throws` with no type instead of `throws (E)`, the function can throw any error that implements `Error` (short for `throws (any Error)`). Use it when it is hard to close the set of error kinds, as in a public API. The receiver catches everything with `catch e` or `catch e: any Error`, or narrows to a concrete type first, as in `catch e: ValueError` ([4.14.3](../spec/refs-lang/004-functions/414-throws.html#4143-untyped-throws)).
+`catch` patterns are tested from top to bottom, and the first matching block runs. `e: T` selects by type, and inside that branch `e` has that type, so you can read its fields. A final `catch e` takes everything else.
 
 ```rok
 fn read_age(s: str) throws -> i32 {
@@ -239,6 +156,80 @@ result 6
 failed: 3 is odd
 done with 6
 result 0
+```
+
+## Your own error types
+
+When callers need to tell failures apart, define an error type: a struct or enum with `Debug` and `Display` that implements the `Error` trait (the `Display` shape is the one from [chapter 6](06-structs-enums-traits.html#operator-traits)). A signature can then list exactly what it throws, `throws (E)`, or several kinds as a sum, `throws (A | B)`. The compiler checks that every listed type is handled or passed on.
+
+```rok
+#[derive(Debug)]
+struct NotFound { key: str; }
+impl Display for NotFound {
+    fn fmt(self, ref f: Formatter) throws (FmtError) { try f.write_str(f"no key {self.key}"); }
+}
+impl Error for NotFound {}
+
+#[derive(Debug)]
+struct Invalid { reason: str; }
+impl Display for Invalid {
+    fn fmt(self, ref f: Formatter) throws (FmtError) { try f.write_str(self.reason); }
+}
+impl Error for Invalid {}
+
+fn lookup(key: str) throws (NotFound | Invalid) -> i32 {
+    if key == "" { throw Invalid { reason: "empty key" }; }
+    if key != "a" { throw NotFound { key: key }; }
+    1
+}
+
+fn describe(key: str) -> str {
+    try f"found {lookup(key)}"
+    catch e: NotFound { f"missing: {e.key}" }
+    catch e: Invalid { f"invalid: {e}" }
+}
+
+fn main() {
+    for k in ["a", "b", ""] {
+        println(describe(k));
+    }
+}
+```
+
+```output
+found 1
+missing: b
+invalid: empty key
+```
+
+The error kinds of `lookup` are closed as `NotFound | Invalid`, so `describe`, which covers both types, becomes a function that no longer throws. The compiler checks this. Use a plain `throws` when the set of error kinds is hard to close, as in a public API; the receiver catches everything with `catch e` or narrows first, as in `catch e: ValueError` ([4.14.3](../spec/refs-lang/004-functions/414-throws.html#4143-untyped-throws)).
+
+Any pattern can follow `catch`, so a struct pattern can pull out fields directly.
+
+```rok
+#[derive(Debug)]
+struct NotFound { key: str; }
+impl Display for NotFound {
+    fn fmt(self, ref f: Formatter) throws (FmtError) { try f.write_str(f"no key {self.key}"); }
+}
+impl Error for NotFound {}
+
+fn lookup(key: str) throws (NotFound) -> i32 {
+    if key != "a" { throw NotFound { key: key }; }
+    1
+}
+
+for key in ["a", "b"] {
+    let n = try lookup(key)
+    catch NotFound { key } { println(f"missing: {key}"); 0 };
+    println(f"{n}");
+}
+```
+
+```output
+1
+missing: b
+0
 ```
 
 ## `rethrows`: throwing only as much as the argument does
@@ -345,10 +336,11 @@ for n in [4, 5] {
 
 ## Summary
 
-- A function that can throw declares `throws (E)` (or `throws`) and throws with `throw`.
-- Calls are marked with `try`. An uncaught error propagates to the enclosing function.
-- `try?` turns an error into `none`; `try!` turns it into a panic.
+- A function that can throw declares `throws` (before `->`) and throws with `throw`; `ValueError { msg }` covers most needs.
+- Calls are marked with `try`. An uncaught error propagates to the enclosing function; at the top of a script it ends the program with exit code 1.
+- `(try? e) ?? default` gives a fallback; `let _ = try? f();` ignores an error; `try!` turns it into a panic.
 - `catch` is an expression that selects by pattern, and `finally` always runs.
+- Define your own error types (`Display` + `Error`) when callers must tell failures apart, and list them with `throws (A | B)`.
 - `rethrows` throws only when the function it received throws.
 - Resources bound with `using` are cleaned up however the block is exited.
 - A panic is an uncatchable bug signal. Use `Result` only when you need to hold an error as a value.

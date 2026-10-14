@@ -215,9 +215,9 @@ println("");
 1 4 9 16
 ```
 
-## Broadcast operators (preview)
+## Advanced: broadcast operators
 
-Dotted operators such as `.+`, `.*`, and `.>` are element-wise operations. They desugar to traits such as `DotAdd`, `DotMul`, and `DotGt`, so implementing those for your type makes the operators available right away.
+You can skip this section on a first read. Dotted operators such as `.+`, `.*`, and `.>` are element-wise operations. They desugar to traits such as `DotAdd`, `DotMul`, and `DotGt`, so implementing those for your type makes the operators available right away.
 
 ```rok
 struct Vec { xs: List<f64>; }

@@ -21,7 +21,13 @@ rok: 2
 Because declaration and reassignment are syntactically distinct, a typo never silently creates a new variable. Assigning to a name that was never declared is a compile error.
 
 ```text
-error: [type] main.rok:2:1: `coutn` is not declared. Use `let` to introduce a new binding
+error[E200]: `coutn` is not declared; a variable is created only by `let`
+  --> main.rok:2:1
+   |
+ 2 | coutn = count + 1;
+   | ^^^^^
+   |
+   = help: write `let coutn = count + 1;`
 ```
 
 A few more rules:
@@ -74,7 +80,13 @@ println(f"{7 / 2} {-7 / 2} {7.0 / 2.0}");
 rok never mixes different numeric types automatically. Adding an `i32` and an `i64` is an error.
 
 ```text
-error: [type] main.rok:3:12: operator `+` cannot be applied to `i32` and `i64`
+error[E200]: operator `+` cannot be applied to `i32` and `i64`
+  --> main.rok:3:12
+   |
+ 3 | println(f"{a + b}");
+   |            ^^^^^
+   |
+   = help: rok never converts numbers implicitly; convert one side: `a + (b as i32)`
 ```
 
 This is by design, to prevent silent loss of precision. You write conversions explicitly. `as` always succeeds but may truncate or change the value; `.into()` is only allowed for lossless conversions.
@@ -94,17 +106,74 @@ println(f"{2.9 as i32} {300 as u8} {x as f64 / 4.0}");
 2 44 2.5
 ```
 
-`2.9 as i32` drops the fractional part, and `300 as u8` keeps only the low 8 bits. For conversions that can fail, use `.try_into::<T>()`. It is a throwing function, so combined with `try?` it gives `none` on failure.
+`2.9 as i32` drops the fractional part, and `300 as u8` keeps only the low 8 bits. For a conversion that must not lose anything, `.try_into::<T>()` checks the range and throws an error instead; [chapter 10](10-errors.html) shows how to handle errors.
+
+## Integer gotchas
+
+A few integer rules surprise people coming from Python, Go, or JavaScript.
+
+**`len()` is a `usize`.** Lengths and indexes are `usize`, while an unsuffixed literal is an `i32`. Since nothing converts implicitly, `total / xs.len()` with an `i32` `total` is an error. Convert one side with `as`.
+
+```text
+error[E200]: operator `/` cannot be applied to `i32` and `usize`
+```
 
 ```rok
-let small: i64 = 300;
-let a: u8 | none = try? small.try_into::<u8>();
-let b: i32 | none = try? small.try_into::<i32>();
-println(f"{a ?? 0} {b ?? 0}");
+let xs = [10, 20, 30];
+let total = 0;
+for x in xs { total += x; }
+let avg = total / (xs.len() as i32);
+println(f"average {avg}");
+
+for i in 0..xs.len() {       // i is a usize, so xs[i] just works
+    print(f"{i}:{xs[i]} ");
+}
+println("");
 ```
 
 ```output
-0 300
+average 20
+0:10 1:20 2:30 
+```
+
+**`/` and `%` truncate toward zero.** `-7 / 2` is `-3` and `-7 % 2` is `-1`: the remainder takes the sign of the left side, as in C, Go, and Rust. For Python's `%`, whose result takes the sign of the divisor, use `%%` (floored modulo). It is handy for wrapping an index around.
+
+```rok
+println(f"{-7 / 2} {-7 % 2} {-7 %% 2}");
+let len = 5;
+let i = -1;
+println(f"{i % len} {i %% len}");
+```
+
+```output
+-3 -1 1
+-1 4
+```
+
+**Overflow depends on the build.** `rok run` and `rok build` compile without optimization (`-O0`), with overflow checks on, so going past the range panics. An optimized build (`-O1` and up; `rok build --release` is `-O2`) turns the checks off, and the same addition silently wraps around.
+
+```rok build
+let x: i32 = 2147483647;
+println(f"{x + 1}");
+```
+
+```text
+$ rok run
+thread 'main' panicked at src/main.rok:2:12:
+attempt to add with overflow
+$ rok run --release
+-2147483648
+```
+
+To keep the checks in an optimized build, add `-C overflow-checks=yes`. When overflow is expected, say what you want with `checked_add` (gives `none`), `wrapping_add`, or `saturating_add`, or use `int` (below), which never overflows.
+
+```rok
+let x: i32 = 2147483647;
+println(f"{x.checked_add(1):?} {x.wrapping_add(1)} {x.saturating_add(1)}");
+```
+
+```output
+none -2147483648 2147483647
 ```
 
 ## bool, char, str
@@ -195,6 +264,9 @@ println(f"2^100 = {big}");
 2^100 = 1267650600228229401496703205376
 ```
 
+> [!NOTE]
+> Advanced: `int` also has number-theory helpers such as `isqrt`, `modpow`, `gcd`, and `lcm`. They are listed in the [`int` API](../std/core/num/bigint.html).
+
 ## Constants
 
 `const` is a value fixed at compile time. Unlike `let`, the type must be written, and it can appear at the top level of a module. The value is inlined at every use.
@@ -219,6 +291,8 @@ welcome: 58 seats left
 - `let` declares, `=` reassigns. Redeclaring in the same scope is forbidden, and an initial value is required.
 - Unsuffixed literals follow the expected type, defaulting to `i32` / `f64`.
 - There is no automatic conversion between numeric types. Use `as`, `.into()`, or `.try_into::<T>()`.
+- `len()` and indexes are `usize`; convert with `as` to mix them with `i32`.
+- `/` and `%` truncate toward zero; `%%` is floored modulo. Overflow panics in a debug build and wraps in an optimized one.
 - `[...]` is a `List`; with a `[T; N]` type it is a fixed array. Print a `List` with `{:?}`.
 - `int` is an unbounded integer; `const` is a compile-time constant.
 

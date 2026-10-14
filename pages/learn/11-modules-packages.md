@@ -216,40 +216,63 @@ Package { name: "app", version: "0.1.0", deps: {
 } }
 ```
 
+A plain string is shorthand for `Dep::version`, and a requirement with no operator means `^`, so these three lines ask for the same thing. Stone READMEs often use the short form (`"json": "0.1"`, which means `>=0.1.0, <0.2.0`).
+
+```rokon
+Package { name: "app", version: "0.1.0", deps: {
+    "textwrap": "1.2",
+    // "textwrap": "^1.2",
+    // "textwrap": Dep::version("^1.2"),
+} }
+```
+
+A path is not a version: write `Dep::path("../geom")`, not `"../geom"`.
+
 A library can offer **features** that its users turn on and off, and you can publish your own library as a stone with `rok login` and `rok publish`. Both are covered in [chapter 18](18-features-and-stones.html), together with the stones the rok project maintains (`json`, `toml`, `http`, `markdown`).
 
 ## Single-file scripts and environments
 
-For a small script that does not warrant a package, write the dependencies in a ```` ```rokon ```` block inside the `//!` comment at the very top of the file. Paths are relative to the script file, and the lockfile is kept in the cache.
+For a small script that does not warrant a package, its dependencies live in a ```` ```rokon ```` block inside the `//!` comment at the very top of the file. `rok add` with the script as the last argument writes the block for you; a path is written relative to the script, and the lockfile is kept in the cache.
+
+```bash
+rok add geom --path ../geom tool.rok
+```
+
+```text
+       Added geom to tool.rok
+```
 
 ````rok norun
 //! ```rokon
 //! Package {
-//!     deps: { "geom": Dep::path("../geom") },
+//!     deps: {
+//!         "geom": Dep::path("../geom"),
+//!     },
 //! }
 //! ```
-
+mod helper;
 use geom::{Circle, area_sum};
-println(f"{area_sum([Circle { r: 1.0 }])}");
+println(f"{area_sum([Circle { r: helper::radius() }])}");
 ````
 
 ```bash
 rok run tool.rok
 ```
 
-If you want to share the same set of dependencies across several scripts or the REPL, create a named environment. There is no activation step: select it with `--env`, or change the default with `rok env use`.
+A script can have file modules too: `mod helper;` loads `helper.rok` beside it, just as in a package's `src/`. A module file may carry its own `//!` block (`rok add <name> helper.rok`), and the blocks of all the files are merged. Scripts never see libraries installed with `rok install`; only their blocks count. When a script outgrows one file, `rok init --script tool.rok` turns it into a package: the blocks become `rok.rokon`, and `tool.rok` and its module files move into `src/`.
+
+Named environments are for the REPL and Jupyter. Install libraries into one with `rok install`, and pick it with `--env` or change the default with `rok env use`; there is no activation step.
 
 ```text
 $ rok env create sci
      Created environment `sci` (~/.rok/envs/sci)
-$ rok add geom --path ~/work/geom --env sci
-$ rok --env sci run plot.rok
+$ rok install --env sci geom --path ~/work/geom
 $ rok env use sci
 $ rok env list
 * sci
 ```
 
-A directory with a `rok.rokon` is itself an environment, so inside a package there is no need to select one.
+A package never uses an environment: inside a package, its own `rok.rokon` is all that counts.
 
 ## Summary
 
@@ -258,7 +281,7 @@ A directory with a `rok.rokon` is itself an environment, so inside a package the
 - `mod x;` maps to `x.rok` (and `x/`). The root is `main.rok` or `lib.rok`.
 - Create packages with `rok new [--lib]` and add dependencies (path, git, stone) with `rok add`. Commit `rok.lock`.
 - Work with stones on rokstones.io using `rok search` / `rok add name@^1.2`; features and publishing are in [chapter 18](18-features-and-stones.html).
-- Scripts use a `//! ```rokon` manifest; shared dependencies use `rok env`.
+- Scripts use their `//! ```rokon` blocks (`rok add <name> <file.rok>`), and `rok init --script` turns one into a package; `rok env` is for the REPL / Jupyter.
 
 ## Further reading
 

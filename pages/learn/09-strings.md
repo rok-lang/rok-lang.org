@@ -25,7 +25,20 @@ hello
 
 Here the Korean text is deliberate: each Hangul syllable takes 3 bytes in UTF-8, so `"hello, 세계"` is 13 bytes but only 9 characters.
 
-A slice `s[a..b]` also cuts at byte positions. Since a Hangul character is 3 bytes, you must not cut anywhere other than a character boundary. To work character by character, use `chars()` or `char_indices()`.
+A slice `s[a..b]` also cuts at byte positions. Since a Hangul character is 3 bytes, you must not cut anywhere other than a character boundary; a cut inside a character panics and names the byte:
+
+```rok build
+let s = "hello, 세계";
+println(s[0..8]);
+```
+
+```text
+thread 'main' panicked at main.rok:2:9:
+string slice is not on a char boundary: byte 8 is inside `세` (bytes 7..10)
+string offsets count bytes; to work by character, use `chars()` or `char_indices()`
+```
+
+To work character by character, use `chars()` or `char_indices()`.
 
 A single character is a `char`, written in single quotes. It holds one Unicode scalar value and has methods for classification and conversion.
 

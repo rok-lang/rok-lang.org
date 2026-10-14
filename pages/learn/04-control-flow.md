@@ -1,6 +1,6 @@
 # 4. Control Flow
 
-This chapter covers branching (`if`, `match`), looping (`while`, `for`, `loop`), and `let else`, `is` checks, and destructuring for branching while extracting values. The key point is that `if`, `match`, and `loop` in rok are all expressions that produce values.
+This chapter covers branching (`if`, `match`), looping (`while`, `for`, `loop`), and destructuring. The key point is that `if`, `match`, and `loop` in rok are all expressions that produce values.
 
 ## `if` is an expression
 
@@ -78,67 +78,7 @@ on the diagonal
 somewhere else
 ```
 
-## Working with sum types: type patterns, `is`, `let else`
-
-When a value can be one of several types (`i32 | str | none`), split on it with a **type-test pattern** `name: Type`. Inside the matching arm, the name is narrowed to that type.
-
-```rok
-fn show(v: i32 | str | none) -> str {
-    match v {
-        n: i32 if n < 0 => "negative int",
-        n: i32 => f"int {n}",
-        s: str => f"str {s}",
-        none => "nothing",
-    }
-}
-
-println(show(5));
-println(show(-1));
-println(show("hi"));
-println(show(none));
-```
-
-```output
-int 5
-negative int
-str hi
-nothing
-```
-
-To only check the type, use `value is Type`. The result is a `bool`, and when an `if` condition tests a local variable, the variable is narrowed to that type inside the body (and to the right of `&&`).
-
-`let pattern = expr else { ... };` binds variables if the pattern matches and otherwise exits through the `else` block. The `else` block must end with `return`, `break`, `continue`, `throw`, or similar. This lets you write "bail out early if missing" without extra indentation.
-
-```rok
-fn first_even(xs: List<i32>) -> i32 | none {
-    for x in xs {
-        if x % 2 == 0 { return x; }
-    }
-    none
-}
-
-fn report(xs: List<i32>) -> str {
-    let n: i32 = first_even(xs) else {
-        return "no even number";
-    };
-    f"first even is {n}, half is {n / 2}"
-}
-
-let v: i32 | str = 7;
-if v is i32 && v > 5 {
-    println(f"big int, next is {v + 1}");
-}
-println(report([1, 3, 8, 10]));
-println(report([1, 3]));
-```
-
-```output
-big int, next is 8
-first even is 8, half is 4
-no even number
-```
-
-To handle just one case and skip the rest, you can also write `if let n: i32 = expr { ... }`.
+When the value can be one of several types (`i32 | str | none`), `match` splits on its type with patterns such as `n: i32`. Those patterns, along with `is`, `if let`, and `let else`, come with sum types in the [next chapter](05-sum-types.html).
 
 ## `while` and `for`
 
@@ -257,8 +197,8 @@ for (x, y) in points {
 ## Summary
 
 - `if`, `match`, `loop`, and blocks are expressions that produce values. Branches must have the same type.
-- `match` supports literals, `|`, ranges, `@` bindings, guards, and type-test patterns, and checks exhaustiveness.
-- `is` tests a type; `let ... else`, `if let`, and `while let` proceed only when the pattern matches.
+- `match` supports literals, `|`, ranges, `@` bindings, and guards, and checks exhaustiveness.
+- `while let` repeats while the pattern matches.
 - `for x in a..b` / `a..=b` iterates over ranges; `.iter().enumerate()` iterates with indices.
 - `break value` and `'label:` let you exit nested loops and return a result.
 

@@ -102,6 +102,24 @@ true
 
 Because of this rule, a library's generic function that compiles for you compiles for everyone who calls it; an error never surfaces at a distant call site. Trait default methods are checked the same way, with `Self` known only through the trait. A function with untyped parameters (an implicit generic, below) is the exception.
 
+A bound can name the same trait twice with different parameters. Each use in the body picks the bound whose parameter matches the argument's type, just as an operator picks among a type's impls.
+
+```rok
+struct Meters { v: f64; }
+impl Add<i32> for Meters { type Output = Meters; fn add(self, rhs: i32) -> Meters { Meters { v: self.v + rhs as f64 } } }
+impl Add<f64> for Meters { type Output = Meters; fn add(self, rhs: f64) -> Meters { Meters { v: self.v + rhs } } }
+
+fn nudge<T: Add<i32, Output = T> + Add<f64, Output = T>>(x: T) -> T {
+    (x + 1) + 0.5          // Add<i32>, then Add<f64>
+}
+
+println(f"{nudge(Meters { v: 2.0 }).v}");
+```
+
+```output
+3.5
+```
+
 ## `where` clauses
 
 When bounds get long, moving them to a `where` clause at the end of the signature makes it easier to read. The meaning is the same.
@@ -180,9 +198,9 @@ println(f"{first_of(s):?} {s.get(5):?}");
 
 It is an associated type rather than a type parameter because `Item` is fixed to exactly one type for a given implementor. Users don't need to spell out `Shelf`'s element type.
 
-## Const generics
+## Advanced: const generics
 
-A parameter can also be a compile-time **value** instead of a type. Use this when a value is part of a type, like the length of a fixed-size array `[T; N]`.
+You can skip this section on a first read. A parameter can also be a compile-time **value** instead of a type. Use this when a value is part of a type, like the length of a fixed-size array `[T; N]`.
 
 ```rok
 fn total<const N: usize>(a: [i32; N]) -> i32 {

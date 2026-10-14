@@ -72,7 +72,10 @@ Three executables are installed.
 rok toolchain list                     # installed toolchains
 rok toolchain default 0.1.0            # change the default
 rok toolchain install 0.2.0 --from rok-0.2.0-aarch64-apple-darwin.tar.gz
+rok toolchain update                   # download the latest release and make it the default
 ```
+
+`rok toolchain update 0.2.0` installs that version instead. The download is checked against its published SHA-256, and if anything fails the previous default stays in place. Older toolchains are kept. Do not confuse it with `rok update`, which moves the versions pinned in a package's `rok.lock` ([chapter 11](11-modules-packages.html)).
 
 ### Using the source tree directly
 
@@ -186,16 +189,15 @@ rok run hi.rok
 hi
 ```
 
-Scripts can use dependencies too. To write a manifest in a `//!` comment at the top of the file, see [inline manifests](../spec/refs-lang/009-tools/910-rok-frontend.html).
+Scripts can use dependencies too: `rok add json --path ../json hi.rok` writes them into a `//!` comment at the top of the file (see [inline manifests](../spec/refs-lang/009-tools/910-rok-frontend.html#9107-inline-manifest-for-single-file-scripts) and [chapter 11](11-modules-packages.html#single-file-scripts-and-environments)).
 
 ## REPL
 
-Running `rok` with no arguments opens the REPL. Enter an expression or a `let` and it shows the value and type.
+Running `rok` with no arguments opens the REPL. Enter an expression and it shows the value and type; a `let` just defines the name.
 
 ```text
 $ rok
 > let xs = [1, 2, 3];
-List<i32>: [1, 2, 3]
 > xs.len() * 2
 usize: 6
 > :type xs

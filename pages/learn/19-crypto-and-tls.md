@@ -7,11 +7,10 @@ rok ships its own cryptography. `rok::core::crypto` has the algorithms (hashes, 
 
 ## Hashes and MACs
 
-The algorithms live in submodules of `rok::core::crypto`: `sha2`, `sha3`, `hmac`, `aead`, `x25519`, `ed25519`, `ecdsa`, `rsa` and `mlkem`. Every function that takes bytes accepts `List<u8>`, `Slice<u8>` or a `str` (its UTF-8 bytes), so byte strings and text can be passed directly. Results are `List<u8>`.
+The algorithms are items of `rok::core::crypto` (`HashAlgorithm`, `Hmac`, `Aead`, `X25519`, `Ed25519`, …), each also in its submodule (`sha2`, `sha3`, `hmac`, `aead`, `x25519`, `ed25519`, `ecdsa`, `rsa`, `mlkem`). Every function that takes bytes accepts `List<u8>`, `Slice<u8>`, a `str` (its UTF-8 bytes) or a `Secret`, so byte strings and text can be passed directly. Results are `List<u8>`, except key material, which comes back as a `Secret` (below).
 
 ```rok
-use rok::core::crypto::sha2::{HashAlgorithm, Digest};
-use rok::core::crypto::hmac::Hmac;
+use rok::core::crypto::{HashAlgorithm, Digest, Hmac};
 
 fn hex(bytes: List<u8>) -> str {
     let s = StrBuf::new();
@@ -46,11 +45,10 @@ false
 `Aead` encrypts and authenticates in one step (AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305). `seal` returns the ciphertext with a 16-byte tag; `open` returns `none` when anything, the ciphertext, the tag or the associated data, was changed. Keys and nonces come from `random`: the algorithms take randomness as an argument and never fetch it themselves.
 
 ```rok
-use rok::core::crypto::aead::{Aead, AeadAlgorithm};
-use rok::core::crypto::ed25519::Ed25519;
+use rok::core::crypto::{Aead, AeadAlgorithm, Ed25519};
 use rok::std::crypto::random;
 
-let key = random::bytes(32);
+let key = random::secret(32);
 let nonce = random::bytes(12);           // never reuse a nonce with the same key
 let aead = try! Aead::new(AeadAlgorithm::ChaCha20Poly1305, key);
 let sealed = try! aead.seal(nonce, "v1", "meet at noon");
@@ -62,7 +60,7 @@ if let plain: List<u8> = try! aead.open(nonce, "v1", sealed) {
 sealed[0] = sealed[0] ^ 1u8;              // tamper with one bit
 println(f"tampered: {(try! aead.open(nonce, "v1", sealed)) is none}");
 
-let seed = random::bytes(32);            // the private key
+let seed = random::secret(32);           // the private key
 let public = try! Ed25519::public_key(seed);
 let sig = try! Ed25519::sign(seed, "release 1.0");
 println(f"{Ed25519::verify(public, "release 1.0", sig)} {Ed25519::verify(public, "release 1.1", sig)}");
@@ -76,6 +74,39 @@ true false
 ```
 
 `X25519` and `MlKem768` agree on shared keys (the classic and the post-quantum way), and `Ecdsa` (P-256 / P-384) and `RsaPublicKey` / `RsaPrivateKey` sign and verify for the certificates the web uses.
+
+## Key material: `Secret`
+
+A `Secret` holds bytes in *secret storage*: a buffer the collector never moves or copies and overwrites with zeros before it frees it. `Hkdf::extract` / `expand`, `X25519::shared_secret` and the ML-KEM key functions return one, and `random::secret(n)` draws random bytes straight into one. It prints as `Secret(n bytes)`, never its contents, and has no `==`: compare with `constant_time_eq`. `wipe()` zeroes it now, and a `using` binding wipes it at the end of the block. `Aead` keeps its expanded key in secret storage too, and `Aead::wipe` clears it.
+
+```rok
+use rok::core::crypto::{Aead, AeadAlgorithm, HashAlgorithm, Hkdf, Secret, X25519, constant_time_eq};
+use rok::std::crypto::random;
+
+let a = random::secret(32);
+let b = random::secret(32);
+let ab = try! X25519::shared_secret(a, try! X25519::public_key(b)) ?? panic("bad key");
+let ba = try! X25519::shared_secret(b, try! X25519::public_key(a)) ?? panic("bad key");
+println(f"{ab:?} {constant_time_eq(ab, ba)}");
+
+let key = try! Hkdf::expand(HashAlgorithm::Sha256, Hkdf::extract(HashAlgorithm::Sha256, "salt", ab), "key", 32);
+let aead = try! Aead::new(AeadAlgorithm::ChaCha20Poly1305, key);
+key.wipe();                               // zero it now, not at some later collection
+println(f"{key[0]}");
+aead.wipe();                              // the cipher is done too
+
+using s = Secret::new("temporary") {
+    println(f"{s.len()} bytes");
+}                                         // wiped here
+```
+
+```output
+Secret(32 bytes) true
+0
+9 bytes
+```
+
+Copying a secret's bytes into an ordinary object (`as_bytes().to_list()`, a `str`, a formatted string) makes a copy the collector does not wipe. Secret storage is not locked in RAM either, so it can still reach swap or a core dump.
 
 ## TLS: `net::tls`
 
@@ -121,7 +152,7 @@ MC4CAQAwBQYDK2VwBCIEIMa20cYLozv3/41l6/owqHiube5cG+rd7cF4nHPZ6qd3
 ";
 
 let chain = try! tls::Certificate::from_pem(CERT);
-let scfg = tls::ServerConfig::new(chain, try! tls::PrivateKey::from_pem(KEY));
+let scfg = try! tls::ServerConfig::new(chain, try! tls::PrivateKey::from_pem(KEY));
 let l = try! net::tcp_listen("127.0.0.1:0");
 let addr = try! l.local_addr();
 let server = task::spawn_local(async {
@@ -154,7 +185,8 @@ server read 4 bytes, SNI localhost
 ## Summary
 
 - `rok::core::crypto` has SHA-2 / SHA-3, HMAC, HKDF, AEAD, X25519, ML-KEM, Ed25519, ECDSA and RSA. Byte arguments take `List<u8>`, `Slice<u8>` or `str`.
-- Randomness comes only from `rok::std::crypto::random` (`bytes(n)`, `fill(buf)`) and is passed in.
+- Randomness comes only from `rok::std::crypto::random` (`bytes(n)`, `fill(buf)`, `secret(n)`) and is passed in.
+- Keys come back as `Secret`, which is wiped by `wipe()`, by `using`, or when it is collected.
 - Compare secrets with `constant_time_eq` or `Hmac::verify`, never `==`.
 - `tls::Client` / `tls::Server` wrap a `TcpStream` in TLS 1.3 and then read and write like it.
 - The implementation is new and unaudited.
@@ -164,3 +196,4 @@ server read 4 bytes, SNI localhost
 - Standard library spec: [2.21 `crypto`](../spec/refs-standard-libraries/200-core/221-crypto.html), [3.10 `crypto::random`](../spec/refs-standard-libraries/300-std/310-crypto.html), [3.2.5 TLS 1.3](../spec/refs-standard-libraries/300-std/302-net.html#325-tls-13--nettls)
 - API: [rok::core::crypto](../std/core/crypto.html), [rok::std::net::tls](../std/std/net/tls.html)
 - [Examples](../examples/index.html)
+- Next: [20. How Do I…](20-cookbook.html), short recipes for everyday tasks

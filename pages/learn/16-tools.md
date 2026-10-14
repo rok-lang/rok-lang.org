@@ -134,12 +134,14 @@ Without `--check`, it quietly fixes the files. Running it on every save in your 
 ```text
 $ rok lint
     Checking mathx (.)
-warning: [lint] src/main.rok:11:5: unused variable `unused`
-   |
-11 |     let unused = 1;
-   |     ^
-  note: if this is intentional, prefix it with an underscore: `_unused`
-  note: `#[warn(unused_variables)]` on by default
+warning[E503]: unused variable `unused`
+   --> src/main.rok:11:5
+    |
+ 11 |     let unused = 1;
+    |     ^^^
+    |
+    = note: if this is intentional, prefix it with an underscore: `_unused`
+    = note: `#[warn(unused_variables)]` on by default
      Checked mathx: 0 errors, 1 warning
     Finished in 0.38s
 ```
@@ -155,25 +157,28 @@ Instead of a single lint (`unused_variables`), you can name a group (`unused`, `
 ```text
 $ rok lint -D unused
     Checking mathx (.)
-error: [lint] src/main.rok:11:5: unused variable `unused`
-   |
-11 |     let unused = 1;
-   |     ^
-  note: if this is intentional, prefix it with an underscore: `_unused`
-  note: `-D unused` on the command line
+error[E503]: unused variable `unused`
+   --> src/main.rok:11:5
+    |
+ 11 |     let unused = 1;
+    |     ^^^
+    |
+    = note: if this is intentional, prefix it with an underscore: `_unused`
+    = note: `-D unused` on the command line
      Checked mathx: 1 error, 0 warnings
     Finished in 0.31s
 ```
 
-See the full list with `rokc lint --list`. `rok check` goes further and also runs code generation, but does not link or produce an executable. It is faster than a build, so use it to answer "does it compile?"
+See the full list with `rokc lint --list` (piping it into `head` is fine: when the reader of its output goes away, `rok` and `rokc` stop quietly instead of reporting an error). `rok check` goes further and also runs code generation, but does not link or produce an executable. It is faster than a build, so use it to answer "does it compile?"
 
 ```text
 $ rok check
     Checking hello (.)
-error: [type] src/main.rok:2:1: mismatched types: `let s` expects `str`, found `i32`
-  |
-2 | let s: str = square(7);
-  | ^
+error[E200]: mismatched types: `let s` expects `str`, found `i32`
+  --> src/main.rok:2:1
+   |
+ 2 | let s: str = square(7);
+   | ^^^
      Checked hello: 1 error, 0 warnings
     Finished in 0.32s
 ```
@@ -227,14 +232,15 @@ In other editors such as VS Code, register `rokls` with a generic LSP client ext
 
 ## REPL and Jupyter
 
-A closer look at the REPL (`rok` or `rok repl`) from Chapter 1. Each cell runs once, and top-level `let` bindings and `fn` / `struct` definitions carry over to later cells. Expression cells and `let` cells show `type: value`. Unlike regular source, you can `let` the same name again, and redefining an `fn` replaces it. A cell that errors leaves no trace.
+A closer look at the REPL (`rok` or `rok repl`) from Chapter 1. Each cell runs once, and top-level `let` bindings and `fn` / `struct` definitions carry over to later cells. An expression cell shows `type: value`; a `let` cell shows nothing. A cell of several statements shows the value of its last expression, if it ends in one. Unlike regular source, you can `let` the same name again, and redefining an `fn` replaces it. A cell that errors leaves no trace.
 
 ```text
 $ rok repl
 > let xs = [3, 1, 2];
-List<i32>: [3, 1, 2]
 > xs.len()
 usize: 3
+> xs.sort(); xs
+List<i32>: [1, 2, 3]
 > :type xs
 List<i32>
 > fn twice(x: i32) -> i32 { x * 2 }
@@ -247,8 +253,18 @@ i32: 42
 |------|---------|
 | `:type expr` | Print the type without evaluating |
 | `:reset` | Forget all cells and start over |
-| `:add name --path path` | Add a dependency to the current session |
+| `:add name --path path` | Add a dependency to the current session (installed into the environment, or added to the package; never into a script) |
 | `:help`, `:quit` | Help, quit |
+
+A closure that captures variables can't be kept in a cell's top-level `let`, because each closure has its own unnamed type. The cell is rejected:
+
+```text
+> let x = 3;
+> let f = |n: i32| n * x;
+error: `f: closure(i32) -> i32` cannot be kept for later cells (its type has no name)
+```
+
+Give the binding a function type, `let f: fn(i32) -> i32 = |n: i32| n * x;`, which carries over. (An `fn` carries over too, but it cannot see cell variables such as `x`; pass them as arguments.) Closures used inside a cell, as in `xs.iter().map(|n| n * x)`, work as usual.
 
 `rok repl --package path` starts with a library package attached and `use name::*;` already in place. Handy for trying out functions while building a library.
 
@@ -296,7 +312,12 @@ name:     square
 generics: (none)
 ```
 
-Building with `-g` includes DWARF debug info, so you can step through source lines in `lldb` / `gdb`.
+Building with `-g` includes DWARF debug info, so you can step through source lines in `lldb` / `gdb`. gdb shows only the active variant of a sum or an enum on its own; for lldb, the toolchain ships formatters that do the same, and `rokc --print lldbinit` prints the command that loads them.
+
+```text
+$ lldb -O "$(rokc --print lldbinit)" ./target/debug/hello
+$ rokc --print lldbinit >> ~/.lldbinit      # or load them every time
+```
 
 ## Summary
 
@@ -306,7 +327,7 @@ Building with `-g` includes DWARF debug info, so you can step through source lin
 - From `///` and `//!` doc comments, `rok doc` generates HTML in `target/doc/`.
 - Register `rokls` as the LSP server in your editor.
 - The REPL has `:type` / `:reset` / `:add`; for notebooks, `rok jupyter install`.
-- To dig into problems: `-v`, `--emit`, `rokc demangle`, `-g`.
+- To dig into problems: `-v`, `--emit`, `rokc demangle`, `-g` (with `rokc --print lldbinit` for lldb).
 
 ## Further reading
 
