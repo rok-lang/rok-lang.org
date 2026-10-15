@@ -73,6 +73,25 @@ println(f"{cube(UNIT + 1)}");
 8
 ```
 
+A name you import by name must not also be defined in the same module; the definition would hide the import without a word. A glob (`use shapes::*;`) simply gives way to the module's own items.
+
+```rok norun
+use shapes::square;
+fn square(x: f64) -> f64 { x * x }
+```
+
+```text
+error[E102]: `square` is both imported from `shapes::square` and defined in this module
+  --> main.rok:1:13
+   |
+ 1 | use shapes::square;
+   |             ^^^^^^ imported here
+ 2 | fn square(x: f64) -> f64 { x * x }
+   | -- defined here, which would hide the import
+   |
+   = help: import it under another name, `use shapes::square as shapes_square;`, or remove this `use` if the module does not need it
+```
+
 Names like `List`, `Dict`, and `println`, which we have used so far without `use`, work thanks to the `use rok::core::**;` implicitly present in every file. Modules in `rok::std` such as files, networking, and threads are imported explicitly, as in `use rok::std::fs;`.
 
 ## Visibility
@@ -203,16 +222,16 @@ $ rok run
 A package on the registry is called a stone, and the default registry is [rokstones.io](https://rokstones.io). You search by name and add it together with a version requirement. Version requirements work as in Cargo: `^1.2` means `>=1.2.0, <2.0.0`. If you omit the requirement, the newest version is recorded with a `^`.
 
 ```text
-$ rok search textwrap
+$ rok search json
     Updating index https://github.com/rok-lang/rokstones.io-index
-textwrap = "1.2.0"
-$ rok add textwrap@^1.2
-       Added textwrap to deps of rok.rokon
+json 0.1.0 — JSON (RFC 8259): Value tree, strict parser, streaming tokenizer, typed encode/decode, JSON Pointer
+$ rok add json@^0.1
+       Added json to deps of rok.rokon
 ```
 
 ```rokon
 Package { name: "app", version: "0.1.0", deps: {
-    "textwrap": Dep::version("^1.2"),
+    "json": Dep::version("^0.1"),
 } }
 ```
 
@@ -273,6 +292,23 @@ $ rok env list
 ```
 
 A package never uses an environment: inside a package, its own `rok.rokon` is all that counts.
+
+## Installing programs
+
+`rok install` also installs programs, like `cargo install`: a package with `src/main.rok` (from a stone, git or a path) or a script file is built with `--release` into `~/.rok/bin`. Installing the same stone version or git commit again does nothing, and says how to rebuild; a new version replaces the old one. A path or a script file is always rebuilt.
+
+```text
+$ rok install tool
+   Installed tool 0.1.0 (~/.rok/bin/tool)
+$ rok install tool
+`tool` 0.1.0 is installed already (~/.rok/bin/tool); to rebuild it, run `rok install tool --force`
+$ rok install tool --force
+ Reinstalled tool 0.1.0 (~/.rok/bin/tool)
+$ rok install tool@0.2
+    Upgraded tool from 0.1.0 to 0.2.0 (~/.rok/bin/tool)
+```
+
+`rok install --list` shows what is installed, and `rok uninstall tool` removes it.
 
 ## Summary
 

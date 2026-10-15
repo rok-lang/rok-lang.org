@@ -97,6 +97,7 @@ The rok project maintains a few libraries as stones of their own, outside the st
 | `toml`     | TOML 1.1.0: a `Value` tree with typed date-times, a parser with `line:col` errors, a writer, typed encode / decode with `#[derive(Toml)]` |
 | `http`     | HTTP/1.1 and HTTP/2 client and server: strict parsing, HPACK, streaming bodies, connection pooling, `https` over std's TLS. Features `http1`, `http2`, `tls`, all on by default |
 | `markdown` | CommonMark plus GitHub extensions (tables, callouts, footnotes, heading anchors) to HTML. It renders this site |
+| `rok-syntax` | A tokenizer and HTML highlighter for rok and ROKON source. It highlights the code on this site |
 
 `json` and `toml` follow the shape of std's [`rokon`](15-rokon.html) module: `parse` / `to_string` / `from_str` / `encode` / `decode`, and a derive for your own types.
 
@@ -122,8 +123,7 @@ Package { name: "app", version: "0.1.0", deps: {
 } }
 ```
 
-> [!NOTE]
-> The stones are not on rokstones.io yet. Until their first versions are published, clone the repository and depend on the checkout with `Dep::path("../json")` (this site does exactly that for `markdown`); the code does not change when you switch to the version requirement.
+In a script, name the file last: `rok add json app.rok` writes the dependency into the script's `//!` block ([chapter 11](11-modules-packages.html#single-file-scripts-and-environments)).
 
 With `http`, an HTTPS request is a few lines. The stone opens the TCP connection, runs the TLS 1.3 handshake from [`rok::std::net::tls`](19-crypto-and-tls.html) against the OS trust store, offers HTTP/2 through ALPN and falls back to HTTP/1.1:
 

@@ -24,7 +24,7 @@ api retry=3 verbose=false
 db retry=5
 ```
 
-Defaults may only be literals or `const` expressions. Initial values that must be computed at runtime go in a constructor function such as `fn new() -> Config`. There are also tuple structs, whose fields are identified by position (`struct Rgb(u8, u8, u8);`), and field-less unit structs (`struct Marker;`).
+Defaults may only be literals or `const` expressions. Initial values that must be computed at runtime go in a constructor function such as `fn new() -> Config`. There are also tuple structs, whose fields are identified by position (`struct Rgb(u8, u8, u8);`), and field-less unit structs (`struct Marker;`). Their constructors are values, so a function, `const` or `static` of the same name in the module is a duplicate definition.
 
 ## Methods: `impl` and `self`
 

@@ -37,17 +37,30 @@
 
   const links = () => [...box.querySelectorAll("a")];
 
+  const status = document.querySelector(".search [role=status]");
+
   const mark = (i) => {
     const as = links();
-    as.forEach((a, k) => a.classList.toggle("sel", k === i));
+    as.forEach((a, k) => a.setAttribute("aria-selected", k === i ? "true" : "false"));
     sel = i;
-    if (as[i]) as[i].scrollIntoView({ block: "nearest" });
+    if (as[i]) {
+      q.setAttribute("aria-activedescendant", as[i].id);
+      as[i].scrollIntoView({ block: "nearest" });
+    } else {
+      q.removeAttribute("aria-activedescendant");
+    }
+  };
+
+  const show = (on) => {
+    box.hidden = !on;
+    q.setAttribute("aria-expanded", on ? "true" : "false");
+    if (!on) q.removeAttribute("aria-activedescendant");
   };
 
   const search = async () => {
     const query = q.value.trim().toLowerCase();
     const terms = query.split(/\s+/).filter(Boolean);
-    if (!terms.length) { box.hidden = true; return; }
+    if (!terms.length) { show(false); status.textContent = ""; return; }
     const data = await load();
     const hits = [];
     for (const e of data) {
@@ -58,9 +71,13 @@
     }
     hits.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
     box.replaceChildren();
-    for (const [, , e] of hits.slice(0, 40)) {
+    hits.slice(0, 40).forEach(([, , e], k) => {
       const li = document.createElement("li");
+      li.setAttribute("role", "none");
       const a = document.createElement("a");
+      a.id = "hit-" + k;
+      a.setAttribute("role", "option");
+      a.tabIndex = -1;
       a.href = root + e.u;
       a.textContent = e.t;
       if (e.p) {
@@ -70,14 +87,16 @@
       }
       li.append(a);
       box.append(li);
-    }
+    });
     if (!hits.length) {
       const li = document.createElement("li");
+      li.setAttribute("role", "none");
       li.className = "empty";
       li.textContent = "No results";
       box.append(li);
     }
-    box.hidden = false;
+    show(true);
+    status.textContent = !hits.length ? "No results" : hits.length > 40 ? `40 of ${hits.length} results shown` : hits.length === 1 ? "1 result" : `${hits.length} results`;
     mark(hits.length ? 0 : -1);
   };
 
@@ -88,12 +107,13 @@
     if (ev.key === "ArrowDown" && n) { ev.preventDefault(); mark((sel + 1) % n); }
     else if (ev.key === "ArrowUp" && n) { ev.preventDefault(); mark((sel - 1 + n) % n); }
     else if (ev.key === "Enter" && links()[sel]) { location.href = links()[sel].href; }
-    else if (ev.key === "Escape") { box.hidden = true; q.blur(); }
+    else if (ev.key === "Escape") { show(false); q.blur(); }
   });
   document.addEventListener("keydown", (ev) => {
-    if (ev.key === "/" && document.activeElement !== q) { ev.preventDefault(); q.focus(); }
+    const typing = ev.target.closest && ev.target.closest("input, textarea, select");
+    if (ev.key === "/" && !typing) { ev.preventDefault(); q.focus(); }
   });
   document.addEventListener("click", (ev) => {
-    if (!ev.target.closest(".search")) box.hidden = true;
+    if (!ev.target.closest(".search")) show(false);
   });
 })();

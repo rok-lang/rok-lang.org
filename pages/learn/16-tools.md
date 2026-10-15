@@ -253,7 +253,7 @@ i32: 42
 |------|---------|
 | `:type expr` | Print the type without evaluating |
 | `:reset` | Forget all cells and start over |
-| `:add name --path path` | Add a dependency to the current session (installed into the environment, or added to the package; never into a script) |
+| `:add name`, `:add name --path path` | Add a dependency to the current session (installed into the environment, or added to the package; never into a script) |
 | `:help`, `:quit` | Help, quit |
 
 A closure that captures variables can't be kept in a cell's top-level `let`, because each closure has its own unnamed type. The cell is rejected:

@@ -78,7 +78,7 @@ Hello, world!
 
 ### Learn rok
 
-Sixteen chapters, from installation and values and types to error handling, modules, concurrency, IO, FFI, and tools. Every code sample runs. [Learn rok](learn/index.html)
+Twenty chapters, from installation and values and types to error handling, modules, concurrency, IO, FFI, tools, stones, cryptography, and a cookbook. Code samples are checked when the site is built. [Learn rok](learn/index.html)
 
 </div>
 <div class="card">

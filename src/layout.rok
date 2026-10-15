@@ -12,6 +12,8 @@ pub fn md(src: str, link: fn(str) -> str, ko: bool) -> Doc {
     let o = if ko { Options { link: link, code: code_html, callout: callout_ko } } else { Options { link: link, code: code_html } };
     let d = markdown::render(src, o);
     d.html = d.html.replace("<pre><code class=\"language-output\">", "<pre class=\"output\"><code class=\"language-output\">");
+    // The heading permalinks are aria-hidden, so keep them out of the tab order too.
+    d.html = d.html.replace("class=\"anchor\" href=", "class=\"anchor\" tabindex=\"-1\" href=");
     d
 }
 
@@ -160,7 +162,7 @@ pub fn page_toc(p: Page) -> str {
 pub fn pager(pages: List<Page>, idx: usize) -> str {
     let p = pages[idx];
     let out = StrBuf::new();
-    out.push_str("<nav class=\"pager\" aria-label=\"Previous / next\">");
+    out.push_str("<nav class=\"pager\" aria-label=\"Previous and next page\">");
     if idx > 0 {
         let q = pages[idx - 1];
         out.push_str(f"<a class=\"prev\" href=\"{rel(p.out, q.out)}\"><small>Previous</small>{esc(q.title)}</a>");
@@ -196,7 +198,7 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
     let aside = if side.is_empty() {
         ""
     } else {
-        f"<aside class=\"side\"><details open><summary>Contents</summary>{side}</details></aside>"
+        f"<aside class=\"side\" aria-label=\"Contents\"><details open><summary>Contents</summary>{side}</details></aside>"
     };
     let kind = if out == "index.html" { "home" } else if side.is_empty() { "doc wide" } else { "doc" };
     let lang = if ko { "ko" } else { "en" };
@@ -210,13 +212,14 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
 <link rel=\"icon\" href=\"{root}logo.png\">
 </head>
 <body class=\"{kind}\" data-root=\"{root}\">
+<a class=\"skip\" href=\"#content\">Skip to content</a>
 <header class=\"top\">
 <a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.png\" alt=\"\" width=\"28\" height=\"28\">{esc(site.title)}</a>
-<nav class=\"main-nav\">{nav.to_str()}</nav>
-<div class=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Search docs ( / )\" aria-label=\"Search docs\" autocomplete=\"off\"><ul id=\"results\" hidden></ul></div>
+<nav class=\"main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
+<div class=\"search\" role=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Search docs ( / )\" aria-label=\"Search docs\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
 </header>
 <div class=\"wrap\">
-{aside}<main>
+{aside}<main id=\"content\">
 <article>
 {body}</article>
 {pager}

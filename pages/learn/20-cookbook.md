@@ -170,11 +170,11 @@ error: port 80 is reserved
 
 ## Parse JSON
 
-JSON lives in the `json` stone, not in the standard library. **The rok stones are not published on rokstones.io yet**, so for now get a checkout of the stone and add it as a path dependency (`rok add json --path ../json` in a package, `rok add json --path ../json app.rok` for a script), or as a git dependency with `rok add json --git <url>`. Once it is published, `"json": "0.1"` will do, with no change to the code ([chapter 18](18-features-and-stones.html#the-rok-stones)).
+JSON lives in the `json` stone on [rokstones.io](https://rokstones.io), not in the standard library. Add it with `rok add json` in a package, or `rok add json app.rok` for a script ([chapter 18](18-features-and-stones.html#the-rok-stones)).
 
 ```rokon
 Package { name: "app", version: "0.1.0", deps: {
-    "json": Dep::path("../json"),
+    "json": Dep::version("^0.1.0"),
 } }
 ```
 
@@ -195,11 +195,11 @@ println(json::to_string(u));                       // {"name":"grace","age":85,"
 
 ## Make an HTTP request, or serve HTTP
 
-HTTP is the `http` stone, added the same way as `json` above (`rok add http --path ../http`, or `rok add http --path ../http app.rok` for a script; not published yet). Its client and server are async, so the script uses `await` ([chapter 12](12-concurrency.html#async-and-tasks), [chapter 18](18-features-and-stones.html#the-rok-stones)).
+HTTP is the `http` stone, added the same way as `json` above (`rok add http`, or `rok add http app.rok` for a script). Its client and server are async, so the script uses `await` ([chapter 12](12-concurrency.html#async-and-tasks), [chapter 18](18-features-and-stones.html#the-rok-stones)).
 
 ```rokon
 Package { name: "app", version: "0.1.0", deps: {
-    "http": Dep::path("../http"),
+    "http": Dep::version("^0.1.0"),
 } }
 ```
 

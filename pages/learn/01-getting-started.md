@@ -6,28 +6,29 @@ In this chapter you install the rok toolchain, create and run your first package
 
 ### Prerequisites
 
-`rokc` emits MLIR as text and produces native code with LLVM's `mlir-opt`, `mlir-translate`, and `clang` ([pipeline](../spec/refs-lang/000-meta/002-pipeline.html)). LLVM 21 and 22 are supported.
+`rokc` is self-contained: LLVM, MLIR and the lld linker are built into it, so you do not install LLVM ([9.2.18](../spec/refs-lang/009-tools/902-aot-pipeline.html#9218-embedded-toolchain)).
 
-- macOS: `brew install llvm@21` and the Xcode Command Line Tools (`xcode-select --install`). `rokc` finds the Homebrew location (`/opt/homebrew/opt/llvm@21/bin`) on its own, so leave `PATH` as is. The final link is done by Xcode's clang.
-- Debian / Ubuntu: `mlir-21-tools` and `clang-21` from [apt.llvm.org](https://apt.llvm.org) (`rokc` looks in `/usr/lib/llvm-21/bin`).
-- If LLVM is installed elsewhere, append its `bin/` to the **end** of `PATH`. Putting it first would shadow the system `clang`: `export PATH="$PATH:/path/to/llvm/bin"`.
+- macOS: the Xcode Command Line Tools (`xcode-select --install`), for the SDK that the final link needs.
+- Linux: nothing. The toolchain and the programs it builds need glibc 2.34 or later (Ubuntu 22.04, Debian 12, RHEL 9 and newer).
+- Windows: nothing.
+
+Release archives are built for macOS arm64, Linux x86_64 and aarch64, and Windows x86_64. Other hosts, such as macOS x86_64 and Windows arm64, are untested.
 
 ### Install script
 
-The install script unpacks the toolchain into `~/.rok`. Once releases are published, installation is one line.
+The install script downloads the toolchain for your platform from the [GitHub releases](https://github.com/rok-lang/rok/releases), checks it against its SHA-256, and unpacks it into `~/.rok`.
 
 ```bash
 curl -fsSL https://rok-lang.org/install.sh | sh
 ```
 
-> [!NOTE]
-> There is no published release yet. For now, build a toolchain archive from source and install it with the same script. This requires a Rust toolchain (`rustup`).
->
-> ```bash
-> git clone https://github.com/rok-lang/rok && cd rok
-> ./dist.sh                                  # dist/rok-<version>-<triple>.tar.gz
-> sh install.sh --archive dist/rok-*.tar.gz  # into ~/.rok
-> ```
+On Windows, run this in PowerShell. It installs into `%USERPROFILE%\.rok` and adds its `bin` to your user `PATH`.
+
+```powershell
+powershell -ExecutionPolicy Bypass -c "irm https://rok-lang.org/install.ps1 | iex"
+```
+
+`install.sh --version <v>` and `install.ps1 -Version <v>` pick a release.
 
 You can change the install location with the `ROK_HOME` environment variable (default `~/.rok`). When the script finishes, you get the following layout.
 
@@ -40,7 +41,7 @@ You can change the install location with the `ROK_HOME` environment variable (de
         └── lib/                # runtime and standard library sources
 ```
 
-The toolchain you just installed becomes the default. The three executables in `~/.rok/bin` are **proxies**: the real work is done by the executable of the same name in the active toolchain. This lets you install several toolchains side by side and pick one (the same approach as rustup). Add this directory to `PATH`.
+The toolchain you just installed becomes the default. The three executables in `~/.rok/bin` are **proxies**: the real work is done by the executable of the same name in the active toolchain. This lets you install several toolchains side by side and pick one (the same approach as rustup). Add this directory to `PATH` (on Windows the installer already did).
 
 ```bash
 # bash / zsh
@@ -77,19 +78,28 @@ rok toolchain update                   # download the latest release and make it
 
 `rok toolchain update 0.2.0` installs that version instead. The download is checked against its published SHA-256, and if anything fails the previous default stays in place. Older toolchains are kept. Do not confuse it with `rok update`, which moves the versions pinned in a package's `rok.lock` ([chapter 11](11-modules-packages.html)).
 
-### Using the source tree directly
+### Building from source (optional)
 
-If you are working on the compiler, you can use the build output directly without installing.
+You can also build a toolchain archive yourself and install it with the same script. This needs a Rust toolchain (`rustup`).
 
 ```bash
 git clone https://github.com/rok-lang/rok && cd rok
+./dist.sh                                  # dist/rok-<version>-<triple>.tar.gz
+sh install.sh --archive dist/rok-*.tar.gz  # into ~/.rok
+```
+
+The first run also builds the pinned LLVM into `~/.cache/rok` (cmake and ninja, about an hour). On Linux, `./dist-linux.sh` (podman or docker) builds the same archive in a container so that it runs on glibc 2.34 and later; the release archives are built this way. The repository's README has the details.
+
+If you are working on the compiler, you can use the build output directly without installing. Without the pinned LLVM, this `rokc` compiles at `-O0` only.
+
+```bash
 cargo build --release
 export PATH="$PWD/target/release:$PATH"
 ```
 
 ## Your first package
 
-`rok new` creates a package directory and initializes a git repository with a `.gitignore` that excludes `target/`. Package names use lowercase letters, digits, `-`, and `_`, and start with a letter. In code, `-` becomes `_` (`rok new my-lib` is imported as `use my_lib::..`).
+`rok new` creates a package directory and initializes a git repository with a `.gitignore` that excludes `target/`. Package names use lowercase letters, digits, `-`, and `_`, and start with a letter. The name `rok` is taken by the standard library, so a package can't be called `rok`. In code, `-` becomes `_` (`rok new my-lib` is imported as `use my_lib::..`).
 
 ```bash
 rok new hello
@@ -189,7 +199,7 @@ rok run hi.rok
 hi
 ```
 
-Scripts can use dependencies too: `rok add json --path ../json hi.rok` writes them into a `//!` comment at the top of the file (see [inline manifests](../spec/refs-lang/009-tools/910-rok-frontend.html#9107-inline-manifest-for-single-file-scripts) and [chapter 11](11-modules-packages.html#single-file-scripts-and-environments)).
+Scripts can use dependencies too: `rok add json hi.rok` writes them into a `//!` comment at the top of the file (see [inline manifests](../spec/refs-lang/009-tools/910-rok-frontend.html#9107-inline-manifest-for-single-file-scripts) and [chapter 11](11-modules-packages.html#single-file-scripts-and-environments)).
 
 ## REPL
 
@@ -209,7 +219,7 @@ List<i32>
 
 ## Summary
 
-- Install into `~/.rok` with `curl -fsSL https://rok-lang.org/install.sh | sh` and add `~/.rok/bin` to `PATH`.
+- Install into `~/.rok` with `curl -fsSL https://rok-lang.org/install.sh | sh` (`install.ps1` on Windows) and add `~/.rok/bin` to `PATH`.
 - `rok new name` creates `rok.rokon` and `src/main.rok`; `rok run` builds and runs.
 - The top-level statements of `src/main.rok` are the program. You can also use `fn main()`.
 - `rok run file.rok` runs a script; `rok` alone starts the REPL.
