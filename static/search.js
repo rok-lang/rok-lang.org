@@ -31,6 +31,89 @@
     });
   }
 
+  // A copy button on each code block (not on output or error boxes).
+  for (const pre of document.querySelectorAll("article pre:not(.output):not(.err):not(.sig), .install pre")) {
+    if (pre.closest(".members")) continue;
+    const wrap = document.createElement("div");
+    wrap.className = "code";
+    pre.replaceWith(wrap);
+    wrap.append(pre);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "copy";
+    b.textContent = "copy";
+    b.setAttribute("aria-label", "Copy code");
+    b.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(pre.innerText.replace(/\n$/, ""));
+        b.textContent = "copied ✓";
+      } catch {
+        b.textContent = "press ⌘C";
+      }
+      b.classList.add("done");
+      setTimeout(() => { b.textContent = "copy"; b.classList.remove("done"); }, 1600);
+    });
+    wrap.append(b);
+  }
+
+  // The sidebar's section list follows the reader.
+  const toc = [...document.querySelectorAll(".side .toc a[href^='#']")];
+  const heads = toc.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter(Boolean);
+  if (heads.length) {
+    let queued = false;
+    const spy = () => {
+      queued = false;
+      let cur = 0;
+      heads.forEach((h, k) => { if (h.getBoundingClientRect().top < 120) cur = k; });
+      toc.forEach((a, k) => (k === cur ? a.setAttribute("aria-current", "location") : a.removeAttribute("aria-current")));
+    };
+    addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(spy); } }, { passive: true });
+    spy();
+  }
+
+  // 404.html: name the missing path in the error.
+  const lost = document.getElementById("lost-path");
+  if (lost) lost.textContent = location.pathname;
+
+  // Where a hit lives, by the first part of its url.
+  const where = (u) =>
+    u.startsWith("learn/") ? "learn" : u.startsWith("examples/") ? "example" : u.startsWith("std/") ? "api"
+      : u.startsWith("spec/refs-standard-libraries/") ? "std spec" : u.startsWith("spec/") ? "spec" : "";
+
+  // Docs: the version menu and, off the newest release, a banner.
+  const vers = document.querySelector(".vers");
+  const version = document.body.dataset.version;
+  if (vers && version) {
+    const base = new URL(root || "./", location.href);
+    const here = location.href.slice(base.href.length).split("#")[0];
+    const at = base.pathname.replace(/\/$/, "").split("/").pop();
+    fetch(new URL("../versions.json", base)).then((r) => r.json()).then((v) => {
+      const menu = vers.querySelector(".vers-menu");
+      const item = (dir, label, note, cur) => {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.href = new URL("../" + dir + "/" + here, base).href;
+        a.textContent = label;
+        if (note) { const s = document.createElement("small"); s.textContent = note; a.append(s); }
+        if (cur) a.setAttribute("aria-current", "true");
+        li.append(a);
+        menu.append(li);
+      };
+      for (const r of v.released) item(r, "v" + r, r === v.latest ? "latest" : "", at !== "latest" && at === r || at === "latest" && r === v.latest);
+      item("dev", "dev", "main branch", at === "dev");
+      if (version !== v.latest && v.latest) {
+        const b = document.createElement("p");
+        b.className = "ver-banner";
+        b.append(version === "dev" ? "These are the docs of the unreleased main branch." : `These are the docs of rok ${version}.`);
+        const a = document.createElement("a");
+        a.href = new URL("../latest/" + here, base).href;
+        a.textContent = `Latest release: v${v.latest} →`;
+        b.append(a);
+        document.querySelector(".top").after(b);
+      }
+    }).catch(() => {});
+  }
+
   const load = () =>
     index ? Promise.resolve(index)
       : fetch(root + "search-index.json").then((r) => r.json()).then((d) => (index = d));
@@ -79,7 +162,14 @@
       a.setAttribute("role", "option");
       a.tabIndex = -1;
       a.href = root + e.u;
-      a.textContent = e.t;
+      const w = where(e.u);
+      if (w) {
+        const tag = document.createElement("span");
+        tag.className = "src";
+        tag.textContent = w;
+        a.append(tag);
+      }
+      a.append(e.t);
       if (e.p) {
         const s = document.createElement("small");
         s.textContent = e.p;
@@ -100,6 +190,7 @@
     mark(hits.length ? 0 : -1);
   };
 
+  if (!q) return;
   q.addEventListener("focus", load, { once: true });
   q.addEventListener("input", search);
   q.addEventListener("keydown", (ev) => {

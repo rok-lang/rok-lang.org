@@ -1,12 +1,22 @@
-// rok-lang.org: renders the rok spec (English at `spec/`, Korean at
-// `ko/spec/`), the site's own pages and the standard library API into a static site, then checks
-// every internal link.
+// rok-lang.org: builds two static sites into `out` (site.rokon) and
+// checks every internal link of both.
 //
-//   rok run                  build into `out` (site.rokon)
-//   rok run -- check         build; run the pages' code blocks; exit 1 on
-//                            a broken link or a failing block
-//   rok run -- code [filter] only run the code blocks (of pages whose
-//                            path contains `filter`)
+//   out/www/        rok-lang.org: the landing page (www/index.md) and the
+//                   installers
+//   out/docs/<v>/   docs.rok-lang.org/<v>/: the spec (English at `spec/`,
+//                   Korean at `ko/spec/`), the guide and examples (docs/)
+//                   and the standard library API, for one version
+//   out/docs/       versions.json, index.html (to latest/) and 404.html;
+//                   latest/ is a copy of the newest release (versions.rokon)
+//
+// Other version directories already in out/docs/ are kept, so a deploy
+// lays the builds of earlier tags there first.
+//
+//   rok run [-- --version <v>]   build; <v> is a release ("0.1") or dev
+//   rok run -- check             build; run the pages' code blocks; exit 1
+//                                on a broken link or a failing block
+//   rok run -- code [filter]     only run the code blocks (of pages whose
+//                                path contains `filter`)
 
 mod apidoc;
 mod check;
@@ -23,6 +33,15 @@ use layout::{dir_of, rel};
 pub struct Site {
     pub title: str;
     pub tagline: str;
+    /// The landing page's `<meta name="description">`, and the fallback
+    /// for pages without a first paragraph.
+    pub description: str = "";
+    /// Where the home site is served.
+    pub base_url: str = "https://rok-lang.org";
+    /// Where the docs are served, above the version directories.
+    pub docs_url: str = "https://docs.rok-lang.org";
+    /// The docs version being built: `--version`, else `dev`.
+    pub version: str = "dev";
     /// The spec's English edition (`spec/en`), relative to this file.
     pub spec: str = "../spec/en";
     /// The Korean edition (`spec/ko`), rendered under `ko/`; `""` for none.
@@ -34,6 +53,12 @@ pub struct Site {
     /// The standard library sources (`bare/src/`, `core/src/`, `std/src/`).
     pub library: str = "../rok/library";
     pub out: str = "public";
+}
+
+/// versions.rokon: the released docs versions, newest first.
+#[derive(Rokon)]
+pub struct Versions {
+    pub released: List<str>;
 }
 
 pub struct Page {
@@ -319,13 +344,13 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
 
 // ---- build ----
 
-/// `pages/**.md`, sorted (each directory's `index.md` first).
+/// `docs/**.md`, sorted (each directory's `index.md` first).
 fn page_sources() throws -> List<str> {
     let srcs: List<str> = List::new();
-    for entry in fs::walk("pages") {
+    for entry in fs::walk("docs") {
         let e = try entry.get();
         let p = e.path().as_str();
-        if e.is_file() && p.ends_with(".md") { srcs.push(p["pages/".len():]); }
+        if e.is_file() && p.ends_with(".md") { srcs.push(p["docs/".len():]); }
     }
     for k in 0..srcs.len() { srcs[k] = srcs[k].replace("index.md", "README.md"); }
     sort_sources(srcs);
@@ -335,8 +360,10 @@ fn page_sources() throws -> List<str> {
 
 fn code_check(filter: str) throws -> List<str> {
     let snips: List<check::Snippet> = List::new();
-    for src in try page_sources() {
-        let page = "pages/" + src;
+    let paths: List<str> = List::new();
+    for src in try page_sources() { paths.push("docs/" + src); }
+    paths.push("www/index.md");
+    for page in paths {
         if !page.contains(filter) { continue; }
         snips.extend(check::extract(page, try fs::read_to_str(page)));
     }
@@ -367,21 +394,93 @@ fn load_site() throws -> Site {
     try rokon::decode(base, "site.rokon")
 }
 
+/// versions.rokon.
+fn load_versions() throws -> Versions {
+    try rokon::decode(try rokon::parse(try fs::read_to_str("versions.rokon")), "versions.rokon")
+}
+
+/// Copies static/ into `dir`; the copied names.
+fn copy_static(dir: str) throws -> Set<str> {
+    let names: Set<str> = Set::new();
+    for entry in fs::walk("static") {
+        let e = try entry.get();
+        if !e.is_file() { continue; }
+        let name = e.path().as_str()["static/".len():];
+        try fs::create_dir_all(dir_of(dir + "/" + name));
+        try fs::copy(e.path(), dir + "/" + name);
+        names.insert(name);
+    }
+    names
+}
+
+fn copy_tree(from: str, to: str) throws {
+    if fs::exists(to) { try fs::remove_dir_all(to); }
+    for entry in fs::walk(from) {
+        let e = try entry.get();
+        if !e.is_file() { continue; }
+        let dest = to + e.path().as_str()[from.len():];
+        try fs::create_dir_all(dir_of(dest));
+        try fs::copy(e.path(), dest);
+    }
+}
+
+/// A release is `<major>.<minor>`; the docs of its patch releases share it.
+fn is_version(v: str) -> bool {
+    if v == "dev" { return true; }
+    let dots = 0usize;
+    let digits = 0usize;
+    for c in v.chars() {
+        if c == '.' {
+            if digits == 0 { return false; }
+            dots += 1;
+            digits = 0;
+        } else if c >= '0' && c <= '9' {
+            digits += 1;
+        } else {
+            return false;
+        }
+    }
+    dots == 1 && digits > 0
+}
+
+fn usage() {
+    eprintln("usage: rok run [-- [check] [--version <major.minor> | --version dev] | -- code [filter]]");
+    env::exit(2);
+}
+
 fn main() throws {
     let t0 = Instant::now();
     let args = env::args();
-    let mode = if args.len() > 1 { args[1] } else { "" };
-    if mode == "code" {
+    if args.len() > 1 && args[1] == "code" {
         let bad = try code_check(if args.len() > 2 { args[2] } else { "" });
         if bad.len() > 0 { env::exit(1); }
         return;
     }
-    if mode != "" && mode != "check" {
-        eprintln("usage: rok run [-- check | -- code [filter]]");
+    let strict = false;
+    let version = "dev";
+    let k = 1usize;
+    while k < args.len() {
+        if args[k] == "check" {
+            strict = true;
+        } else if args[k] == "--version" && k + 1 < args.len() {
+            version = args[k + 1];
+            k += 1;
+        } else {
+            usage();
+        }
+        k += 1;
+    }
+    if !is_version(version) {
+        eprintln(f"error: `--version {version}`: write a release as <major>.<minor> (`--version 0.1`), or `--version dev`");
         env::exit(2);
     }
-    let strict = mode == "check";
     let site = try load_site();
+    site.version = version;
+    let vs = try load_versions();
+    let newest = if vs.released.len() > 0 { vs.released[0] } else { "" };
+    if version != "dev" && !vs.released.contains(version) {
+        eprintln(f"note: {version} is not in versions.rokon, so the version menu will not list it");
+    }
     let out_root = site.out;
 
     let pages = try spec_pages(site, spec_root(site.spec), "", false);
@@ -397,11 +496,11 @@ fn main() throws {
         files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(ko_pages, k), lang_switch(p, pages, true) + p.html, layout::pager(ko_pages, k)));
     }
 
-    // The site's own pages: `pages/x.md` → `x.html`; a directory
-    // (`pages/learn/`) is a chapter with its own sidebar and pager.
+    // The docs' own pages: `docs/x.md` → `x.html`; a directory
+    // (`docs/learn/`) is a chapter with its own sidebar and pager.
     let own: List<Page> = List::new();
     for src in try page_sources() {
-        let doc = layout::md(try fs::read_to_str("pages/" + src), |h| h, false);
+        let doc = layout::md(try fs::read_to_str("docs/" + src), |h| h, false);
         let key = src.replace("index.md", "README.md");
         own.push(Page { src: key, out: src.replace(".md", ".html"), dir: dir_of(src), title: doc.title, html: doc.html, heads: doc.headings });
     }
@@ -454,28 +553,51 @@ fn main() throws {
     }
     idx.push_str("]\n");
 
-    if fs::exists(out_root) { try fs::remove_dir_all(out_root); }
-    for out in files.keys() { try write(out_root, out, files[out]); }
-    try write(out_root, "search-index.json", idx.to_str());
-    let statics: Set<str> = Set::new();
-    statics.insert("search-index.json");
-    for entry in fs::walk("static") {
-        let e = try entry.get();
-        if !e.is_file() { continue; }
-        let name = e.path().as_str()["static/".len():];
-        try fs::create_dir_all(dir_of(out_root + "/" + name));
-        try fs::copy(e.path(), out_root + "/" + name);
-        statics.insert(name);
+    // The home site: the landing page links into the newest docs with
+    // `docs:<path>`.
+    let www: Dict<str, str> = Dict::new();
+    let landing = layout::md(try fs::read_to_str("www/index.md"), |h| if h.starts_with("docs:") { layout::latest(site, h["docs:".len():]) } else { h }, false);
+    // Raw HTML blocks are not seen by the link mapper.
+    let landing_html = landing.html.replace("href=\"docs:", "href=\"" + layout::latest(site, ""));
+    www.insert("index.html", layout::www_page(site, "index.html", landing.title, landing_html));
+    www.insert("404.html", layout::www_page(site, "404.html", "Page not found", layout::not_found("/logo.svg", |p| layout::latest(site, p), false)));
+
+    let docs_root = out_root + "/docs";
+    let docs_dir = docs_root + "/" + version;
+    let www_dir = out_root + "/www";
+    for d in [docs_dir, www_dir] {
+        if fs::exists(d) { try fs::remove_dir_all(d); }
     }
+    for out in files.keys() { try write(docs_dir, out, files[out]); }
+    try write(docs_dir, "search-index.json", idx.to_str());
+    let statics = try copy_static(docs_dir);
+    statics.insert("search-index.json");
+    for out in www.keys() { try write(www_dir, out, www[out]); }
+    let www_statics = try copy_static(www_dir);
     // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
     for f in ["install.sh", "install.ps1"] {
-        try fs::copy(site.library + "/../" + f, out_root + "/" + f);
-        statics.insert(f);
+        try fs::copy(site.library + "/../" + f, www_dir + "/" + f);
+        www_statics.insert(f);
     }
 
+    // Above the versions: the version list for the menu, a redirect to
+    // latest/, and the 404 page (which borrows latest/'s files).
+    let list = StrBuf::new();
+    for v in vs.released {
+        if !list.is_empty() { list.push(','); }
+        list.push_str(json_str(v));
+    }
+    try write(docs_root, "versions.json", f"{{\"latest\":{json_str(newest)},\"released\":[{list.to_str()}]}}\n");
+    try write(docs_root, "index.html", layout::to_latest());
+    if version == newest { try copy_tree(docs_dir, docs_root + "/latest"); }
+    // The 404 page uses latest/'s files, so it speaks for that version.
+    site.version = if newest.is_empty() { version } else { newest };
+    try write(docs_root, "404.html", layout::page(site, "404.html", "Page not found", "", layout::not_found("/latest/logo.svg", |p| "/latest/" + p, true), ""));
+
     let bad = check(files, statics);
+    for b in check(www, www_statics) { bad.push("www/" + b); }
     for b in bad { eprintln(f"broken link: {b}"); }
-    println(f"{pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} site pages + {api.len()} API pages → {out_root}/ ({files.len()} html), {bad.len()} broken links, {t0.elapsed():?}");
+    println(f"docs {version}: {pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} guide pages + {api.len()} API pages → {docs_dir}/ ({files.len()} html){if version == newest { ", copied to latest/" } else { "" }}; home → {www_dir}/; {bad.len()} broken links, {t0.elapsed():?}");
     if strict {
         let failing = try code_check("");
         println(f"checked in {t0.elapsed():?}");

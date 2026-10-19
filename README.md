@@ -1,6 +1,11 @@
 # rok-lang.org
 
-The documentation site for the rok language. The site generator itself is written in rok. It reads both editions of the spec repository, English (`spec/en`, rendered at `/spec/`) and Korean (`spec/ko`, rendered at `/ko/spec/`), to build the language reference and the standard library reference, extracts the API listing (`/std/`) from the standard library sources of the implementation repository (`rok/library`), adds the landing page, the guide (`/learn/`), and the examples (`/examples/`) from this repository's `pages/`, and writes a static site to `public/`.
+The two websites of the rok language, built by one static site generator written in rok:
+
+- **rok-lang.org**: the landing page (`www/index.md`) and the installers (`/install.sh`, `/install.ps1`). Built into `public/www/`.
+- **docs.rok-lang.org**: the documentation, one directory per version (`/0.1/`, `/dev/`, ...; `/latest/` is the newest release). Built into `public/docs/<version>/`.
+
+For the docs, the generator reads both editions of the spec repository, English (`spec/en`, rendered at `spec/`) and Korean (`spec/ko`, rendered at `ko/spec/`), to build the language reference and the standard library reference. It extracts the API listing (`std/`) from the standard library sources of the implementation repository (`rok/library`), and adds the docs home, the guide (`learn/`) and the examples (`examples/`) from this repository's `docs/`.
 
 ## Build
 
@@ -25,7 +30,7 @@ If your checkouts live elsewhere, put the paths in `site.local.rokon` (git-ignor
 }
 ```
 
-If you have no toolchain, install one (`curl -fsSL https://rok-lang.org/install.sh | sh`, see [Getting Started](https://rok-lang.org/learn/01-getting-started.html)) or build it from source:
+If you have no toolchain, install one (`curl -fsSL https://rok-lang.org/install.sh | sh`, see [Getting Started](https://docs.rok-lang.org/latest/learn/01-getting-started.html)) or build it from source:
 
 ```bash
 cd ../rok
@@ -36,8 +41,9 @@ export PATH="$PWD/target/release:$PATH"
 Then, in this repository:
 
 ```bash
-rok run                      # generate the site in public/ (spec + guide + examples + API)
-rok run -- check             # generate + run code blocks; exit code 1 on broken links or failed blocks
+rok run                      # build public/www/ and the dev docs in public/docs/dev/
+rok run -- --version 0.1     # build the 0.1 docs in public/docs/0.1/ (and latest/ if 0.1 is the newest release)
+rok run -- check             # build + run code blocks; exit code 1 on broken links or failed blocks
 rok run -- code [filter]     # run code blocks only (pages whose path contains filter); leaves public/ alone
 rok test                     # code block extraction tests
 ```
@@ -46,7 +52,7 @@ When the build finishes it prints the page count, the broken link count, and the
 
 ### Code block checks
 
-Every ` ```rok ` block in the markdown under `pages/` is compiled and run as a standalone program (`rokc run <block>.rok`, in `rok-lang.org-snippets/` under the system temp directory). The second word of the info string changes the behavior.
+Every ` ```rok ` block in the markdown under `docs/` and in `www/index.md` is compiled and run as a standalone program (`rokc run <block>.rok`, in `rok-lang.org-snippets/` under the system temp directory). The second word of the info string changes the behavior.
 
 | Block | Check |
 |-------|-------|
@@ -62,13 +68,32 @@ Starting from `src/lib.rok` of `bare` / `core` / `std` under `library` in `site.
 
 Why not `rokc doc`: `rokc doc` documents only the user package and `--extern` dependencies and skips the `rok::` standard library, and the standard library does not compile as a user package (lang slots, type keywords, `rok::core` paths). So `src/apidoc.rok` scans the sources directly (it masks comments / strings, then finds item boundaries by bracket depth).
 
+## Versions
+
+`versions.rokon` lists the released docs versions, newest first. A version is `<major>.<minor>`: the docs of 0.1.0, 0.1.1, ... are all `0.1/`.
+
+Each build writes one version directory, `public/docs/<version>/`, and leaves the other version directories in `public/docs/` alone. It also writes, above them:
+
+- `versions.json`: the version list. `search.js` reads it to fill the version menu in the header, and to show a banner on `dev/` and on releases older than the newest.
+- `index.html`: a redirect to `latest/`.
+- `404.html`: served for any missing path; it uses `latest/`'s stylesheet and links.
+
+When the version built is the first in `versions.rokon`, the build also copies its directory to `latest/`. Canonical links of every version point at `latest/`, and `dev/` pages are `noindex`.
+
+To release the docs of a new version:
+
+1. Tag spec, impl and this repository.
+2. Add the version at the front of `versions.rokon`.
+3. Build it from the tags with `rok run -- --version <v>`, with `site.local.rokon` pointing at checkouts of the tags and `spec_branch` set to the tag.
+4. Keep `public/docs/<v>/` as an archive. Old versions are never rebuilt: a deploy first lays the archived version directories into `public/docs/`, then builds `dev` from main.
+
 ## Preview
 
-The search index (`search-index.json`) is loaded with `fetch`, so open the site through a local server rather than `file://`.
+The search index (`search-index.json`) is loaded with `fetch`, so serve the two sites over HTTP rather than `file://`. For links between them to work locally, set `base_url` and `docs_url` in `site.local.rokon` to the local addresses.
 
 ```bash
-python3 -m http.server -d public 8000
-# http://localhost:8000
+python3 -m http.server -d public/www 8401    # rok-lang.org
+python3 -m http.server -d public/docs 8403   # docs.rok-lang.org
 ```
 
 ## Configuration
@@ -79,26 +104,31 @@ Edit `site.rokon` (ROKON); `site.local.rokon`, if present, overrides its fields.
 |---------------|---------|
 | `title`       | Site name |
 | `tagline`     | Phrase appended to the home page title |
+| `description` | `<meta name="description">` of the home page and of pages without a first paragraph |
+| `base_url`    | Where the home site is served (`https://rok-lang.org`) |
+| `docs_url`    | Where the docs are served, above the version directories (`https://docs.rok-lang.org`) |
 | `spec`        | English edition of the spec (default `../spec/en`), rendered at `spec/` |
 | `spec_ko`     | Korean edition (`../spec/ko`), rendered at `ko/spec/`; `""` for none |
 | `spec_repo`, `spec_branch` | Repository that links pointing outside the spec directory (`../LICENSE`, etc.) resolve to |
 | `packages`    | Package site URL (`https://rokstones.io`) |
-| `library`     | Standard library source directory (default `../rok/library`); `install.sh` and `install.ps1` next to it are served at `/install.sh` and `/install.ps1` |
+| `library`     | Standard library source directory (default `../rok/library`); `install.sh` and `install.ps1` next to it are served by the home site at `/install.sh` and `/install.ps1` |
 | `out`         | Output directory (default `public`) |
 
 ## Layout
 
 | File | Contents |
 |------|----------|
-| `src/main.rok`   | Reads the configuration, collects spec / pages, generates pages, builds the search index, copies static files, checks links |
+| `src/main.rok`   | Reads the configuration and `versions.rokon`, collects spec / pages, generates both sites, builds the search index, copies static files, checks links |
 | `src/check.rok`  | Code block extraction and parallel compile / run / output comparison |
 | `src/apidoc.rok` | API pages from the standard library sources |
-| `src/layout.rok` | Page frame: header, navigation, chapter sidebar and table of contents, previous / next, contents listing, footer; markdown options |
-| `pages/`        | Landing page (`index.md`), guide (`learn/`), examples (`examples/`) |
-| `static/`       | `style.css` (light / dark), `search.js`, logo |
+| `src/layout.rok` | Page frames of the docs and the home site: header, version menu, navigation, chapter sidebar and table of contents, previous / next, contents listing, footer, 404 pages; markdown options |
+| `www/index.md`  | The home site's landing page; `docs:<path>` links go to `<docs_url>/latest/<path>` |
+| `docs/`         | The docs: home (`index.md`), guide (`learn/`), examples (`examples/`) |
+| `versions.rokon` | Released docs versions, newest first |
+| `static/`       | `style.css` (light / dark), `search.js`, logos, `og.png`; copied to both sites |
 
 Markdown rendering (a CommonMark subset + GFM tables / strikethrough / callouts / footnotes, GitHub-compatible heading ids) and ` ```rok ` / ` ```rokon ` highlighting are handled by the stones [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) (path dependencies in `rok.rokon`, on the checkouts under `../stones/`). They stay path dependencies until `rok.rokon` is switched to their rokstones.io versions.
 
 Spec files map as `x/README.md` → `spec/x/index.html` and `x/foo.md` → `spec/x/foo.html`, and `.md` links in the text are rewritten to relative paths of the generated `.html`. Anchors follow GitHub's rules, so the spec's `#...` links work unchanged. The Korean edition goes under `ko/` (`ko/spec/x/foo.html`) with `lang="ko"` and Korean callout titles; everything else is English. Every spec page carries an EN / 한국어 switch to the same page of the other edition; `search.js` carries the reader's section over, pairing headings by position when the two outlines match and by section number otherwise. The search index covers the English spec only.
 
-`pages/x.md` becomes `x.html`. A subdirectory (`pages/learn/`) is grouped into one chapter with a sidebar and previous / next links, and a contents listing of the directory's pages (each page's title and first paragraph; cards for `examples/`) is appended after its `index.md`. Pages are ordered by file name.
+`docs/x.md` becomes `<version>/x.html`. A subdirectory (`docs/learn/`) is grouped into one chapter with a sidebar and previous / next links, and a contents listing of the directory's pages (each page's title and first paragraph; cards for `examples/`) is appended after its `index.md`. Pages are ordered by file name.

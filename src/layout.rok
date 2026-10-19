@@ -180,8 +180,70 @@ fn nav_item(root: str, href: str, label: str, on: bool) -> str {
     f"<a href=\"{root}{href}\"{cur}>{label}</a>"
 }
 
+/// `s` cut to `n` characters, with an ellipsis if it was longer.
+fn clip(s: str, n: usize) -> str {
+    let out = StrBuf::new();
+    let k = 0usize;
+    for c in s.chars() {
+        if k == n {
+            out.push('…');
+            break;
+        }
+        out.push(c);
+        k += 1;
+    }
+    out.to_str()
+}
+
+/// The page's summary for `<meta name="description">`: its first paragraph.
+fn describe(site: Site, out: str, body: str) -> str {
+    if out == "index.html" || out == "404.html" { return site.description; }
+    let s = strip_tags(lead(body)).replace("\n", " ").trim();
+    if s.is_empty() { site.description } else { clip(s, 160) }
+}
+
+/// `<head>` from the charset to the icons. `root` leads to the icons and
+/// stylesheet, `url` is the canonical address, `img` the og:image.
+fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: str) -> str {
+    f"<meta charset=\"utf-8\">
+<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
+<title>{esc(full)}</title>
+<meta name=\"description\" content=\"{desc}\">
+<link rel=\"canonical\" href=\"{esc(url)}\">
+{extra}<meta property=\"og:type\" content=\"website\">
+<meta property=\"og:site_name\" content=\"{esc(site.title)}\">
+<meta property=\"og:title\" content=\"{esc(full)}\">
+<meta property=\"og:description\" content=\"{desc}\">
+<meta property=\"og:url\" content=\"{esc(url)}\">
+<meta property=\"og:image\" content=\"{esc(img)}\">
+<meta name=\"twitter:card\" content=\"summary_large_image\">
+<meta name=\"theme-color\" content=\"#fcfbfd\" media=\"(prefers-color-scheme: light)\">
+<meta name=\"theme-color\" content=\"#15151b\" media=\"(prefers-color-scheme: dark)\">
+<link rel=\"stylesheet\" href=\"{root}style.css\">
+<link rel=\"icon\" href=\"{root}logo.svg\" type=\"image/svg+xml\">
+<link rel=\"icon\" href=\"{root}favicon.ico\" sizes=\"32x32\">
+<link rel=\"apple-touch-icon\" href=\"{root}apple-touch-icon.png\">
+"
+}
+
+/// The address of `path` in the newest release's docs.
+pub fn latest(site: Site, path: str) -> str { site.docs_url + "/latest/" + path }
+
+fn footer(site: Site, first: str) -> str {
+    f"<footer>
+<ul class=\"links\">{first}<li>Spec text © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a></li><li><a href=\"{esc(site.spec_repo)}\">Spec repository</a></li><li><a href=\"{esc(site.packages)}\">Packages</a></li></ul>
+<p class=\"made\">built with a static site generator written in rok</p>
+</footer>
+"
+}
+
+/// A page of the docs of one version, `out` relative to that version's
+/// root. search.js fills the version menu and banner from `versions.json`
+/// beside the version directories.
 pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) -> str {
-    let root = root_of(out);
+    // The 404 page sits above the versions and is served for any missing
+    // path, so it borrows the newest release's files.
+    let root = if out == "404.html" { "/latest/" } else { root_of(out) };
     let ko = out.starts_with("ko/");
     // Nav state of a Korean spec page is that of its English twin.
     let at = if ko { out["ko/".len():] } else { out };
@@ -194,7 +256,8 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
     nav.push_str(nav_item(root, "std/index.html", "API", out.starts_with("std/")));
     nav.push_str(nav_item(root, "spec/refs-lang/009-tools/index.html", "Tools", tools));
     nav.push_str(f"<a href=\"{esc(site.packages)}\">Packages ↗</a>");
-    let full = if out == "index.html" { site.title + " — " + site.tagline } else { title + " — " + site.title };
+    let name = site.title + " docs";
+    let full = if out == "index.html" { name } else { title + " — " + name };
     let aside = if side.is_empty() {
         ""
     } else {
@@ -202,21 +265,23 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
     };
     let kind = if out == "index.html" { "home" } else if side.is_empty() { "doc wide" } else { "doc" };
     let lang = if ko { "ko" } else { "en" };
+    let desc = esc(describe(site, out, body));
+    let url = latest(site, if out == "index.html" || out == "404.html" { "" } else { out });
+    // Unreleased docs stay out of search engines.
+    let robots = if site.version == "dev" { "<meta name=\"robots\" content=\"noindex\">\n" } else { "" };
+    let ver = if site.version == "dev" { "dev" } else { "v" + site.version };
+    let home = f"<li><a href=\"{esc(site.base_url)}\">{esc(site.title)} home</a></li>";
     f"<!doctype html>
 <html lang=\"{lang}\">
 <head>
-<meta charset=\"utf-8\">
-<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
-<title>{esc(full)}</title>
-<link rel=\"stylesheet\" href=\"{root}style.css\">
-<link rel=\"icon\" href=\"{root}logo.png\">
-</head>
-<body class=\"{kind}\" data-root=\"{root}\">
+{head(site, root, full, desc, url, latest(site, "og.png"), robots)}</head>
+<body class=\"{kind}\" data-root=\"{root}\" data-version=\"{esc(site.version)}\">
 <a class=\"skip\" href=\"#content\">Skip to content</a>
 <header class=\"top\">
-<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.png\" alt=\"\" width=\"28\" height=\"28\">{esc(site.title)}</a>
+<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.svg\" alt=\"\" width=\"28\" height=\"28\"><span>{esc(site.title)}</span><span class=\"docs-tag\">docs</span></a>
+<details class=\"vers\"><summary aria-label=\"Docs version: {ver}\">{ver}</summary><ul class=\"vers-menu\"></ul></details>
 <nav class=\"main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
-<div class=\"search\" role=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Search docs ( / )\" aria-label=\"Search docs\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
+<div class=\"search\" role=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Search docs\" aria-label=\"Search docs\" aria-keyshortcuts=\"/\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
 </header>
 <div class=\"wrap\">
 {aside}<main id=\"content\">
@@ -225,11 +290,78 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
 {pager}
 </main>
 </div>
-<footer>
-<p>Spec text © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a> · <a href=\"{esc(site.spec_repo)}\">Spec repository</a> · <a href=\"{esc(site.packages)}\">Packages</a></p>
-<p>Built with a static site generator written in rok.</p>
-</footer>
-<script src=\"{root}search.js\" defer></script>
+{footer(site, home)}<script src=\"{root}search.js\" defer></script>
+</body>
+</html>
+"
+}
+
+/// A page of the home site (rok-lang.org): no search, its nav into the
+/// newest docs.
+pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
+    let root = if out == "404.html" { "/" } else { root_of(out) };
+    let nav = StrBuf::new();
+    nav.push_str(f"<a href=\"{esc(latest(site, "index.html"))}\">Docs</a>");
+    nav.push_str(f"<a href=\"{esc(latest(site, "learn/index.html"))}\">Learn</a>");
+    nav.push_str(f"<a href=\"{esc(latest(site, "examples/index.html"))}\">Examples</a>");
+    nav.push_str(f"<a href=\"{esc(latest(site, "spec/refs-lang/index.html"))}\">Language reference</a>");
+    nav.push_str(f"<a href=\"{esc(latest(site, "std/index.html"))}\">API</a>");
+    nav.push_str(f"<a href=\"{esc(site.packages)}\">Packages ↗</a>");
+    let full = if out == "index.html" { site.title + " — " + site.tagline } else { title + " — " + site.title };
+    let url = if out == "index.html" || out == "404.html" { site.base_url + "/" } else { site.base_url + "/" + out };
+    let desc = esc(site.description);
+    let docs = f"<li><a href=\"{esc(latest(site, "index.html"))}\">Docs</a></li>";
+    f"<!doctype html>
+<html lang=\"en\">
+<head>
+{head(site, root, full, desc, url, site.base_url + "/og.png", "")}</head>
+<body class=\"home www\" data-root=\"{root}\">
+<a class=\"skip\" href=\"#content\">Skip to content</a>
+<header class=\"top\">
+<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.svg\" alt=\"\" width=\"28\" height=\"28\"><span>{esc(site.title)}</span></a>
+<nav class=\"main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
+</header>
+<div class=\"wrap\">
+<main id=\"content\">
+<article>
+{body}</article>
+</main>
+</div>
+{footer(site, docs)}<script src=\"{root}search.js\" defer></script>
+</body>
+</html>
+"
+}
+
+/// Body of a 404 page, a compiler-style error; search.js fills in the
+/// path. `to(p)` is the address of docs page `p`.
+pub fn not_found(logo: str, to: fn(str) -> str, search: bool) -> str {
+    let help = if search { "search with <kbd>/</kbd>, or start from one of these" } else { "start from one of these" };
+    f"<div class=\"lost\">
+<img src=\"{logo}\" alt=\"\" width=\"88\" height=\"88\">
+<h1>Page not found</h1>
+<p>This page rolled away, or it never existed.</p>
+<pre class=\"err\"><code><span class=\"e\">error[E404]</span>: page not found
+ <span class=\"g\">--&gt;</span> <span id=\"lost-path\">this address</span>
+  <span class=\"g\">|</span>
+  <span class=\"g\">=</span> <span class=\"h\">help</span>: {help}</code></pre>
+<div class=\"cta\"><a class=\"primary\" href=\"{esc(to("index.html"))}\">Docs home</a><a href=\"{esc(to("learn/index.html"))}\">Learn</a><a href=\"{esc(to("spec/refs-lang/index.html"))}\">Reference</a><a href=\"{esc(to("std/index.html"))}\">API</a></div>
+</div>
+"
+}
+
+/// The docs root's `index.html`: off to the newest release.
+pub fn to_latest() -> str {
+    "<!doctype html>
+<html lang=\"en\">
+<head>
+<meta charset=\"utf-8\">
+<title>rok docs</title>
+<meta http-equiv=\"refresh\" content=\"0; url=latest/index.html\">
+<link rel=\"canonical\" href=\"latest/index.html\">
+</head>
+<body>
+<p><a href=\"latest/index.html\">rok docs</a></p>
 </body>
 </html>
 "
