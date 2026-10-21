@@ -78,14 +78,23 @@ Each build writes one version directory, `public/docs/<version>/`, and leaves th
 - `index.html`: a redirect to `latest/`.
 - `404.html`: served for any missing path; it uses `latest/`'s stylesheet and links.
 
-When the version built is the first in `versions.rokon`, the build also copies its directory to `latest/`. Canonical links of every version point at `latest/`, and `dev/` pages are `noindex`.
+`latest/` is a copy of the newest release's directory (the first in `versions.rokon`), made by every build in which that directory is present. Canonical links of every version point at `latest/`, and `dev/` pages are `noindex`. The version menu and the banners are read from `versions.json` when a page opens, so archived pages learn of newer releases without being rebuilt.
 
-To release the docs of a new version:
+### Archive and deploy
 
-1. Tag spec, impl and this repository.
-2. Add the version at the front of `versions.rokon`.
-3. Build it from the tags with `rok run -- --version <v>`, with `site.local.rokon` pointing at checkouts of the tags and `spec_branch` set to the tag.
-4. Keep `public/docs/<v>/` as an archive. Old versions are never rebuilt: a deploy first lays the archived version directories into `public/docs/`, then builds `dev` from main.
+Old versions are never rebuilt. Each release's docs are built once, from its tags, and kept on the `docs-archive` branch of this repository (one directory per version).
+
+```bash
+# At a release, after tagging spec, impl and this repository (versions.rokon of the tag lists the version first):
+ROK=<the release's rok> scripts/release-docs.sh 0.1 v0.1.0   # build from the tags, commit to docs-archive
+git push origin docs-archive
+
+# At every deploy, from main:
+scripts/assemble.sh          # docs-archive → public/docs/, then build dev and the home site
+# upload public/www/ as rok-lang.org and public/docs/ as docs.rok-lang.org
+```
+
+`release-docs.sh` checks the tag out in temporary worktrees of spec (`SPEC_REPO`, default `../spec`), impl (`IMPL_REPO`, default `../rok`) and this repository, builds with that tag's generator, and pushes nothing. A patch release (0.1.1) replaces its version's directory. `assemble.sh` takes `origin/docs-archive` if it was fetched, else the local branch.
 
 ## Preview
 
@@ -125,6 +134,7 @@ Edit `site.rokon` (ROKON); `site.local.rokon`, if present, overrides its fields.
 | `www/index.md`  | The home site's landing page; `docs:<path>` links go to `<docs_url>/latest/<path>` |
 | `docs/`         | The docs: home (`index.md`), guide (`learn/`), examples (`examples/`) |
 | `versions.rokon` | Released docs versions, newest first |
+| `scripts/`      | `release-docs.sh` (a release's docs onto `docs-archive`), `assemble.sh` (both sites for a deploy) |
 | `static/`       | `style.css` (light / dark), `search.js`, logos, `og.png`; copied to both sites |
 
 Markdown rendering (a CommonMark subset + GFM tables / strikethrough / callouts / footnotes, GitHub-compatible heading ids) and ` ```rok ` / ` ```rokon ` highlighting are handled by the stones [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) (path dependencies in `rok.rokon`, on the checkouts under `../stones/`). They stay path dependencies until `rok.rokon` is switched to their rokstones.io versions.

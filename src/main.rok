@@ -589,7 +589,11 @@ fn main() throws {
     }
     try write(docs_root, "versions.json", f"{{\"latest\":{json_str(newest)},\"released\":[{list.to_str()}]}}\n");
     try write(docs_root, "index.html", layout::to_latest());
-    if version == newest { try copy_tree(docs_dir, docs_root + "/latest"); }
+    // latest/ follows the newest release, whether built now or laid in
+    // from the archive (scripts/assemble.sh).
+    let latest_from = docs_root + "/" + newest;
+    let has_latest = !newest.is_empty() && fs::exists(latest_from);
+    if has_latest { try copy_tree(latest_from, docs_root + "/latest"); }
     // The 404 page uses latest/'s files, so it speaks for that version.
     site.version = if newest.is_empty() { version } else { newest };
     try write(docs_root, "404.html", layout::page(site, "404.html", "Page not found", "", layout::not_found("/latest/logo.svg", |p| "/latest/" + p, true), ""));
@@ -597,7 +601,11 @@ fn main() throws {
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }
     for b in bad { eprintln(f"broken link: {b}"); }
-    println(f"docs {version}: {pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} guide pages + {api.len()} API pages → {docs_dir}/ ({files.len()} html){if version == newest { ", copied to latest/" } else { "" }}; home → {www_dir}/; {bad.len()} broken links, {t0.elapsed():?}");
+    let latest_note = if has_latest { ", latest/ = " + newest } else { "" };
+    println(f"docs {version}: {pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} guide pages + {api.len()} API pages → {docs_dir}/ ({files.len()} html){latest_note}; home → {www_dir}/; {bad.len()} broken links, {t0.elapsed():?}");
+    if !has_latest && !newest.is_empty() {
+        eprintln(f"note: no {docs_root}/{newest}/, so no latest/: build it with `--version {newest}`, or lay in the archive (scripts/assemble.sh)");
+    }
     if strict {
         let failing = try code_check("");
         println(f"checked in {t0.elapsed():?}");
