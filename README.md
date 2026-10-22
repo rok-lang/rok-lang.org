@@ -48,7 +48,9 @@ rok run -- code [filter]     # run code blocks only (pages whose path contains f
 rok test                     # code block extraction tests
 ```
 
-When the build finishes it prints the page count, the broken link count, and the elapsed time. The link check re-reads the generated HTML every time and verifies that the target file and `#anchor` of every `href` / `src` exist. Generation alone takes 1–5 seconds; `check` compiles and runs hundreds of code blocks in parallel and takes about 1–3 minutes depending on the machine.
+The search index (`search-index.json`) writes each page once, `{"p": [[title, url], ...], "h": [[page, heading, id], ...]}`, and `search.js` reads it into one list of hits.
+
+When the build finishes it prints the page count, the broken link count, and the elapsed time. The link check re-reads the generated HTML every time and verifies that the target file and `#anchor` of every `href` / `src` exist. Generation alone takes 1-5 seconds; `check` compiles and runs hundreds of code blocks in parallel and takes about 1-3 minutes depending on the machine.
 
 ### Code block checks
 
@@ -64,7 +66,7 @@ A ` ```output ` block right after a run block is the expected stdout. It must ma
 
 ### Standard library API
 
-Starting from `src/lib.rok` of `bare` / `core` / `std` under `library` in `site.rokon` (default `../rok/library`), the generator follows `pub mod` and builds one page per module (`std/<tier>/<module path>.html`). It shows the signatures of `pub` items as written, uses the `///` comment right above as documentation, and uses the file's first comment block as the module description. Members of structs / enums / traits / inherent `impl`s and the list of trait implementations are included. Items and methods go into the search index.
+Starting from `src/lib.rok` of `bare` / `core` / `std` under `library` in `site.rokon` (default `../rok/library`), the generator follows `pub mod` and builds one page per module (`std/<tier>/<module path>.html`). It shows the signatures of `pub` items as written, uses the `///` comment right above as documentation, and uses the file's first comment block as the module description. Members of structs / enums / traits / inherent `impl`s and the list of trait implementations are included. Items and methods go into the search index. A module with more than 300 members on one page (`rok::core::num::ints`) moves each item of 20 or more members to a page of its own, `std/<tier>/<module path>/<kind>.<name>.html` (`ints/impl.i32.html`), and its page lists them.
 
 Why not `rokc doc`: `rokc doc` documents only the user package and `--extern` dependencies and skips the `rok::` standard library, and the standard library does not compile as a user package (lang slots, type keywords, `rok::core` paths). So `src/apidoc.rok` scans the sources directly (it masks comments / strings, then finds item boundaries by bracket depth).
 

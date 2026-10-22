@@ -1,7 +1,8 @@
 // rok-lang.org: builds two static sites into `out` (site.rokon) and
 // checks every internal link of both.
 //
-//   out/www/        rok-lang.org: the landing page (www/index.md) and the
+//   out/www/        rok-lang.org: the landing page (www/index.md), the
+//                   download page (www/download.md) and the
 //                   installers
 //   out/docs/<v>/   docs.rok-lang.org/<v>/: the spec (English at `spec/`,
 //                   Korean at `ko/spec/`), the guide and examples (docs/)
@@ -36,6 +37,8 @@ pub struct Site {
     /// The landing page's `<meta name="description">`, and the fallback
     /// for pages without a first paragraph.
     pub description: str = "";
+    /// The toolchain release the download page offers.
+    pub release: str = "0.1.0";
     /// Where the home site is served.
     pub base_url: str = "https://rok-lang.org";
     /// Where the docs are served, above the version directories.
@@ -49,6 +52,8 @@ pub struct Site {
     /// Where links that leave the spec directory point (`../LICENSE`).
     pub spec_repo: str;
     pub spec_branch: str = "main";
+    /// This repository, for the docs pages' edit links.
+    pub repo: str = "https://github.com/rok-lang/rok-lang.org";
     pub packages: str;
     /// The standard library sources (`bare/src/`, `core/src/`, `std/src/`).
     pub library: str = "../rok/library";
@@ -195,6 +200,16 @@ fn lang_switch(p: Page, others: List<Page>, ko: bool) -> str {
     let en = if ko { f"<a href=\"{href}\" hreflang=\"en\" lang=\"en\">EN</a>" } else { "<span aria-current=\"true\">EN</span>" };
     let kr = if ko { "<span aria-current=\"true\">한국어</span>" } else { f"<a href=\"{href}\" hreflang=\"ko\" lang=\"ko\">한국어</a>" };
     f"<nav class=\"lang-switch\" aria-label=\"Language\" data-sec=\"{markdown::esc(sec)}\">{en}<span aria-hidden=\"true\"> · </span>{kr}</nav>\n"
+}
+
+/// The edit link of spec page `p` of the edition in `spec`.
+fn spec_edit(site: Site, spec: str, p: Page) -> str {
+    layout::edit_link(f"{site.spec_repo}/blob/{site.spec_branch}/{last_seg(spec)}/{p.src}", p.out.starts_with("ko/"))
+}
+
+/// The edit link of docs page `p` (docs/).
+fn docs_edit(site: Site, p: Page) -> str {
+    layout::edit_link(f"{site.repo}/blob/main/docs/{p.src.replace("README.md", "index.md")}", false)
 }
 
 fn spec_root(dir: str) -> str {
@@ -363,6 +378,7 @@ fn code_check(filter: str) throws -> List<str> {
     let paths: List<str> = List::new();
     for src in try page_sources() { paths.push("docs/" + src); }
     paths.push("www/index.md");
+    paths.push("www/download.md");
     for page in paths {
         if !page.contains(filter) { continue; }
         snips.extend(check::extract(page, try fs::read_to_str(page)));
@@ -392,6 +408,14 @@ fn load_site() throws -> Site {
         }
     }
     try rokon::decode(base, "site.rokon")
+}
+
+fn sitemap(urls: List<str>) -> str {
+    let b = StrBuf::new();
+    b.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n");
+    for u in urls { b.push_str(f"<url><loc>{markdown::esc(u)}</loc></url>\n"); }
+    b.push_str("</urlset>\n");
+    b.to_str()
 }
 
 /// versions.rokon.
@@ -486,14 +510,25 @@ fn main() throws {
     let pages = try spec_pages(site, spec_root(site.spec), "", false);
     let ko_pages: List<Page> = if site.spec_ko.is_empty() { List::new() } else { try spec_pages(site, spec_root(site.spec_ko), "ko/", true) };
 
+    let ko_outs: Set<str> = Set::new();
+    for p in ko_pages { ko_outs.insert(p.out); }
     let files: Dict<str, str> = Dict::new();
     for k in 0..pages.len() {
         let p = pages[k];
-        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(pages, k), lang_switch(p, ko_pages, false) + p.html, layout::pager(pages, k)));
+        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(pages, k), lang_switch(p, ko_pages, false) + p.html + spec_edit(site, site.spec, p), layout::pager(pages, k)));
     }
     for k in 0..ko_pages.len() {
         let p = ko_pages[k];
-        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(ko_pages, k), lang_switch(p, pages, true) + p.html, layout::pager(ko_pages, k)));
+        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(ko_pages, k), lang_switch(p, pages, true) + p.html + spec_edit(site, site.spec_ko, p), layout::pager(ko_pages, k)));
+    }
+
+    // Each spec page names its other edition for search engines.
+    for p in pages {
+        let ko = "ko/" + p.out;
+        if !ko_outs.contains(ko) { continue; }
+        let alt = f"<link rel=\"alternate\" hreflang=\"en\" href=\"{markdown::esc(layout::latest(site, p.out))}\">\n<link rel=\"alternate\" hreflang=\"ko\" href=\"{markdown::esc(layout::latest(site, ko))}\">\n</head>";
+        files.insert(p.out, files[p.out].replace("</head>", alt));
+        files.insert(ko, files[ko].replace("</head>", alt));
     }
 
     // The docs' own pages: `docs/x.md` → `x.html`; a directory
@@ -508,7 +543,7 @@ fn main() throws {
         let p = own[k];
         if p.dir.is_empty() {
             let side = if p.out == "index.html" { "" } else { layout::page_toc(p) };
-            files.insert(p.out, layout::page(site, p.out, p.title, side, p.html, ""));
+            files.insert(p.out, layout::page(site, p.out, p.title, side, p.html + docs_edit(site, p), ""));
             continue;
         }
         let group: List<Page> = List::new();
@@ -519,7 +554,7 @@ fn main() throws {
                 group.push(q);
             }
         }
-        let body = if at == 0 { p.html + layout::contents(group) } else { p.html };
+        let body = (if at == 0 { p.html + layout::contents(group) } else { p.html }) + docs_edit(site, p);
         files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(group, at), body, layout::pager(group, at)));
     }
 
@@ -528,38 +563,62 @@ fn main() throws {
     let mods = try apidoc::collect(site.library);
     for m in mods {
         let (html, heads) = apidoc::body(m, mods);
-        files.insert(m.out, layout::page(site, m.out, m.path, apidoc::sidebar(m, mods, heads), html, ""));
+        files.insert(m.out, layout::page(site, m.out, m.path, apidoc::sidebar(m, mods, heads, m.out), html, ""));
+        for s in apidoc::subpages(m) {
+            files.insert(s.out, layout::page(site, s.out, s.title, apidoc::sidebar(m, mods, s.heads, s.out), s.html, ""));
+            api.push(Page { src: "", out: s.out, dir: "std", title: s.title, html: "", heads: s.heads });
+        }
         api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads });
     }
     files.insert("std/index.html", layout::page(site, "std/index.html", "Standard library API", "", apidoc::index(mods), ""));
 
     // Search index: every page and its `##` / `###` sections (the
     // English spec only).
-    let idx = StrBuf::new();
-    idx.push('[');
-    let first = true;
+    // A heading many pages share ("Code", "Walkthrough") is named by its
+    // page in the results.
+    let seen: Dict<str, usize> = Dict::new();
+    for group in [own, pages, api] {
+        for p in group {
+            for h in p.heads { seen.insert(h.text, (seen.get(h.text) ?? 0usize) + 1); }
+        }
+    }
+    // Each page is written once: {"p": [[title, url]], "h": [[page,
+    // heading, id] or [page, heading, id, 1] when named by its page]}.
+    let pl = StrBuf::new();
+    let hl = StrBuf::new();
+    let n = 0usize;
     for group in [own, pages, api] {
         for p in group {
             if p.out == "index.html" { continue; }
-            if !first { idx.push_str(",\n"); }
-            first = false;
-            idx.push_str(f"{{\"t\":{json_str(p.title)},\"u\":{json_str(p.out)},\"p\":\"\"}}");
+            if n > 0 { pl.push_str(",\n"); }
+            pl.push_str(f"[{json_str(p.title)},{json_str(p.out)}]");
             for h in p.heads {
                 if h.level == 2 || h.level == 3 {
-                    idx.push_str(f",\n{{\"t\":{json_str(h.text)},\"u\":{json_str(p.out + "#" + h.id)},\"p\":{json_str(p.title)}}}");
+                    let named = if (seen.get(h.text) ?? 0usize) >= 4 { ",1" } else { "" };
+                    if !hl.is_empty() { hl.push_str(",\n"); }
+                    hl.push_str(f"[{n},{json_str(h.text)},{json_str(h.id)}{named}]");
                 }
             }
+            n += 1;
         }
     }
-    idx.push_str("]\n");
+    let idx = StrBuf::new();
+    idx.push_str(f"{{\"p\":[\n{pl.to_str()}],\n\"h\":[\n{hl.to_str()}]}}\n");
 
     // The home site: the landing page links into the newest docs with
     // `docs:<path>`.
     let www: Dict<str, str> = Dict::new();
-    let landing = layout::md(try fs::read_to_str("www/index.md"), |h| if h.starts_with("docs:") { layout::latest(site, h["docs:".len():]) } else { h }, false);
-    // Raw HTML blocks are not seen by the link mapper.
-    let landing_html = landing.html.replace("href=\"docs:", "href=\"" + layout::latest(site, ""));
-    www.insert("index.html", layout::www_page(site, "index.html", landing.title, landing_html));
+    // `{release}` in its pages is the release the download page offers.
+    let www_urls: List<str> = List::new();
+    for name in ["index", "download"] {
+        let text = (try fs::read_to_str(f"www/{name}.md")).replace("{release}", site.release);
+        let doc = layout::md(text, |h| if h.starts_with("docs:") { layout::latest(site, h["docs:".len():]) } else { h }, false);
+        // Raw HTML blocks are not seen by the link mapper.
+        let html = doc.html.replace("href=\"docs:", "href=\"" + layout::latest(site, ""));
+        let out = name + ".html";
+        www.insert(out, layout::www_page(site, out, doc.title, html));
+        www_urls.push(site.base_url + "/" + if name == "index" { "" } else { out });
+    }
     www.insert("404.html", layout::www_page(site, "404.html", "Page not found", layout::not_found("/logo.svg", |p| layout::latest(site, p), false)));
 
     let docs_root = out_root + "/docs";
@@ -588,7 +647,19 @@ fn main() throws {
         list.push_str(json_str(v));
     }
     try write(docs_root, "versions.json", f"{{\"latest\":{json_str(newest)},\"released\":[{list.to_str()}]}}\n");
-    try write(docs_root, "index.html", layout::to_latest());
+    try write(docs_root, "index.html", layout::to_latest(site));
+    try write(docs_root, "robots.txt", f"User-agent: *\nDisallow: /dev/\nSitemap: {site.docs_url}/sitemap.xml\n");
+    try write(www_dir, "robots.txt", f"User-agent: *\nAllow: /\nSitemap: {site.base_url}/sitemap.xml\n");
+    try write(www_dir, "sitemap.xml", sitemap(www_urls));
+    // The sitemap lists latest/, so the build of that version writes it.
+    if version == newest {
+        let urls: List<str> = List::new();
+        for out in files.keys() {
+            if out != "404.html" { urls.push(layout::latest(site, if out == "index.html" { "" } else { out })); }
+        }
+        urls.sort();
+        try write(docs_root, "sitemap.xml", sitemap(urls));
+    }
     // latest/ follows the newest release, whether built now or laid in
     // from the archive (scripts/assemble.sh).
     let latest_from = docs_root + "/" + newest;

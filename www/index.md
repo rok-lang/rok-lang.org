@@ -5,7 +5,27 @@
 
 <div class="lead">A small language with a rich library.<br>Static types, closed sum types, AOT compilation, plus a REPL and Jupyter.</div>
 <div class="cta"><a class="primary" href="docs:learn/01-getting-started.html">Get started</a><a href="docs:index.html">Docs</a></div>
-<div class="install"><pre><code>curl -fsSL https://rok-lang.org/install.sh | sh</code></pre><p>macOS and Linux. On Windows, use <a href="docs:learn/01-getting-started.html#install-script">install.ps1</a>.</p></div>
+<div class="install"><pre><code>curl -fsSL https://rok-lang.org/<wbr>install.sh | sh</code></pre><p>macOS and Linux. Windows and archives: <a href="download.html">Download</a>.</p></div>
+<div class="term" aria-label="A terminal: rok new hello, then rok run prints Hello, world!" role="img">
+<div class="term-bar"><i></i><i></i><i></i><span>~/code</span><button class="term-again" type="button" hidden>↻ again</button></div>
+<pre><span class="l" style="--d:0s"><b>$</b> <span class="type" style="--n:13">rok new hello</span></span>
+<span class="l o" style="--d:1.1s"><em>     Created</em> executable package (hello)</span>
+<span class="l" style="--d:1.6s"><b>$</b> <span class="type" style="--n:20">cd hello &amp;&amp; rok run</span></span>
+<span class="l o" style="--d:3s"><em>   Compiling</em> hello (.)</span>
+<span class="l o" style="--d:3.4s"><em>    Finished</em> in 0.39s</span>
+<span class="l o" style="--d:3.8s"><em>     Running</em> `./target/debug/hello`</span>
+<span class="l out" style="--d:4.3s">Hello, world!</span>
+<span class="l" style="--d:4.8s"><b>$</b> <span class="cursor"></span></span></pre>
+</div>
+</div>
+
+<div class="tiles">
+<div class="tile"><code class="glyph">A | B</code><h3>Closed sum types</h3><p>An <code>enum</code> or <code>T | none</code> names every case, and <code>match</code> checks that you handled them all.</p></div>
+<div class="tile"><code class="glyph">??</code><h3>No null surprises</h3><p>A missing value is <code>none</code> in the type; <code>??</code> gives the default.</p></div>
+<div class="tile"><code class="glyph">throws</code><h3>Errors you can see</h3><p><code>throws (E)</code> is part of the signature; the caller writes <code>try</code> or <code>catch</code>.</p></div>
+<div class="tile"><code class="glyph">AOT</code><h3>Native programs</h3><p>Compiled ahead of time, with LLVM built into <code>rokc</code>: nothing else to install.</p></div>
+<div class="tile"><code class="glyph">&gt;_</code><h3>REPL and Jupyter</h3><p>Try an idea at the prompt or in a notebook, then keep it as a script.</p></div>
+<div class="tile"><code class="glyph">◎</code><h3>Stones</h3><p>Packages from <a href="https://rokstones.io">rokstones.io</a>, added with <code>rok add</code> and pinned in <code>rok.lock</code>.</p></div>
 </div>
 
 ## What is rok

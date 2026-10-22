@@ -2,6 +2,10 @@
 // per public module of `bare` / `core` / `std`, listing its `pub` items
 // with their `///` docs. Signatures are shown as written.
 //
+// A module with more members than one page can carry (`ints`: twelve
+// integer types) gives each of its big items a page of its own,
+// `<module>/<kind>.<name>.html`, and lists them on the module page.
+//
 // The source is scanned, not compiled: comments, strings and chars are
 // masked out first, so item boundaries are found by bracket depth alone.
 
@@ -26,6 +30,14 @@ pub struct Item {
     pub members: List<Member>;
     /// `impl Trait for Self` headers.
     pub traits: List<str>;
+}
+
+/// A page of one item of a split module.
+pub struct Sub {
+    pub out: str;
+    pub title: str;
+    pub html: str;
+    pub heads: List<Heading>;
 }
 
 pub struct Module {
@@ -534,6 +546,33 @@ fn summary(doc: str) -> str {
 
 fn anchor(it: Item) -> str { it.kind + "." + it.name }
 
+/// Members on one module page beyond which its big items move out.
+const SPLIT_MODULE: usize = 300;
+/// An item of a split module with this many members gets its own page.
+const SPLIT_ITEM: usize = 20;
+
+fn split(m: Module) -> bool {
+    let n = 0usize;
+    for it in m.items { n += it.members.len(); }
+    for it in m.impls { n += it.members.len(); }
+    n > SPLIT_MODULE
+}
+
+fn moves_out(m: Module, it: Item) -> bool { split(m) && it.members.len() >= SPLIT_ITEM }
+
+fn sub_out(m: Module, id: str) -> str { m.out[:m.out.len() - ".html".len()] + "/" + id + ".html" }
+
+/// The module page's stand-in for an item on a page of its own.
+fn stub_html(m: Module, it: Item, id: str, title: str) -> str {
+    let href = rel(m.out, sub_out(m, id));
+    let out = StrBuf::new();
+    out.push_str(f"<section class=\"api-item api-split\" id=\"{esc(id)}\"><h3><a href=\"{href}\">{esc(title)}</a></h3>");
+    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{rok_syntax::highlight_rok(it.sig)}</code></pre>"); }
+    let more = if it.traits.len() > 0 { f", {it.traits.len()} trait implementations" } else { "" };
+    out.push_str(f"<p class=\"api-more\"><a href=\"{href}\">{it.members.len()} members{more} →</a></p></section>");
+    out.to_str()
+}
+
 const KINDS: [(str, str); 8] = [
     ("use", "Re-exports"), ("struct", "Structs"), ("enum", "Enums"), ("trait", "Traits"),
     ("type", "Type aliases"), ("fn", "Functions"), ("const", "Constants"), ("static", "Statics"),
@@ -605,7 +644,11 @@ pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
         heads.push(Heading { level: 2, id: kind, text: label });
         for it in its {
             if kind != "use" { heads.push(Heading { level: 3, id: anchor(it), text: m.path + "::" + it.name }); }
-            out.push_str(item_html(it, anchor(it), it.name, heads, m.path));
+            if moves_out(m, it) {
+                out.push_str(stub_html(m, it, anchor(it), it.name));
+            } else {
+                out.push_str(item_html(it, anchor(it), it.name, heads, m.path));
+            }
         }
     }
     if m.impls.len() > 0 {
@@ -613,10 +656,45 @@ pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
         heads.push(Heading { level: 2, id: "impl", text: "Implementations" });
         for it in m.impls {
             heads.push(Heading { level: 3, id: "impl." + it.name, text: "impl " + it.name });
-            out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m.path));
+            if moves_out(m, it) {
+                out.push_str(stub_html(m, it, "impl." + it.name, "impl " + it.name));
+            } else {
+                out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m.path));
+            }
         }
     }
     (out.to_str(), heads)
+}
+
+/// The pages of `m`'s items that moved out (none unless `m` is split).
+pub fn subpages(m: Module) -> List<Sub> {
+    let subs: List<Sub> = List::new();
+    let all: List<(Item, str, str)> = List::new();
+    for it in m.items {
+        if it.kind != "use" { all.push((it, anchor(it), it.name)); }
+    }
+    for it in m.impls { all.push((it, "impl." + it.name, "impl " + it.name)); }
+    for (it, id, title) in all {
+        if !moves_out(m, it) { continue; }
+        let out = sub_out(m, id);
+        let heads: List<Heading> = List::new();
+        let b = StrBuf::new();
+        b.push_str(f"<h1><code><a href=\"{rel(out, m.out)}\">{esc(m.path)}</a>::{esc(title)}</code></h1>");
+        b.push_str(item_html(it, id, title, heads, m.path));
+        subs.push(Sub { out: out, title: m.path + "::" + title, html: b.to_str(), heads: heads });
+    }
+    subs
+}
+
+/// A split module's pages for the sidebar, from page `from`.
+pub fn sub_toc(m: Module, from: str) -> str {
+    let out = StrBuf::new();
+    for s in subpages(m) {
+        let name = s.title[m.path.len() + 2:];
+        let cur = if s.out == from { " aria-current=\"page\"" } else { "" };
+        out.push_str(f"<li><a{cur} href=\"{rel(from, s.out)}\">{esc(name)}</a></li>");
+    }
+    out.to_str()
 }
 
 fn segs(path: str) -> List<str> {
@@ -632,12 +710,13 @@ fn find(mods: List<Module>, path: str) -> Module | none {
     none
 }
 
-/// Sidebar: the modules of `m`'s tier, the current one with its items.
-pub fn sidebar(m: Module, mods: List<Module>, heads: List<Heading>) -> str {
+/// Sidebar of page `from`: the modules of `m`'s tier, the current one with
+/// its sections, or (on an item's own page) its item pages.
+pub fn sidebar(m: Module, mods: List<Module>, heads: List<Heading>, from: str) -> str {
     let tier = segs(m.path)[1];
     let root = "rok::" + tier;
     let out = StrBuf::new();
-    out.push_str(f"<a class=\"up\" href=\"{rel(m.out, "std/index.html")}\">← Standard library API</a>");
+    out.push_str(f"<a class=\"up\" href=\"{rel(from, "std/index.html")}\">← Standard library API</a>");
     out.push_str("<ul class=\"pages\">");
     for q in mods {
         if q.path != root && !q.path.starts_with(root + "::") { continue; }
@@ -645,14 +724,16 @@ pub fn sidebar(m: Module, mods: List<Module>, heads: List<Heading>) -> str {
         let depth = qs.len() - 2;
         let label = if depth == 0 { q.path } else { qs[depth + 1] };
         let pad = if depth > 1 { f" style=\"padding-left:{(depth - 1) * 12}px\"" } else { "" };
-        if q.path == m.path {
-            out.push_str(f"<li class=\"cur\"{pad}><a aria-current=\"page\" href=\"{rel(m.out, q.out)}\">{esc(label)}</a><ul class=\"toc\">");
+        if q.path == m.path && from == m.out {
+            out.push_str(f"<li class=\"cur\"{pad}><a aria-current=\"page\" href=\"{rel(from, q.out)}\">{esc(label)}</a><ul class=\"toc\">");
             for h in heads {
                 if h.level == 2 { out.push_str(f"<li><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>"); }
             }
             out.push_str("</ul></li>");
+        } else if q.path == m.path {
+            out.push_str(f"<li class=\"cur\"{pad}><a href=\"{rel(from, q.out)}\">{esc(label)}</a><ul class=\"toc\">{sub_toc(m, from)}</ul></li>");
         } else {
-            out.push_str(f"<li{pad}><a href=\"{rel(m.out, q.out)}\">{esc(label)}</a></li>");
+            out.push_str(f"<li{pad}><a href=\"{rel(from, q.out)}\">{esc(label)}</a></li>");
         }
     }
     out.push_str("</ul>");

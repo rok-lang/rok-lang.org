@@ -39,6 +39,12 @@ fn callout_ko(kind: str) -> str {
     }
 }
 
+/// The end of a page whose source is at `url`.
+pub fn edit_link(url: str, ko: bool) -> str {
+    let label = if ko { "GitHub에서 이 페이지 고치기" } else { "Edit this page on GitHub" };
+    f"<p class=\"edit\"><a href=\"{esc(url)}\">{label}</a></p>\n"
+}
+
 /// `../` once per directory level of `out`, back to the site root.
 pub fn root_of(out: str) -> str {
     let n = 0usize;
@@ -186,7 +192,7 @@ fn clip(s: str, n: usize) -> str {
     let k = 0usize;
     for c in s.chars() {
         if k == n {
-            out.push('…');
+            out.push_str("...");
             break;
         }
         out.push(c);
@@ -208,6 +214,7 @@ fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: 
     f"<meta charset=\"utf-8\">
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
 <title>{esc(full)}</title>
+<script>try{{const t=localStorage.getItem(\"theme\");if(t)document.documentElement.dataset.theme=t}}catch(e){{}}</script>
 <meta name=\"description\" content=\"{desc}\">
 <link rel=\"canonical\" href=\"{esc(url)}\">
 {extra}<meta property=\"og:type\" content=\"website\">
@@ -258,7 +265,7 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
     nav.push_str(nav_item(root, "spec/refs-lang/009-tools/index.html", "Tools", tools));
     nav.push_str(f"<a href=\"{esc(site.packages)}\">Packages ↗</a>");
     let name = site.title + " docs";
-    let full = if out == "index.html" { name } else { title + " — " + name };
+    let full = if out == "index.html" { name } else { title + " - " + name };
     let aside = if side.is_empty() {
         ""
     } else {
@@ -283,6 +290,7 @@ pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) 
 <details class=\"vers\"><summary aria-label=\"Docs version: {ver}\">{ver}</summary><ul class=\"vers-menu\"></ul></details>
 <nav class=\"main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
 <div class=\"search\" role=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Search docs\" aria-label=\"Search docs\" aria-keyshortcuts=\"/\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
+<button class=\"theme\" type=\"button\" aria-label=\"Theme\">◐</button>
 </header>
 <div class=\"wrap\">
 {aside}<main id=\"content\">
@@ -303,24 +311,30 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
     let root = if out == "404.html" { "/" } else { root_of(out) };
     let nav = StrBuf::new();
     nav.push_str(f"<a href=\"{esc(latest(site, "index.html"))}\">Docs</a>");
+    let dl = if out == "download.html" { " aria-current=\"page\"" } else { "" };
+    nav.push_str(f"<a href=\"{root}download.html\"{dl}>Download</a>");
     nav.push_str(f"<a href=\"{esc(latest(site, "learn/index.html"))}\">Learn</a>");
     nav.push_str(f"<a href=\"{esc(latest(site, "examples/index.html"))}\">Examples</a>");
     nav.push_str(f"<a href=\"{esc(latest(site, "spec/refs-lang/index.html"))}\">Language reference</a>");
+    nav.push_str(f"<a href=\"{esc(latest(site, "spec/refs-standard-libraries/index.html"))}\">Standard library</a>");
     nav.push_str(f"<a href=\"{esc(latest(site, "std/index.html"))}\">API</a>");
+    nav.push_str(f"<a href=\"{esc(latest(site, "spec/refs-lang/009-tools/index.html"))}\">Tools</a>");
     nav.push_str(f"<a href=\"{esc(site.packages)}\">Packages ↗</a>");
-    let full = if out == "index.html" { site.title + " — " + site.tagline } else { title + " — " + site.title };
+    let full = if out == "index.html" { site.title + " - " + site.tagline } else { title + " - " + site.title };
     let url = if out == "index.html" || out == "404.html" { site.base_url + "/" } else { site.base_url + "/" + out };
-    let desc = esc(site.description);
+    let kind = if out == "download.html" { "doc wide" } else { "home" };
+    let desc = esc(if out == "download.html" { f"Download rok {site.release} for macOS, Linux and Windows: the install script, or an archive with its SHA-256." } else { site.description });
     let docs = f"<li><a href=\"{esc(latest(site, "index.html"))}\">Docs</a></li>";
     f"<!doctype html>
 <html lang=\"en\">
 <head>
 {head(site, root, full, desc, url, site.base_url + "/og.png", "")}</head>
-<body class=\"home www\" data-root=\"{root}\">
+<body class=\"{kind} www\" data-root=\"{root}\">
 <a class=\"skip\" href=\"#content\">Skip to content</a>
 <header class=\"top\">
 <a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.svg\" alt=\"\" width=\"28\" height=\"28\"><span>{esc(site.title)}</span></a>
 <nav class=\"main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
+<button class=\"theme\" type=\"button\" aria-label=\"Theme\">◐</button>
 </header>
 <div class=\"wrap\">
 <main id=\"content\">
@@ -352,14 +366,15 @@ pub fn not_found(logo: str, to: fn(str) -> str, search: bool) -> str {
 }
 
 /// The docs root's `index.html`: off to the newest release.
-pub fn to_latest() -> str {
-    "<!doctype html>
+pub fn to_latest(site: Site) -> str {
+    let home = esc(latest(site, "index.html"));
+    f"<!doctype html>
 <html lang=\"en\">
 <head>
 <meta charset=\"utf-8\">
 <title>rok docs</title>
 <meta http-equiv=\"refresh\" content=\"0; url=latest/index.html\">
-<link rel=\"canonical\" href=\"latest/index.html\">
+<link rel=\"canonical\" href=\"{home}\">
 </head>
 <body>
 <p><a href=\"latest/index.html\">rok docs</a></p>

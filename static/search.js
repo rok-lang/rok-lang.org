@@ -1,4 +1,5 @@
-// Client-side search over search-index.json: [{t: title, u: url, p: page}].
+// Client-side search over search-index.json: {p: [[title, url]], h:
+// [[page, heading, id, named?]]}, read into [{t: title, u: url, p: page}].
 (() => {
   const root = document.body.dataset.root || "";
   const q = document.getElementById("q");
@@ -6,9 +7,40 @@
   let index = null;
   let sel = -1;
 
-  // The sidebar starts folded on small screens.
+  // The sidebar starts folded on small screens; on wide ones it scrolls
+  // to the current page (the API list is long).
   const side = document.querySelector(".side details");
   if (side && matchMedia("(max-width: 860px)").matches) side.open = false;
+  const aside = document.querySelector(".side");
+  const here_item = aside && aside.querySelector("[aria-current=page], a.cur");
+  if (here_item && aside.scrollHeight > aside.clientHeight) {
+    aside.scrollTop = here_item.offsetTop - aside.clientHeight / 2;
+  }
+
+  // Theme button: auto (the system setting) → light → dark. The choice
+  // is this reader's alone, so it lives in localStorage; the inline
+  // script in <head> applies it before the page paints.
+  const tb = document.querySelector(".theme");
+  if (tb) {
+    const order = ["auto", "light", "dark"];
+    const glyph = { auto: "◐", light: "☀", dark: "☾" };
+    const get = () => { try { return localStorage.getItem("theme") || "auto"; } catch { return "auto"; } };
+    const show = (t) => {
+      tb.textContent = glyph[t];
+      tb.setAttribute("aria-label", `Theme: ${t}`);
+      tb.title = `Theme: ${t}`;
+    };
+    show(get());
+    tb.addEventListener("click", () => {
+      const t = order[(order.indexOf(get()) + 1) % order.length];
+      try { t === "auto" ? localStorage.removeItem("theme") : localStorage.setItem("theme", t); } catch {}
+      if (t === "auto") delete document.documentElement.dataset.theme;
+      else document.documentElement.dataset.theme = t;
+      show(t);
+    });
+  }
+
+
 
   // Spec language switch: carry the current section over to the other
   // edition (data-sec pairs this page's heading ids with the other's).
@@ -33,9 +65,12 @@
 
   // A copy button on each code block (not on output or error boxes).
   for (const pre of document.querySelectorAll("article pre:not(.output):not(.err):not(.sig), .install pre")) {
-    if (pre.closest(".members")) continue;
+    if (pre.closest(".members, .term")) continue;
     const wrap = document.createElement("div");
     wrap.className = "code";
+    // Its language in the corner, as the fence named it.
+    const lang = (pre.querySelector("code")?.className.match(/language-(\w+)/) || [])[1];
+    if (lang && lang !== "text" && !pre.closest(".install")) wrap.dataset.lang = lang;
     pre.replaceWith(wrap);
     wrap.append(pre);
     const b = document.createElement("button");
@@ -48,7 +83,7 @@
         await navigator.clipboard.writeText(pre.innerText.replace(/\n$/, ""));
         b.textContent = "copied ✓";
       } catch {
-        b.textContent = "press ⌘C";
+        b.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? "press ⌘C" : "press Ctrl+C";
       }
       b.classList.add("done");
       setTimeout(() => { b.textContent = "copy"; b.classList.remove("done"); }, 1600);
@@ -71,6 +106,62 @@
     spy();
   }
 
+  // Docs pages: a reading-progress line at the top of the window.
+  if (document.body.classList.contains("doc")) {
+    const bar = document.createElement("div");
+    bar.className = "progress";
+    bar.setAttribute("aria-hidden", "true");
+    document.body.append(bar);
+    let queued = false;
+    const paint = () => {
+      queued = false;
+      const max = document.documentElement.scrollHeight - innerHeight;
+      bar.style.setProperty("--read", max > 0 ? Math.min(1, scrollY / max) : 0);
+    };
+    addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(paint); } }, { passive: true });
+    paint();
+  }
+
+  // A heading's # copies the link to that section.
+  const toast = (text) => {
+    const t = document.createElement("div");
+    t.className = "toast";
+    t.setAttribute("role", "status");
+    t.textContent = text;
+    document.body.append(t);
+    setTimeout(() => t.remove(), 1400);
+  };
+  for (const a of document.querySelectorAll("article .anchor")) {
+    a.addEventListener("click", async (ev) => {
+      ev.preventDefault();
+      history.replaceState(null, "", a.hash);
+      try {
+        await navigator.clipboard.writeText(location.href);
+        toast("link copied ✓");
+      } catch {
+        toast("link in the address bar");
+      }
+    });
+  }
+
+  // The home page's terminal plays once it is in view, and again on ask.
+  const term = document.querySelector(".term");
+  if (term && "IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const again = term.querySelector(".term-again");
+    const play = () => {
+      term.classList.remove("play");
+      void term.offsetWidth;
+      term.classList.add("play");
+      again.hidden = true;
+      setTimeout(() => { again.hidden = false; }, 5200);
+    };
+    const seen = new IntersectionObserver((es) => {
+      if (es.some((e) => e.isIntersecting)) { seen.disconnect(); play(); }
+    });
+    seen.observe(term);
+    again.addEventListener("click", play);
+  }
+
   // 404.html: name the missing path in the error.
   const lost = document.getElementById("lost-path");
   if (lost) lost.textContent = location.pathname;
@@ -83,6 +174,14 @@
   // Docs: the version menu and, off the newest release, a banner.
   const vers = document.querySelector(".vers");
   const version = document.body.dataset.version;
+  if (vers) {
+    // Escape or a click elsewhere closes the menu.
+    const sum = vers.querySelector("summary");
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape" && vers.open) { vers.open = false; sum.focus(); }
+    });
+    document.addEventListener("click", (ev) => { if (!vers.contains(ev.target)) vers.open = false; });
+  }
   if (vers && version) {
     const base = new URL(root || "./", location.href);
     const here = location.href.slice(base.href.length).split("#")[0];
@@ -101,6 +200,15 @@
       };
       for (const r of v.released) item(r, "v" + r, r === v.latest ? "latest" : "", at !== "latest" && at === r || at === "latest" && r === v.latest);
       item("dev", "dev", "main branch", at === "dev");
+      if (at === "latest") {
+        const s = vers.querySelector("summary");
+        s.textContent = "latest";
+        const full = document.createElement("span");
+        full.className = "vers-full";
+        full.textContent = ` (v${v.latest})`;
+        s.append(full);
+        s.setAttribute("aria-label", `Docs version: latest (v${v.latest})`);
+      }
       if (version !== v.latest && v.latest) {
         const b = document.createElement("p");
         b.className = "ver-banner";
@@ -114,9 +222,29 @@
     }).catch(() => {});
   }
 
+  // `text` as nodes, each search term in it wrapped in <mark>.
+  const marked = (text, terms) => {
+    const words = terms.filter(Boolean).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    if (!words.length) return [document.createTextNode(text)];
+    const re = new RegExp(`(${words.join("|")})`, "gi");
+    return text.split(re).map((part, k) => {
+      if (k % 2 === 0) return document.createTextNode(part);
+      const m = document.createElement("mark");
+      m.textContent = part;
+      return m;
+    });
+  };
+
   const load = () =>
     index ? Promise.resolve(index)
-      : fetch(root + "search-index.json").then((r) => r.json()).then((d) => (index = d));
+      : fetch(root + "search-index.json").then((r) => r.json()).then((d) => {
+        index = d.p.map(([t, u]) => ({ t, u, p: "" }));
+        for (const [k, t, id, named] of d.h) {
+          const [pt, pu] = d.p[k];
+          index.push({ t: named ? `${pt} › ${t}` : t, u: `${pu}#${id}`, p: pt });
+        }
+        return index;
+      });
 
   const links = () => [...box.querySelectorAll("a")];
 
@@ -169,7 +297,7 @@
         tag.textContent = w;
         a.append(tag);
       }
-      a.append(e.t);
+      a.append(...marked(e.t, terms));
       if (e.p) {
         const s = document.createElement("small");
         s.textContent = e.p;
