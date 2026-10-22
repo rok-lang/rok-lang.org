@@ -63,6 +63,24 @@
     });
   }
 
+  // A block runs in the playground when it has `fn main`, or a top-level
+  // statement rok runs as the script body (helpers beside it are fine).
+  // A block of only declarations (a lone `enum`, a signature) would just
+  // error there, so it gets no try button.
+  const runnableRok = (src) => {
+    if (/\bfn\s+main\s*\(/.test(src)) return true;
+    let depth = 0;
+    for (const line of src.split("\n")) {
+      const t = line.trim();
+      if (depth === 0 && t && !t.startsWith("//") && !t.startsWith("}") &&
+          !/^(pub\s+)?(fn|struct|enum|trait|impl|type|const|static|mod|use)\b/.test(t)) {
+        return true;
+      }
+      for (const c of line) { if (c === "{") depth++; else if (c === "}") depth = Math.max(0, depth - 1); }
+    }
+    return false;
+  };
+
   // A copy button on each code block (not on output or error boxes).
   for (const pre of document.querySelectorAll("article pre:not(.output):not(.err):not(.sig), .install pre")) {
     if (pre.closest(".members, .term")) continue;
@@ -71,6 +89,22 @@
     // Its language in the corner, as the fence named it.
     const lang = (pre.querySelector("code")?.className.match(/language-(\w+)/) || [])[1];
     if (lang && lang !== "text" && !pre.closest(".install")) wrap.dataset.lang = lang;
+    // A whole rok program opens in the playground, its code in the link.
+    const play = document.body.dataset.play;
+    if (play && lang === "rok" && runnableRok(pre.innerText) && "CompressionStream" in window) {
+      const t = document.createElement("button");
+      t.type = "button";
+      t.className = "copy try";
+      t.textContent = "▶ try";
+      t.setAttribute("aria-label", "Open in the playground");
+      t.addEventListener("click", async () => {
+        const s = new Blob([pre.innerText]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+        const b = new Uint8Array(await new Response(s).arrayBuffer());
+        const code = btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+        window.open(`${play}/#code=${code}`, "_blank", "noopener");
+      });
+      wrap.append(t);
+    }
     pre.replaceWith(wrap);
     wrap.append(pre);
     const b = document.createElement("button");

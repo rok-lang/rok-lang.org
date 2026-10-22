@@ -4,7 +4,7 @@
 # rok
 
 <div class="lead">A small language with a rich library.<br>Static types, closed sum types, AOT compilation, plus a REPL and Jupyter.</div>
-<div class="cta"><a class="primary" href="docs:learn/01-getting-started.html">Get started</a><a href="docs:index.html">Docs</a></div>
+<div class="cta"><a class="primary" href="docs:learn/01-getting-started.html">Get started</a><a href="play:">Try it online</a><a href="docs:index.html">Docs</a></div>
 <div class="install"><pre><code>curl -fsSL https://rok-lang.org/<wbr>install.sh | sh</code></pre><p>macOS and Linux. Windows and archives: <a href="download.html">Download</a>.</p></div>
 <div class="term" aria-label="A terminal: rok new hello, then rok run prints Hello, world!" role="img">
 <div class="term-bar"><i></i><i></i><i></i><span>~/code</span><button class="term-again" type="button" hidden>↻ again</button></div>

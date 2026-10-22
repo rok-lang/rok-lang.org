@@ -41,6 +41,8 @@ pub struct Site {
     pub release: str = "0.1.0";
     /// Where the home site is served.
     pub base_url: str = "https://rok-lang.org";
+    /// The playground; docs code blocks open there with "try".
+    pub playground: str = "https://playground.rok-lang.org";
     /// Where the docs are served, above the version directories.
     pub docs_url: str = "https://docs.rok-lang.org";
     /// The docs version being built: `--version`, else `dev`.
@@ -614,7 +616,7 @@ fn main() throws {
         let text = (try fs::read_to_str(f"www/{name}.md")).replace("{release}", site.release);
         let doc = layout::md(text, |h| if h.starts_with("docs:") { layout::latest(site, h["docs:".len():]) } else { h }, false);
         // Raw HTML blocks are not seen by the link mapper.
-        let html = doc.html.replace("href=\"docs:", "href=\"" + layout::latest(site, ""));
+        let html = doc.html.replace("href=\"docs:", "href=\"" + layout::latest(site, "")).replace("href=\"play:", "href=\"" + site.playground + "/");
         let out = name + ".html";
         www.insert(out, layout::www_page(site, out, doc.title, html));
         www_urls.push(site.base_url + "/" + if name == "index" { "" } else { out });
