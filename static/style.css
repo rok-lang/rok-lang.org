@@ -299,6 +299,10 @@ kbd {
   font-size: var(--fs-base);
 }
 .search input::placeholder { color: var(--muted); opacity: 1; }
+/* No native search widgets (the webkit clear ×, decoration) on the pill. */
+.search input { appearance: none; -webkit-appearance: none; }
+.search input::-webkit-search-cancel-button,
+.search input::-webkit-search-decoration { -webkit-appearance: none; display: none; }
 .search input:focus-visible { outline-offset: 1px; }
 .search kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
 .search input:is(:focus, :not(:placeholder-shown)) + kbd { display: none; }
@@ -350,6 +354,43 @@ kbd {
 }
 .theme:hover { color: var(--accent-2); border-color: var(--accent-2); }
 .main-nav + .theme { margin-left: auto; }
+
+/* The hamburger: bars drawn in CSS (no font glyph), shown only when the
+   nav collapses. The middle bar is the span; the two others are its
+   pseudo-elements, which cross into an X when the menu is open. */
+.nav-toggle {
+  display: none;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.nav-toggle:hover { color: var(--accent-2); border-color: var(--accent-2); }
+.nav-toggle .bars, .nav-toggle .bars::before, .nav-toggle .bars::after {
+  content: "";
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.nav-toggle .bars { position: relative; }
+.nav-toggle .bars::before { position: absolute; left: 0; top: -6px; }
+.nav-toggle .bars::after { position: absolute; left: 0; top: 6px; }
+.top.nav-open .nav-toggle .bars { background: transparent; }
+.top.nav-open .nav-toggle .bars::before { top: 0; transform: rotate(45deg); }
+.top.nav-open .nav-toggle .bars::after { top: 0; transform: rotate(-45deg); }
+@media (prefers-reduced-motion: no-preference) {
+  .nav-toggle .bars, .nav-toggle .bars::before, .nav-toggle .bars::after {
+    transition: transform 160ms ease, background-color 120ms ease, top 160ms ease;
+  }
+}
 @media (pointer: coarse) { .theme { width: var(--target); height: var(--target); } }
 
 /* article */
@@ -416,23 +457,28 @@ pre code { font-size: 1em; }
 /* A code block with its copy button (search.js wraps it). */
 .code { position: relative; }
 .code > pre { margin: 0; }
-.copy {
+/* try and copy ride in a header strip at the top-right, a fixed gap apart. */
+.code-tools {
   position: absolute;
-  top: var(--sp-2);
+  top: 4px;
   right: var(--sp-2);
+  z-index: 2;
+  display: flex;
+  gap: var(--sp-2);
+}
+.copy {
   padding: 2px var(--sp-2);
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--bg);
   color: var(--muted);
-  font: 600 var(--fs-xs)/1.6 var(--mono);
+  font: 600 var(--fs-xs)/1.6 var(--sans);
   cursor: pointer;
   opacity: 0;
 }
 .code:hover .copy, .copy:focus-visible, .copy.done { opacity: 1; }
 .copy:hover { color: var(--accent-2); border-color: var(--accent-2); }
 /* "try" sits left of "copy". */
-.copy.try { right: calc(var(--sp-2) + 86px); }
 .copy.done { color: var(--tip); border-color: var(--tip); }
 @media (pointer: coarse) {
   .copy { opacity: 1; min-height: 32px; padding: 0 var(--sp-3); }
@@ -441,6 +487,30 @@ pre code { font-size: 1em; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .copy { transition: opacity 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out; }
+}
+
+/* A very tall code block collapses behind a show-all bar (search.js). */
+.code.tall.collapsed > pre { max-height: 420px; overflow: hidden; }
+.code.tall .expand { border: 0; color: var(--accent-2); font: 600 var(--fs-xs) var(--sans); cursor: pointer; }
+.code.tall .expand:hover { color: var(--accent-2-deep); }
+.code.tall.collapsed .expand {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 68px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--sp-2);
+  background: linear-gradient(transparent, var(--code-bg));
+}
+.code.tall:not(.collapsed) .expand {
+  display: block;
+  width: 100%;
+  padding: var(--sp-2);
+  border-top: 1px solid var(--line);
+  background: var(--panel);
 }
 
 pre.output {
@@ -548,6 +618,37 @@ footer .by a { font-weight: 600; }
 .lost .err .h { color: var(--tip); font-weight: 700; }
 .lost .err .g { color: var(--accent); }
 
+/* The ? keyboard-shortcuts card. */
+.kbd-help { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: var(--sp-4); background: rgb(20 20 30 / .45); }
+.kbd-card { width: min(380px, 100%); padding: var(--sp-5); border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--raised); box-shadow: var(--shadow); }
+.kbd-card h2 { margin: 0 0 var(--sp-3); font-size: var(--fs-md); }
+.kbd-card dl { display: grid; grid-template-columns: auto 1fr; gap: var(--sp-2) var(--sp-4); margin: 0; align-items: center; }
+.kbd-card dt { justify-self: start; display: flex; gap: 4px; }
+.kbd-card dd { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+
+/* A back-to-top button on long docs pages. */
+.to-top {
+  position: fixed;
+  right: var(--sp-5);
+  bottom: var(--sp-5);
+  z-index: 30;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--fg);
+  font-size: var(--fs-lg);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.to-top[hidden] { display: none; }
+.to-top:hover { color: var(--accent-2); border-color: var(--accent-2); }
+@media (prefers-reduced-motion: no-preference) { .to-top { transition: color 120ms, border-color 120ms; } }
+@media print { .to-top { display: none; } }
+
 /* print */
 
 @media print {
@@ -618,7 +719,15 @@ article .lang-switch [aria-current] { color: var(--fg); font-weight: 600; backgr
   cursor: pointer;
 }
 .vers summary::-webkit-details-marker { display: none; }
-.vers summary::after { content: "▾"; color: var(--accent-2); }
+/* A masked chevron, not a font glyph, so it stays crisp and aligned. */
+.vers summary::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: var(--accent-2);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+}
 .vers summary:hover { color: var(--fg); border-color: var(--accent-2); }
 /* A finger-sized hit area around the small pill. */
 .vers summary { position: relative; }
@@ -727,7 +836,8 @@ article .api-list li a { text-decoration: none; }
 .install { max-width: 34rem; margin: 0 auto; text-align: left; }
 .lead + .install { margin-top: var(--sp-5); }
 .install .code > pre, .install > pre { padding: var(--sp-3) 72px var(--sp-3) var(--sp-4); border-radius: 999px; white-space: pre; }
-.install .copy { top: 50%; right: var(--sp-3); transform: translateY(-50%); opacity: 1; }
+.install .code-tools { top: 50%; right: var(--sp-3); transform: translateY(-50%); }
+.install .copy { opacity: 1; }
 .install code::before { content: "$ "; color: var(--accent-2); font-weight: 700; user-select: none; }
 .install p { margin: var(--sp-2) 0 0; text-align: center; color: var(--muted); font-size: var(--fs-sm); }
 
@@ -755,7 +865,7 @@ ol.chapters p { margin: 2px 0 0; color: var(--muted); }
 .term-bar i + i { background: #7dd3fc; }
 .term-bar i + i + i { background: #3a3a46; }
 .term-bar span { margin-left: auto; color: #9c9eab; font: 600 var(--fs-xs) var(--mono); }
-.term-again { margin-left: var(--sp-3); padding: 0 var(--sp-2); border: 1px solid #3a3a46; border-radius: 999px; background: none; color: #9c9eab; font: 600 var(--fs-xs)/1.7 var(--mono); cursor: pointer; }
+.term-again { margin-left: var(--sp-3); padding: 0 var(--sp-2); border: 1px solid #3a3a46; border-radius: 999px; background: none; color: #9c9eab; font: 600 var(--fs-xs)/1.7 var(--sans); cursor: pointer; }
 .term-again:hover { color: #f9a8d4; border-color: #f9a8d4; }
 .term pre { margin: 0; padding: var(--sp-4); border: 0; background: none; color: inherit; font-size: 0.8125rem; line-height: 1.7; white-space: normal; }
 /* One block per line; the newlines between them in the source are not lines. */
@@ -808,52 +918,80 @@ article .dl-sum a { color: var(--muted); }
 /* Docs: reading progress, code labels, the edit link, the copied toast. */
 
 .progress { position: fixed; left: 0; top: 0; z-index: 30; height: 3px; width: 100%; transform-origin: 0 50%; transform: scaleX(var(--read, 0)); background: linear-gradient(90deg, var(--accent-2), var(--accent)); pointer-events: none; }
+/* The language names the header strip, on its left. */
 .code[data-lang]::before {
   content: attr(data-lang);
   position: absolute;
-  top: var(--sp-2);
-  right: var(--sp-3);
+  top: 7px;
+  left: var(--sp-4);
   color: var(--muted);
-  font: 600 var(--fs-xs)/1.9 var(--mono);
+  font: 600 var(--fs-xs)/1.6 var(--mono);
+  letter-spacing: 0.02em;
   pointer-events: none;
 }
-.code[data-lang]:hover::before, .code[data-lang]:focus-within::before { opacity: 0; }
-/* Room for the label above the first line. */
+/* A divider between the header strip and the code below it. */
+.code[data-lang]::after {
+  content: "";
+  position: absolute;
+  top: 29px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line);
+  pointer-events: none;
+}
+/* Room for the header above the first line. */
 .code[data-lang] > pre { padding-top: 30px; }
-@media (pointer: coarse) { .code[data-lang]::before { display: none; } }
-article .edit { margin: var(--sp-7) 0 0; font: 600 var(--fs-sm) var(--mono); }
+@media (pointer: coarse) {
+  .code[data-lang]::before { display: none; }
+  .code[data-lang]::after { top: 47px; }
+}
+article .edit { margin: var(--sp-7) 0 0; font: 600 var(--fs-sm) var(--sans); }
 article .edit a { color: var(--muted); text-decoration: none; }
 article .edit a::before { content: "✎ "; color: var(--accent-2); }
 article .edit a:hover { color: var(--accent-2); }
 .toast { position: fixed; left: 50%; bottom: var(--sp-6); z-index: 40; padding: var(--sp-2) var(--sp-4); border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 var(--fs-sm) var(--mono); transform: translateX(-50%); box-shadow: var(--shadow); }
 /* small screens */
 
-@media (max-width: 860px) {
+@media (max-width: 1024px) {
   html { scroll-padding-top: var(--sp-4); }
-  /* Brand and search on one row, the nav a scrolling strip below. */
-  .top { position: relative; flex-wrap: wrap; gap: 0 var(--sp-3); padding: var(--sp-2) var(--sp-4) 0; }
+  /* The header collapses: brand (and version) on row one, search full
+     width on row two, and the nav folds behind the hamburger as a drop
+     panel rather than wrapping to a second line. */
+  .top { position: relative; flex-wrap: wrap; gap: 0 var(--sp-3); padding: var(--sp-2) var(--sp-4); }
   .brand { min-height: var(--target); }
-  .theme { order: 1; }
-  .main-nav + .theme { margin-left: auto; }
-  /* Above the nav strip, whose mask makes it a stacking context. */
-  .search { order: 1; flex: 1; min-width: 0; margin: 0; position: relative; z-index: 2; }
   .vers { margin-left: 0; }
-  .vers-full { display: none; }
+  .vers summary { min-height: 36px; }
+  .vers-menu { min-width: 160px; }
+  .nav-toggle { display: inline-grid; order: 0; margin-left: auto; }
+  .theme { order: 0; margin-left: var(--sp-2); }
+  .search { order: 1; flex: 0 0 100%; min-width: 0; margin: var(--sp-2) 0 0; position: relative; z-index: 2; }
   .search input { width: 100%; height: 40px; }
   .main-nav {
-    order: 2;
-    flex-wrap: nowrap;
-    width: calc(100% + 2 * var(--sp-4));
-    margin: var(--sp-1) calc(-1 * var(--sp-4)) 0;
-    padding: 0 var(--sp-2);
-    overflow-x: auto;
-    scrollbar-width: none;
-    mask-image: linear-gradient(90deg, transparent, #000 var(--sp-3), #000 calc(100% - var(--sp-6)), transparent);
+    order: 3;
+    position: absolute;
+    top: calc(100% + var(--sp-1));
+    right: var(--sp-4);
+    min-width: 220px;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--sp-2);
+    background: var(--raised);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow);
+    z-index: 30;
+    display: none;
   }
-  .main-nav::-webkit-scrollbar { display: none; }
-  .main-nav a { display: inline-flex; align-items: center; min-height: var(--target); padding: 0 var(--sp-2); }
+  .top.nav-open .main-nav { display: flex; }
+  .main-nav a { display: flex; align-items: center; min-height: var(--target); padding: 0 var(--sp-3); border-radius: var(--r-sm); white-space: nowrap; }
+  .main-nav a:hover, .main-nav a:focus-visible { color: var(--accent-2); background: var(--panel); }
   .results { position: fixed; left: var(--sp-4); right: var(--sp-4); top: 60px; width: auto; }
   .results a { min-height: var(--target); }
+}
+@media (max-width: 860px) {
+  /* On a phone, trim the version pill to just the channel name. */
+  .vers-full { display: none; }
   .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 var(--sp-4); }
   .wide .wrap, .home .wrap { grid-template-columns: minmax(0, 1fr); }
   .side { position: static; max-height: none; padding: var(--sp-4) 0 0; font-size: var(--fs-base); }

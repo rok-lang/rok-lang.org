@@ -40,7 +40,29 @@
     });
   }
 
-
+  // Compact header: the hamburger opens the nav as a drop panel. It
+  // closes on a link, an outside click, Escape, or a return to desktop.
+  const top = document.querySelector(".top");
+  const navToggle = document.querySelector(".nav-toggle");
+  const nav = document.getElementById("nav");
+  if (top && navToggle && nav) {
+    const setNav = (open) => {
+      top.classList.toggle("nav-open", open);
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    navToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setNav(!top.classList.contains("nav-open"));
+    });
+    nav.addEventListener("click", (e) => { if (e.target.closest("a")) setNav(false); });
+    document.addEventListener("click", (e) => {
+      if (top.classList.contains("nav-open") && !e.target.closest(".nav-toggle, #nav")) setNav(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && top.classList.contains("nav-open")) { setNav(false); navToggle.focus(); }
+    });
+    matchMedia("(min-width: 1025px)").addEventListener("change", (e) => { if (e.matches) setNav(false); });
+  }
 
   // Spec language switch: carry the current section over to the other
   // edition (data-sec pairs this page's heading ids with the other's).
@@ -86,6 +108,9 @@
     if (pre.closest(".members, .term")) continue;
     const wrap = document.createElement("div");
     wrap.className = "code";
+    // try and copy sit together in the header strip, above the code.
+    const tools = document.createElement("div");
+    tools.className = "code-tools";
     // Its language in the corner, as the fence named it.
     const lang = (pre.querySelector("code")?.className.match(/language-(\w+)/) || [])[1];
     if (lang && lang !== "text" && !pre.closest(".install")) wrap.dataset.lang = lang;
@@ -103,7 +128,7 @@
         const code = btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
         window.open(`${play}/#code=${code}`, "_blank", "noopener");
       });
-      wrap.append(t);
+      tools.append(t);
     }
     pre.replaceWith(wrap);
     wrap.append(pre);
@@ -122,7 +147,26 @@
       b.classList.add("done");
       setTimeout(() => { b.textContent = "copy"; b.classList.remove("done"); }, 1600);
     });
-    wrap.append(b);
+    tools.append(b);
+    wrap.append(tools);
+
+    // A very tall block collapses behind a "show all" bar.
+    if (!pre.closest(".install") && pre.scrollHeight > 460) {
+      const lines = pre.innerText.replace(/\n$/, "").split("\n").length;
+      wrap.classList.add("tall", "collapsed");
+      const ex = document.createElement("button");
+      ex.type = "button";
+      ex.className = "expand";
+      const label = () => { ex.textContent = wrap.classList.contains("collapsed") ? `\u25BE show all ${lines} lines` : "\u25B4 collapse"; };
+      label();
+      ex.addEventListener("click", () => {
+        const wasOpen = !wrap.classList.contains("collapsed");
+        wrap.classList.toggle("collapsed");
+        label();
+        if (wasOpen) wrap.scrollIntoView({ block: "nearest" });
+      });
+      wrap.append(ex);
+    }
   }
 
   // The sidebar's section list follows the reader.
@@ -154,6 +198,25 @@
     };
     addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(paint); } }, { passive: true });
     paint();
+
+    // A button back to the top, once the reader is well down the page.
+    const top = document.createElement("button");
+    top.type = "button";
+    top.className = "to-top";
+    top.setAttribute("aria-label", "Back to top");
+    top.textContent = "\u2191";
+    top.hidden = true;
+    top.addEventListener("click", () => scrollTo({ top: 0, behavior: "smooth" }));
+    document.body.append(top);
+    addEventListener("scroll", () => { top.hidden = scrollY < 600; }, { passive: true });
+
+    // [ and ] walk to the previous / next page (the pager).
+    addEventListener("keydown", (ev) => {
+      if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+      if (ev.target.closest && ev.target.closest("input, textarea, select")) return;
+      if (ev.key === "[") { document.querySelector(".pager .prev")?.click(); }
+      else if (ev.key === "]") { document.querySelector(".pager .next")?.click(); }
+    });
   }
 
   // A heading's # copies the link to that section.
@@ -362,9 +425,30 @@
     else if (ev.key === "Enter" && links()[sel]) { location.href = links()[sel].href; }
     else if (ev.key === "Escape") { show(false); q.blur(); }
   });
+  // A shortcuts help card, opened with ? (and closed with Escape).
+  let help = null;
+  const buildHelp = () => {
+    const rows = [["/", "Search the docs"]];
+    if (document.querySelector(".pager")) rows.push(["[  ]", "Previous / next page"]);
+    rows.push(["?", "This help"], ["Esc", "Close / clear search"]);
+    help = document.createElement("div");
+    help.className = "kbd-help";
+    help.innerHTML =
+      '<div class="kbd-card" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">' +
+      "<h2>Keyboard shortcuts</h2><dl>" +
+      rows.map(([k, d]) => `<dt>${k.trim().split(/\s+/).map((x) => `<kbd>${x}</kbd>`).join(" ")}</dt><dd>${d}</dd>`).join("") +
+      "</dl></div>";
+    help.addEventListener("click", (e) => { if (e.target === help) closeHelp(); });
+    document.body.append(help);
+  };
+  const closeHelp = () => { if (help) { help.remove(); help = null; } };
+  const toggleHelp = () => { if (help) closeHelp(); else buildHelp(); };
+
   document.addEventListener("keydown", (ev) => {
     const typing = ev.target.closest && ev.target.closest("input, textarea, select");
     if (ev.key === "/" && !typing) { ev.preventDefault(); q.focus(); }
+    else if (ev.key === "?" && !typing) { ev.preventDefault(); toggleHelp(); }
+    else if (ev.key === "Escape" && help) { closeHelp(); }
   });
   document.addEventListener("click", (ev) => {
     if (!ev.target.closest(".search")) show(false);
