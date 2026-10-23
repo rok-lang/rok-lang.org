@@ -80,9 +80,8 @@ pub struct Page {
     pub heads: List<Heading>;
 }
 
-// ---- paths ----
 
-/// `a/./b/../c` → `a/c`; leading `..` kept.
+/// `a/./b/../c` -> `a/c`; leading `..` kept.
 fn norm(p: str) -> str {
     let segs: List<str> = List::new();
     for s in p.split("/") {
@@ -105,7 +104,7 @@ fn join(dir: str, p: str) -> str {
     if dir.is_empty() { p } else { dir + "/" + p }
 }
 
-/// Output path of a spec source: `x/README.md` → `spec/x/index.html`.
+/// Output path of a spec source: `x/README.md` -> `spec/x/index.html`.
 fn out_of(src: str) -> str {
     if src == "README.md" { return "spec/index.html"; }
     if let s: str = src.strip_suffix("/README.md") { return "spec/" + s + "/index.html"; }
@@ -145,7 +144,7 @@ fn spec_link(site: Site, spec: str, prefix: str, href: str, src_dir: str, out: s
     rel(out, prefix + out_of(file)) + frag
 }
 
-/// `"3.11.4. Patterns"` → `"3.11.4."`; `""` if unnumbered.
+/// `"3.11.4. Patterns"` -> `"3.11.4."`; `""` if unnumbered.
 fn sec_no(t: str) -> str {
     let w = t;
     if let k: usize = t.find(" ") { w = t[:k]; }
@@ -186,7 +185,7 @@ fn sec_map(a: List<Heading>, b: List<Heading>) -> str {
     out.to_str()
 }
 
-/// EN / 한국어 switch for spec page `p`, linking to the same page of the
+/// EN / Korean switch for spec page `p`, linking to the same page of the
 /// other edition (`others`); search.js carries the reader's section over.
 fn lang_switch(p: Page, others: List<Page>, ko: bool) -> str {
     if others.len() == 0 { return ""; }
@@ -241,7 +240,6 @@ fn spec_pages(site: Site, spec: str, prefix: str, ko: bool) throws -> List<Page>
     pages
 }
 
-// ---- small helpers ----
 
 /// README first within each directory, then by name.
 fn sort_key(src: str) -> str { src.replace("README.md", "!") }
@@ -284,7 +282,6 @@ fn write(root: str, path: str, data: str) throws {
     try fs::write(full, data);
 }
 
-// ---- link check ----
 
 /// Every value of `name="..."` in `html`.
 fn attr_values(cs: List<char>, name: str) -> List<str> {
@@ -359,7 +356,6 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
     bad
 }
 
-// ---- build ----
 
 /// `docs/**.md`, sorted (each directory's `index.md` first).
 fn page_sources() throws -> List<str> {
@@ -533,7 +529,7 @@ fn main() throws {
         files.insert(ko, files[ko].replace("</head>", alt));
     }
 
-    // The docs' own pages: `docs/x.md` → `x.html`; a directory
+    // The docs' own pages: `docs/x.md` -> `x.html`; a directory
     // (`docs/learn/`) is a chapter with its own sidebar and pager.
     let own: List<Page> = List::new();
     for src in try page_sources() {

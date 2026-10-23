@@ -12,12 +12,12 @@
   const side = document.querySelector(".side details");
   if (side && matchMedia("(max-width: 860px)").matches) side.open = false;
   const aside = document.querySelector(".side");
-  const here_item = aside && aside.querySelector("[aria-current=page], a.cur");
-  if (here_item && aside.scrollHeight > aside.clientHeight) {
-    aside.scrollTop = here_item.offsetTop - aside.clientHeight / 2;
+  const hereItem = aside && aside.querySelector("[aria-current=page], a.cur");
+  if (hereItem && aside.scrollHeight > aside.clientHeight) {
+    aside.scrollTop = hereItem.offsetTop - aside.clientHeight / 2;
   }
 
-  // Theme button: auto (the system setting) → light → dark. The choice
+  // Theme button: auto (the system setting) -> light -> dark. The choice
   // is this reader's alone, so it lives in localStorage; the inline
   // script in <head> applies it before the page paints.
   const tb = document.querySelector(".theme");
@@ -41,7 +41,7 @@
   }
 
   // Compact header: the hamburger opens the nav as a drop panel. It
-  // closes on a link, an outside click, Escape, or a return to desktop.
+  // closes on a link, an outside click, Escape, or a return to the full nav.
   const top = document.querySelector(".top");
   const navToggle = document.querySelector(".nav-toggle");
   const nav = document.getElementById("nav");
@@ -61,7 +61,20 @@
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && top.classList.contains("nav-open")) { setNav(false); navToggle.focus(); }
     });
-    matchMedia("(min-width: 1025px)").addEventListener("change", (e) => { if (e.matches) setNav(false); });
+    // Collapse exactly when the full nav would not fit on one row: measure
+    // the natural width with the row forced not to wrap or shrink. Works
+    // for any number of links, so there is no per-page width breakpoint.
+    const fitNav = () => {
+      top.classList.remove("nav-compact");
+      top.classList.add("nav-measuring");
+      const overflow = top.scrollWidth > top.clientWidth + 1;
+      top.classList.remove("nav-measuring");
+      if (overflow) top.classList.add("nav-compact");
+      else setNav(false);
+    };
+    fitNav();
+    addEventListener("resize", fitNav);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitNav);
   }
 
   // Spec language switch: carry the current section over to the other
@@ -148,7 +161,24 @@
       setTimeout(() => { b.textContent = "copy"; b.classList.remove("done"); }, 1600);
     });
     tools.append(b);
-    wrap.append(tools);
+    // A language'd block gets a macOS-style title bar: traffic lights, the
+    // language, then the tools. Plain and install blocks keep the floating
+    // tools (positioned by CSS).
+    if (wrap.dataset.lang && !pre.closest(".install")) {
+      const head = document.createElement("div");
+      head.className = "code-head";
+      const lights = document.createElement("span");
+      lights.className = "lights";
+      lights.setAttribute("aria-hidden", "true");
+      for (let i = 0; i < 3; i++) lights.append(document.createElement("i"));
+      const title = document.createElement("span");
+      title.className = "code-title";
+      title.textContent = wrap.dataset.lang;
+      head.append(lights, title, tools);
+      wrap.prepend(head);
+    } else {
+      wrap.append(tools);
+    }
 
     // A very tall block collapses behind a "show all" bar.
     if (!pre.closest(".install") && pre.scrollHeight > 460) {

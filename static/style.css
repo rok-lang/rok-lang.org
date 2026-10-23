@@ -136,7 +136,7 @@
 }
 :root[data-theme="light"] { color-scheme: light; }
 
-/* ui-monospace (SF Mono) has no √ ∘ ∪ ...: take them from a mono font that
+/* ui-monospace (SF Mono) lacks some math glyphs (sqrt, compose, union): take them from a mono font that
    does, so tables in <pre> keep their columns. */
 @font-face {
   font-family: "rok-mono-math";
@@ -299,7 +299,7 @@ kbd {
   font-size: var(--fs-base);
 }
 .search input::placeholder { color: var(--muted); opacity: 1; }
-/* No native search widgets (the webkit clear ×, decoration) on the pill. */
+/* No native search widgets (the webkit clear x, decoration) on the pill. */
 .search input { appearance: none; -webkit-appearance: none; }
 .search input::-webkit-search-cancel-button,
 .search input::-webkit-search-decoration { -webkit-appearance: none; display: none; }
@@ -354,6 +354,7 @@ kbd {
 }
 .theme:hover { color: var(--accent-2); border-color: var(--accent-2); }
 .main-nav + .theme { margin-left: auto; }
+@media (pointer: coarse) { .theme { width: var(--target); height: var(--target); } }
 
 /* The hamburger: bars drawn in CSS (no font glyph), shown only when the
    nav collapses. The middle bar is the span; the two others are its
@@ -391,7 +392,6 @@ kbd {
     transition: transform 160ms ease, background-color 120ms ease, top 160ms ease;
   }
 }
-@media (pointer: coarse) { .theme { width: var(--target); height: var(--target); } }
 
 /* article */
 
@@ -478,7 +478,40 @@ pre code { font-size: 1em; }
 }
 .code:hover .copy, .copy:focus-visible, .copy.done { opacity: 1; }
 .copy:hover { color: var(--accent-2); border-color: var(--accent-2); }
-/* "try" sits left of "copy". */
+
+/* A language'd block is a little macOS window: the border and rounding
+   move to the wrapper so the title bar and code read as one pane. */
+.code[data-lang] {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--code-bg);
+}
+.code[data-lang] > pre {
+  border: 0;
+  border-radius: 0;
+  padding-top: var(--sp-4);
+}
+.code-head {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  height: 36px;
+  padding: 0 var(--sp-4);
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+/* The traffic lights, same palette as the terminal windows. */
+.code-head .lights { flex: 0 0 auto; display: flex; gap: 6px; margin-right: var(--sp-2); }
+.code-head .lights i { width: 11px; height: 11px; border-radius: 50%; background: #f9a8d4; }
+.code-head .lights i + i { background: #7dd3fc; }
+.code-head .lights i + i + i { background: #3a3a46; }
+.code-title { color: var(--muted); font: 600 var(--fs-xs) var(--mono); letter-spacing: 0.02em; }
+/* In the bar the tools are a static flex item and always shown. */
+.code-head .code-tools { position: static; margin-left: auto; }
+.code-head .copy { opacity: 1; }
+/* Joined to an output block below: square the shared edge. */
+.code[data-lang]:has(+ pre.output) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 .copy.done { color: var(--tip); border-color: var(--tip); }
 @media (pointer: coarse) {
   .copy { opacity: 1; min-height: 32px; padding: 0 var(--sp-3); }
@@ -487,30 +520,6 @@ pre code { font-size: 1em; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .copy { transition: opacity 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out; }
-}
-
-/* A very tall code block collapses behind a show-all bar (search.js). */
-.code.tall.collapsed > pre { max-height: 420px; overflow: hidden; }
-.code.tall .expand { border: 0; color: var(--accent-2); font: 600 var(--fs-xs) var(--sans); cursor: pointer; }
-.code.tall .expand:hover { color: var(--accent-2-deep); }
-.code.tall.collapsed .expand {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 68px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: var(--sp-2);
-  background: linear-gradient(transparent, var(--code-bg));
-}
-.code.tall:not(.collapsed) .expand {
-  display: block;
-  width: 100%;
-  padding: var(--sp-2);
-  border-top: 1px solid var(--line);
-  background: var(--panel);
 }
 
 pre.output {
@@ -618,6 +627,43 @@ footer .by a { font-weight: 600; }
 .lost .err .h { color: var(--tip); font-weight: 700; }
 .lost .err .g { color: var(--accent); }
 
+/* print */
+
+@media print {
+  .skip, .top, .side, .pager, footer, .copy, .search, .lang-switch, .anchor { display: none !important; }
+  body { background: #fff; color: #000; font-size: 11pt; }
+  .wrap, main { display: block; max-width: none; padding: 0; }
+  a { color: inherit; text-decoration: underline; }
+  pre { white-space: pre-wrap; border: 1px solid #ccc; break-inside: avoid; }
+  article h2 { background: none; break-after: avoid; }
+}
+
+/* site: rok-lang.org */
+
+/* A very tall code block collapses behind a show-all bar (search.js). */
+.code.tall.collapsed > pre { max-height: 420px; overflow: hidden; }
+.code.tall .expand { border: 0; color: var(--accent-2); font: 600 var(--fs-xs) var(--sans); cursor: pointer; }
+.code.tall .expand:hover { color: var(--accent-2-deep); }
+.code.tall.collapsed .expand {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 68px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--sp-2);
+  background: linear-gradient(transparent, var(--code-bg));
+}
+.code.tall:not(.collapsed) .expand {
+  display: block;
+  width: 100%;
+  padding: var(--sp-2);
+  border-top: 1px solid var(--line);
+  background: var(--panel);
+}
+
 /* The ? keyboard-shortcuts card. */
 .kbd-help { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: var(--sp-4); background: rgb(20 20 30 / .45); }
 .kbd-card { width: min(380px, 100%); padding: var(--sp-5); border: 1px solid var(--line-strong); border-radius: var(--r-lg); background: var(--raised); box-shadow: var(--shadow); }
@@ -648,19 +694,6 @@ footer .by a { font-weight: 600; }
 .to-top:hover { color: var(--accent-2); border-color: var(--accent-2); }
 @media (prefers-reduced-motion: no-preference) { .to-top { transition: color 120ms, border-color 120ms; } }
 @media print { .to-top { display: none; } }
-
-/* print */
-
-@media print {
-  .skip, .top, .side, .pager, footer, .copy, .search, .lang-switch, .anchor { display: none !important; }
-  body { background: #fff; color: #000; font-size: 11pt; }
-  .wrap, main { display: block; max-width: none; padding: 0; }
-  a { color: inherit; text-decoration: underline; }
-  pre { white-space: pre-wrap; border: 1px solid #ccc; break-inside: avoid; }
-  article h2 { background: none; break-after: avoid; }
-}
-
-/* site: rok-lang.org */
 
 .wrap {
   display: grid;
@@ -918,34 +951,6 @@ article .dl-sum a { color: var(--muted); }
 /* Docs: reading progress, code labels, the edit link, the copied toast. */
 
 .progress { position: fixed; left: 0; top: 0; z-index: 30; height: 3px; width: 100%; transform-origin: 0 50%; transform: scaleX(var(--read, 0)); background: linear-gradient(90deg, var(--accent-2), var(--accent)); pointer-events: none; }
-/* The language names the header strip, on its left. */
-.code[data-lang]::before {
-  content: attr(data-lang);
-  position: absolute;
-  top: 7px;
-  left: var(--sp-4);
-  color: var(--muted);
-  font: 600 var(--fs-xs)/1.6 var(--mono);
-  letter-spacing: 0.02em;
-  pointer-events: none;
-}
-/* A divider between the header strip and the code below it. */
-.code[data-lang]::after {
-  content: "";
-  position: absolute;
-  top: 29px;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: var(--line);
-  pointer-events: none;
-}
-/* Room for the header above the first line. */
-.code[data-lang] > pre { padding-top: 30px; }
-@media (pointer: coarse) {
-  .code[data-lang]::before { display: none; }
-  .code[data-lang]::after { top: 47px; }
-}
 article .edit { margin: var(--sp-7) 0 0; font: 600 var(--fs-sm) var(--sans); }
 article .edit a { color: var(--muted); text-decoration: none; }
 article .edit a::before { content: "✎ "; color: var(--accent-2); }
@@ -953,43 +958,46 @@ article .edit a:hover { color: var(--accent-2); }
 .toast { position: fixed; left: 50%; bottom: var(--sp-6); z-index: 40; padding: var(--sp-2) var(--sp-4); border-radius: 999px; background: var(--fg); color: var(--bg); font: 600 var(--fs-sm) var(--mono); transform: translateX(-50%); box-shadow: var(--shadow); }
 /* small screens */
 
-@media (max-width: 1024px) {
-  html { scroll-padding-top: var(--sp-4); }
-  /* The header collapses: brand (and version) on row one, search full
-     width on row two, and the nav folds behind the hamburger as a drop
-     panel rather than wrapping to a second line. */
-  .top { position: relative; flex-wrap: wrap; gap: 0 var(--sp-3); padding: var(--sp-2) var(--sp-4); }
-  .brand { min-height: var(--target); }
-  .vers { margin-left: 0; }
-  .vers summary { min-height: 36px; }
-  .vers-menu { min-width: 160px; }
-  .nav-toggle { display: inline-grid; order: 0; margin-left: auto; }
-  .theme { order: 0; margin-left: var(--sp-2); }
-  .search { order: 1; flex: 0 0 100%; min-width: 0; margin: var(--sp-2) 0 0; position: relative; z-index: 2; }
-  .search input { width: 100%; height: 40px; }
-  .main-nav {
-    order: 3;
-    position: absolute;
-    top: calc(100% + var(--sp-1));
-    right: var(--sp-4);
-    min-width: 220px;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--sp-2);
-    background: var(--raised);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r-md);
-    box-shadow: var(--shadow);
-    z-index: 30;
-    display: none;
-  }
-  .top.nav-open .main-nav { display: flex; }
-  .main-nav a { display: flex; align-items: center; min-height: var(--target); padding: 0 var(--sp-3); border-radius: var(--r-sm); white-space: nowrap; }
-  .main-nav a:hover, .main-nav a:focus-visible { color: var(--accent-2); background: var(--panel); }
-  .results { position: fixed; left: var(--sp-4); right: var(--sp-4); top: 60px; width: auto; }
-  .results a { min-height: var(--target); }
+/* The header folds into the hamburger exactly when the full nav would no
+   longer fit on one row. search.js measures that (forcing the row not to
+   wrap or shrink) and toggles .nav-compact, so the same rule serves any
+   number of links on any page -- no per-page width breakpoint. */
+.top.nav-measuring { flex-wrap: nowrap; }
+.top.nav-measuring > * { flex-shrink: 0; }
+.top.nav-measuring .main-nav { flex-wrap: nowrap; flex-shrink: 0; }
+
+.top.nav-compact { position: relative; flex-wrap: wrap; gap: 0 var(--sp-3); padding: var(--sp-2) var(--sp-4); }
+.nav-compact .brand { min-height: var(--target); }
+.nav-compact .vers { margin-left: 0; }
+.nav-compact .vers summary { min-height: 36px; }
+.nav-compact .vers-menu { min-width: 160px; }
+.nav-compact .nav-toggle { display: inline-grid; order: 0; margin-left: auto; }
+.nav-compact .theme { order: 0; margin-left: var(--sp-2); }
+.nav-compact .search { order: 1; flex: 0 0 100%; min-width: 0; margin: var(--sp-2) 0 0; position: relative; z-index: 2; }
+.nav-compact .search input { width: 100%; height: 40px; }
+.nav-compact .main-nav {
+  order: 3;
+  position: absolute;
+  top: calc(100% + var(--sp-1));
+  right: var(--sp-4);
+  min-width: 220px;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sp-2);
+  background: var(--raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow);
+  z-index: 30;
+  display: none;
 }
+.top.nav-compact.nav-open .main-nav { display: flex; }
+.nav-compact .main-nav a { display: flex; align-items: center; min-height: var(--target); padding: 0 var(--sp-3); border-radius: var(--r-sm); white-space: nowrap; }
+.nav-compact .main-nav a:hover, .nav-compact .main-nav a:focus-visible { color: var(--accent-2); background: var(--panel); }
+.nav-compact .results { position: fixed; left: var(--sp-4); right: var(--sp-4); top: 60px; width: auto; }
+.nav-compact .results a { min-height: var(--target); }
 @media (max-width: 860px) {
+  html { scroll-padding-top: var(--sp-4); }
   /* On a phone, trim the version pill to just the channel name. */
   .vers-full { display: none; }
   .wrap { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 var(--sp-4); }
