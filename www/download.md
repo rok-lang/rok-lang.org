@@ -36,6 +36,28 @@ sh install.sh --archive rok-{release}-aarch64-apple-darwin.tar.xz
 
 The `.tar.xz` is about half the size of the `.tar.gz`; on Linux, tar needs `xz` to unpack it. An unpacked archive also installs itself with its own `install.sh` (Windows: `install.ps1`).
 
+## Cross-compilation targets
+
+You download one archive for your own machine; it builds for the rest. Every release archive carries the runtime and linker for these targets, so `rok build --target <triple>` (or `--target` on `rok run`) produces a binary for any of them without anything more to install:
+
+| Target | Triple |
+|---|---|
+| Linux x86_64, glibc 2.34+ | `x86_64-unknown-linux-gnu` |
+| Linux arm64, glibc 2.34+ | `aarch64-unknown-linux-gnu` |
+| Linux x86 (32-bit), glibc 2.34+ | `i686-unknown-linux-gnu` |
+| Linux armv7 hard-float, glibc 2.34+ | `armv7-unknown-linux-gnueabihf` |
+| Linux riscv64, glibc 2.34+ | `riscv64gc-unknown-linux-gnu` |
+| Linux x86_64, static (musl 1.2.5) | `x86_64-unknown-linux-musl` |
+| Linux arm64, static (musl 1.2.5) | `aarch64-unknown-linux-musl` |
+| Windows x86_64 | `x86_64-pc-windows-msvc` |
+| Windows arm64 | `aarch64-pc-windows-msvc` |
+| Windows x86 (32-bit) | `i686-pc-windows-msvc` |
+| WebAssembly, WASI preview 2 | `wasm32-wasi` |
+| WebAssembly, WASI with threads | `wasm32-wasi-threads` |
+| WebAssembly, browser / freestanding | `wasm32-unknown-unknown` |
+
+The macOS archive adds `aarch64-apple-darwin` and `x86_64-apple-darwin` (they link against the Xcode Command Line Tools SDK, so only a macOS host builds them). These are the targets a release ships a runtime and linker for, so they build with nothing more installed; `rokc --print target-list` also lists the other triples the code generator knows, for which you supply the runtime yourself.
+
 ## What else you need
 
 - macOS: the Xcode Command Line Tools (`xcode-select --install`), for the SDK that linking needs.
