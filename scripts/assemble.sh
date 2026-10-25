@@ -1,7 +1,9 @@
 #!/bin/sh
-# Lay out both sites for a deploy: the archived release docs from the
-# docs-archive branch (origin's if fetched, else the local one), then
-# the dev docs and the home site built from this checkout.
+# Lay out both sites for a deploy: the home site and the dev docs built
+# from this checkout, plus every released version re-wrapped from its
+# content bundle on the docs-archive branch (origin's if fetched, else the
+# local one) with the current chrome, so a design change reaches old
+# versions while their content stays pinned.
 #
 # usage: scripts/assemble.sh
 #
@@ -22,7 +24,6 @@ fi
 out=$(sed -n 's/^ *out: *"\(.*\)",*$/\1/p' site.rokon)
 out=${out:-public}
 rm -rf "$out"
-mkdir -p "$out/docs"
 
 ref=""
 for r in origin/docs-archive docs-archive; do
@@ -31,11 +32,14 @@ for r in origin/docs-archive docs-archive; do
 		break
 	fi
 done
+arch="$here/.docs-archive"
+rm -rf "$arch"
 if [ -n "$ref" ]; then
-	git archive "$ref" | tar -x -C "$out/docs"
-	echo "archived docs from $ref: $(ls "$out/docs" | tr '\n' ' ')"
+	mkdir -p "$arch"
+	git archive "$ref" | tar -x -C "$arch"
+	echo "docs bundles from $ref: $(ls "$arch" | tr '\n' ' ')"
+	ROK_DOCS_ARCHIVE="$arch" "$rok" run
 else
 	echo "note: no docs-archive branch; only dev is built (see scripts/release-docs.sh)" >&2
+	"$rok" run
 fi
-
-"$rok" run

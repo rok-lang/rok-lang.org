@@ -80,6 +80,34 @@ pub struct Page {
     pub heads: List<Heading>;
 }
 
+/// A doc page's content and navigation without any chrome: enough for the
+/// current generator to re-wrap it. Archived per released version so a
+/// design change reaches old versions while their content stays pinned.
+#[derive(Rokon)]
+pub struct Frag {
+    pub out: str;
+    pub title: str;
+    pub side: str;
+    pub body: str;
+    pub pager: str;
+    /// An hreflang `<link>` block to splice before `</head>`, or `""`.
+    pub head: str;
+}
+
+/// One released version's docs as fragments, plus its search index.
+#[derive(Rokon)]
+pub struct Bundle {
+    pub version: str;
+    pub pages: List<Frag>;
+    pub search: str;
+}
+
+/// Final HTML of a doc page: the current chrome around `f`'s content.
+fn wrap(site: Site, f: Frag) -> str {
+    let html = layout::page(site, f.out, f.title, f.side, f.body, f.pager);
+    if f.head.is_empty() { html } else { html.replace("</head>", f.head) }
+}
+
 
 /// `a/./b/../c` -> `a/c`; leading `..` kept.
 fn norm(p: str) -> str {
@@ -470,6 +498,16 @@ fn load_versions() throws -> Versions {
     try rokon::decode(try rokon::parse(try fs::read_to_str("versions.rokon")), "versions.rokon")
 }
 
+/// The names under static/, without copying (for the link check).
+fn static_names() throws -> Set<str> {
+    let names: Set<str> = Set::new();
+    for entry in fs::walk("static") {
+        let e = try entry.get();
+        if e.is_file() { names.insert(e.path().as_str()["static/".len():]); }
+    }
+    names
+}
+
 /// Copies static/ into `dir`; the copied names.
 fn copy_static(dir: str) throws -> Set<str> {
     let names: Set<str> = Set::new();
@@ -515,7 +553,7 @@ fn is_version(v: str) -> bool {
 }
 
 fn usage() {
-    eprintln("usage: rok run [-- [check] [--version <major.minor> | --version dev] | -- code [filter]]");
+    eprintln("usage: rok run [-- [check] [--version <major.minor> | --version dev] | -- code [filter] | -- archive <major.minor> <dir>]");
     env::exit(2);
 }
 
@@ -529,6 +567,7 @@ fn main() throws {
     }
     let strict = false;
     let version = "dev";
+    let archive_out = "";
     let k = 1usize;
     while k < args.len() {
         if args[k] == "check" {
@@ -536,6 +575,10 @@ fn main() throws {
         } else if args[k] == "--version" && k + 1 < args.len() {
             version = args[k + 1];
             k += 1;
+        } else if args[k] == "archive" && k + 2 < args.len() {
+            version = args[k + 1];
+            archive_out = args[k + 2];
+            k += 2;
         } else {
             usage();
         }
@@ -559,14 +602,17 @@ fn main() throws {
 
     let ko_outs: Set<str> = Set::new();
     for p in ko_pages { ko_outs.insert(p.out); }
-    let files: Dict<str, str> = Dict::new();
+    // Each doc page as a chrome-less fragment, keyed by output path; the
+    // current chrome is applied in `wrap`, so a released version's archived
+    // fragments re-wrap with it too.
+    let frags: Dict<str, Frag> = Dict::new();
     for k in 0..pages.len() {
         let p = pages[k];
-        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(pages, k), lang_switch(p, ko_pages, false) + p.html + spec_edit(site, site.spec, p), layout::pager(pages, k)));
+        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(pages, k), body: lang_switch(p, ko_pages, false) + p.html + spec_edit(site, site.spec, p), pager: layout::pager(pages, k), head: "" });
     }
     for k in 0..ko_pages.len() {
         let p = ko_pages[k];
-        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(ko_pages, k), lang_switch(p, pages, true) + p.html + spec_edit(site, site.spec_ko, p), layout::pager(ko_pages, k)));
+        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(ko_pages, k), body: lang_switch(p, pages, true) + p.html + spec_edit(site, site.spec_ko, p), pager: layout::pager(ko_pages, k), head: "" });
     }
 
     // Each spec page names its other edition for search engines.
@@ -574,8 +620,12 @@ fn main() throws {
         let ko = "ko/" + p.out;
         if !ko_outs.contains(ko) { continue; }
         let alt = f"<link rel=\"alternate\" hreflang=\"en\" href=\"{markdown::esc(layout::latest(site, p.out))}\">\n<link rel=\"alternate\" hreflang=\"ko\" href=\"{markdown::esc(layout::latest(site, ko))}\">\n</head>";
-        files.insert(p.out, files[p.out].replace("</head>", alt));
-        files.insert(ko, files[ko].replace("</head>", alt));
+        let fe = frags[p.out];
+        fe.head = alt;
+        frags.insert(p.out, fe);
+        let fk = frags[ko];
+        fk.head = alt;
+        frags.insert(ko, fk);
     }
 
     // The docs' own pages: `docs/x.md` -> `x.html`; a directory
@@ -590,7 +640,7 @@ fn main() throws {
         let p = own[k];
         if p.dir.is_empty() {
             let side = if p.out == "index.html" { "" } else { layout::page_toc(p) };
-            files.insert(p.out, layout::page(site, p.out, p.title, side, p.html + docs_edit(site, p), ""));
+            frags.insert(p.out, Frag { out: p.out, title: p.title, side: side, body: p.html + docs_edit(site, p), pager: "", head: "" });
             continue;
         }
         let group: List<Page> = List::new();
@@ -602,7 +652,7 @@ fn main() throws {
             }
         }
         let body = (if at == 0 { p.html + layout::contents(group) } else { p.html }) + docs_edit(site, p);
-        files.insert(p.out, layout::page(site, p.out, p.title, layout::sidebar(group, at), body, layout::pager(group, at)));
+        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(group, at), body: body, pager: layout::pager(group, at), head: "" });
     }
 
     // Standard library API: `std/<tier>/<module>.html`.
@@ -610,14 +660,14 @@ fn main() throws {
     let mods = try apidoc::collect(site.library);
     for m in mods {
         let (html, heads) = apidoc::body(m, mods);
-        files.insert(m.out, layout::page(site, m.out, m.path, apidoc::sidebar(m, mods, heads, m.out), html, ""));
+        frags.insert(m.out, Frag { out: m.out, title: m.path, side: apidoc::sidebar(m, mods, heads, m.out), body: html, pager: "", head: "" });
         for s in apidoc::subpages(m) {
-            files.insert(s.out, layout::page(site, s.out, s.title, apidoc::sidebar(m, mods, s.heads, s.out), s.html, ""));
+            frags.insert(s.out, Frag { out: s.out, title: s.title, side: apidoc::sidebar(m, mods, s.heads, s.out), body: s.html, pager: "", head: "" });
             api.push(Page { src: "", out: s.out, dir: "std", title: s.title, html: "", heads: s.heads });
         }
         api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads });
     }
-    files.insert("std/index.html", layout::page(site, "std/index.html", "Standard library API", "", apidoc::index(mods), ""));
+    frags.insert("std/index.html", Frag { out: "std/index.html", title: "Standard library API", side: "", body: apidoc::index(mods), pager: "", head: "" });
 
     // Search index: every page and its `##` / `###` sections (the
     // English spec only).
@@ -651,6 +701,27 @@ fn main() throws {
     }
     let idx = StrBuf::new();
     idx.push_str(f"{{\"p\":[\n{pl.to_str()}],\n\"h\":[\n{hl.to_str()}]}}\n");
+
+    // This version's pages, with the current chrome.
+    let files: Dict<str, str> = Dict::new();
+    for out in frags.keys() { files.insert(out, wrap(site, frags[out])); }
+
+    // `archive` mode: emit this version's content as a bundle for a later
+    // deploy to re-wrap with the chrome of the day, instead of writing HTML.
+    // The link check still runs, so a release with a broken link is caught.
+    if !archive_out.is_empty() {
+        let abad = check(files, try static_names());
+        for b in abad { eprintln(f"broken link: {b}"); }
+        if abad.len() > 0 { env::exit(1); }
+        let outs: List<str> = List::new();
+        for o in frags.keys() { outs.push(o); }
+        outs.sort();
+        let fl: List<Frag> = List::new();
+        for o in outs { fl.push(frags[o]); }
+        try write(archive_out, "bundle.rokon", rokon::to_string(Bundle { version: version, pages: fl, search: idx.to_str() }));
+        println(f"archived docs {version}: {fl.len()} pages → {archive_out}/bundle.rokon ({t0.elapsed():?})");
+        return;
+    }
 
     // The home site: the landing page links into the newest docs with
     // `docs:<path>`.
@@ -686,6 +757,33 @@ fn main() throws {
         www_statics.insert(f);
     }
 
+    // Released versions other than the one built now: re-wrap their
+    // archived fragments with the current chrome, so a design change reaches
+    // them while their content stays pinned. The bundles come from the
+    // docs-archive branch (scripts/assemble.sh points ROK_DOCS_ARCHIVE at it).
+    let arch_bad: List<str> = List::new();
+    let archive = try env::var("ROK_DOCS_ARCHIVE") catch _ { "" };
+    if !archive.is_empty() {
+        for v in vs.released {
+            if v == version { continue; }
+            let bpath = f"{archive}/{v}/bundle.rokon";
+            if !fs::exists(bpath) { continue; }
+            let b: Bundle = try rokon::decode(try rokon::parse(try fs::read_to_str(bpath)), bpath);
+            site.version = v;
+            let vdir = docs_root + "/" + v;
+            if fs::exists(vdir) { try fs::remove_dir_all(vdir); }
+            let vfiles: Dict<str, str> = Dict::new();
+            for f in b.pages { vfiles.insert(f.out, wrap(site, f)); }
+            for out in vfiles.keys() { try write(vdir, out, clean_hrefs(vfiles[out])); }
+            try write(vdir, "search-index.json", b.search);
+            let vstatics = try copy_static(vdir);
+            vstatics.insert("search-index.json");
+            for bd in check(vfiles, vstatics) { arch_bad.push(f"[{v}] {bd}"); }
+            println(f"docs {v}: {b.pages.len()} pages re-wrapped from archive → {vdir}/");
+        }
+        site.version = version;
+    }
+
     // Above the versions: the version list for the menu, a redirect to
     // latest/, and the 404 page (which borrows latest/'s files).
     let list = StrBuf::new();
@@ -719,6 +817,7 @@ fn main() throws {
 
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }
+    for b in arch_bad { bad.push(b); }
     for b in bad { eprintln(f"broken link: {b}"); }
     let latest_note = if has_latest { ", latest/ = " + newest } else { "" };
     println(f"docs {version}: {pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} guide pages + {api.len()} API pages → {docs_dir}/ ({files.len()} html){latest_note}; home → {www_dir}/; {bad.len()} broken links, {t0.elapsed():?}");
