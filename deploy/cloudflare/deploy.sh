@@ -18,6 +18,6 @@ scripts/assemble.sh
 
 cp deploy/cloudflare/_headers.docs public/docs/_headers
 
-wrangler pages deploy public/www  --config deploy/cloudflare/wrangler.www.toml  --branch main
-wrangler pages deploy public/docs --config deploy/cloudflare/wrangler.docs.toml --branch main
+wrangler pages deploy public/www  --project-name rok-lang-org      --branch main
+wrangler pages deploy public/docs --project-name docs-rok-lang-org --branch main
 echo "deployed rok-lang.org and docs.rok-lang.org"
