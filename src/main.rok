@@ -322,6 +322,55 @@ fn chars_of(s: str) -> List<char> {
     cs
 }
 
+/// Drop `.html` from an internal href target (`index.html` -> its directory).
+/// External, mailto and anchor-only hrefs are left alone.
+fn clean_one(href: str) -> str {
+    if href.contains("://") || href.starts_with("mailto:") || href.starts_with("#") || href.is_empty() { return href; }
+    let path = href;
+    let frag = "";
+    if let k: usize = href.find("#") { path = href[:k]; frag = href[k:]; }
+    let clean = if path.ends_with("/index.html") {
+        path[:path.len() - "index.html".len()]
+    } else if path == "index.html" {
+        "./"
+    } else if path.ends_with(".html") {
+        path[:path.len() - ".html".len()]
+    } else {
+        path
+    };
+    clean + frag
+}
+
+/// Rewrite every `href="..."` to its extensionless form. Output files keep
+/// their `.html` names; the server / Pages resolve the clean paths. The link
+/// check runs on the uncleaned pages, so it still verifies `.html` targets.
+fn clean_hrefs(html: str) -> str {
+    let cs = chars_of(html);
+    let n = cs.len();
+    let out = StrBuf::new();
+    let i = 0usize;
+    while i < n {
+        let hit = cs[i] == 'h' && i + 6 <= n && (i == 0 || cs[i - 1] == ' ')
+            && cs[i + 1] == 'r' && cs[i + 2] == 'e' && cs[i + 3] == 'f' && cs[i + 4] == '=' && cs[i + 5] == '"';
+        if !hit {
+            out.push(cs[i]);
+            i += 1;
+            continue;
+        }
+        out.push_str("href=\"");
+        let j = i + 6;
+        let v = StrBuf::new();
+        while j < n && cs[j] != '"' {
+            v.push(cs[j]);
+            j += 1;
+        }
+        out.push_str(clean_one(v.to_str()));
+        out.push('"');
+        i = if j < n { j + 1 } else { j };
+    }
+    out.to_str()
+}
+
 /// Broken internal `href` / `src` targets (missing file or anchor).
 fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
     let ids: Dict<str, Set<str>> = Dict::new();
@@ -625,11 +674,11 @@ fn main() throws {
     for d in [docs_dir, www_dir] {
         if fs::exists(d) { try fs::remove_dir_all(d); }
     }
-    for out in files.keys() { try write(docs_dir, out, files[out]); }
+    for out in files.keys() { try write(docs_dir, out, clean_hrefs(files[out])); }
     try write(docs_dir, "search-index.json", idx.to_str());
     let statics = try copy_static(docs_dir);
     statics.insert("search-index.json");
-    for out in www.keys() { try write(www_dir, out, www[out]); }
+    for out in www.keys() { try write(www_dir, out, clean_hrefs(www[out])); }
     let www_statics = try copy_static(www_dir);
     // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
     for f in ["install.sh", "install.ps1"] {
@@ -666,7 +715,7 @@ fn main() throws {
     if has_latest { try copy_tree(latest_from, docs_root + "/latest"); }
     // The 404 page uses latest/'s files, so it speaks for that version.
     site.version = if newest.is_empty() { version } else { newest };
-    try write(docs_root, "404.html", layout::page(site, "404.html", "Page not found", "", layout::not_found("/latest/logo.svg", |p| "/latest/" + p, true), ""));
+    try write(docs_root, "404.html", clean_hrefs(layout::page(site, "404.html", "Page not found", "", layout::not_found("/latest/logo.svg", |p| "/latest/" + p, true), "")));
 
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }
