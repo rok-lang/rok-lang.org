@@ -1,15 +1,16 @@
 #!/bin/sh
-# Build the docs of a release from its tags and keep them on the
-# docs-archive branch, where scripts/assemble.sh finds them. Old versions
-# are never rebuilt: their archived pages are what a deploy serves.
+# Build a release's docs content bundle and keep it on the docs-archive
+# branch, where scripts/assemble.sh re-wraps it with the chrome of the day.
+# The content comes from the release's tags; the generator is this
+# checkout's, so a later design change reaches old versions on the next
+# deploy while their content stays pinned.
 #
 # usage: scripts/release-docs.sh <version> <tag>      e.g. 0.1 v0.1.0
 #
-# <tag> is checked out in spec, impl and this repository; <version>
-# (<major.minor>) must be in that tag's versions.rokon. A patch release
-# replaces its version's directory. SPEC_REPO and IMPL_REPO default to
-# ../spec and ../rok; ROK is the toolchain to build with (that of the
-# release). Nothing is pushed.
+# <tag> is checked out in spec and impl; <version> (<major.minor>) must be
+# in that tag's versions.rokon. A patch release replaces its version's
+# bundle. SPEC_REPO and IMPL_REPO default to ../spec and ../rok; ROK is the
+# toolchain to build with. Nothing is pushed.
 set -eu
 
 [ $# -eq 2 ] || { echo "usage: $0 <version> <tag>" >&2; exit 2; }
@@ -25,7 +26,7 @@ case $v in
 *.*) ;;
 *) echo "error: version '$v': write <major>.<minor>, as in 0.1" >&2; exit 2 ;;
 esac
-for r in "$spec" "$impl" "$here"; do
+for r in "$spec" "$impl"; do
 	git -C "$r" rev-parse --verify --quiet "$tag^{commit}" > /dev/null ||
 		{ echo "error: no '$tag' in $r (SPEC_REPO / IMPL_REPO name the checkouts)" >&2; exit 1; }
 done
@@ -42,7 +43,8 @@ trap cleanup EXIT
 
 git -C "$spec" worktree add --quiet --detach "$tmp/spec" "$tag"
 git -C "$impl" worktree add --quiet --detach "$tmp/rok" "$tag"
-git -C "$here" worktree add --quiet --detach "$tmp/site" "$tag"
+# The generator is this checkout's (current chrome), not the tag's.
+git -C "$here" worktree add --quiet --detach "$tmp/site" HEAD
 # While the generator's stones are path dependencies (../stones).
 if [ -d "$here/../stones" ]; then ln -s "$here/../stones" "$tmp/stones"; fi
 
@@ -54,7 +56,7 @@ cat > "$tmp/site/site.local.rokon" <<ROKON
     spec_branch: "$tag",
 }
 ROKON
-(cd "$tmp/site" && "$rok" run -- --version "$v")
+(cd "$tmp/site" && "$rok" run -- archive "$v" "$tmp/bundle")
 
 if git -C "$here" rev-parse --verify --quiet docs-archive > /dev/null; then
 	git -C "$here" worktree add --quiet "$tmp/archive" docs-archive
@@ -62,7 +64,8 @@ else
 	git -C "$here" worktree add --quiet --orphan -b docs-archive "$tmp/archive"
 fi
 rm -rf "${tmp:?}/archive/$v"
-cp -R "$tmp/site/public/docs/$v" "$tmp/archive/$v"
+mkdir -p "$tmp/archive/$v"
+cp "$tmp/bundle/bundle.rokon" "$tmp/archive/$v/bundle.rokon"
 git -C "$tmp/archive" add -A
 if git -C "$tmp/archive" diff --cached --quiet; then
 	echo "docs $v: unchanged on docs-archive"
