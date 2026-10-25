@@ -18,6 +18,13 @@ scripts/assemble.sh
 
 cp deploy/cloudflare/_headers.docs public/docs/_headers
 
+# Identity well-knowns served at the rok-lang.org root: the Bluesky
+# handle proof and the Mastodon WebFinger alias (see _headers.www).
+mkdir -p public/www/.well-known
+cp deploy/cloudflare/well-known/atproto-did public/www/.well-known/atproto-did
+cp deploy/cloudflare/well-known/webfinger   public/www/.well-known/webfinger
+cp deploy/cloudflare/_headers.www           public/www/_headers
+
 wrangler pages deploy public/www  --project-name rok-lang-org      --branch main
 wrangler pages deploy public/docs --project-name docs-rok-lang-org --branch main
 echo "deployed rok-lang.org and docs.rok-lang.org"
