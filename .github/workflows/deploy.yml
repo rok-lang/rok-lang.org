@@ -1,0 +1,51 @@
+name: deploy
+
+# Build rok-lang.org + docs.rok-lang.org and push them to Cloudflare Pages
+# on every change to main. Needs repo secrets CLOUDFLARE_API_TOKEN and
+# CLOUDFLARE_ACCOUNT_ID (a token with Account > Cloudflare Pages: Edit).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout site
+        uses: actions/checkout@v4
+        with:
+          path: rok-lang.org
+      - name: Checkout spec
+        uses: actions/checkout@v4
+        with:
+          repository: rok-lang/spec
+          path: spec
+      - name: Checkout rok library
+        uses: actions/checkout@v4
+        with:
+          repository: rok-lang/rok
+          path: rok
+          sparse-checkout: library
+
+      - name: Install the rok toolchain
+        run: |
+          curl -fsSL https://rok-lang.org/install.sh | sh
+          echo "$HOME/.rok/bin" >> "$GITHUB_PATH"
+      - name: Install wrangler
+        run: npm install -g wrangler@4
+
+      - name: Fetch the archived release docs
+        working-directory: rok-lang.org
+        run: git fetch --no-tags --depth=1 origin docs-archive:refs/remotes/origin/docs-archive
+
+      - name: Build and deploy
+        working-directory: rok-lang.org
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: deploy/cloudflare/deploy.sh
