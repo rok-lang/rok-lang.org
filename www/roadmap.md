@@ -1,6 +1,6 @@
 # Roadmap
 
-Where rok is today and where it is headed. A version is cut when its work is ready, so the headings below are direction, not a schedule.
+Where Rok is today and where it is headed. A version is cut when its work is ready, so the headings below are direction, not a schedule.
 
 For specific, trackable work, follow the issues on [GitHub](https://github.com/rok-lang/rok/issues).
 
@@ -15,8 +15,16 @@ The first public release.
 
 See [Download](download.html) for the archives, the cross-compilation targets, and the install script.
 
-## Next: 0.2.0
+## Next: 0.1.1
 
+Printing and REPL ergonomics.
+
+- Print a value directly: `println(x)` and `print(x)` for any type that implements `Display`, plus a no-argument `println()` for a blank line. Today you wrap a value in an f-string first (`println(f"{x}")`).
+- A friendlier REPL: entering a bare expression shows its value with `Display`; add a trailing `?` (as in `x?`) to see the `Debug` form; `:type x` shows the type.
+
+## Then: 0.2.0
+
+- Variadic functions, enabling format-string printing like `print("{}", a, b)` alongside f-strings.
 - Prebuilt archives for more hosts: Windows on arm64 (`aarch64-pc-windows-msvc`) and 32-bit Arm Linux (`armv7`, both glibc and musl). You can already cross-compile to these from any 0.1.0 host; 0.2.0 makes them hosts of their own.
 - A larger standard library and more published stones.
 
