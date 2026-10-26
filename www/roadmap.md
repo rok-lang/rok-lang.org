@@ -32,15 +32,17 @@ See [Download](download.html) for the archives, the cross-compilation targets, a
 ## 0.1.2 -- tooling and standard-library polish
 
 - Install and update that look the same: consistent, polished output from the install scripts and from `rok self update`.
+- Install through Nix: a flake exposing the toolchain, so `nix profile install` and `nix run` work.
 - Standard-library fixes and ergonomics improvements across the existing modules.
 
 ## 0.1.3 -- variadic functions
 
 - Variadic functions (`...T` and `...any`, with list and tuple spreads): a general language feature for user code. Formatting stays with f-strings, so there is no positional `print("{}", x)` form.
 
-## 0.1.4 -- more host archives
+## 0.1.4 -- more host archives and platforms
 
 - Prebuilt archives for more hosts: Windows on arm64 (`aarch64-pc-windows-msvc`) and 32-bit x86 (`i686-pc-windows-msvc`), and 32-bit Linux on Arm (`armv7`, both glibc and musl) and x86 (`i686-unknown-linux-gnu`). You can already cross-compile to these from any 0.1.0 host; this makes them hosts of their own.
+- FreeBSD (`x86_64-unknown-freebsd`): cross-compilation first, then a host archive when a runner is available.
 
 ## 0.1.5 -- a larger standard library
 
