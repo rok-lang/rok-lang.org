@@ -13,6 +13,9 @@ set -eu
 here=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$here"
 
+# Open Graph card images (static/og.png etc.) via headless Chrome.
+node og/render.mjs og/card.html static/og.png
+
 # site.local.rokon's preview base_url / docs_url must not reach a deploy.
 scripts/assemble.sh
 
