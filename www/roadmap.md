@@ -25,7 +25,7 @@ Printing and REPL ergonomics.
 ## Then: 0.2.0
 
 - Variadic functions, enabling format-string printing like `print("{} {}", a, b)` alongside f-strings.
-- Prebuilt archives for more hosts: Windows on arm64 (`aarch64-pc-windows-msvc`) and 32-bit Arm Linux (`armv7`, both glibc and musl). You can already cross-compile to these from any 0.1.0 host; 0.2.0 makes them hosts of their own.
+- Prebuilt archives for more hosts: Windows on arm64 (`aarch64-pc-windows-msvc`) and 32-bit x86 (`i686-pc-windows-msvc`), and 32-bit Linux on Arm (`armv7`, both glibc and musl) and x86 (`i686-unknown-linux-gnu`). You can already cross-compile to these from any 0.1.0 host; 0.2.0 makes them hosts of their own.
 - A larger standard library and more published stones.
 
 ## Later
