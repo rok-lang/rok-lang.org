@@ -1,7 +1,7 @@
 <div class="hero">
 <img src="logo.svg" alt="rok logo">
 
-# rok
+# Rok
 
 <div class="lead">A statically-typed, compiled language with a rich library.<br>Closed sum types, ahead-of-time compilation, a package registry, a REPL, and Jupyter.</div>
 <div class="cta"><a class="primary" href="docs:learn/01-getting-started.html">Get started</a><a href="play:">Try it online</a><a href="docs:index.html">Docs</a></div>
