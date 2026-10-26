@@ -34,9 +34,9 @@ See [Download](download.html) for the archives, the cross-compilation targets, a
 - Install and update that look the same: consistent, polished output from the install scripts and from `rok self update`.
 - Standard-library fixes and ergonomics improvements across the existing modules.
 
-## 0.1.3 -- printing, completed
+## 0.1.3 -- variadic functions
 
-- Variadic functions, enabling format-string printing like `print("{} {}", a, b)` alongside f-strings.
+- Variadic functions (`...T` and `...any`, with list and tuple spreads): a general language feature for user code. Formatting stays with f-strings, so there is no positional `print("{}", x)` form.
 
 ## 0.1.4 -- more host archives
 
