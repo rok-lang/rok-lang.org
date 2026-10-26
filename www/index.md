@@ -3,7 +3,7 @@
 
 # rok
 
-<div class="lead">A small language with a rich library.<br>Static types, closed sum types, AOT compilation, plus a REPL and Jupyter.</div>
+<div class="lead">A statically-typed, compiled language with a rich library.<br>Closed sum types, ahead-of-time compilation, a package registry, a REPL, and Jupyter.</div>
 <div class="cta"><a class="primary" href="docs:learn/01-getting-started.html">Get started</a><a href="play:">Try it online</a><a href="docs:index.html">Docs</a></div>
 <div class="install"><pre><code>curl -fsSL https://rok-lang.org/<wbr>install.sh | sh</code></pre><p>macOS and Linux. Windows and archives: <a href="download.html">Download</a>.</p></div>
 <div class="term" aria-label="A terminal: rok new hello, then rok run prints Hello, world!" role="img">
@@ -32,7 +32,7 @@
 
 rok is a programming language that aims to be "one language for everything you want to do". Its design follows two slogans.
 
-- **A small language, a rich library.** Most of what defines how a language feels (numeric semantics, conversions, collections, IO, concurrency) lives in the standard library.
+- **A lean core, a rich library.** Most of what defines how a language feels (numeric semantics, conversions, collections, IO, concurrency) lives in the standard library.
 - **Freedom within control.** Static types, closed sum types, no traits-as-types, no implicit promotion, and AOT-only compilation narrow the paths you can take; in exchange, the code within them is predictable.
 
 The full motivation and philosophy are in the [spec introduction](docs:spec/index.html).
