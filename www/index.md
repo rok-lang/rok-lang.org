@@ -1,5 +1,5 @@
 <div class="hero">
-<img src="logo.svg" alt="rok logo">
+<img src="logo.svg" alt="Rok logo">
 
 # Rok
 
@@ -28,9 +28,9 @@
 <div class="tile"><code class="glyph">◎</code><h3>Stones</h3><p>Packages from <a href="https://rokstones.io">rokstones.io</a>, added with <code>rok add</code> and pinned in <code>rok.lock</code>.</p></div>
 </div>
 
-## What is rok
+## What is Rok
 
-rok is a programming language that aims to be "one language for everything you want to do". Its design follows two slogans.
+Rok is a programming language that aims to be "one language for everything you want to do". Its design follows two slogans.
 
 - **A lean core, a rich library.** Most of what defines how a language feels (numeric semantics, conversions, collections, IO, concurrency) lives in the standard library.
 - **Freedom within control.** Static types, closed sum types, no traits-as-types, no implicit promotion, and AOT-only compilation narrow the paths you can take; in exchange, the code within them is predictable.
@@ -95,14 +95,14 @@ Hello, world!
 ```
 
 <div class="cards">
-<a class="card" href="docs:learn/index.html"><span class="tag">learn/</span><h3>Learn rok</h3><p>Twenty chapters, from installation to concurrency, FFI, stones, and a cookbook. Every code sample is checked when the site is built.</p></a>
+<a class="card" href="docs:learn/index.html"><span class="tag">learn/</span><h3>Learn Rok</h3><p>Twenty chapters, from installation to concurrency, FFI, stones, and a cookbook. Every code sample is checked when the site is built.</p></a>
 <a class="card" href="docs:examples/index.html"><span class="tag">examples/</span><h3>Examples</h3><p>Small complete programs: CLI tools, file processing, a TCP echo server, parallel map, an interpreter, and more.</p></a>
 <a class="card" href="docs:spec/refs-lang/index.html"><span class="tag">spec/</span><h3>Language reference</h3><p>Ten chapters, from lexical structure through types, expressions, modules, the meta system, the runtime, and the ABI.</p></a>
 <a class="card" href="docs:spec/refs-standard-libraries/index.html"><span class="tag">std/</span><h3>Standard library</h3><p>The specification of the three tiers <code>bare</code> / <code>core</code> / <code>std</code>, with an API listing generated from the sources.</p></a>
 <a class="card" href="docs:spec/refs-lang/009-tools/index.html"><span class="tag">tools/</span><h3>Tools</h3><p>The <code>rokc</code> compiler, the <code>rok</code> package tool, the REPL, the Jupyter kernel, the LSP server, and debugging tools.</p></a>
-<a class="card" href="https://rokstones.io"><span class="tag">stones/</span><h3>Packages</h3><p>Stones, rok's packages, live on rokstones.io. Add one with <code>rok add &lt;name&gt;</code>.</p></a>
+<a class="card" href="https://rokstones.io"><span class="tag">stones/</span><h3>Packages</h3><p>Stones, Rok's packages, live on rokstones.io. Add one with <code>rok add &lt;name&gt;</code>.</p></a>
 </div>
 
 ## Packages
 
-rok packages are called stones. Add a stone from the [rokstones.io](https://rokstones.io) registry as a dependency with `rok add <name>`, or a local path or git repository with `rok add <name> --path <dir>` / `--git <url>`. See [Modules and Packages](docs:learn/11-modules-packages.html) for details.
+Rok packages are called stones. Add a stone from the [rokstones.io](https://rokstones.io) registry as a dependency with `rok add <name>`, or a local path or git repository with `rok add <name> --path <dir>` / `--git <url>`. See [Modules and Packages](docs:learn/11-modules-packages.html) for details.

@@ -1,6 +1,6 @@
-# Download rok
+# Download Rok
 
-<div class="lead-sm">rok {release}: one line installs it, or take an archive below. The toolchain is self-contained, with LLVM and the linker built in.</div>
+<div class="lead-sm">Rok {release}: one line installs it, or take an archive below. The toolchain is self-contained, with LLVM and the linker built in.</div>
 
 ## Install script
 
@@ -68,6 +68,6 @@ The macOS archive adds `aarch64-apple-darwin` and `x86_64-apple-darwin` (they li
 - Linux: nothing; glibc 2.34 or later (Ubuntu 22.04, Debian 12, RHEL 9 and newer).
 - Windows: nothing.
 
-Other hosts, such as Intel Macs and Windows on arm64, have no release archive yet: [build rok from source](https://github.com/rok-lang/rok#building-from-source). Every release, with its notes, is on [GitHub](https://github.com/rok-lang/rok/releases). Next: [Getting started](docs:learn/01-getting-started.html).
+Other hosts, such as Intel Macs and Windows on arm64, have no release archive yet: [build Rok from source](https://github.com/rok-lang/rok#building-from-source). Every release, with its notes, is on [GitHub](https://github.com/rok-lang/rok/releases). Next: [Getting started](docs:learn/01-getting-started.html).
 
 <div class="credit">Platform icons: <a href="https://fontawesome.com">Font Awesome Free</a> (<a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>). Apple, Linux and Windows are trademarks of their owners.</div>
