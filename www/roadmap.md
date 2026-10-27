@@ -1,60 +1,89 @@
 # Roadmap
 
-Where Rok is and where it is going. A version ships when its work is ready; the headings are direction, not dates. Trackable work is in the [GitHub issues](https://github.com/rok-lang/rok/issues).
+<div class="lead-sm">What is being built, in the order it ships. A version ships when its work is done; there are no dates. Every item is tracked in a <a href="https://github.com/rok-lang/rok/milestones">GitHub milestone</a>.</div>
 
-## Versioning
+<div class="rm-legend"><span class="rm-pill now">In progress</span><span class="rm-pill next">Next</span><span class="rm-pill later">Later</span><span class="rm-pill done">Shipped</span></div>
 
-Until 1.0.0 the minor number is the breaking slot, as Cargo treats 0.x crates:
+## In progress
 
-- **0.x.0**: breaking changes.
-- **0.x.y**: features and fixes, backward compatible.
+<div class="rm">
+<section class="rm-card now">
+<header><span class="rm-ver">0.1.2</span><span class="rm-pill now">In progress</span></header>
+<h3>Tooling and standard-library polish</h3>
+<ul>
+<li>Consistent output from the install scripts and <code>rok self update</code> (<a href="https://github.com/rok-lang/rok/issues/14">#14</a>)</li>
+<li>A Nix flake: <code>nix profile install</code>, <code>nix run</code> (<a href="https://github.com/rok-lang/rok/issues/34">#34</a>)</li>
+<li>Standard-library fixes and ergonomics (<a href="https://github.com/rok-lang/rok/issues/15">#15</a>)</li>
+<li>Compiler and library fixes from the 0.1.1 spec audit (<a href="https://github.com/rok-lang/rok/issues/84">#84</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/3">Milestone 0.1.2</a>
+</section>
+</div>
 
-The first breaking release is 0.2.0.
+## Next
 
-## 0.1.0
-
-The first public release.
-
-- `rokc`, the compiler with LLVM built in; `rok`, the package and toolchain front end; `rokls`, the language server.
-- Native builds, with prebuilt archives for six hosts: macOS on Apple silicon, Linux on x86_64 and arm64 (glibc and static musl), Windows on x86_64. Each archive cross-compiles to the other targets.
-- A REPL and a Jupyter kernel.
-- The first stones on [rokstones.io](https://rokstones.io), added with `rok add` and pinned in `rok.lock`.
-
-## 0.1.1 (current)
-
-- `print(x)` and `println(x)` take any `Display` value; `println()` prints a blank line.
-- REPL: a bare expression prints with `Display`, `x?` prints `Debug`, `:type x` prints the type.
-
-Archives and the install script: [Download](download.html).
-
-## 0.1.2: tooling and standard-library polish
-
-- Consistent output from the install scripts and `rok self update`.
-- A Nix flake, for `nix profile install` and `nix run`.
-- Standard-library fixes and ergonomics.
-- Compiler and library fixes from the 0.1.1 spec audit ([#84](https://github.com/rok-lang/rok/issues/84)).
-
-## 0.1.3: variadic functions
-
-- `...T` and `...any`, with list and tuple spreads. Formatting stays with f-strings; there is no positional `print("{}", x)`.
-
-## 0.1.4: more hosts
-
-- Host archives for Windows on arm64 and i686, and Linux on armv7 (glibc and musl) and i686. All of them are cross-compile targets already.
-- FreeBSD (`x86_64-unknown-freebsd`): cross-compilation first, a host archive once a runner is available.
-
-## 0.1.5: a larger standard library
-
-- Byte encodings, more iterator and collection adapters, a public string builder, formatting into a writer.
-- More stones for what stays outside the core.
-
-## 0.2.0: first breaking release
-
-- Standard-library semantics aligned with Rust where that breaks code: the `char` digit API, iterator tie-breaks, the `clamp` precondition.
+<div class="rm">
+<section class="rm-card next">
+<header><span class="rm-ver">0.1.3</span><span class="rm-pill next">Next</span></header>
+<h3>Variadic functions</h3>
+<ul>
+<li><code>...T</code> and <code>...any</code> parameters, list and tuple spreads (<a href="https://github.com/rok-lang/rok/issues/4">#4</a>)</li>
+<li>Formatting stays with f-strings: no positional <code>print("{}", x)</code></li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/4">Milestone 0.1.3</a>
+</section>
+<section class="rm-card next">
+<header><span class="rm-ver">0.1.4</span><span class="rm-pill next">Next</span></header>
+<h3>More hosts</h3>
+<ul>
+<li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686 (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>)</li>
+<li>FreeBSD: cross-compilation first, a host archive once a runner exists (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.1.4</a>
+</section>
+<section class="rm-card next">
+<header><span class="rm-ver">0.1.5</span><span class="rm-pill next">Next</span></header>
+<h3>A larger standard library</h3>
+<ul>
+<li>Byte encodings, more iterator and collection adapters, a public string builder, formatting into a writer (<a href="https://github.com/rok-lang/rok/issues/11">#11</a>)</li>
+<li>More stones for what stays outside the core (<a href="https://github.com/rok-lang/rok/issues/12">#12</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/6">Milestone 0.1.5</a>
+</section>
+</div>
 
 ## Later
 
-- Host archives for the remaining hosts, such as Intel Macs.
-- Vim and VS Code extensions on their marketplaces, tracking the `rok-syntax` grammar; more editors.
+<div class="rm">
+<section class="rm-card later">
+<header><span class="rm-ver">0.2.0</span><span class="rm-pill later">Later</span></header>
+<h3>First breaking release</h3>
+<ul>
+<li>Standard-library semantics aligned with Rust where that breaks code: the <code>char</code> digit API, iterator tie-breaks, the <code>clamp</code> precondition (<a href="https://github.com/rok-lang/rok/issues/29">#29</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/2">Milestone 0.2.0</a>
+</section>
+<section class="rm-card later">
+<header><span class="rm-ver">Unscheduled</span><span class="rm-pill later">Later</span></header>
+<h3>Editors and remaining hosts</h3>
+<ul>
+<li>Vim and VS Code extensions on their marketplaces, tracking the <code>rok-syntax</code> grammar (<a href="https://github.com/rok-lang/rok.vim/issues/3">rok.vim#3</a>, <a href="https://github.com/rok-lang/rok.vscode/issues/3">rok.vscode#3</a>)</li>
+<li>Host archives for the remaining hosts, such as Intel Macs</li>
+</ul>
+</section>
+</div>
+
+## Shipped
+
+<div class="rm-log">
+<div class="rm-entry"><span class="rm-ver">0.1.1</span><time datetime="2026-10-27">2026-10-27</time><p><code>print(x)</code> and <code>println(x)</code> take any <code>Display</code>; <code>println()</code> prints a blank line. The REPL prints <code>Display</code>, <code>x?</code> prints <code>Debug</code>, <code>:type x</code> prints the type. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.1">Release notes</a></p></div>
+<div class="rm-entry"><span class="rm-ver">0.1.0</span><time datetime="2026-10-25">2026-10-25</time><p>First public release: <code>rokc</code> with LLVM built in, <code>rok</code>, <code>rokls</code>; archives for six hosts; a REPL and a Jupyter kernel; the first stones on <a href="https://rokstones.io">rokstones.io</a>. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.0">Release notes</a></p></div>
+</div>
+
+Current release: {release}. Archives and the install script: [Download](download.html).
+
+## Versioning
+
+Until 1.0.0 the minor number is the breaking slot, as Cargo treats 0.x crates: **0.x.0** may break code, **0.x.y** adds features and fixes and stays compatible. The first breaking release is 0.2.0.
 
 Missing something? Open an issue or a discussion on [GitHub](https://github.com/rok-lang/rok).
