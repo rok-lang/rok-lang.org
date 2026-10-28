@@ -8,33 +8,7 @@
 
 <div class="rm">
 <section class="rm-card now">
-<header><span class="rm-ver">0.1.2</span><span class="rm-pill now">In progress</span></header>
-<h3>Tooling and standard-library polish</h3>
-<ul>
-<li>Consistent output from the install scripts and <code>rok toolchain update</code> (<a href="https://github.com/rok-lang/rok/issues/14">#14</a>)</li>
-<li>A Nix flake: <code>nix profile install</code>, <code>nix run</code> (<a href="https://github.com/rok-lang/rok/issues/34">#34</a>)</li>
-<li>Collection traits and methods, <code>Iterator::exact_len</code>, <code>ClientConfig::try_new</code></li>
-<li>Package metadata: authors, homepage, documentation, readme, keywords, publish (<a href="https://github.com/rok-lang/rok/issues/102">#102</a>)</li>
-<li>Compiler and library fixes from the 0.1.1 spec audit</li>
-</ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/3">Milestone 0.1.2</a>
-</section>
-</div>
-
-## Next
-
-<div class="rm">
-<section class="rm-card next">
-<header><span class="rm-ver">0.1.3</span><span class="rm-pill next">Next</span></header>
-<h3>A larger standard library</h3>
-<ul>
-<li>Byte encodings, more iterator and collection adapters, a public string builder, formatting into a writer</li>
-<li>More stones for what stays outside the core (<a href="https://github.com/rok-lang/rok/issues/12">#12</a>)</li>
-</ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/6">Milestone 0.1.3</a>
-</section>
-<section class="rm-card next">
-<header><span class="rm-ver">0.1.4</span><span class="rm-pill next">Next</span></header>
+<header><span class="rm-ver">0.1.4</span><span class="rm-pill now">In progress</span></header>
 <h3>A better REPL</h3>
 <ul>
 <li>A <code>&gt;&gt;&gt;</code> prompt that always starts on a fresh line (<a href="https://github.com/rok-lang/rok/issues/161">#161</a>)</li>
@@ -44,6 +18,11 @@
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/7">Milestone 0.1.4</a>
 </section>
+</div>
+
+## Next
+
+<div class="rm">
 <section class="rm-card next">
 <header><span class="rm-ver">0.1.5</span><span class="rm-pill next">Next</span></header>
 <h3>More hosts</h3>
@@ -98,6 +77,8 @@
 ## Shipped
 
 <div class="rm-log">
+<div class="rm-entry"><span class="rm-ver">0.1.3</span><time datetime="2026-10-29">2026-10-29</time><p>A larger standard library: hex and base64 encoding, more <code>str</code> splitting, iterator adapters such as <code>take_while</code>, <code>scan</code>, <code>chunks</code> and <code>unzip</code>, matching methods across the collections, <code>Writer::write_display</code>, field and variant reflection through <code>Inspect</code>, <code>int</code> bit and byte methods. API pages mark what each release added. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.3">Release notes</a></p></div>
+<div class="rm-entry"><span class="rm-ver">0.1.2</span><time datetime="2026-10-28">2026-10-28</time><p>Install through Nix; package metadata in <code>rok.rokon</code>; collection traits and methods, <code>Iterator::exact_len</code>; clearer errors and fixes from the 0.1.1 spec audit. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.2">Release notes</a></p></div>
 <div class="rm-entry"><span class="rm-ver">0.1.1</span><time datetime="2026-10-27">2026-10-27</time><p><code>print(x)</code> and <code>println(x)</code> take any <code>Display</code>; <code>println()</code> prints a blank line. The REPL prints <code>Display</code>, <code>x?</code> prints <code>Debug</code>, <code>:type x</code> prints the type. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.1">Release notes</a></p></div>
 <div class="rm-entry"><span class="rm-ver">0.1.0</span><time datetime="2026-10-25">2026-10-25</time><p>First public release: <code>rokc</code> with LLVM built in, <code>rok</code>, <code>rokls</code>; archives for six hosts; a REPL and a Jupyter kernel; the first stones on <a href="https://rokstones.io">rokstones.io</a>. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.0">Release notes</a></p></div>
 </div>
