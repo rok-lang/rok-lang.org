@@ -45,6 +45,15 @@
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/7">Milestone 0.1.4</a>
 </section>
 <section class="rm-card next">
+<header><span class="rm-ver">0.1.5</span><span class="rm-pill next">Next</span></header>
+<h3>More hosts</h3>
+<ul>
+<li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686 (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>)</li>
+<li>FreeBSD (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.1.5</a>
+</section>
+<section class="rm-card next">
 <header><span class="rm-ver">0.2.0</span><span class="rm-pill next">Next</span></header>
 <h3>First breaking release</h3>
 <ul>
@@ -67,15 +76,6 @@
 <li>Formatting stays with f-strings: no positional <code>print("{}", x)</code></li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/4">Milestone 0.2.1</a>
-</section>
-<section class="rm-card later">
-<header><span class="rm-ver">0.2.x</span><span class="rm-pill later">Later</span></header>
-<h3>More hosts</h3>
-<ul>
-<li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686 (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>)</li>
-<li>FreeBSD (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
-</ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.2.2</a>
 </section>
 <section class="rm-card later">
 <header><span class="rm-ver">Unscheduled</span><span class="rm-pill later">Later</span></header>
