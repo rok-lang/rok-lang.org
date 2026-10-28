@@ -542,6 +542,31 @@ fn summary(doc: str) -> str {
 
 fn anchor(it: Item) -> str { it.kind + "." + it.name }
 
+/// Every item and member of `mods`, keyed as the "Added in" badges look
+/// them up: `rok::core::iter::trait.Iterator`, `...::trait.Iterator::exact_len`.
+pub fn keys(mods: List<Module>) -> Set<str> {
+    let out: Set<str> = Set::new();
+    for m in mods {
+        let all: List<(Item, str)> = List::new();
+        for it in m.items {
+            if it.kind != "use" { all.push((it, anchor(it))); }
+        }
+        for it in m.impls { all.push((it, "impl." + it.name)); }
+        for (it, id) in all {
+            let key = m.path + "::" + id;
+            out.insert(key);
+            for mb in it.members { out.insert(key + "::" + mb.name); }
+        }
+    }
+    out
+}
+
+/// "Added in 0.1.2" for an item or member newer than its docs version's
+/// first release; nothing for the rest.
+fn badge(since: Dict<str, str>, key: str) -> str {
+    if since.contains_key(key) { f"<span class=\"since\">Added in {esc(since[key])}</span>" } else { "" }
+}
+
 /// Members on one module page beyond which its big items move out.
 const SPLIT_MODULE: usize = 300;
 /// An item of a split module with this many members gets its own page.
@@ -559,10 +584,10 @@ fn moves_out(m: Module, it: Item) -> bool { split(m) && it.members.len() >= SPLI
 fn sub_out(m: Module, id: str) -> str { m.out[:m.out.len() - ".html".len()] + "/" + id + ".html" }
 
 /// The module page's stand-in for an item on a page of its own.
-fn stub_html(m: Module, it: Item, id: str, title: str) -> str {
+fn stub_html(m: Module, it: Item, id: str, title: str, since: Dict<str, str>) -> str {
     let href = rel(m.out, sub_out(m, id));
     let out = StrBuf::new();
-    out.push_str(f"<section class=\"api-item api-split\" id=\"{esc(id)}\"><h3><a href=\"{href}\">{esc(title)}</a></h3>");
+    out.push_str(f"<section class=\"api-item api-split\" id=\"{esc(id)}\"><h3><a href=\"{href}\">{esc(title)}</a>{badge(since, m.path + "::" + id)}</h3>");
     if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{rok_syntax::highlight_rok(it.sig)}</code></pre>"); }
     let more = if it.traits.len() > 0 { f", {it.traits.len()} trait implementations" } else { "" };
     out.push_str(f"<p class=\"api-more\"><a href=\"{href}\">{it.members.len()} members{more} →</a></p></section>");
@@ -574,16 +599,20 @@ const KINDS: [(str, str); 8] = [
     ("type", "Type aliases"), ("fn", "Functions"), ("const", "Constants"), ("static", "Statics"),
 ];
 
-fn item_html(it: Item, id: str, title: str, heads: List<Heading>, path: str) -> str {
+fn item_html(it: Item, id: str, title: str, heads: List<Heading>, path: str, since: Dict<str, str>) -> str {
+    let key = path + "::" + id;
     let out = StrBuf::new();
-    out.push_str(f"<section class=\"api-item\" id=\"{esc(id)}\"><h3><a href=\"#{esc(id)}\">{esc(title)}</a></h3>");
+    out.push_str(f"<section class=\"api-item\" id=\"{esc(id)}\"><h3><a href=\"#{esc(id)}\">{esc(title)}</a>{badge(since, key)}</h3>");
     if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{rok_syntax::highlight_rok(it.sig)}</code></pre>"); }
     out.push_str(md(it.doc));
     if it.members.len() > 0 {
         out.push_str("<ul class=\"members\">");
         for m in it.members {
             let mid = it.name + "." + m.name;
-            out.push_str(f"<li id=\"{esc(mid)}\"><pre><code>{rok_syntax::highlight_rok(m.sig)}</code></pre>{md(m.doc)}</li>");
+            // A member of an item added after it: the item's own badge
+            // covers members that came with it.
+            let mb = if since.contains_key(key) { "" } else { badge(since, key + "::" + m.name) };
+            out.push_str(f"<li id=\"{esc(mid)}\">{mb}<pre><code>{rok_syntax::highlight_rok(m.sig)}</code></pre>{md(m.doc)}</li>");
             if m.sig.contains("fn ") { heads.push(Heading { level: 3, id: mid, text: f"{path}::{it.name}::{m.name}" }); }
         }
         out.push_str("</ul>");
@@ -599,7 +628,7 @@ fn item_html(it: Item, id: str, title: str, heads: List<Heading>, path: str) -> 
 }
 
 /// A module page's body and its section headings (for search / TOC).
-pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
+pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>) -> (str, List<Heading>) {
     let heads: List<Heading> = List::new();
     let out = StrBuf::new();
     out.push_str("<h1><code>");
@@ -641,9 +670,9 @@ pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
         for it in its {
             if kind != "use" { heads.push(Heading { level: 3, id: anchor(it), text: m.path + "::" + it.name }); }
             if moves_out(m, it) {
-                out.push_str(stub_html(m, it, anchor(it), it.name));
+                out.push_str(stub_html(m, it, anchor(it), it.name, since));
             } else {
-                out.push_str(item_html(it, anchor(it), it.name, heads, m.path));
+                out.push_str(item_html(it, anchor(it), it.name, heads, m.path, since));
             }
         }
     }
@@ -653,9 +682,9 @@ pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
         for it in m.impls {
             heads.push(Heading { level: 3, id: "impl." + it.name, text: "impl " + it.name });
             if moves_out(m, it) {
-                out.push_str(stub_html(m, it, "impl." + it.name, "impl " + it.name));
+                out.push_str(stub_html(m, it, "impl." + it.name, "impl " + it.name, since));
             } else {
-                out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m.path));
+                out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m.path, since));
             }
         }
     }
@@ -663,7 +692,7 @@ pub fn body(m: Module, mods: List<Module>) -> (str, List<Heading>) {
 }
 
 /// The pages of `m`'s items that moved out (none unless `m` is split).
-pub fn subpages(m: Module) -> List<Sub> {
+pub fn subpages(m: Module, since: Dict<str, str>) -> List<Sub> {
     let subs: List<Sub> = List::new();
     let all: List<(Item, str, str)> = List::new();
     for it in m.items {
@@ -676,7 +705,7 @@ pub fn subpages(m: Module) -> List<Sub> {
         let heads: List<Heading> = List::new();
         let b = StrBuf::new();
         b.push_str(f"<h1><code><a href=\"{rel(out, m.out)}\">{esc(m.path)}</a>::{esc(title)}</code></h1>");
-        b.push_str(item_html(it, id, title, heads, m.path));
+        b.push_str(item_html(it, id, title, heads, m.path, since));
         subs.push(Sub { out: out, title: m.path + "::" + title, html: b.to_str(), heads: heads });
     }
     subs
@@ -685,7 +714,7 @@ pub fn subpages(m: Module) -> List<Sub> {
 /// A split module's pages for the sidebar, from page `from`.
 pub fn sub_toc(m: Module, from: str) -> str {
     let out = StrBuf::new();
-    for s in subpages(m) {
+    for s in subpages(m, Dict::new()) {
         let name = s.title[m.path.len() + 2:];
         let cur = if s.out == from { " aria-current=\"page\"" } else { "" };
         out.push_str(f"<li><a{cur} href=\"{rel(from, s.out)}\">{esc(name)}</a></li>");

@@ -60,6 +60,19 @@ pub struct Site {
     /// The standard library sources (`bare/src/`, `core/src/`, `std/src/`).
     pub library: str = "../rok/library";
     pub out: str = "public";
+    /// The release this build documents (`0.1.2`), and the earlier
+    /// releases of its version, oldest first: what the API's "Added in"
+    /// badges compare against. Set by scripts/release-docs.sh; empty, no
+    /// badges.
+    pub built_from: str = "";
+    pub history: List<Release> = List::new();
+}
+
+/// A release and its standard library sources.
+#[derive(Rokon)]
+pub struct Release {
+    pub release: str;
+    pub library: str;
 }
 
 /// versions.rokon: the released docs versions, newest first.
@@ -495,6 +508,26 @@ fn sitemap(urls: List<str>) -> str {
     b.to_str()
 }
 
+/// For the "Added in" badges: each API item and member that the first
+/// release of `site.history` lacks, mapped to the release that added it.
+fn added_in(site: Site, mods: List<apidoc::Module>) throws -> Dict<str, str> {
+    let since: Dict<str, str> = Dict::new();
+    if site.history.len() == 0 || site.built_from.is_empty() { return since; }
+    let seen = apidoc::keys(try apidoc::collect(site.history[0].library));
+    for h in site.history[1..] {
+        for k in apidoc::keys(try apidoc::collect(h.library)) {
+            if !seen.contains(k) {
+                since.insert(k, h.release);
+                seen.insert(k);
+            }
+        }
+    }
+    for k in apidoc::keys(mods) {
+        if !seen.contains(k) { since.insert(k, site.built_from); }
+    }
+    since
+}
+
 /// versions.rokon.
 fn load_versions() throws -> Versions {
     try rokon::decode(try rokon::parse(try fs::read_to_str("versions.rokon")), "versions.rokon")
@@ -660,10 +693,11 @@ fn main() throws {
     // Standard library API: `std/<tier>/<module>.html`.
     let api: List<Page> = List::new();
     let mods = try apidoc::collect(site.library);
+    let since = try added_in(site, mods);
     for m in mods {
-        let (html, heads) = apidoc::body(m, mods);
+        let (html, heads) = apidoc::body(m, mods, since);
         frags.insert(m.out, Frag { out: m.out, title: m.path, side: apidoc::sidebar(m, mods, heads, m.out), body: html, pager: "", head: "" });
-        for s in apidoc::subpages(m) {
+        for s in apidoc::subpages(m, since) {
             frags.insert(s.out, Frag { out: s.out, title: s.title, side: apidoc::sidebar(m, mods, s.heads, s.out), body: s.html, pager: "", head: "" });
             api.push(Page { src: "", out: s.out, dir: "std", title: s.title, html: "", heads: s.heads });
         }

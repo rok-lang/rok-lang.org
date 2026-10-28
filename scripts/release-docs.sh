@@ -37,12 +37,23 @@ cleanup() {
 		set -- $pair
 		[ -d "$tmp/$2" ] && git -C "$1" worktree remove --force "$tmp/$2" 2> /dev/null
 	done
+	for d in "$tmp"/rok-v*; do
+		[ -d "$d" ] && git -C "$impl" worktree remove --force "$d" 2> /dev/null
+	done
 	rm -rf "$tmp"
 }
 trap cleanup EXIT
 
 git -C "$spec" worktree add --quiet --detach "$tmp/spec" "$tag"
 git -C "$impl" worktree add --quiet --detach "$tmp/rok" "$tag"
+# The version's earlier releases (v0.1.0, v0.1.1 before v0.1.2), oldest
+# first, for the API's "Added in" badges.
+history=""
+for t in $(git -C "$impl" tag -l "v$v.*" --sort=v:refname); do
+	[ "$t" = "$tag" ] && break
+	git -C "$impl" worktree add --quiet --detach "$tmp/rok-$t" "$t"
+	history="$history{ release: \"${t#v}\", library: \"$tmp/rok-$t/library\" }, "
+done
 # The generator is this checkout's (current chrome), not the tag's.
 git -C "$here" worktree add --quiet --detach "$tmp/site" HEAD
 # While the generator's stones are path dependencies (../stones).
@@ -54,6 +65,8 @@ cat > "$tmp/site/site.local.rokon" <<ROKON
     spec_ko: "$tmp/spec/ko",
     library: "$tmp/rok/library",
     spec_branch: "$tag",
+    built_from: "${tag#v}",
+    history: [$history],
 }
 ROKON
 (cd "$tmp/site" && "$rok" run -- archive "$v" "$tmp/bundle")
