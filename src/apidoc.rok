@@ -298,6 +298,10 @@ fn doc_above(src: List<char>, start: usize) -> str {
     out.to_str()
 }
 
+/// Whether `d` carries `#[doc(hidden)]`: a compiler hook that is `pub`
+/// only for lowered code.
+fn hidden(s: Scan, d: Decl) -> bool { text(s.src, d.start, d.head_end).contains("#[doc(hidden)]") }
+
 /// Words of a masked header after its attributes.
 fn words(m: List<char>, a: usize, b: usize) -> List<str> {
     let out: List<str> = List::new();
@@ -389,7 +393,7 @@ fn members(s: Scan, d: Decl, kind: str, trait_impl: bool) -> List<Member> {
         } else {
             public
         };
-        if keep { out.push(Member { name: member_name(ws), sig: sig(s, m), doc: doc_above(s.src, m.start) }); }
+        if keep && !hidden(s, m) { out.push(Member { name: member_name(ws), sig: sig(s, m), doc: doc_above(s.src, m.start) }); }
     }
     out
 }
@@ -445,7 +449,7 @@ fn scan(path: str, out: str, src_text: str) -> Module {
             impls.push(d);
             continue;
         }
-        if !public { continue; }
+        if !public || hidden(s, d) { continue; }
         if kind == "mod" {
             md.children.push(name);
             continue;
