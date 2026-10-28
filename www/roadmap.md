@@ -34,6 +34,17 @@
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/6">Milestone 0.1.3</a>
 </section>
 <section class="rm-card next">
+<header><span class="rm-ver">0.1.4</span><span class="rm-pill next">Next</span></header>
+<h3>A better REPL</h3>
+<ul>
+<li>A <code>&gt;&gt;&gt;</code> prompt that always starts on a fresh line (<a href="https://github.com/rok-lang/rok/issues/161">#161</a>)</li>
+<li>Tab completion, highlighting and bracketed paste (<a href="https://github.com/rok-lang/rok/issues/164">#164</a>, <a href="https://github.com/rok-lang/rok/issues/165">#165</a>)</li>
+<li><code>exit</code>, <code>:doc</code>, <code>:time</code>, <code>:vars</code>, <code>:load</code>, <code>:edit</code> (<a href="https://github.com/rok-lang/rok/issues/166">#166</a>)</li>
+<li>Values print through <code>Debug</code> when they have no <code>Display</code> (<a href="https://github.com/rok-lang/rok/issues/163">#163</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/7">Milestone 0.1.4</a>
+</section>
+<section class="rm-card next">
 <header><span class="rm-ver">0.2.0</span><span class="rm-pill next">Next</span></header>
 <h3>Lamina backend, first breaking release</h3>
 <ul>
