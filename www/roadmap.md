@@ -25,6 +25,15 @@
 
 <div class="rm">
 <section class="rm-card next">
+<header><span class="rm-ver">0.1.3</span><span class="rm-pill next">Next</span></header>
+<h3>A larger standard library</h3>
+<ul>
+<li>Byte encodings, more iterator and collection adapters, a public string builder, formatting into a writer</li>
+<li>More stones for what stays outside the core (<a href="https://github.com/rok-lang/rok/issues/12">#12</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/6">Milestone 0.1.3</a>
+</section>
+<section class="rm-card next">
 <header><span class="rm-ver">0.2.0</span><span class="rm-pill next">Next</span></header>
 <h3>Lamina backend, first breaking release</h3>
 <ul>
@@ -57,15 +66,6 @@
 <li>FreeBSD (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.2.2</a>
-</section>
-<section class="rm-card later">
-<header><span class="rm-ver">0.2.x</span><span class="rm-pill later">Later</span></header>
-<h3>A larger standard library</h3>
-<ul>
-<li>Byte encodings, more iterator and collection adapters, a public string builder, formatting into a writer</li>
-<li>More stones for what stays outside the core (<a href="https://github.com/rok-lang/rok/issues/12">#12</a>)</li>
-</ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/6">Milestone 0.2.3</a>
 </section>
 <section class="rm-card later">
 <header><span class="rm-ver">Unscheduled</span><span class="rm-pill later">Later</span></header>
