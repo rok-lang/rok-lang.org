@@ -325,9 +325,9 @@
         li.append(a);
         menu.append(li);
       };
-      // "v0.1 (0.1.2)": the version, and the patch release its docs follow.
-      const full = (r) => (v.patches && v.patches[r] ? `v${r} (${v.patches[r]})` : `v${r}`);
-      for (const r of v.released) item(r, full(r), r === v.latest ? "latest" : "", at !== "latest" && at === r || at === "latest" && r === v.latest);
+      // "v0.1", noted with the patch release its docs follow: "0.1.2 · latest".
+      const note = (r) => [v.patches && v.patches[r], r === v.latest && "latest"].filter(Boolean).join(" · ");
+      for (const r of v.released) item(r, "v" + r, note(r), at !== "latest" && at === r || at === "latest" && r === v.latest);
       item("dev", "dev", "main branch", at === "dev");
       if (at === "latest") {
         const s = vers.querySelector("summary");
