@@ -13,8 +13,9 @@
 <ul>
 <li>Consistent output from the install scripts and <code>rok toolchain update</code> (<a href="https://github.com/rok-lang/rok/issues/14">#14</a>)</li>
 <li>A Nix flake: <code>nix profile install</code>, <code>nix run</code> (<a href="https://github.com/rok-lang/rok/issues/34">#34</a>)</li>
-<li>Standard-library fixes and ergonomics (<a href="https://github.com/rok-lang/rok/issues/15">#15</a>)</li>
-<li>Compiler and library fixes from the 0.1.1 spec audit (<a href="https://github.com/rok-lang/rok/issues/84">#84</a>)</li>
+<li>Collection traits and methods, <code>Iterator::exact_len</code>, <code>ClientConfig::try_new</code></li>
+<li>Package metadata: authors, homepage, documentation, readme, keywords, publish (<a href="https://github.com/rok-lang/rok/issues/102">#102</a>)</li>
+<li>Compiler and library fixes from the 0.1.1 spec audit</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/3">Milestone 0.1.2</a>
 </section>
@@ -24,31 +25,15 @@
 
 <div class="rm">
 <section class="rm-card next">
-<header><span class="rm-ver">0.1.3</span><span class="rm-pill next">Next</span></header>
-<h3>Variadic functions</h3>
+<header><span class="rm-ver">0.2.0</span><span class="rm-pill next">Next</span></header>
+<h3>Lamina backend, first breaking release</h3>
 <ul>
-<li><code>...T</code> and <code>...any</code> parameters, list and tuple spreads (<a href="https://github.com/rok-lang/rok/issues/4">#4</a>)</li>
-<li>Formatting stays with f-strings: no positional <code>print("{}", x)</code></li>
+<li>Lamina replaces LLVM and MLIR: a lighter toolchain, written in Rust end to end (<a href="https://github.com/rok-lang/rok/issues/159">#159</a>)</li>
+<li><code>bare::mlir</code> and MLIR plugins go</li>
+<li>Safety: guard escapes, double release through <code>using</code>, unsafe FFI entry points (<a href="https://github.com/rok-lang/rok/issues/104">#104</a> to <a href="https://github.com/rok-lang/rok/issues/109">#109</a>)</li>
+<li>Language and library fixes that break code, among them semantics aligned with Rust (<a href="https://github.com/rok-lang/rok/issues/29">#29</a>) and a <code>Send</code> <code>BinaryHeap</code> (<a href="https://github.com/rok-lang/rok/issues/24">#24</a>)</li>
 </ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/4">Milestone 0.1.3</a>
-</section>
-<section class="rm-card next">
-<header><span class="rm-ver">0.1.4</span><span class="rm-pill next">Next</span></header>
-<h3>More hosts</h3>
-<ul>
-<li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686 (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>)</li>
-<li>FreeBSD: cross-compilation first, a host archive once a runner exists (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
-</ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.1.4</a>
-</section>
-<section class="rm-card next">
-<header><span class="rm-ver">0.1.5</span><span class="rm-pill next">Next</span></header>
-<h3>A larger standard library</h3>
-<ul>
-<li>Byte encodings, more iterator and collection adapters, a public string builder, formatting into a writer (<a href="https://github.com/rok-lang/rok/issues/11">#11</a>)</li>
-<li>More stones for what stays outside the core (<a href="https://github.com/rok-lang/rok/issues/12">#12</a>)</li>
-</ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/6">Milestone 0.1.5</a>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/2">Milestone 0.2.0</a>
 </section>
 </div>
 
@@ -56,13 +41,31 @@
 
 <div class="rm">
 <section class="rm-card later">
-<header><span class="rm-ver">0.2.0</span><span class="rm-pill later">Later</span></header>
-<h3>First breaking release</h3>
+<header><span class="rm-ver">0.2.x</span><span class="rm-pill later">Later</span></header>
+<h3>Variadic functions</h3>
 <ul>
-<li>Standard-library semantics aligned with Rust where that breaks code: the <code>char</code> digit API, iterator tie-breaks, the <code>clamp</code> precondition (<a href="https://github.com/rok-lang/rok/issues/29">#29</a>)</li>
-<li><code>BinaryHeap</code> becomes <code>Send</code>: its comparator takes <code>fn(T, T) -&gt; bool + Send</code> (<a href="https://github.com/rok-lang/rok/issues/24">#24</a>)</li>
+<li><code>...T</code> and <code>...any</code> parameters, list and tuple spreads (<a href="https://github.com/rok-lang/rok/issues/4">#4</a>)</li>
+<li>Formatting stays with f-strings: no positional <code>print("{}", x)</code></li>
 </ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/2">Milestone 0.2.0</a>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/4">Milestone 0.2.1</a>
+</section>
+<section class="rm-card later">
+<header><span class="rm-ver">0.2.x</span><span class="rm-pill later">Later</span></header>
+<h3>More hosts</h3>
+<ul>
+<li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686 (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>)</li>
+<li>FreeBSD (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.2.2</a>
+</section>
+<section class="rm-card later">
+<header><span class="rm-ver">0.2.x</span><span class="rm-pill later">Later</span></header>
+<h3>A larger standard library</h3>
+<ul>
+<li>Byte encodings, more iterator and collection adapters, a public string builder, formatting into a writer</li>
+<li>More stones for what stays outside the core (<a href="https://github.com/rok-lang/rok/issues/12">#12</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/6">Milestone 0.2.3</a>
 </section>
 <section class="rm-card later">
 <header><span class="rm-ver">Unscheduled</span><span class="rm-pill later">Later</span></header>
