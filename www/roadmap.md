@@ -46,11 +46,10 @@
 </section>
 <section class="rm-card next">
 <header><span class="rm-ver">0.2.0</span><span class="rm-pill next">Next</span></header>
-<h3>Lamina backend, first breaking release</h3>
+<h3>First breaking release</h3>
 <ul>
-<li>Lamina replaces LLVM and MLIR: a lighter toolchain, written in Rust end to end (<a href="https://github.com/rok-lang/rok/issues/159">#159</a>)</li>
-<li><code>bare::mlir</code> and MLIR plugins go</li>
 <li>Safety: guard escapes, double release through <code>using</code>, unsafe FFI entry points (<a href="https://github.com/rok-lang/rok/issues/104">#104</a> to <a href="https://github.com/rok-lang/rok/issues/109">#109</a>)</li>
+<li><code>bare::mlir</code> and MLIR plugins go (<a href="https://github.com/rok-lang/rok/issues/167">#167</a>)</li>
 <li>Language and library fixes that break code, among them semantics aligned with Rust (<a href="https://github.com/rok-lang/rok/issues/29">#29</a>) and a <code>Send</code> <code>BinaryHeap</code> (<a href="https://github.com/rok-lang/rok/issues/24">#24</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/2">Milestone 0.2.0</a>
@@ -77,6 +76,14 @@
 <li>FreeBSD (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.2.2</a>
+</section>
+<section class="rm-card later">
+<header><span class="rm-ver">Unscheduled</span><span class="rm-pill later">Later</span></header>
+<h3>Lamina backend</h3>
+<ul>
+<li>Lamina, a code generator in Rust, in place of LLVM: a lighter toolchain (<a href="https://github.com/rok-lang/rok/issues/159">#159</a>)</li>
+<li>Opt-in first; the default once it passes every Tier 1 target, runs within 2x of LLVM and debugs in gdb, lldb and the Windows debugger</li>
+</ul>
 </section>
 <section class="rm-card later">
 <header><span class="rm-ver">Unscheduled</span><span class="rm-pill later">Later</span></header>
