@@ -325,16 +325,19 @@
         li.append(a);
         menu.append(li);
       };
-      for (const r of v.released) item(r, "v" + r, r === v.latest ? "latest" : "", at !== "latest" && at === r || at === "latest" && r === v.latest);
+      // "v0.1 (0.1.2)": the version, and the patch release its docs follow.
+      const full = (r) => (v.patches && v.patches[r] ? `v${r} (${v.patches[r]})` : `v${r}`);
+      for (const r of v.released) item(r, full(r), r === v.latest ? "latest" : "", at !== "latest" && at === r || at === "latest" && r === v.latest);
       item("dev", "dev", "main branch", at === "dev");
       if (at === "latest") {
         const s = vers.querySelector("summary");
         s.textContent = "latest";
-        const full = document.createElement("span");
-        full.className = "vers-full";
-        full.textContent = ` (v${v.latest})`;
-        s.append(full);
-        s.setAttribute("aria-label", `Docs version: latest (v${v.latest})`);
+        const tail = document.createElement("span");
+        tail.className = "vers-full";
+        const latest = (v.patches && v.patches[v.latest]) || v.latest;
+        tail.textContent = ` (v${latest})`;
+        s.append(tail);
+        s.setAttribute("aria-label", `Docs version: latest (v${latest})`);
       }
       if (version !== v.latest && v.latest) {
         const b = document.createElement("p");

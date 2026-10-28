@@ -66,6 +66,8 @@ pub struct Site {
 #[derive(Rokon)]
 pub struct Versions {
     pub released: List<str>;
+    /// The newest patch release of each, e.g. "0.1" -> "0.1.2".
+    pub patches: Dict<str, str>;
 }
 
 pub struct Page {
@@ -787,11 +789,16 @@ fn main() throws {
     // Above the versions: the version list for the menu, a redirect to
     // latest/, and the 404 page (which borrows latest/'s files).
     let list = StrBuf::new();
+    let patches = StrBuf::new();
     for v in vs.released {
         if !list.is_empty() { list.push(','); }
         list.push_str(json_str(v));
+        if vs.patches.contains_key(v) {
+            if !patches.is_empty() { patches.push(','); }
+            patches.push_str(f"{json_str(v)}:{json_str(vs.patches[v])}");
+        }
     }
-    try write(docs_root, "versions.json", f"{{\"latest\":{json_str(newest)},\"released\":[{list.to_str()}]}}\n");
+    try write(docs_root, "versions.json", f"{{\"latest\":{json_str(newest)},\"released\":[{list.to_str()}],\"patches\":{{{patches.to_str()}}}}}\n");
     try write(docs_root, "index.html", layout::to_latest(site));
     try write(docs_root, "robots.txt", f"User-agent: *\nDisallow: /dev/\nSitemap: {site.docs_url}/sitemap.xml\n");
     try write(www_dir, "robots.txt", f"User-agent: *\nAllow: /\nSitemap: {site.base_url}/sitemap.xml\n");
