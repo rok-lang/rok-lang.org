@@ -11,7 +11,7 @@
 <header><span class="rm-ver">0.1.2</span><span class="rm-pill now">In progress</span></header>
 <h3>Tooling and standard-library polish</h3>
 <ul>
-<li>Consistent output from the install scripts and <code>rok self update</code> (<a href="https://github.com/rok-lang/rok/issues/14">#14</a>)</li>
+<li>Consistent output from the install scripts and <code>rok toolchain update</code> (<a href="https://github.com/rok-lang/rok/issues/14">#14</a>)</li>
 <li>A Nix flake: <code>nix profile install</code>, <code>nix run</code> (<a href="https://github.com/rok-lang/rok/issues/34">#34</a>)</li>
 <li>Standard-library fixes and ergonomics (<a href="https://github.com/rok-lang/rok/issues/15">#15</a>)</li>
 <li>Compiler and library fixes from the 0.1.1 spec audit (<a href="https://github.com/rok-lang/rok/issues/84">#84</a>)</li>
@@ -60,6 +60,7 @@
 <h3>First breaking release</h3>
 <ul>
 <li>Standard-library semantics aligned with Rust where that breaks code: the <code>char</code> digit API, iterator tie-breaks, the <code>clamp</code> precondition (<a href="https://github.com/rok-lang/rok/issues/29">#29</a>)</li>
+<li><code>BinaryHeap</code> becomes <code>Send</code>: its comparator takes <code>fn(T, T) -&gt; bool + Send</code> (<a href="https://github.com/rok-lang/rok/issues/24">#24</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/2">Milestone 0.2.0</a>
 </section>
