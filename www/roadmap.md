@@ -9,10 +9,11 @@
 <div class="rm">
 <section class="rm-card now">
 <header><span class="rm-ver">0.1.5</span><span class="rm-pill now">In progress</span></header>
-<h3>More hosts</h3>
+<h3>Polish after the REPL release</h3>
 <ul>
-<li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686 (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>)</li>
-<li>FreeBSD (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
+<li>The REPL: no <code>%</code> marker after output without a newline, Jupyter cell numbers that match <code>In [N]</code>, <code>:save</code> that loads back (<a href="https://github.com/rok-lang/rok/issues/222">#222</a>, <a href="https://github.com/rok-lang/rok/issues/224">#224</a>, <a href="https://github.com/rok-lang/rok/issues/229">#229</a>)</li>
+<li><code>rok toolchain update</code> warns when another <code>rok</code> comes first on PATH (<a href="https://github.com/rok-lang/rok/issues/223">#223</a>)</li>
+<li>ROKON fixes, a per-case timeout for the wasm corpus, current release docs (<a href="https://github.com/rok-lang/rok/issues/226">#226</a>, <a href="https://github.com/rok-lang/rok/issues/227">#227</a>, <a href="https://github.com/rok-lang/rok/issues/225">#225</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.1.5</a>
 </section>
@@ -64,10 +65,10 @@
 </section>
 <section class="rm-card later">
 <header><span class="rm-ver">Unscheduled</span><span class="rm-pill later">Later</span></header>
-<h3>Editors and remaining hosts</h3>
+<h3>Editors and more hosts</h3>
 <ul>
 <li>Vim and VS Code extensions on their marketplaces, tracking the <code>rok-syntax</code> grammar (<a href="https://github.com/rok-lang/rok.vim/issues/3">rok.vim#3</a>, <a href="https://github.com/rok-lang/rok.vscode/issues/3">rok.vscode#3</a>)</li>
-<li>Host archives for the remaining hosts, such as Intel Macs</li>
+<li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686, FreeBSD, Intel Macs (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>, <a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
 </ul>
 </section>
 </div>
