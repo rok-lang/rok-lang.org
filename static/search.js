@@ -12,31 +12,39 @@
   const side = document.querySelector(".side details");
   if (side && matchMedia("(max-width: 860px)").matches) side.open = false;
   const aside = document.querySelector(".side");
-  const hereItem = aside && aside.querySelector("[aria-current=page], a.cur");
+  const hereItem = aside && aside.querySelector("[aria-current=page]");
   if (hereItem && aside.scrollHeight > aside.clientHeight) {
-    aside.scrollTop = hereItem.offsetTop - aside.clientHeight / 2;
+    aside.scrollTop = hereItem.offsetTop - aside.offsetTop - aside.clientHeight / 2;
   }
 
-  // Theme button: auto (the system setting) -> light -> dark. The choice
-  // is this reader's alone, so it lives in localStorage; the inline
-  // script in <head> applies it before the page paints.
+  // Theme: "light" or "dark" in localStorage, else the system setting.
+  // The inline script in <head> sets the class before the first paint.
+  const html = document.documentElement;
+  const media = matchMedia("(prefers-color-scheme: dark)");
+  const stored = () => { try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : "auto"; } catch { return "auto"; } };
+  const apply = () => {
+    const t = stored();
+    const dark = t === "dark" || (t === "auto" && media.matches);
+    html.classList.toggle("dk", dark);
+    html.classList.toggle("lt", !dark);
+    for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", b.dataset.themeSet === t ? "true" : "false");
+  };
+  const setTheme = (t) => {
+    try { t === "auto" ? localStorage.removeItem("theme") : localStorage.setItem("theme", t); } catch {}
+    apply();
+  };
+  apply();
+  media.addEventListener("change", apply);
+  for (const b of document.querySelectorAll("[data-theme-set]")) b.addEventListener("click", () => setTheme(b.dataset.themeSet));
   const tb = document.querySelector(".theme");
-  if (tb) {
-    const order = ["auto", "light", "dark"];
-    const glyph = { auto: "◐", light: "☀", dark: "☾" };
-    const get = () => { try { return localStorage.getItem("theme") || "auto"; } catch { return "auto"; } };
-    const show = (t) => {
-      tb.textContent = glyph[t];
-      tb.setAttribute("aria-label", `Theme: ${t}`);
-      tb.title = `Theme: ${t}`;
-    };
-    show(get());
-    tb.addEventListener("click", () => {
-      const t = order[(order.indexOf(get()) + 1) % order.length];
-      try { t === "auto" ? localStorage.removeItem("theme") : localStorage.setItem("theme", t); } catch {}
-      if (t === "auto") delete document.documentElement.dataset.theme;
-      else document.documentElement.dataset.theme = t;
-      show(t);
+  if (tb) tb.addEventListener("click", () => setTheme(html.classList.contains("dk") ? "light" : "dark"));
+
+  // Copy buttons with their text in data-copy.
+  for (const b of document.querySelectorAll("[data-copy]")) {
+    const label = b.textContent;
+    b.addEventListener("click", async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; } catch { b.textContent = "Press Ctrl+C"; }
+      setTimeout(() => { b.textContent = label; }, 1600);
     });
   }
 
@@ -67,7 +75,8 @@
     const fitNav = () => {
       top.classList.remove("nav-compact");
       top.classList.add("nav-measuring");
-      const overflow = top.scrollWidth > top.clientWidth + 1;
+      const row = top.querySelector(".in") || top;
+      const overflow = row.scrollWidth > row.clientWidth + 1;
       top.classList.remove("nav-measuring");
       if (overflow) top.classList.add("nav-compact");
       else setNav(false);
@@ -116,78 +125,69 @@
     return false;
   };
 
-  // A copy button on each code block (not on output or error boxes).
-  for (const pre of document.querySelectorAll("article pre:not(.output):not(.err):not(.sig), .install pre")) {
-    if (pre.closest(".members, .term")) continue;
+  // Code blocks get a bar (language, run, copy); output that follows a
+  // block moves into it, beside the code when both are short.
+  for (const pre of document.querySelectorAll("article pre:not(.output):not(.err):not(.sig):not(.term)")) {
+    if (pre.closest(".members, .code, .landing")) continue;
+    const lang = (pre.querySelector("code")?.className.match(/language-(\w+)/) || [])[1] || "";
     const wrap = document.createElement("div");
-    wrap.className = "code";
-    // try and copy sit together in the header strip, above the code.
-    const tools = document.createElement("div");
-    tools.className = "code-tools";
-    // Its language in the corner, as the fence named it.
-    const lang = (pre.querySelector("code")?.className.match(/language-(\w+)/) || [])[1];
-    if (lang && lang !== "text" && !pre.closest(".install")) wrap.dataset.lang = lang;
-    // A whole rok program opens in the playground, its code in the link.
+    wrap.className = "code cb";
+    const head = document.createElement("div");
+    head.className = "cb-h";
+    const title = document.createElement("span");
+    title.className = "t-label";
+    title.textContent = lang && lang !== "text" ? lang : "";
+    head.append(title);
     const play = document.body.dataset.play;
     if (play && lang === "rok" && runnableRok(pre.innerText) && "CompressionStream" in window) {
       const t = document.createElement("button");
       t.type = "button";
-      t.className = "copy try";
-      t.textContent = "▶ try";
-      t.setAttribute("aria-label", "Open in the playground");
+      t.className = "btn btn-sm run";
+      t.textContent = "Run";
+      t.setAttribute("aria-label", "Run in the playground");
       t.addEventListener("click", async () => {
         const s = new Blob([pre.innerText]).stream().pipeThrough(new CompressionStream("deflate-raw"));
         const b = new Uint8Array(await new Response(s).arrayBuffer());
         const code = btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
         window.open(`${play}/#code=${code}`, "_blank", "noopener");
       });
-      tools.append(t);
+      head.append(t);
     }
-    pre.replaceWith(wrap);
-    wrap.append(pre);
     const b = document.createElement("button");
     b.type = "button";
-    b.className = "copy";
-    b.textContent = "copy";
+    b.className = "btn-2 btn-sm copy";
+    b.textContent = "Copy";
     b.setAttribute("aria-label", "Copy code");
     b.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(pre.innerText.replace(/\n$/, ""));
-        b.textContent = "copied ✓";
+        b.textContent = "Copied";
       } catch {
-        b.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? "press ⌘C" : "press Ctrl+C";
+        b.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? "Press \u2318C" : "Press Ctrl+C";
       }
       b.classList.add("done");
-      setTimeout(() => { b.textContent = "copy"; b.classList.remove("done"); }, 1600);
+      setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1600);
     });
-    tools.append(b);
-    // A language'd block gets a macOS-style title bar: traffic lights, the
-    // language, then the tools. Plain and install blocks keep the floating
-    // tools (positioned by CSS).
-    if (wrap.dataset.lang && !pre.closest(".install")) {
-      const head = document.createElement("div");
-      head.className = "code-head";
-      const lights = document.createElement("span");
-      lights.className = "lights";
-      lights.setAttribute("aria-hidden", "true");
-      for (let i = 0; i < 3; i++) lights.append(document.createElement("i"));
-      const title = document.createElement("span");
-      title.className = "code-title";
-      title.textContent = wrap.dataset.lang;
-      head.append(lights, title, tools);
-      wrap.prepend(head);
-    } else {
-      wrap.append(tools);
+    head.append(b);
+    const body = document.createElement("div");
+    body.className = "cb-body";
+    const out = pre.nextElementSibling;
+    pre.replaceWith(wrap);
+    wrap.append(head, body);
+    body.append(pre);
+    if (out && out.matches("pre.output")) {
+      body.append(out);
+      const lines = (el) => el.innerText.replace(/\n$/, "").split("\n");
+      const o = lines(out), c = lines(pre);
+      if (o.length <= c.length && Math.max(...o.map((l) => l.length)) <= 28 && Math.max(...c.map((l) => l.length)) <= 60) body.classList.add("side-by-side");
     }
-
-    // A very tall block collapses behind a "show all" bar.
-    if (!pre.closest(".install") && pre.scrollHeight > 460) {
-      const lines = pre.innerText.replace(/\n$/, "").split("\n").length;
+    if (pre.scrollHeight > 480) {
+      const n = pre.innerText.replace(/\n$/, "").split("\n").length;
       wrap.classList.add("tall", "collapsed");
       const ex = document.createElement("button");
       ex.type = "button";
       ex.className = "expand";
-      const label = () => { ex.textContent = wrap.classList.contains("collapsed") ? `\u25BE show all ${lines} lines` : "\u25B4 collapse"; };
+      const label = () => { ex.textContent = wrap.classList.contains("collapsed") ? `Show all ${n} lines` : "Collapse"; };
       label();
       ex.addEventListener("click", () => {
         const wasOpen = !wrap.classList.contains("collapsed");
@@ -200,7 +200,7 @@
   }
 
   // The sidebar's section list follows the reader.
-  const toc = [...document.querySelectorAll(".side .toc a[href^='#']")];
+  const toc = [...document.querySelectorAll(".toc a[href^='#']")];
   const heads = toc.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter(Boolean);
   if (heads.length) {
     let queued = false;
@@ -214,32 +214,7 @@
     spy();
   }
 
-  // Docs pages: a reading-progress line at the top of the window.
-  if (document.body.classList.contains("doc")) {
-    const bar = document.createElement("div");
-    bar.className = "progress";
-    bar.setAttribute("aria-hidden", "true");
-    document.body.append(bar);
-    let queued = false;
-    const paint = () => {
-      queued = false;
-      const max = document.documentElement.scrollHeight - innerHeight;
-      bar.style.setProperty("--read", max > 0 ? Math.min(1, scrollY / max) : 0);
-    };
-    addEventListener("scroll", () => { if (!queued) { queued = true; requestAnimationFrame(paint); } }, { passive: true });
-    paint();
-
-    // A button back to the top, once the reader is well down the page.
-    const top = document.createElement("button");
-    top.type = "button";
-    top.className = "to-top";
-    top.setAttribute("aria-label", "Back to top");
-    top.textContent = "\u2191";
-    top.hidden = true;
-    top.addEventListener("click", () => scrollTo({ top: 0, behavior: "smooth" }));
-    document.body.append(top);
-    addEventListener("scroll", () => { top.hidden = scrollY < 600; }, { passive: true });
-
+  if (document.querySelector(".pager")) {
     // [ and ] walk to the previous / next page (the pager).
     addEventListener("keydown", (ev) => {
       if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
@@ -271,32 +246,14 @@
     });
   }
 
-  // The home page's terminal plays once it is in view, and again on ask.
-  const term = document.querySelector(".term");
-  if (term && "IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    const again = term.querySelector(".term-again");
-    const play = () => {
-      term.classList.remove("play");
-      void term.offsetWidth;
-      term.classList.add("play");
-      again.hidden = true;
-      setTimeout(() => { again.hidden = false; }, 5200);
-    };
-    const seen = new IntersectionObserver((es) => {
-      if (es.some((e) => e.isIntersecting)) { seen.disconnect(); play(); }
-    });
-    seen.observe(term);
-    again.addEventListener("click", play);
-  }
-
   // 404.html: name the missing path in the error.
   const lost = document.getElementById("lost-path");
   if (lost) lost.textContent = location.pathname;
 
   // Where a hit lives, by the first part of its url.
   const where = (u) =>
-    u.startsWith("learn/") ? "learn" : u.startsWith("examples/") ? "example" : u.startsWith("std/") ? "api"
-      : u.startsWith("spec/refs-standard-libraries/") ? "std spec" : u.startsWith("spec/") ? "spec" : "";
+    u.startsWith("learn/") ? "Learn" : u.startsWith("examples/") ? "Example" : u.startsWith("std/") ? "API"
+      : u.startsWith("spec/refs-standard-libraries/") ? "Library spec" : u.startsWith("spec/") ? "Spec" : "";
 
   // Docs: the version menu and, off the newest release, a banner.
   const vers = document.querySelector(".vers");
@@ -342,12 +299,12 @@
       if (version !== v.latest && v.latest) {
         const b = document.createElement("p");
         b.className = "ver-banner";
-        b.append(version === "dev" ? "These are the docs of the unreleased main branch." : `These are the docs of rok ${version}.`);
+        b.append(version === "dev" ? "These are the docs of the unreleased main branch." : `These are the docs of Rok ${version}.`);
         const a = document.createElement("a");
         a.href = new URL("../latest/" + here, base).href;
         a.textContent = `Latest release: v${v.latest} →`;
         b.append(a);
-        document.querySelector(".top").after(b);
+        document.querySelector(".hdr").after(b);
       }
     }).catch(() => {});
   }
@@ -449,6 +406,12 @@
   };
 
   if (!q) return;
+  // Folded header: the search icon opens the field.
+  const sbox = q.closest(".search");
+  sbox.addEventListener("click", () => {
+    if (top && top.classList.contains("nav-compact")) { sbox.classList.add("open"); q.focus(); }
+  });
+  q.addEventListener("blur", () => { if (!q.value) setTimeout(() => sbox.classList.remove("open"), 150); });
   q.addEventListener("focus", load, { once: true });
   q.addEventListener("input", search);
   q.addEventListener("keydown", (ev) => {
@@ -479,7 +442,7 @@
 
   document.addEventListener("keydown", (ev) => {
     const typing = ev.target.closest && ev.target.closest("input, textarea, select");
-    if (ev.key === "/" && !typing) { ev.preventDefault(); q.focus(); }
+    if ((ev.key === "/" && !typing) || (ev.key === "k" && (ev.metaKey || ev.ctrlKey))) { ev.preventDefault(); sbox.click(); q.focus(); }
     else if (ev.key === "?" && !typing) { ev.preventDefault(); toggleHelp(); }
     else if (ev.key === "Escape" && help) { closeHelp(); }
   });

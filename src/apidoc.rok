@@ -735,33 +735,51 @@ fn find(mods: List<Module>, path: str) -> Module | none {
     none
 }
 
-/// Sidebar of page `from`: the modules of `m`'s tier, the current one with
-/// its sections, or (on an item's own page) its item pages.
-pub fn sidebar(m: Module, mods: List<Module>, heads: List<Heading>, from: str) -> str {
+/// Sidebar of page `from`: the modules of `m`'s tier and, on an item's
+/// own page, the module's item pages.
+pub fn sidebar(m: Module, mods: List<Module>, from: str) -> str {
     let tier = segs(m.path)[1];
     let root = "rok::" + tier;
     let out = StrBuf::new();
     out.push_str(f"<a class=\"up\" href=\"{rel(from, "std/index.html")}\">← Standard library API</a>");
-    out.push_str("<ul class=\"pages\">");
+    out.push_str("<ul class=\"pages api-tree\">");
     for q in mods {
         if q.path != root && !q.path.starts_with(root + "::") { continue; }
         let qs = segs(q.path);
         let depth = qs.len() - 2;
         let label = if depth == 0 { q.path } else { qs[depth + 1] };
-        let pad = if depth > 1 { f" style=\"padding-left:{(depth - 1) * 12}px\"" } else { "" };
-        if q.path == m.path && from == m.out {
-            out.push_str(f"<li class=\"cur\"{pad}><a aria-current=\"page\" href=\"{rel(from, q.out)}\">{esc(label)}</a><ul class=\"toc\">");
-            for h in heads {
-                if h.level == 2 { out.push_str(f"<li><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>"); }
-            }
-            out.push_str("</ul></li>");
-        } else if q.path == m.path {
-            out.push_str(f"<li class=\"cur\"{pad}><a href=\"{rel(from, q.out)}\">{esc(label)}</a><ul class=\"toc\">{sub_toc(m, from)}</ul></li>");
-        } else {
-            out.push_str(f"<li{pad}><a href=\"{rel(from, q.out)}\">{esc(label)}</a></li>");
-        }
+        let pad = if depth > 1 { f" style=\"--depth:{depth - 1}\"" } else { "" };
+        let cur = if q.path == m.path && from == m.out { " aria-current=\"page\"" } else { "" };
+        out.push_str(f"<li{pad}><a{cur} href=\"{rel(from, q.out)}\">{esc(label)}</a>");
+        if q.path == m.path && from != m.out { out.push_str(f"<ul>{sub_toc(m, from)}</ul>"); }
+        out.push_str("</li>");
     }
     out.push_str("</ul>");
+    out.to_str()
+}
+
+/// "On this page" of an API page: its sections and items, not members.
+pub fn toc(heads: List<Heading>) -> str {
+    let out = StrBuf::new();
+    for h in heads {
+        if h.level == 2 {
+            out.push_str(f"<li><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>");
+            continue;
+        }
+        let item = false;
+        for k in ["struct.", "enum.", "trait.", "type.", "fn.", "const.", "static.", "impl."] {
+            if h.id.starts_with(k) { item = true; }
+        }
+        if !item { continue; }
+        let name = if h.text.starts_with("impl ") { h.text } else if let k: usize = h.text.rfind("::") { h.text[k + 2:] } else { h.text };
+        out.push_str(f"<li class=\"sub\"><a href=\"#{esc(h.id)}\"><code>{esc(name)}</code></a></li>");
+    }
+    if !out.is_empty() { return out.to_str(); }
+    // An item's own page: its members.
+    for h in heads {
+        let name = if let k: usize = h.text.rfind("::") { h.text[k + 2:] } else { h.text };
+        out.push_str(f"<li><a href=\"#{esc(h.id)}\"><code>{esc(name)}</code></a></li>");
+    }
     out.to_str()
 }
 

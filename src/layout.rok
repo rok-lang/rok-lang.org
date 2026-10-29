@@ -41,8 +41,8 @@ fn callout_ko(kind: str) -> str {
 
 /// The end of a page whose source is at `url`.
 pub fn edit_link(url: str, ko: bool) -> str {
-    let label = if ko { "GitHub에서 이 페이지 고치기" } else { "Edit this page on GitHub" };
-    f"<p class=\"edit\"><a href=\"{esc(url)}\">{label}</a></p>\n"
+    let (ask, label) = if ko { ("잘못된 곳이 있나요?", "GitHub에서 이 페이지 고치기") } else { ("Found a mistake?", "Edit this page on GitHub") };
+    f"<p class=\"edit\">{ask} <a href=\"{esc(url)}\">{label}</a>.</p>\n"
 }
 
 /// `../` once per directory level of `out`, back to the site root.
@@ -91,17 +91,48 @@ fn find(pages: List<Page>, src: str) -> usize | none {
     none
 }
 
-fn toc(p: Page) -> str {
+/// `"5. Sum Types"` -> `("5", "Sum Types")`; `("", t)` if unnumbered.
+pub fn split_no(t: str) -> (str, str) {
+    let n = 0usize;
+    for c in t.chars() {
+        if c < '0' || c > '9' { break; }
+        n += 1;
+    }
+    if n > 0 && t[n:].starts_with(". ") { return (t[:n], t[n + 2:]); }
+    ("", t)
+}
+
+/// A sidebar link label: the chapter number in its own column.
+fn label(t: str) -> str {
+    let (no, rest) = split_no(t);
+    if no.is_empty() { esc(t) } else { f"<span class=\"no\">{no}</span>{esc(rest)}" }
+}
+
+/// A learn chapter's `<h1>N. Title</h1>` as "Chapter N" over the title.
+pub fn chapter(html: str, title: str) -> str {
+    let (no, rest) = split_no(title);
+    if no.is_empty() { return html; }
+    let t = esc(rest) + "</h1>";
+    let h = html.replace(f"aria-hidden=\"true\">#</a>{no}. {t}", "aria-hidden=\"true\">#</a>" + t);
+    if let k: usize = h.find("<h1") { return h[:k] + f"<p class=\"chap\">Chapter {no}</p>\n" + h[k:]; }
+    h
+}
+
+/// "On this page": the `##` and `###` sections of `p`.
+pub fn toc(p: Page) -> str {
     let out = StrBuf::new();
     for h in p.heads {
-        if h.level == 2 { out.push_str(f"<li><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>"); }
+        if h.level == 2 {
+            out.push_str(f"<li><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>");
+        } else if h.level == 3 {
+            out.push_str(f"<li class=\"sub\"><a href=\"#{esc(h.id)}\">{esc(h.text)}</a></li>");
+        }
     }
-    if out.is_empty() { return ""; }
-    f"<ul class=\"toc\">{out.to_str()}</ul>"
+    out.to_str()
 }
 
 /// The pages of the current chapter (directory): its index, its files
-/// and its sub-chapters, with the current page's sections under it.
+/// and its sub-chapters.
 pub fn sidebar(pages: List<Page>, idx: usize) -> str {
     let p = pages[idx];
     let d = p.dir;
@@ -112,9 +143,8 @@ pub fn sidebar(pages: List<Page>, idx: usize) -> str {
         }
     }
     if let h: usize = find(pages, readme_of(d)) {
-        let cur = if h == idx { " class=\"cur\"" } else { "" };
+        let cur = if h == idx { " aria-current=\"page\"" } else { "" };
         out.push_str(f"<p class=\"side-title\"><a{cur} href=\"{rel(p.out, pages[h].out)}\">{esc(pages[h].title)}</a></p>");
-        if h == idx { out.push_str(toc(p)); }
     }
     out.push_str("<ul class=\"pages\">");
     for k in 0..pages.len() {
@@ -122,11 +152,8 @@ pub fn sidebar(pages: List<Page>, idx: usize) -> str {
         let file = q.dir == d && !is_readme(q.src);
         let sub = is_readme(q.src) && q.dir != d && dir_of(q.dir) == d;
         if !file && !sub { continue; }
-        if k == idx {
-            out.push_str(f"<li class=\"cur\"><a aria-current=\"page\" href=\"{rel(p.out, q.out)}\">{esc(q.title)}</a>{toc(q)}</li>");
-        } else {
-            out.push_str(f"<li><a href=\"{rel(p.out, q.out)}\">{esc(q.title)}</a></li>");
-        }
+        let cur = if k == idx { " aria-current=\"page\"" } else { "" };
+        out.push_str(f"<li><a{cur} href=\"{rel(p.out, q.out)}\">{label(q.title)}</a></li>");
     }
     out.push_str("</ul>");
     out.to_str()
@@ -140,29 +167,33 @@ fn lead(html: str) -> str {
     ""
 }
 
-/// A section index's list of its pages (after the index itself):
-/// cards for `examples/`, a numbered list otherwise.
+/// The summary of a page as plain text.
+pub fn lead_text(html: str) -> str { strip_tags(lead(html)).replace("\n", " ").trim() }
+
+/// A section index's list of its pages (after the index itself): a
+/// two-column list for `examples/`, numbered chapters otherwise.
 pub fn contents(group: List<Page>) -> str {
     let p = group[0];
-    let cards = p.out.starts_with("examples/");
+    let ex = p.out.starts_with("examples/");
     let out = StrBuf::new();
-    out.push_str(if cards { "<div class=\"cards\">" } else { "<ol class=\"chapters\">" });
+    out.push_str(if ex { "<div class=\"ex-list\">" } else { "<ol class=\"chapters\">" });
     for k in 1..group.len() {
         let q = group[k];
         let href = rel(p.out, q.out);
-        if cards {
-            out.push_str(f"<a class=\"card\" href=\"{href}\"><h3>{esc(q.title)}</h3><p>{esc(strip_tags(lead(q.html)))}</p></a>");
+        if ex {
+            out.push_str(f"<a class=\"ex\" href=\"{href}\"><b>{esc(q.title)}</b><span>{esc(lead_text(q.html))}</span></a>");
         } else {
-            out.push_str(f"<li><a href=\"{href}\">{esc(q.title)}</a><p>{lead(q.html)}</p></li>");
+            let (no, rest) = split_no(q.title);
+            out.push_str(f"<li><span class=\"no\">{no}</span><div><a href=\"{href}\">{esc(rest)}</a><p>{lead(q.html)}</p></div></li>");
         }
     }
-    out.push_str(if cards { "</div>" } else { "</ol>" });
+    out.push_str(if ex { "</div>" } else { "</ol>" });
     out.to_str()
 }
 
-/// Sections of a standalone page.
+/// Sidebar of a standalone page: just its title.
 pub fn page_toc(p: Page) -> str {
-    f"<p class=\"side-title\"><a class=\"cur\" href=\"#\">{esc(p.title)}</a></p>{toc(p)}"
+    f"<p class=\"side-title\"><a aria-current=\"page\" href=\"#\">{esc(p.title)}</a></p>"
 }
 
 pub fn pager(pages: List<Page>, idx: usize) -> str {
@@ -171,19 +202,19 @@ pub fn pager(pages: List<Page>, idx: usize) -> str {
     out.push_str("<nav class=\"pager\" aria-label=\"Previous and next page\">");
     if idx > 0 {
         let q = pages[idx - 1];
-        out.push_str(f"<a class=\"prev\" href=\"{rel(p.out, q.out)}\"><small>Previous</small>{esc(q.title)}</a>");
+        out.push_str(f"<a class=\"prev\" href=\"{rel(p.out, q.out)}\"><small>← Previous</small><span>{esc(q.title)}</span></a>");
     }
     if idx + 1 < pages.len() {
         let q = pages[idx + 1];
-        out.push_str(f"<a class=\"next\" href=\"{rel(p.out, q.out)}\"><small>Next</small>{esc(q.title)}</a>");
+        out.push_str(f"<a class=\"next\" href=\"{rel(p.out, q.out)}\"><small>Next →</small><span>{esc(q.title)}</span></a>");
     }
     out.push_str("</nav>");
     out.to_str()
 }
 
-fn nav_item(root: str, href: str, label: str, on: bool) -> str {
+fn nav_item(href: str, label: str, on: bool) -> str {
     let cur = if on { " aria-current=\"page\"" } else { "" };
-    f"<a href=\"{root}{href}\"{cur}>{label}</a>"
+    f"<a href=\"{href}\"{cur}>{label}</a>"
 }
 
 /// `s` cut to `n` characters, with an ellipsis if it was longer.
@@ -204,17 +235,20 @@ fn clip(s: str, n: usize) -> str {
 /// The page's summary for `<meta name="description">`: its first paragraph.
 fn describe(site: Site, out: str, body: str) -> str {
     if out == "index.html" || out == "404.html" { return site.description; }
-    let s = strip_tags(lead(body)).replace("\n", " ").trim();
+    let s = lead_text(body);
     if s.is_empty() { site.description } else { clip(s, 160) }
 }
 
+const FONTS: str = "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap";
+const PRETENDARD: str = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css";
+
 /// `<head>` from the charset to the icons. `root` leads to the icons and
-/// stylesheet, `url` is the canonical address, `img` the og:image.
+/// stylesheets, `url` is the canonical address, `img` the og:image.
 fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: str) -> str {
     f"<meta charset=\"utf-8\">
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
 <title>{esc(full)}</title>
-<script>try{{const t=localStorage.getItem(\"theme\");if(t)document.documentElement.dataset.theme=t}}catch(e){{}}</script>
+<script>try{{var t=localStorage.getItem(\"theme\");if(t!==\"light\"&&t!==\"dark\")t=matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\";document.documentElement.className=\"rk \"+(t===\"dark\"?\"dk\":\"lt\")}}catch(e){{document.documentElement.className=\"rk lt\"}}</script>
 <meta name=\"description\" content=\"{desc}\">
 <link rel=\"canonical\" href=\"{esc(url)}\">
 {extra}<meta property=\"og:type\" content=\"website\">
@@ -224,8 +258,13 @@ fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: 
 <meta property=\"og:url\" content=\"{esc(url)}\">
 <meta property=\"og:image\" content=\"{esc(img)}\">
 <meta name=\"twitter:card\" content=\"summary_large_image\">
-<meta name=\"theme-color\" content=\"#fcfbfd\" media=\"(prefers-color-scheme: light)\">
-<meta name=\"theme-color\" content=\"#15151b\" media=\"(prefers-color-scheme: dark)\">
+<meta name=\"theme-color\" content=\"#fbfbfc\" media=\"(prefers-color-scheme: light)\">
+<meta name=\"theme-color\" content=\"#0f1013\" media=\"(prefers-color-scheme: dark)\">
+<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">
+<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>
+<link rel=\"stylesheet\" href=\"{esc(FONTS)}\">
+<link rel=\"stylesheet\" href=\"{PRETENDARD}\">
+<link rel=\"stylesheet\" href=\"{root}rok.css\">
 <link rel=\"stylesheet\" href=\"{root}style.css\">
 <link rel=\"icon\" href=\"{root}logo.svg\" type=\"image/svg+xml\">
 <link rel=\"icon\" href=\"{root}favicon.ico\" sizes=\"32x32\">
@@ -236,114 +275,159 @@ fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: 
 /// The address of `path` in the newest release's docs.
 pub fn latest(site: Site, path: str) -> str { site.docs_url + "/latest/" + path }
 
-fn footer(site: Site, first: str) -> str {
-    f"<footer>
-<ul class=\"links\">{first}<li>Spec text © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a></li><li><a href=\"{esc(site.spec_repo)}\">Spec repository</a></li><li><a href=\"{esc(site.packages)}\">Packages</a></li><li><a href=\"mailto:contact@rok-lang.org\">Contact</a></li></ul>
-<ul class=\"social\"><li><a href=\"https://github.com/rok-lang\" aria-label=\"GitHub\"><svg class=\"ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12\"/></svg></a></li><li><a href=\"https://x.com/roklangorg\" aria-label=\"X\"><svg class=\"ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z\"/></svg></a></li><li><a href=\"https://bsky.app/profile/rok-lang.org\" aria-label=\"Bluesky\"><svg class=\"ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 3.768c0 .69.378 5.65.624 6.479.815 2.736 3.713 3.66 6.383 3.364.136-.02.275-.039.415-.056-.138.022-.276.04-.415.056-3.912.58-7.387 2.005-2.83 7.078 5.013 5.19 6.87-1.113 7.823-4.308.953 3.195 2.05 9.271 7.733 4.308 4.267-4.308 1.172-6.498-2.74-7.078a8.741 8.741 0 0 1-.415-.056c.14.017.279.036.415.056 2.67.297 5.568-.628 6.383-3.364.246-.828.624-5.79.624-6.478 0-.69-.139-1.861-.902-2.206-.659-.298-1.664-.62-4.3 1.24C16.046 4.748 13.087 8.687 12 10.8Z\"/></svg></a></li><li><a rel=\"me\" href=\"https://mastodon.social/@roklang\" aria-label=\"Mastodon\"><svg class=\"ico\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M23.268 5.313c-.35-2.578-2.617-4.61-5.304-5.004C17.51.242 15.792 0 11.813 0h-.03c-3.98 0-4.835.242-5.288.309C3.882.692 1.496 2.518.917 5.127.64 6.412.61 7.837.661 9.143c.074 1.874.088 3.745.26 5.611.118 1.24.325 2.47.62 3.68.55 2.237 2.777 4.098 4.96 4.857 2.336.792 4.849.923 7.256.38.265-.061.527-.132.786-.213.585-.184 1.27-.39 1.774-.753a.057.057 0 0 0 .023-.043v-1.809a.052.052 0 0 0-.02-.041.053.053 0 0 0-.046-.01 20.282 20.282 0 0 1-4.709.545c-2.73 0-3.463-1.284-3.674-1.818a5.593 5.593 0 0 1-.319-1.433.053.053 0 0 1 .066-.054c1.517.363 3.072.546 4.632.546.376 0 .75 0 1.125-.01 1.57-.044 3.224-.124 4.768-.422.038-.008.077-.015.11-.024 2.435-.464 4.753-1.92 4.989-5.604.008-.145.03-1.52.03-1.67.002-.512.167-3.63-.024-5.545zm-3.748 9.195h-2.561V8.29c0-1.309-.55-1.976-1.67-1.976-1.23 0-1.846.79-1.846 2.35v3.403h-2.546V8.663c0-1.56-.617-2.35-1.848-2.35-1.112 0-1.668.668-1.67 1.977v6.218H4.822V8.102c0-1.31.337-2.35 1.011-3.12.696-.77 1.608-1.164 2.74-1.164 1.311 0 2.302.5 2.962 1.498l.638 1.06.638-1.06c.66-.999 1.65-1.498 2.96-1.498 1.13 0 2.043.395 2.74 1.164.675.77 1.012 1.81 1.012 3.12z\"/></svg></a></li></ul>
-<p class=\"by\">Made and maintained by <a href=\"https://daminstudio.com\">DaminStudio</a></p>
-<p class=\"made\">built with a static site generator written in rok</p>
+const ICON_SEARCH: str = "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"M20 20l-4-4\"/></svg>";
+const ICON_THEME: str = "<svg class=\"moon\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z\"/></svg><svg class=\"sun\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4\"/></svg>";
+
+const TOGGLE: str = "<button class=\"nav-toggle\" type=\"button\" aria-label=\"Menu\" aria-expanded=\"false\" aria-controls=\"nav\"><span class=\"bars\"></span></button>";
+
+/// Where the footer's links go, from the page it sits on.
+struct Links {
+    home: str;
+    docs: str;
+    learn: str;
+    examples: str;
+    spec: str;
+    api: str;
+    tools: str;
+    publishing: str;
+    roadmap: str;
+}
+
+fn footer(site: Site, l: Links, note: str, logo: str) -> str {
+    let gh = "https://github.com/rok-lang";
+    let col = |head: str, items: str| f"<div class=\"col\"><p class=\"t-label\">{head}</p>{items}</div>";
+    f"<footer class=\"foot\" lang=\"en\">
+<div class=\"frame cols\">
+<div class=\"about\"><a class=\"brand\" href=\"{esc(l.home)}\"><img src=\"{logo}\" alt=\"\" width=\"24\" height=\"24\">Rok</a><p>{esc(site.tagline)}.</p><p class=\"social\"><a href=\"{gh}\">GitHub</a><a href=\"https://x.com/roklangorg\">X</a><a href=\"https://bsky.app/profile/rok-lang.org\">Bluesky</a><a rel=\"me\" href=\"https://mastodon.social/@roklang\">Mastodon</a></p></div>
+{col("Learn", f"<a href=\"{esc(l.learn)}\">Guide</a><a href=\"{esc(l.examples)}\">Examples</a><a href=\"{esc(site.playground)}\">Playground</a>")}
+{col("Reference", f"<a href=\"{esc(l.spec)}\">Language spec</a><a href=\"{esc(l.api)}\">Std library</a><a href=\"{esc(l.tools)}\">Tools</a>")}
+{col("Ecosystem", f"<a href=\"{esc(site.packages)}\">Stones</a><a href=\"{esc(l.publishing)}\">Publishing</a><a href=\"{gh}/rok.vscode\">VS Code</a><a href=\"{gh}/rok.vim\">Vim</a>")}
+{col("Project", f"<a href=\"{esc(l.roadmap)}\">Roadmap</a><a href=\"{gh}/rok\">GitHub</a><a href=\"{gh}/rok/blob/main/SECURITY.md\">Security</a><a href=\"{gh}/rok/blob/main/CODE_OF_CONDUCT.md\">Code of conduct</a><a href=\"mailto:contact@rok-lang.org\">Contact</a>")}
+</div>
+<div class=\"frame bar\">
+<nav aria-label=\"Rok sites\"><a href=\"{esc(l.home)}\">Home</a><a href=\"{esc(l.docs)}\">Docs</a><a href=\"{esc(site.packages)}\">Stones</a><a href=\"{esc(site.playground)}\">Playground</a></nav>
+<span class=\"mono\">rok {esc(site.release)}</span>
+<span>MIT OR Apache-2.0</span>{note}
+<span class=\"seg\" role=\"group\" aria-label=\"Theme\"><button type=\"button\" data-theme-set=\"auto\">System</button><button type=\"button\" data-theme-set=\"light\">Light</button><button type=\"button\" data-theme-set=\"dark\">Dark</button></span>
+</div>
 </footer>
 "
+}
+
+/// The section a docs page belongs to: (label, index page).
+fn section(at: str) -> (str, str) {
+    if at.starts_with("learn/") { return ("Learn", "learn/index.html"); }
+    if at.starts_with("examples/") { return ("Examples", "examples/index.html"); }
+    if at.starts_with("spec/refs-lang/009-tools/") { return ("Tools", "spec/refs-lang/009-tools/index.html"); }
+    if at.starts_with("spec/refs-lang/") { return ("Language", "spec/refs-lang/index.html"); }
+    if at.starts_with("spec/refs-standard-libraries/") || at.starts_with("std/") { return ("Std library", "std/index.html"); }
+    if at.starts_with("spec/") { return ("Spec", "spec/index.html"); }
+    ("", "")
 }
 
 /// A page of the docs of one version, `out` relative to that version's
 /// root. search.js fills the version menu and banner from `versions.json`
 /// beside the version directories.
-pub fn page(site: Site, out: str, title: str, side: str, body: str, pager: str) -> str {
+pub fn page(site: Site, out: str, title: str, side: str, toc: str, body: str, pager: str) -> str {
     // The 404 page sits above the versions and is served for any missing
     // path, so it borrows the newest release's files.
     let root = if out == "404.html" { "/latest/" } else { root_of(out) };
     let ko = out.starts_with("ko/");
     // Nav state of a Korean spec page is that of its English twin.
     let at = if ko { out["ko/".len():] } else { out };
-    let tools = at.starts_with("spec/refs-lang/009-tools/");
+    let (sec, sec_index) = section(at);
     let nav = StrBuf::new();
-    nav.push_str(nav_item(root, "learn/index.html", "Learn", out.starts_with("learn/")));
-    nav.push_str(nav_item(root, "examples/index.html", "Examples", out.starts_with("examples/")));
-    nav.push_str(nav_item(root, "spec/refs-lang/index.html", "Reference", at.starts_with("spec/refs-lang/") && !tools));
-    nav.push_str(nav_item(root, "spec/refs-standard-libraries/index.html", "Library", at.starts_with("spec/refs-standard-libraries/")));
-    nav.push_str(nav_item(root, "std/index.html", "API", out.starts_with("std/")));
-    nav.push_str(nav_item(root, "spec/refs-lang/009-tools/index.html", "Tools", tools));
-    nav.push_str(f"<a href=\"{esc(site.playground)}\">Playground ↗</a>");
-    nav.push_str(f"<a href=\"{esc(site.packages)}\">Packages ↗</a>");
+    for (label, href) in [("Learn", "learn/index.html"), ("Examples", "examples/index.html"), ("Language", "spec/refs-lang/index.html"), ("Std library", "std/index.html"), ("Tools", "spec/refs-lang/009-tools/index.html")] {
+        nav.push_str(nav_item(root + href, label, sec == label));
+    }
     let name = site.title + " Docs";
     let full = if out == "index.html" { name } else { title + " - " + name };
     let aside = if side.is_empty() {
         ""
     } else {
-        f"<aside class=\"side\" aria-label=\"Contents\"><details open><summary>Contents</summary>{side}</details></aside>"
+        f"<nav class=\"side\" aria-label=\"Contents\"><details open><summary>Contents</summary>{side}</details></nav>\n"
     };
+    let on_page = if toc.is_empty() { "" } else { f"<aside class=\"toc\" aria-label=\"On this page\"><p class=\"t-label\">On this page</p><ul>{toc}</ul></aside>\n" };
     let kind = if out == "index.html" { "home" } else if side.is_empty() { "doc wide" } else { "doc" };
+    let crumb = if sec.is_empty() || at == sec_index || out == "404.html" { "" } else { f"<nav class=\"crumb\" aria-label=\"Breadcrumb\"><a href=\"{root}{sec_index}\">{sec}</a></nav>\n" };
     let lang = if ko { "ko" } else { "en" };
     let desc = esc(describe(site, out, body));
     let url = latest(site, if out == "index.html" || out == "404.html" { "" } else { out });
     // Unreleased docs stay out of search engines.
     let robots = if site.version == "dev" { "<meta name=\"robots\" content=\"noindex\">\n" } else { "" };
     let ver = if site.version == "dev" { "dev" } else { "v" + site.version };
-    let home = f"<li><a href=\"{esc(site.base_url)}\">Home</a></li>";
+    let links = Links { home: site.base_url, docs: root + "index.html", learn: root + "learn/index.html", examples: root + "examples/index.html", spec: root + "spec/refs-lang/index.html", api: root + "std/index.html", tools: root + "spec/refs-lang/009-tools/index.html", publishing: root + "learn/18-features-and-stones.html#publishing-a-stone", roadmap: site.base_url + "/roadmap" };
+    let note = if at.starts_with("spec/") { "<span>Spec text © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a></span>" } else { "" };
     f"<!doctype html>
-<html lang=\"{lang}\">
+<html class=\"rk lt\" lang=\"{lang}\">
 <head>
 {head(site, root, full, desc, url, latest(site, "og.png"), robots)}</head>
 <body class=\"{kind}\" data-root=\"{root}\" data-version=\"{esc(site.version)}\" data-play=\"{esc(site.playground)}\">
 <a class=\"skip\" href=\"#content\">Skip to content</a>
-<header class=\"top\">
-<a class=\"brand\" href=\"{esc(site.base_url)}\"><img src=\"{root}logo.svg\" alt=\"\" width=\"28\" height=\"28\"><span>{esc(site.title)}</span></a>
-<button class=\"nav-toggle\" type=\"button\" aria-label=\"Menu\" aria-expanded=\"false\" aria-controls=\"nav\"><span class=\"bars\"></span></button>
-<nav id=\"nav\" class=\"main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
-<div class=\"search\" role=\"search\"><input id=\"q\" type=\"search\" placeholder=\"Search docs\" aria-label=\"Search docs\" aria-keyshortcuts=\"/\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
+<header class=\"hdr top\" lang=\"en\">
+<div class=\"in\">
+<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.svg\" alt=\"\" width=\"24\" height=\"24\">Rok<span class=\"sl\">/</span><span class=\"site\">Docs</span></a>
+{TOGGLE}
+<nav id=\"nav\" class=\"nav main-nav\" aria-label=\"Sections\">{nav.to_str()}</nav>
+<div class=\"tools\">
+<div class=\"search\" role=\"search\">{ICON_SEARCH}<input id=\"q\" type=\"search\" placeholder=\"Search docs\" aria-label=\"Search docs\" aria-keyshortcuts=\"/\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd class=\"kbd\" aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
 <details class=\"vers\"><summary aria-label=\"Docs version: {ver}\">{ver}</summary><ul class=\"vers-menu\"></ul></details>
-<button class=\"theme\" type=\"button\" aria-label=\"Theme\">◐</button>
-</header>
-<div class=\"wrap\">
-{aside}<main id=\"content\">
-<article>
-{body}</article>
-{pager}
-</main>
+<button class=\"ib theme\" type=\"button\" aria-label=\"Switch theme\">{ICON_THEME}</button>
 </div>
-{footer(site, home)}<script src=\"{root}search.js\" defer></script>
+</div>
+</header>
+<div class=\"shell\">
+{aside}<main id=\"content\" class=\"main\">
+<article class=\"prose\">
+{crumb}{body}{pager}
+</article>
+{on_page}</main>
+</div>
+{footer(site, links, note, root + "logo.svg")}<script src=\"{root}search.js\" defer></script>
 </body>
 </html>
 "
 }
 
 /// A page of the home site (rok-lang.org): no search, its nav into the
-/// newest docs.
+/// newest docs. The landing page (`index.html`) brings its own layout.
 pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
     let root = if out == "404.html" { "/" } else { root_of(out) };
     let nav = StrBuf::new();
-    let dl = if out == "download.html" { " aria-current=\"page\"" } else { "" };
-    nav.push_str(f"<a href=\"{root}download.html\"{dl}>Download</a>");
-    let rm = if out == "roadmap.html" { " aria-current=\"page\"" } else { "" };
-    nav.push_str(f"<a href=\"{root}roadmap.html\"{rm}>Roadmap</a>");
-    nav.push_str(f"<a href=\"{esc(latest(site, "index.html"))}\">Docs</a>");
-    nav.push_str(f"<a href=\"{esc(site.playground)}\">Playground ↗</a>");
-    nav.push_str(f"<a href=\"{esc(site.packages)}\">Packages ↗</a>");
+    nav.push_str(nav_item(esc(latest(site, "learn/index.html")), "Learn", false));
+    nav.push_str(nav_item(esc(latest(site, "index.html")), "Docs", false));
+    nav.push_str(nav_item(esc(latest(site, "examples/index.html")), "Examples", false));
+    nav.push_str(nav_item(esc(site.playground), "Playground", false));
+    nav.push_str(nav_item(esc(site.packages), "Stones", false));
+    nav.push_str(nav_item(root + "roadmap.html", "Roadmap", out == "roadmap.html"));
     let full = if out == "index.html" { site.title + " - " + site.tagline } else { title + " - " + site.title };
     let url = if out == "index.html" || out == "404.html" { site.base_url + "/" } else { site.base_url + "/" + out };
-    let kind = if out == "download.html" || out == "roadmap.html" { "doc wide" } else { "home" };
+    let kind = if out == "index.html" { "landing" } else { "plain" };
     let desc = esc(if out == "download.html" { f"Download rok {site.release} for macOS, Linux and Windows: the install script, or an archive with its SHA-256." } else if out == "roadmap.html" { "The rok roadmap: what the current release ships and where the language is headed next." } else { site.description });
-    let docs = f"<li><a href=\"{esc(latest(site, "index.html"))}\">Docs</a></li>";
+    let main = if out == "index.html" { body } else { f"<div class=\"frame page\"><article class=\"prose\">\n{body}</article></div>\n" };
+    let install = if out == "download.html" { " aria-current=\"page\"" } else { "" };
+    let links = Links { home: root + "index.html", docs: latest(site, "index.html"), learn: latest(site, "learn/index.html"), examples: latest(site, "examples/index.html"), spec: latest(site, "spec/refs-lang/index.html"), api: latest(site, "std/index.html"), tools: latest(site, "spec/refs-lang/009-tools/index.html"), publishing: latest(site, "learn/18-features-and-stones.html#publishing-a-stone"), roadmap: root + "roadmap.html" };
     f"<!doctype html>
-<html lang=\"en\">
+<html class=\"rk lt\" lang=\"en\">
 <head>
 {head(site, root, full, desc, url, site.base_url + "/og.png", "")}</head>
 <body class=\"{kind} www\" data-root=\"{root}\" data-play=\"{esc(site.playground)}\">
 <a class=\"skip\" href=\"#content\">Skip to content</a>
-<header class=\"top\">
-<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.svg\" alt=\"\" width=\"28\" height=\"28\"><span>{esc(site.title)}</span></a>
-<button class=\"nav-toggle\" type=\"button\" aria-label=\"Menu\" aria-expanded=\"false\" aria-controls=\"nav\"><span class=\"bars\"></span></button>
-<nav id=\"nav\" class=\"main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
-<button class=\"theme\" type=\"button\" aria-label=\"Theme\">◐</button>
-</header>
-<div class=\"wrap\">
-<main id=\"content\">
-<article>
-{body}</article>
-</main>
+<header class=\"hdr top\" lang=\"en\">
+<div class=\"frame in\">
+<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.svg\" alt=\"\" width=\"26\" height=\"26\">Rok</a>
+{TOGGLE}
+<nav id=\"nav\" class=\"nav main-nav\" aria-label=\"Main\">{nav.to_str()}</nav>
+<div class=\"tools\">
+<a class=\"gh\" href=\"https://github.com/rok-lang/rok\">GitHub</a>
+<a class=\"btn btn-sm\" href=\"{root}download.html\"{install}>Install</a>
+<button class=\"ib theme\" type=\"button\" aria-label=\"Switch theme\">{ICON_THEME}</button>
 </div>
-{footer(site, docs)}<script src=\"{root}search.js\" defer></script>
+</div>
+</header>
+<main id=\"content\">
+{main}</main>
+{footer(site, links, "", root + "logo.svg")}<script src=\"{root}search.js\" defer></script>
 </body>
 </html>
 "
@@ -351,21 +435,19 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
 
 /// Body of a 404 page, a compiler-style error; search.js fills in the
 /// path. `to(p)` is the address of docs page `p`.
-pub fn not_found(logo: str, to: fn(str) -> str, search: bool) -> str {
-    let help = if search { "search with <kbd>/</kbd>, or start from one of these" } else { "start from one of these" };
+pub fn not_found(to: fn(str) -> str, search: bool) -> str {
+    let help = if search { "search with <kbd class=\"kbd\">/</kbd>, or start from one of these" } else { "start from one of these" };
     f"<div class=\"lost\">
-<img src=\"{logo}\" alt=\"\" width=\"88\" height=\"88\">
 <h1>Page not found</h1>
-<p>This page rolled away, or it never existed.</p>
-<pre class=\"err\"><code><span class=\"e\">error[E404]</span>: page not found
+<p class=\"lead\">This page rolled away, or it never existed.</p>
+<pre class=\"err\"><span class=\"e\">error[E404]</span>: page not found
  <span class=\"g\">--&gt;</span> <span id=\"lost-path\">this address</span>
   <span class=\"g\">|</span>
-  <span class=\"g\">=</span> <span class=\"h\">help</span>: {help}</code></pre>
-<div class=\"cta\"><a class=\"primary\" href=\"{esc(to("index.html"))}\">Docs home</a><a href=\"{esc(to("learn/index.html"))}\">Learn</a><a href=\"{esc(to("spec/refs-lang/index.html"))}\">Reference</a><a href=\"{esc(to("std/index.html"))}\">API</a></div>
+  <span class=\"g\">=</span> <span class=\"h\">help</span>: {help}</pre>
+<p class=\"cta\"><a class=\"btn\" href=\"{esc(to("index.html"))}\">Docs home</a><a href=\"{esc(to("learn/index.html"))}\">Learn</a><a href=\"{esc(to("spec/refs-lang/index.html"))}\">Language</a><a href=\"{esc(to("std/index.html"))}\">Std library</a></p>
 </div>
 "
 }
-
 /// The docs root's `index.html`: off to the newest release.
 pub fn to_latest(site: Site) -> str {
     let home = esc(latest(site, "index.html"));

@@ -111,6 +111,8 @@ pub struct Frag {
     pub side: str;
     pub body: str;
     pub pager: str;
+    /// "On this page" items, or `""`.
+    pub toc: str = "";
     /// An hreflang `<link>` block to splice before `</head>`, or `""`.
     pub head: str;
 }
@@ -125,7 +127,7 @@ pub struct Bundle {
 
 /// Final HTML of a doc page: the current chrome around `f`'s content.
 fn wrap(site: Site, f: Frag) -> str {
-    let html = layout::page(site, f.out, f.title, f.side, f.body, f.pager);
+    let html = layout::page(site, f.out, f.title, f.side, f.toc, f.body, f.pager);
     if f.head.is_empty() { html } else { html.replace("</head>", f.head) }
 }
 
@@ -663,11 +665,11 @@ fn main() throws {
     let frags: Dict<str, Frag> = Dict::new();
     for k in 0..pages.len() {
         let p = pages[k];
-        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(pages, k), body: lang_switch(p, ko_pages, false) + p.html + spec_edit(site, site.spec, p), pager: layout::pager(pages, k), head: "" });
+        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(pages, k), toc: layout::toc(p), body: lang_switch(p, ko_pages, false) + p.html + spec_edit(site, site.spec, p), pager: layout::pager(pages, k), head: "" });
     }
     for k in 0..ko_pages.len() {
         let p = ko_pages[k];
-        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(ko_pages, k), body: lang_switch(p, pages, true) + p.html + spec_edit(site, site.spec_ko, p), pager: layout::pager(ko_pages, k), head: "" });
+        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(ko_pages, k), toc: layout::toc(p), body: lang_switch(p, pages, true) + p.html + spec_edit(site, site.spec_ko, p), pager: layout::pager(ko_pages, k), head: "" });
     }
 
     // Each spec page names its other edition for search engines.
@@ -695,7 +697,8 @@ fn main() throws {
         let p = own[k];
         if p.dir.is_empty() {
             let side = if p.out == "index.html" { "" } else { layout::page_toc(p) };
-            frags.insert(p.out, Frag { out: p.out, title: p.title, side: side, body: p.html + docs_edit(site, p), pager: "", head: "" });
+            let toc = if p.out == "index.html" { "" } else { layout::toc(p) };
+            frags.insert(p.out, Frag { out: p.out, title: p.title, side: side, toc: toc, body: p.html + docs_edit(site, p), pager: "", head: "" });
             continue;
         }
         let group: List<Page> = List::new();
@@ -706,8 +709,9 @@ fn main() throws {
                 group.push(q);
             }
         }
-        let body = (if at == 0 { p.html + layout::contents(group) } else { p.html }) + docs_edit(site, p);
-        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(group, at), body: body, pager: layout::pager(group, at), head: "" });
+        let html = if p.dir == "learn" { layout::chapter(p.html, p.title) } else { p.html };
+        let body = (if at == 0 { html + layout::contents(group) } else { html }) + docs_edit(site, p);
+        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(group, at), toc: layout::toc(p), body: body, pager: layout::pager(group, at), head: "" });
     }
 
     // Standard library API: `std/<tier>/<module>.html`.
@@ -716,9 +720,9 @@ fn main() throws {
     let since = try added_in(site, mods);
     for m in mods {
         let (html, heads) = apidoc::body(m, mods, since);
-        frags.insert(m.out, Frag { out: m.out, title: m.path, side: apidoc::sidebar(m, mods, heads, m.out), body: html, pager: "", head: "" });
+        frags.insert(m.out, Frag { out: m.out, title: m.path, side: apidoc::sidebar(m, mods, m.out), toc: apidoc::toc(heads), body: html, pager: "", head: "" });
         for s in apidoc::subpages(m, since) {
-            frags.insert(s.out, Frag { out: s.out, title: s.title, side: apidoc::sidebar(m, mods, s.heads, s.out), body: s.html, pager: "", head: "" });
+            frags.insert(s.out, Frag { out: s.out, title: s.title, side: apidoc::sidebar(m, mods, s.out), toc: apidoc::toc(s.heads), body: s.html, pager: "", head: "" });
             api.push(Page { src: "", out: s.out, dir: "std", title: s.title, html: "", heads: s.heads });
         }
         api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads });
@@ -793,7 +797,7 @@ fn main() throws {
         www.insert(out, layout::www_page(site, out, doc.title, html));
         www_urls.push(site.base_url + "/" + if name == "index" { "" } else { out });
     }
-    www.insert("404.html", layout::www_page(site, "404.html", "Page not found", layout::not_found("/logo.svg", |p| layout::latest(site, p), false)));
+    www.insert("404.html", layout::www_page(site, "404.html", "Page not found", layout::not_found(|p| layout::latest(site, p), false)));
 
     let docs_root = out_root + "/docs";
     let docs_dir = docs_root + "/" + version;
@@ -874,7 +878,7 @@ fn main() throws {
     if has_latest { try copy_tree(latest_from, docs_root + "/latest"); }
     // The 404 page uses latest/'s files, so it speaks for that version.
     site.version = if newest.is_empty() { version } else { newest };
-    try write(docs_root, "404.html", clean_hrefs(layout::page(site, "404.html", "Page not found", "", layout::not_found("/latest/logo.svg", |p| "/latest/" + p, true), "")));
+    try write(docs_root, "404.html", clean_hrefs(layout::page(site, "404.html", "Page not found", "", "", layout::not_found(|p| "/latest/" + p, true), "")));
 
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }
