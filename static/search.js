@@ -107,6 +107,7 @@
     });
   }
 
+  // Only the newest release has data-play: the playground runs it.
   // A block runs in the playground when it has `fn main`, or a top-level
   // statement rok runs as the script body (helpers beside it are fine).
   // A block of only declarations (a lone `enum`, a signature) would just
