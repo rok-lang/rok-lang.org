@@ -1,23 +1,18 @@
-// `serve`: rok-lang.org and docs.rok-lang.org from content bundles.
+// rok-lang.org and docs.rok-lang.org from content bundles.
 //
-// The pages live in rok-lang/docs, rok-lang/www and rok-lang/spec; CI
-// checks each branch and publishes it as a bundle (rok-content) under
-// <repo>/<branch>/<sha>.rokon, with <repo>/<branch>/current naming the
-// sha. The standard library of a release comes from the rok tag. This
-// server fetches what changed, builds it with this same program (a
-// release once into an archive bundle, then the whole site around the
-// dev docs), and serves the result. A signed POST /_admin/reload starts
-// the next round; the server also looks every few minutes.
+// Bundles are <repo>/<branch>/<sha>.rokon, <repo>/<branch>/current names
+// the sha. Each release is archived once; dev and home are rebuilt around
+// the archives. A signed POST /_admin/reload starts a round, so does a
+// five-minute timer.
 //
 //   ROK_WEB_ADDR      listen address (127.0.0.1:8080)
-//   ROK_WEB_DATA      state directory (fetched sources, archives, output)
-//   ROK_WEB_CONTENT   where the bundles are: an https:// base or a directory
-//   ROK_WEB_ROK_GIT   the rok repository (https://github.com/rok-lang/rok.git)
-//   ROK_WEB_RELOAD_KEY  HMAC-SHA256 key of the reload request
-//   ROK_WEB_DOCS_HOST   host name of the docs (docs.rok-lang.org)
+//   ROK_WEB_DATA      state: sources, archives, output
+//   ROK_WEB_CONTENT   bundle store: https:// base or directory
+//   ROK_WEB_ROK_GIT   rok repository
+//   ROK_WEB_RELOAD_KEY  HMAC-SHA256 key for reload
+//   ROK_WEB_DOCS_HOST   docs host name
 //
-// Settings come from the environment, else from `.env` in the working
-// directory, which also holds site.rokon and static/.
+// Environment first, then .env in the working directory.
 
 use rok::std::env;
 use rok::std::fs;
@@ -46,7 +41,6 @@ pub struct Cfg {
     pub docs_host: str;
 }
 
-/// A content bundle, as rok-content writes it.
 #[derive(Rokon)]
 pub struct Bundle {
     pub repo: str;
@@ -56,7 +50,7 @@ pub struct Bundle {
     pub files: Dict<str, str>;
 }
 
-/// rok-lang/docs versions.rokon: the releases, newest first.
+/// docs versions.rokon, newest first.
 #[derive(Rokon)]
 pub struct Versions {
     pub releases: List<str>;
@@ -100,8 +94,6 @@ pub fn load_cfg(path: str) throws -> Cfg {
     cfg
 }
 
-// -- fetching -------------------------------------------------------------
-
 fn sh(script: str) throws -> str {
     let out = try Command::new("sh").args(["-c", script]).stdin(Stdio::Null).output();
     if !out.status.success() { throw ValueError { msg: f"`{script}` failed: {(try? str::from_utf8(out.stderr)) ?? ""}" }; }
@@ -111,7 +103,6 @@ fn sh(script: str) throws -> str {
 /// `'s'` for a shell.
 fn q(s: str) -> str { "'" + s.replace("'", "'\\''") + "'" }
 
-/// A file of the content store, `key` relative to its root.
 fn fetch(cfg: Cfg, key: str) throws -> str {
     if cfg.content.starts_with("https://") || cfg.content.starts_with("http://") {
         try sh(f"curl -fsSL --max-time 60 {q(cfg.content + "/" + key)}")
@@ -120,7 +111,7 @@ fn fetch(cfg: Cfg, key: str) throws -> str {
     }
 }
 
-/// Lays `repo`@`branch` out under data/src; true if its sha changed.
+/// Unpack `repo`@`branch` under data/src; true if the sha changed.
 fn sync_bundle(cfg: Cfg, repo: str, branch: str) throws -> bool {
     let key = f"{repo}/{branch}";
     let sha = (try fetch(cfg, key + "/current")).trim();
@@ -155,8 +146,7 @@ fn before_last(s: str, sep: str) -> str | none {
 
 fn dir_of(p: str) -> str { before_last(p, "/") ?? "." }
 
-/// The rok sources a build needs (library/, install.sh, install.ps1, and
-/// CHANGELOG.md on main) at `rev` (a tag or main), under
+/// library/, install scripts and CHANGELOG.md of rok at `rev`, under
 /// data/src/rok/<rev>; true if they changed.
 fn sync_library(cfg: Cfg, rev: str) throws -> bool {
     let git = cfg.data + "/rok.git";
@@ -174,15 +164,12 @@ fn sync_library(cfg: Cfg, rev: str) throws -> bool {
     if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == sha { return false; }
     if fs::exists(dir) { try fs::remove_dir_all(dir); }
     try fs::create_dir_all(dir);
-    // CHANGELOG.md: the landing page's release notes.
     let extra = if is_tag { "" } else { " CHANGELOG.md" };
     try sh(f"git -C {q(git)} archive {q(sha)} library install.sh install.ps1{extra} | tar -x -C {q(dir)}");
     try fs::write(mark, sha + "\n");
     eprintln(f"library {rev} @ {short(sha)}");
     true
 }
-
-// -- building -------------------------------------------------------------
 
 /// "0.1.4" -> "0.1".
 fn minor_of(v: str) -> str { before_last(v, ".") ?? v }
@@ -197,7 +184,7 @@ fn site_local(cfg: Cfg, docs: str, spec: str, library: str, extra: str) -> str {
     f"{{\n    docs: \"{s}/docs/{docs}\",\n    www: \"{s}/www/main\",\n    spec: \"{s}/spec/{spec}/en\",\n    spec_ko: \"{s}/spec/{spec}/ko\",\n    library: \"{s}/rok/{library}/library\",\n{extra}}}\n"
 }
 
-/// One round: fetch what changed, rebuild it, and swap the output in.
+/// Fetch what changed, rebuild it, swap the output in.
 fn round(cfg: Cfg, exe: str) throws {
     let t0 = Instant::now();
     let changed: Set<str> = Set::new();
@@ -207,13 +194,12 @@ fn round(cfg: Cfg, exe: str) throws {
     if try sync_library(cfg, "main") { changed.insert("rok/main"); }
     let rel: Versions = try rokon::from_str(try fs::read_to_str(cfg.data + "/src/docs/main/versions.rokon"));
 
-    // The generator's version list: every release, newest first.
     let vl = StrBuf::new();
     for v in rel.releases { vl.push_str(f"\"{v}\", "); }
     let versions = cfg.data + "/versions.rokon";
     try fs::write(versions, f"Versions {{ released: [{vl.to_str()}] }}\n");
 
-    // Each release whose inputs changed is built once into an archive bundle.
+    // Archive each release whose inputs changed.
     let archive = cfg.data + "/archive";
     for v in rel.releases {
         let tag = "v" + v;
@@ -222,7 +208,7 @@ fn round(cfg: Cfg, exe: str) throws {
         if try sync_bundle(cfg, "spec", tag) { any = true; }
         if try sync_library(cfg, tag) { any = true; }
         if !any && fs::exists(f"{archive}/{v}/bundle.rokon") { continue; }
-        // Earlier releases of the same minor, oldest first, for "Added in".
+        // Same-minor releases, oldest first, for "Added in".
         let hist = StrBuf::new();
         let older: List<str> = List::new();
         for w in rel.releases {
@@ -245,7 +231,6 @@ fn round(cfg: Cfg, exe: str) throws {
         eprintln(f"round: nothing changed ({t0.elapsed():?})");
         return;
     }
-    // The dev docs and the home site, with every archived release laid in.
     let next = cfg.data + "/out.next";
     if fs::exists(next) { try fs::remove_dir_all(next); }
     let local = cfg.data + "/site.dev.rokon";
@@ -265,7 +250,6 @@ fn rebuild_loop(cfg: Cfg) {
     };
     let idle = 0;
     loop {
-        // A reload request, or every five minutes.
         if STALE.swap(0) == 1 || idle >= 300 {
             idle = 0;
             try round(cfg, exe.as_str()) catch e { eprintln(f"round: {e}"); };
@@ -275,14 +259,11 @@ fn rebuild_loop(cfg: Cfg) {
     }
 }
 
-// -- serving --------------------------------------------------------------
-
-/// The hex HMAC-SHA256 of `body` under `key`.
 pub fn signature(key: str, body: str) -> str {
     encoding::hex_encode(Hmac::mac(HashAlgorithm::Sha256, key, body))
 }
 
-/// The newest built release of minor `m` ("0.1" -> "0.1.4"), or none.
+/// Newest built release of minor `m`, or none.
 fn newest_of(docs: str, m: str) -> str | none {
     let best: str | none = none;
     let best_patch = -1;
