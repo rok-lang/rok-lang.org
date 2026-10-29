@@ -12,7 +12,7 @@
 <h3>Polish after the REPL release</h3>
 <ul>
 <li>The REPL: no <code>%</code> marker after output without a newline, Jupyter cell numbers that match <code>In [N]</code>, <code>:save</code> that loads back (<a href="https://github.com/rok-lang/rok/issues/222">#222</a>, <a href="https://github.com/rok-lang/rok/issues/224">#224</a>, <a href="https://github.com/rok-lang/rok/issues/229">#229</a>)</li>
-<li><code>rok toolchain update</code> warns when another <code>rok</code> comes first on PATH (<a href="https://github.com/rok-lang/rok/issues/223">#223</a>)</li>
+<li><code>rok toolchain update</code> warns when another <code>rok</code> comes first on PATH; <code>rok fmt</code> and other commands outside a package say what they did instead of running silently (<a href="https://github.com/rok-lang/rok/issues/223">#223</a>, <a href="https://github.com/rok-lang/rok/issues/232">#232</a> to <a href="https://github.com/rok-lang/rok/issues/235">#235</a>)</li>
 <li>ROKON fixes, a per-case timeout for the wasm corpus, current release docs (<a href="https://github.com/rok-lang/rok/issues/226">#226</a>, <a href="https://github.com/rok-lang/rok/issues/227">#227</a>, <a href="https://github.com/rok-lang/rok/issues/225">#225</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.1.5</a>
