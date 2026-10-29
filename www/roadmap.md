@@ -8,25 +8,7 @@
 
 <div class="rm">
 <section class="rm-card now">
-<header><span class="rm-ver">0.1.4</span><span class="rm-pill now">In progress</span></header>
-<h3>A better REPL</h3>
-<ul>
-<li>A <code>&gt;&gt;&gt;</code> prompt that always starts on a fresh line; cells split by tokens, not characters (<a href="https://github.com/rok-lang/rok/issues/161">#161</a>, <a href="https://github.com/rok-lang/rok/issues/162">#162</a>)</li>
-<li>Values and errors in full, with the cell and line they come from (<a href="https://github.com/rok-lang/rok/issues/163">#163</a>, <a href="https://github.com/rok-lang/rok/issues/189">#189</a>, <a href="https://github.com/rok-lang/rok/issues/190">#190</a>, <a href="https://github.com/rok-lang/rok/issues/191">#191</a>)</li>
-<li>Top-level <code>await</code> keeps its bindings (<a href="https://github.com/rok-lang/rok/issues/188">#188</a>); <code>it</code> holds the last value (<a href="https://github.com/rok-lang/rok/issues/195">#195</a>)</li>
-<li>Tab completion, highlighting, bracketed paste, history search, wide characters (<a href="https://github.com/rok-lang/rok/issues/164">#164</a>, <a href="https://github.com/rok-lang/rok/issues/165">#165</a>, <a href="https://github.com/rok-lang/rok/issues/192">#192</a>)</li>
-<li><code>exit</code>, <code>:doc</code>, <code>:time</code>, <code>:vars</code>, <code>:load</code>, <code>:edit</code>, <code>:save</code>; a package loads with <code>rok repl .</code> (<a href="https://github.com/rok-lang/rok/issues/166">#166</a>, <a href="https://github.com/rok-lang/rok/issues/193">#193</a>)</li>
-<li>Jupyter: streamed output, stdin, highlighting and indent hints (<a href="https://github.com/rok-lang/rok/issues/194">#194</a>, <a href="https://github.com/rok-lang/rok/issues/196">#196</a>, <a href="https://github.com/rok-lang/rok/issues/197">#197</a>)</li>
-</ul>
-<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/7">Milestone 0.1.4</a>
-</section>
-</div>
-
-## Next
-
-<div class="rm">
-<section class="rm-card next">
-<header><span class="rm-ver">0.1.5</span><span class="rm-pill next">Next</span></header>
+<header><span class="rm-ver">0.1.5</span><span class="rm-pill now">In progress</span></header>
 <h3>More hosts</h3>
 <ul>
 <li>Host archives for Windows on arm64 and i686, Linux on armv7 (glibc, musl) and i686 (<a href="https://github.com/rok-lang/rok/issues/6">#6</a> to <a href="https://github.com/rok-lang/rok/issues/10">#10</a>)</li>
@@ -34,6 +16,11 @@
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.1.5</a>
 </section>
+</div>
+
+## Next
+
+<div class="rm">
 <section class="rm-card next">
 <header><span class="rm-ver">0.1.6</span><span class="rm-pill next">Next</span></header>
 <h3>A backend interface</h3>
@@ -88,6 +75,7 @@
 ## Shipped
 
 <div class="rm-log">
+<div class="rm-entry"><span class="rm-ver">0.1.4</span><time datetime="2026-10-29">2026-10-29</time><p>A better REPL: a <code>&gt;&gt;&gt;</code> prompt with the toolchain line, values in full and <code>it</code>, cell locations in errors, session commands, colours, completion, paste and history search; Jupyter streams output and asks for input. The installer sets up PATH and shell completion; the last statement before <code>}</code> may omit its <code>;</code>. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.4">Release notes</a></p></div>
 <div class="rm-entry"><span class="rm-ver">0.1.3</span><time datetime="2026-10-29">2026-10-29</time><p>A larger standard library: hex and base64 encoding, more <code>str</code> splitting, iterator adapters such as <code>take_while</code>, <code>scan</code>, <code>chunks</code> and <code>unzip</code>, matching methods across the collections, <code>Writer::write_display</code>, field and variant reflection through <code>Inspect</code>, <code>int</code> bit and byte methods. API pages mark what each release added. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.3">Release notes</a></p></div>
 <div class="rm-entry"><span class="rm-ver">0.1.2</span><time datetime="2026-10-28">2026-10-28</time><p>Install through Nix; package metadata in <code>rok.rokon</code>; collection traits and methods, <code>Iterator::exact_len</code>; clearer errors and fixes from the 0.1.1 spec audit. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.2">Release notes</a></p></div>
 <div class="rm-entry"><span class="rm-ver">0.1.1</span><time datetime="2026-10-27">2026-10-27</time><p><code>print(x)</code> and <code>println(x)</code> take any <code>Display</code>; <code>println()</code> prints a blank line. The REPL prints <code>Display</code>, <code>x?</code> prints <code>Debug</code>, <code>:type x</code> prints the type. <a href="https://github.com/rok-lang/rok/releases/tag/v0.1.1">Release notes</a></p></div>
