@@ -1,18 +1,20 @@
 # rok-lang.org
 
-Source for the two Rok websites, built by one static site generator written in Rok:
+The generator for the two Rok websites, written in Rok. The pages themselves live in their own repositories:
 
-- rok-lang.org: the landing page (`www/index.md`) and the installers (`/install.sh`, `/install.ps1`), built into `public/www/`.
+- rok-lang.org: the home, download and roadmap pages from [rok-lang/www](https://github.com/rok-lang/www) and the installers (`/install.sh`, `/install.ps1`), built into `public/www/`.
 - docs.rok-lang.org: the docs, one directory per version (`/0.1/`, `/dev/`, `/latest/`), built into `public/docs/<version>/`.
 
-The docs combine the spec (English `spec/en`, Korean `spec/ko`), the standard library API extracted from `rok/library`, and this repo's `docs/` (home, guide, examples).
+The docs combine the guide and examples from [rok-lang/docs](https://github.com/rok-lang/docs), the spec (English `spec/en`, Korean `spec/ko`) and the standard library API extracted from `rok/library`. Released versions are the `vX.Y.Z` branches of docs and spec.
 
 ## Build
 
-Needs the Rok toolchain (`rok`, `rokc`) plus checkouts of [rok-lang/rok](https://github.com/rok-lang/rok), [rok-lang/spec](https://github.com/rok-lang/spec), and the `markdown` / `rok-syntax` stones, laid out beside this repo (see `rok.rokon`):
+Needs the Rok toolchain (`rok`, `rokc`) plus checkouts of [rok-lang/docs](https://github.com/rok-lang/docs), [rok-lang/www](https://github.com/rok-lang/www), [rok-lang/rok](https://github.com/rok-lang/rok), [rok-lang/spec](https://github.com/rok-lang/spec), and the `markdown` / `rok-syntax` stones, laid out beside this repo (see `rok.rokon`):
 
 ```
 ./
+|-- docs/               # guide, examples
+|-- www/                # home, download, roadmap
 |-- rok/                # toolchain; rok/library is the standard library
 |-- spec/               # spec/en/ + spec/ko/
 |-- stones/markdown/    # markdown renderer stone
@@ -20,7 +22,7 @@ Needs the Rok toolchain (`rok`, `rokc`) plus checkouts of [rok-lang/rok](https:/
 `-- rok-lang.org/       # this repository
 ```
 
-If checkouts live elsewhere, point `spec`, `spec_ko`, and `library` at them in `site.local.rokon` (git-ignored; overrides `site.rokon`). No toolchain? Install one (`curl -fsSL https://rok-lang.org/install.sh | sh`) or `cargo build --release` in `../rok`.
+If checkouts live elsewhere, point `docs`, `www`, `spec`, `spec_ko`, and `library` at them in `site.local.rokon` (git-ignored; overrides `site.rokon`). No toolchain? Install one (`curl -fsSL https://rok-lang.org/install.sh | sh`) or `cargo build --release` in `../rok`.
 
 ```bash
 rok run                      # build public/www/ and the dev docs
@@ -43,21 +45,22 @@ python3 -m http.server -d public/docs 8403   # docs.rok-lang.org
 
 ## Release and deploy
 
-Old versions are never rebuilt: each release's docs are built once from its tags and kept on the `docs-archive` branch.
+Each release's docs are built once, from the `vX.Y.Z` branches of docs and spec and the release tag of rok, and kept on the `docs-archive` branch; every build wraps them in the current chrome.
 
 ```bash
-# At a release, after tagging spec, impl and this repo:
-ROK=<the release's rok> scripts/release-docs.sh 0.1 v0.1.0
+# At a release, after tagging rok and spec and cutting the vX.Y.Z branches:
+ROK=<the release's rok> scripts/release-docs.sh 0.1 v0.1.4
 git push origin docs-archive
 
-# At every deploy, from main:
+# Build everything for a deploy, from main:
 scripts/assemble.sh          # docs-archive -> public/docs/, then build dev + home site
-# upload public/www/ as rok-lang.org and public/docs/ as docs.rok-lang.org
 ```
+
+Deployment itself lives in a private repository.
 
 ## Configuration
 
-Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: `title`, `tagline`, `description`, `base_url`, `docs_url`, `spec` / `spec_ko`, `packages`, `library`, `out`. `versions.rokon` lists released docs versions, newest first.
+Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: `title`, `tagline`, `description`, `base_url`, `docs_url`, `docs`, `www`, `spec` / `spec_ko`, `packages`, `library`, `out`. `versions.rokon` lists released docs versions, newest first.
 
 ## Layout
 
@@ -67,8 +70,6 @@ Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: 
 | `src/check.rok`  | Code block extraction and parallel compile / run / output comparison |
 | `src/apidoc.rok` | API pages from the standard library sources |
 | `src/layout.rok` | Page frames: header, navigation, sidebar, footer, 404 |
-| `www/index.md`   | Landing page |
-| `docs/`          | Docs home, guide (`learn/`), examples (`examples/`) |
 | `scripts/`       | `release-docs.sh`, `assemble.sh` |
 | `static/`        | `style.css`, `search.js`, logos, `og.png` |
 

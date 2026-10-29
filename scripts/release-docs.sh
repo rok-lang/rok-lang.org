@@ -19,6 +19,8 @@ tag=$2
 here=$(cd "$(dirname "$0")/.." && pwd)
 spec=${SPEC_REPO:-$here/../spec}
 impl=${IMPL_REPO:-$here/../rok}
+docs=${DOCS_REPO:-$here/../docs}
+www=${WWW_REPO:-$here/../www}
 rok=${ROK:-rok}
 
 case $v in
@@ -30,10 +32,13 @@ for r in "$spec" "$impl"; do
 	git -C "$r" rev-parse --verify --quiet "$tag^{commit}" > /dev/null ||
 		{ echo "error: no '$tag' in $r (SPEC_REPO / IMPL_REPO name the checkouts)" >&2; exit 1; }
 done
+# The guide of a release is the vX.Y.Z branch of rok-lang/docs.
+git -C "$docs" rev-parse --verify --quiet "refs/heads/$tag^{commit}" > /dev/null ||
+	{ echo "error: no branch '$tag' in $docs (DOCS_REPO names the checkout)" >&2; exit 1; }
 
 tmp=$(mktemp -d "${TMPDIR:-/tmp}/rok-docs.XXXXXX")
 cleanup() {
-	for pair in "$spec spec" "$impl rok" "$here site" "$here archive"; do
+	for pair in "$spec spec" "$impl rok" "$docs docs" "$here site" "$here archive"; do
 		set -- $pair
 		[ -d "$tmp/$2" ] && git -C "$1" worktree remove --force "$tmp/$2" 2> /dev/null
 	done
@@ -46,6 +51,7 @@ trap cleanup EXIT
 
 git -C "$spec" worktree add --quiet --detach "$tmp/spec" "$tag"
 git -C "$impl" worktree add --quiet --detach "$tmp/rok" "$tag"
+git -C "$docs" worktree add --quiet --detach "$tmp/docs" "refs/heads/$tag"
 # The version's earlier releases (v0.1.0, v0.1.1 before v0.1.2), oldest
 # first, for the API's "Added in" badges.
 history=""
@@ -61,6 +67,8 @@ if [ -d "$here/../stones" ]; then ln -s "$here/../stones" "$tmp/stones"; fi
 
 cat > "$tmp/site/site.local.rokon" <<ROKON
 {
+    docs: "$tmp/docs",
+    www: "$www",
     spec: "$tmp/spec/en",
     spec_ko: "$tmp/spec/ko",
     library: "$tmp/rok/library",

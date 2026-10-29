@@ -54,8 +54,12 @@ pub struct Site {
     /// Where links that leave the spec directory point (`../LICENSE`).
     pub spec_repo: str;
     pub spec_branch: str = "main";
-    /// This repository, for the docs pages' edit links.
-    pub repo: str = "https://github.com/rok-lang/rok-lang.org";
+    /// The guide and examples (rok-lang/docs), relative to this file.
+    pub docs: str = "../docs";
+    /// The home site's pages (rok-lang/www), relative to this file.
+    pub www: str = "../www";
+    /// rok-lang/docs, for the docs pages' edit links.
+    pub repo: str = "https://github.com/rok-lang/docs";
     pub packages: str;
     /// The standard library sources (`bare/src/`, `core/src/`, `std/src/`).
     pub library: str = "../rok/library";
@@ -253,7 +257,7 @@ fn spec_edit(site: Site, spec: str, p: Page) -> str {
 
 /// The edit link of docs page `p` (docs/).
 fn docs_edit(site: Site, p: Page) -> str {
-    layout::edit_link(f"{site.repo}/blob/main/docs/{p.src.replace("README.md", "index.md")}", false)
+    layout::edit_link(f"{site.repo}/blob/{docs_branch(site)}/{p.src.replace("README.md", "index.md")}", false)
 }
 
 fn spec_root(dir: str) -> str {
@@ -449,13 +453,16 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
 }
 
 
-/// `docs/**.md`, sorted (each directory's `index.md` first).
-fn page_sources() throws -> List<str> {
+/// `<docs>/**.md`, sorted (each directory's `index.md` first); the
+/// repository's own files are not pages.
+fn page_sources(root: str) throws -> List<str> {
     let srcs: List<str> = List::new();
-    for entry in fs::walk("docs") {
+    for entry in fs::walk(root) {
         let e = try entry.get();
-        let p = e.path().as_str();
-        if e.is_file() && p.ends_with(".md") { srcs.push(p["docs/".len():]); }
+        let p = e.path().as_str()[root.len() + 1:];
+        if !e.is_file() || !p.ends_with(".md") || p.starts_with(".") { continue; }
+        if p == "README.md" || p == "CODE_OF_CONDUCT.md" || p == "SECURITY.md" || p == "CONTRIBUTING.md" { continue; }
+        srcs.push(p);
     }
     for k in 0..srcs.len() { srcs[k] = srcs[k].replace("index.md", "README.md"); }
     sort_sources(srcs);
@@ -466,9 +473,10 @@ fn page_sources() throws -> List<str> {
 fn code_check(filter: str) throws -> List<str> {
     let snips: List<check::Snippet> = List::new();
     let paths: List<str> = List::new();
-    for src in try page_sources() { paths.push("docs/" + src); }
-    paths.push("www/index.md");
-    paths.push("www/download.md");
+    let site = try load_site();
+    for src in try page_sources(site.docs) { paths.push(site.docs + "/" + src); }
+    paths.push(site.www + "/index.md");
+    paths.push(site.www + "/download.md");
     for page in paths {
         if !page.contains(filter) { continue; }
         snips.extend(check::extract(page, try fs::read_to_str(page)));
@@ -526,6 +534,12 @@ fn added_in(site: Site, mods: List<apidoc::Module>) throws -> Dict<str, str> {
         if !seen.contains(k) { since.insert(k, site.built_from); }
     }
     since
+}
+
+/// The rok-lang/docs branch a build documents: `main` for dev, else the
+/// newest patch of the version (`v0.1.4`).
+fn docs_branch(site: Site) -> str {
+    if site.version == "dev" || site.built_from.is_empty() { "main" } else { "v" + site.built_from }
 }
 
 /// versions.rokon.
@@ -666,8 +680,8 @@ fn main() throws {
     // The docs' own pages: `docs/x.md` -> `x.html`; a directory
     // (`docs/learn/`) is a chapter with its own sidebar and pager.
     let own: List<Page> = List::new();
-    for src in try page_sources() {
-        let doc = layout::md(try fs::read_to_str("docs/" + src), |h| h, false);
+    for src in try page_sources(site.docs) {
+        let doc = layout::md(try fs::read_to_str(site.docs + "/" + src), |h| h, false);
         let key = src.replace("index.md", "README.md");
         own.push(Page { src: key, out: src.replace(".md", ".html"), dir: dir_of(src), title: doc.title, html: doc.html, heads: doc.headings });
     }
@@ -765,7 +779,7 @@ fn main() throws {
     // `{release}` in its pages is the release the download page offers.
     let www_urls: List<str> = List::new();
     for name in ["index", "download", "roadmap"] {
-        let text = (try fs::read_to_str(f"www/{name}.md")).replace("{release}", site.release);
+        let text = (try fs::read_to_str(f"{site.www}/{name}.md")).replace("{release}", site.release);
         let doc = layout::md(text, |h| if h.starts_with("docs:") { layout::latest(site, h["docs:".len():]) } else { h }, false);
         // Raw HTML blocks are not seen by the link mapper.
         let html = doc.html.replace("href=\"docs:", "href=\"" + layout::latest(site, "")).replace("href=\"play:", "href=\"" + site.playground + "/");
