@@ -11,10 +11,12 @@
 <header><span class="rm-ver">0.1.4</span><span class="rm-pill now">In progress</span></header>
 <h3>A better REPL</h3>
 <ul>
-<li>A <code>&gt;&gt;&gt;</code> prompt that always starts on a fresh line (<a href="https://github.com/rok-lang/rok/issues/161">#161</a>)</li>
-<li>Tab completion, highlighting and bracketed paste (<a href="https://github.com/rok-lang/rok/issues/164">#164</a>, <a href="https://github.com/rok-lang/rok/issues/165">#165</a>)</li>
-<li><code>exit</code>, <code>:doc</code>, <code>:time</code>, <code>:vars</code>, <code>:load</code>, <code>:edit</code> (<a href="https://github.com/rok-lang/rok/issues/166">#166</a>)</li>
-<li>Values print through <code>Debug</code> when they have no <code>Display</code> (<a href="https://github.com/rok-lang/rok/issues/163">#163</a>)</li>
+<li>A <code>&gt;&gt;&gt;</code> prompt that always starts on a fresh line; cells split by tokens, not characters (<a href="https://github.com/rok-lang/rok/issues/161">#161</a>, <a href="https://github.com/rok-lang/rok/issues/162">#162</a>)</li>
+<li>Values and errors in full, with the cell and line they come from (<a href="https://github.com/rok-lang/rok/issues/163">#163</a>, <a href="https://github.com/rok-lang/rok/issues/189">#189</a>, <a href="https://github.com/rok-lang/rok/issues/190">#190</a>, <a href="https://github.com/rok-lang/rok/issues/191">#191</a>)</li>
+<li>Top-level <code>await</code> keeps its bindings (<a href="https://github.com/rok-lang/rok/issues/188">#188</a>); <code>it</code> holds the last value (<a href="https://github.com/rok-lang/rok/issues/195">#195</a>)</li>
+<li>Tab completion, highlighting, bracketed paste, history search, wide characters (<a href="https://github.com/rok-lang/rok/issues/164">#164</a>, <a href="https://github.com/rok-lang/rok/issues/165">#165</a>, <a href="https://github.com/rok-lang/rok/issues/192">#192</a>)</li>
+<li><code>exit</code>, <code>:doc</code>, <code>:time</code>, <code>:vars</code>, <code>:load</code>, <code>:edit</code>, <code>:save</code>; a package loads with <code>rok repl .</code> (<a href="https://github.com/rok-lang/rok/issues/166">#166</a>, <a href="https://github.com/rok-lang/rok/issues/193">#193</a>)</li>
+<li>Jupyter: streamed output, stdin, highlighting and indent hints (<a href="https://github.com/rok-lang/rok/issues/194">#194</a>, <a href="https://github.com/rok-lang/rok/issues/196">#196</a>, <a href="https://github.com/rok-lang/rok/issues/197">#197</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/7">Milestone 0.1.4</a>
 </section>
@@ -31,6 +33,15 @@
 <li>FreeBSD (<a href="https://github.com/rok-lang/rok/issues/35">#35</a>)</li>
 </ul>
 <a class="rm-link" href="https://github.com/rok-lang/rok/milestone/5">Milestone 0.1.5</a>
+</section>
+<section class="rm-card next">
+<header><span class="rm-ver">0.1.6</span><span class="rm-pill next">Next</span></header>
+<h3>A backend interface</h3>
+<ul>
+<li>One documented boundary from rok-mir to code generation, so LLVM, the native backend and a future one plug in the same way (<a href="https://github.com/rok-lang/rok/issues/199">#199</a>, <a href="https://github.com/rok-lang/rok/issues/200">#200</a>)</li>
+<li>Every backend checked against the corpus through it (<a href="https://github.com/rok-lang/rok/issues/201">#201</a>)</li>
+</ul>
+<a class="rm-link" href="https://github.com/rok-lang/rok/milestone/8">Milestone 0.1.6</a>
 </section>
 <section class="rm-card next">
 <header><span class="rm-ver">0.2.0</span><span class="rm-pill next">Next</span></header>
