@@ -21,7 +21,9 @@
 
 mod apidoc;
 mod check;
+mod http;
 mod layout;
+mod serve;
 
 use rok::std::env;
 use rok::std::fs;
@@ -84,7 +86,7 @@ pub struct Release {
 pub struct Versions {
     pub released: List<str>;
     /// The newest patch release of each, e.g. "0.1" -> "0.1.2".
-    pub patches: Dict<str, str>;
+    pub patches: Dict<str, str> = Dict::new();
 }
 
 pub struct Page {
@@ -490,11 +492,13 @@ fn code_check(filter: str) throws -> List<str> {
 }
 
 /// `site.rokon`, with the fields of `site.local.rokon` (git-ignored,
-/// for a machine whose checkouts are not siblings) laid over it.
+/// for a machine whose checkouts are not siblings), or of the file
+/// $ROK_SITE_LOCAL names (the server's builds), laid over it.
 fn load_site() throws -> Site {
     let base = try rokon::parse(try fs::read_to_str("site.rokon"));
-    if fs::exists("site.local.rokon") {
-        let local = try rokon::parse(try fs::read_to_str("site.local.rokon"));
+    let local_path = try env::var("ROK_SITE_LOCAL") catch _ { "site.local.rokon" };
+    if fs::exists(local_path) {
+        let local = try rokon::parse(try fs::read_to_str(local_path));
         if let rokon::Value::Struct { name: _, fields } = base {
             if let rokon::Value::Struct { name: _, fields: over } = local {
                 for (k, v) in over.entries() { fields.insert(k, v); }
@@ -538,9 +542,10 @@ fn docs_branch(site: Site) -> str {
     if site.version == "dev" || site.built_from.is_empty() { "main" } else { "v" + site.built_from }
 }
 
-/// versions.rokon.
+/// versions.rokon, or the file $ROK_VERSIONS names (the server's builds).
 fn load_versions() throws -> Versions {
-    try rokon::decode(try rokon::parse(try fs::read_to_str("versions.rokon")), "versions.rokon")
+    let path = try env::var("ROK_VERSIONS") catch _ { "versions.rokon" };
+    try rokon::decode(try rokon::parse(try fs::read_to_str(path)), path)
 }
 
 /// The names under static/, without copying (for the link check).
@@ -578,7 +583,8 @@ fn copy_tree(from: str, to: str) throws {
     }
 }
 
-/// A release is `<major>.<minor>`; the docs of its patch releases share it.
+/// A version is `dev`, a minor (`0.1`, whose patch releases share one
+/// build) or a patch release (`0.1.4`, the server's builds).
 fn is_version(v: str) -> bool {
     if v == "dev" { return true; }
     let dots = 0usize;
@@ -594,7 +600,7 @@ fn is_version(v: str) -> bool {
             return false;
         }
     }
-    dots == 1 && digits > 0
+    (dots == 1 || dots == 2) && digits > 0
 }
 
 fn usage() {
@@ -605,6 +611,10 @@ fn usage() {
 fn main() throws {
     let t0 = Instant::now();
     let args = env::args();
+    if args.len() > 1 && args[1] == "serve" {
+        try serve::run();
+        return;
+    }
     if args.len() > 1 && args[1] == "code" {
         let bad = try code_check(if args.len() > 2 { args[2] } else { "" });
         if bad.len() > 0 { env::exit(1); }
@@ -630,7 +640,7 @@ fn main() throws {
         k += 1;
     }
     if !is_version(version) {
-        eprintln(f"error: `--version {version}`: write a release as <major>.<minor> (`--version 0.1`), or `--version dev`");
+        eprintln(f"error: `--version {version}`: write a release as <major>.<minor> (`--version 0.1`) or <major>.<minor>.<patch>, or `--version dev`");
         env::exit(2);
     }
     let site = try load_site();

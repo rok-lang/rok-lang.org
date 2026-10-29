@@ -1,0 +1,397 @@
+// `serve`: rok-lang.org and docs.rok-lang.org from content bundles.
+//
+// The pages live in rok-lang/docs, rok-lang/www and rok-lang/spec; CI
+// checks each branch and publishes it as a bundle (rok-content) under
+// <repo>/<branch>/<sha>.rokon, with <repo>/<branch>/current naming the
+// sha. The standard library of a release comes from the rok tag. This
+// server fetches what changed, builds it with this same program (a
+// release once into an archive bundle, then the whole site around the
+// dev docs), and serves the result. A signed POST /_admin/reload starts
+// the next round; the server also looks every few minutes.
+//
+//   ROK_WEB_ADDR      listen address (127.0.0.1:8080)
+//   ROK_WEB_DATA      state directory (fetched sources, archives, output)
+//   ROK_WEB_CONTENT   where the bundles are: an https:// base or a directory
+//   ROK_WEB_ROK_GIT   the rok repository (https://github.com/rok-lang/rok.git)
+//   ROK_WEB_RELOAD_KEY  HMAC-SHA256 key of the reload request
+//   ROK_WEB_DOCS_HOST   host name of the docs (docs.rok-lang.org)
+//
+// Settings come from the environment, else from `.env` in the working
+// directory, which also holds site.rokon and static/.
+
+use rok::std::env;
+use rok::std::fs;
+use rok::std::net;
+use rok::std::net::TcpStream;
+use rok::std::process::{Command, Stdio};
+use rok::std::rokon;
+use rok::std::thread;
+use rok::std::time::Duration;
+use rok::core::crypto::{Hmac, HashAlgorithm, constant_time_eq};
+use rok::core::encoding;
+use rok::core::task::time::Instant;
+use pkg::http;
+use pkg::http::Request;
+
+static STALE: Atomic<i32> = Atomic::new(1);
+static ACTIVE: Atomic<i32> = Atomic::new(0);
+const MAX_CONNS: i32 = 256;
+
+pub struct Cfg {
+    pub addr: str;
+    pub data: str;
+    pub content: str;
+    pub rok_git: str;
+    pub reload_key: str;
+    pub docs_host: str;
+}
+
+/// A content bundle, as rok-content writes it.
+#[derive(Rokon)]
+pub struct Bundle {
+    pub repo: str;
+    pub branch: str;
+    pub sha: str;
+    pub toolchain: str;
+    pub files: Dict<str, str>;
+}
+
+/// rok-lang/docs versions.rokon: the releases, newest first.
+#[derive(Rokon)]
+pub struct Versions {
+    pub releases: List<str>;
+}
+
+pub fn parse_env(text: str) -> Dict<str, str> {
+    let out: Dict<str, str> = Dict::new();
+    for raw in text.split("\n") {
+        let l = raw.trim();
+        if l.is_empty() || l.starts_with("#") { continue; }
+        l = l.strip_prefix("export ") ?? l;
+        let (k, v) = l.split_once("=") ?? ("", "");
+        let key = k.trim();
+        if key.is_empty() { continue; }
+        let val = v.trim();
+        if val.len() >= 2 && ((val.starts_with("\"") && val.ends_with("\"")) || (val.starts_with("'") && val.ends_with("'"))) {
+            val = val[1:val.len() - 1];
+        }
+        out.insert(key, val);
+    }
+    out
+}
+
+fn setting(file: Dict<str, str>, k: str, dflt: str) -> str {
+    try env::var(k) catch _ { file.get(k) ?? dflt }
+}
+
+pub fn load_cfg(path: str) throws -> Cfg {
+    let f = parse_env(if fs::exists(path) { try fs::read_to_str(path) } else { "" });
+    let cfg = Cfg {
+        addr: setting(f, "ROK_WEB_ADDR", "127.0.0.1:8080"),
+        data: setting(f, "ROK_WEB_DATA", ""),
+        content: setting(f, "ROK_WEB_CONTENT", ""),
+        rok_git: setting(f, "ROK_WEB_ROK_GIT", "https://github.com/rok-lang/rok.git"),
+        reload_key: setting(f, "ROK_WEB_RELOAD_KEY", ""),
+        docs_host: setting(f, "ROK_WEB_DOCS_HOST", "docs.rok-lang.org"),
+    };
+    for (k, v) in [("ROK_WEB_DATA", cfg.data), ("ROK_WEB_CONTENT", cfg.content)] {
+        if v.is_empty() { throw ValueError { msg: f"{k} is not set (environment or .env)" }; }
+    }
+    cfg
+}
+
+// -- fetching -------------------------------------------------------------
+
+fn sh(script: str) throws -> str {
+    let out = try Command::new("sh").args(["-c", script]).stdin(Stdio::Null).output();
+    if !out.status.success() { throw ValueError { msg: f"`{script}` failed: {(try? str::from_utf8(out.stderr)) ?? ""}" }; }
+    (try? str::from_utf8(out.stdout)) ?? ""
+}
+
+/// `'s'` for a shell.
+fn q(s: str) -> str { "'" + s.replace("'", "'\\''") + "'" }
+
+/// A file of the content store, `key` relative to its root.
+fn fetch(cfg: Cfg, key: str) throws -> str {
+    if cfg.content.starts_with("https://") || cfg.content.starts_with("http://") {
+        try sh(f"curl -fsSL --max-time 60 {q(cfg.content + "/" + key)}")
+    } else {
+        try fs::read_to_str(cfg.content + "/" + key)
+    }
+}
+
+/// Lays `repo`@`branch` out under data/src; true if its sha changed.
+fn sync_bundle(cfg: Cfg, repo: str, branch: str) throws -> bool {
+    let key = f"{repo}/{branch}";
+    let sha = (try fetch(cfg, key + "/current")).trim();
+    let mark = f"{cfg.data}/src/{key}.sha";
+    if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == sha { return false; }
+    let b: Bundle = try rokon::from_str(try fetch(cfg, f"{key}/{sha}.rokon"));
+    let dir = f"{cfg.data}/src/{key}";
+    let tmp = dir + ".new";
+    if fs::exists(tmp) { try fs::remove_dir_all(tmp); }
+    for (path, text) in b.files.entries() {
+        if path.contains("..") { throw ValueError { msg: f"{key}: bad path {path}" }; }
+        try fs::create_dir_all(dir_of(tmp + "/" + path));
+        try fs::write(tmp + "/" + path, text);
+    }
+    if fs::exists(dir) { try fs::remove_dir_all(dir); }
+    try fs::rename(tmp, dir);
+    try fs::write(mark, sha + "\n");
+    eprintln(f"content {key} @ {short(sha)}");
+    true
+}
+
+fn short(sha: str) -> str { if sha.len() > 12 { sha[:12] } else { sha } }
+
+/// `s` up to its last `sep` ("a/b/c" -> "a/b"), or `none` without one.
+fn before_last(s: str, sep: str) -> str | none {
+    let parts: List<str> = List::new();
+    for x in s.split(sep) { parts.push(x); }
+    if parts.len() < 2 { return none; }
+    parts.pop();
+    parts.join(sep)
+}
+
+fn dir_of(p: str) -> str { before_last(p, "/") ?? "." }
+
+/// The rok sources a build needs (library/, install.sh, install.ps1) at
+/// `rev` (a tag or main), under data/src/rok/<rev>; true if they changed.
+fn sync_library(cfg: Cfg, rev: str) throws -> bool {
+    let git = cfg.data + "/rok.git";
+    if !fs::exists(git) { try sh(f"git clone -q --bare --filter=blob:none {q(cfg.rok_git)} {q(git)}"); }
+    let dir = f"{cfg.data}/src/rok/{rev}";
+    let mark = dir + ".sha";
+    let is_tag = rev != "main";
+    if is_tag && fs::exists(mark) { return false; }
+    if is_tag {
+        try sh(f"git -C {q(git)} fetch -q origin {q("refs/tags/" + rev + ":refs/tags/" + rev)}");
+    } else {
+        try sh(f"git -C {q(git)} fetch -q origin +refs/heads/main:refs/heads/main");
+    }
+    let sha = (try sh(f"git -C {q(git)} rev-parse {q(rev + "^{commit}")}")).trim();
+    if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == sha { return false; }
+    if fs::exists(dir) { try fs::remove_dir_all(dir); }
+    try fs::create_dir_all(dir);
+    try sh(f"git -C {q(git)} archive {q(sha)} library install.sh install.ps1 | tar -x -C {q(dir)}");
+    try fs::write(mark, sha + "\n");
+    eprintln(f"library {rev} @ {short(sha)}");
+    true
+}
+
+// -- building -------------------------------------------------------------
+
+/// "0.1.4" -> "0.1".
+fn minor_of(v: str) -> str { before_last(v, ".") ?? v }
+
+fn run_self(exe: str, args: List<str>, envs: List<(str, str)>) throws {
+    let st = try Command::new(exe).args(args).envs(envs).status();
+    if !st.success() { throw ValueError { msg: f"build {args.join(" ")}: {st}" }; }
+}
+
+fn site_local(cfg: Cfg, docs: str, spec: str, library: str, extra: str) -> str {
+    let s = cfg.data + "/src";
+    f"{{\n    docs: \"{s}/docs/{docs}\",\n    www: \"{s}/www/main\",\n    spec: \"{s}/spec/{spec}/en\",\n    spec_ko: \"{s}/spec/{spec}/ko\",\n    library: \"{s}/rok/{library}/library\",\n{extra}}}\n"
+}
+
+/// One round: fetch what changed, rebuild it, and swap the output in.
+fn round(cfg: Cfg, exe: str) throws {
+    let t0 = Instant::now();
+    let changed: Set<str> = Set::new();
+    for (repo, branch) in [("docs", "main"), ("www", "main"), ("spec", "main")] {
+        if try sync_bundle(cfg, repo, branch) { changed.insert(f"{repo}/{branch}"); }
+    }
+    if try sync_library(cfg, "main") { changed.insert("rok/main"); }
+    let rel: Versions = try rokon::from_str(try fs::read_to_str(cfg.data + "/src/docs/main/versions.rokon"));
+
+    // The generator's version list: every release, newest first.
+    let vl = StrBuf::new();
+    for v in rel.releases { vl.push_str(f"\"{v}\", "); }
+    let versions = cfg.data + "/versions.rokon";
+    try fs::write(versions, f"Versions {{ released: [{vl.to_str()}] }}\n");
+
+    // Each release whose inputs changed is built once into an archive bundle.
+    let archive = cfg.data + "/archive";
+    for v in rel.releases {
+        let tag = "v" + v;
+        let any = false;
+        if try sync_bundle(cfg, "docs", tag) { any = true; }
+        if try sync_bundle(cfg, "spec", tag) { any = true; }
+        if try sync_library(cfg, tag) { any = true; }
+        if !any && fs::exists(f"{archive}/{v}/bundle.rokon") { continue; }
+        // Earlier releases of the same minor, oldest first, for "Added in".
+        let hist = StrBuf::new();
+        let older: List<str> = List::new();
+        for w in rel.releases {
+            if w != v && minor_of(w) == minor_of(v) && !older.contains(w) { older.push(w); }
+        }
+        older.reverse();
+        for w in older {
+            try sync_library(cfg, "v" + w);
+            hist.push_str(f"{{ release: \"{w}\", library: \"{cfg.data}/src/rok/v{w}/library\" }}, ");
+        }
+        let local = f"{cfg.data}/site.{v}.rokon";
+        try fs::write(local, site_local(cfg, tag, tag, tag, f"    spec_branch: \"{tag}\",\n    built_from: \"{v}\",\n    history: [{hist.to_str()}],\n"));
+        try fs::create_dir_all(f"{archive}/{v}");
+        try run_self(exe, ["archive", v, f"{archive}/{v}"], [("ROK_SITE_LOCAL", local), ("ROK_VERSIONS", versions)]);
+        changed.insert(tag);
+    }
+
+    let out = cfg.data + "/out";
+    if changed.is_empty() && fs::exists(out) {
+        eprintln(f"round: nothing changed ({t0.elapsed():?})");
+        return;
+    }
+    // The dev docs and the home site, with every archived release laid in.
+    let next = cfg.data + "/out.next";
+    if fs::exists(next) { try fs::remove_dir_all(next); }
+    let local = cfg.data + "/site.dev.rokon";
+    try fs::write(local, site_local(cfg, "main", "main", "main", f"    out: \"{next}\",\n"));
+    try run_self(exe, [], [("ROK_SITE_LOCAL", local), ("ROK_VERSIONS", versions), ("ROK_DOCS_ARCHIVE", archive)]);
+    let old = cfg.data + "/out.old";
+    if fs::exists(old) { try fs::remove_dir_all(old); }
+    if fs::exists(out) { try fs::rename(out, old); }
+    try fs::rename(next, out);
+    eprintln(f"round: rebuilt {changed.len()} source(s) ({t0.elapsed():?})");
+}
+
+fn rebuild_loop(cfg: Cfg) {
+    let exe = try env::current_exe() catch e {
+        eprintln(f"cannot find this program to rebuild the site: {e}");
+        return;
+    };
+    let idle = 0;
+    loop {
+        // A reload request, or every five minutes.
+        if STALE.swap(0) == 1 || idle >= 300 {
+            idle = 0;
+            try round(cfg, exe.as_str()) catch e { eprintln(f"round: {e}"); };
+        }
+        thread::sleep(Duration::sec(1));
+        idle += 1;
+    }
+}
+
+// -- serving --------------------------------------------------------------
+
+/// The hex HMAC-SHA256 of `body` under `key`.
+pub fn signature(key: str, body: str) -> str {
+    encoding::hex_encode(Hmac::mac(HashAlgorithm::Sha256, key, body))
+}
+
+/// The newest built release of minor `m` ("0.1" -> "0.1.4"), or none.
+fn newest_of(docs: str, m: str) -> str | none {
+    let best: str | none = none;
+    let best_patch = -1;
+    for entry in try fs::read_dir(docs) catch _ { return none; } {
+        let e = try entry.get() catch _ { continue; };
+        let name = e.file_name();
+        if !name.starts_with(m + ".") { continue; }
+        let p = try name[m.len() + 1:].parse::<i32>() catch _ { continue; };
+        if p > best_patch {
+            best_patch = p;
+            best = name;
+        }
+    }
+    best
+}
+
+pub struct Resp {
+    pub status: i32;
+    pub headers: List<str>;
+    pub body: str;
+    pub file: str;
+}
+
+fn text(status: i32, body: str) -> Resp { Resp { status: status, headers: ["Content-Type: text/plain; charset=utf-8", "Cache-Control: no-store"], body: body + "\n", file: "" } }
+
+fn page(f: str) -> Resp { Resp { status: 200, headers: [f"Content-Type: {http::content_type(f)}", "Cache-Control: public, max-age=300"], body: "", file: f } }
+
+fn route(cfg: Cfg, r: Request) -> Resp {
+    if r.path == "/_admin/reload" {
+        if r.method != "POST" { return text(405, "POST only"); }
+        if cfg.reload_key.is_empty() || !constant_time_eq(signature(cfg.reload_key, r.body), r.header("x-rok-signature")) {
+            return text(401, "bad signature");
+        }
+        STALE.store(1);
+        return text(202, "reloading");
+    }
+    if r.method != "GET" && r.method != "HEAD" { return text(405, "GET only"); }
+    let host = (r.header("host").split_once(":") ?? (r.header("host"), "")).0;
+    let docs = host == cfg.docs_host || host.starts_with("docs.");
+    let root = cfg.data + "/out/" + if docs { "docs" } else { "www" };
+    let p = r.path;
+    // /0.1/... is the newest built 0.1.x.
+    if docs {
+        let first = (p[1:].split_once("/") ?? (p[1:], "")).0;
+        if first.split(".").count() == 2 && !fs::exists(root + "/" + first) {
+            if let v: str = newest_of(root, first) { p = "/" + v + p[1 + first.len():]; }
+        }
+    }
+    if let f: str = http::static_file(root, p) { return page(f); }
+    if !p.ends_with("/") {
+        if let g: str = http::static_file(root, p + ".html") { return page(g); }
+    }
+    let nf = root + "/404.html";
+    if fs::exists(nf) { return Resp { status: 404, headers: ["Content-Type: text/html; charset=utf-8", "Cache-Control: no-store"], body: "", file: nf }; }
+    text(404, "not found")
+}
+
+fn handle(s: TcpStream, cfg: Cfg) {
+    let t0 = Instant::now();
+    let r = try http::read_request(s, http::MAX_BODY, Duration::sec(30)) catch e {
+        try http::send(s, e.status, ["Content-Type: text/plain; charset=utf-8"], e.msg + "\n", false) catch _ {};
+        s.close();
+        return;
+    };
+    let resp = route(cfg, r);
+    let head = r.method == "HEAD";
+    if !resp.file.is_empty() {
+        let data = try fs::read(resp.file) catch _ { List::new() };
+        try http::send(s, resp.status, resp.headers, data, head) catch _ {};
+    } else {
+        try http::send(s, resp.status, resp.headers, resp.body, head) catch _ {};
+    }
+    s.close();
+    eprintln(f"{r.method} {r.header("host")}{r.path} {resp.status} {t0.elapsed().as_ms()}ms");
+}
+
+pub fn run() throws {
+    let cfg = try load_cfg(".env");
+    try fs::create_dir_all(cfg.data + "/src");
+    using l = try net::tcp_listen(cfg.addr) {
+        eprintln(f"serving rok-lang.org and {cfg.docs_host} on http://{cfg.addr} from {cfg.data}/out");
+        let bg = thread::spawn(|| {
+            rebuild_loop(cfg);
+            0
+        });
+        bg.detach();
+        for c in l.incoming() {
+            let s = try c.get() catch e {
+                eprintln(f"accept: {e}");
+                continue;
+            };
+            if ACTIVE.fetch_add(1) >= MAX_CONNS {
+                ACTIVE.fetch_sub(1);
+                try http::send(s, 503, ["Content-Type: text/plain; charset=utf-8"], "busy\n", false) catch _ {};
+                s.close();
+                continue;
+            }
+            let t = thread::spawn(|| {
+                handle(s, cfg);
+                ACTIVE.fetch_sub(1);
+                0
+            });
+            t.detach();
+        }
+    }
+}
+
+#[test]
+fn signatures_and_versions() {
+    // RFC 4231 test case 2.
+    assert(signature("Jefe", "what do ya want for nothing?") == "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843", "hmac");
+    assert(minor_of("0.1.4") == "0.1" && minor_of("1.2.3") == "1.2", "minor");
+    let e = parse_env("# c\nA=1\nexport B = \"x y\"\n");
+    assert(e["A"] == "1" && e["B"] == "x y", "env");
+}
