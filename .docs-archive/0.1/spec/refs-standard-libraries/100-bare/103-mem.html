@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.3. MaybeUninit&lt;T&gt; - uninitialized memory - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::bare::mem module defines a wrapper for handling uninitialized memory safely, along with the associated ops. Whereas an ordinary T is always guaranteed ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/103-mem.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.3. MaybeUninit&lt;T&gt; - uninitialized memory - rok docs">
+<meta property="og:description" content="The rok::bare::mem module defines a wrapper for handling uninitialized memory safely, along with the associated ops. Whereas an ordinary T is always guaranteed ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/103-mem.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/103-mem.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/103-mem.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li class="cur"><a aria-current="page" href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a><ul class="toc"><li><a href="#131-motivation---reading-uninitialized-memory-is-ub">1.3.1. Motivation - reading uninitialized memory is UB</a></li><li><a href="#132-maybeuninitt">1.3.2. MaybeUninit&lt;T&gt;</a></li><li><a href="#133-the-pod-trait">1.3.3. The Pod trait</a></li><li><a href="#134-raw-mem-ops---read--write">1.3.4. raw mem ops - read / write</a></li><li><a href="#135-transmute_unchecked---escape-hatch">1.3.5. transmute_unchecked - escape hatch</a></li><li><a href="#136-align--size-util">1.3.6. align / size util</a></li><li><a href="#137-intrinsic-mapping">1.3.7. intrinsic mapping</a></li><li><a href="#138-comparison-with-other-languages">1.3.8. Comparison with other languages</a></li></ul></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile memory access</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="13-maybeuninitt---uninitialized-memory 13-maybeuninitt---미초기화-메모리 131-motivation---reading-uninitialized-memory-is-ub 131-동기---미초기화-read-는-ub 132-maybeuninitt 132-maybeuninitt example---separating-the-initialization-step 사용-예---초기화-단계-분리 using-after-write write-후-사용 133-the-pod-trait 133-pod-트레잇 what-pod-guarantees pod-가-보장하는-것 134-raw-mem-ops---read--write 134-raw-mem-ops---read--write 135-transmute_unchecked---escape-hatch 135-transmute_unchecked---escape-hatch 136-align--size-util 136-align--size-util 137-intrinsic-mapping 137-intrinsic-매핑 138-comparison-with-other-languages 138-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/103-mem" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="13-maybeuninitt---uninitialized-memory"><a class="anchor" tabindex="-1" href="#13-maybeuninitt---uninitialized-memory" aria-hidden="true">#</a>1.3. <code>MaybeUninit&lt;T&gt;</code> - uninitialized memory</h1>
+<p>The <code>rok::bare::mem</code> module defines a wrapper for handling uninitialized memory safely, along with the associated ops. Whereas an ordinary <code>T</code> is always guaranteed to be initialized, <code>MaybeUninit&lt;T&gt;</code> expresses initialization status explicitly at the type level.</p>
+<h2 id="131-motivation---reading-uninitialized-memory-is-ub"><a class="anchor" tabindex="-1" href="#131-motivation---reading-uninitialized-memory-is-ub" aria-hidden="true">#</a>1.3.1. Motivation - reading uninitialized memory is UB</h2>
+<p>Under LLVM's <code>freeze</code> semantics (clarified in 2022), reading uninitialized memory is UB even for integer types. It is not merely that a &quot;garbage value&quot; comes out; the compiler may assume anything about the value and transform the code accordingly.</p>
+<pre><code class="language-c">// C
+int x;            // uninit
+if (x == 0) { ... }   // the compiler may assume any value for x - either branch may become dead code
+</code></pre>
+<p>T itself therefore cannot represent the uninitialized state, and a separate wrapper is needed.</p>
+<h2 id="132-maybeuninitt"><a class="anchor" tabindex="-1" href="#132-maybeuninitt" aria-hidden="true">#</a>1.3.2. <code>MaybeUninit&lt;T&gt;</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* same size + align as T, but possibly uninitialized */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> uninit() -&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt;;          <span class="c">// uninitialized slot</span>
+    <span class="k">fn</span> zeroed() -&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt;;          <span class="c">// filled with 0</span>
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt;;     <span class="c">// initialized slot</span>
+
+    <span class="k">fn</span> write(<span class="k">ref</span> <span class="k">self</span>, value: <span class="t">T</span>);           <span class="c">// write value</span>
+
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> as_mut_ptr(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">unsafe</span> <span class="k">fn</span> assume_init(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="c">// SAFETY: only when initialization is guaranteed by write / an external mechanism</span>
+
+}
+</code></pre>
+<p><code>as_ptr</code> / <code>as_mut_ptr</code> need the receiver to be a place: the pointer points at that variable, not at a copy. <code>uninit()</code> may be implemented as <code>zeroed()</code>.</p>
+<h3 id="example---separating-the-initialization-step"><a class="anchor" tabindex="-1" href="#example---separating-the-initialization-step" aria-hidden="true">#</a>Example - separating the initialization step</h3>
+<p>A typical pattern: wait for FFI to fill a buffer, then take the value out.</p>
+<pre><code class="language-rok"><span class="k">let</span> buf: <span class="t">MaybeUninit</span>&lt;[<span class="t">u8</span>; <span class="n">1024</span>]&gt; = <span class="t">MaybeUninit</span>::uninit();
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = buf.as_mut_ptr().cast::&lt;<span class="t">u8</span>&gt;();
+
+<span class="k">unsafe</span> {
+    read_from_kernel(p, <span class="n">1024</span>);              <span class="c">// FFI fills buf</span>
+    <span class="k">let</span> initialized: [<span class="t">u8</span>; <span class="n">1024</span>] = buf.assume_init();
+}
+</code></pre>
+<h3 id="using-after-write"><a class="anchor" tabindex="-1" href="#using-after-write" aria-hidden="true">#</a>Using after <code>write</code></h3>
+<p><code>write</code> only stores the value; it returns no reference (rok has no <code>ref</code> returns). After writing, take the value out with <code>assume_init</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> slot: <span class="t">MaybeUninit</span>&lt;<span class="t">Big</span>&gt; = <span class="t">MaybeUninit</span>::uninit();
+slot.write(big_value());
+<span class="k">let</span> v: <span class="t">Big</span> = <span class="k">unsafe</span> { slot.assume_init() };
+process(v);
+</code></pre>
+<h2 id="133-the-pod-trait"><a class="anchor" tabindex="-1" href="#133-the-pod-trait" aria-hidden="true">#</a>1.3.3. The <code>Pod</code> trait</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Pod</span> { <span class="c">/* marker */</span> }
+</code></pre>
+<p>Short for Plain Old Data: a type for which every bit pattern is valid. The <code>reinterpret</code> of <a href="102-cast#125-reinterpreta-pod-b-pod---bit-cast-safe">1.2 cast</a> requires this marker.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Automatic impl</th><th>Not applied</th></tr></thead>
+<tbody>
+<tr><td>All integers (i*, u*)</td><td><code>Ptr&lt;T&gt;</code> (provenance)</td></tr>
+<tr><td>All floating-point (f*)</td><td>User structs (explicit #[derive(Pod)])</td></tr>
+<tr><td><code>[T; N]</code> (T:Pod)</td><td>enum (variant tag - niche)</td></tr>
+<tr><td><code>(T, U, ...)</code> (all Pod)</td><td></td></tr>
+<tr><td><code>c_char</code></td><td></td></tr>
+<tr><td><code>bool</code>, <code>char</code> (invalid bits handled by automatic niche)</td><td></td></tr>
+</tbody></table></div>
+<h3 id="what-pod-guarantees"><a class="anchor" tabindex="-1" href="#what-pod-guarantees" aria-hidden="true">#</a>What <code>Pod</code> guarantees</h3>
+<p><code>Pod</code> guarantees three things at once.</p>
+<ol>
+<li>Reading any bit pattern is safe - no uninit exposure.
+</li>
+<li><strong>Deterministic layout</strong>: <code>#[repr(C)]</code> or <code>#[repr(transparent)]</code> is required.
+</li>
+<li><strong>No Drop</strong>: if <code>Drop</code> is implemented, <code>Pod</code> is automatically rejected.
+</li>
+</ol>
+<pre><code class="language-rok"><span class="a">#[derive(Pod)]</span>
+<span class="a">#[repr(C)]</span>
+<span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f32</span>; y: <span class="t">f32</span>; z: <span class="t">f32</span>; }
+<span class="c">// → reinterpret OK, ffi safe, etc.</span>
+</code></pre>
+<h2 id="134-raw-mem-ops---read--write"><a class="anchor" tabindex="-1" href="#134-raw-mem-ops---read--write" aria-hidden="true">#</a>1.3.4. raw mem ops - read / write</h2>
+<p>The free functions for low-level memory manipulation are:</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> <span class="k">fn</span> read&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> write&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>);
+<span class="k">unsafe</span> <span class="k">fn</span> read_volatile&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> write_volatile&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>);
+
+<span class="k">unsafe</span> <span class="k">fn</span> copy&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;, dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, count: <span class="t">usize</span>);
+                                               <span class="c">// memmove (overlap OK)</span>
+<span class="k">unsafe</span> <span class="k">fn</span> copy_nonoverlapping&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;, dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, count: <span class="t">usize</span>);
+                                               <span class="c">// memcpy (overlap UB - faster)</span>
+
+<span class="k">unsafe</span> <span class="k">fn</span> write_bytes&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">u8</span>, count: <span class="t">usize</span>);
+                                               <span class="c">// memset (every byte = value)</span>
+
+<span class="k">unsafe</span> <span class="k">fn</span> swap&lt;<span class="t">T</span>&gt;(a: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, b: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;);
+<span class="k">unsafe</span> <span class="k">fn</span> replace&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>) -&gt; <span class="t">T</span>;     <span class="c">// read existing + write</span>
+<span class="k">unsafe</span> <span class="k">fn</span> drop_in_place&lt;<span class="t">T</span>&gt;(p: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;);               <span class="c">// runs the drop glue (does not free memory)</span>
+</code></pre>
+<p>Most of these are also exposed as methods of <code>Ptr&lt;T&gt;</code> (1.1.2); the free functions of this module serve as an <strong>ergonomic alternative</strong>.</p>
+<p><code>drop_in_place</code> runs the drop glue: the type's own <code>drop</code>, then its fields' in reverse declaration order (<a href="../200-core/213-marker#2134-drop---cleanup-on-using-release">2.13.4</a>).</p>
+<h2 id="135-transmute_unchecked---escape-hatch"><a class="anchor" tabindex="-1" href="#135-transmute_unchecked---escape-hatch" aria-hidden="true">#</a>1.3.5. <code>transmute_unchecked</code> - escape hatch</h2>
+<p>It behaves the same as in <a href="102-cast#126-transmute_uncheckeda-b---escape-hatch">1.2 cast</a> and is also exposed from this module as an alias.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> <span class="k">fn</span> transmute_unchecked&lt;<span class="t">A</span>, <span class="t">B</span>&gt;(a: <span class="t">A</span>) -&gt; <span class="t">B</span>;        <span class="c">// no size check</span>
+</code></pre>
+<h2 id="136-align--size-util"><a class="anchor" tabindex="-1" href="#136-align--size-util" aria-hidden="true">#</a>1.3.6. align / size util</h2>
+<pre><code class="language-rok"><span class="k">fn</span> align_of&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">usize</span>;                  <span class="c">// T::align()</span>
+<span class="k">fn</span> size_of&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">usize</span>;                   <span class="c">// T::size()</span>
+<span class="k">fn</span> align_of_val&lt;<span class="t">T</span>&gt;(val: <span class="t">T</span>) -&gt; <span class="t">usize</span>;
+<span class="k">fn</span> size_of_val&lt;<span class="t">T</span>&gt;(val: <span class="t">T</span>) -&gt; <span class="t">usize</span>;         <span class="c">// takes a value - no unsized types, same as size_of::&lt;T&gt;()</span>
+
+<span class="k">fn</span> min_align_of&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">usize</span>;              <span class="c">// same as align_of - Rust compatibility</span>
+</code></pre>
+<p>These are <strong>not unsafe</strong>. They are effectively free-function forms of the <code>Reflect</code> trait (<a href="../200-core/212-reflect">2.12 reflect</a>), also exposed in the <code>rok::bare::mem</code> module for convenience.</p>
+<h2 id="137-intrinsic-mapping"><a class="anchor" tabindex="-1" href="#137-intrinsic-mapping" aria-hidden="true">#</a>1.3.7. intrinsic mapping</h2>
+<p>The correspondence between each item and compiler intrinsics is:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>intrinsic</th></tr></thead>
+<tbody>
+<tr><td><code>MaybeUninit&lt;T&gt;</code></td><td><code>rok.mem.assume_init</code> (no-op)</td></tr>
+<tr><td><code>Pod</code></td><td>(marker - derived automatically)</td></tr>
+<tr><td><code>read</code> / <code>write</code></td><td><code>rok.mem.read.T</code></td></tr>
+<tr><td><code>copy</code> / <code>copy_nonoverlapping</code></td><td><code>rok.mem.memcpy</code> / <code>memmove</code></td></tr>
+<tr><td><code>write_bytes</code></td><td><code>rok.mem.memset</code></td></tr>
+</tbody></table></div>
+<h2 id="138-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#138-comparison-with-other-languages" aria-hidden="true">#</a>1.3.8. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>C</th><th>Rust</th><th>Zig</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Uninitialized representation</td><td><code>T x;</code> (silent)</td><td><code>MaybeUninit&lt;T&gt;</code></td><td><code>undefined</code></td><td><code>MaybeUninit&lt;T&gt;</code></td></tr>
+<tr><td><code>Pod</code> / safe transmute</td><td><strong>none</strong></td><td><code>bytemuck::Pod</code> (lib)</td><td><code>@bitCast</code></td><td><code>Pod</code> + <code>reinterpret</code></td></tr>
+<tr><td>Uninitialized read UB</td><td><strong>allowed</strong></td><td><strong>UB</strong></td><td><strong>UB</strong></td><td><strong>UB</strong></td></tr>
+<tr><td>memcpy / memmove</td><td><code>memcpy</code></td><td><code>ptr::copy*</code></td><td><code>@memcpy</code></td><td><code>rok::bare::mem::copy*</code></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/103-mem.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="102-cast"><small>Previous</small>1.2. cast operations - explicitly named casts</a><a class="next" href="104-alloc"><small>Next</small>1.4. raw allocation - alloc / dealloc / realloc</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

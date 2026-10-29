@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6. 메타 시스템 개요 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="본 블록에서는 rok 의 메타 시스템, 즉 속성 (attribute), 매직 (magic), 메타 블록 (meta block) 을 정의합니다. 이 시스템은 언어와 표준 라이브러리의 경계 모델을 가능하게 하는 핵심 메커니즘으로서, 언어가 작은 코어를 제공하고 표준 라이브러리가 그 의미를 ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6. 메타 시스템 개요 - rok docs">
+<meta property="og:description" content="본 블록에서는 rok 의 메타 시스템, 즉 속성 (attribute), 매직 (magic), 메타 블록 (meta block) 을 정의합니다. 이 시스템은 언어와 표준 라이브러리의 경계 모델을 가능하게 하는 핵심 메커니즘으로서, 언어가 작은 코어를 제공하고 표준 라이브러리가 그 의미를 ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a class="cur" href="./">6. 메타 시스템 개요</a></p><ul class="toc"><li><a href="#목차">목차</a></li><li><a href="#세-단계의-구조">세 단계의 구조</a></li><li><a href="#핵심-원칙">핵심 원칙</a></li></ul><ul class="pages"><li><a href="601-attribute-syntax">6.1. 속성 문법</a></li><li><a href="602-built-in-attributes">6.2. 내장 속성</a></li><li><a href="603-cfg">6.3. #[cfg] 조건부 컴파일</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] 매직</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] 매직</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] 매직</a></li><li><a href="607-operator-magic">6.7. 연산자 매직</a></li><li><a href="608-meta-blocks">6.8. 사용자 정의 메타 정의</a></li><li><a href="609-template-tokens">6.9. 템플릿 토큰과 확장</a></li><li><a href="610-reflection">6.10. 리플렉션</a></li><li><a href="611-include">6.11. 컴파일 시점 파일 포함</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="6-메타-시스템-개요 6-meta-system-overview 목차 contents 세-단계의-구조 three-level-structure 속성-attribute attributes 매직-magic magic 메타-정의-meta-definition meta-blocks 핵심-원칙 core-principles 1-토큰-스트림-조작-없음 1-no-token-stream-manipulation 2-매직은-표준-라이브러리가-사용 2-magic-is-used-by-the-standard-library 3-매크로-위생-hygiene 3-macro-hygiene 4-컴파일-타임만 4-compile-time-only"><a href="../../../../spec/refs-lang/006-meta-system/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="6-메타-시스템-개요"><a class="anchor" tabindex="-1" href="#6-메타-시스템-개요" aria-hidden="true">#</a>6. 메타 시스템 개요</h1>
+<p>본 블록에서는 rok 의 메타 시스템, 즉 속성 (attribute), 매직 (magic), 메타 <a href="../000-meta/007-glossary#block-블록">블록</a> (meta block) 을 정의합니다. 이 시스템은 <a href="../000-meta/004-language-vs-standard-libraries">언어와 표준 라이브러리의 경계</a> 모델을 가능하게 하는 핵심 메커니즘으로서, 언어가 작은 코어를 제공하고 표준 라이브러리가 그 의미를 채워 넣는 형태로 동작합니다.</p>
+<h2 id="목차"><a class="anchor" tabindex="-1" href="#목차" aria-hidden="true">#</a>목차</h2>
+<ul>
+<li><a href="601-attribute-syntax">6.1. 속성 문법</a>
+</li>
+<li><a href="602-built-in-attributes">6.2. 내장 속성</a>
+</li>
+<li><a href="603-cfg">6.3. <code>#[cfg]</code> 조건부 컴파일</a>
+</li>
+<li><a href="604-lang-magic">6.4. <code>#[lang(...)]</code> 매직</a>
+</li>
+<li><a href="605-literal-magic">6.5. <code>#[literal(...)]</code> 매직</a>
+</li>
+<li><a href="606-keyword-magic">6.6. <code>#[keyword(...)]</code> 매직</a>
+</li>
+<li><a href="607-operator-magic">6.7. 연산자 매직</a>
+</li>
+<li><a href="608-meta-blocks">6.8. 사용자 정의 메타 정의 (메타 블록과 매크로)</a>
+</li>
+<li><a href="609-template-tokens">6.9. 템플릿 토큰과 확장</a>
+</li>
+<li><a href="610-reflection">6.10. 리플렉션</a>
+</li>
+<li><a href="611-include">6.11. 컴파일 시점 파일 포함</a>
+</li>
+</ul>
+<h2 id="세-단계의-구조"><a class="anchor" tabindex="-1" href="#세-단계의-구조" aria-hidden="true">#</a>세 단계의 구조</h2>
+<p>메타 시스템은 다음과 같이 세 단계로 구성됩니다.</p>
+<pre><code>attribute
+  ├── plain attribute - hints / metadata for compiler / tools
+  └── magic - channel where the library binds to language meaning
+
+meta definition - user-defined code generator, one template engine (6.8)
+  ├── derive / attribute / per-field  - triggered by #[..] on a type or item
+  └── macro                           - triggered by a call, name!(..)
+      └── template token (@Self, @field, ..) + matcher (typed fragments)
+</code></pre>
+<h3 id="속성-attribute"><a class="anchor" tabindex="-1" href="#속성-attribute" aria-hidden="true">#</a>속성 (attribute)</h3>
+<p>속성은 다음과 같은 모습을 가집니다.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Debug, Clone)]</span>
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+
+<span class="a">#[inline(always)]</span>
+<span class="k">fn</span> fast() { ... }
+
+<span class="a">#[cfg(target_os = "linux")]</span>
+<span class="k">fn</span> linux_only() { ... }
+</code></pre>
+<p>속성은 <code>#[...]</code> 또는 <code>#![...]</code> 형태로 항목에 부착되며, 컴파일러가 인식하는 내장 속성 (예를 들어 <code>#[derive]</code>, <code>#[repr]</code>, <code>#[cfg]</code> 등) 과 사용자 정의 속성이 같은 형태를 공유합니다. 자세한 형태는 <a href="601-attribute-syntax">속성 문법</a> 과 <a href="602-built-in-attributes">내장 속성</a> 에서 정의합니다.</p>
+<h3 id="매직-magic"><a class="anchor" tabindex="-1" href="#매직-magic" aria-hidden="true">#</a>매직 (magic)</h3>
+<p>매직은 언어와 라이브러리를 연결하는 특별한 속성을 가리킵니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang(slot_name)]</span>              <span class="c">// 표준 라이브러리 항목 ↔ 컴파일러 슬롯 연결</span>
+<span class="a">#[literal("...")]</span>                <span class="c">// 리터럴 문법 등록</span>
+<span class="a">#[keyword("name")]</span>               <span class="c">// 새 키워드 등록</span>
+</code></pre>
+<p>여기에 더해 연산자 매직 패밀리가 있습니다.</p>
+<pre><code class="language-rok"><span class="a">#[infix("+")]</span>
+<span class="a">#[prefix("-")]</span>
+<span class="a">#[infix("⊕", like = "+")]</span>
+</code></pre>
+<p>이 매직들이 <code>1 + 2</code> 와 같은 언어 토큰을 라이브러리 트레잇 메서드 호출로 연결하는 역할을 담당합니다. 자세한 내용은 <a href="605-literal-magic"><code>#[literal]</code> 매직</a> 부터 <a href="607-operator-magic">연산자 매직</a> 까지에 걸쳐 정의됩니다.</p>
+<h3 id="메타-정의-meta-definition"><a class="anchor" tabindex="-1" href="#메타-정의-meta-definition" aria-hidden="true">#</a>메타 정의 (meta definition)</h3>
+<p>메타 정의는 코드 생성기입니다. 세 형태는 사용자가 자신만의 derive 또는 attribute 를 정의하게 하고 (Rust 의 derive·attribute proc macro 자리), 넷째인 <a href="608-meta-blocks#6812-macro-형태">매크로</a> 는 호출 <code>name!(..)</code> 로 트리거되어 호출자가 쓴 것으로부터 코드를 생성합니다 (함수형 경우). 넷 다 하나의 템플릿 엔진을 공유합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(MyTrait)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyTrait</span> <span class="k">for</span> @<span class="k">Self</span> {
+        @for_fields {
+            <span class="c">// 필드 별 코드 생성</span>
+        }
+    }
+}
+</code></pre>
+<p>네 가지 형태가 모두 같은 방식(<code>#[impl_&lt;kind&gt;(name)]</code>, 가시성, <code>@</code> 시작자, 블록)으로 쓰입니다. attribute 로 트리거되는 <code>#[impl_derive]</code>, <code>#[impl_attribute]</code>, <code>#[impl_derive_attribute]</code> 와, 호출로 트리거되는 <code>#[impl_macro(name)] @macro { .. }</code> (<code>name!(..)</code> 로 호출) 입니다. 본체에 <code>@Self</code>, <code>@field</code>, <code>@for_fields</code> 같은 템플릿 토큰으로 코드 생성 규칙을 작성하고, 매크로는 타입드 fragment 매처 (<code>@x: expr</code>) 를 더합니다. proc macro 스타일의 토큰 스트림 조작은 도입하지 않으며, 템플릿 토큰만으로도 충분한 표현력을 제공합니다. 자세한 정의는 <a href="608-meta-blocks">메타 정의</a> 에서 다룹니다.</p>
+<h2 id="핵심-원칙"><a class="anchor" tabindex="-1" href="#핵심-원칙" aria-hidden="true">#</a>핵심 원칙</h2>
+<p>메타 시스템을 떠받치는 네 가지 핵심 원칙은 다음과 같습니다.</p>
+<h3 id="1-토큰-스트림-조작-없음"><a class="anchor" tabindex="-1" href="#1-토큰-스트림-조작-없음" aria-hidden="true">#</a>1. 토큰 스트림 조작 없음</h3>
+<p>Rust 의 <code>syn</code> 이나 <code>quote</code> 와 같은 절차적·토큰 조작 매크로는 rok 에 존재하지 않습니다. 모든 사용자 코드 생성, 곧 attribute 로 트리거되는 메타 블록과 호출로 트리거되는 매크로 (<a href="608-meta-blocks#6812-macro-형태">6.8.12</a>) 둘 다는 오로지 패턴과 템플릿을 통해서만 이루어집니다. 매처가 입력의 일부를 바인딩하고 템플릿이 그것을 전사할 뿐, 어떤 단계도 임의 코드를 실행하거나 원시 토큰 스트림을 고쳐 쓰지 않습니다.</p>
+<p>이러한 제약을 두는 이유는, 생성된 코드를 컴파일러·포매터·언어 서버가 따라갈 수 있는 상태로 유지하기 위함입니다. 임의의 토큰 변환을 허용하게 되면 예측 불가성, 디버깅의 어려움, 도구 표면의 폭발이라는 트레이드오프가 강제로 따라붙게 됩니다. 매크로는 이 규칙 안에 머물면서 호출부 코드 생성 (나머지 형태가 할 수 없는 것) 을 더합니다.</p>
+<h3 id="2-매직은-표준-라이브러리가-사용"><a class="anchor" tabindex="-1" href="#2-매직은-표준-라이브러리가-사용" aria-hidden="true">#</a>2. 매직은 표준 라이브러리가 사용</h3>
+<p><code>#[lang]</code>, <code>#[literal]</code>, <code>#[keyword]</code>, 그리고 연산자 매직은 주로 표준 라이브러리에서 사용하게 되며, 사용자 코드에서 직접 쓸 일은 거의 없습니다.</p>
+<p>이 매직들이야말로 표준 라이브러리가 언어와 결합되어 의미를 만들어 내는 메커니즘이며, <a href="../000-meta/004-language-vs-standard-libraries">언어와 표준 라이브러리의 경계</a> 가 바로 이 메타 시스템을 통해 실현됩니다.</p>
+<h3 id="3-매크로-위생-hygiene"><a class="anchor" tabindex="-1" href="#3-매크로-위생-hygiene" aria-hidden="true">#</a>3. 매크로 위생 (hygiene)</h3>
+<p>메타 블록에서 이루어지는 코드 생성은 위생적 (hygienic) 입니다. 생성된 코드 안에 등장하는 식별자는 생성 컨텍스트의 이름 공간만을 바라보며, 사용처의 이름 공간을 오염시키지 않게 됩니다.</p>
+<p>이 원칙을 통해 사용자 코드와 메타 블록 사이에서 발생할 수 있는 예측 불가능한 충돌을 차단할 수 있습니다.</p>
+<h3 id="4-컴파일-타임만"><a class="anchor" tabindex="-1" href="#4-컴파일-타임만" aria-hidden="true">#</a>4. 컴파일 타임만</h3>
+<p>모든 메타 처리는 컴파일 타임에 끝마치게 됩니다. 런타임에 새로운 derive 를 등록하거나 새로운 매직을 주입하는 형태는 지원하지 않습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/006-meta-system/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../005-modules/509-extern-block"><small>Previous</small>5.9. extern 블록 (FFI 선언)</a><a class="next" href="601-attribute-syntax"><small>Next</small>6.1. 속성 문법</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

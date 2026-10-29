@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. Unsafe tier - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The unsafe tier defines the standard library items that are low-level or dangerous. Tools that operate outside safe abstractions, such as raw pointers, transmut...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1. Unsafe tier - rok docs">
+<meta property="og:description" content="The unsafe tier defines the standard library items that are low-level or dangerous. Tools that operate outside safe abstractions, such as raw pointers, transmut...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/index.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a class="cur" href="./">1. Unsafe tier</a></p><ul class="toc"><li><a href="#dependencies">Dependencies</a></li><li><a href="#user-import-policy">User import policy</a></li><li><a href="#module-contents">Module contents</a></li><li><a href="#core-design-principles">Core design principles</a></li></ul><ul class="pages"><li><a href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile memory access</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="1-unsafe-tier 1-unsafe-tier dependencies 의존성 user-import-policy 사용자-import-정책 module-contents 모듈-목차 pointer-family-5-kinds pointer-계열-5-종 memory--conversion 메모리--변환 gc-integration gc-통합 ffi ffi mlir-backend mlir-backend core-design-principles 핵심-디자인-원칙 1-strict-provenance---adopting-the-rust-2024-model 1-strict-provenance---rust-2024-모델-채택 2-arity-is-type-encoded---the-zig-model 2-arity-가-type-encoded---zig-모델 3-gc--raw-pointer---two-separate-type-levels 3-gc--raw-pointer---두-type-level-분리 4-casts-only-as-explicitly-named-operations 4-cast-는-명시-named-operation-만 5-raii-via-using-block---no-reliance-on-finalizers 5-raii-via-using-block---finalizer-에-의존하지-않습니다"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="1-unsafe-tier"><a class="anchor" tabindex="-1" href="#1-unsafe-tier" aria-hidden="true">#</a>1. Unsafe tier</h1>
+<p>The unsafe tier defines the standard library items that are low-level or dangerous. Tools that operate outside safe abstractions, such as raw pointers, transmute, raw allocation, GC pinning, FFI primitives and direct access to MLIR dialects, are all gathered here.</p>
+<h2 id="dependencies"><a class="anchor" tabindex="-1" href="#dependencies" aria-hidden="true">#</a>Dependencies</h2>
+<p>Upward, it depends only on the <code>extern &quot;C&quot;</code> symbols exposed by the runtime. Downward, <code>rok</code>, <code>std</code> and user code are its dependents, but only through explicit imports.</p>
+<h2 id="user-import-policy"><a class="anchor" tabindex="-1" href="#user-import-policy" aria-hidden="true">#</a>User import policy</h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::ptr::<span class="t">Ptr</span>;                              <span class="c">// explicit import required - danger signal</span>
+<span class="k">use</span> rok::bare::alloc::{alloc, <span class="t">Layout</span>};
+
+<span class="k">let</span> layout = <span class="k">try</span>! <span class="t">Layout</span>::array::&lt;<span class="t">u8</span>&gt;(<span class="n">1024</span>);
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = <span class="k">unsafe</span> { alloc(layout) };
+</code></pre>
+<p>The implicitly applied <code>use rok::core::**;</code> does not include unsafe items. <code>rok::bare::*</code> therefore requires a separate explicit import, which makes visible in the code the point where the user enters dangerous territory.</p>
+<h2 id="module-contents"><a class="anchor" tabindex="-1" href="#module-contents" aria-hidden="true">#</a>Module contents</h2>
+<h3 id="pointer-family-5-kinds"><a class="anchor" tabindex="-1" href="#pointer-family-5-kinds" aria-hidden="true">#</a>Pointer family (5 kinds)</h3>
+<ul>
+<li><a href="101-ptr">1.1. <code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code> / <code>ManyPtr&lt;T&gt;</code> / <code>CPtr&lt;T&gt;</code> - Zig-style arity-encoded</a>
+</li>
+<li><a href="102-cast">1.2. cast operations - <code>ptr_cast</code>, <code>align_cast</code>, <code>const_cast</code>, <code>reinterpret</code></a>
+</li>
+</ul>
+<h3 id="memory--conversion"><a class="anchor" tabindex="-1" href="#memory--conversion" aria-hidden="true">#</a>Memory / conversion</h3>
+<ul>
+<li><a href="103-mem">1.3. <code>MaybeUninit&lt;T&gt;</code> / <code>transmute_unchecked</code> - bit-level conversion</a>
+</li>
+<li><a href="104-alloc">1.4. raw allocation (<code>alloc</code>, <code>dealloc</code>, <code>realloc</code>)</a>
+</li>
+<li><a href="105-volatile">1.5. volatile memory access - <code>volatile::read</code> / <code>volatile::write</code></a>
+</li>
+</ul>
+<h3 id="gc-integration"><a class="anchor" tabindex="-1" href="#gc-integration" aria-hidden="true">#</a>GC integration</h3>
+<ul>
+<li><a href="106-gc-pin">1.6. <code>Pinned&lt;T&gt;</code> / <code>gc::pin</code> - keeping the GC from moving an object</a>
+</li>
+</ul>
+<h3 id="ffi"><a class="anchor" tabindex="-1" href="#ffi" aria-hidden="true">#</a>FFI</h3>
+<ul>
+<li><a href="107-ffi">1.7. extern &quot;C&quot; / <code>CStr</code> / <code>CString</code> / <code>CPtr</code> - C ABI compatibility</a>
+</li>
+<li><a href="108-wit">1.8. WASM Component Model interface (<code>ffi.wit</code>)</a>
+</li>
+</ul>
+<h3 id="mlir-backend"><a class="anchor" tabindex="-1" href="#mlir-backend" aria-hidden="true">#</a>MLIR backend</h3>
+<ul>
+<li><a href="109-mlir">1.9. <code>rok::bare::mlir</code> - direct access to MLIR dialects</a>
+</li>
+<li><a href="110-mlir-plugin">1.10. <code>rok::bare::mlir::plugin</code> - registering user-defined dialects</a>
+</li>
+</ul>
+<h2 id="core-design-principles"><a class="anchor" tabindex="-1" href="#core-design-principles" aria-hidden="true">#</a>Core design principles</h2>
+<h3 id="1-strict-provenance---adopting-the-rust-2024-model"><a class="anchor" tabindex="-1" href="#1-strict-provenance---adopting-the-rust-2024-model" aria-hidden="true">#</a>1. Strict provenance - adopting the Rust 2024 model</h3>
+<p><code>Ptr&lt;T&gt;</code> is an (address, provenance) pair, not a plain integer. A <code>usize ↔ Ptr&lt;T&gt;</code> round-trip therefore loses provenance and is allowed only through explicit escape hatches.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> addr: <span class="t">usize</span> = p.addr();              <span class="c">// safe - address only</span>
+<span class="k">let</span> q: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = p.with_addr(addr + <span class="n">4</span>); <span class="c">// safe - provenance kept, only the address changes</span>
+<span class="k">let</span> r: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::from_exposed_provenance(addr);  <span class="c">// unsafe - fresh provenance</span>
+</code></pre>
+<p><code>as</code> casts can never be used on pointers. The authority for this direction is <a href="https://www.ralfj.de/blog/2022/04/11/provenance-exposed.html">Ralf Jung &quot;Pointers Are Complicated&quot;</a>, and it is isomorphic to the model stabilized in Rust 1.84 (Dec 2024).</p>
+<h3 id="2-arity-is-type-encoded---the-zig-model"><a class="anchor" tabindex="-1" href="#2-arity-is-type-encoded---the-zig-model" aria-hidden="true">#</a>2. Arity is type-encoded - the Zig model</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Meaning</th><th>C equivalent</th></tr></thead>
+<tbody>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>Exactly <strong>one</strong> T</td><td><code>T*</code> (single)</td></tr>
+<tr><td><code>ConstPtr&lt;T&gt;</code></td><td>Exactly <strong>one</strong> const T</td><td><code>const T*</code></td></tr>
+<tr><td><code>ManyPtr&lt;T&gt;</code></td><td><strong>N contiguous</strong> Ts (length unknown, C-compatible)</td><td><code>T*</code> (array)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><strong>N contiguous</strong> Ts (length included)</td><td>(ptr, len)</td></tr>
+<tr><td><code>CPtr&lt;T&gt;</code></td><td>C-compatible <strong>nullable</strong> pointer</td><td><code>T*</code> (nullable)</td></tr>
+</tbody></table></div>
+<p><code>Slice&lt;T&gt;</code> is a safe view defined in <a href="../200-core/209-collections">2.9 collections</a> and does not belong to the unsafe tier. This chapter covers only the paths that expose the underlying ptr of a <code>Slice</code> raw.</p>
+<h3 id="3-gc--raw-pointer---two-separate-type-levels"><a class="anchor" tabindex="-1" href="#3-gc--raw-pointer---two-separate-type-levels" aria-hidden="true">#</a>3. GC + raw pointer - two separate type levels</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Meaning</th><th>When the GC moves the object</th></tr></thead>
+<tbody>
+<tr><td><code>GcPtr&lt;T&gt;</code></td><td>Reference to an object on the GC heap (usually <code>T</code>)</td><td><strong>Updated automatically</strong></td></tr>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>raw pointer (unmanaged or pinned)</td><td><strong>Invalid</strong></td></tr>
+</tbody></table></div>
+<p>This distinction follows Go 1.21's <code>runtime.Pinner</code> model. A raw <code>Ptr&lt;T&gt;</code> is valid only within a GC pin, so using it after the pin is released is UB.</p>
+<pre><code class="language-rok"><span class="k">let</span> obj: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];                <span class="c">// GcPtr (automatic)</span>
+<span class="k">using</span> pin = rok::bare::gc::pin(obj) {           <span class="c">// pin begins</span>
+    <span class="k">let</span> raw: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::list_data(obj);
+    ffi_function(raw, obj.len());
+}                                              <span class="c">// pin released - raw invalid</span>
+</code></pre>
+<h3 id="4-casts-only-as-explicitly-named-operations"><a class="anchor" tabindex="-1" href="#4-casts-only-as-explicitly-named-operations" aria-hidden="true">#</a>4. Casts only as explicitly named operations</h3>
+<p>The pitfalls of <code>as</code> casts on pointers in C and Rust are the biggest hazard. rok therefore exposes every unsafe cast only as an explicitly named function.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>C/Rust notation</th><th>rok notation</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>ptr as *U</code></td><td><code>rok::bare::ptr_cast&lt;U&gt;(p)</code></td><td>Type change only (provenance kept)</td></tr>
+<tr><td><code>ptr as *Aligned</code></td><td><code>rok::bare::align_cast(p)</code></td><td>Alignment up-cast (checked in debug)</td></tr>
+<tr><td><code>*const → *mut</code></td><td><code>rok::bare::const_cast(p)</code></td><td>Removes const</td></tr>
+<tr><td><code>transmute&lt;A,B&gt;</code></td><td><code>rok::bare::reinterpret&lt;A:Pod, B:Pod&gt;(a)</code></td><td>Bit reinterpretation (Pod enforced)</td></tr>
+</tbody></table></div>
+<h3 id="5-raii-via-using-block---no-reliance-on-finalizers"><a class="anchor" tabindex="-1" href="#5-raii-via-using-block---no-reliance-on-finalizers" aria-hidden="true">#</a>5. RAII via <code>using</code> block - no reliance on finalizers</h3>
+<p>Every GC language has learned that finalizers are unreliable in a GC environment. External resources such as files, sockets and mutexes are therefore released by explicit <code>using</code> blocks. The GC never calls <code>drop</code> and there are no finalizers; an unreleased resource is reported by the <code>unclosed_resource</code> lint (<a href="../../refs-lang/006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">refs-lang 6.2.9</a>).</p>
+<pre><code class="language-rok"><span class="k">using</span> f = rok::bare::ffi::open(path) {
+    f.read(...);
+}     <span class="c">// ← _guaranteed_ close at end of scope (RAII via Drop)</span>
+
+<span class="c">// ordinary GC objects need no using - the GC reclaims them</span>
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];     <span class="c">// GC automatic</span>
+</code></pre>
+<p>The authority is the <code>Drop</code> trait of <a href="../200-core/213-marker">2.13 marker</a>; the syntax authority for the <code>using</code> block is <a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 using expression</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/README.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../000-meta/005-notation"><small>Previous</small>0.5. Notation</a><a class="next" href="101-ptr"><small>Next</small>1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

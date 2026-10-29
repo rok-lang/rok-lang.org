@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.6. #[keyword(...)] magic - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The #[keyword(&quot;name&quot;)] attribute is the mechanism by which the standard library registers new keywords.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/606-keyword-magic.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.6. #[keyword(...)] magic - rok docs">
+<meta property="og:description" content="The #[keyword(&quot;name&quot;)] attribute is the mechanism by which the standard library registers new keywords.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/606-keyword-magic.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/606-keyword-magic.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/606-keyword-magic.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">6. Meta-system overview</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. Attribute syntax</a></li><li><a href="602-built-in-attributes">6.2. Built-in attributes</a></li><li><a href="603-cfg">6.3. #[cfg] conditional compilation</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] magic</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] magic</a></li><li class="cur"><a aria-current="page" href="606-keyword-magic">6.6. #[keyword(...)] magic</a><ul class="toc"><li><a href="#661-motivation">6.6.1. Motivation</a></li><li><a href="#662-form">6.6.2. Form</a></li><li><a href="#663-effect-of-registration">6.6.3. Effect of registration</a></li><li><a href="#664-conflict-checking">6.6.4. Conflict checking</a></li><li><a href="#665-scope-of-application">6.6.5. Scope of application</a></li><li><a href="#666-usage-patterns">6.6.6. Usage patterns</a></li><li><a href="#667-combination-with-the-scanner-pre-pass">6.6.7. Combination with the scanner pre-pass</a></li><li><a href="#668-signature-of-keyword-handlers">6.6.8. Signature of keyword handlers</a></li><li><a href="#669-absence-of-contextual-keywords-restated">6.6.9. Absence of contextual keywords (restated)</a></li><li><a href="#6610-visibility-of-registration">6.6.10. Visibility of registration</a></li><li><a href="#6611-difference-between-keyword-and-user-defined-macros">6.6.11. Difference between #[keyword] and user-defined macros</a></li><li><a href="#6612-registered-keywords-vs-function-calls">6.6.12. Registered keywords vs function calls</a></li><li><a href="#6613-when-it-is-evaluated">6.6.13. When it is evaluated</a></li><li><a href="#6614-use-sparingly">6.6.14. Use sparingly</a></li></ul></li><li><a href="607-operator-magic">6.7. Operator magic</a></li><li><a href="608-meta-blocks">6.8. User-defined meta definitions</a></li><li><a href="609-template-tokens">6.9. Template tokens and expansion</a></li><li><a href="610-reflection">6.10. Reflection</a></li><li><a href="611-include">6.11. Compile-time file embedding</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="66-keyword-magic 66-keyword-매직 661-motivation 661-동기 662-form 662-형태 663-effect-of-registration 663-등록의-효과 664-conflict-checking 664-충돌-검사 665-scope-of-application 665-적용-범위 666-usage-patterns 666-사용-패턴 667-combination-with-the-scanner-pre-pass 667-scanner-pre-pass-와의-결합 668-signature-of-keyword-handlers 668-키워드-핸들러의-시그니처 669-absence-of-contextual-keywords-restated 669-컨텍스트-키워드의-부재-재확인 6610-visibility-of-registration 6610-등록의-가시성 6611-difference-between-keyword-and-user-defined-macros 6611-keyword-와-사용자-정의-매크로의-차이 6612-registered-keywords-vs-function-calls 6612-등록된-키워드-vs-함수-호출 6613-when-it-is-evaluated 6613-평가-시점 6614-use-sparingly 6614-사용-자제-권장"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/006-meta-system/606-keyword-magic" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="66-keyword-magic"><a class="anchor" tabindex="-1" href="#66-keyword-magic" aria-hidden="true">#</a>6.6. <code>#[keyword(...)]</code> magic</h1>
+<p>The <code>#[keyword(&quot;name&quot;)]</code> attribute is the mechanism by which the standard library registers new keywords.</p>
+<h2 id="661-motivation"><a class="anchor" tabindex="-1" href="#661-motivation" aria-hidden="true">#</a>6.6.1. Motivation</h2>
+<p>The reserved keyword list in <a href="../001-lexical/105-keywords">keywords</a> is a fixed set defined by the language itself. Must the language specification be changed every time another keyword is to be added?</p>
+<p>The standard library sometimes wants to introduce tokens that look like keywords, such as domain keywords of a library DSL. The <code>#[keyword]</code> magic is the sanctioned channel through which a library can register language-level keywords in such situations.</p>
+<h2 id="662-form"><a class="anchor" tabindex="-1" href="#662-form" aria-hidden="true">#</a>6.6.2. Form</h2>
+<pre><code>keyword_attr    ::= &quot;#&quot; &quot;[&quot; &quot;keyword&quot; &quot;(&quot; string_lit &quot;)&quot; &quot;]&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="a">#[keyword("yield_priority")]</span>
+<span class="k">fn</span> yield_priority_handler(...) { ... }
+
+<span class="a">#[keyword("with")]</span>
+<span class="k">fn</span> with_handler(...) { ... }
+</code></pre>
+<p>The basic form is <code>#[keyword(&quot;name&quot;)]</code>, taking the keyword name (a string literal in identifier shape) as its argument. The handler is a <strong>free function</strong>; it cannot be attached to methods or trait items.</p>
+<p><code>#[keyword(&quot;name&quot;)]</code> on a <code>struct</code> registers a <strong>type keyword</strong>: that name designates the struct in type position (<code>int</code> → <code>rok::core::num::bigint::Int</code>, <code>float</code> → <code>rok::core::num::bigfloat::Float</code>, <a href="../../refs-standard-libraries/200-core/201-numbers#212-int---arbitrary-precision-integer">stdlib 2.1.2</a>). Only the standard library may register type keywords. Attaching it to an item that is neither a function nor a struct is an error.</p>
+<h2 id="663-effect-of-registration"><a class="anchor" tabindex="-1" href="#663-effect-of-registration" aria-hidden="true">#</a>6.6.3. Effect of registration</h2>
+<p>When <code>#[keyword(&quot;name&quot;)]</code> is registered somewhere, the following takes effect.</p>
+<ol>
+<li>In that compilation unit, the identifier <code>name</code> is tokenized as a keyword.
+</li>
+<li>Uses of the keyword desugar into handler calls. <code>name(args)</code> is a call through the handler's absolute path, and a following block becomes a <a href="../004-functions/408-trailing-closure">trailing closure</a> argument.
+</li>
+</ol>
+<pre><code class="language-rok"><span class="a">#[keyword("with")]</span>
+<span class="k">fn</span> with_handler(m: <span class="t">Mutex</span>&lt;<span class="t">i32</span>&gt;, body: <span class="k">fn</span>()) { ... }
+
+with(m) { critical(); }
+<span class="c">// ⇒ pkg::with_handler(m) { critical(); }     - handler + trailing closure</span>
+</code></pre>
+<p>Before registration <code>name</code> could be used as an ordinary identifier; after registration it is a keyword token. Using <code>name</code> as the name of a declaration or member is therefore a compile error. Those positions are <code>let name</code>, <code>fn name</code>, <code>struct name</code>, <code>enum name</code>, <code>trait name</code>, <code>mod name</code>, <code>for name in</code>, <code>.name</code>, <code>::name</code>, <code>name:</code> (field / argument name), and <code>name::</code>. The same rule applies inside <code>{..}</code> of f-strings.</p>
+<h2 id="664-conflict-checking"><a class="anchor" tabindex="-1" href="#664-conflict-checking" aria-hidden="true">#</a>6.6.4. Conflict checking</h2>
+<pre><code class="language-rok"><span class="a">#[keyword("if")]</span>                  <span class="c">// ERROR - 'if' is a reserved keyword</span>
+<span class="k">fn</span> ... { ... }
+</code></pre>
+<p>Reserved keywords from <a href="../001-lexical/105-keywords">keywords</a>, names that are keywords only in fixed positions (<code>type</code>, <code>any</code>, <code>in</code>, <code>where</code>, <code>throws</code>, <code>rethrows</code>, <code>catch</code>, <code>finally</code>, <code>const</code>, <code>static</code>, <code>extern</code>, <code>mut</code>, <code>union</code>), and path roots (<code>pkg</code>, <code>sup</code>, <code>rok</code>) cannot be registered. They are rejected immediately at registration.</p>
+<p>Registering the same keyword twice within one build is an error, whether within the same package or across different libraries.</p>
+<pre><code>package_a registers #[keyword(&quot;with&quot;)]
+package_b also registers #[keyword(&quot;with&quot;)]    → ERROR if both packages are used in one build
+</code></pre>
+<h2 id="665-scope-of-application"><a class="anchor" tabindex="-1" href="#665-scope-of-application" aria-hidden="true">#</a>6.6.5. Scope of application</h2>
+<p>A <code>#[keyword]</code> takes effect only within the compilation unit (usually a package) that contains the registration. In other packages the same name works as an ordinary identifier. As an exception, the standard library's type keywords (<code>int</code>, <code>float</code>) apply to every package.</p>
+<p>This locality reduces conflicts between libraries and lets users decide consciously which package introduces which keyword.</p>
+<h2 id="666-usage-patterns"><a class="anchor" tabindex="-1" href="#666-usage-patterns" aria-hidden="true">#</a>6.6.6. Usage patterns</h2>
+<p><code>#[keyword]</code> is used rarely, mainly in these cases:</p>
+<ul>
+<li>Domain-specific languages (DSLs): when it is natural for domain words - tabular data, grids, circuits, etc. - to behave like keywords in identifier positions.
+</li>
+<li>New syntax in block or body form that is hard to express with operator magic.
+</li>
+</ul>
+<p>In most cases, a combination of a function and a trailing closure suffices to build a keyword-like pattern (<a href="../004-functions/408-trailing-closure">trailing closures</a>). Where that form is possible, prefer it.</p>
+<h2 id="667-combination-with-the-scanner-pre-pass"><a class="anchor" tabindex="-1" href="#667-combination-with-the-scanner-pre-pass" aria-hidden="true">#</a>6.6.7. Combination with the scanner pre-pass</h2>
+<p>When <code>#[keyword]</code> registrations are recognized is handled by the compiler's scanner pre-pass.</p>
+<ol>
+<li>Before parsing, the compiler quickly scans the source files and collects <code>#[keyword(...)]</code> registrations.
+</li>
+<li>The registration table is passed to the lexer.
+</li>
+<li>During full lexical analysis, the registered names are split off as keyword tokens.
+</li>
+<li>The parser desugars them into the registered handlers.
+</li>
+</ol>
+<p>Thanks to this pre-pass, consistency within the compilation unit is maintained regardless of where a registration appears (which file, which line). Users need not care about registration order.</p>
+<h2 id="668-signature-of-keyword-handlers"><a class="anchor" tabindex="-1" href="#668-signature-of-keyword-handlers" aria-hidden="true">#</a>6.6.8. Signature of keyword handlers</h2>
+<p>The compiler does not check the handler's signature separately. After a keyword use becomes a handler call (6.6.3), the call is type-checked as an ordinary function call. The handler's parameters therefore determine the usage form of the keyword (arguments, trailing closure).</p>
+<h2 id="669-absence-of-contextual-keywords-restated"><a class="anchor" tabindex="-1" href="#669-absence-of-contextual-keywords-restated" aria-hidden="true">#</a>6.6.9. Absence of contextual keywords (restated)</h2>
+<p>The principle in <a href="../001-lexical/105-keywords">keywords</a> of not introducing contextual keywords applies equally to registered keywords.</p>
+<p>Once <code>#[keyword(&quot;with&quot;)]</code> is registered, <code>with</code> is tokenized as a keyword everywhere. Forms such as &quot;a keyword only in certain positions&quot; are not introduced.</p>
+<p>This consistency helps keep the lexer and parser simple.</p>
+<h2 id="6610-visibility-of-registration"><a class="anchor" tabindex="-1" href="#6610-visibility-of-registration" aria-hidden="true">#</a>6.6.10. Visibility of registration</h2>
+<p>The visibility (<a href="../005-modules/506-visibility">visibility</a>) of the item carrying <code>#[keyword]</code> applies only to accessing the item and is separate from the effect of keyword registration.</p>
+<pre><code class="language-rok"><span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> keyword_handler(...) { ... }
+
+<span class="a">#[keyword("with")]</span>
+<span class="k">fn</span> another_handler(...) { ... }     <span class="c">// keyword registration - applies to the whole package</span>
+</code></pre>
+<p>Whether the handler can be called from outside is determined by visibility, but the keyword registration itself affects the whole compilation unit.</p>
+<h2 id="6611-difference-between-keyword-and-user-defined-macros"><a class="anchor" tabindex="-1" href="#6611-difference-between-keyword-and-user-defined-macros" aria-hidden="true">#</a>6.6.11. Difference between <code>#[keyword]</code> and user-defined macros</h2>
+<p>Compared with macro systems of other languages:</p>
+<ul>
+<li>Rust proc macro: performs arbitrary token transformations; users generate code freely. Hygiene is a separate matter.
+</li>
+<li>Lisp macro: dynamic macros that can also be registered at runtime.
+</li>
+<li>rok <code>#[keyword]</code>: compile-time keyword registration; a handler function determines the desugaring. Free token transformation is impossible.
+</li>
+</ul>
+<p>rok deliberately has a restricted macro system, favoring tool friendliness in the trade-off between expressiveness and tool friendliness.</p>
+<h2 id="6612-registered-keywords-vs-function-calls"><a class="anchor" tabindex="-1" href="#6612-registered-keywords-vs-function-calls" aria-hidden="true">#</a>6.6.12. Registered keywords vs function calls</h2>
+<pre><code class="language-rok"><span class="c">// keyword form</span>
+with(mutex) { critical(); }
+
+<span class="c">// function call form (no registration)</span>
+with_lock(mutex) { critical(); }     <span class="c">// function + trailing closure</span>
+</code></pre>
+<p>Most DSL-like patterns are served by combining a function with a trailing closure. Restrict <code>#[keyword]</code> registration to cases where that form would be unnatural.</p>
+<h2 id="6613-when-it-is-evaluated"><a class="anchor" tabindex="-1" href="#6613-when-it-is-evaluated" aria-hidden="true">#</a>6.6.13. When it is evaluated</h2>
+<p>Keyword registration is processed at the scanner pre-pass, before other meta processing (cfg, meta block expansion, etc.).</p>
+<p>Because of this order, cfg can be applied conditionally to keyword handlers themselves, and keywords can be used inside meta block bodies. A meta block's or keyword handler's <code>#[cfg]</code> is evaluated with the cfg of the package that defines it (its own features, <a href="../009-tools/910-rok-frontend#9104c-features">9.10.4c</a>).</p>
+<h2 id="6614-use-sparingly"><a class="anchor" tabindex="-1" href="#6614-use-sparingly" aria-hidden="true">#</a>6.6.14. Use sparingly</h2>
+<p>Use <code>#[keyword]</code> rarely and carefully. Every registration enlarges the language surface and burdens other users with guessing the meaning of a new keyword.</p>
+<p>For a language keyword that would be adopted universally, adding it directly to the reserved list in <a href="../001-lexical/105-keywords">keywords</a> (that is, as a language specification change) may be more appropriate.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/006-meta-system/606-keyword-magic.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="605-literal-magic"><small>Previous</small>6.5. #[literal(...)] magic</a><a class="next" href="607-operator-magic"><small>Next</small>6.7. Operator magic</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

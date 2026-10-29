@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.2. Compilation pipeline - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This specification calls the rok compiler rokc. rokc embeds LLVM, MLIR and lld and runs the whole pipeline, from source to a linked binary, in-process.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/002-pipeline.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.2. Compilation pipeline - rok docs">
+<meta property="og:description" content="This specification calls the rok compiler rokc. rokc embeds LLVM, MLIR and lld and runs the whole pipeline, from source to a linked binary, in-process.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/002-pipeline.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/002-pipeline.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/002-pipeline.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">0. Introduction</a></p><ul class="pages"><li><a href="001-execution-modes">0.1. Execution engines and user surfaces</a></li><li class="cur"><a aria-current="page" href="002-pipeline">0.2. Compilation pipeline</a><ul class="toc"><li><a href="#021-stages">0.2.1. Stages</a></li><li><a href="#022-one-way-visibility">0.2.2. One-way visibility</a></li><li><a href="#023-standard-mlir-dialects-only">0.2.3. Standard MLIR dialects only</a></li><li><a href="#024-backends">0.2.4. Backends</a></li></ul></li><li><a href="003-source-units">0.3. Source units</a></li><li><a href="004-language-vs-standard-libraries">0.4. Boundary between the language and the standard libraries</a></li><li><a href="005-standard-libraries-tiers">0.5. Standard library tiers</a></li><li><a href="006-platform-targets">0.6. Platform targets</a></li><li><a href="007-glossary">0.7. Glossary</a></li><li><a href="008-notation">0.8. Notation</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="02-compilation-pipeline 02-컴파일-파이프라인 021-stages 021-단계 022-one-way-visibility 022-단방향-가시성 023-standard-mlir-dialects-only 023-표준-mlir-다이얼렉트만-사용 024-backends 024-backends"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/000-meta/002-pipeline" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="02-compilation-pipeline"><a class="anchor" tabindex="-1" href="#02-compilation-pipeline" aria-hidden="true">#</a>0.2. Compilation pipeline</h1>
+<p>This specification calls the rok compiler <code>rokc</code>. <code>rokc</code> embeds LLVM, MLIR and lld and runs the whole pipeline, from source to a linked binary, in-process.</p>
+<h2 id="021-stages"><a class="anchor" tabindex="-1" href="#021-stages" aria-hidden="true">#</a>0.2.1. Stages</h2>
+<p>The overall flow is as follows.</p>
+<pre><code>  source code
+        │
+        ▼
+   rok-hir         (High-level IR - pre type inference, user code structure preserved)
+        │
+        ▼
+   rok-mir         (Mid-level IR - monomorphized / operators desugared, all types fixed)
+        │
+        ▼
+   standard MLIR   (upstream MLIR dialects - `func`, `arith`, `scf`, ...)    -O1 and above
+        │
+        ▼
+   LLVM IR → native object → lld
+</code></pre>
+<p>At <code>-O0</code> (builds and REPL), rok-mir goes straight to machine code through rok's native backend (0.2.4).</p>
+<blockquote>
+<p>rok-hir is the high-level IR; it precedes type inference and preserves the structure of user code as is. rok-mir is the mid-level IR, in which monomorphization and operator desugaring are complete and all types are fixed.
+standard MLIR means the upstream MLIR dialects. Finally, LLVM IR and native code are produced.</p>
+</blockquote>
+<h2 id="022-one-way-visibility"><a class="anchor" tabindex="-1" href="#022-one-way-visibility" aria-hidden="true">#</a>0.2.2. One-way visibility</h2>
+<p>Each stage looks only at the stage immediately before it. The <code>rok-hir</code> generator refers only to the source. The <code>rok-mir</code> generator refers only to <code>rok-hir</code>. The MLIR emitter refers only to <code>rok-mir</code>.</p>
+<p>Results of earlier stages are thus never consulted again by later stages. The specification documents follow the same rule: a lower-numbered file does not refer to a higher-numbered file.</p>
+<h2 id="023-standard-mlir-dialects-only"><a class="anchor" tabindex="-1" href="#023-standard-mlir-dialects-only" aria-hidden="true">#</a>0.2.3. Standard MLIR dialects only</h2>
+<p>No rok-specific MLIR dialect is defined. All dialects used are official upstream MLIR dialects.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Dialect</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>func</code></td><td>Function definition / call</td></tr>
+<tr><td><code>arith</code></td><td>Integer / floating-point arithmetic / comparison</td></tr>
+<tr><td><code>scf</code></td><td>Structured control flow (<code>if</code> / <code>for</code> / <code>while</code>)</td></tr>
+<tr><td><code>cf</code></td><td>Unstructured branches (switch, cond_br)</td></tr>
+<tr><td><code>index</code></td><td>Index type operations</td></tr>
+<tr><td><code>math</code></td><td>Math functions</td></tr>
+<tr><td><code>llvm</code></td><td>Low-level ops (intrinsic, <code>struct</code>)</td></tr>
+</tbody></table></div>
+<p>This choice guarantees the following. Improvements in upstream MLIR flow into rok automatically. rok interoperates with external MLIR-based tools such as IREE, Enzyme and Triton. And there is no cost of registering and maintaining a custom dialect.</p>
+<p>In exchange, the responsibility for lowering rok's high-level semantics to the standard dialects concentrates in the compiler, specifically in the <code>rok-mir → MLIR</code> stage. This burden is intentional: it is moved inward so as not to close off options at the end of the pipeline.</p>
+<h2 id="024-backends"><a class="anchor" tabindex="-1" href="#024-backends" aria-hidden="true">#</a>0.2.4. Backends</h2>
+<p><code>rokc</code> has two code generators. Both consume rok-mir and follow the same runtime ABI (<a href="../008-abi/">8</a>), so their objects link together.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Backend</th><th>Used for</th><th>Path</th></tr></thead>
+<tbody>
+<tr><td>native</td><td><code>-O0</code> builds and REPL cells</td><td>rok-mir → machine code</td></tr>
+<tr><td>MLIR → LLVM</td><td><code>-O1</code> and above</td><td>rok-mir → MLIR → LLVM IR → optimized object</td></tr>
+</tbody></table></div>
+<p>LLVM, MLIR and lld are part of <code>rokc</code>; no external LLVM tools are run and users do not install LLVM. Targets on macOS need the Xcode Command Line Tools for the SDK. Cross-compilation is built in: <code>--target &lt;triple&gt;</code> works from any host, and the toolchain ships the C library (musl, glibc link stubs) for its supported Linux targets, so a Linux target needs no sysroot. There are no C headers: rok compiles no C. Windows targets link against import libraries built from module definitions the toolchain carries, over the UCRT, with no MSVC tools or Windows SDK. Apple targets need the macOS SDK (Xcode Command Line Tools), which is not redistributable (<a href="../009-tools/902-aot-pipeline#9214-linking-for-executables">9.2.14</a>, <a href="006-platform-targets">0.6</a>). <code>--emit=mlir</code> / <code>--emit=llvmir</code> dump the intermediate forms (<a href="../009-tools/909-debug-tools#991-intermediate-output---emit">9.9.1</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/000-meta/002-pipeline.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="001-execution-modes"><small>Previous</small>0.1. Execution engines and user surfaces</a><a class="next" href="003-source-units"><small>Next</small>0.3. Source units</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

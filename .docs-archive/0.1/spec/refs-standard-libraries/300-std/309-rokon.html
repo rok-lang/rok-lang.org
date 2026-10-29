@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.9. rokon:: - the ROKON data format - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="ROKON (Rok Object Notation) is a data format that writes values in rok's literal syntax. The file extension is .rokon. It fills the same role as Rust's RON and ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/309-rokon.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.9. rokon:: - the ROKON data format - rok docs">
+<meta property="og:description" content="ROKON (Rok Object Notation) is a data format that writes values in rok's literal syntax. The file extension is .rokon. It fills the same role as Rust's RON and ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/309-rokon.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/309-rokon.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/309-rokon.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - file system</a></li><li><a href="302-net">3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - time</a></li><li><a href="304-thread">3.4. thread:: - OS threads (1:1 model)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / standard I/O</a></li><li><a href="306-env">3.6. env:: - environment variables / args / directories</a></li><li><a href="307-process">3.7. process:: - child processes</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python-style)</a></li><li class="cur"><a aria-current="page" href="309-rokon">3.9. rokon:: - the ROKON data format</a><ul class="toc"><li><a href="#391-format">3.9.1. Format</a></li><li><a href="#392-correspondence-with-rok-types">3.9.2. Correspondence with rok types</a></li><li><a href="#393-reading">3.9.3. Reading</a></li><li><a href="#394-canonical-form">3.9.4. Canonical form</a></li><li><a href="#395-library-rokstdrokon">3.9.5. Library: rok::std::rokon</a></li><li><a href="#396-comparison-with-other-formats">3.9.6. Comparison with other formats</a></li></ul></li><li><a href="310-crypto">3.10. crypto:: - the OS random source</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="39-rokon---the-rokon-data-format 39-rokon---rokon-데이터-형식 391-format 391-형식 392-correspondence-with-rok-types 392-rok-타입과의-대응 393-reading 393-읽기 394-canonical-form 394-정규-형식 395-library-rokstdrokon 395-라이브러리-rokstdrokon deriverokon deriverokon limitations 한계 396-comparison-with-other-formats 396-다른-형식과의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/300-std/309-rokon" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="39-rokon---the-rokon-data-format"><a class="anchor" tabindex="-1" href="#39-rokon---the-rokon-data-format" aria-hidden="true">#</a>3.9. <code>rokon::</code> - the ROKON data format</h1>
+<p>ROKON (Rok Object Notation) is a data format that writes values in rok's literal syntax. The file extension is <code>.rokon</code>. It fills the same role as Rust's RON and Zig's ZON; the package manifest <code>rok.rokon</code> and the lockfile <code>rok.lock</code> (<a href="../../refs-lang/009-tools/910-rok-frontend#9103-rokrokon--roklock">refs-lang 9.10.3</a>) use this format.</p>
+<h2 id="391-format"><a class="anchor" tabindex="-1" href="#391-format" aria-hidden="true">#</a>3.9.1. Format</h2>
+<p>ROKON is a subset of rok expression syntax and is read with rok's lexer / parser. One file holds one value.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Example</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>none</td><td><code>none</code></td><td></td></tr>
+<tr><td>bool</td><td><code>true</code>, <code>false</code></td><td></td></tr>
+<tr><td>Integer</td><td><code>42</code>, <code>-7</code>, <code>0xff</code>, <code>0b1010</code>, <code>0o17</code>, <code>1_000_000</code></td><td>No suffix</td></tr>
+<tr><td>Float</td><td><code>3.14</code>, <code>-1.5e-3</code>, <code>2E10</code></td><td>No suffix</td></tr>
+<tr><td>char</td><td><code>'a'</code>, <code>'\n'</code></td><td><code>c'..'</code> not allowed</td></tr>
+<tr><td>String</td><td><code>&quot;text&quot;</code>, raw strings, multi-line strings</td><td>f-strings not allowed</td></tr>
+<tr><td>List</td><td><code>[a, b, c]</code></td><td></td></tr>
+<tr><td>dict</td><td><code>{ &quot;k&quot;: v, 1: w }</code></td><td>Keys are values (strings, numbers, etc.)</td></tr>
+<tr><td>Tuple</td><td><code>(a, b)</code>, <code>(a,)</code></td><td><code>(x)</code> is grouping, not a tuple</td></tr>
+<tr><td>struct</td><td><code>Point { x: 1, y: 2 }</code>, <code>{ x: 1, y: 2 }</code>, <code>Pair(1, 2)</code>, <code>Unit {}</code></td><td>The name is optional. Field names are identifiers. Tuple structs are <code>Name(a, b)</code></td></tr>
+<tr><td>enum variant</td><td><code>Shape::Unit</code>, <code>Shape::Circle(1.0, at: p)</code>, <code>Shape::Rect { w: 2, h: 3 }</code></td><td>Written with the full path</td></tr>
+</tbody></table></div>
+<ul>
+<li>A trailing comma is allowed. Comments are <code>//</code> and <code>/* */</code>.
+</li>
+<li><code>{}</code> is both an empty struct and an empty dict (the target type decides). A single <code>{ .. }</code> may contain either fields (identifier keys) or keys (value keys), not both; mixing them is an error.
+</li>
+<li>Not allowed: bare identifiers, operators (only unary <code>-</code> before a number is allowed), method calls, <code>..</code>, blocks, f-strings, Set literals (<code>{1, 2}</code>; write a Set as a list), <code>c'..'</code> literals, generic paths (<code>List&lt;i32&gt;::..</code>), and tokens left after the value. All are errors showing <code>line:col</code>.
+</li>
+<li>NaN and infinity have no ROKON notation. <code>nan</code> / <code>inf</code> in the input are rejected as bare identifiers.
+</li>
+</ul>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Known limitation: a dict whose first key is <code>none</code> (<code>{ none: 1 }</code>) is not supported, because the rok parser reads it as a block.</p>
+</div>
+<pre><code class="language-rokon"><span class="c">// config.rokon</span>
+<span class="t">Config</span> {
+    name: <span class="s">"geom"</span>,
+    retries: <span class="n">3</span>,
+    ratio: <span class="n">0.75</span>,
+    tags: [<span class="s">"a"</span>, <span class="s">"b"</span>],
+    limits: { <span class="s">"cpu"</span>: <span class="n">2</span>, <span class="s">"mem"</span>: <span class="n">512</span> },
+    mode: <span class="t">Mode</span>::<span class="t">Fast</span>,
+    proxy: <span class="k">none</span>,
+}
+</code></pre>
+<h2 id="392-correspondence-with-rok-types"><a class="anchor" tabindex="-1" href="#392-correspondence-with-rok-types" aria-hidden="true">#</a>3.9.2. Correspondence with rok types</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>ROKON</th><th>rok type</th></tr></thead>
+<tbody>
+<tr><td><code>none</code></td><td><code>none</code> of <code>T | none</code></td></tr>
+<tr><td><code>true</code> / <code>false</code></td><td><code>bool</code></td></tr>
+<tr><td>Integer</td><td>Every integer type, <code>int</code>. Also accepted where a float is expected (<code>f32</code> / <code>f64</code> / <code>float</code>)</td></tr>
+<tr><td>Float</td><td><code>f32</code>, <code>f64</code>, <code>float</code></td></tr>
+<tr><td>char</td><td><code>char</code></td></tr>
+<tr><td>String</td><td><code>str</code></td></tr>
+<tr><td>List</td><td><code>List&lt;T&gt;</code>, <code>[T; N]</code>, <code>Set&lt;T&gt;</code>, <code>OrderedSet&lt;T&gt;</code></td></tr>
+<tr><td>dict</td><td><code>Dict&lt;K, V&gt;</code>, <code>OrderedDict&lt;K, V&gt;</code></td></tr>
+<tr><td>Tuple</td><td>Tuples of 1 ~ 6 elements</td></tr>
+<tr><td>struct</td><td><code>struct</code> (<code>#[derive(Rokon)]</code>)</td></tr>
+<tr><td>enum variant</td><td><code>enum</code> (<code>#[derive(Rokon)]</code>)</td></tr>
+<tr><td>Any value</td><td><code>Value</code></td></tr>
+</tbody></table></div>
+<h2 id="393-reading"><a class="anchor" tabindex="-1" href="#393-reading" aria-hidden="true">#</a>3.9.3. Reading</h2>
+<p><code>parse</code> reads text into a <code>Value</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Input</th><th><code>Value</code></th></tr></thead>
+<tbody>
+<tr><td><code>{ ident: v, .. }</code></td><td>Unnamed <code>Struct</code></td></tr>
+<tr><td><code>{ &quot;k&quot;: v, .. }</code>, <code>{}</code></td><td><code>Dict</code></td></tr>
+<tr><td><code>Name { f: v }</code></td><td>Named <code>Struct</code></td></tr>
+<tr><td><code>A::B { f: v }</code></td><td><code>Variant</code> (values in <code>named</code>)</td></tr>
+<tr><td><code>A::B(a, k: b)</code>, <code>A::B</code></td><td><code>Variant</code> (<code>args</code>, <code>named</code>)</td></tr>
+<tr><td><code>Name(a, b)</code></td><td><code>Variant</code> with a single-segment path (tuple struct)</td></tr>
+<tr><td>Integer</td><td><code>Int</code> (exact <code>int</code>)</td></tr>
+</tbody></table></div>
+<p>In typed reads (<code>from_str</code>, <code>decode</code>), the target type determines the interpretation.</p>
+<ul>
+<li>A struct target accepts <code>Struct</code>, <code>{}</code> and <code>A::B { .. }</code>, so struct names with a module path (<code>geom::Point { .. }</code>) are accepted too.
+</li>
+<li>A written name must match the target. For structs, the last path segment is compared; for enum variants, the last two segments.
+</li>
+<li>An unknown field is an error at the position of that field name.
+</li>
+<li>A missing field takes the field's <code>= default</code> if it has one, <code>none</code> if its type is <code>T | none</code>, and is an error otherwise (<code>FromRokon::from_missing</code>).
+</li>
+<li>An integer value outside the range of the target integer type is an error.
+</li>
+<li>Named variants can also be read as <code>E::V(a, k: b)</code>. Positional arguments fill the fields in order, followed by named arguments.
+</li>
+</ul>
+<h2 id="394-canonical-form"><a class="anchor" tabindex="-1" href="#394-canonical-form" aria-hidden="true">#</a>3.9.4. Canonical form</h2>
+<p>The canonical form emitted by <code>rokon::to_string</code> and by <code>rok</code> (when editing the manifest or writing <code>rok.lock</code>) is as follows. The canonical form is also the readable form, so there is no separate pretty function.</p>
+<ul>
+<li>Indentation is 4 spaces.
+</li>
+<li>A value is written on one line if it fits within 100 columns; otherwise on multiple lines with a comma after each element.
+</li>
+<li>Floats use the shortest notation that reads back to the same value (<code>1.0</code>, <code>1.0e300</code>). Attempting to write NaN / infinity panics (&quot;NaN/infinity has no ROKON form&quot;).
+</li>
+<li>A variant with only named values has one canonical form, <code>E::V { .. }</code> (<code>Value::Variant</code> keeps no form flag).
+</li>
+<li>Bidi controls (U+202A-U+202E, U+2066-U+2069) in strings and chars are written escaped (<code>\u{202e}</code>).
+</li>
+<li>Reading the canonical form back yields the same value (round-trip). A reader rejects float literals out of range (<code>1e999</code>).
+</li>
+</ul>
+<p><code>rokc fmt</code> checks that a <code>.rokon</code> file is ROKON and only re-indents it. It does not rewrite it into canonical form, so comments and layout are preserved.</p>
+<h2 id="395-library-rokstdrokon"><a class="anchor" tabindex="-1" href="#395-library-rokstdrokon" aria-hidden="true">#</a>3.9.5. Library: <code>rok::std::rokon</code></h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::rokon;
+
+<span class="k">pub</span> <span class="k">enum</span> <span class="t">Value</span> {
+    <span class="t">None</span>,
+    <span class="t">Bool</span>(<span class="t">bool</span>),
+    <span class="t">Int</span>(<span class="t">int</span>),
+    <span class="t">Float</span>(<span class="t">float</span>),
+    <span class="t">Char</span>(<span class="t">char</span>),
+    <span class="t">Str</span>(<span class="t">str</span>),
+    <span class="t">List</span>(<span class="t">List</span>&lt;<span class="t">Value</span>&gt;),
+    <span class="t">Dict</span>(<span class="t">OrderedDict</span>&lt;<span class="t">Value</span>, <span class="t">Value</span>&gt;),
+    <span class="t">Tuple</span>(<span class="t">List</span>&lt;<span class="t">Value</span>&gt;),
+    <span class="t">Struct</span> { name: <span class="t">str</span> | <span class="k">none</span>; fields: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">Value</span>&gt;; },
+    <span class="t">Variant</span> { path: <span class="t">str</span>; args: <span class="t">List</span>&lt;<span class="t">Value</span>&gt;; named: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">Value</span>&gt;; },
+}
+<span class="k">impl</span> <span class="t">Value</span> {
+    <span class="k">fn</span> to_string(<span class="k">self</span>) -&gt; <span class="t">str</span>;       <span class="c">// canonical form</span>
+    <span class="k">fn</span> kind(<span class="k">self</span>) -&gt; <span class="t">str</span>;            <span class="c">// kind name for error messages (below)</span>
+}                                    <span class="c">// + Display, Debug, PartialEq, Eq, Hash</span>
+
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">RokonError</span> { <span class="k">pub</span> msg: <span class="t">str</span>; <span class="k">pub</span> line: <span class="t">u32</span>; <span class="k">pub</span> col: <span class="t">u32</span>; <span class="k">pub</span> path: <span class="t">str</span>; }
+
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">ToRokon</span> { <span class="k">fn</span> to_rokon(<span class="k">self</span>) -&gt; <span class="t">Value</span>; }
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">FromRokon</span> {
+    <span class="k">fn</span> from_rokon(v: <span class="t">Value</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="k">Self</span>;
+    <span class="k">fn</span> from_missing() <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="k">Self</span>;   <span class="c">// default: error. none for T | none</span>
+}
+
+<span class="k">pub</span> <span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="t">Value</span>;
+<span class="k">pub</span> <span class="k">fn</span> to_string&lt;<span class="t">T</span>: <span class="t">ToRokon</span>&gt;(v: <span class="t">T</span>) -&gt; <span class="t">str</span>;
+<span class="k">pub</span> <span class="k">fn</span> from_str&lt;<span class="t">T</span>: <span class="t">FromRokon</span>&gt;(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="t">T</span>;
+<span class="k">pub</span> <span class="k">fn</span> encode&lt;<span class="t">T</span>: <span class="t">ToRokon</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">Value</span>;
+<span class="k">pub</span> <span class="k">fn</span> decode&lt;<span class="t">T</span>: <span class="t">FromRokon</span>&gt;(v: <span class="t">Value</span>, seg: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="t">T</span>;
+</code></pre>
+<ul>
+<li><code>Display</code> of <code>RokonError</code> is <code>line:col: msg</code> if there is a position, otherwise <code>at &lt;path&gt;: msg</code>. Errors from typed reads carry paths such as <code>.servers[1].port</code> or <code>.limits[&quot;cpu&quot;]</code>, and <code>from_str</code> converts that path to the <code>line:col</code> of the input. The <code>seg</code> of <code>decode</code> is the first segment of the path.
+</li>
+<li><code>Value::kind</code> is the kind name used in error messages: in order, <code>&quot;none&quot;</code>, <code>&quot;bool&quot;</code>, <code>&quot;integer&quot;</code>, <code>&quot;float&quot;</code>, <code>&quot;char&quot;</code>, <code>&quot;string&quot;</code>, <code>&quot;list&quot;</code>, <code>&quot;dict&quot;</code>, <code>&quot;tuple&quot;</code>, <code>&quot;struct&quot;</code>, and for <code>Variant</code> <code>&quot;variant `&lt;path&gt;`&quot;</code>.
+</li>
+<li><code>==</code> and <code>hash</code> on <code>Value</code> are structural. Dict entries and struct fields are compared regardless of order, and floating-point values are compared by identity (NaN == NaN, -0.0 != 0.0). An unnamed empty struct and an empty dict are equal.
+</li>
+<li><code>Debug</code>, <code>==</code> and <code>hash</code> on <code>Value</code> never panic.
+</li>
+<li>Standard implementations: every integer type, <code>f32</code> / <code>f64</code>, <code>int</code> / <code>float</code>, <code>bool</code> / <code>char</code> / <code>str</code>, <code>Value</code>, <code>T | none</code>, <code>List</code>, <code>Set</code>, <code>Dict</code>, <code>OrderedDict</code>, <code>OrderedSet</code>, tuples of 1 ~ 6 elements, <code>[T; N]</code>.
+</li>
+</ul>
+<h3 id="deriverokon"><a class="anchor" tabindex="-1" href="#deriverokon" aria-hidden="true">#</a><code>#[derive(Rokon)]</code></h3>
+<p>Implements both <code>ToRokon</code> and <code>FromRokon</code> for structs and enums (including generic ones).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Definition</th><th>Written form</th></tr></thead>
+<tbody>
+<tr><td>Struct with named fields</td><td><code>Name { f: v }</code></td></tr>
+<tr><td>Tuple struct</td><td><code>Name(a, b)</code></td></tr>
+<tr><td>Unit struct</td><td><code>Name {}</code></td></tr>
+<tr><td>Unit variant</td><td><code>E::V</code></td></tr>
+<tr><td>Tuple variant</td><td><code>E::V(a)</code></td></tr>
+<tr><td>Named variant</td><td><code>E::V { f: v }</code></td></tr>
+</tbody></table></div>
+<p>A field's <code>= default</code> is used for missing fields (3.9.3). The derive is built with the meta tokens <code>@Self.name</code>, <code>@Self.is_unit</code> / <code>is_tuple</code> / <code>is_named</code>, <code>@field.has_default</code> / <code>@field.default</code> (<a href="../../refs-lang/006-meta-system/609-template-tokens">refs-lang 6.9</a>).</p>
+<pre><code class="language-rok"><span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Server</span> { host: <span class="t">str</span>; port: <span class="t">u16</span> = <span class="n">80</span>; tls: <span class="t">bool</span> | <span class="k">none</span>; }
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Config</span> { name: <span class="t">str</span>; servers: <span class="t">List</span>&lt;<span class="t">Server</span>&gt;; limits: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt;; }
+
+<span class="k">let</span> cfg: <span class="t">Config</span> = <span class="k">try</span> rokon::from_str(text);   <span class="c">// errors are "line:col: msg"</span>
+print(rokon::to_string(cfg));
+</code></pre>
+<h3 id="limitations"><a class="anchor" tabindex="-1" href="#limitations" aria-hidden="true">#</a>Limitations</h3>
+<ul>
+<li><code>Dict</code> / <code>Set</code> are written in hash order. To preserve order, use <code>OrderedDict</code> / <code>OrderedSet</code>.
+</li>
+<li><code>[T; 0]</code> cannot be read.
+</li>
+<li>Tuples are limited to 6 elements.
+</li>
+<li>A dict whose first key is <code>none</code> cannot be read (3.9.1).
+</li>
+</ul>
+<h2 id="396-comparison-with-other-formats"><a class="anchor" tabindex="-1" href="#396-comparison-with-other-formats" aria-hidden="true">#</a>3.9.6. Comparison with other formats</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Format</th><th>struct notation</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>RON</td><td><code>Name(field: v)</code></td><td>A dedicated syntax different from Rust</td></tr>
+<tr><td>ZON</td><td><code>.{ .name = &quot;x&quot; }</code></td><td>Zig's anonymous struct literal</td></tr>
+<tr><td>ROKON</td><td><code>Name { field: v }</code></td><td>rok's own literal syntax as is</td></tr>
+</tbody></table></div>
+<p>ROKON adds no separate syntax and uses rok literals directly, so a value written in source and a value written in a file look the same.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/300-std/309-rokon.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="308-path"><small>Previous</small>3.8. path:: - UTF-8 Path (Python-style)</a><a class="next" href="310-crypto"><small>Next</small>3.10. crypto:: - the OS random source</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

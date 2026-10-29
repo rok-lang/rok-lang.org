@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.7. I/O 드라이버와 타이머 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="스케줄러 의 worker 가 I/O 대기 task 와 타이머 대기 task 를 효율적으로 처리하기 위해 두 가지 메커니즘을 사용합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/707-io-and-timer.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.7. I/O 드라이버와 타이머 - rok docs">
+<meta property="og:description" content="스케줄러 의 worker 가 I/O 대기 task 와 타이머 대기 task 를 효율적으로 처리하기 위해 두 가지 메커니즘을 사용합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/707-io-and-timer.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/707-io-and-timer.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/707-io-and-timer.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">7. 런타임 개요</a></p><ul class="pages"><li><a href="701-object-layout">7.1. 객체 레이아웃과 메모리 공간</a></li><li><a href="702-allocation">7.2. 할당</a></li><li><a href="703-gc-algorithm">7.3. GC 알고리듬</a></li><li><a href="704-barriers-and-roots">7.4. 배리어와 루트 추적</a></li><li><a href="705-concurrent-collection">7.5. 동시 mark</a></li><li><a href="706-scheduler">7.6. 스케줄러</a></li><li class="cur"><a aria-current="page" href="707-io-and-timer">7.7. I/O 드라이버와 타이머</a><ul class="toc"><li><a href="#771-io-멀티플렉싱">7.7.1. I/O 멀티플렉싱</a></li><li><a href="#772-io-대기-패턴">7.7.2. I/O 대기 패턴</a></li><li><a href="#773-io-driver-추상화">7.7.3. I/O Driver 추상화</a></li><li><a href="#774-타이머-구조">7.7.4. 타이머 구조</a></li><li><a href="#775-타이머-정밀도">7.7.5. 타이머 정밀도</a></li><li><a href="#776-타이머와-io-의-통합">7.7.6. 타이머와 I/O 의 통합</a></li><li><a href="#777-park--unpark">7.7.7. Park / Unpark</a></li><li><a href="#778-worker-수의-동적-조절">7.7.8. Worker 수의 동적 조절</a></li><li><a href="#779-cancellation">7.7.9. Cancellation</a></li><li><a href="#7710-reactor-패턴과의-비교">7.7.10. Reactor 패턴과의 비교</a></li></ul></li><li><a href="708-coroutine">7.8. 코루틴</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="77-io-드라이버와-타이머 77-io-driver-and-timers 771-io-멀티플렉싱 771-io-multiplexing 772-io-대기-패턴 772-io-wait-pattern 773-io-driver-추상화 773-io-driver-abstraction 774-타이머-구조 774-timer-structure 775-타이머-정밀도 775-timer-precision 776-타이머와-io-의-통합 776-integrating-timers-and-io 777-park--unpark 777-park--unpark 778-worker-수의-동적-조절 778-dynamic-adjustment-of-worker-count 779-cancellation 779-cancellation 7710-reactor-패턴과의-비교 7710-comparison-with-the-reactor-pattern"><a href="../../../../spec/refs-lang/007-runtime/707-io-and-timer" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="77-io-드라이버와-타이머"><a class="anchor" tabindex="-1" href="#77-io-드라이버와-타이머" aria-hidden="true">#</a>7.7. I/O 드라이버와 타이머</h1>
+<p><a href="706-scheduler">스케줄러</a> 의 worker 가 I/O 대기 task 와 타이머 대기 task 를 효율적으로 처리하기 위해 두 가지 메커니즘을 사용합니다.</p>
+<h2 id="771-io-멀티플렉싱"><a class="anchor" tabindex="-1" href="#771-io-멀티플렉싱" aria-hidden="true">#</a>7.7.1. I/O 멀티플렉싱</h2>
+<p>프로세스마다 <strong>reactor thread 하나</strong> 가 OS 의 readiness 멀티플렉서에서 기다리다가, 준비된 fd 를 기다리던 task 를 깨웁니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>OS / 환경</th><th>메커니즘</th></tr></thead>
+<tbody>
+<tr><td>Linux</td><td>epoll (<code>EPOLLET</code>, edge-triggered)</td></tr>
+<tr><td>BSD (FreeBSD / macOS)</td><td>kqueue (<code>EV_CLEAR</code>, edge-triggered)</td></tr>
+<tr><td>Windows</td><td>IOCP + AFD poll (readiness 흉내)</td></tr>
+<tr><td>WASI (<code>wasm32-wasi</code>)</td><td><code>wasi:io/poll</code></td></tr>
+<tr><td>WASI (<code>wasm32-wasi-threads</code>)</td><td><code>poll_oneoff</code></td></tr>
+</tbody></table></div>
+<p>빌드 시점에 타깃에 맞는 driver 가 컴파일되며, 이는 <a href="../006-meta-system/603-cfg">조건부 컴파일</a> 의 <code>target_os</code> 분기를 통해 이루어집니다.</p>
+<p>reactor thread 는 첫 async I/O 대기 때 시작합니다.</p>
+<p><code>wasm32-wasi</code> (preview 2 component) 에서는 드라이버가 <code>wasi:io/poll</code> 이며, host 가 네트워크 접근을 허락하면 <code>std::net</code> 이 <code>wasi:sockets</code> 로 동작합니다. <code>wasm32-wasi-threads</code> (preview 1) 에서는 <code>poll_oneoff</code> 가 host 가 넘긴 소켓을 지켜봅니다.</p>
+<h2 id="772-io-대기-패턴"><a class="anchor" tabindex="-1" href="#772-io-대기-패턴" aria-hidden="true">#</a>7.7.2. I/O 대기 패턴</h2>
+<p>I/O 대기는 다음과 같은 흐름으로 진행됩니다.</p>
+<pre><code>1. task 가 non-blocking 소켓에 read 를 시도 → WouldBlock.
+2. task 가 await task::readable(fd) - fd 를 reactor 에 (다시) 등록하고 park.
+3. worker 는 다른 task 를 실행.
+4. reactor 가 fd 의 readiness edge 를 받으면 그 fd 에 park 한 task 를 unpark.
+5. 어떤 worker 가 그 task 를 꺼내 read 를 다시 시도.
+</code></pre>
+<p>이 흐름은 <code>async</code> <code>fn</code> 의 <code>await</code> 와 결합됩니다 (<a href="../004-functions/412-async">비동기</a> 참고). 등록은 edge-triggered 이므로 대기마다 다시 겁니다. <code>task::readable(fd)</code> / <code>task::writable(fd)</code> future 는 park 한 뒤 fd 를 한 번 더 확인해 그사이 지나간 edge 를 놓치지 않습니다. 깨어났는데 아직 준비되지 않았을 수 있으므로 호출자는 연산을 다시 시도합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> readable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;     <span class="c">// rok::core::task - Future&lt;Output = ()&gt;</span>
+<span class="k">fn</span> writable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;
+</code></pre>
+<p>blocking 호출 (<code>TcpStream::read</code> 등) 은 이 경로를 쓰지 않고 호출한 OS 스레드를 막습니다. task 를 중단하는 I/O 는 표준 라이브러리의 <code>*_async</code> 메서드입니다 (<a href="../../refs-standard-libraries/300-std/302-net#320-공통-규칙">stdlib 3.2.0</a>).</p>
+<p>일반 파일은 readiness 모델로 기다릴 수 없습니다 (epoll / kqueue 에서 늘 준비됨). 그래서 일반 파일의 async I/O (<code>fs::*_async</code>, <a href="../../refs-standard-libraries/300-std/301-fs#314a-비동기-파일-io-_async">stdlib 3.1.4a</a>) 는 blocking syscall 을 다른 OS 스레드에서 실행하고 (<code>task::spawn_blocking</code>) 그동안 task 를 중단합니다.</p>
+<h2 id="773-io-driver-추상화"><a class="anchor" tabindex="-1" href="#773-io-driver-추상화" aria-hidden="true">#</a>7.7.3. I/O Driver 추상화</h2>
+<p>각 driver 는 공통된 인터페이스를 구현합니다.</p>
+<pre><code>trait IODriver {
+    fn register(ref self, fd: Fd, interest: IoInterest) throws (IoError);   // edge-triggered
+    fn poll(ref self, timeout: Duration) -&gt; List&lt;Event&gt;;
+}
+</code></pre>
+<p>위 인터페이스는 개념적인 모습을 나타낸 것이며, 정확한 시그니처는 런타임 구현이 결정합니다. driver 는 waker 를 들지 않습니다. 깨울 task 는 fd 와 방향 (읽기 / 쓰기) 으로 정한 parking key 로 <code>rok::core::task</code> 의 parking 표에서 찾습니다. 런타임 심볼은 <a href="../008-abi/805-extern-symbols#855-io--timer-영역">8.5.5</a> 를 참조합니다.</p>
+<h2 id="774-타이머-구조"><a class="anchor" tabindex="-1" href="#774-타이머-구조" aria-hidden="true">#</a>7.7.4. 타이머 구조</h2>
+<p><code>task::sleep(d)</code> / <code>task::timeout(d, ..)</code> 의 대기는 마감 시각 순의 binary heap 에 둡니다. 마감 시각이 지나면 깨웁니다. 취소된 task 의 timer 는 heap 에 남았다가 만료나 정리 때 버립니다. timer 를 처리할 때 이미 마감 시각이 지난 sleep 들은, 여러 스레드가 동시에 timer 를 처리하더라도 마감 시각 순으로 깨어납니다. 첫 poll 때 이미 마감 시각이 지난 sleep 은 그 자리에서 끝납니다.</p>
+<p>insert 와 만료는 <code>O(log n)</code> 입니다.</p>
+<h2 id="775-타이머-정밀도"><a class="anchor" tabindex="-1" href="#775-타이머-정밀도" aria-hidden="true">#</a>7.7.5. 타이머 정밀도</h2>
+<p>기본 tick 단위는 1 ms (밀리초) 입니다. 마이크로초 수준의 더 정밀한 시간이 필요한 경우에는 busy-wait 이나 hardware timer 와 같은 별도 메커니즘을 라이브러리가 제공합니다.</p>
+<p>밀리초 단위는 대부분의 <code>async</code> 코드, 타임아웃, sleep 처리에 충분한 정밀도를 제공합니다.</p>
+<h2 id="776-타이머와-io-의-통합"><a class="anchor" tabindex="-1" href="#776-타이머와-io-의-통합" aria-hidden="true">#</a>7.7.6. 타이머와 I/O 의 통합</h2>
+<p>worker 의 main <code>loop</code> 는 다음과 같습니다. I/O readiness 는 reactor thread 가 parking 표를 거쳐 task 를 큐에 되돌려 놓으므로, worker 는 driver 를 직접 poll 하지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    <span class="c">// 1. 큐에서 ready task 처리 (reactor 가 깨운 task 포함)</span>
+    <span class="k">while</span> <span class="k">let</span> task: <span class="t">Task</span> = queue.next_ready() {        <span class="c">// none 이면 종료</span>
+        execute(task);
+    }
+
+    <span class="c">// 2. 시간 지난 timer 의 task 들 큐에 복귀</span>
+    timers.fire_due();
+
+    <span class="c">// 3. 할 일이 없으면 다음 timer 까지 park (unpark 로 깨어남)</span>
+    park_until(timers.next_deadline());
+}
+</code></pre>
+<p>reactor thread 의 <code>loop</code> 는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    <span class="k">let</span> events = io_driver.poll();                     <span class="c">// 막힘 - GC 에는 native 구간</span>
+    <span class="k">for</span> event <span class="k">in</span> events {
+        task::unpark(parking_key(event.fd, event.direction));
+    }
+}
+</code></pre>
+<h2 id="777-park--unpark"><a class="anchor" tabindex="-1" href="#777-park--unpark" aria-hidden="true">#</a>7.7.7. Park / Unpark</h2>
+<p>worker 의 큐가 완전히 비어 있고 I/O 도 idle 상태일 때에는 worker 를 park 시켜 OS sleep 상태로 둡니다.</p>
+<ul>
+<li>park 는 <code>pthread_cond_wait</code> 또는 OS 별 sleep 메커니즘을 사용합니다.
+</li>
+<li>unpark 는 다른 worker 나 I/O 이벤트가 깨워 줍니다.
+</li>
+</ul>
+<p>park 가 진행되는 동안 CPU 사용량은 0 이므로, idle worker 가 많아지더라도 추가 비용이 발생하지 않습니다.</p>
+<h2 id="778-worker-수의-동적-조절"><a class="anchor" tabindex="-1" href="#778-worker-수의-동적-조절" aria-hidden="true">#</a>7.7.8. Worker 수의 동적 조절</h2>
+<p>기본값은 N = CPU 코어 수로 고정됩니다.</p>
+<p>켜면 (<code>ROK_DYNAMIC_WORKERS=1</code>) 과도하게 idle 한 worker 는 park 하며, push 는 다른 worker 를 먼저 깨웁니다. 모든 활성 worker 가 바쁘면 park 한 worker 를 다시 씁니다. 호출 안에서 block 된 worker 는 모든 모드에서 대체됩니다 (<a href="706-scheduler#767-blocking-syscall-자동-검출">7.6.7</a>).</p>
+<h2 id="779-cancellation"><a class="anchor" tabindex="-1" href="#779-cancellation" aria-hidden="true">#</a>7.7.9. Cancellation</h2>
+<p><code>Task::cancel</code> 은 취소를 <strong>요청</strong> 합니다 (<a href="../../refs-standard-libraries/200-core/218-task#2184-협력적-취소---taskcancel">stdlib 2.18.4</a>). 런타임은 플래그를 세우고 task 를 깨웁니다.</p>
+<ul>
+<li>모든 <code>await</code> 가 cancellation point 입니다. <code>await</code> 는 들어갈 때와 중단하기 직전에 플래그를 봅니다.
+</li>
+<li>기다린 future 가 <code>Ready</code> 를 돌려준 뒤의 검사는 &quot;플래그가 섰는가&quot; 가 아니라 &quot;<strong>기다린 코루틴이 취소 때문에 떠났는가</strong>&quot; 입니다. 그래서 future 가 넘겨준 값 (받은 메시지, 잡은 잠금 guard) 은 지켜지고, 다음 <code>await</code> 에서 떠납니다.
+</li>
+<li>취소된 task 는 다음 <code>await</code> 에서 <code>return</code> 처럼 본문을 떠납니다. 지나는 <code>finally</code> 블록과 <code>using</code> 의 <code>drop</code> 이 안쪽부터 실행됩니다. 중첩된 <code>async fn</code> 호출은 가장 안쪽 코루틴부터 정리됩니다.
+</li>
+<li>이것은 task 안에서 <code>catch</code> 할 수 있는 에러가 아닙니다. throwing 이 아닌 async 본문도 같은 경로로 끝납니다. 결과는 버려집니다.
+</li>
+<li>마지막 cancellation point 를 지난 뒤에 취소된 task 는 정상적으로 끝나고 결과를 가집니다 (<code>await</code> / <code>join</code> 이 그 결과를 돌려줌). <code>CancellationError</code> 는 결과 없이 끝난 task 에만 해당합니다.
+</li>
+<li>blocking syscall (<code>TcpStream::read</code> 등) 은 cancellation point 가 아닙니다. 끝난 뒤 다음 <code>await</code> 에서 떠납니다.
+</li>
+<li>소켓 I/O, <code>readable</code> / <code>writable</code>, <code>sleep</code> / <code>timeout</code>, <code>lock_async</code>, <code>recv_async</code> / <code>send_async</code> 에서 기다리던 task 는 취소되면 깨어나 다음 <code>await</code> 에서 떠납니다.
+</li>
+<li>task 가 끝나면 그 task 의 깨우기 등록 (I/O readiness 대기, timer, parking 표의 waker) 은 모두 풀립니다. 실행 중 pool 의 등록 수는 진단용 <code>task::registrations()</code> 로 볼 수 있으며, 그 값의 정확한 의미는 구현이 정합니다.
+</li>
+</ul>
+<p><code>task::timeout</code> 이 시간을 넘기거나 <code>task::race</code> 가 승자를 정한 뒤에도, 진 쪽 task 는 계속 실행됩니다. 멈추려면 <code>cancel</code> 을 부릅니다. <code>task::select</code> 는 spawn 하지 않으므로 진 future 를 스스로 취소합니다 (<a href="../../refs-standard-libraries/200-core/218-task#select---먼저-끝나는-future">stdlib 2.18.1</a>).</p>
+<h2 id="7710-reactor-패턴과의-비교"><a class="anchor" tabindex="-1" href="#7710-reactor-패턴과의-비교" aria-hidden="true">#</a>7.7.10. Reactor 패턴과의 비교</h2>
+<p>rok 은 전통적인 reactor 구조를 씁니다. 별도의 reactor thread 하나가 I/O 를 기다리고, worker thread 들과는 parking 표를 통해서만 만납니다. 그 대가로 I/O 깨움이 thread 를 건넙니다 (unpark 한 번).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/007-runtime/707-io-and-timer.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="706-scheduler"><small>Previous</small>7.6. 스케줄러</a><a class="next" href="708-coroutine"><small>Next</small>7.8. 코루틴</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

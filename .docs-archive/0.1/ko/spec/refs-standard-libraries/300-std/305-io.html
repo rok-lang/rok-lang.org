@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.5. io:: - Reader / Writer / 표준 입출력 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::std::io 모듈은 byte stream 추상화와 더불어 표준 입출력 (stdin/stdout/stderr) 을 함께 제공합니다. 별도의 AsyncRead/AsyncWrite 트레잇은 두지 않습니다. 이 모듈의 API 는 호출한 OS 스레드를 막습니다. stackless 코루...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/305-io.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.5. io:: - Reader / Writer / 표준 입출력 - rok docs">
+<meta property="og:description" content="rok::std::io 모듈은 byte stream 추상화와 더불어 표준 입출력 (stdin/stdout/stderr) 을 함께 제공합니다. 별도의 AsyncRead/AsyncWrite 트레잇은 두지 않습니다. 이 모듈의 API 는 호출한 OS 스레드를 막습니다. stackless 코루...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/305-io.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/305-io.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/305-io.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - 시간</a></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li class="cur"><a aria-current="page" href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a><ul class="toc"><li><a href="#350-ioerror">3.5.0. IoError</a></li><li><a href="#351-asbytes">3.5.1. AsBytes</a></li><li><a href="#351a-reader--writer-트레잇">3.5.1a. Reader / Writer 트레잇</a></li><li><a href="#352-표준-입출력">3.5.2. 표준 입출력</a></li><li><a href="#353-bufreader--bufwriter--linewriter">3.5.3. BufReader / BufWriter / LineWriter</a></li><li><a href="#354-copy---iocopyreader-writer">3.5.4. copy - io::copy(reader, writer)</a></li><li><a href="#355-사용-예">3.5.5. 사용 예</a></li></ul></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="35-io---reader--writer--표준-입출력 35-io---reader--writer--standard-io 350-ioerror 350-ioerror 351-asbytes 351-asbytes 351a-reader--writer-트레잇 351a-reader--writer-traits 352-표준-입출력 352-standard-io 353-bufreader--bufwriter--linewriter 353-bufreader--bufwriter--linewriter 354-copy---iocopyreader-writer 354-copy---iocopyreader-writer 355-사용-예 355-examples"><a href="../../../../spec/refs-standard-libraries/300-std/305-io" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="35-io---reader--writer--표준-입출력"><a class="anchor" tabindex="-1" href="#35-io---reader--writer--표준-입출력" aria-hidden="true">#</a>3.5. <code>io::</code> - <code>Reader</code> / <code>Writer</code> / 표준 입출력</h1>
+<p><code>rok::std::io</code> 모듈은 byte stream 추상화와 더불어 표준 입출력 (stdin/stdout/stderr) 을 함께 제공합니다. 별도의 <code>AsyncRead</code>/<code>AsyncWrite</code> 트레잇은 두지 않습니다. 이 모듈의 API 는 호출한 OS 스레드를 막습니다. stackless 코루틴은 보통 함수 안에서 중단할 수 없으므로 sync 호출이 task 안에서 저절로 async 가 되지는 않으며, task 만 중단하는 I/O 는 타입별 <code>*_async</code> 메서드로 둡니다 (소켓 <a href="302-net#320-공통-규칙">3.2.0</a>, 파일 <a href="301-fs#314a-비동기-파일-io-_async">3.1.4a</a>).</p>
+<h2 id="350-ioerror"><a class="anchor" tabindex="-1" href="#350-ioerror" aria-hidden="true">#</a>3.5.0. <code>IoError</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">IoError</span> {
+    kind: <span class="t">IoErrorKind</span>;
+    code: <span class="t">i32</span>;            <span class="c">// OS errno</span>
+    message: <span class="t">str</span>;         <span class="c">// OS 메시지 (strerror)</span>
+}
+
+<span class="k">enum</span> <span class="t">IoErrorKind</span> {
+    <span class="t">Other</span>,                <span class="c">// 그 밖의 errno</span>
+    <span class="t">NotFound</span>,             <span class="c">// ENOENT</span>
+    <span class="t">PermissionDenied</span>,     <span class="c">// EACCES, EPERM</span>
+    <span class="t">AlreadyExists</span>,        <span class="c">// EEXIST</span>
+    <span class="t">NotADirectory</span>,        <span class="c">// ENOTDIR</span>
+    <span class="t">IsADirectory</span>,         <span class="c">// EISDIR</span>
+    <span class="t">DirectoryNotEmpty</span>,    <span class="c">// ENOTEMPTY</span>
+    <span class="t">InvalidInput</span>,         <span class="c">// EINVAL</span>
+    <span class="t">BrokenPipe</span>,           <span class="c">// EPIPE</span>
+    <span class="t">Interrupted</span>,          <span class="c">// EINTR</span>
+    <span class="t">WouldBlock</span>,           <span class="c">// EAGAIN</span>
+    <span class="t">TimedOut</span>,             <span class="c">// ETIMEDOUT, 시간 제한</span>
+    <span class="t">StorageFull</span>,          <span class="c">// ENOSPC</span>
+    <span class="t">CrossesDevices</span>,       <span class="c">// EXDEV</span>
+    <span class="t">Unsupported</span>,          <span class="c">// ENOTSUP, ENOSYS</span>
+    <span class="t">UnexpectedEof</span>,        <span class="c">// 기대한 바이트 전에 끝남 (read_exact 등)</span>
+    <span class="t">InvalidData</span>,          <span class="c">// 데이터가 형식에 맞지 않음 (UTF-8 등)</span>
+}
+</code></pre>
+<p><code>kind</code> 는 errno 에서 정해지며 (<code>UnexpectedEof</code> / <code>InvalidData</code> 는 라이브러리가 정함), 원래 값은 <code>code</code> 에, OS 가 주는 설명은 <code>message</code> 에 남습니다.</p>
+<h2 id="351-asbytes"><a class="anchor" tabindex="-1" href="#351-asbytes" aria-hidden="true">#</a>3.5.1. <code>AsBytes</code></h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">AsBytes</span> { <span class="k">fn</span> byte_slice(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;; }   <span class="c">// UTF-8 일 필요 없음</span>
+<span class="k">impl</span> <span class="t">AsBytes</span> <span class="k">for</span> <span class="t">str</span> { .. }
+<span class="k">impl</span> <span class="t">AsBytes</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">u8</span>&gt; { .. }
+<span class="k">impl</span> <span class="t">AsBytes</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt; { .. }
+<span class="k">impl</span>&lt;<span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; <span class="t">AsBytes</span> <span class="k">for</span> [<span class="t">u8</span>; <span class="t">N</span>] { .. }   <span class="c">// 사본의 view (b"...", include_bytes!)</span>
+</code></pre>
+<p>쓰기 함수 (<code>fs</code>, <code>net</code>, <code>Writer</code>) 의 데이터 인자는 <code>AsBytes</code> 를 받습니다. <code>AsBytes</code> 는 <code>rok::core</code> 에 (<code>Slice</code> 옆, <code>rok::core::collections::slice</code>) 정의되며 <code>rok::std::io::AsBytes</code> 로 다시 내보냅니다.</p>
+<h2 id="351a-reader--writer-트레잇"><a class="anchor" tabindex="-1" href="#351a-reader--writer-트레잇" aria-hidden="true">#</a>3.5.1a. <code>Reader</code> / <code>Writer</code> 트레잇</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Reader</span> {
+    <span class="k">fn</span> read(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;   <span class="c">// buf[0..n] 을 채움, 0 = 끝</span>
+
+    <span class="c">// default 메서드</span>
+    <span class="k">fn</span> read_exact(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>);      <span class="c">// buf 전체, 모자라면 UnexpectedEof</span>
+    <span class="k">fn</span> read_to_end(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> read_to_str(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;             <span class="c">// UTF-8 검증</span>
+    <span class="k">fn</span> read_line(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;               <span class="c">// `\n` 포함, 끝이면 ""</span>
+    <span class="k">fn</span> lines(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Lines</span>&lt;<span class="k">Self</span>&gt;;     <span class="c">// Iterator&lt;Item = Result&lt;str, IoError&gt;&gt; 구현</span>
+    <span class="k">fn</span> bytes(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Bytes</span>&lt;<span class="k">Self</span>&gt;;     <span class="c">// Iterator&lt;Item = Result&lt;u8, IoError&gt;&gt; 구현</span>
+    <span class="k">fn</span> raw_fd(<span class="k">self</span>) -&gt; <span class="t">RawFd</span>;              <span class="c">// io::copy 가 커널에 넘길 수 있는 OS descriptor; 없거나, stream 이 buffer / timeout / non-blocking 이면 -1 (기본값)</span>
+}
+
+<span class="k">trait</span> <span class="t">Writer</span> {
+    <span class="k">fn</span> write(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> flush(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="c">// default</span>
+    <span class="k">fn</span> write_all(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> write_str(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> write_fmt(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);     <span class="c">// f-string 결과를 씀</span>
+    <span class="k">fn</span> raw_fd(<span class="k">self</span>) -&gt; <span class="t">RawFd</span>;              <span class="c">// io::copy 가 커널에 넘길 수 있는 OS descriptor; 없거나, stream 이 buffer / timeout / non-blocking 이면 -1 (기본값)</span>
+}
+
+<span class="k">trait</span> <span class="t">Seek</span> {
+    <span class="k">fn</span> seek(<span class="k">ref</span> <span class="k">self</span>, pos: <span class="t">SeekFrom</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+
+    <span class="c">// default</span>
+    <span class="k">fn</span> rewind(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                         <span class="c">// seek(Start(0))</span>
+    <span class="k">fn</span> stream_position(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;         <span class="c">// seek(Current(0))</span>
+}
+</code></pre>
+<p>바이트 buffer 는 <code>Slice&lt;u8&gt;</code> 가 생기기 전까지 <code>List&lt;u8&gt;</code> 로 주고받습니다. <code>read</code> 는 미리 길이를 잡아 둔 <code>buf</code> 를 채웁니다 (<code>List</code> 는 handle 이므로 호출자가 결과를 봅니다). 트레잇 메서드는 <code>ref self</code> 를 받고, 핸들 타입의 고유 메서드는 <code>self</code> 를 받습니다.</p>
+<p>이 세 트레잇은 <code>File</code>, <code>TcpStream</code>, <code>UnixStream</code>, 그리고 <code>stdin/out/err</code> 모두에서 일관되게 구현되어 있어, 동일한 코드로 다양한 stream 을 다룰 수 있게 합니다.</p>
+<h2 id="352-표준-입출력"><a class="anchor" tabindex="-1" href="#352-표준-입출력" aria-hidden="true">#</a>3.5.2. 표준 입출력</h2>
+<p>다음으로, 프로세스의 가장 흔한 I/O 통로인 표준 입출력을 들여다봅니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> stdin() -&gt; <span class="t">Stdin</span>;
+<span class="k">fn</span> stdout() -&gt; <span class="t">Stdout</span>;
+<span class="k">fn</span> stderr() -&gt; <span class="t">Stderr</span>;
+
+<span class="k">struct</span> <span class="t">Stdin</span> { <span class="c">/* read line / bytes / etc. */</span> }
+<span class="k">struct</span> <span class="t">Stdout</span> { <span class="c">/* tty 면 line-buffered, pipe 면 block-buffered */</span> }
+<span class="k">struct</span> <span class="t">Stderr</span> { <span class="c">/* unbuffered */</span> }
+
+<span class="k">impl</span> <span class="t">Reader</span> <span class="k">for</span> <span class="t">Stdin</span> { ... }
+<span class="k">impl</span> <span class="t">Writer</span> <span class="k">for</span> <span class="t">Stdout</span> { ... }
+<span class="k">impl</span> <span class="t">Writer</span> <span class="k">for</span> <span class="t">Stderr</span> { ... }
+
+<span class="k">impl</span> <span class="t">Stdin</span> {
+    <span class="k">fn</span> lock(<span class="k">self</span>) -&gt; <span class="t">StdinLock</span>;          <span class="c">// exclusive lock - 멀티스레드 안전</span>
+    <span class="k">fn</span> read_line(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> lines(<span class="k">self</span>) -&gt; <span class="t">Lines</span>&lt;<span class="t">Stdin</span>&gt;;      <span class="c">// Iterator&lt;Item = Result&lt;str, IoError&gt;&gt; 구현</span>
+}
+</code></pre>
+<p><code>stdout()</code> 은 <code>print</code> / <code>println</code> 과 같은 런타임 buffer 를 공유하므로 둘을 섞어 써도 출력 순서가 유지됩니다. 이 buffer 는 프로세스가 끝날 때, <code>flush()</code> 를 부를 때, buffer 가 찰 때 비웁니다. <code>stderr</code> 는 buffer 없이 바로 씁니다. <code>stdin()</code> 도 하나의 공유 buffer 를 씁니다.</p>
+<p>stdout/stderr 에서 자주 쓰이는 <code>print</code> / <code>println</code> / <code>eprint</code> / <code>eprintln</code> 은 <code>rok::core::print::*</code> 에 자리 잡고 있으므로, <a href="../000-meta/002-import">묵시 <code>use rok::core::**;</code></a> 를 통해 별도 import 없이 자동으로 노출됩니다.</p>
+<h2 id="353-bufreader--bufwriter--linewriter"><a class="anchor" tabindex="-1" href="#353-bufreader--bufwriter--linewriter" aria-hidden="true">#</a>3.5.3. <code>BufReader</code> / <code>BufWriter</code> / <code>LineWriter</code></h2>
+<p>원시 stream 을 그대로 쓰면 system call 비용이 누적되기 쉽기에, 표준 라이브러리는 다음과 같은 buffering wrapper 를 함께 제공합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">BufReader</span>&lt;<span class="t">R</span>: <span class="t">Reader</span>&gt; { <span class="c">/* internal buffer */</span> }
+<span class="k">struct</span> <span class="t">BufWriter</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; { <span class="c">/* internal buffer */</span> }
+<span class="k">struct</span> <span class="t">LineWriter</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; { <span class="c">/* line-buffered */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">R</span>: <span class="t">Reader</span>&gt; <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt; {
+    <span class="k">fn</span> new(inner: <span class="t">R</span>) -&gt; <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>, inner: <span class="t">R</span>) -&gt; <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt;;
+    <span class="k">fn</span> into_inner(<span class="k">self</span>) -&gt; <span class="t">R</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">R</span>: <span class="t">Reader</span>&gt; <span class="t">Reader</span> <span class="k">for</span> <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt; { ... }
+
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt; {
+    <span class="k">fn</span> new(inner: <span class="t">W</span>) -&gt; <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>, inner: <span class="t">W</span>) -&gt; <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt;;
+    <span class="k">fn</span> into_inner(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">W</span>;     <span class="c">// 남은 buffer 를 flush 한 뒤 돌려줌</span>
+}
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">Writer</span> <span class="k">for</span> <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt; { ... }
+
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">LineWriter</span>&lt;<span class="t">W</span>&gt; {                    <span class="c">// \n 이 든 write 마다 flush</span>
+    <span class="k">fn</span> new(inner: <span class="t">W</span>) -&gt; <span class="t">LineWriter</span>&lt;<span class="t">W</span>&gt;;
+}
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">Writer</span> <span class="k">for</span> <span class="t">LineWriter</span>&lt;<span class="t">W</span>&gt; { ... }
+</code></pre>
+<p><code>BufWriter</code> 는 <code>Drop</code> 을 구현하므로 <code>using</code> 블록을 빠져나갈 때 남은 buffer 를 flush 합니다. 이때의 에러는 무시되므로, 에러를 확인하려면 빠져나가기 전에 <code>flush()</code> 를 직접 부릅니다. <code>LineWriter</code> 는 <code>\n</code> 을 포함한 write 마다 flush 합니다.</p>
+<pre><code class="language-rok"></code></pre>
+<p>요컨대 작은 read 가 잦은 상황에서 system call 횟수를 줄이는 것이 핵심 효용입니다.</p>
+<h2 id="354-copy---iocopyreader-writer"><a class="anchor" tabindex="-1" href="#354-copy---iocopyreader-writer" aria-hidden="true">#</a>3.5.4. <code>copy</code> - <code>io::copy(reader, writer)</code></h2>
+<p>stream 간 단순 복사는 별도 함수로 따로 묶어 두었습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> copy&lt;<span class="t">R</span>: <span class="t">Reader</span>, <span class="t">W</span>: <span class="t">Writer</span>&gt;(<span class="k">ref</span> reader: <span class="t">R</span>, <span class="k">ref</span> writer: <span class="t">W</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+</code></pre>
+<p>내부적으로는 가능한 자리에서 <em><code>splice</code> / <code>sendfile</code> / <code>copy_file_range</code> 를 활용</em> 하지만, 사용자 코드 입장에서는 단순한 호출 한 번이면 충분합니다. descriptor 두 개 (<code>raw_fd</code>) 가 주어지면 커널 경로를 descriptor 종류에 따라 고르며, 그렇지 않으면 <code>read</code> / <code>write</code> 를 씁니다.</p>
+<h2 id="355-사용-예"><a class="anchor" tabindex="-1" href="#355-사용-예" aria-hidden="true">#</a>3.5.5. 사용 예</h2>
+<p>지금까지의 조각들을 조합한 전형적인 사용 모습은 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::io::{stdin, stdout, <span class="t">BufReader</span>, <span class="t">BufWriter</span>};
+
+<span class="c">// 줄 단위 처리</span>
+<span class="k">let</span> stdin = stdin().lock();
+<span class="k">for</span> line <span class="k">in</span> stdin.lines() {
+    <span class="k">let</span> line = <span class="k">try</span> line.get();       <span class="c">// 반복자 원소는 Result - get() 으로 에러 흐름 복귀</span>
+    process(line);
+}
+
+<span class="c">// 버퍼 쓰기</span>
+<span class="k">let</span> f = <span class="k">try</span> fs::create(<span class="s">"output.txt"</span>);
+<span class="k">let</span> buf = <span class="t">BufWriter</span>::new(f);
+<span class="k">for</span> x <span class="k">in</span> xs {
+    <span class="k">try</span> buf.write_str(<span class="s">f"{</span>x<span class="s">}\n"</span>);
+}
+<span class="k">try</span> buf.flush();    <span class="c">// 명시 flush - 해제 시점의 silent fail 회피</span>
+
+<span class="c">// 복사</span>
+<span class="k">let</span> src = <span class="k">try</span> fs::open(<span class="s">"a.txt"</span>);
+<span class="k">let</span> dst = <span class="k">try</span> fs::create(<span class="s">"b.txt"</span>);
+<span class="k">try</span> io::copy(<span class="k">ref</span> src, <span class="k">ref</span> dst);
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/305-io.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="304-thread"><small>Previous</small>3.4. thread:: - OS 스레드 (1:1 모델)</a><a class="next" href="306-env"><small>Next</small>3.6. env:: - 환경 변수 / args / 디렉토리</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

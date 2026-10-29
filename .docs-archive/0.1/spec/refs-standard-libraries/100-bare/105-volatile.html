@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.5. volatile memory access - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::bare::volatile module provides memory reads / writes that the compiler does not optimize away. This channel is essential where every access must be exe...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/105-volatile.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.5. volatile memory access - rok docs">
+<meta property="og:description" content="The rok::bare::volatile module provides memory reads / writes that the compiler does not optimize away. This channel is essential where every access must be exe...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/105-volatile.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/105-volatile.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/105-volatile.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li class="cur"><a aria-current="page" href="105-volatile">1.5. volatile memory access</a><ul class="toc"><li><a href="#151-motivation">1.5.1. Motivation</a></li><li><a href="#152-api">1.5.2. API</a></li><li><a href="#153-uses">1.5.3. Uses</a></li><li><a href="#154-caution---not-the-same-as-atomic">1.5.4. Caution - not the same as atomic</a></li><li><a href="#155-lowering">1.5.5. lowering</a></li></ul></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="15-volatile-memory-access 15-volatile-메모리-접근 151-motivation 151-동기 152-api 152-api 153-uses 153-사용처 154-caution---not-the-same-as-atomic 154-주의---atomic-과-다름 155-lowering 155-lowering"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/105-volatile" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="15-volatile-memory-access"><a class="anchor" tabindex="-1" href="#15-volatile-memory-access" aria-hidden="true">#</a>1.5. volatile memory access</h1>
+<p>The <code>rok::bare::volatile</code> module provides memory reads / writes that the compiler does not optimize away. This channel is essential where every access must be executed as written, such as hardware registers, MMIO, signal handlers and DMA buffers.</p>
+<h2 id="151-motivation"><a class="anchor" tabindex="-1" href="#151-motivation" aria-hidden="true">#</a>1.5.1. Motivation</h2>
+<p>The compiler may freely remove, reorder or merge ordinary reads / writes. Consider the following code.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u32</span>&gt; = mmio_register;
+<span class="k">unsafe</span> {
+    p.write(<span class="n">1</span>);                <span class="c">// compiler: possible dead store (overwritten by the next write)</span>
+    p.write(<span class="n">2</span>);                <span class="c">// the actual hardware must receive both, 1 → 2</span>
+}
+</code></pre>
+<p>The compiler may treat the first write as a dead store and delete it, yet some hardware works correctly only if it receives 1 and then 2. <code>volatile</code> rejects such optimizations and forces the accesses to happen exactly as written.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> {
+    rok::bare::volatile::write(p, <span class="n">1</span>);    <span class="c">// always writes 1 to the hardware</span>
+    rok::bare::volatile::write(p, <span class="n">2</span>);    <span class="c">// always writes 2</span>
+}
+</code></pre>
+<h2 id="152-api"><a class="anchor" tabindex="-1" href="#152-api" aria-hidden="true">#</a>1.5.2. API</h2>
+<p>The API consists of just two functions, read and write.</p>
+<pre><code class="language-rok"><span class="c">// rok::bare::volatile</span>
+<span class="k">unsafe</span> <span class="k">fn</span> read&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> write&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>);
+</code></pre>
+<p>The same operations are available as the methods <code>Ptr&lt;T&gt;::read_volatile</code> / <code>write_volatile</code>, which often read more naturally (<a href="101-ptr#112-ptrt---strict-provenance-api">1.1.2</a>).</p>
+<h2 id="153-uses"><a class="anchor" tabindex="-1" href="#153-uses" aria-hidden="true">#</a>1.5.3. Uses</h2>
+<p>The places that need <code>volatile</code> generally fall into these patterns.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Place</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>MMIO register</td><td>Hardware has side effects even on read</td></tr>
+<tr><td>Memory-mapped device</td><td>DMA, etc.</td></tr>
+<tr><td>Signal handler variable</td><td>Changed inside a signal - must be visible outside</td></tr>
+<tr><td>Spinlock retry loop</td><td>Repeatedly reads a value changed by another thread</td></tr>
+</tbody></table></div>
+<h2 id="154-caution---not-the-same-as-atomic"><a class="anchor" tabindex="-1" href="#154-caution---not-the-same-as-atomic" aria-hidden="true">#</a>1.5.4. Caution - not the same as atomic</h2>
+<p>A common misconception: <code>volatile</code> only blocks compiler optimizations and gives no atomicity guarantee.</p>
+<ul>
+<li>Race conditions still occur across threads
+</li>
+<li>No memory ordering is enforced
+</li>
+</ul>
+<p>Variables shared between threads must therefore use <a href="../200-core/216-sync#2162-atomict---lock-free-atomics"><code>Atomic&lt;T&gt;</code></a>, and <code>volatile</code> should be reserved as a tool for <strong>hardware MMIO</strong>.</p>
+<h2 id="155-lowering"><a class="anchor" tabindex="-1" href="#155-lowering" aria-hidden="true">#</a>1.5.5. lowering</h2>
+<p><code>volatile::read</code> and <code>volatile::write</code> lower to LLVM's <code>load volatile</code> / <code>store volatile</code>; their intrinsic names are <code>rok.volatile.read.T</code> and <code>rok.volatile.write.T</code> respectively.</p>
+<p>Atomics are covered in detail in <a href="../200-core/216-sync">2.16 sync</a>; this chapter is authoritative only for non-atomic cases.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/105-volatile.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="104-alloc"><small>Previous</small>1.4. raw allocation - alloc / dealloc / realloc</a><a class="next" href="106-gc-pin"><small>Next</small>1.6. Pinned&lt;T&gt; - GC pinning</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

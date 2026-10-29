@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.13. marker - Clone / Copy / Drop - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="값을 복제하고, 더 이상 필요 없어진 자원을 정리하는 일은 어떤 언어에서도 피할 수 없는 주제입니다. rok::core::marker 모듈은 이 두 가지 관심사를 세 트레잇으로 묶어 표현합니다. 먼저 Clone 은 값의 독립적인 사본을 만드는 방법을 정의하고, 그다음 Copy 는 단순한...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/213-marker.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.13. marker - Clone / Copy / Drop - rok docs">
+<meta property="og:description" content="값을 복제하고, 더 이상 필요 없어진 자원을 정리하는 일은 어떤 언어에서도 피할 수 없는 주제입니다. rok::core::marker 모듈은 이 두 가지 관심사를 세 트레잇으로 묶어 표현합니다. 먼저 Clone 은 값의 독립적인 사본을 만드는 방법을 정의하고, 그다음 Copy 는 단순한...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/213-marker.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/213-marker.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/213-marker.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li class="cur"><a aria-current="page" href="213-marker">2.13. marker - Clone / Copy / Drop</a><ul class="toc"><li><a href="#2131-메모리-모델---gc-가-있는-언어의-clonedrop">2.13.1. 메모리 모델 - GC 가 있는 언어의 Clone/Drop</a></li><li><a href="#2132-clone---깊은-복제">2.13.2. Clone - 깊은 복제</a></li><li><a href="#2133-copy---marker">2.13.3. Copy - marker</a></li><li><a href="#2134-drop---using-해제-시-정리">2.13.4. Drop - using 해제 시 정리</a></li><li><a href="#2135-lang-slot-매핑">2.13.5. lang slot 매핑</a></li><li><a href="#2136-트레잇-구현-매트릭스">2.13.6. 트레잇 구현 매트릭스</a></li><li><a href="#2137-다른-언어와의-비교">2.13.7. 다른 언어와의 비교</a></li><li><a href="#2138-nonesentinel---none-리터럴의-타입">2.13.8. NoneSentinel - none 리터럴의 타입</a></li><li><a href="#2139-send--sync---스레드-경계-marker">2.13.9. Send / Sync - 스레드 경계 marker</a></li><li><a href="#21310-default---기본값">2.13.10. Default - 기본값</a></li><li><a href="#21311-derive-가능한-트레잇">2.13.11. derive 가능한 트레잇</a></li></ul></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="213-marker---clone--copy--drop 213-marker---clone--copy--drop 2131-메모리-모델---gc-가-있는-언어의-clonedrop 2131-memory-model---clonedrop-in-a-language-with-a-gc 2132-clone---깊은-복제 2132-clone---deep-copy clone-의-의미 meaning-of-clone 자동-호출-없음---clone_trait-lang-slot no-automatic-calls---clone_trait-lang-slot default-본문 default-bodies derive derive 2133-copy---marker 2133-copy---marker impl-정책 impl-policy 2134-drop---using-해제-시-정리 2134-drop---cleanup-on-using-release 호출-시점---using-바인딩에서만 when-called---only-for-using-bindings gc-와의-관계 relation-to-the-gc drop-구현-예 drop-implementation-example drop-의-제약 restrictions-on-drop derive-정책 derive-policy 2135-lang-slot-매핑 2135-lang-slot-mapping 2136-트레잇-구현-매트릭스 2136-trait-implementation-matrix 2137-다른-언어와의-비교 2137-comparison-with-other-languages 2138-nonesentinel---none-리터럴의-타입 2138-nonesentinel---the-type-of-the-none-literal 2139-send--sync---스레드-경계-marker 2139-send--sync---thread-boundary-markers 21310-default---기본값 21310-default---default-values 21311-derive-가능한-트레잇 21311-derivable-traits"><a href="../../../../spec/refs-standard-libraries/200-core/213-marker" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="213-marker---clone--copy--drop"><a class="anchor" tabindex="-1" href="#213-marker---clone--copy--drop" aria-hidden="true">#</a>2.13. marker - <code>Clone</code> / <code>Copy</code> / <code>Drop</code></h1>
+<p>값을 복제하고, 더 이상 필요 없어진 자원을 정리하는 일은 어떤 언어에서도 피할 수 없는 주제입니다. <code>rok::core::marker</code> 모듈은 이 두 가지 관심사를 세 트레잇으로 묶어 표현합니다. 먼저 <code>Clone</code> 은 값의 독립적인 사본을 만드는 방법을 정의하고, 그다음 <code>Copy</code> 는 단순한 비트 복사로 충분한 타입임을 알리는 표지를 제공하며, 또한 <code>Drop</code> 은 scope 를 떠나는 순간 실행해야 하는 정리 코드를 정의합니다. 이 밖에 <code>none</code> 리터럴의 타입인 zero-sized marker 타입 <code>NoneSentinel</code> 도 이 모듈에 둡니다 (2.13.8).</p>
+<p>rok 이 GC 를 채택했다는 사실은 이 트레잇들의 의미에 직접적인 영향을 줍니다. 메모리 회수는 GC 가 책임지므로 <code>Drop</code> 은 더 이상 메모리 해제와 얽히지 않습니다. 따라서 <code>Drop</code> 은 파일 핸들이나 소켓처럼 언어 외부에 존재하는 자원을 정리하는 finalize 작업에 한정됩니다. 이러한 차이가 rok 의 marker 트레잇을 Rust 와도, Java/Python 과도 다른 자리에 놓이게 합니다.</p>
+<h2 id="2131-메모리-모델---gc-가-있는-언어의-clonedrop"><a class="anchor" tabindex="-1" href="#2131-메모리-모델---gc-가-있는-언어의-clonedrop" aria-hidden="true">#</a>2.13.1. 메모리 모델 - GC 가 있는 언어의 Clone/Drop</h2>
+<p>rok 의 런타임은 <a href="../../refs-lang/007-runtime/703-gc-algorithm">Immix + Sticky Mark-Bit Generational GC</a> 가 heap 객체의 수명을 자동으로 관리합니다. 즉 어떤 객체가 언제 메모리에서 사라지는지를 사용자가 직접 결정할 필요가 없습니다. 그러나 외부 자원의 정리만큼은 결정론적으로 일어나야 하기 때문에, rok 의 <code>Drop</code> 은 GC 와 분리된 별도의 메커니즘으로 동작합니다. 이를 Rust 와 비교하면 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust (no GC)</th><th>rok (GC)</th></tr></thead>
+<tbody>
+<tr><td>메모리 회수</td><td><code>Drop</code> 가 책임</td><td>GC 가 자동 - <code>Drop</code> <strong>하지 않음</strong></td></tr>
+<tr><td><code>Drop::drop</code> 의미</td><td>자원 해제 + 메모리 free</td><td><strong>외부 자원 정리만</strong> (file handle, socket, ...)</td></tr>
+<tr><td>호출 시점</td><td>결정론적 (scope exit)</td><td><strong><code>using</code> 블록을 빠져나갈 때만</strong> (GC 수집과 무관)</td></tr>
+<tr><td>누락 시 영향</td><td>자원 누수 + 메모리 누수</td><td>자원 누수만 (메모리는 GC 가 결국 회수)</td></tr>
+</tbody></table></div>
+<div class="callout note"><p class="callout-title">참고</p>
+<p>일반 바인딩에는 scope 종료 시 자동 drop 이 없습니다. <code>Drop::drop</code> 은 <code>using</code> 으로 묶은 바인딩에서만 호출됩니다 (<a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 <code>using</code></a>). GC 는 다른 객체의 finalization 을 보장하지 않으며, 어떤 경우에도 <code>drop</code> 을 부르지 않습니다.</p>
+</div>
+<p>이처럼 메모리 회수와 자원 정리를 분리한 덕분에, 일반 객체는 <code>Drop</code> 을 신경 쓰지 않아도 GC 가 알아서 회수해 주고, 외부 자원을 다루는 타입만 <code>Drop</code> 을 구현해 결정론적인 정리 시점을 확보할 수 있습니다.</p>
+<h2 id="2132-clone---깊은-복제"><a class="anchor" tabindex="-1" href="#2132-clone---깊은-복제" aria-hidden="true">#</a>2.13.2. <code>Clone</code> - 깊은 복제</h2>
+<p>값의 독립적인 사본이 필요할 때 호출하는 메서드가 <code>Clone::clone</code> 입니다. 시그니처는 다음과 같이 단순합니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang("clone_trait")]</span>
+<span class="k">trait</span> <span class="t">Clone</span> {
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<p><code>clone</code> 은 깊은 복제를 수행합니다. 즉 내부에 참조가 있더라도 그 참조가 가리키는 데이터까지 새로 복사해, 이후에 양쪽을 따로 변경해도 서로 영향을 주지 않습니다. 다만 GC 가 immutable 로 보장하는 공유 데이터는 여전히 그대로 공유할 수 있습니다.</p>
+<h3 id="clone-의-의미"><a class="anchor" tabindex="-1" href="#clone-의-의미" aria-hidden="true">#</a><code>Clone</code> 의 의미</h3>
+<p>다음 예제는 <code>Clone</code> 의 가장 직관적인 모습을 보여줍니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> b = a.clone();           <span class="c">// 새 List, 내부 buffer 도 새로</span>
+b.push(<span class="n">4</span>);                   <span class="c">// a 영향 없음</span>
+a;                           <span class="c">//→ [1, 2, 3]</span>
+b;                           <span class="c">//→ [1, 2, 3, 4]</span>
+</code></pre>
+<p>여기서 &quot;깊다&quot; 라는 표현이 정확히 무엇을 의미하는지 짚어 둘 필요가 있습니다. <code>Clone</code> 은 logical equality 를 유지하면서 값 사이의 mutation 독립성을 보장합니다. 구체적으로 두 가지 성질이 따라옵니다. 먼저 <code>let b = a.clone();</code> 직후에는 <code>PartialEq</code> 가 정의되어 있다면 <code>a == b</code> 가 성립합니다. 그다음 그 이후 <code>a</code> 에 어떤 변경을 가해도 <code>b</code> 에 반영되지 않으며, 반대 방향도 마찬가지로 독립적입니다.</p>
+<h3 id="자동-호출-없음---clone_trait-lang-slot"><a class="anchor" tabindex="-1" href="#자동-호출-없음---clone_trait-lang-slot" aria-hidden="true">#</a>자동 호출 없음 - <code>clone_trait</code> lang slot</h3>
+<p>언어에 따라서는 <code>let y = x;</code> 만 써도 컴파일러가 알아서 <code>clone</code> 을 호출하기도 합니다. rok 은 이 부분에서 명시적인 쪽을 택했습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> ys = xs;          <span class="c">// GC heap 객체 → 참조 공유 (clone 안 일어남)</span>
+</code></pre>
+<p><code>let y = x;</code> 는 GC heap 객체에 대해서는 참조 공유를 수행하고, <code>Copy</code> 타입에 대해서는 비트 복사를 수행합니다. 따라서 <code>Clone::clone</code> 은 자동으로 디스패치되지 않으며 사용자가 명시적으로 호출했을 때만 실행됩니다. 이 때문에 <code>Clone</code> 은 메서드 슬롯이 아니라 트레잇 슬롯 <code>clone_trait</code> 로 등록되며, 컴파일러는 이 슬롯을 <code>#[derive(Clone)]</code> 확장에서만 찾습니다.</p>
+<h3 id="default-본문"><a class="anchor" tabindex="-1" href="#default-본문" aria-hidden="true">#</a>default 본문</h3>
+<p>primitive 타입의 <code>clone</code> 은 결국 비트 복사로 귀결되므로 intrinsic 으로 직접 매핑하고, 컬렉션의 <code>clone</code> 은 내부 buffer 를 새로 할당하면서 원소를 재귀적으로 복제합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Clone</span> <span class="k">for</span> <span class="t">i32</span> {
+    <span class="a">#[intrinsic("rok.clone.copy")]</span>    <span class="c">// bitwise copy</span>
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Clone</span>&gt; <span class="t">Clone</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+        <span class="k">let</span> r: <span class="t">List</span>&lt;<span class="t">T</span>&gt; = [];
+        <span class="k">for</span> x <span class="k">in</span> <span class="k">self</span> {
+            r.push(x.clone());
+        }
+        r
+    }
+}
+</code></pre>
+<p>GC 객체의 clone 은 항상 새 buffer 를 할당하고 원소를 재귀적으로 clone 합니다.</p>
+<h3 id="derive"><a class="anchor" tabindex="-1" href="#derive" aria-hidden="true">#</a><code>#[derive(...)]</code></h3>
+<p>대부분의 사용자 정의 struct 는 모든 필드가 <code>Clone</code> 이라면 직접 본문을 작성할 이유가 없습니다. 이러한 경우 <code>#[derive(Clone)]</code> 이 작업을 대신합니다.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Clone)]</span>
+<span class="k">struct</span> <span class="t">Config</span> {
+    name: <span class="t">str</span>;
+    timeout: <span class="t">u32</span>;
+    retries: <span class="t">u32</span>;
+}
+
+<span class="k">let</span> c1 = <span class="t">Config</span> { name: <span class="s">"default"</span>, timeout: <span class="n">30</span>, retries: <span class="n">3</span> };
+<span class="k">let</span> c2 = c1.clone();         <span class="c">// 모든 필드 재귀 clone</span>
+</code></pre>
+<p>derive 가 합성하는 본문은 모든 필드의 <code>Clone::clone</code> 을 호출한 결과를 같은 구조로 묶어 돌려주는 형태입니다. 따라서 모든 필드가 재귀적으로 <code>Clone</code> 을 구현하고 있어야 한다는 요구 조건이 자연스럽게 따라옵니다.</p>
+<h2 id="2133-copy---marker"><a class="anchor" tabindex="-1" href="#2133-copy---marker" aria-hidden="true">#</a>2.13.3. <code>Copy</code> - marker</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Copy</span>: <span class="t">Clone</span> {
+    <span class="c">// marker - 메서드 없음</span>
+}
+</code></pre>
+<p>rok 에서는 모든 값이 값으로 복사됩니다. 컬렉션이나 GC 객체는 핸들이 복사되어 같은 객체를 가리키고, 원시 값, <code>str</code> (불변 <code>(ptr, len)</code>), 구조체, enum, 튜플은 그 자체가 복사됩니다 (<a href="../../refs-lang/002-types/203-struct#238-값-의미">refs-lang 2.3.8</a>). 따라서 <code>Copy</code> 는 <strong>marker 일 뿐</strong> 이며, 대입이나 인자 전달의 의미를 바꾸지 않습니다. <code>Copy</code> 는 제네릭 bound (<code>T: Copy</code>) 에서 &quot;비트 복사가 곧 독립된 사본&quot; 인 타입을 고를 때만 쓰입니다.</p>
+<h3 id="impl-정책"><a class="anchor" tabindex="-1" href="#impl-정책" aria-hidden="true">#</a>impl 정책</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th><code>Clone</code></th><th><code>Copy</code></th><th>비고</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code>, <code>f*</code></td><td>✓</td><td>✓</td><td>원시 숫자</td></tr>
+<tr><td><code>bool</code>, <code>char</code>, <code>c_char</code></td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td><code>str</code></td><td>✓</td><td>✓</td><td>불변 <code>(ptr, len)</code> 값</td></tr>
+<tr><td><code>int</code>, <code>float</code></td><td>✓</td><td>✓</td><td>불변 값 - heap 의 BigInt 도 공유만</td></tr>
+<tr><td><code>List&lt;T&gt;</code>, <code>Dict&lt;K,V&gt;</code>, <code>Set&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✗</td><td>핸들 복사는 공유 - 독립 사본 아님</td></tr>
+<tr><td>튜플</td><td>✓ (모두)</td><td>✓ (모두 Copy 시)</td><td>컴포넌트별</td></tr>
+<tr><td><code>Range&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✓ (T:Copy)</td><td>start/end 둘 다 Copy 시</td></tr>
+<tr><td>사용자 struct / enum</td><td>derive</td><td>derive</td><td>모든 필드 같은 트레잇 구현 시</td></tr>
+</tbody></table></div>
+<p><code>Drop</code> 을 구현한 타입은 <code>Copy</code> 가 될 수 없습니다.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Clone, Copy)]</span>
+<span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; z: <span class="t">f64</span>; }
+</code></pre>
+<div class="callout important"><p class="callout-title">중요</p>
+<p><code>Copy</code> derive 는 <code>Clone</code> 도 함께 구현될 때만, 그리고 모든 필드가 <code>Copy</code> 일 때만 가능합니다.</p>
+</div>
+<h2 id="2134-drop---using-해제-시-정리"><a class="anchor" tabindex="-1" href="#2134-drop---using-해제-시-정리" aria-hidden="true">#</a>2.13.4. <code>Drop</code> - <code>using</code> 해제 시 정리</h2>
+<p>파일을 열었으면 닫아야 하고, mutex 를 잠갔으면 풀어야 합니다. 이러한 외부 자원 정리는 GC 의 손에 맡길 수 없습니다. 언제 일어날지 알 수 없는 sweep 시점까지 자원을 붙들고 있다면, 파일 디스크립터가 고갈되거나 잠금이 풀리지 않은 채로 다른 코드가 멈춰 서는 일이 벌어지기 때문입니다. <code>Drop</code> 트레잇과 <code>using</code> 표현식이 이 문제를 해결합니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Drop</span> {
+    <span class="a">#[lang("drop_method")]</span>
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>);
+}
+</code></pre>
+<h3 id="호출-시점---using-바인딩에서만"><a class="anchor" tabindex="-1" href="#호출-시점---using-바인딩에서만" aria-hidden="true">#</a>호출 시점 - <code>using</code> 바인딩에서만</h3>
+<p>rok 은 GC 언어이므로 일반 바인딩이 scope 를 벗어날 때 자동으로 <code>drop</code> 을 부르지 않습니다. <code>drop</code> 은 <code>using</code> 으로 묶은 바인딩에서만, 블록을 빠져나갈 때 호출됩니다 (<a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 <code>using</code></a>).</p>
+<ul>
+<li>정상 종료, <code>return</code>, <code>break</code>, 에러 전파 모두에서 호출됩니다.
+</li>
+<li>여러 바인딩은 선언의 역순 (LIFO) 으로 호출됩니다.
+</li>
+<li>panic 은 프로세스를 끝내므로 <code>drop</code> 을 부르지 않습니다.
+</li>
+<li>drop glue: 값 자신의 <code>drop</code> 뒤에, <code>Drop</code> 을 가진 필드가 선언의 역순으로 재귀적으로 정리됩니다. 튜플 원소와, enum / 합 타입이 지금 담은 payload 도 같습니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">fn</span> process(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">using</span> lock = <span class="t">MUTEX</span>.lock(), file = <span class="k">try</span> <span class="t">File</span>::open(path) {
+        do_work(file);
+    }   <span class="c">// ← 정상 종료든 에러든 file.drop() 다음 lock.drop()</span>
+}
+
+{
+    <span class="k">let</span> f = <span class="k">try</span>! <span class="t">File</span>::open(<span class="s">"data.txt"</span>);
+}   <span class="c">// ← 자동 drop 없음 - f 는 GC 가 회수하지만 File::drop 은 불리지 않음</span>
+</code></pre>
+<p><code>Drop</code> 을 구현하지 않은 타입을 <code>using</code> 으로 묶으면 <code>Drop</code> 이 필요하다는 컴파일 에러가 납니다.</p>
+<h3 id="gc-와의-관계"><a class="anchor" tabindex="-1" href="#gc-와의-관계" aria-hidden="true">#</a>GC 와의 관계</h3>
+<p>GC 는 <code>drop</code> 을 부르지 않으며 finalizer 는 없습니다. 정리가 필요한 자원은 <code>using</code> 으로 묶거나 <code>close()</code> 같은 메서드로 직접 닫으며, 그러지 않으면 <code>unclosed_resource</code> lint 가 경고합니다 (<a href="../../refs-lang/006-meta-system/602-built-in-attributes#629-allow--deny--warn-린트-제어">refs-lang 6.2.9</a>).</p>
+<h3 id="drop-구현-예"><a class="anchor" tabindex="-1" href="#drop-구현-예" aria-hidden="true">#</a><code>Drop</code> 구현 예</h3>
+<p>가장 전형적인 구현은 OS 자원을 감싼 wrapper 입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">File</span> {
+    handle: <span class="t">i32</span>;
+}
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">File</span> {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        rok::bare::close_fd(<span class="k">self</span>.handle);     <span class="c">// OS file descriptor close</span>
+    }
+}
+</code></pre>
+<h3 id="drop-의-제약"><a class="anchor" tabindex="-1" href="#drop-의-제약" aria-hidden="true">#</a><code>Drop</code> 의 제약</h3>
+<p><code>Drop</code> 은 강력한 만큼 몇 가지 제약을 동반합니다. 먼저 <code>Drop</code> 을 구현한 타입은 <code>Copy</code> 가 될 수 없습니다. 비트 복사로 사본을 무한히 늘리면서 결정론적인 정리를 보장한다는 것은 모순이기 때문입니다.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Copy)]</span>              <span class="c">// ERROR - Drop 과 충돌</span>
+<span class="k">struct</span> <span class="t">File</span> { handle: <span class="t">i32</span>; }
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">File</span> { ... }
+</code></pre>
+<p>그다음 사용자가 <code>drop</code> 을 직접 호출하면 컴파일 에러입니다. <code>using</code> 해제 시점에 한 번만 호출되어야 정확성이 보장되기 때문입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = <span class="t">File</span>::open(path);
+f.drop();                    <span class="c">// ERROR - Drop::drop 직접 호출 금지</span>
+</code></pre>
+<p>따라서 조기에 자원을 닫고 싶다면 <code>File::close()</code> 처럼 별도의 메서드를 노출하는 쪽이 옳습니다.</p>
+<p>예외는 <code>rok::bare</code> 안의 unsafe 코드뿐입니다. 예를 들어 <code>unsafe fn drop_in_place</code> (<a href="../100-bare/103-mem">1.3 mem</a>) 는 수동 메모리 관리를 위한 함수입니다. drop glue 를 실행합니다: 위와 같이 그 타입 자신의 <code>drop</code>, 그 다음 필드들의 <code>drop</code> 을 선언 역순으로.</p>
+<p>또한 <code>drop</code> 은 <code>throws</code> 시그니처를 갖지 않으므로 본문에서 에러를 던질 수 없습니다. <code>drop</code> 안에서 panic 이 일어나면 다른 panic 과 마찬가지로 프로세스가 종료됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">X</span> {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        <span class="k">if</span> some_cond { <span class="k">throw</span> <span class="s">"oops"</span> }    <span class="c">// ERROR - drop 은 throws 가 아님</span>
+    }
+}
+</code></pre>
+<h3 id="derive-정책"><a class="anchor" tabindex="-1" href="#derive-정책" aria-hidden="true">#</a>derive 정책</h3>
+<p><code>Clone</code> 과 달리 <code>Drop</code> 은 derive 할 수 없습니다. <code>using</code> 으로 묶인 값의 <code>drop</code> 이 끝나면, 컴파일러는 그 struct 의 <code>Drop</code> 필드들의 <code>drop</code> 을 선언 역순으로 이어서 호출합니다. 따라서 사용자가 작성하는 <code>Drop</code> 본문은 &quot;필드 이외에 추가로 정리해야 할 것&quot; 만 다루면 됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Container</span> {
+    a: <span class="t">File</span>;
+    b: <span class="t">Socket</span>;
+}
+<span class="c">// Container 를 using 으로 묶으면 해제 시 b.drop() → a.drop()</span>
+<span class="c">// (필드 자체가 Drop 구현이라)</span>
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">Container</span> {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        log(<span class="s">"Container released"</span>);
+        <span class="c">// 필드 drop 은 _이 메서드 종료 후_ 컴파일러가 자동 호출</span>
+    }
+}
+</code></pre>
+<h2 id="2135-lang-slot-매핑"><a class="anchor" tabindex="-1" href="#2135-lang-slot-매핑" aria-hidden="true">#</a>2.13.5. lang slot 매핑</h2>
+<p>이 모듈이 컴파일러와 연결되는 지점은 다섯 개의 lang slot 입니다. 각각의 자동 호출 시점은 앞서 살펴본 정책 그대로입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>slot</th><th>부착 항목</th><th>자동 호출 시점</th></tr></thead>
+<tbody>
+<tr><td><code>clone_trait</code></td><td><code>Clone</code> 트레잇</td><td>없음 - <code>#[derive(Clone)]</code> 확장에서 사용</td></tr>
+<tr><td><code>drop_method</code></td><td><code>Drop::drop</code> 메서드</td><td><code>using</code> 바인딩 해제 시 (drop glue 포함)</td></tr>
+<tr><td><code>none_type</code></td><td><code>NoneSentinel</code> 타입 (2.13.8)</td><td><code>none</code> 리터럴 lower</td></tr>
+<tr><td><code>send_trait</code></td><td><code>Send</code> 트레잇 (2.13.9)</td><td>자동 구현, 스레드 경계 검사</td></tr>
+<tr><td><code>sync_trait</code></td><td><code>Sync</code> 트레잇 (2.13.9)</td><td>자동 구현, 스레드 경계 검사</td></tr>
+</tbody></table></div>
+<p>상세한 내용은 <a href="../000-meta/004-lang-slot-table">0.4 lang slot 표</a> 0.4.2 / 0.4.3 / 0.4.5 절을 참고합니다.</p>
+<h2 id="2136-트레잇-구현-매트릭스"><a class="anchor" tabindex="-1" href="#2136-트레잇-구현-매트릭스" aria-hidden="true">#</a>2.13.6. 트레잇 구현 매트릭스</h2>
+<p>표준 라이브러리의 주요 타입이 세 트레잇과 어떻게 맺어지는지 한눈에 정리하면 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>Clone</th><th>Copy</th><th>Drop</th><th>동작</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code>, <code>f*</code></td><td>✓</td><td>✓</td><td>✗</td><td><code>rok.clone.copy</code> (bitwise)</td></tr>
+<tr><td><code>bool</code>, <code>char</code>, <code>c_char</code></td><td>✓</td><td>✓</td><td>✗</td><td>bitwise</td></tr>
+<tr><td><code>str</code></td><td>✓</td><td>✓</td><td>✗</td><td>불변 <code>(ptr, len)</code> 값 복사</td></tr>
+<tr><td><code>List&lt;T&gt;</code>, <code>Dict&lt;K,V&gt;</code>, <code>Set&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✗</td><td>✗</td><td>재귀 clone</td></tr>
+<tr><td>튜플</td><td>✓ (모두)</td><td>✓ (모두 Copy)</td><td>✗</td><td>컴포넌트별</td></tr>
+<tr><td><code>Range&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✓ (T:Copy)</td><td>✗</td><td>derive 자동</td></tr>
+<tr><td><code>File</code></td><td>✗</td><td>✗</td><td>✓</td><td><code>rok::bare::close_fd</code></td></tr>
+<tr><td><code>MutexGuard&lt;T&gt;</code></td><td>✗</td><td>✗</td><td>✓ (<code>using</code> 해제 시)</td><td><code>rok::bare::unlock</code></td></tr>
+<tr><td><code>Channel::Sender&lt;T&gt;</code></td><td>✓</td><td>✗</td><td>✗ (<code>close()</code> 로 닫음)</td><td>(위와 동일)</td></tr>
+</tbody></table></div>
+<p>표 뒤에 자리 잡은 원칙은 단순합니다. 먼저 모든 primitive 와 내부 GC 타입은 <code>Clone</code> 을 구현하고, 그 가운데 비트 복사가 의미적으로 옳은 것들만 <code>Copy</code> 가 됩니다. 컬렉션은 <code>Clone</code> 이지만 <code>Copy</code> 는 아닙니다. 핸들의 비트 복사가 깊은 복제의 의미를 보존하지 않기 때문입니다. <code>str</code> 은 불변이므로 그 <code>(ptr, len)</code> 의 복사가 곧 독립된 사본이어서 <code>Copy</code> 입니다. 또한 <code>Drop</code> 은 <code>File</code>, <code>Socket</code>, <code>MutexGuard</code> 처럼 외부 자원을 감싸는 wrapper 만 구현합니다. 이 타입들은 자원 중복 소유를 막기 위해 보통 <code>Clone</code> 을 구현하지 않습니다.</p>
+<h2 id="2137-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#2137-다른-언어와의-비교" aria-hidden="true">#</a>2.13.7. 다른 언어와의 비교</h2>
+<p>지금까지 설명한 rok 의 모델이 기존 언어들과 어떻게 다른지 비교해 보면, 설계 의도가 좀 더 분명해집니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>Java/Python (GC)</th><th>rok (GC + Drop)</th></tr></thead>
+<tbody>
+<tr><td>메모리 회수</td><td><code>Drop</code> 가 책임</td><td>GC</td><td>GC</td></tr>
+<tr><td>결정론적 finalize</td><td><code>Drop</code> (컴파일러 보장)</td><td><strong>없음</strong> (finalizer 비결정)</td><td><code>Drop</code> (scope-bound)</td></tr>
+<tr><td>Copy 의미</td><td>bitwise + <code>!Drop</code> 강제</td><td><strong>없음</strong> (모든 객체 ref)</td><td>bitwise + <code>!Drop</code> 강제</td></tr>
+<tr><td>Clone 의미</td><td>깊은 복제</td><td><code>clone()</code> (Object.clone)</td><td>깊은 복제</td></tr>
+<tr><td>derive</td><td><code>#[derive(Clone, Copy)]</code></td><td><code>Cloneable</code> 인터페이스</td><td><code>#[derive(Clone, Copy)]</code></td></tr>
+</tbody></table></div>
+<p>rok 이 두드러지는 지점은 결국 GC 와 결정론적 <code>Drop</code> 의 공존입니다. 메모리 회수는 GC 가 맡기 때문에 <code>Drop</code> 이 메모리 해제를 의미하지 않으며, 그래서 일반 객체는 <code>Drop</code> 을 구현할 필요가 전혀 없습니다. 따라서 외부 자원 정리가 필요한 타입만 <code>Drop</code> 을 구현하고, 사용하는 쪽은 <code>using</code> 으로 묶으면 충분합니다.</p>
+<p>이 모델은 한쪽으로는 Java/Python 의 finalizer 비결정성 문제를, 다른 한쪽으로는 GC 가 없는 데에서 오는 Rust 의 비용을 동시에 회피합니다.</p>
+<h2 id="2138-nonesentinel---none-리터럴의-타입"><a class="anchor" tabindex="-1" href="#2138-nonesentinel---none-리터럴의-타입" aria-hidden="true">#</a>2.13.8. <code>NoneSentinel</code> - <code>none</code> 리터럴의 타입</h2>
+<p><a href="../../refs-lang/001-lexical/109-other-literals">refs-lang 1.9.2</a> 의 <code>none</code> 리터럴은 값이 하나뿐인 zero-sized 타입 <code>NoneSentinel</code> 로 lower 됩니다. 이 타입은 <code>rok::core::marker</code> 에 정의되며, <code>none_type</code> lang slot 에 부착됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang("none_type")]</span>
+<span class="a">#[derive(Clone, Copy, PartialEq, Eq, Hash)]</span>
+<span class="k">struct</span> <span class="t">NoneSentinel</span>;
+</code></pre>
+<p>사용자는 이 이름을 직접 쓸 일이 거의 없습니다. <code>T | none</code> 같은 합 타입 표기 (<a href="../../refs-lang/002-types/206-sum-types">refs-lang 2.6</a>) 에서 <code>none</code> 자리가 곧 <code>NoneSentinel</code> 변형이며, <code>none</code> 리터럴과 <code>none</code> 타입 표기는 모두 이 슬롯을 통해 같은 타입으로 해소됩니다.</p>
+<h2 id="2139-send--sync---스레드-경계-marker"><a class="anchor" tabindex="-1" href="#2139-send--sync---스레드-경계-marker" aria-hidden="true">#</a>2.13.9. <code>Send</code> / <code>Sync</code> - 스레드 경계 marker</h2>
+<pre><code class="language-rok"><span class="a">#[lang("send_trait")]</span>
+<span class="k">trait</span> <span class="t">Send</span> { }      <span class="c">// 다른 스레드로 옮겨도 안전</span>
+
+<span class="a">#[lang("sync_trait")]</span>
+<span class="k">trait</span> <span class="t">Sync</span> { }      <span class="c">// 공유 참조로 여러 스레드에서 읽어도 안전</span>
+</code></pre>
+<p>두 트레잇은 메서드가 없는 <strong>자동 marker 트레잇</strong> 이며, 컴파일러가 구조적으로 구현합니다.</p>
+<ul>
+<li><p>원시 숫자, <code>bool</code>, <code>char</code>, <code>c_char</code>, <code>str</code>, <code>none</code> 은 <code>Send + Sync</code> 입니다.</p>
+</li>
+<li><p><code>struct</code>, <code>enum</code>, <code>union</code>, 튜플, 배열, 합 타입은 모든 필드 (구성 요소) 가 <code>Send</code> 이면 <code>Send</code>, 모두 <code>Sync</code> 이면 <code>Sync</code> 입니다. 제네릭 컨테이너의 <code>Send</code> 는 같은 규칙으로 <code>T</code> 에 따릅니다.</p>
+</li>
+<li><p>컬렉션 (<code>List</code>, <code>Dict</code>, <code>Set</code>, <code>StrBuf</code>, <code>Deque</code>, <code>BinaryHeap</code>, <code>OrderedDict</code>, <code>OrderedSet</code>, <code>Slice</code>) 은 <code>Send</code> 이고 <code>!Sync</code> 입니다. 가변 핸들을 공유하기 때문입니다. 스레드 사이에서는 <code>Mutex</code> / <code>RwLock</code> / 채널로 공유합니다.</p>
+</li>
+<li><p>rok 에는 move 의미가 없습니다. 값을 넘겨도 (<code>Mutex::new(xs)</code>, <code>RwLock::new(xs)</code>, <code>tx.send(xs)</code> / <code>try_send</code> / <code>send_async</code>, <code>Handoff::new(xs)</code>) 보낸 쪽의 핸들은 새 소유자가 이제 다른 스레드와 공유하는 객체를 가리킵니다. guard 에서 꺼낸 (<code>get</code>), guard 에 넣은 (<code>set</code>), <code>update</code> 의 클로저가 닿은 핸들도 guard 의 <code>using</code> 블록이 끝난 뒤 여전히 보호된 객체를 가리킵니다. 그 뒤에 그런 값을 어느 경로에서든 쓰는 것은 컴파일 에러 (<code>E202</code>, <a href="../../refs-lang/009-tools/909-debug-tools#994-진단--에러-메시지">refs-lang 9.9.4</a>) 입니다. 값은 다음을 거쳐 추적합니다:</p>
+<ul>
+<li>복사 (<code>let ys = xs</code>, struct 필드나 tuple 원소, 필드 대입);
+</li>
+<li>그 값을 넘기는 필드 (<code>Mutex::new(s.items)</code>);
+</li>
+<li>그 값을 담는 객체 (<code>all.push(xs)</code>, 그 값을 캡처하는 클로저). 양쪽 모두입니다: <code>xs</code> 를 넘기면 <code>all</code> 도 쓸 수 없습니다;
+</li>
+<li>컬렉션의 원소. 컬렉션에 저장한 것과 거기서 읽은 것 (<code>xs[i]</code>, <code>get</code>, 반복, 그 slice) 은 한 값이므로, 어느 쪽을 넘겨도 다른 쪽은 쓸 수 없습니다 (<code>let x = xs[0]; tx.send(xs); x.len()</code>, <code>tx.send(xs[0]); xs[1].len()</code>). 원소를 넘긴 컬렉션에는 <code>len</code>, <code>is_empty</code>, <code>capacity</code>, <code>clear</code>, <code>truncate</code>, <code>reserve</code>, <code>shrink_to_fit</code>, <code>push</code>, <code>insert</code> (와 <code>Deque</code> 의 <code>push_back</code> / <code>push_front</code>) 만 쓸 수 있습니다. <code>clear</code> 는 컬렉션을 비우므로 다시 온전히 쓸 수 있습니다. 다른 컬렉션에서 복사한 컬렉션 (<code>extend</code>, <code>+=</code>, <code>collect</code>, <code>par::filter</code>) 은 원본의 원소를 공유합니다. <code>pop</code> 이나 <code>remove</code> 로 꺼낸 원소 (<code>List</code>, <code>Deque</code>, <code>Dict</code>, <code>OrderedDict</code>, <code>BinaryHeap</code>) 는 컬렉션을 떠났습니다: 그것을 넘겨도 컬렉션은 계속 쓸 수 있습니다. 다만 컬렉션이 그 객체를 두 번 담고 있을 수 있으면 그렇지 않습니다. 한 값을 두 번 저장했거나, 저장한 두 값이 한 객체를 공유하거나, 한 컬렉션의 원소를 반복문에서 다른 컬렉션에 저장했을 때가 그렇습니다 (원소를 위치로 구별하지 않습니다);
+</li>
+<li>무언가를 넘기는 직접 호출의 인자. 한 객체를 두 인자로 넘기고, 호출된 함수가 그중 하나로 넘기고 다른 하나로 쓰면 (<code>f(tx, a, a)</code>, <code>go</code> 가 <code>self.items</code> 를 쓰는 <code>h.go(tx, h.items)</code>, pop 해서 보내는 리스트와 그 원소 하나) 컴파일 에러입니다. 한 컬렉션의 두 원소는 서로 다른 객체로 봅니다 (<code>f(tx, rows[0], rows[1])</code> 은 허용);
+</li>
+<li><code>ref</code> 매개변수. 호출된 함수가 그 일부를 넘긴 뒤, 넘기는 모든 경로에서 그 부분에 새 값을 주면 (<code>tx.send(self.buf)</code> 뒤의 <code>self.buf = []</code>), 호출자의 변수는 새 값을 돌려받아 계속 쓸 수 있습니다. 옛 값의 다른 핸들은 그렇지 않습니다. 값 매개변수는 복사본이므로 그 필드에 새 값을 줘도 호출자에게 닿지 않고, 호출자는 넘긴 것을 여전히 쥡니다;
+</li>
+<li>호출. 매개변수를 넘기거나, 그것이나 그 일부를 돌려주거나, 다른 매개변수의 객체나 <code>ref</code> 매개변수에 저장하거나, 돌려주는 클로저에 캡처하거나, guard 매개변수가 담은 것을 돌려주는 함수는 그 호출자에게도 그렇게 하며, 미리 빌드한 라이브러리를 넘어서도 마찬가지입니다 (<a href="../../refs-lang/009-tools/904-rokhir-bytecode#947-body">refs-lang 9.4.7</a>).
+</li>
+</ul>
+<p>함수 값을 통한 호출은 그 매개변수 타입으로 값으로 쓰인 모든 함수에 닿는다고 봅니다. 조건은 컴파일러가 경로마다 아는 값을 검사할 때 따라갑니다: 상수로 정하거나 복사한 <code>bool</code> 이나 합 또는 enum 변형 (<code>let sent = false; if c { tx.send(xs); sent = true; } if !sent { xs.len() }</code>), 그리고 호출이 어떻게 끝났는지. 에러 없이 반환할 때, 또는 <code>none</code> / <code>false</code> 가 아닌 값을 돌려줄 때만 매개변수를 넘기는 함수는, 다른 결과에 대한 호출자의 <code>catch</code>, <code>try?</code>, <code>??</code>, <code>else</code>, <code>if</code> 경로에서는 그것을 넘기지 않습니다. <code>async fn</code> 에 대한 <code>try await</code> 의 <code>catch</code> 도 마찬가지입니다. 그 밖의 조건은 따라가지 않습니다: 한 경로에서 넘긴 값은 그 경로가 다른 경로와 합쳐지는 곳에서 사라집니다.</p>
+<p>값을 계속 쓰려면 <code>clone()</code> (독립된 값) 을 넘기거나, 먼저 변수나 필드에 새 값을 줍니다 (struct 사본이면 그 필드만). <code>set</code> 은 앞선 <code>get</code> 이 돌려준 것을 풀어 줍니다. <code>Sync</code> 값의 사용, 값의 tag 읽기 (<code>x is none</code>, <code>match x</code>), <code>unsafe</code> (<a href="../../refs-lang/004-functions/415-unsafe#4152-unsafe------블록-표현식">refs-lang 4.15.2</a>) 안의 사용은 예외입니다. <code>Handoff</code> 프로토콜은 그것을 만드는 함수 안에서 끝납니다: 호출자는 그 넘김을 보지 않습니다. spawn 한 클로저의 캡처는 검사가 필요 없습니다: 그것들은 <code>Send + Sync</code> 여야 합니다. <code>task::spawn</code> 은 future 를 넘깁니다: task 의 frame 은 future 가 캡처한 것의 복사본을 받고, spawn 한 쪽에서는 send 뒤와 같이 그 future 와 그것이 캡처한 것이 사라집니다 (<a href="218-task#2181-핵심-api">2.18.1</a>).</p>
+<p>다음도 컴파일 에러입니다: <code>Sync</code> 객체에서 읽은, 그 자체는 <code>Sync</code> 가 아닌 값 (사용자의 <code>unsafe impl Sync</code> 타입의 필드, <code>thread::local</code> 의 값) 을 넘기는 것. 그런 값은 넘김 없이도 다른 코드가 닿습니다. <code>clone()</code> 을 넘깁니다. 채널의 <code>recv</code>, task 의 결과, 잠금 guard 가 주는 값은 받는 쪽의 것이므로 이 규칙에 들지 않습니다. guard 가 아직 쥔 동안 (<code>set</code> 이 잠금에 새 값을 줄 때까지) guard 의 <code>get</code> 이 돌려준 것을 넘기는 것, 그리고 그것을 <code>using</code> 블록 안에서 돌려주거나, 거기서 yield 하거나 (generator 의 <code>yield g.get()</code>), 블록의 값으로 삼거나 (<code>let x = using g = m.lock() { g.get() }</code>, <code>f(using g = m.lock() { g.get() })</code>), 블록 안에서 만들어 블록 뒤에 실행하는 코루틴 (<code>async fn</code> 의 future, generator: <code>fut = grow(g.get()[0])</code>) 에 주는 것: 값을 쓰기 전에 블록의 끝이 잠금을 풉니다. guard 는 자기 <code>using</code> 블록 안에서만 쓸 수 있습니다: 그 블록이 끝난 뒤 guard 의 복사본 (컬렉션에 넣은 것, 클로저가 잡은 것, 호출된 함수가 저장한 것, 두 번째 <code>using</code> 으로 묶은 것, 코루틴이 들고 있는 것: <code>async fn</code> 이나 generator 의 인자, <code>async</code> 블록의 캡처) 을 쓰면 컴파일 에러입니다. guard 는 <code>!Sync</code> 입니다 (<a href="216-sync#2163-mutext---배타적-잠금">2.16.3</a>). <code>par::for_each</code>, <code>par::map</code>, <code>par::filter</code> 는 항목마다 worker 에 주므로, 두 항목이 <code>Sync</code> 가 아닌 컬렉션 하나에 닿으면 안 됩니다. 호출마다 실행 중에 이것을 확인합니다 (<a href="219-par#2191-핵심-api">2.19.1</a>): 두 항목이 한 컬렉션에 닿으면, 항목들을 부른 스레드에서 하나씩 실행하고 호출 위치마다 한 번 경고합니다. slice 는 읽기만 하므로, 어느 항목도 리스트 자체를 들고 있지 않으면 항목들이 한 리스트의 slice 를 통해 그것을 공유해도 됩니다.</p>
+<p>이 규칙 밖에 남는 것: <code>unsafe</code> 안의 코드, 위의 인자 검사를 건너뛰는 함수 값이나 클로저를 통한 호출, 그리고 한 객체를 두 번 이상 yield 하는 generator 를 모은 컬렉션의 원소를 하나씩 넘기는 경우. 그런 컬렉션은 그 객체를 두 번 담는다고 보지 않습니다.</p>
+<p>넘김은 실행 중에도 복사하므로, 위의 규칙 밖에 남는 경로 (와 <code>unsafe</code> 안의 코드) 에서도 넘긴 값이 값으로 닿는 컬렉션은 보낸 쪽과 새 소유자 사이에 공유되지 않습니다 (예외는 아래에 적습니다). <code>Mutex::new</code>, <code>RwLock::new</code>, guard 의 <code>set</code> 과 <code>update</code>, <code>send</code> / <code>try_send</code> / <code>send_async</code>, 그리고 task, 스레드, <code>par</code> scope 작업의 결과 (와 <code>try_scope</code> 의 에러) 는 값이 닿는 모든 컬렉션의 복사본을 새 소유자에게 줍니다: struct, 튜플, 배열, enum, 합 타입의 구성 요소와 컬렉션의 원소를 거쳐, 깊이에 상관없이, 단계마다 스택을 쓰지 않고 작업 목록으로 따라갑니다. 여러 번 닿는 컬렉션은 한 번만 복사하므로, 복사본은 값의 공유 관계와 순환을 그대로 지닙니다. 복사하는 것은 <code>List</code>, <code>Dict</code>, <code>Deque</code>, <code>StrBuf</code>, <code>Slice</code> 와 그 위에 만든 컬렉션, 그리고 <code>GcPtr</code> (<a href="../100-bare/106-gc-pin">1.6.3</a>) 입니다. 코루틴 future (<code>AsyncFuture</code>, <code>TryAsyncFuture</code>) 는 같은 복사로 만든, 캡처한 것의 복사본을 담은 자기 frame 을 받습니다. 시작했거나 끝난 것, 또는 frame (이나 캡처한 future 의 frame) 에 <code>[ref x]</code> 캡처가 있는 것은 넘길 수 없으며 넘기면 panic 합니다 (<a href="218-task#2181-핵심-api">2.18.1</a>). <code>Task</code> 는 복사하지 않지만, 한 번 넘겨진 뒤에는 그것을 <code>await</code> 할 때마다 결과의 자기 복사본을 받습니다 (<a href="218-task#2182-taskt-타입">2.18.2</a>). 리스트와 그 buffer 를 보는 모든 view 는 복사한 buffer 하나를 계속 공유하고, <code>str</code> 의 바이트를 보는 view 는 그 바이트만 복사합니다 (바뀔 수 없습니다). <code>update</code> 는 guard 가 이미 쥔 것을 그대로 두고, 클로저가 들여오는 것만 복사합니다. 보낸 쪽의 핸들은 그대로 두므로, 위의 규칙이 놓친 핸들은 다른 스레드가 쓰지 않는 객체를 가리킵니다. throw 하는 send 는 같은 값 (호출자의 값이나 그 복사본) 을 돌려줍니다. 복사에는 복사하는 양에 비례하는 시간과 메모리가 들며, plain 값 (GC 참조 없음) 의 연속은 한 번의 메모리 복사입니다. <code>rok::core::marker::hand_over(x)</code> 는 같은 복사본을 돌려줍니다. 공유한 채로 두는 것: <code>Sync</code> 인 구성 요소, <code>unsafe impl Send</code> 가 있는 타입의 값 (task, 파일, 소켓처럼 스스로 공유를 다룹니다), generator 와 stream (<code>Send</code> 가 아니어서 넘겨지지 않습니다). <code>Handoff::new</code> 와 <code>Mutex::new_unshared</code> (2.16.3) 는 복사하지 않습니다. guard 에서 꺼낸 핸들 (<code>get</code>, <code>update</code> 클로저의 인자) 은 실행 중에 복사하지 않습니다: 위의 규칙이 그것과 guard 자체를 모든 복사본, <code>return</code>, <code>yield</code>, 블록의 값, 블록 안에서 만든 코루틴의 frame 을 거쳐 <code>using</code> 블록 밖까지 따라갑니다.</p>
+</li>
+<li><p>다음은 제외됩니다: <code>Cell&lt;T&gt;</code>, 원시 포인터 (<code>Ptr&lt;T&gt;</code>, <code>ConstPtr&lt;T&gt;</code>, <code>CPtr&lt;T&gt;</code>), 맨 <code>any</code> 와 bound 에 <code>Send</code> / <code>Sync</code> 가 없는 <code>any Tr</code> (<code>any Tr</code> 은 bound 에 <code>Send</code> 와 <code>Sync</code> 가 모두 있을 때만 <code>Send</code> 입니다: 클로저의 캡처처럼 <code>any</code> 의 사본은 그 box 를 공유하므로, 스레드를 건너는 <code>any</code> 안에는 컬렉션이 있을 수 없습니다), bound 없는 함수 타입, <code>[ref]</code> 캡처가 있는 클로저 (<a href="../../refs-lang/004-functions/406-capture-semantics#469-병렬과-동시성-문맥의-추가-제약">refs-lang 4.6.9</a>). 이 밖의 예외는 각 타입의 장에서 정합니다.</p>
+</li>
+<li><p>함수 타입은 <code>fn(..) -&gt; R + Send</code> 처럼 bound 를 적었을 때만 그 트레잇을 가집니다 (<a href="../../refs-lang/004-functions/404-function-type#send--sync-bound">refs-lang 4.4</a>).</p>
+</li>
+</ul>
+<p>자동 구현이 맞지 않는 타입은 직접 선언합니다. 내부에 원시 포인터를 두지만 스레드 안전하게 감싼 타입은 <code>unsafe impl</code> 로 opt-in 하고 (안전성은 작성자 책임), 구조상 자동 구현되지만 스레드 안전하지 않은 타입은 <code>impl !Send</code> 로 opt-out 합니다. <code>Cell&lt;T&gt;</code> 의 제외도 이 방식으로 선언됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Handle</span> { raw: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;; }
+<span class="k">unsafe</span> <span class="k">impl</span> <span class="t">Send</span> <span class="k">for</span> <span class="t">Handle</span> { }
+<span class="k">unsafe</span> <span class="k">impl</span> <span class="t">Sync</span> <span class="k">for</span> <span class="t">Handle</span> { }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; { }
+</code></pre>
+<p>스레드나 task 로 값을 넘기는 API (<code>thread::spawn</code>, <code>task::spawn</code>, <code>par::*</code>, <code>channel</code>) 는 이 두 트레잇으로 인자를 제한합니다. 동기화 primitive 의 정책은 <a href="216-sync">2.16 sync</a> 를 따릅니다.</p>
+<h2 id="21310-default---기본값"><a class="anchor" tabindex="-1" href="#21310-default---기본값" aria-hidden="true">#</a>2.13.10. <code>Default</code> - 기본값</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Default</span> {
+    <span class="k">fn</span> default() -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th><code>default()</code></th></tr></thead>
+<tbody>
+<tr><td>정수, <code>int</code></td><td><code>0</code></td></tr>
+<tr><td>실수, <code>float</code></td><td><code>0.0</code></td></tr>
+<tr><td><code>bool</code></td><td><code>false</code></td></tr>
+<tr><td><code>char</code></td><td><code>'\0'</code></td></tr>
+<tr><td><code>str</code></td><td><code>&quot;&quot;</code></td></tr>
+<tr><td><code>List</code>, <code>Dict</code>, <code>Set</code> 등 컬렉션</td><td>빈 컬렉션</td></tr>
+<tr><td><code>T | none</code></td><td><code>none</code></td></tr>
+</tbody></table></div>
+<p><code>Default</code> 는 derive 할 수 있으며, 모든 필드의 <code>default()</code> 로 값을 만듭니다.</p>
+<h2 id="21311-derive-가능한-트레잇"><a class="anchor" tabindex="-1" href="#21311-derive-가능한-트레잇" aria-hidden="true">#</a>2.13.11. derive 가능한 트레잇</h2>
+<p><code>#[derive(...)]</code> (<a href="../../refs-lang/006-meta-system/602-built-in-attributes#621-derive-자동-트레잇-구현">refs-lang 6.2.1</a>) 로 만들 수 있는 내장 트레잇은 다음뿐입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>생성되는 구현</th><th>요구</th></tr></thead>
+<tbody>
+<tr><td><code>Clone</code></td><td>필드별 <code>clone</code></td><td>모든 필드 <code>Clone</code></td></tr>
+<tr><td><code>Copy</code></td><td>marker</td><td><code>Clone</code> 도 derive/구현, <code>Drop</code> 아님</td></tr>
+<tr><td><code>Debug</code></td><td>필드 이름과 값을 <code>f&quot;{x:?}&quot;</code> 형식으로</td><td>모든 필드 <code>Debug</code></td></tr>
+<tr><td><code>Default</code></td><td>필드별 <code>default()</code></td><td>모든 필드 <code>Default</code></td></tr>
+<tr><td><code>PartialEq</code></td><td>필드별 <code>==</code> 의 AND</td><td>모든 필드 <code>PartialEq</code></td></tr>
+<tr><td><code>Eq</code></td><td>marker</td><td><code>PartialEq</code> 도 derive/구현</td></tr>
+<tr><td><code>PartialOrd</code></td><td>필드 선언 순서의 사전식 비교</td><td>모든 필드 <code>PartialOrd</code>, <code>PartialEq</code></td></tr>
+<tr><td><code>Ord</code></td><td>필드 선언 순서의 사전식 비교</td><td><code>Eq</code>, <code>PartialOrd</code> 도 derive/구현</td></tr>
+<tr><td><code>Hash</code></td><td>필드별 해시의 결합 (결합 함수는 정하지 않음)</td><td>모든 필드 <code>Hash</code></td></tr>
+</tbody></table></div>
+<ul>
+<li><code>Display</code> 는 derive 할 수 없습니다 (<a href="210-fmt">2.10</a>).
+</li>
+<li><code>Eq</code> / <code>Ord</code> 를 그 상위 트레잇 없이 derive 하면 컴파일 에러입니다.
+</li>
+<li><code>union</code> 에 <code>#[derive]</code> 를 붙이면 컴파일 에러입니다.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/213-marker.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="212-reflect"><small>Previous</small>2.12. reflect - Reflect / Inspect</a><a class="next" href="214-error"><small>Next</small>2.14. error - 에러 트레잇 / 타입</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

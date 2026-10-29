@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::bare::ptr module defines five kinds of raw pointer. The design follows Zig's arity-encoded model: the number of pointees (arity) and mutability are enc...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/101-ptr.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr - rok docs">
+<meta property="og:description" content="The rok::bare::ptr module defines five kinds of raw pointer. The design follows Zig's arity-encoded model: the number of pointees (arity) and mutability are enc...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/101-ptr.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/101-ptr.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/101-ptr.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a><ul class="toc"><li><a href="#111-the-5-pointer-kinds">1.1.1. The 5 pointer kinds</a></li><li><a href="#112-ptrt---strict-provenance-api">1.1.2. Ptr&lt;T&gt; - strict provenance API</a></li><li><a href="#113-constptrt---read-only">1.1.3. ConstPtr&lt;T&gt; - read-only</a></li><li><a href="#114-manyptrt---n-contiguous-length-unknown">1.1.4. ManyPtr&lt;T&gt; - N contiguous, length unknown</a></li><li><a href="#115-cptrt---c-compatible-nullable">1.1.5. CPtr&lt;T&gt; - C-compatible nullable</a></li><li><a href="#116-conversion-matrix">1.1.6. Conversion matrix</a></li><li><a href="#117-comparison-with-other-languages">1.1.7. Comparison with other languages</a></li></ul></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile memory access</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="11-pointer-family---ptr--constptr--manyptr--cptr 11-pointer-계열---ptr--constptr--manyptr--cptr 111-the-5-pointer-kinds 111-5-pointer-종류 send--sync send--sync automatic-niche 자동-niche 112-ptrt---strict-provenance-api 112-ptrt---strict-provenance-api strict-provenance---separated-escape-hatch strict-provenance---escape-hatch-분리 example---pointer-arithmetic 사용-예---pointer-산술 113-constptrt---read-only 113-constptrt---read-only 114-manyptrt---n-contiguous-length-unknown 114-manyptrt---연속-n개-길이-모름 115-cptrt---c-compatible-nullable 115-cptrt---c-호환-nullable 116-conversion-matrix 116-변환-매트릭스 117-comparison-with-other-languages 117-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/101-ptr" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="11-pointer-family---ptr--constptr--manyptr--cptr"><a class="anchor" tabindex="-1" href="#11-pointer-family---ptr--constptr--manyptr--cptr" aria-hidden="true">#</a>1.1. Pointer family - <code>Ptr</code> / <code>ConstPtr</code> / <code>ManyPtr</code> / <code>CPtr</code></h1>
+<p>The <code>rok::bare::ptr</code> module defines five kinds of raw pointer. The design follows Zig's arity-encoded model: the number of pointees (arity) and mutability are encoded in the type itself, ruling out silent coercion entirely.</p>
+<h2 id="111-the-5-pointer-kinds"><a class="anchor" tabindex="-1" href="#111-the-5-pointer-kinds" aria-hidden="true">#</a>1.1.1. The 5 pointer kinds</h2>
+<p>The table below shows how the five kinds divide.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Meaning</th><th>C equivalent</th><th>Nullable</th></tr></thead>
+<tbody>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>mutable, exactly 1 T</td><td><code>T*</code></td><td>✗ (use <code>Ptr&lt;T&gt; | none</code>)</td></tr>
+<tr><td><code>ConstPtr&lt;T&gt;</code></td><td>const, exactly 1 T</td><td><code>const T*</code></td><td>✗</td></tr>
+<tr><td><code>ManyPtr&lt;T&gt;</code></td><td>mutable, N contiguous Ts (length unknown)</td><td><code>T*</code> (array)</td><td>✗</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>mutable, N contiguous Ts (length included)</td><td>(T*, len)</td><td>✗ (separate niche)</td></tr>
+<tr><td><code>CPtr&lt;T&gt;</code></td><td>C-compatible <strong>nullable</strong> + 1</td><td><code>T*</code> (nullable)</td><td>✓ (automatic)</td></tr>
+</tbody></table></div>
+<p><code>Ptr</code>, <code>ConstPtr</code>, <code>ManyPtr</code> and <code>CPtr</code> are <code>#[repr(transparent)]</code>: across <code>extern &quot;C&quot;</code> they are C pointers.</p>
+<p>Of these, <code>Slice&lt;T&gt;</code> is a safe view defined in <a href="../200-core/209-collections">2.9 collections</a>; this module only defines the path for extracting its <strong>underlying ptr</strong>.</p>
+<h3 id="send--sync"><a class="anchor" tabindex="-1" href="#send--sync" aria-hidden="true">#</a><code>Send</code> / <code>Sync</code></h3>
+<p>The raw pointers <code>Ptr&lt;T&gt;</code> and <code>CPtr&lt;T&gt;</code> are <code>!Send</code> and <code>!Sync</code> (<a href="../200-core/213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>). To pass a type containing a pointer between threads, its author must vouch for it with <code>unsafe impl Send</code>.</p>
+<h3 id="automatic-niche"><a class="anchor" tabindex="-1" href="#automatic-niche" aria-hidden="true">#</a>Automatic niche</h3>
+<p><code>Ptr&lt;T&gt;</code>, <code>ConstPtr&lt;T&gt;</code> and <code>ManyPtr&lt;T&gt;</code> can use the null pointer value as a niche, so adding <code>none</code> requires no extra tag. This is an optimization, not a guarantee: an implementation may represent <code>Ptr&lt;T&gt; | none</code> as an ordinary tagged sum type.</p>
+<pre><code class="language-rok">sizeof::&lt;<span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt;&gt;()         <span class="c">//→ 8 (64-bit target)</span>
+sizeof::&lt;<span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; | <span class="k">none</span>&gt;() <span class="c">//→ 8 (implementation using the niche - not guaranteed)</span>
+</code></pre>
+<p><code>CPtr&lt;T&gt;</code>, on the other hand, is itself nullable, so it needs no separate sentinel; its <code>none</code> representation is simply <code>CPtr::null()</code>.</p>
+<p>The niche mechanism is covered in <a href="../200-core/202-non-zero">2.2 non-zero</a>.</p>
+<h2 id="112-ptrt---strict-provenance-api"><a class="anchor" tabindex="-1" href="#112-ptrt---strict-provenance-api" aria-hidden="true">#</a>1.1.2. <code>Ptr&lt;T&gt;</code> - strict provenance API</h2>
+<p>The public API of the most basic type, <code>Ptr&lt;T&gt;</code>, is:</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque - (address, provenance) pair */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// construction</span>
+    <span class="k">fn</span> dangling() -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;           <span class="c">// valid alignment, invalid address (unique)</span>
+    <span class="k">fn</span> null() -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;         <span class="c">// always none</span>
+
+    <span class="c">// provenance-preserving (strict provenance, safety first)</span>
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;             <span class="c">// address only (provenance lost)</span>
+    <span class="k">fn</span> with_addr(<span class="k">self</span>, addr: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+                                        <span class="c">// provenance kept, address changed</span>
+    <span class="k">fn</span> map_addr(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">usize</span>) -&gt; <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="c">// arithmetic (provenance preserving)</span>
+    <span class="k">fn</span> offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;       <span class="c">// count * sizeof(T) byte offset</span>
+    <span class="k">fn</span> add(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> sub(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> byte_offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;  <span class="c">// offset in bytes</span>
+
+    <span class="k">fn</span> distance(<span class="k">self</span>, origin: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">isize</span>;     <span class="c">// self.addr() - origin.addr()</span>
+    <span class="k">fn</span> is_aligned(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> align_offset(<span class="k">self</span>, align: <span class="t">usize</span>) -&gt; <span class="t">usize</span>;
+
+    <span class="c">// dereference (UB if invalid)</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> read(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> write(<span class="k">self</span>, value: <span class="t">T</span>);
+    <span class="k">unsafe</span> <span class="k">fn</span> read_volatile(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> write_volatile(<span class="k">self</span>, value: <span class="t">T</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="c">// module functions of rok::bare::ptr</span>
+<span class="k">fn</span> addr_of&lt;<span class="t">T</span>&gt;(place: <span class="t">T</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+<span class="k">fn</span> many_addr_of&lt;<span class="t">T</span>&gt;(place: <span class="t">T</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+<span class="k">fn</span> expose_provenance&lt;<span class="t">T</span>&gt;(p: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">usize</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> from_exposed_provenance&lt;<span class="t">T</span>&gt;(addr: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+</code></pre>
+<p><code>addr_of</code> / <code>many_addr_of</code> take a place expression: a local variable or a <code>static</code> (an <code>extern &quot;C&quot;</code> <code>static</code> included), or a field or element of one. A pointer to a local is valid while that variable is in scope; a pointer to a static for the whole run (statics live in data sections; a lazily initialized static is initialized before its address is taken; GC references held by statics are roots). Writing through a pointer to a non-<code>mut</code> static is undefined behavior. A variable whose address is taken stays a GC root for that scope, and roots pin, so the referent does not move. In a coroutine body the pointer is valid only until the next suspension point. Using such a pointer after a suspension point is a compile error.</p>
+<h3 id="strict-provenance---separated-escape-hatch"><a class="anchor" tabindex="-1" href="#strict-provenance---separated-escape-hatch" aria-hidden="true">#</a>Strict provenance - separated escape hatch</h3>
+<p>Conversion <code>usize → Ptr&lt;T&gt;</code> is rejected by default, because dereferencing a ptr whose provenance was lost is UB. The normal path and the escape hatch are therefore clearly separated.</p>
+<pre><code class="language-rok"><span class="c">// recommended - provenance preserved</span>
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> q = p.with_addr(p.addr() + <span class="n">4</span>);     <span class="c">// 4 bytes further - provenance unchanged</span>
+
+<span class="c">// discouraged - fresh provenance (only for FFI / hardware registers)</span>
+<span class="k">use</span> rok::bare::ptr::{expose_provenance, from_exposed_provenance};
+
+<span class="k">let</span> exposed: <span class="t">usize</span> = expose_provenance(p);   <span class="c">// "exposes" p's provenance</span>
+<span class="k">let</span> r: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = <span class="k">unsafe</span> { from_exposed_provenance(exposed) };
+                                              <span class="c">// _assumes_ the new ptr has one of</span>
+                                              <span class="c">// the exposed provenances</span>
+</code></pre>
+<p>The authoritative starting point of this design is <a href="https://www.ralfj.de/blog/2022/04/11/provenance-exposed.html">Ralf Jung's &quot;Pointers Are Complicated&quot;</a>, and it is isomorphic to <code>rok::core::ptr::with_exposed_provenance</code> of Rust 1.84, stabilized in December 2024.</p>
+<h3 id="example---pointer-arithmetic"><a class="anchor" tabindex="-1" href="#example---pointer-arithmetic" aria-hidden="true">#</a>Example - pointer arithmetic</h3>
+<p>The short example below shows arithmetic in use.</p>
+<pre><code class="language-rok"><span class="k">let</span> arr: [<span class="t">i32</span>; <span class="n">5</span>] = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">40</span>, <span class="n">50</span>];
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::addr_of(arr[<span class="n">0</span>]);
+
+<span class="k">let</span> p3 = p.add(<span class="n">3</span>);                    <span class="c">// ptr to arr[3]</span>
+<span class="k">unsafe</span> {
+    <span class="k">let</span> v = p3.read();                <span class="c">//→ 40</span>
+}
+
+<span class="c">// byte arithmetic (struct field offset)</span>
+<span class="k">struct</span> <span class="t">Header</span> { magic: <span class="t">u32</span>; size: <span class="t">u64</span>; }
+<span class="k">let</span> h: <span class="t">Ptr</span>&lt;<span class="t">Header</span>&gt; = ...;
+<span class="k">let</span> size_ptr: <span class="t">Ptr</span>&lt;<span class="t">u64</span>&gt; = h.byte_offset(<span class="n">4</span>).cast::&lt;<span class="t">u64</span>&gt;();
+                                      <span class="c">// location of Header.size</span>
+                                      <span class="c">// (alignment check needed - see 1.2 cast)</span>
+</code></pre>
+<h2 id="113-constptrt---read-only"><a class="anchor" tabindex="-1" href="#113-constptrt---read-only" aria-hidden="true">#</a>1.1.3. <code>ConstPtr&lt;T&gt;</code> - read-only</h2>
+<p>The read-only variant lacks the write family.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> dangling() -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> with_addr(<span class="k">self</span>, addr: <span class="t">usize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> add(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> sub(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">unsafe</span> <span class="k">fn</span> read(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> read_volatile(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="c">// no write methods - read-only</span>
+}
+</code></pre>
+<p>The safety of conversion to and from <code>Ptr&lt;T&gt;</code> depends on direction. Adding const is free; removing it must go through the named cast <code>rok::bare::const_cast</code> (a safe call; writing through the result is <code>unsafe</code>).</p>
+<pre><code class="language-rok"><span class="k">let</span> m: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> c: <span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt; = m.as_const();        <span class="c">// Ptr → ConstPtr (safe)</span>
+
+<span class="k">let</span> c: <span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> m: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::const_cast(c);    <span class="c">// ConstPtr → Ptr (safe call; writes through m are unsafe - 1.2 cast)</span>
+</code></pre>
+<p>Removing const therefore happens only through an <strong>explicit</strong> path; silent conversion is not accepted.</p>
+<h2 id="114-manyptrt---n-contiguous-length-unknown"><a class="anchor" tabindex="-1" href="#114-manyptrt---n-contiguous-length-unknown" aria-hidden="true">#</a>1.1.4. <code>ManyPtr&lt;T&gt;</code> - N contiguous, length unknown</h2>
+<p>Next is the type that points to several elements without length information.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> with_addr(<span class="k">self</span>, addr: <span class="t">usize</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> add(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">unsafe</span> <span class="k">fn</span> read(<span class="k">self</span>, idx: <span class="t">usize</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> write(<span class="k">self</span>, idx: <span class="t">usize</span>, value: <span class="t">T</span>);
+
+    <span class="c">// no length information - the caller guarantees the index</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> slice(<span class="k">self</span>, len: <span class="t">usize</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">T</span>&gt;;        <span class="c">// attaches a length to make a Slice</span>
+}
+</code></pre>
+<p>It is used to accept C's <code>T*</code> (array); since there is no length information, avoiding OOB is the caller's responsibility. <code>slice</code> over memory outside the GC heap must not hold elements with GC references; that is undefined behavior.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> read_buffer(out: <span class="t">ManyPtr</span>&lt;<span class="t">u8</span>&gt;, len: <span class="t">usize</span>) -&gt; <span class="t">usize</span>;
+}
+
+<span class="k">let</span> buf: [<span class="t">u8</span>; <span class="n">1024</span>] = [<span class="n">0</span>; <span class="n">1024</span>];
+<span class="k">let</span> read_count = <span class="k">unsafe</span> {
+    read_buffer(rok::bare::ptr::many_addr_of(buf[<span class="n">0</span>]), <span class="n">1024</span>)
+};
+</code></pre>
+<h2 id="115-cptrt---c-compatible-nullable"><a class="anchor" tabindex="-1" href="#115-cptrt---c-compatible-nullable" aria-hidden="true">#</a>1.1.5. <code>CPtr&lt;T&gt;</code> - C-compatible nullable</h2>
+<p>The nullable variant tied directly to the C ABI is:</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque - nullable */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> null() -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> from_ptr(p: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;       <span class="c">// non-null</span>
+    <span class="k">fn</span> from_const(p: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> is_null(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;        <span class="c">// null → none</span>
+    <span class="k">fn</span> as_const(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                  <span class="c">// null = 0</span>
+}
+</code></pre>
+<p>It fits at boundaries where C functions exchange nullable <code>T*</code>. Typical use:</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;       <span class="c">// null on failure</span>
+    <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+}
+
+<span class="k">let</span> buf: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt; = <span class="k">unsafe</span> { malloc(<span class="n">1024</span>) };
+<span class="k">match</span> buf.as_ptr() {
+    p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; =&gt; <span class="k">use</span>(p),
+    <span class="k">none</span>       =&gt; panic(<span class="s">"malloc failed"</span>),
+}
+<span class="k">unsafe</span> { free(buf) };
+</code></pre>
+<p><code>Ptr&lt;T&gt; | none</code> is ABI-compatible thanks to the automatic niche, but <code>CPtr</code> alone is not enough where an <strong>explicit sentinel</strong> such as <code>-1</code> is needed. In that case the standard approach is to model it separately with <code>#[niche(-1)]</code> on a newtype.</p>
+<h2 id="116-conversion-matrix"><a class="anchor" tabindex="-1" href="#116-conversion-matrix" aria-hidden="true">#</a>1.1.6. Conversion matrix</h2>
+<p>The ways between these five types are summarized in a single matrix.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th><code>Ptr&lt;T&gt;</code></th><th><code>ConstPtr&lt;T&gt;</code></th><th><code>ManyPtr&lt;T&gt;</code></th><th><code>CPtr&lt;T&gt;</code></th><th><code>Slice&lt;T&gt;</code></th><th><code>usize</code></th></tr></thead>
+<tbody>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>-</td><td><code>.as_const()</code> safe</td><td><code>.as_many()</code> safe</td><td><code>CPtr::from_ptr()</code></td><td><code>rok::bare::ptr::slice(p, len)</code></td><td><code>.addr()</code> provenance loss</td></tr>
+<tr><td><code>ConstPtr&lt;T&gt;</code></td><td><code>rok::bare::const_cast</code></td><td>-</td><td><code>.as_many()</code></td><td><code>CPtr::from_const()</code></td><td><code>rok::bare::ptr::slice</code></td><td><code>.addr()</code></td></tr>
+<tr><td><code>ManyPtr&lt;T&gt;</code></td><td><code>.as_one()</code> safe</td><td><code>.as_const()</code></td><td>-</td><td><code>CPtr::from_ptr(...)</code></td><td><code>.slice(len)</code> unsafe</td><td><code>.addr()</code></td></tr>
+<tr><td><code>CPtr&lt;T&gt;</code></td><td><code>.as_ptr()? </code></td><td><code>.as_const()?</code></td><td>manual</td><td>-</td><td>manual</td><td><code>.addr()</code></td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>(raw extraction from a safe view)</td><td><code>.as_ptr()</code> (ConstPtr)</td><td><code>.as_many_ptr()</code></td><td>manual</td><td>-</td><td><code>.as_ptr().addr()</code></td></tr>
+<tr><td><code>usize</code></td><td><code>from_exposed_provenance</code> ⚠</td><td><code>from_exposed_provenance</code> ⚠</td><td>manual</td><td><code>CPtr::from_addr</code></td><td>manual</td><td>-</td></tr>
+</tbody></table></div>
+<p>⚠ marks an escape hatch that creates fresh provenance.</p>
+<h2 id="117-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#117-comparison-with-other-languages" aria-hidden="true">#</a>1.1.7. Comparison with other languages</h2>
+<p>Comparing with other languages that have tackled the same problem makes rok's position clear.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>C</th><th>Rust</th><th>Zig</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Single ptr</td><td><code>T*</code></td><td><code>*const T</code> / <code>*mut T</code></td><td><code>*T</code> / <code>*const T</code></td><td><code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code></td></tr>
+<tr><td>Many ptr</td><td><code>T*</code> (ambiguous)</td><td><code>*const T</code> (ambiguous)</td><td><code>[*]T</code></td><td><code>ManyPtr&lt;T&gt;</code></td></tr>
+<tr><td>length-aware</td><td><strong>none</strong></td><td><code>&amp;[T]</code></td><td><code>[]T</code></td><td><code>Slice&lt;T&gt;</code></td></tr>
+<tr><td>nullable</td><td>(every ptr)</td><td><code>Option&lt;*const T&gt;</code></td><td><code>?*T</code></td><td><code>CPtr&lt;T&gt;</code> or <code>Ptr&lt;T&gt; | none</code></td></tr>
+<tr><td>arity separation</td><td><strong>none</strong></td><td><strong>partial</strong> (slice separate)</td><td>✓ (<code>*T</code> / <code>[*]T</code> separate)</td><td>✓ (Zig model)</td></tr>
+<tr><td>strict provenance</td><td><strong>none</strong></td><td>✓ (1.84+)</td><td><strong>none</strong></td><td>✓ (Rust model)</td></tr>
+<tr><td><code>as</code> cast rejected</td><td><strong>allowed</strong></td><td><strong>allowed</strong> (warning only)</td><td><strong>explicit <code>@ptrCast</code></strong></td><td><strong>fully rejected</strong></td></tr>
+</tbody></table></div>
+<p>As the table shows, rok's three weightiest decisions are: first, adopting Zig-style arity separation to divide the five kinds clearly; second, adopting the Rust 2024 model of strict provenance; and third, enforcing explicit casts so that <code>as</code> cannot be used on pointers at all. Together these three decisions avoid most of the pointer pitfalls of both C and Rust.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/101-ptr.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>1. Unsafe tier</a><a class="next" href="102-cast"><small>Next</small>1.2. cast operations - explicitly named casts</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.6. Scheduler - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok's scheduler is M:N work-stealing; this document defines its structure.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/706-scheduler.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.6. Scheduler - rok docs">
+<meta property="og:description" content="rok's scheduler is M:N work-stealing; this document defines its structure.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/706-scheduler.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/706-scheduler.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/706-scheduler.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">7. Runtime overview</a></p><ul class="pages"><li><a href="701-object-layout">7.1. Object layout and memory spaces</a></li><li><a href="702-allocation">7.2. Allocation</a></li><li><a href="703-gc-algorithm">7.3. GC algorithm</a></li><li><a href="704-barriers-and-roots">7.4. Barriers and root tracking</a></li><li><a href="705-concurrent-collection">7.5. Concurrent mark</a></li><li class="cur"><a aria-current="page" href="706-scheduler">7.6. Scheduler</a><ul class="toc"><li><a href="#761-unified-worker-model">7.6.1. Unified worker model</a></li><li><a href="#762-work-stealing-structure">7.6.2. Work-stealing structure</a></li><li><a href="#763-global-injector-queue">7.6.3. Global injector queue</a></li><li><a href="#764-steal-algorithm">7.6.4. Steal algorithm</a></li><li><a href="#765-keywords-vs-library-functions">7.6.5. Keywords vs library functions</a></li><li><a href="#766-11-os-threads-threadspawn">7.6.6. 1:1 OS threads: thread::spawn</a></li><li><a href="#767-automatic-detection-of-blocking-syscalls">7.6.7. Automatic detection of blocking syscalls</a></li><li><a href="#768-thread-per-core-option">7.6.8. Thread-per-core option</a></li><li><a href="#769-priority--fairness">7.6.9. Priority / fairness</a></li><li><a href="#7610-integrated-gc-worker-role">7.6.10. Integrated GC worker role</a></li><li><a href="#7611-scheduler-and-coroutines">7.6.11. Scheduler and coroutines</a></li><li><a href="#7612-spawn-cost">7.6.12. Spawn cost</a></li><li><a href="#7613-overall-flow">7.6.13. Overall flow</a></li></ul></li><li><a href="707-io-and-timer">7.7. I/O driver and timers</a></li><li><a href="708-coroutine">7.8. Coroutines</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="76-scheduler 76-스케줄러 761-unified-worker-model 761-통합된-worker-모델 762-work-stealing-structure 762-work-stealing-구조 763-global-injector-queue 763-global-injector-queue 764-steal-algorithm 764-steal-알고리듬 765-keywords-vs-library-functions 765-키워드-vs-라이브러리-함수 766-11-os-threads-threadspawn 766-11-os-thread-threadspawn 767-automatic-detection-of-blocking-syscalls 767-blocking-syscall-자동-검출 768-thread-per-core-option 768-thread-per-core-옵션 769-priority--fairness 769-우선순위--공정성 7610-integrated-gc-worker-role 7610-통합-gc-worker-역할 7611-scheduler-and-coroutines 7611-scheduler-와-coroutine-의-관계 7612-spawn-cost 7612-spawn-비용 7613-overall-flow 7613-전체-흐름-요약"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/007-runtime/706-scheduler" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="76-scheduler"><a class="anchor" tabindex="-1" href="#76-scheduler" aria-hidden="true">#</a>7.6. Scheduler</h1>
+<p>rok's scheduler is M:N <a href="../000-meta/007-glossary#work-stealing">work-stealing</a>; this document defines its structure.</p>
+<h2 id="761-unified-worker-model"><a class="anchor" tabindex="-1" href="#761-unified-worker-model" aria-hidden="true">#</a>7.6.1. Unified worker model</h2>
+<p>A process has one executor, started on first use. Workers are as many OS threads as there are CPUs, plus a blocking lane and an I/O driver. <code>task::block_on</code> attaches the calling thread as a guest worker; remaining tasks keep running after it returns. <code>par::*</code> and <code>spawn_blocking</code> use the same executor (<a href="../../refs-standard-libraries/200-core/218-task#2183-scheduler-model---work-stealing">stdlib 2.18.3</a>). Each worker combines these roles:</p>
+<pre><code>worker = {
+    scheduler   // task queue (work-stealing)
+    mutator     // TLAB + shadow stack (701 / 702 / 704)
+}
+</code></pre>
+<p>Workers do not double as the I/O driver; a single reactor thread per process handles it (<a href="707-io-and-timer#771-io-multiplexing">7.7.1</a>). STW collection is run by the thread that started the collection, and concurrent mark by the marker thread (7.6.10).</p>
+<h2 id="762-work-stealing-structure"><a class="anchor" tabindex="-1" href="#762-work-stealing-structure" aria-hidden="true">#</a>7.6.2. Work-stealing structure</h2>
+<p>Each worker has a local deque (lock-free Chase-Lev deque, <a href="../008-abi/805-extern-symbols#rok_deque_---work-stealing-deque">8.5.4 <code>rok_deque_*</code></a>).</p>
+<pre><code>Worker:
+  ├── local_deque : growable ring    (this worker's tasks, GC-traced)
+  └── ...
+</code></pre>
+<p>A newly woken or spawned task goes to the bottom of that worker's deque. <strong>Both the owning worker and thieves take the oldest task (top) first.</strong> If the owner took the newest task first, a task that keeps re-waking itself (such as one looping on <code>await task::yield_now()</code>) could starve the tasks queued behind it.</p>
+<p>This is a work-stealing model in which a worker usually runs the tasks it spawned, preserving cache locality, while idle workers steal work, providing load balancing. An implementation may add &quot;most recent task first&quot; optimizations such as a LIFO slot, as long as the starvation above cannot occur.</p>
+<h2 id="763-global-injector-queue"><a class="anchor" tabindex="-1" href="#763-global-injector-queue" aria-hidden="true">#</a>7.6.3. Global injector queue</h2>
+<p>Besides each worker's local queue, there is a separate global injector queue.</p>
+<pre><code>Global injector:
+  - receives tasks spawned from outside (e.g. extern callback).
+  - when a worker's local queue is empty - pull from global.
+</code></pre>
+<p>This queue is the entry point for tasks arriving from outside the worker pool.</p>
+<h2 id="764-steal-algorithm"><a class="anchor" tabindex="-1" href="#764-steal-algorithm" aria-hidden="true">#</a>7.6.4. Steal algorithm</h2>
+<p>When a worker's local deque is empty, it proceeds in this order:</p>
+<pre><code>1. Try to pull from the global injector.
+2. Try to steal from the top of another worker's local deque. Victims start at a per-worker pseudo-random index, then go round-robin.
+3. If all fail - sleep / park (blocking sync).
+</code></pre>
+<p>Steal tries up to N-1 workers; if all are empty, the worker switches to the parked state.</p>
+<h2 id="765-keywords-vs-library-functions"><a class="anchor" tabindex="-1" href="#765-keywords-vs-library-functions" aria-hidden="true">#</a>7.6.5. Keywords vs library functions</h2>
+<p>Following the principle of minimizing reserved keywords in <a href="../001-lexical/105-keywords">Keywords</a>, scheduler functions are all provided as library functions.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Library function</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>task::spawn(fut)</code></td><td>Push the future onto the queue as a new task. Result <code>Task&lt;T&gt;</code>.</td></tr>
+<tr><td><code>task::yield_now()</code></td><td>Voluntary yield (<code>await</code>). Lets other ready tasks run once.</td></tr>
+<tr><td><code>task::sleep(d)</code></td><td>Move to the timer queue.</td></tr>
+<tr><td><code>task::race([...])</code></td><td>The task that finishes first (<code>List&lt;Task&lt;T&gt;&gt;</code>, await).</td></tr>
+<tr><td><code>task::join([...])</code></td><td>Until all finish (<code>List&lt;Task&lt;T&gt;&gt;</code>, await).</td></tr>
+<tr><td><code>task::timeout(d, t)</code></td><td>Time limit. If exceeded, <code>TimeoutError</code> at <code>try await</code>.</td></tr>
+<tr><td><code>thread::spawn(f)</code></td><td>Create a new OS thread (1:1).</td></tr>
+<tr><td><code>par::for_each(xs, f)</code></td><td>Parallel for-each (<a href="../000-meta/007-glossary#block">block</a> on join).</td></tr>
+<tr><td><code>par::scope { ... }</code></td><td>Parallel scope (trailing closure).</td></tr>
+</tbody></table></div>
+<p>Since these are not keywords, identifiers such as <code>spawn</code> or <code>race</code> can be used freely in user code.</p>
+<h2 id="766-11-os-threads-threadspawn"><a class="anchor" tabindex="-1" href="#766-11-os-threads-threadspawn" aria-hidden="true">#</a>7.6.6. 1:1 OS threads: <code>thread::spawn</code></h2>
+<p>Most tasks run M:N as mapped by the scheduler, but for blocking work or external library calls a dedicated OS thread is sometimes the natural fit. In that case <code>thread::spawn</code> creates a real OS thread mapped 1:1.</p>
+<p>Internally it directly calls Unix <code>pthread_create</code>, Windows <code>CreateThread</code>, etc., and runs in a pool separate from ordinary tasks. The result is returned as <code>JoinHandle&lt;T&gt;</code>, a type distinct from Future.</p>
+<h2 id="767-automatic-detection-of-blocking-syscalls"><a class="anchor" tabindex="-1" href="#767-automatic-detection-of-blocking-syscalls" aria-hidden="true">#</a>7.6.7. Automatic detection of blocking syscalls</h2>
+<p>The work-stealing model has the problem that when a task calls a blocking syscall, the worker itself stalls. This is solved by automatic offloading to a blocking pool.</p>
+<p>The compiler and runtime automatically send known blocking syscalls to a blocking pool worker, which is a separate OS thread and so does not hinder other tasks' progress. The detailed mechanism is left to the scheduler implementation.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>In the reference runtime, a pool thread whose task stays in a blocking call hands its worker to a new thread. Tasks spawned with <code>spawn_local</code> pin their worker, which is never handed on.</p>
+</div>
+<h2 id="768-thread-per-core-option"><a class="anchor" tabindex="-1" href="#768-thread-per-core-option" aria-hidden="true">#</a>7.6.8. Thread-per-core option</h2>
+<p>By default there are N workers and tasks move freely between threads. With the thread-per-core option enabled, each task is pinned to a fixed worker and workers do not steal from each other; cache locality is maximized, suiting NUMA environments and datacenter workloads.</p>
+<p>It is toggled with the environment variable <code>ROK_THREAD_PER_CORE=1</code>; <code>ROK_WORKERS=&lt;n&gt;</code> sets N (default: the online CPUs).</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>A task is pinned to a worker; a worker whose task blocks may continue on another OS thread (<a href="#767-automatic-detection-of-blocking-syscalls">7.6.7</a>), so thread identity is not stable for a pinned task.</p>
+</div>
+<h2 id="769-priority--fairness"><a class="anchor" tabindex="-1" href="#769-priority--fairness" aria-hidden="true">#</a>7.6.9. Priority / fairness</h2>
+<p>The default is priority-less FIFO + work-stealing. Both the owning worker and thieves process the oldest task in the deque first (7.6.2).</p>
+<p>A busy worker does not defer timers either. Every 32 tasks executed, it processes expired timers and returns their tasks to the queue. So <code>task::sleep</code> / <code>task::timeout</code> wake on time even on a worker that always has work.</p>
+<p>Explicit priorities are out of scope for this specification and are covered by a separate surface of the standard library.</p>
+<h2 id="7610-integrated-gc-worker-role"><a class="anchor" tabindex="-1" href="#7610-integrated-gc-worker-role" aria-hidden="true">#</a>7.6.10. Integrated GC worker role</h2>
+<p>STW collection is run by the thread that started it through allocation or <code>rok_gc_collect</code>, while other workers stop and wait at safepoints (<a href="704-barriers-and-roots#743-safepoint-polling">7.4.3</a>). After the collection, workers return to running tasks. Concurrent mark is done by a single separate marker thread (<a href="705-concurrent-collection">7.5</a>).</p>
+<h2 id="7611-scheduler-and-coroutines"><a class="anchor" tabindex="-1" href="#7611-scheduler-and-coroutines" aria-hidden="true">#</a>7.6.11. Scheduler and coroutines</h2>
+<p>The scheduler uses the stackless coroutines of <a href="708-coroutine">Coroutines</a>; each task's state machine is stored in a coroutine frame.</p>
+<p>When a task hits <code>await</code> or <code>yield</code>, only the coroutine frame goes back into the queue and the worker continues with another task; when the task resumes, a different worker may take the frame and continue it. This model lets millions of tasks be handled efficiently on N workers.</p>
+<h2 id="7612-spawn-cost"><a class="anchor" tabindex="-1" href="#7612-spawn-cost" aria-hidden="true">#</a>7.6.12. Spawn cost</h2>
+<p><code>task::spawn</code> completes by merely allocating a stackless coroutine frame. The frame's size depends on the task's local variables, roughly 64-256 bytes, and it is allocated on the <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> fast path, so the cost is near zero.</p>
+<p>As a result, even millions of concurrent tasks are incomparably lighter than OS threads.</p>
+<h2 id="7613-overall-flow"><a class="anchor" tabindex="-1" href="#7613-overall-flow" aria-hidden="true">#</a>7.6.13. Overall flow</h2>
+<pre><code>user code:    task::spawn(async { compute() })
+  ↓
+compiler:     create coroutine frame + push to queue
+  ↓
+worker:       pop task from deque/lifo and execute
+  ↓ (on await / yield)
+worker:       requeue frame, run another task
+  ↓ (some worker)
+resume:       pop frame and continue execution
+  ↓ (on normal termination)
+result:       delivered as Output of Task&lt;T&gt; (Task&lt;T&gt;: Future&lt;Output = T&gt;)
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/007-runtime/706-scheduler.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="705-concurrent-collection"><small>Previous</small>7.5. Concurrent mark</a><a class="next" href="707-io-and-timer"><small>Next</small>7.7. I/O driver and timers</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

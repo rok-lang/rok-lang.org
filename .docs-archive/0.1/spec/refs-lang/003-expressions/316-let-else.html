@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.16. let-else - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="let-else places a refutable pattern on the left-hand side of let and writes, together with it, the divergent branch taken when the match fails.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/316-let-else.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.16. let-else - rok docs">
+<meta property="og:description" content="let-else places a refutable pattern on the left-hand side of let and writes, together with it, the divergent branch taken when the match fails.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/316-let-else.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/316-let-else.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/316-let-else.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li class="cur"><a aria-current="page" href="316-let-else">3.16. let-else</a><ul class="toc"><li><a href="#3161-form">3.16.1. Form</a></li><li><a href="#3162-behavior">3.16.2. Behavior</a></li><li><a href="#3163-divergence-required">3.16.3. Divergence required</a></li><li><a href="#3164-unwrapping-sum-types-and-enums">3.16.4. Unwrapping sum types and enums</a></li><li><a href="#3165-visibility">3.16.5. Visibility</a></li><li><a href="#3166-guards-none">3.16.6. Guards (none)</a></li><li><a href="#3167-exit-keywords-of-else">3.16.7. Exit keywords of else</a></li><li><a href="#3168-comparison-with-match">3.16.8. Comparison with match</a></li><li><a href="#3169-evaluation-order">3.16.9. Evaluation order</a></li></ul></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="316-let-else 316-let-else 3161-form 3161-형태 3162-behavior 3162-동작 3163-divergence-required 3163-divergent-강제 3164-unwrapping-sum-types-and-enums 3164-합-타입과-enum-의-자연스러운-풀기 3165-visibility 3165-가시-범위 3166-guards-none 3166-가드-없음 3167-exit-keywords-of-else 3167-else-의-종료-키워드 3168-comparison-with-match 3168-match-와의-비교 3169-evaluation-order 3169-평가-순서"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/316-let-else" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="316-let-else"><a class="anchor" tabindex="-1" href="#316-let-else" aria-hidden="true">#</a>3.16. <code>let-else</code></h1>
+<p><code>let-else</code> places a refutable pattern on the left-hand side of <code>let</code> and writes, together with it, the divergent branch taken when the match fails.</p>
+<h2 id="3161-form"><a class="anchor" tabindex="-1" href="#3161-form" aria-hidden="true">#</a>3.16.1. Form</h2>
+<p>The grammar is:</p>
+<pre><code>let_else_stmt   ::= &quot;let&quot; pattern (&quot;:&quot; type_expr)? &quot;=&quot; expr &quot;else&quot; block &quot;;&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> pattern = expr <span class="k">else</span> { diverge };
+</code></pre>
+<p><code>let</code> is followed by a pattern, <code>=</code> and an expression, then <code>else</code> and a block. Any refutable pattern is accepted. The <code>else</code> body must be a divergent block of <a href="309-block-expressions">block expressions</a>, so it must exit via <code>return</code>, <code>break</code>, <code>continue</code>, <code>throw</code>, or the like.</p>
+<h2 id="3162-behavior"><a class="anchor" tabindex="-1" href="#3162-behavior" aria-hidden="true">#</a>3.16.2. Behavior</h2>
+<pre><code class="language-rok"><span class="k">let</span> value: <span class="t">T</span> = compute() <span class="k">else</span> {       <span class="c">// compute(): T | none</span>
+    <span class="k">return</span> default;
+};
+<span class="c">// here value is a value of type T (if none, control left via the else above)</span>
+</code></pre>
+<p>Evaluation proceeds as follows. The expression's result is matched against the pattern; on success, the pattern's bindings are introduced into the current scope and evaluation continues with the next line. On failure, the <code>else</code> body is evaluated, and because <code>else</code> is divergent, control leaves at that point.</p>
+<h2 id="3163-divergence-required"><a class="anchor" tabindex="-1" href="#3163-divergence-required" aria-hidden="true">#</a>3.16.3. Divergence required</h2>
+<p>The <code>else</code> body must be divergent. A body that completes normally is a compile error.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> {
+    print(<span class="s">"no value"</span>);          <span class="c">// ERROR: not divergent</span>
+};
+</code></pre>
+<p>This requirement prevents evaluation from continuing without the binding variables after a failed match. Only if the <code>else</code> body exits can the existence of the bindings be guaranteed on the next line.</p>
+<h2 id="3164-unwrapping-sum-types-and-enums"><a class="anchor" tabindex="-1" href="#3164-unwrapping-sum-types-and-enums" aria-hidden="true">#</a>3.16.4. Unwrapping sum types and <code>enum</code>s</h2>
+<p>The most common use is accepting one case of a <code>T | none</code> or an <code>enum</code> variant and exiting early in all other cases.</p>
+<pre><code class="language-rok"><span class="c">// unwrap one member of a sum type</span>
+<span class="k">let</span> n: <span class="t">i32</span> = x <span class="k">else</span> {                    <span class="c">// x: i32 | f32</span>
+    panic(<span class="s">"expected i32"</span>);
+};
+<span class="c">// here n: i32</span>
+
+<span class="c">// unwrap an enum variant</span>
+<span class="k">let</span> <span class="t">Ok</span>(data) = parse(input) <span class="k">else</span> {
+    <span class="k">return</span> <span class="t">Err</span>(<span class="t">ParseFailed</span>);
+};
+<span class="c">// data is the contents of the Ok variant</span>
+</code></pre>
+<p>This pattern keeps the vertical flow more concise than <code>match</code>, which is useful for explicitly separating the main flow from exceptional cases.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>In the form <code>let identifier : Type = expr else { ... };</code>, the <code>: Type</code> is interpreted as a <strong>refutable type-check pattern</strong> (the <code>type_check_pattern</code> of <a href="311-patterns">patterns</a>). Unlike a slot type annotation in an ordinary <code>let</code>, it can fail to match, which is what gives the <code>else</code> branch its meaning. That is, <code>let n: i32 = x else { ... };</code> is equivalent to <code>match x { v: i32 =&gt; v, _ =&gt; { ... } }</code>, and <code>: i32</code> is not the slot type of <code>n</code> but the check <code>x</code> must pass.</p>
+</div>
+<h2 id="3165-visibility"><a class="anchor" tabindex="-1" href="#3165-visibility" aria-hidden="true">#</a>3.16.5. Visibility</h2>
+<p>On a successful match, the pattern's binding variables are introduced into the scope where the <code>let-else</code> appears - not inside the <code>else</code> body.</p>
+<pre><code class="language-rok">{
+    <span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> { <span class="k">return</span>; };
+    <span class="c">// v is visible here</span>
+    <span class="k">use</span>(v);
+}
+<span class="c">// v is not visible here (scope ended)</span>
+</code></pre>
+<p>The binding variables are not visible in the <code>else</code> body, because the match has just failed and no value exists.</p>
+<h2 id="3166-guards-none"><a class="anchor" tabindex="-1" href="#3166-guards-none" aria-hidden="true">#</a>3.16.6. Guards (none)</h2>
+<pre><code>let v: T = expr if v &gt; 0 else { ... };       // not adopted
+</code></pre>
+<p>A guard (<code>if condition</code>) in a <code>let-else</code> is not adopted. If a guard is needed, check it separately afterward.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> { <span class="k">return</span>; };
+<span class="k">if</span> v &lt;= <span class="n">0</span> { <span class="k">return</span>; }
+</code></pre>
+<h2 id="3167-exit-keywords-of-else"><a class="anchor" tabindex="-1" href="#3167-exit-keywords-of-else" aria-hidden="true">#</a>3.16.7. Exit keywords of <code>else</code></h2>
+<p>Exit keywords commonly found in the <code>else</code> body and their effects:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Keyword</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>return val;</code></td><td>return from the function</td></tr>
+<tr><td><code>break;</code> and <code>break value;</code></td><td>exit the enclosing loop</td></tr>
+<tr><td><code>continue;</code></td><td>go to the next iteration of the loop</td></tr>
+<tr><td><code>throw err;</code></td><td>raise an error</td></tr>
+<tr><td><code>panic(&quot;msg&quot;)</code></td><td>library panic function, unrecoverable exit</td></tr>
+<tr><td><code>loop { ... }</code> (no <code>break</code>)</td><td>divergent loop</td></tr>
+</tbody></table></div>
+<p>Any of these, and any form the compiler classifies as divergent, is allowed.</p>
+<h2 id="3168-comparison-with-match"><a class="anchor" tabindex="-1" href="#3168-comparison-with-match" aria-hidden="true">#</a>3.16.8. Comparison with <code>match</code></h2>
+<pre><code class="language-rok"><span class="c">// let-else</span>
+<span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> { <span class="k">return</span>; };       <span class="c">// compute(): T | none</span>
+<span class="k">use</span>(v);
+
+<span class="c">// match equivalent</span>
+<span class="k">let</span> v = <span class="k">match</span> compute() {
+    v: <span class="t">T</span> =&gt; v,
+    <span class="k">none</span> =&gt; <span class="k">return</span>,
+};
+<span class="k">use</span>(v);
+</code></pre>
+<p>The two express the same meaning. Choose <code>let-else</code> when its flat main flow is more readable.</p>
+<h2 id="3169-evaluation-order"><a class="anchor" tabindex="-1" href="#3169-evaluation-order" aria-hidden="true">#</a>3.16.9. Evaluation order</h2>
+<p><code>let-else</code> is evaluated in this order:</p>
+<ol>
+<li>Evaluate the right-hand expression.
+</li>
+<li>Match the result against the pattern.
+</li>
+<li>On success, bind and continue with the next line.
+</li>
+<li>On failure, evaluate the <code>else</code> body; being divergent, control leaves.
+</li>
+</ol>
+<p>If the right-hand expression has side effects, it is evaluated only once.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/316-let-else.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="315-destructuring"><small>Previous</small>3.15. Destructuring assignment</a><a class="next" href="317-using-expression"><small>Next</small>3.17. using expression - deterministic release of resources</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

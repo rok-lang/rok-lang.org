@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.6. Sum types (A | B) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A sum type is a tagged union whose value is one of several existing types. It is similar to enum, but its variants are not separately named; existing types are ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/206-sum-types.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.6. Sum types (A | B) - rok docs">
+<meta property="og:description" content="A sum type is a tagged union whose value is one of several existing types. It is similar to enum, but its variants are not separately named; existing types are ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/206-sum-types.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/206-sum-types.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/206-sum-types.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">2. Type system overview</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li class="cur"><a aria-current="page" href="206-sum-types">2.6. Sum types (A | B)</a><ul class="toc"><li><a href="#261-form">2.6.1. Form</a></li><li><a href="#262-meaning">2.6.2. Meaning</a></li><li><a href="#263-memory-representation">2.6.3. Memory representation</a></li><li><a href="#264-set-semantics">2.6.4. Set semantics</a></li><li><a href="#265-combining-with-none">2.6.5. Combining with none</a></li><li><a href="#266-difference-from-any">2.6.6. Difference from any</a></li><li><a href="#267-difference-from-enum">2.6.7. Difference from enum</a></li><li><a href="#268-narrowing">2.6.8. Narrowing</a></li><li><a href="#269-combining-with-type-aliases">2.6.9. Combining with type aliases</a></li></ul></li><li><a href="207-niche-optimization">2.7. Niche optimization</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. Generics</a></li><li><a href="211-const-generics">2.11. const generics</a></li><li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="26-sum-types-a--b 26-합-타입-a--b 261-form 261-형태 262-meaning 262-의미 263-memory-representation 263-메모리-표현 value-recursion-and-size-limits 값-재귀와-크기-한도 exact-bit-width 정확한-비트-폭 264-set-semantics 264-집합-의미론 normalization 정규화 layers-of-generic-sums 제네릭-합의-층 canonical-order 정규-순서 subsets 부분-집합 generic-inference 제네릭-추론 265-combining-with-none 265-none-과의-결합 nested-optional 중첩-optional 266-difference-from-any 266-any-와의-차이 267-difference-from-enum 267-enum-과의-차이 268-narrowing 268-좁히기-narrowing 269-combining-with-type-aliases 269-type-alias-와-결합"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/206-sum-types" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="26-sum-types-a--b"><a class="anchor" tabindex="-1" href="#26-sum-types-a--b" aria-hidden="true">#</a>2.6. Sum types (<code>A | B</code>)</h1>
+<p>A sum type is a tagged union whose value is one of several existing types. It is similar to <code>enum</code>, but its variants are not separately named; existing types are used directly as variants.</p>
+<h2 id="261-form"><a class="anchor" tabindex="-1" href="#261-form" aria-hidden="true">#</a>2.6.1. Form</h2>
+<p>Examples of sum types:</p>
+<pre><code class="language-rok"><span class="t">i32</span> | <span class="t">f32</span>
+<span class="t">T</span> | <span class="k">none</span>
+<span class="t">A</span> | <span class="t">B</span> | <span class="t">C</span>
+<span class="t">i32</span> | <span class="t">str</span> | <span class="t">bool</span>
+</code></pre>
+<p>Terms are separated by the <code>|</code> token of <a href="../001-lexical/110-punctuation-and-operator-tokens">Punctuation and operator tokens</a>. A term may be any type expression: a simple name, a path, a generic, or another sum type.</p>
+<h2 id="262-meaning"><a class="anchor" tabindex="-1" href="#262-meaning" aria-hidden="true">#</a>2.6.2. Meaning</h2>
+<p>A sum type value belongs to one of the terms, and which term it belongs to is tracked by a tag.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">i32</span> | <span class="t">f32</span> = <span class="n">42i32</span>;       <span class="c">// tag is at the i32 position</span>
+<span class="k">let</span> y: <span class="t">i32</span> | <span class="t">f32</span> = <span class="n">3.14f32</span>;     <span class="c">// tag is at the f32 position</span>
+</code></pre>
+<h2 id="263-memory-representation"><a class="anchor" tabindex="-1" href="#263-memory-representation" aria-hidden="true">#</a>2.6.3. Memory representation</h2>
+<p>The default representation places the tag and payload inline.</p>
+<pre><code>+------+----------------------+
+| tag  | payload (size of     |
+|      |  largest variant)    |
++------+----------------------+
+</code></pre>
+<p>The tag identifies which term is active. The payload is sized to the largest of all terms, and the alignment is the largest alignment among all terms.</p>
+<p>This representation is subject to <a href="207-niche-optimization">niche optimization</a>, so the tag slot may disappear.</p>
+<h3 id="value-recursion-and-size-limits"><a class="anchor" tabindex="-1" href="#value-recursion-and-size-limits" aria-hidden="true">#</a>Value recursion and size limits</h3>
+<ul>
+<li>A recursive type that contains itself by value (even through structs, enums, tuples, sums, arrays or generic instances) is an error at the declaration site. Use GC reference types (<code>List&lt;T&gt;</code> etc.) for recursion.
+</li>
+<li>rok's implementation limit (implementation-defined, <a href="../000-meta/004-language-vs-standard-libraries#044-implementation-limits">0.4.4</a>): a value type exceeding 65536 flattened scalar slots or 4 GiB is an error.
+</li>
+</ul>
+<p>The exact placement is up to the implementation, but one thing is guaranteed: zero-filled <code>T | none</code> storage (elements of <code>GcBuf&lt;T | none&gt;</code> and collection buffers, fields of newly allocated GC objects) reads as <code>none</code>.</p>
+<h3 id="exact-bit-width"><a class="anchor" tabindex="-1" href="#exact-bit-width" aria-hidden="true">#</a>Exact bit width</h3>
+<p>The tag's bit width is decided by the compiler and may be 1, 2, 4, 8 bits and so on, depending on the number of terms. User code has no way to access the tag bits directly.</p>
+<h2 id="264-set-semantics"><a class="anchor" tabindex="-1" href="#264-set-semantics" aria-hidden="true">#</a>2.6.4. Set semantics</h2>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>Sum types have the semantics of set operations.</p>
+</div>
+<h3 id="normalization"><a class="anchor" tabindex="-1" href="#normalization" aria-hidden="true">#</a>Normalization</h3>
+<p>Sum types are always handled in normal form.</p>
+<ul>
+<li>Nested sums are flattened. <code>(A | B) | C</code>, <code>A | (B | C)</code> and <code>A | B | C</code> are the same type.
+</li>
+<li>Duplicates are removed. <code>A | A | B</code> is <code>A | B</code>.
+</li>
+<li>Term order is irrelevant. <code>A | B</code> and <code>B | A</code> are the same type.
+</li>
+<li>If one term remains, it is that type itself. <code>A | A</code> is <code>A</code>.
+</li>
+</ul>
+<p>The result of expanding a type alias is normalized again (with <code>type N = i32 | f64;</code>, <code>N | i32</code> is <code>i32 | f64</code>). Substitution of generic parameters follows &quot;Layers of generic sums&quot; below.</p>
+<p>So sum types of the same shape are the same type, and the user need not care whether <code>i32 | f32</code> or <code>f32 | i32</code> was written.</p>
+<h3 id="layers-of-generic-sums"><a class="anchor" tabindex="-1" href="#layers-of-generic-sums" aria-hidden="true">#</a>Layers of generic sums</h3>
+<p>A sum with a generic term, <code>T | X1 | ... | Xn</code> (e.g. <code>T | none</code>, <code>T | ParseErr</code>), semantically has <strong>its own layer</strong>. <code>X1 ... Xn</code> are the non-generic terms written in that sum. Generic terms are these four:</p>
+<ul>
+<li>type parameters (<code>T</code>)
+</li>
+<li><code>Self</code>
+</li>
+<li>associated types (<code>Self::X</code>, <code>T::X</code>, <code>&lt;T as Tr&gt;::X</code>)
+</li>
+<li>parameters of generic type aliases
+</li>
+</ul>
+<p>The layering rule applies when a generic term is replaced by an actual type. If the substituted type overlaps a co-written term, a nested layer results; if not, it is flattened. Below, <code>T</code> stands for one generic term.</p>
+<p><strong>When a layer remains.</strong> If the type substituted for <code>T</code> shares any term with <code>X1 ... Xn</code>, the substituted <code>T</code> remains a single term and becomes a <strong>nested layer</strong>. If there is no overlap, it is flattened. Flattening loses no information distinguishing values, so the result appears and is treated as a flat sum.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Generic sum</th><th><code>T</code> substitution</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td><code>T | none</code></td><td><code>i32 | str</code></td><td><code>i32 | str | none</code> (no overlap - flattened)</td></tr>
+<tr><td><code>T | none</code></td><td><code>i32 | none</code></td><td><code>(i32 | none)?</code> (two layers)</td></tr>
+<tr><td><code>T | ParseErr</code></td><td><code>i32 | ParseErr</code></td><td><code>(i32 | ParseErr) | ParseErr</code></td></tr>
+<tr><td><code>T | str | none</code></td><td><code>i32 | str</code></td><td><code>(i32 | str) | str | none</code> (<code>str</code> overlaps)</td></tr>
+</tbody></table></div>
+<ul>
+<li>Overlap counts any term, not only <code>none</code>.
+</li>
+<li>A sum of only two parameters, <code>T | U</code>, has both substituted, so it is flattened even if they overlap, not nested. If the two values must be distinguished, use an <code>enum</code>.
+</li>
+<li>Each layer is normalized separately, so <code>A | B == B | A</code> holds at every layer.
+</li>
+<li>A sum written in the source with concrete types is always flattened. Writing <code>(i32 | none) | none</code> gives <code>i32 | none</code>.
+</li>
+<li>A non-generic type alias is a written type, so it is always flattened. With <code>type Opt = i32 | none; type Flat = Opt | none;</code>, <code>Flat</code> is <code>i32 | none</code>.
+</li>
+<li>Parameters of a generic alias are generic terms and follow the rules above (see &quot;Writing nested types&quot; below).
+</li>
+</ul>
+<p><strong>Writing nested types.</strong> An optional is written with postfix <code>?</code> (<a href="201-type-expressions#215a-optional-types-t">2.1.5a</a>). <code>T?</code> is the same as <code>Maybe&lt;T&gt;</code>, so its operand is a generic term and the same layering rule applies. Other nestings (<code>(i32 | E) | E</code> etc.) are written with a generic alias or <code>Self::X</code>.</p>
+<pre><code class="language-rok"><span class="k">type</span> <span class="t">Maybe</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> | <span class="k">none</span>;
+<span class="k">let</span> r: (<span class="t">i32</span> | <span class="k">none</span>)? = xs.get(<span class="n">0</span>);       <span class="c">// two layers</span>
+<span class="k">let</span> q: <span class="t">Maybe</span>&lt;<span class="t">i32</span> | <span class="k">none</span>&gt; = xs.get(<span class="n">0</span>);   <span class="c">// same type</span>
+<span class="k">let</span> p: <span class="t">i32</span>? = <span class="n">1</span>;                         <span class="c">// i32 | none - no overlap</span>
+<span class="k">let</span> f: (<span class="t">i32</span> | <span class="t">str</span>)? = <span class="k">none</span>;              <span class="c">// i32 | str | none</span>
+</code></pre>
+<p><strong>Storing values.</strong> When a value is stored into a nested sum, a value of one of <code>T</code>'s term types goes into the inner layer. A value of an outer-layer term type (the <code>none</code> literal, a <code>ParseErr</code> value, etc.) is a value of the outer layer. To put an outer-term-type value into the inner layer, first place it in a slot of type <code>T</code>, then store that.</p>
+<p><strong>Conversion.</strong> A nested type is not implicitly converted to a flat type; it is a type error.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="k">none</span> = xs.get(<span class="n">0</span>);    <span class="c">// ERROR - xs: List&lt;i32 | none&gt;</span>
+<span class="c">// mismatched types: `let v` expects `i32 | none`, found `(i32 | none)?`</span>
+</code></pre>
+<p><strong>Operations.</strong> Patterns, <code>is</code>, <code>?.</code>, <code>??</code> and <code>?</code> act on the <strong>outermost layer</strong>. The other side of the outer layer is bound to the inner <code>T</code>. A binding pattern after arms that cover every outer-layer term binds the inner layer.</p>
+<p><strong>Diagnostic notation.</strong> Diagnostics show nested layers in parentheses. If the outer layer is only <code>none</code>, it is written <code>(i32 | none)?</code>; otherwise as <code>(i32 | E) | E</code>, <code>(i32 | none) | str | none</code>. <code>(i32 | none)?</code> is also valid source with the same meaning.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">ParseErr</span> { msg: <span class="t">str</span>; }
+
+<span class="k">fn</span> check&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> | <span class="t">ParseErr</span> {
+    <span class="k">if</span> bad(x) { <span class="k">return</span> <span class="t">ParseErr</span> { msg: <span class="s">"bad"</span> }; }   <span class="c">// ParseErr of the outer layer</span>
+    x                                                <span class="c">// a value of T - inner layer</span>
+}
+
+<span class="k">let</span> a = check(<span class="n">1i32</span>);                  <span class="c">// T = i32 - no overlap: i32 | ParseErr</span>
+<span class="k">let</span> v: <span class="t">i32</span> | <span class="t">ParseErr</span> = <span class="t">ParseErr</span> { msg: <span class="s">"earlier"</span> };
+<span class="k">let</span> r = check(v);                     <span class="c">// T = i32 | ParseErr - overlap: (i32 | ParseErr) | ParseErr</span>
+<span class="k">match</span> r {
+    e: <span class="t">ParseErr</span> =&gt; print(<span class="s">f"check failed: {</span>e.msg<span class="s">}"</span>),        <span class="c">// outer layer - error made by check</span>
+    inner =&gt; <span class="k">match</span> inner {                                <span class="c">// inner: i32 | ParseErr</span>
+        e: <span class="t">ParseErr</span> =&gt; print(<span class="s">f"original value was an error: {</span>e.msg<span class="s">}"</span>), <span class="c">// inner layer - error that was in v</span>
+        n: <span class="t">i32</span> =&gt; print(n),
+    },
+}
+</code></pre>
+<p><strong>Associated types.</strong> Inside a trait and all its impls, both the bare name <code>X</code> and <code>Self::X</code> denote the associated type (<a href="208-trait#283-associated-types">2.8.3</a>). Associated types are generic terms, so the same rule applies. <code>fn next(ref self) -&gt; Self::Item?</code> nests when <code>Item</code> contains <code>none</code>, so a user iterator yielding <code>i32 | none</code> elements also iterates over stored <code>none</code>s as elements.</p>
+<p>For the <code>none</code> case (nested optional), see the example in 2.6.5.</p>
+<h3 id="canonical-order"><a class="anchor" tabindex="-1" href="#canonical-order" aria-hidden="true">#</a>Canonical order</h3>
+<p>Terms of the normal form have a defined order.</p>
+<ul>
+<li><code>none</code> is always last.
+</li>
+<li>The remaining terms are ordered by a structural key: a primitive by its name, a struct or enum by its full path, a generic instance by <code>path&lt;arg keys&gt;</code>. Nested sums are flattened (Normalization above), so a sum is never a term of a sum; a sum inside a generic argument is keyed by its terms in canonical order (<code>List&lt;A | B&gt;</code> has the key <code>List&lt;key(A)|key(B)&gt;</code>). A layer kept by &quot;Layers of generic sums&quot; is a single term whose key is <code>(</code> + its terms' keys in canonical order joined by <code>|</code> + <code>)</code>. The order is independent of the written order.
+</li>
+<li>The order, and so the tags, never depend on a build's internal type numbering, so a prebuilt library and its users agree (<a href="../009-tools/904-rokhir-bytecode#948-rules-for-separate-compilation">9.4.8</a>).
+</li>
+</ul>
+<p><code>PartialOrd</code> / <code>Ord</code> and <code>min</code> / <code>max</code> / <code>clamp</code> on sum type values follow this order (<a href="../../refs-standard-libraries/200-core/205-cmp#257-implementation-matrix">stdlib 2.5.7</a>). Values of different terms are compared by canonical order; values of the same term by that term type's <code>Ord</code>. So in <code>T | none</code>, <code>none</code> is greater than any <code>T</code> value.</p>
+<h3 id="subsets"><a class="anchor" tabindex="-1" href="#subsets" aria-hidden="true">#</a>Subsets</h3>
+<ul>
+<li>A sum type value fits as-is into a larger sum type that contains all its terms. An <code>i32 | none</code> value can be placed in an <code>i32 | str | none</code> position. The same holds for a value of a single term (<code>i32</code>).
+</li>
+<li>A type pattern <code>v: A | B</code> can match a subset of the terms of a larger sum. In that arm, <code>v</code> is <code>A | B</code>.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> | <span class="t">f64</span> | <span class="k">none</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> | <span class="t">f64</span> =&gt; use_num(n),     <span class="c">// n: i32 | f64</span>
+    s: <span class="t">str</span> =&gt; use_str(s),
+    <span class="k">none</span> =&gt; {},
+}
+</code></pre>
+<h3 id="generic-inference"><a class="anchor" tabindex="-1" href="#generic-inference" aria-hidden="true">#</a>Generic inference</h3>
+<p>Generic inference treats sums as sets. Matching <code>T | none</code> against <code>i32 | str | none</code> collects the remaining terms: <code>T = i32 | str</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> unwrap_or&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span> | <span class="k">none</span>, d: <span class="t">T</span>) -&gt; <span class="t">T</span> { ... }
+<span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> | <span class="k">none</span> = ...;
+unwrap_or(v, <span class="n">0i32</span>);       <span class="c">// T = i32 | str</span>
+</code></pre>
+<h2 id="265-combining-with-none"><a class="anchor" tabindex="-1" href="#265-combining-with-none" aria-hidden="true">#</a>2.6.5. Combining with <code>none</code></h2>
+<p>The <code>none</code> of <a href="../001-lexical/109-other-literals">Boolean and sentinel literals</a> most often appears as a term of a sum type.</p>
+<pre><code class="language-rok"><span class="t">T</span> | <span class="k">none</span>
+</code></pre>
+<p>This form expresses that a value may or may not be present, corresponding to <code>Option&lt;T&gt;</code>, <code>T?</code> or <code>Maybe T</code> in other languages.</p>
+<p>Combined with niche optimization (e.g. for a pointer-like T), null can represent <code>none</code> with no memory overhead. The exact rules are defined in <a href="207-niche-optimization">Niche optimization</a>.</p>
+<h3 id="nested-optional"><a class="anchor" tabindex="-1" href="#nested-optional" aria-hidden="true">#</a>Nested optional</h3>
+<p>This is the &quot;Layers of generic sums&quot; rule of 2.6.4 applied to <code>none</code>. If the <code>T</code> of a generic <code>T | none</code> already contains <code>none</code>, the outer <code>none</code> layer remains and it becomes a <strong>nested optional</strong> (like Swift's <code>T??</code>). <code>Maybe&lt;i32 | none&gt;</code>, i.e. <code>Maybe&lt;T&gt; = T | none</code> with <code>T = i32 | none</code>, which is <code>(i32 | none)?</code>, has two layers. The <code>none</code> pattern, <code>is none</code>, <code>?.</code>, <code>??</code> and <code>?</code> act on the outer layer, and the non-none side is bound to the inner <code>T</code> (<code>i32 | none</code>).</p>
+<p>So <code>List&lt;i32 | none&gt;</code> iterates over stored <code>none</code>s as elements, and <code>get</code> / <code>pop</code> / <code>Dict</code> lookups distinguish &quot;absent&quot; from &quot;stored none&quot;.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span> | <span class="k">none</span>&gt; = [<span class="n">1</span>, <span class="k">none</span>, <span class="n">3</span>];
+
+<span class="k">for</span> x <span class="k">in</span> xs { print(x); }        <span class="c">// 1, none, 3 - stored none is also an element</span>
+
+<span class="k">match</span> xs.get(<span class="n">1</span>) {                <span class="c">// get: (i32 | none) | none - two layers</span>
+    <span class="k">none</span> =&gt; print(<span class="s">"out of range"</span>),     <span class="c">// outer none: no element</span>
+    v =&gt; <span class="k">match</span> v {               <span class="c">// v: i32 | none - stored value</span>
+        <span class="k">none</span> =&gt; print(<span class="s">"stored none"</span>),
+        n: <span class="t">i32</span> =&gt; print(n),
+    },
+}
+
+<span class="k">let</span> d: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span> | <span class="k">none</span>&gt; = {<span class="s">"a"</span>: <span class="k">none</span>};
+d.get(<span class="s">"a"</span>) ?? <span class="n">0i32</span>;              <span class="c">// none - key present, value is none (?? strips only the outer layer)</span>
+d.get(<span class="s">"b"</span>) ?? <span class="n">0i32</span>;              <span class="c">// 0 - key absent</span>
+</code></pre>
+<h2 id="266-difference-from-any"><a class="anchor" tabindex="-1" href="#266-difference-from-any" aria-hidden="true">#</a>2.6.6. Difference from <code>any</code></h2>
+<p>The <code>any</code> of <a href="202-any-slot">The <code>any</code> slot</a> is an open slot: any type is possible and variants can be added freely.</p>
+<p>A sum type (<code>A | B</code>), by contrast, is a closed slot: only the listed variants are possible. In return, the compiler knows every possible term and can check pattern matches for exhaustiveness.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>any</code></th><th><code>A | B</code></th></tr></thead>
+<tbody>
+<tr><td>Possible types</td><td>All types</td><td>Only the listed terms</td></tr>
+<tr><td>Dispatch</td><td>Runtime tag check</td><td>Runtime tag check (fewer terms, fewer branches)</td></tr>
+<tr><td>Exhaustiveness</td><td>Not possible</td><td>Possible</td></tr>
+<tr><td>Memory</td><td>Tag + payload (general)</td><td>Tag + largest term (tighter)</td></tr>
+<tr><td>Gradualness</td><td>Gradual (new types OK without code changes)</td><td>Static (adding a variant changes the type)</td></tr>
+</tbody></table></div>
+<h2 id="267-difference-from-enum"><a class="anchor" tabindex="-1" href="#267-difference-from-enum" aria-hidden="true">#</a>2.6.7. Difference from <code>enum</code></h2>
+<p>In an <code>enum</code>, named variants are defined inside the container, and the variants are part of the <code>enum</code>.</p>
+<p>A sum type uses existing types directly as variants, so there are no separate variant names.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Result</span> { <span class="t">Ok</span>(<span class="t">i32</span>), <span class="t">Err</span>(<span class="t">str</span>) }       <span class="c">// variant names Ok / Err are defined inside the enum</span>
+<span class="k">type</span> <span class="t">Either</span> = <span class="t">i32</span> | <span class="t">str</span>;                  <span class="c">// no variant names - just i32 or str</span>
+</code></pre>
+<p>Choose an <code>enum</code> when the variants carry distinct meanings and need names. Choose a sum type when combining existing types as they are is the natural fit.</p>
+<h2 id="268-narrowing"><a class="anchor" tabindex="-1" href="#268-narrowing" aria-hidden="true">#</a>2.6.8. Narrowing</h2>
+<p>A sum type value can be narrowed to a term by pattern matching or an <code>is</code> check, in the same way as <a href="202-any-slot">The <code>any</code> slot</a>.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> =&gt; ...,           <span class="c">// inside this arm v is i32</span>
+    s: <span class="t">str</span> =&gt; ...,           <span class="c">// inside this arm v is str</span>
+}
+</code></pre>
+<p>The exact narrowing syntax is defined in the pattern and expression specifications.</p>
+<h2 id="269-combining-with-type-aliases"><a class="anchor" tabindex="-1" href="#269-combining-with-type-aliases" aria-hidden="true">#</a>2.6.9. Combining with type aliases</h2>
+<p>A long sum type can be given an alias with <code>type</code> (<code>type Num = i32 | f64;</code>). A cyclic type alias (even through generic arguments) is an error. The <code>where</code> of a type alias goes after the aliased type (<code>type A&lt;T&gt; = B&lt;T&gt; where T: X;</code>). An alias's <code>where</code> is checked at every use of the alias. When a use's arguments name type parameters, the bounds in scope at the use decide it, as in a generic body (<a href="210-generics#2109-body-checking">2.10.9</a>): the enclosing function's, <code>impl</code>'s or trait's parameter bounds and <code>where</code> clauses, a trait's supertraits and associated-type bounds. With <code>type W&lt;T&gt; = S&lt;T&gt; where T: Num;</code>, <code>fn get&lt;T: Num&gt;(x: W&lt;T&gt;)</code> and <code>impl&lt;T: Num&gt; W&lt;T&gt; { .. }</code> are valid; <code>fn get&lt;T&gt;(x: W&lt;T&gt;)</code> is an error even if never called. The same holds in declaration types: a <code>struct</code>, <code>enum</code> or <code>union</code> field, a trait <code>impl</code>'s trait arguments and associated types, and a trait method's signature are rejected when the alias's <code>where</code> is not met, even if nothing uses them; the help names the generics to add the bound to (<code>add `T: Num` to `F`'s generics</code>). <code>type</code> is a contextual keyword, a keyword only at the start of an item when followed by an identifier and <code>=</code> or <code>&lt;</code> (<a href="../001-lexical/105-keywords#154-contextual-keywords">1.5.4</a>). The exact alias syntax is defined in the type alias specification.</p>
+<pre><code class="language-rok"><span class="k">type</span> <span class="t">Number</span> = <span class="t">i32</span> | <span class="t">i64</span> | <span class="t">f32</span> | <span class="t">f64</span>;
+<span class="k">type</span> <span class="t">Maybe</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> | <span class="k">none</span>;
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/206-sum-types.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="205-union"><small>Previous</small>2.5. union</a><a class="next" href="207-niche-optimization"><small>Next</small>2.7. Niche optimization</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

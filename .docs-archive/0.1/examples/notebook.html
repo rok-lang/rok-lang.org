@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exploring data in a Jupyter notebook - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Install the rok kernel in Jupyter and explore temperature data cell by cell, alongside a single runnable program that does the same work.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/notebook.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Exploring data in a Jupyter notebook - rok docs">
+<meta property="og:description" content="Install the rok kernel in Jupyter and explore temperature data cell by cell, alongside a single runnable program that does the same work.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/notebook.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li class="cur"><a aria-current="page" href="notebook">Exploring data in a Jupyter notebook</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li><li><a href="#running-it">Running it</a></li></ul></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="exploring-data-in-a-jupyter-notebook"><a class="anchor" tabindex="-1" href="#exploring-data-in-a-jupyter-notebook" aria-hidden="true">#</a>Exploring data in a Jupyter notebook</h1>
+<p>Install the rok kernel in Jupyter and explore temperature data cell by cell, alongside a single runnable program that does the same work.</p>
+<p>In a notebook you work step by step: one cell loads the data, another defines functions, another checks the results. The program below is those cells joined in order from top to bottom. From four weeks of daily highs it computes summary statistics, weekly averages and a text histogram.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// Daily high temperatures (°C) for four weeks.</span>
+<span class="k">let</span> temps: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [
+    <span class="n">12.5</span>, <span class="n">14.0</span>, <span class="n">13.2</span>, <span class="n">15.8</span>, <span class="n">17.1</span>, <span class="n">16.4</span>, <span class="n">18.9</span>,
+    <span class="n">19.5</span>, <span class="n">21.0</span>, <span class="n">20.2</span>, <span class="n">22.7</span>, <span class="n">24.1</span>, <span class="n">23.3</span>, <span class="n">22.0</span>,
+    <span class="n">20.8</span>, <span class="n">19.4</span>, <span class="n">21.6</span>, <span class="n">23.9</span>, <span class="n">25.2</span>, <span class="n">26.0</span>, <span class="n">24.4</span>,
+    <span class="n">22.1</span>, <span class="n">20.5</span>, <span class="n">18.7</span>, <span class="n">17.9</span>, <span class="n">19.2</span>, <span class="n">21.3</span>, <span class="n">22.8</span>,
+];
+
+<span class="k">fn</span> mean(xs: <span class="t">List</span>&lt;<span class="t">f64</span>&gt;) -&gt; <span class="t">f64</span> {
+    <span class="k">let</span> sum = <span class="n">0.0</span>;
+    <span class="k">for</span> x <span class="k">in</span> xs { sum += x; }
+    sum / xs.len() <span class="k">as</span> <span class="t">f64</span>
+}
+
+<span class="k">fn</span> std_dev(xs: <span class="t">List</span>&lt;<span class="t">f64</span>&gt;) -&gt; <span class="t">f64</span> {
+    <span class="k">let</span> m = mean(xs);
+    <span class="k">let</span> sq = <span class="n">0.0</span>;
+    <span class="k">for</span> x <span class="k">in</span> xs { sq += (x - m) * (x - m); }
+    (sq / xs.len() <span class="k">as</span> <span class="t">f64</span>).sqrt()
+}
+
+<span class="k">fn</span> median(xs: <span class="t">List</span>&lt;<span class="t">f64</span>&gt;) -&gt; <span class="t">f64</span> {
+    <span class="k">let</span> sorted: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [];
+    <span class="k">for</span> x <span class="k">in</span> xs { sorted.push(x); }
+    sorted.sort_by(|a, b| a.partial_cmp(b) ?? <span class="t">Ordering</span>::<span class="t">Equal</span>);
+    <span class="k">let</span> n = sorted.len();
+    <span class="k">if</span> n % <span class="n">2</span> == <span class="n">1</span> { sorted[n / <span class="n">2</span>] } <span class="k">else</span> { (sorted[n / <span class="n">2</span> - <span class="n">1</span>] + sorted[n / <span class="n">2</span>]) / <span class="n">2.0</span> }
+}
+
+<span class="c">// Summary statistics.</span>
+<span class="k">let</span> lo = temps.iter().fold(<span class="t">f64</span>::<span class="t">INFINITY</span>, |a, x| <span class="k">if</span> x &lt; a { x } <span class="k">else</span> { a });
+<span class="k">let</span> hi = temps.iter().fold(<span class="t">f64</span>::<span class="t">NEG_INFINITY</span>, |a, x| <span class="k">if</span> x &gt; a { x } <span class="k">else</span> { a });
+println(<span class="s">f"n      = {</span>temps.len()<span class="s">}"</span>);
+println(<span class="s">f"mean   = {</span>mean(temps)<span class="s">:.2</span><span class="s">}"</span>);
+println(<span class="s">f"median = {</span>median(temps)<span class="s">:.2</span><span class="s">}"</span>);
+println(<span class="s">f"stddev = {</span>std_dev(temps)<span class="s">:.2</span><span class="s">}"</span>);
+println(<span class="s">f"range  = {</span>lo<span class="s">:.1</span><span class="s">} .. {</span>hi<span class="s">:.1</span><span class="s">}"</span>);
+
+<span class="c">// Weekly averages.</span>
+<span class="k">for</span> week <span class="k">in</span> <span class="n">0</span>..<span class="n">4</span> {
+    <span class="k">let</span> days = temps[week * <span class="n">7</span>:(week + <span class="n">1</span>) * <span class="n">7</span>];
+    <span class="k">let</span> w: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = days.iter().collect();
+    println(<span class="s">f"week {</span>week + <span class="n">1</span><span class="s">}: {</span>mean(w)<span class="s">:5.2</span><span class="s">}"</span>);
+}
+
+<span class="c">// An ASCII histogram with 2-degree buckets.</span>
+<span class="k">let</span> start = <span class="n">12.0</span>;
+<span class="k">let</span> width = <span class="n">2.0</span>;
+<span class="k">let</span> counts: <span class="t">List</span>&lt;<span class="t">usize</span>&gt; = [];
+<span class="k">for</span> _ <span class="k">in</span> <span class="n">0</span>..<span class="n">8</span> { counts.push(<span class="n">0</span>); }
+<span class="k">for</span> t <span class="k">in</span> temps {
+    <span class="k">let</span> b = ((t - start) / width) <span class="k">as</span> <span class="t">usize</span>;
+    counts[b] = counts[b] + <span class="n">1</span>;
+}
+println(<span class="s">"histogram:"</span>);
+<span class="k">for</span> (i, c) <span class="k">in</span> counts.iter().enumerate() {
+    <span class="k">let</span> from = start + width * i <span class="k">as</span> <span class="t">f64</span>;
+    println(<span class="s">f"  {</span>from<span class="s">:4.1</span><span class="s">}-{</span>from + width<span class="s">:4.1</span><span class="s">} | {</span><span class="s">"#"</span>.repeat(c)<span class="s">} {</span>c<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">n      = 28
+mean   = 20.16
+median = 20.65
+stddev = 3.49
+range  = 12.5 .. 26.0
+week 1: 15.41
+week 2: 21.83
+week 3: 23.04
+week 4: 20.36
+histogram:
+  12.0-14.0 | ## 2
+  14.0-16.0 | ## 2
+  16.0-18.0 | ### 3
+  18.0-20.0 | ##### 5
+  20.0-22.0 | ###### 6
+  22.0-24.0 | ###### 6
+  24.0-26.0 | ### 3
+  26.0-28.0 | # 1
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Top-level <code>let</code>s and <code>fn</code>s in a notebook cell persist for the whole session. Unlike a regular source file, a cell may <code>let</code> the same name again at top level, so you can re-run a cell with different data (<a href="../spec/refs-lang/005-modules/501-variable-declaration#514-no-redeclaration-in-the-same-scope">5.1.4 No redeclaration in the same scope</a>).
+</li>
+<li><code>f64</code> is not totally ordered, so <code>sort_by</code> gets <code>partial_cmp</code>, and an incomparable NaN is handled with <code>?? Ordering::Equal</code> (<a href="../learn/08-collections-iterators">Collections and iterators</a>).
+</li>
+<li>A single <code>fold</code> finds both the minimum and the maximum. Starting from <code>f64::INFINITY</code> / <code>f64::NEG_INFINITY</code> means the first element replaces them, as long as the list is not empty (<a href="../std/core/iter#trait.Iterator"><code>Iterator</code></a>).
+</li>
+<li><code>temps[week * 7:(week + 1) * 7]</code> takes one range of the list as a slice (<a href="../spec/refs-lang/003-expressions/306-indexing-and-slicing">3.6 Indexing and slicing</a>).
+</li>
+<li>Histogram bars come from <code>&quot;#&quot;.repeat(c)</code> and the bucket labels are aligned with format specs such as <code>{from:4.1}</code>. An <code>f64</code> printed with <code>{}</code> uses the shortest digits that read back as the same value, so <code>26.0</code> prints as <code>26</code>; write a precision such as <code>{hi:.1}</code> when you want fixed digits (<a href="../learn/09-strings">Strings</a>).
+</li>
+</ul>
+<h2 id="running-it"><a class="anchor" tabindex="-1" href="#running-it" aria-hidden="true">#</a>Running it</h2>
+<p>First register the rok kernel with Jupyter. <code>rok jupyter install</code> writes the kernelspec (<code>kernels/rok/kernel.json</code>) into the Jupyter data directory (<code>~/Library/Jupyter</code> on macOS, <code>~/.local/share/jupyter</code> elsewhere) (<a href="../spec/refs-lang/009-tools/908-jupyter-integration#983-kernelspec-installation">9.8.3 Installing the kernelspec</a>).</p>
+<pre><code class="language-bash">rok jupyter install
+jupyter lab            # pick the &quot;rok&quot; kernel in a new notebook
+</code></pre>
+<p>To keep a separate kernel per environment, install with <code>rok jupyter install --env &lt;name&gt;</code>. That creates another kernel shown as <code>rok (&lt;name&gt;)</code>.</p>
+<p>In the notebook, the program above runs split into a few cells. The last expression of a cell is its result and is shown as <code>type: value</code>.</p>
+<pre><code class="language-text">In [1]:  let temps: List&lt;f64&gt; = [12.5, 14.0, 13.2, 15.8, 17.1, 16.4, 18.9,
+                                 19.5, 21.0, 20.2, 22.7, 24.1, 23.3, 22.0,
+                                 20.8, 19.4, 21.6, 23.9, 25.2, 26.0, 24.4,
+                                 22.1, 20.5, 18.7, 17.9, 19.2, 21.3, 22.8];
+         temps.len()
+Out[1]:  usize: 28
+
+In [2]:  fn mean(xs: List&lt;f64&gt;) -&gt; f64 {
+             let sum = 0.0;
+             for x in xs { sum += x; }
+             sum / xs.len() as f64
+         }
+         mean(temps)
+Out[2]:  f64: 20.16071428571428
+
+In [3]:  temps[0:7]
+Out[3]:  Slice&lt;f64&gt;: [12.5, 14, 13.2, 15.8, 17.1, 16.4, 18.9]
+
+In [4]:  let week1: List&lt;f64&gt; = temps[0:7].iter().collect();
+         mean(week1)
+Out[4]:  f64: 15.414285714285715
+</code></pre>
+<p><code>let temps</code> and <code>fn mean</code> stay defined in later cells, so cells <code>[3]</code> and <code>[4]</code> use the values and functions created earlier. If you fix a function and re-run its cell, the following cells use the new definition (<a href="../spec/refs-lang/009-tools/907-jit-cells">9.7 JIT cell execution</a>). To use the same kind of cell session in a terminal, run <code>rok repl</code> (<a href="../learn/16-tools">Tools</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/notebook.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="matrix"><small>Previous</small>Matrix operations</a><a class="next" href="par-map"><small>Next</small>Parallel map / reduce</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

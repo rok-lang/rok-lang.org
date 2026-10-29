@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.5. 심볼 맹글링 스킴 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="AOT 빌드 파이프라인 의 specialize 결과로 같은 함수가 구체 타입마다 별개의 함수로 갈라지게 됩니다. 이렇게 갈라진 함수들에 고유한 심볼 이름을 부여하기 위한 규칙을 여기에서 정의해 두겠습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/905-symbol-mangling.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.5. 심볼 맹글링 스킴 - rok docs">
+<meta property="og:description" content="AOT 빌드 파이프라인 의 specialize 결과로 같은 함수가 구체 타입마다 별개의 함수로 갈라지게 됩니다. 이렇게 갈라진 함수들에 고유한 심볼 이름을 부여하기 위한 규칙을 여기에서 정의해 두겠습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/905-symbol-mangling.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/905-symbol-mangling.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/905-symbol-mangling.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">9. 실행 / 툴 개요</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI 인터페이스</a></li><li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a></li><li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a></li><li class="cur"><a aria-current="page" href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a><ul class="toc"><li><a href="#951-형태">9.5.1. 형태</a></li><li><a href="#952-부분별-의미">9.5.2. 부분별 의미</a></li><li><a href="#953-비교-rust-_zn">9.5.3. 비교: Rust _ZN</a></li><li><a href="#954-demangle-도구">9.5.4. demangle 도구</a></li><li><a href="#955-예약된-prefix">9.5.5. 예약된 prefix</a></li><li><a href="#956-심볼-길이">9.5.6. 심볼 길이</a></li><li><a href="#957-충돌-회피-typehash-의-안정성">9.5.7. 충돌 회피: typehash 의 안정성</a></li><li><a href="#958-extern-c-함수-맹글링-미적용">9.5.8. extern &quot;C&quot; 함수: 맹글링 미적용</a></li><li><a href="#959-main-함수의-심볼">9.5.9. main 함수의 심볼</a></li><li><a href="#9510-디버그-정보">9.5.10. 디버그 정보</a></li><li><a href="#9511-안정성">9.5.11. 안정성</a></li></ul></li><li><a href="906-jit-engine">9.6. JIT 엔진</a></li><li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a></li><li><a href="908-jupyter-integration">9.8. Jupyter 커널 통합</a></li><li><a href="909-debug-tools">9.9. 디버그 / 진단 도구</a></li><li><a href="910-rok-frontend">9.10. rok - 패키지 / 빌드 front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="95-심볼-맹글링-스킴 95-symbol-mangling-scheme 951-형태 951-form 952-부분별-의미 952-meaning-of-each-part _y-rok-심볼-prefix _y-rok-symbol-prefix pkg_hash_8 pkg_hash_8 path-모듈-경로 path-module-path name-항목-이름 name-item-name 메서드의-이름 method-names 중첩-함수 nested-functions typehash_16-타입-튜플-해시 typehash_16-type-tuple-hash concrete-fn-의-typehash typehash-of-a-concrete-fn 953-비교-rust-_zn 953-comparison-rust-_zn 954-demangle-도구 954-demangle-tool 955-예약된-prefix 955-reserved-prefixes 956-심볼-길이 956-symbol-length 957-충돌-회피-typehash-의-안정성 957-collision-avoidance-typehash-stability canonical-직렬화-규칙 canonical-serialization-rules 958-extern-c-함수-맹글링-미적용 958-extern-c-functions-no-mangling 959-main-함수의-심볼 959-symbol-of-the-main-function 9510-디버그-정보 9510-debug-information 9511-안정성 9511-stability"><a href="../../../../spec/refs-lang/009-tools/905-symbol-mangling" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="95-심볼-맹글링-스킴"><a class="anchor" tabindex="-1" href="#95-심볼-맹글링-스킴" aria-hidden="true">#</a>9.5. 심볼 맹글링 스킴</h1>
+<p><a href="902-aot-pipeline">AOT 빌드 파이프라인</a> 의 <a href="../000-meta/007-glossary#specialize">specialize</a> 결과로 같은 함수가 구체 타입마다 별개의 함수로 갈라지게 됩니다. 이렇게 갈라진 함수들에 고유한 심볼 이름을 부여하기 위한 규칙을 여기에서 정의해 두겠습니다.</p>
+<h2 id="951-형태"><a class="anchor" tabindex="-1" href="#951-형태" aria-hidden="true">#</a>9.5.1. 형태</h2>
+<p>심볼의 전체적인 문법은 다음과 같습니다.</p>
+<pre><code>mangled_symbol  ::= &quot;_Y&quot; pkg_hash &quot;_&quot; mod_path &quot;_&quot; item_name &quot;_&quot; type_hash
+pkg_hash        ::= [0-9a-f]{8}            // package SHA-256 prefix
+mod_path        ::= identifier (&quot;_&quot; identifier)*
+item_name       ::= identifier
+type_hash       ::= [0-9a-f]{16}           // generic args SHA-256 prefix
+                  | &quot;&quot;                       // concrete (non-generic) item
+</code></pre>
+<p>이를 한 줄로 풀어 보면 다음과 같은 모습이 됩니다.</p>
+<pre><code>_Y &lt;pkg_hash_8&gt; _ &lt;path&gt; _ &lt;name&gt; _ &lt;typehash_16&gt;
+</code></pre>
+<p>실제 예시는 아래와 같습니다.</p>
+<pre><code>_Y3f8a1c2b_std_vec_push_a7c91d8e44b2f190
+   |       |       |    |
+   |       |       |    +-- typehash (16 chars, hash of generic args)
+   |       |       +-- name (push)
+   |       +-- path (std_vec)
+   +-- pkg hash (8 chars)
+</code></pre>
+<h2 id="952-부분별-의미"><a class="anchor" tabindex="-1" href="#952-부분별-의미" aria-hidden="true">#</a>9.5.2. 부분별 의미</h2>
+<h3 id="_y-rok-심볼-prefix"><a class="anchor" tabindex="-1" href="#_y-rok-심볼-prefix" aria-hidden="true">#</a><code>_Y</code>: rok 심볼 prefix</h3>
+<p>모든 rok 심볼은 <code>_Y</code> 로 시작합니다. 밑줄 + 대문자로 시작하는 이름은 C 에서 구현 예약 영역이므로 일반 C 심볼과 충돌하지 않으며, 이미 널리 쓰이는 맹글링 스킴 (C++ Itanium 의 <code>_Z</code>, Rust v0 의 <code>_R</code>, D 의 <code>_D</code>, Swift 의 <code>$s</code>) 과도 겹치지 않도록 <code>_Y</code> 를 골랐습니다. 또한 <code>nm</code> 이나 링커 에러 출력에서 rok 이 발행한 심볼을 한눈에 구분할 수 있습니다. prefix 바로 뒤에는 소문자 16진수 <code>&lt;pkg_hash_8&gt;</code> 이 오므로, 대문자 한 글자가 이어지는 예약 prefix (<code>_YK</code> 등, <a href="#955-예약된-prefix">9.5.5</a>) 와는 첫 글자만으로 구분됩니다.</p>
+<h3 id="pkg_hash_8"><a class="anchor" tabindex="-1" href="#pkg_hash_8" aria-hidden="true">#</a><code>&lt;pkg_hash_8&gt;</code></h3>
+<p><a href="../000-meta/003-source-units">소스 단위</a> 의 패키지 해시에 해당합니다. 내용 기반의 SHA-256 해시 가운데 앞 8 글자를 잘라 사용합니다.</p>
+<pre><code>3f8a1c2b
+</code></pre>
+<p>같은 내용을 가진 패키지라면 어디에서 빌드하더라도 같은 해시가 나오게 됩니다. 덕분에 서로 다른 패키지에 들어 있는 같은 이름의 함수끼리도 충돌할 일이 없습니다.</p>
+<h3 id="path-모듈-경로"><a class="anchor" tabindex="-1" href="#path-모듈-경로" aria-hidden="true">#</a><code>&lt;path&gt;</code>: 모듈 경로</h3>
+<p><a href="../005-modules/507-paths">경로</a> 에서 정의한 모듈 경로의 <code>::</code> 를 <code>_</code> 로 바꾸어 표현합니다. 표준 라이브러리 경로는 <code>rok::</code> 루트 세그먼트를 빼고 (<code>rok::std::vec</code> → <code>std_vec</code>), 사용자 경로는 <code>pkg::</code> 를 뺍니다.</p>
+<pre><code>rok::std::vec      → std_vec
+pkg::geom   → geom               (pkg:: 는 패키지 hash 가 이미 식별)
+foo::inner::sub → foo_inner_sub
+</code></pre>
+<h3 id="name-항목-이름"><a class="anchor" tabindex="-1" href="#name-항목-이름" aria-hidden="true">#</a><code>&lt;name&gt;</code>: 항목 이름</h3>
+<p><a href="../001-lexical/104-identifiers">식별자</a> 에서 정의한 식별자가 들어갑니다. <code>&lt;path&gt;</code> 의 각 세그먼트도 같은 규칙으로 escape 합니다.</p>
+<p><code>_</code> 가 구분자이므로, 식별자 안의 <code>[A-Za-z0-9]</code> 이외 문자는 다음과 같이 escape 합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>원문</th><th>표기</th></tr></thead>
+<tbody>
+<tr><td><code>[A-Za-z0-9]</code></td><td>그대로</td></tr>
+<tr><td><code>_</code></td><td><code>_0</code></td></tr>
+<tr><td>그 밖의 문자 (유니코드 포함)</td><td><code>_1&lt;소문자 16진 코드포인트&gt;_</code></td></tr>
+</tbody></table></div>
+<p>식별자는 숫자로 시작하지 않으므로 구분자 <code>_</code> 뒤에는 <code>0</code> / <code>1</code> 이 오지 않습니다. 따라서 escape 와 구분자는 항상 구별됩니다.</p>
+<pre><code>mod a { fn b }   → _Y&lt;pkg&gt;_a_b_
+fn a__b          → _Y&lt;pkg&gt;__a_0_0b_
+fn α             → _Y&lt;pkg&gt;___13b1__
+</code></pre>
+<h3 id="메서드의-이름"><a class="anchor" tabindex="-1" href="#메서드의-이름" aria-hidden="true">#</a>메서드의 이름</h3>
+<p>메서드는 <code>&lt;타입&gt;.&lt;메서드&gt;</code> 를 이름으로, 타입이 정의된 모듈을 경로로 맹글링합니다. 같은 타입에 같은 이름의 메서드를 주는 트레잇이 여럿이면 뒤에 <code>__by_&lt;트레잇&gt;</code> 이 붙습니다. 의존 패키지 (<a href="902-aot-pipeline#923-의존성-해소">9.2.3</a>) 의 메서드도 이 안정된 경로 <code>&lt;모듈&gt;::&lt;타입&gt;.&lt;메서드&gt;[__by_&lt;트레잇&gt;]</code> 로 맹글링되므로, 따로 빌드한 패키지와 프로그램이 같은 심볼을 만듭니다. <code>.</code> 와 <code>_</code> 는 위 표대로 escape 됩니다.</p>
+<h3 id="중첩-함수"><a class="anchor" tabindex="-1" href="#중첩-함수" aria-hidden="true">#</a>중첩 함수</h3>
+<p>중첩 함수 (<a href="../004-functions/410-nested-functions">4.10</a>) 는 바깥 항목의 모듈에서 <code>&lt;outer&gt;/&lt;name&gt;</code> 을 이름으로 맹글링합니다. <code>&lt;outer&gt;</code> 는 바깥 함수의 이름입니다 (메서드면 <code>&lt;타입&gt;.&lt;메서드&gt;</code>, 트레잇 기본 본체면 <code>&lt;트레잇&gt;.&lt;메서드&gt;</code>, 중첩 함수면 재귀적으로 <code>&lt;outer&gt;/&lt;name&gt;</code>). 한 소스 파일에서 <code>&lt;outer&gt;/&lt;name&gt;</code> 이 같은 중첩 함수가 둘 이상이면 소스 순서대로 <code>/2</code>, <code>/3</code>, ... 이 붙습니다. <code>/</code> 는 다른 어떤 항목 이름에도 나오지 않으므로, 이 심볼은 모듈 경로나 메서드와 구별됩니다. <code>/</code> 는 표대로 escape 됩니다 (<code>_12f_</code>).</p>
+<pre><code>mod a { fn outer() { fn helper() } }   → _Y&lt;pkg&gt;_a_outer_12f_helper_
+</code></pre>
+<h3 id="typehash_16-타입-튜플-해시"><a class="anchor" tabindex="-1" href="#typehash_16-타입-튜플-해시" aria-hidden="true">#</a><code>&lt;typehash_16&gt;</code>: 타입 튜플 해시</h3>
+<p><a href="../002-types/210-generics">제네릭</a> 의 구체 타입 튜플을 SHA-256 으로 해싱한 뒤 앞 16 글자를 가져와 사용합니다.</p>
+<pre><code>fn id&lt;T&gt;(x: T) -&gt; T
+
+call id(42i32)   → typehash = SHA-256(&quot;(i32)&quot;)[0..16]
+call id(3.14f64) → typehash = SHA-256(&quot;(f64)&quot;)[0..16]
+</code></pre>
+<h3 id="concrete-fn-의-typehash"><a class="anchor" tabindex="-1" href="#concrete-fn-의-typehash" aria-hidden="true">#</a>concrete <code>fn</code> 의 typehash</h3>
+<p>제네릭 인자를 받지 않는 함수의 경우 typehash 를 빈 문자열로 두거나 아예 생략합니다.</p>
+<pre><code>_Y3f8a1c2b_geom_compute_main           (no typehash)
+or
+_Y3f8a1c2b_geom_compute_main_           (empty typehash)
+</code></pre>
+<p>자세한 표기 방식은 <code>rokc</code> 가 정해 주게 됩니다. 본 사양에서는 제네릭 인자가 없을 때 typehash 를 명확히 식별할 수 있는 형태일 것까지만 요구합니다.</p>
+<h2 id="953-비교-rust-_zn"><a class="anchor" tabindex="-1" href="#953-비교-rust-_zn" aria-hidden="true">#</a>9.5.3. 비교: Rust <code>_ZN</code></h2>
+<p>Rust 의 itanium-style 맹글링은 다음과 같은 모습을 띱니다.</p>
+<pre><code>_ZN3std3vec10push_inner17h2d4c3e9d8f1a2b3cE
+</code></pre>
+<ul>
+<li>길이 prefix 마다 길이를 명시합니다 (<code>3std3vec</code>).
+</li>
+<li><a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 식별자 hash 가 들어갑니다 (17h...).
+</li>
+<li>끝에 <code>E</code> 가 붙습니다.
+</li>
+</ul>
+<p>Itanium 호환이라는 장점이 있지만, 읽기가 어렵고 길이 prefix 가 인코딩 측면에서 비효율적이라는 단점이 있습니다.</p>
+<p>이에 비해 rok 의 <code>N...</code> 은 읽기가 쉽고 길이 prefix 도 따로 두지 않습니다 (구분자 <code>_</code> 로 구분). demangle 과정도 단순하게 가져갈 수 있습니다.</p>
+<h2 id="954-demangle-도구"><a class="anchor" tabindex="-1" href="#954-demangle-도구" aria-hidden="true">#</a>9.5.4. demangle 도구</h2>
+<p>심볼을 사람이 읽기 좋게 풀어 보고 싶을 때는 다음 명령을 사용할 수 있습니다.</p>
+<pre><code>rokc demangle &lt;symbol&gt;
+</code></pre>
+<p>실행 결과는 다음과 같은 모습이 됩니다.</p>
+<pre><code>$ rokc demangle _Y3f8a1c2b_std_vec_push_a7c91d8e44b2f190
+package:  3f8a1c2b
+path:     rok::std::vec
+name:     push
+generics: a7c91d8e44b2f190 (type tuple hash)
+</code></pre>
+<h2 id="955-예약된-prefix"><a class="anchor" tabindex="-1" href="#955-예약된-prefix" aria-hidden="true">#</a>9.5.5. 예약된 prefix</h2>
+<p>사용 중인 prefix 와 예약된 prefix 는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Prefix</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>_Y...</code></td><td>rok 일반 심볼</td></tr>
+<tr><td><code>rok_*</code></td><td><code>extern</code> &quot;C&quot; 런타임 함수 (<a href="../008-abi/805-extern-symbols">Extern &quot;C&quot; 심볼</a>)</td></tr>
+<tr><td><code>_YK...</code></td><td>(예약) keyword 핸들러</td></tr>
+<tr><td><code>_YL...</code></td><td>(예약) literal 핸들러</td></tr>
+<tr><td><code>_YI...</code></td><td>(예약) infix / prefix / postfix 매직</td></tr>
+<tr><td><code>_YM...</code></td><td>(예약) 메타 블록 (impl_derive 등) 의 생성 코드</td></tr>
+</tbody></table></div>
+<p><code>_YK</code> / <code>_YL</code> / <code>_YI</code> / <code>_YM</code> 은 이름 공간만 예약된 상태이며, 일반 심볼은 모두 <code>_Y</code> prefix 로 발행됩니다.</p>
+<h2 id="956-심볼-길이"><a class="anchor" tabindex="-1" href="#956-심볼-길이" aria-hidden="true">#</a>9.5.6. 심볼 길이</h2>
+<p>대부분의 rok 심볼은 다음과 같은 길이 분포를 보입니다.</p>
+<pre><code>_Y + 8 + _ + path (수십) + _ + 이름 (수~수십) + _ + 16
+≈ 30 ~ 80 글자
+</code></pre>
+<p>매우 큰 path 와 깊은 <a href="../000-meta/007-glossary#generic--제네릭">generic</a> 이 결합되는 경우 100 글자를 넘어갈 수도 있습니다. 디버거나 도구들은 이 정도 길이는 무리 없이 처리해 주게 됩니다 (보통은 2KB 이하를 권장합니다).</p>
+<h2 id="957-충돌-회피-typehash-의-안정성"><a class="anchor" tabindex="-1" href="#957-충돌-회피-typehash-의-안정성" aria-hidden="true">#</a>9.5.7. 충돌 회피: typehash 의 안정성</h2>
+<p>제네릭 인자의 타입 튜플은 결정론적인 방식으로 직렬화한 뒤 SHA-256 으로 해싱합니다.</p>
+<pre><code>타입 튜플 → canonical 직렬화 → SHA-256 → 앞 16 글자
+</code></pre>
+<p>같은 타입이라면 빌드를 몇 번 다시 하더라도 동일한 해시가 나옵니다. 다른 빌드에서 일어난 같은 specialization 도 같은 심볼 이름을 갖게 됩니다. rokc 가 클로저와 그 밖의 생성된 함수에 붙이는 이름은 그것이 적힌 항목 (인스턴스면 그 타입 인자까지) 에서 나오므로, 이것도 모든 빌드에서 같습니다.</p>
+<p>이러한 안정성 덕분에 분리 빌드와 증분 빌드, 그리고 의존 패키지 사이의 심볼 매칭이 가능해집니다.</p>
+<h3 id="canonical-직렬화-규칙"><a class="anchor" tabindex="-1" href="#canonical-직렬화-규칙" aria-hidden="true">#</a>canonical 직렬화 규칙</h3>
+<p>타입 튜플의 직렬화는 결정론적으로 이루어집니다.</p>
+<ul>
+<li>원시 타입은 짧은 식별자로 표기됩니다 (<code>i32</code> / <code>f64</code> 등).
+</li>
+<li>사용자 타입은 <code>{pkg_hash}**{path}**{name}</code> 에 generic 인자를 더한 형태가 됩니다.
+</li>
+<li>합 타입의 경우 항들을 순서 정규화한 뒤 결합합니다 (<a href="../002-types/206-sum-types">합 타입 (<code>A | B</code>)</a> 의 집합 의미론을 따릅니다).
+</li>
+<li><code>struct</code> 는 필드 타입들로 구성됩니다 (필드 이름은 무관합니다).
+</li>
+</ul>
+<p>자세한 정규화 알고리듬은 <code>rokc</code> 가 결정해 주게 됩니다. 본 사양에서는 결정론적이어야 한다는 점까지만 정해 두고 있습니다.</p>
+<h2 id="958-extern-c-함수-맹글링-미적용"><a class="anchor" tabindex="-1" href="#958-extern-c-함수-맹글링-미적용" aria-hidden="true">#</a>9.5.8. <code>extern</code> &quot;C&quot; 함수: 맹글링 미적용</h2>
+<p><a href="../005-modules/509-extern-block"><code>extern</code> 블록</a> 에서 선언한 외부 함수는 해당 ABI 의 표준 명명 규칙을 그대로 사용합니다. rok 의 맹글링은 적용하지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;;     <span class="c">// 심볼: "malloc" (그대로)</span>
+}
+</code></pre>
+<p>반대 방향으로, <code>#[export_name(&quot;name&quot;)]</code> 을 사용하면 rok 함수를 외부에 노출할 때 이름을 직접 지정해 둘 수 있습니다 ([<code>extern</code> 블록 (<a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> 선언)](../005-modules/509-extern-block.md) 참고). 이런 항목은 도달 불가 함수 제거의 root 이므로 항상 emit 됩니다 (<a href="902-aot-pipeline#928-specialize-단형화">9.2.8</a>).</p>
+<pre><code class="language-rok"><span class="a">#[export_name("rok_compute")]</span>
+<span class="k">pub</span> <span class="k">fn</span> compute(x: <span class="t">i32</span>, y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x + y }
+<span class="c">// 심볼: "rok_compute" (맹글링 안 됨)</span>
+</code></pre>
+<p>이 두 가지 메커니즘 덕분에 rok 과 C 사이의 자연스러운 통합이 이루어지게 됩니다.</p>
+<h2 id="959-main-함수의-심볼"><a class="anchor" tabindex="-1" href="#959-main-함수의-심볼" aria-hidden="true">#</a>9.5.9. main 함수의 심볼</h2>
+<p><a href="../000-meta/003-source-units">소스 단위</a> 의 진입점 함수는 플랫폼이 제공하는 일반 main 심볼을 그대로 사용합니다.</p>
+<pre><code>main                                (Linux / macOS)
+mainCRTStartup                      (Windows console)
+WinMainCRTStartup + WinMain         (Windows GUI, -C subsystem=windows)
+_start                              (no-OS)
+__main_void                         (wasm32-wasi*; wasi-libc 의 _start 가 부름)
+_initialize, then main              (wasm32-unknown-unknown; host 가 부르는 reactor export)
+</code></pre>
+<p><code>wasm32-unknown-unknown</code> 에서 모듈은 reactor 입니다: host 가 <code>_initialize</code> 를, 그 다음 export <code>main</code> 을 부르며, 런타임은 그 뒤에도 살아 있습니다 (shutdown 없음). <code>#[export_name(&quot;x&quot;)]</code> 함수는 이름이 <code>x</code> 인 wasm export 입니다. 모든 wasm32 타깃에서 런타임은 <code>__main_void</code>, <code>main</code>, export 호출 가운데 처음 것에서 시작합니다.</p>
+<p>Windows 에서는 rok 자신의 startup object 가 <code>mainCRTStartup</code> (console) 이나 <code>WinMainCRTStartup</code> 과 <code>WinMain</code> (GUI) 을 제공하며, 이것이 rokc 가 생성한 <code>main</code> wrapper 를 부릅니다.</p>
+<p>플랫폼별 진입점은 rokc 가 생성한 wrapper 안에서 사용자가 정의한 main 함수를 호출해 주게 됩니다. wrapper 는 <code>rok_runtime_init</code> 과 타입 등록 함수 <code>rok.register_types</code> (<a href="../008-abi/802-scan-table#8213-등록-시점">8.2.13</a>) 를 차례로 호출한 뒤 진입 함수를 호출하고, <a href="../004-functions/416-entry-point#4164-종료-코드와-미처리-예외">4.16.4</a> 의 규칙으로 종료 코드를 정한 다음 <code>rok_runtime_shutdown</code> 을 거쳐 반환합니다.</p>
+<p><code>main.rok</code> 가 top-level 문으로 이루어진 경우 (<a href="../004-functions/416-entry-point#4162-top-level-문의-의미-암묵-main">4.16.2</a>), 컴파일러가 합성한 암묵 <code>main</code> 이 진입 함수가 됩니다. 암묵 <code>main</code> 은 일반 함수와 같은 규칙으로 맹글링되지만 사용자 코드에서 이름으로 참조할 수 없으며, wrapper 만이 이를 호출합니다.</p>
+<h2 id="9510-디버그-정보"><a class="anchor" tabindex="-1" href="#9510-디버그-정보" aria-hidden="true">#</a>9.5.10. 디버그 정보</h2>
+<p>각 mangled 심볼은 DWARF 와 PDB 디버그 정보 안에 원본 이름을 함께 포함합니다.</p>
+<pre><code>debugger 출력.
+  fn distance&lt;f64&gt; at geom.rok:42
+    (mangled: _Y3f8a1c2b_geom_distance_a7c91d8e44b2f190)
+</code></pre>
+<p>이 정보 덕분에 gdb, lldb, VS Code 같은 도구들이 rok 함수를 원본 이름으로 표시해 줄 수 있습니다. 코루틴의 resume 함수 이름은 <code>&lt;creator&gt;::{coroutine#k}</code> 이며, <code>k</code> 는 그 creator 의 클로저와 코루틴을 함께 셉니다.</p>
+<h2 id="9511-안정성"><a class="anchor" tabindex="-1" href="#9511-안정성" aria-hidden="true">#</a>9.5.11. 안정성</h2>
+<p>심볼 맹글링 스킴은 ABI 의 일부이기도 합니다. 따라서 변경하실 때는 <a href="../008-abi/">개요</a> 에 정리된 안정성 정책을 따르셔야 합니다.</p>
+<ul>
+<li>같은 major version 안에서는 호환성이 유지됩니다.
+</li>
+<li>다른 major version 사이에서는 호환이 깨지며, 이때는 ABI 해시도 달라지게 됩니다.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/009-tools/905-symbol-mangling.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="904-rokhir-bytecode"><small>Previous</small>9.4. ROKHIR 포맷</a><a class="next" href="906-jit-engine"><small>Next</small>9.6. JIT 엔진</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

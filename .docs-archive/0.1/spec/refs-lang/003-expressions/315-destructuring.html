@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.15. Destructuring assignment - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Writing an irrefutable pattern of patterns on the left-hand side of let unpacks the result of one expression into several variables.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/315-destructuring.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.15. Destructuring assignment - rok docs">
+<meta property="og:description" content="Writing an irrefutable pattern of patterns on the left-hand side of let unpacks the result of one expression into several variables.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/315-destructuring.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/315-destructuring.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/315-destructuring.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li class="cur"><a aria-current="page" href="315-destructuring">3.15. Destructuring assignment</a><ul class="toc"><li><a href="#3151-form">3.15.1. Form</a></li><li><a href="#3152-tuple-destructuring">3.15.2. Tuple destructuring</a></li><li><a href="#3153-rest-patterns">3.15.3. Rest patterns</a></li><li><a href="#3154-nested-destructuring">3.15.4. Nested destructuring</a></li><li><a href="#3155-struct-destructuring">3.15.5. Struct destructuring</a></li><li><a href="#3156-type-annotations">3.15.6. Type annotations</a></li><li><a href="#3157-irrefutable-patterns-only">3.15.7. Irrefutable patterns only</a></li><li><a href="#3158-default-values-none">3.15.8. Default values (none)</a></li><li><a href="#3159-visibility-of-variables-after-destructuring">3.15.9. Visibility of variables after destructuring</a></li><li><a href="#31510-number-of-evaluations-of-the-matched-expression">3.15.10. Number of evaluations of the matched expression</a></li><li><a href="#31511-generalization-of-multiple-assignment">3.15.11. Generalization of multiple assignment</a></li><li><a href="#31512-without-let-destructuring-reassignment-none">3.15.12. Without let: destructuring reassignment (none)</a></li></ul></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="315-destructuring-assignment 315-분해-대입-destructuring 3151-form 3151-형태 3152-tuple-destructuring 3152-튜플-분해 3153-rest-patterns 3153-rest-패턴 3154-nested-destructuring 3154-중첩-분해 3155-struct-destructuring 3155-구조체-분해 3156-type-annotations 3156-타입-명시 3157-irrefutable-patterns-only 3157-반증-불가능-패턴만 3158-default-values-none 3158-기본값-없음 3159-visibility-of-variables-after-destructuring 3159-분해-후의-변수-가시성 31510-number-of-evaluations-of-the-matched-expression 31510-매칭-식의-평가-횟수 31511-generalization-of-multiple-assignment 31511-다중-대입의-일반화 31512-without-let-destructuring-reassignment-none 31512-let-없이-재할당의-분해-없음"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/315-destructuring" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="315-destructuring-assignment"><a class="anchor" tabindex="-1" href="#315-destructuring-assignment" aria-hidden="true">#</a>3.15. Destructuring assignment</h1>
+<p>Writing an irrefutable pattern of <a href="311-patterns">patterns</a> on the left-hand side of <code>let</code> unpacks the result of one expression into several variables.</p>
+<h2 id="3151-form"><a class="anchor" tabindex="-1" href="#3151-form" aria-hidden="true">#</a>3.15.1. Form</h2>
+<p>The grammar of destructuring assignment is:</p>
+<pre><code>destructure_let ::= &quot;let&quot; irrefutable_pattern (&quot;:&quot; type_expr)? &quot;=&quot; expr &quot;;&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> pattern = expr;
+</code></pre>
+<p>This form matches the expression's result against the pattern and declares all binding variables in the pattern at once.</p>
+<h2 id="3152-tuple-destructuring"><a class="anchor" tabindex="-1" href="#3152-tuple-destructuring" aria-hidden="true">#</a>3.15.2. Tuple destructuring</h2>
+<p>The most basic form, tuple destructuring, is used as follows.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (<span class="n">1</span>, <span class="n">2</span>);                    <span class="c">// a = 1, b = 2</span>
+<span class="k">let</span> (q, r) = divmod(<span class="n">10</span>, <span class="n">3</span>);             <span class="c">// receive two values at once</span>
+<span class="k">let</span> (q, _) = divmod(<span class="n">10</span>, <span class="n">3</span>);             <span class="c">// discard the second</span>
+</code></pre>
+<p>The number of elements must match exactly; otherwise it is a compile error.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>);                 <span class="c">// ERROR: length mismatch</span>
+</code></pre>
+<h2 id="3153-rest-patterns"><a class="anchor" tabindex="-1" href="#3153-rest-patterns" aria-hidden="true">#</a>3.15.3. Rest patterns</h2>
+<p>To receive the remaining elements together, use a rest pattern with <code>..</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> (first, ..rest) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>);     <span class="c">// rest = (2, 3, 4)</span>
+<span class="k">let</span> (..init, last) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>);      <span class="c">// init = (1, 2, 3), last = 4</span>
+<span class="k">let</span> (head, ..mid, tail) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>);  <span class="c">// mid = (2, 3, 4)</span>
+<span class="k">let</span> (..) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>);                    <span class="c">// discard everything</span>
+</code></pre>
+<p><code>..</code> appears at most once in a pattern and is used to bundle the rest into one variable or to discard it.</p>
+<h2 id="3154-nested-destructuring"><a class="anchor" tabindex="-1" href="#3154-nested-destructuring" aria-hidden="true">#</a>3.15.4. Nested destructuring</h2>
+<p>Destructuring patterns can nest to any depth, so complex structures can be unpacked at once.</p>
+<pre><code class="language-rok"><span class="k">let</span> ((a, b), c) = ((<span class="n">1</span>, <span class="n">2</span>), <span class="n">3</span>);          <span class="c">// a = 1, b = 2, c = 3</span>
+<span class="k">let</span> (<span class="t">Point</span> { x, y }, scale) = (origin, <span class="n">2.0f64</span>);
+</code></pre>
+<p>The destructured shape need only match the structure of the value.</p>
+<h2 id="3155-struct-destructuring"><a class="anchor" tabindex="-1" href="#3155-struct-destructuring" aria-hidden="true">#</a>3.15.5. Struct destructuring</h2>
+<p>For struct values, the <code>struct</code> pattern of <a href="311-patterns">patterns</a> can be used directly.</p>
+<pre><code class="language-rok"><span class="k">let</span> <span class="t">Point</span> { x, y } = origin;            <span class="c">// x = origin.x, y = origin.y</span>
+<span class="k">let</span> <span class="t">Point</span> { x, .. } = origin;           <span class="c">// discard other fields</span>
+<span class="k">let</span> <span class="t">Point</span> { x: px, y: py } = origin;    <span class="c">// rename</span>
+</code></pre>
+<p>This extracts fields together, receives only some fields while discarding the rest, or renames them.</p>
+<h2 id="3156-type-annotations"><a class="anchor" tabindex="-1" href="#3156-type-annotations" aria-hidden="true">#</a>3.15.6. Type annotations</h2>
+<p>Types may be given for each part of the destructuring or for the whole pattern at once.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a: <span class="t">i32</span>, b: <span class="t">str</span>) = (<span class="n">1i32</span>, <span class="s">"hi"</span>);    <span class="c">// type on each position</span>
+<span class="k">let</span> (a, b): (<span class="t">i32</span>, <span class="t">str</span>) = (<span class="n">1i32</span>, <span class="s">"hi"</span>);  <span class="c">// type on the whole pattern</span>
+</code></pre>
+<p>An annotated type is a slot type, not a runtime type check. It must match the type of the value; otherwise it is a compile error.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a: <span class="t">i32</span>, b: <span class="t">str</span>) = (<span class="n">1</span>, <span class="n">2</span>);          <span class="c">// ERROR: second type mismatch</span>
+</code></pre>
+<h2 id="3157-irrefutable-patterns-only"><a class="anchor" tabindex="-1" href="#3157-irrefutable-patterns-only" aria-hidden="true">#</a>3.15.7. Irrefutable patterns only</h2>
+<p>The pattern of <code>let pattern = expr;</code> must be irrefutable, meaning it must always match.</p>
+<p>Allowed patterns:</p>
+<ul>
+<li>identifiers, wildcards.
+</li>
+<li>complete matches of tuples, structs, and tuple-structs (no missing fields or positions).
+</li>
+<li>nestings of the above.
+</li>
+</ul>
+<p>Disallowed patterns:</p>
+<ul>
+<li>literal patterns (<code>1</code>, <code>&quot;hello&quot;</code>, etc.).
+</li>
+<li>patterns that match only a particular <code>enum</code> variant (<code>Circle(r)</code>, <code>Click { x, y }</code>, etc.).
+</li>
+<li>type-check patterns (<code>v: i32</code>, on a sum type or <code>any</code> slot).
+</li>
+<li>range patterns.
+</li>
+</ul>
+<p>These forms can fail to match, so receiving them with <code>let</code> is unsafe. Use <a href="316-let-else"><code>let-else</code></a>, the <a href="312-match-expression"><code>match</code> expression</a>, or <code>if let</code> (<a href="310-if-expression"><code>if</code> expression</a>) instead.</p>
+<h2 id="3158-default-values-none"><a class="anchor" tabindex="-1" href="#3158-default-values-none" aria-hidden="true">#</a>3.15.8. Default values (none)</h2>
+<p>Default values in destructuring positions are not adopted.</p>
+<pre><code>let (a, b = 0i32) = ...;        // not adopted
+</code></pre>
+<p>Default values for function parameters are considered sufficient. To handle a possibly absent value in a destructuring position, use <code>match</code> or <code>let-else</code>.</p>
+<h2 id="3159-visibility-of-variables-after-destructuring"><a class="anchor" tabindex="-1" href="#3159-visibility-of-variables-after-destructuring" aria-hidden="true">#</a>3.15.9. Visibility of variables after destructuring</h2>
+<p>Every variable declared by destructuring is introduced into the scope where the <code>let</code> appears.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (<span class="n">1</span>, <span class="n">2</span>);
+<span class="c">// a and b are both visible here</span>
+</code></pre>
+<p>Variables declared by the same <code>let</code> become visible simultaneously; none becomes visible before another.</p>
+<h2 id="31510-number-of-evaluations-of-the-matched-expression"><a class="anchor" tabindex="-1" href="#31510-number-of-evaluations-of-the-matched-expression" aria-hidden="true">#</a>3.15.10. Number of evaluations of the matched expression</h2>
+<p>The right-hand expression of a destructuring is evaluated exactly once, and the result is matched against the pattern. An expression with side effects is therefore guaranteed to be called once.</p>
+<h2 id="31511-generalization-of-multiple-assignment"><a class="anchor" tabindex="-1" href="#31511-generalization-of-multiple-assignment" aria-hidden="true">#</a>3.15.11. Generalization of multiple assignment</h2>
+<p>Destructuring assignment can be seen as a generalization of multiple assignment.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (b, a);                    <span class="c">// swap, in one expression</span>
+<span class="k">let</span> (q, r) = divmod(num, den);          <span class="c">// two results</span>
+<span class="k">let</span> (head, ..tail) = items;             <span class="c">// split</span>
+</code></pre>
+<p>This form also expresses the C- or Python-style <code>a, b = b, a</code> pattern naturally.</p>
+<h2 id="31512-without-let-destructuring-reassignment-none"><a class="anchor" tabindex="-1" href="#31512-without-let-destructuring-reassignment-none" aria-hidden="true">#</a>3.15.12. Without <code>let</code>: destructuring reassignment (none)</h2>
+<p>Destructuring reassignment of existing variables is not adopted.</p>
+<pre><code>(a, b) = (1, 2);                // not adopted
+</code></pre>
+<p><code>let</code> is always required, to keep the distinction between new declaration and reassignment clear (consistent with the decision in <a href="304-assignment">assignment</a>).</p>
+<p>To assign destructured results to existing variables, go through temporaries or assign them separately.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/315-destructuring.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="314-error-control-flow"><small>Previous</small>3.14. Error control flow</a><a class="next" href="316-let-else"><small>Next</small>3.16. let-else</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

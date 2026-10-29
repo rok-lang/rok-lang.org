@@ -68,8 +68,8 @@ pub struct Site {
     pub out: str = "public";
     /// The release this build documents (`0.1.2`), and the earlier
     /// releases of its version, oldest first: what the API's "Added in"
-    /// badges compare against. Set by scripts/release-docs.sh; empty, no
-    /// badges.
+    /// badges compare against. Set by `serve` when it archives a release;
+    /// empty, no badges.
     pub built_from: str = "";
     pub history: List<Release> = List::new();
 }
@@ -815,8 +815,8 @@ fn main() throws {
 
     // Released versions other than the one built now: re-wrap their
     // archived fragments with the current chrome, so a design change reaches
-    // them while their content stays pinned. The bundles come from the
-    // docs-archive branch (scripts/assemble.sh points ROK_DOCS_ARCHIVE at it).
+    // them while their content stays pinned. `serve` archives each release
+    // once and points ROK_DOCS_ARCHIVE at the archive.
     let arch_bad: List<str> = List::new();
     let archive = try env::var("ROK_DOCS_ARCHIVE") catch _ { "" };
     if !archive.is_empty() {
@@ -868,7 +868,7 @@ fn main() throws {
         try write(docs_root, "sitemap.xml", sitemap(urls));
     }
     // latest/ follows the newest release, whether built now or laid in
-    // from the archive (scripts/assemble.sh).
+    // from the archive.
     let latest_from = docs_root + "/" + newest;
     let has_latest = !newest.is_empty() && fs::exists(latest_from);
     if has_latest { try copy_tree(latest_from, docs_root + "/latest"); }

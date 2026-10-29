@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rok standard library reference - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This is the formal specification of the rok standard libraries. Where the language specification defines syntax and semantic mechanisms, the standard library sp...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="rok standard library reference - rok docs">
+<meta property="og:description" content="This is the formal specification of the rok standard libraries. Where the language specification defines syntax and semantic mechanisms, the standard library sp...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../style.css">
+<link rel="icon" href="../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/index.html">
+</head>
+<body class="doc" data-root="../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../"><img src="../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../learn/">Learn</a><a href="../../examples/">Examples</a><a href="../../spec/refs-lang/">Reference</a><a href="../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../std/">API</a><a href="../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← The rok language specification</a><p class="side-title"><a class="cur" href="./">rok standard library reference</a></p><ul class="toc"><li><a href="#the-3-tier-model">The 3-tier model</a></li><li><a href="#chapters">Chapters</a></li><li><a href="#how-to-read">How to read</a></li><li><a href="#directory--file-naming">Directory / file naming</a></li></ul><ul class="pages"><li><a href="000-meta/">0. Standard library meta</a></li><li><a href="100-bare/">1. Unsafe tier</a></li><li><a href="200-core/">2. Rok tier</a></li><li><a href="300-std/">3. Std tier</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="rok-standard-library-reference rok-표준-라이브러리-참조 the-3-tier-model 3-tier-모델 chapters 장-목차 0-meta---000-meta 0-메타---000-meta 1-unsafe---100-bare 1-unsafe---100-bare 2-rok---200-core 2-rok---200-core 3-std---300-std 3-std---300-std how-to-read 읽는-방법 first-reading 처음-읽을-때 as-a-reference 참조용 search 검색 directory--file-naming 디렉토리--파일-명명"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../ko/spec/refs-standard-libraries/" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="rok-standard-library-reference"><a class="anchor" tabindex="-1" href="#rok-standard-library-reference" aria-hidden="true">#</a>rok standard library reference</h1>
+<p>This is the formal specification of the rok standard libraries. Where the language specification defines syntax and semantic mechanisms, the standard library specification supplies the meaning of the types, traits and functions those mechanisms need in order to actually work. It defines in one place which traits operators resolve to, which interfaces collections have, and on which guarantees async and I/O operate.</p>
+<p>The language specification is collected separately in <a href="../refs-lang/"><code>refs-lang/</code></a>; this document covers only the specification. The actual implementation of the libraries is outside the scope of the spec.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong>Boundary between the language specification and the standard library specification</strong></p>
+<p><a href="../refs-lang/">refs-lang</a> defines <strong>syntax and semantic mechanisms</strong> (e.g. which trait
+method the <code>+</code> token maps to). <a href="./">refs-standard-libraries</a> (this document) defines
+<strong>the signatures and meaning of those traits themselves</strong> (e.g. which numeric conversion
+<code>Add::add</code> applies).</p>
+<p>Both specifications follow the same <a href="../refs-lang/000-meta/008-notation">notation conventions</a>.</p>
+</div>
+<hr>
+<h2 id="the-3-tier-model"><a class="anchor" tabindex="-1" href="#the-3-tier-model" aria-hidden="true">#</a>The 3-tier model</h2>
+<p>The standard libraries are not a single flat plane but are divided into three layers. Almost all systems code is written on top of safe abstractions, but implementing those abstractions eventually requires handling raw memory and FFI somewhere. Moreover, features that are meaningful only with a host environment, such as files or networking, must not exist at all on targets without such an environment, such as embedded. To expose these differences directly in the dependency graph, the libraries follow a 3-tier structure under the virtual namespace <code>rok::</code>: <code>rok::bare</code> / <code>rok::core</code> / <code>rok::std</code>.</p>
+<pre><code>rok::bare   (base, depends only on runtime extern &quot;C&quot;)
+  ↓
+rok::core   (foundation, safe, all targets - uses rok::bare internally)
+  ↓
+rok::std   (target-dep - uses rok::core + rok::bare)
+</code></pre>
+<p><code>rok::bare</code> exposes only raw capabilities at the bottom, and <code>rok::core</code> provides a safe foundation on top of it, identically on every target. <code>rok::std</code> adds host-dependent features on top of <code>rok::core</code>, completing the surface an ordinary application expects. Everyday code needs only <code>rok::core</code>; it reaches for <code>rok::std</code> the moment OS resources are needed, and imports <code>rok::bare</code> explicitly only when it must cross an abstraction boundary directly. The detailed dependency rules are covered in <a href="000-meta/001-tier-model">0.1 Tier model</a>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Tier</th><th>Path</th><th>Directory</th><th>Area</th></tr></thead>
+<tbody>
+<tr><td><code>rok::bare</code></td><td><code>rok::bare::*</code></td><td><a href="100-bare/"><code>100-bare/</code></a></td><td><code>Ptr</code>, <code>ConstPtr</code>, <code>transmute</code>, raw alloc, pin</td></tr>
+<tr><td><code>rok::core</code></td><td><code>rok::core::*</code></td><td><a href="200-core/"><code>200-core/</code></a></td><td>Numbers, operators, iter, collections, fmt, sync, task</td></tr>
+<tr><td><code>rok::std</code></td><td><code>rok::std::*</code></td><td><a href="300-std/"><code>300-std/</code></a></td><td>fs, net, time, thread, io, env, process, path, crypto (random)</td></tr>
+</tbody></table></div>
+<hr>
+<h2 id="chapters"><a class="anchor" tabindex="-1" href="#chapters" aria-hidden="true">#</a>Chapters</h2>
+<h3 id="0-meta---000-meta"><a class="anchor" tabindex="-1" href="#0-meta---000-meta" aria-hidden="true">#</a>0. Meta - <a href="000-meta/">000-meta/</a></h3>
+<p>Library-wide policies and tables.</p>
+<ul>
+<li><a href="000-meta/001-tier-model">0.1. The 3-tier model</a>
+</li>
+<li><a href="000-meta/002-import">0.2. Import policy (implicit <code>use rok::core::**;</code>)</a>
+</li>
+<li><a href="000-meta/003-intrinsics">0.3. Intrinsic mechanism - the compiler ↔ standard library boundary</a>
+</li>
+<li><a href="000-meta/004-lang-slot-table">0.4. <code>#[lang]</code> slot mapping table</a>
+</li>
+<li><a href="000-meta/005-notation">0.5. Notation</a>
+</li>
+</ul>
+<h3 id="1-unsafe---100-bare"><a class="anchor" tabindex="-1" href="#1-unsafe---100-bare" aria-hidden="true">#</a>1. Unsafe - <a href="100-bare/">100-bare/</a></h3>
+<p>Low-level / dangerous area. Explicit import required.</p>
+<ul>
+<li>1.1. <a href="100-bare/101-ptr">Pointer family (<code>Ptr</code>/<code>ConstPtr</code>/<code>ManyPtr</code>/<code>CPtr</code> - Zig arity-encoded + Rust strict provenance)</a>
+</li>
+<li>1.2. <a href="100-bare/102-cast">Cast operations (<code>ptr_cast</code>/<code>align_cast</code>/<code>const_cast</code>/<code>reinterpret</code>)</a>
+</li>
+<li>1.3. <a href="100-bare/103-mem"><code>MaybeUninit&lt;T&gt;</code> + <code>Pod</code> + raw mem ops</a>
+</li>
+<li>1.4. <a href="100-bare/104-alloc">Raw allocation</a>
+</li>
+<li>1.5. <a href="100-bare/105-volatile">Volatile memory access</a>
+</li>
+<li>1.6. <a href="100-bare/106-gc-pin"><code>Pinned&lt;T&gt;</code> - GC pin (Go 1.21 Pinner model)</a>
+</li>
+<li>1.7. <a href="100-bare/107-ffi">FFI - <code>extern &quot;C&quot;</code> / <code>CStr</code> / <code>CString</code></a>
+</li>
+<li>1.8. <a href="100-bare/108-wit">WASM Component Model (<code>ffi.wit</code>)</a>
+</li>
+<li>1.9. <a href="100-bare/109-mlir"><code>rok::bare::mlir</code> - direct access to MLIR dialects</a>
+</li>
+<li>1.10. <a href="100-bare/110-mlir-plugin"><code>rok::bare::mlir::plugin</code> - registering user-defined dialects</a>
+</li>
+</ul>
+<h3 id="2-rok---200-core"><a class="anchor" tabindex="-1" href="#2-rok---200-core" aria-hidden="true">#</a>2. Rok - <a href="200-core/">200-core/</a></h3>
+<p>Safe area. All targets. <code>use rok::core::**;</code> applied implicitly (no separate prelude module).</p>
+<ul>
+<li>2.1. <a href="200-core/201-numbers">Numeric types (<code>int</code>, <code>float</code>, auto-promote)</a>
+</li>
+<li>2.2. <a href="200-core/202-non-zero">Niche wrappers (<code>NonZero</code>, <code>NonNan</code>, <code>Finite</code>, <code>Positive</code>)</a>
+</li>
+<li>2.3. <a href="200-core/203-ops">Arithmetic / bitwise traits (<code>Add</code>, <code>Sub</code>, ..., <code>Shl</code>, <code>Shr</code>)</a>
+</li>
+<li>2.4. <a href="200-core/204-ops-assign">Compound assignment traits (<code>AddAssign</code>, ...)</a>
+</li>
+<li>2.5. <a href="200-core/205-cmp">Comparison traits (<code>PartialEq</code>, <code>Eq</code>, <code>Ord</code>, <code>PartialOrd</code>, <code>Hash</code>)</a>
+</li>
+<li>2.6. <a href="200-core/206-broadcast">Broadcast traits (<code>DotAdd</code>, <code>DotMul</code>, ...)</a>
+</li>
+<li>2.7. <a href="200-core/207-iter">Iter traits (<code>Iterator</code>, <code>IntoIterator</code>)</a>
+</li>
+<li>2.8. <a href="200-core/208-stream"><code>Stream</code> (async iterator)</a>
+</li>
+<li>2.9. <a href="200-core/209-collections">Collections (<code>List</code>, <code>Dict</code>, <code>Set</code>, <code>Tuple</code>, <code>Slice</code>)</a>
+</li>
+<li>2.10. <a href="200-core/210-fmt">fmt (<code>Display</code>, <code>Debug</code>, <code>Formatter</code>)</a>
+</li>
+<li>2.11. <a href="200-core/211-conversion">Conversion (<code>From</code>, <code>Into</code>, <code>TryFrom</code>, <code>saturating_into</code>, ...)</a>
+</li>
+<li>2.12. <a href="200-core/212-reflect">Reflection (<code>Reflect</code>, <code>Inspect</code>)</a>
+</li>
+<li>2.13. <a href="200-core/213-marker">Marker traits (<code>Clone</code>, <code>Copy</code>)</a>
+</li>
+<li>2.14. <a href="200-core/214-error">Error types (<code>TypeError</code>, <code>ValueError</code>, ...)</a>
+</li>
+<li>2.15. <a href="200-core/215-string">Strings (<code>str</code> single mutable, <code>char</code>, <code>c_char</code>)</a>
+</li>
+<li>2.16. <a href="200-core/216-sync">Sync primitives (<code>Atomic</code>, <code>Mutex</code>, <code>RwLock</code>, <code>Cell</code>)</a>
+</li>
+<li>2.17. <a href="200-core/217-channel"><code>Channel</code></a>
+</li>
+<li>2.18. <a href="200-core/218-task"><code>task::</code> API</a>
+</li>
+<li>2.19. <a href="200-core/219-par"><code>par::</code> API</a>
+</li>
+<li>2.20. <a href="200-core/220-future"><code>Future</code> / <code>await</code> integration</a>
+</li>
+<li>2.21. <a href="200-core/221-crypto"><code>crypto::</code> - hashes, MACs, AEADs, key exchange, signatures</a>
+</li>
+</ul>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Scientific computing / AI areas such as tensors / automatic differentiation / SIMD / GPU are not part of the standard libraries and are split out into external libraries. External libraries can access MLIR dialects directly through the <a href="100-bare/109-mlir"><code>rok::bare::mlir</code></a> module.</p>
+</div>
+<h3 id="3-std---300-std"><a class="anchor" tabindex="-1" href="#3-std---300-std" aria-hidden="true">#</a>3. Std - <a href="300-std/">300-std/</a></h3>
+<p>Target-dependent area. Explicit import.</p>
+<ul>
+<li>3.1. <a href="300-std/301-fs"><code>fs::</code> - file system (atomic ops, Dir capability, reflink)</a>
+</li>
+<li>3.2. <a href="300-std/302-net"><code>net::</code> - TCP/UDP/Unix + TLS 1.3 (HTTP is external)</a>
+</li>
+<li>3.3. <a href="300-std/303-time"><code>time::</code> - <code>Instant</code> / <code>SystemTime</code> / <code>Duration</code> / <code>BootTime</code></a>
+</li>
+<li>3.4. <a href="300-std/304-thread"><code>thread::</code> - OS threads (1:1, separate from tasks)</a>
+</li>
+<li>3.5. <a href="300-std/305-io"><code>io::</code> - <code>Reader</code> / <code>Writer</code> / stdin/out/err (sync only - no async traits)</a>
+</li>
+<li>3.6. <a href="300-std/306-env"><code>env::</code> - environment variables / args / directories</a>
+</li>
+<li>3.7. <a href="300-std/307-process"><code>process::</code> - <code>Command</code> / pidfd / kill_on_drop</a>
+</li>
+<li>3.8. <a href="300-std/308-path"><code>path::</code> - UTF-8 <code>Path</code> + <code>/</code> operator (Python pathlib style)</a>
+</li>
+<li>3.9. <a href="300-std/309-rokon"><code>rokon::</code> - the ROKON data format (<code>.rokon</code>)</a>
+</li>
+<li>3.10. <a href="300-std/310-crypto"><code>crypto::</code> - the OS random source</a>
+</li>
+</ul>
+<hr>
+<h2 id="how-to-read"><a class="anchor" tabindex="-1" href="#how-to-read" aria-hidden="true">#</a>How to read</h2>
+<h3 id="first-reading"><a class="anchor" tabindex="-1" href="#first-reading" aria-hidden="true">#</a>First reading</h3>
+<p>On a first approach, it is recommended to follow Chapters 0-6 of <a href="../refs-lang/"><code>refs-lang</code></a> to understand the language's mechanisms, and then read this document on top of that. This document gives meaning to the mechanisms refs-lang defines; without a feel for those mechanisms, the traits and signatures tend to read as if floating in the air. Reading the two documents side by side, moving back and forth, is the most efficient approach.</p>
+<h3 id="as-a-reference"><a class="anchor" tabindex="-1" href="#as-a-reference" aria-hidden="true">#</a>As a reference</h3>
+<p>Each item is identified by a stable section number (<code>&lt;chapter&gt;.&lt;section&gt;</code>). The number is used identically in internal links and external references, so it points reliably even if files move.</p>
+<pre><code>refs-standard-libraries 2.3        →  rok ops (Add/Sub/...)
+refs-standard-libraries 1.1        →  unsafe Ptr&lt;T&gt;
+refs-standard-libraries 3.5.2      →  std io (specific subsection)
+</code></pre>
+<h3 id="search"><a class="anchor" tabindex="-1" href="#search" aria-hidden="true">#</a>Search</h3>
+<p>To find a specific trait or function quickly, the lightest approach is to search with <code>ripgrep</code>, narrowing the directory.</p>
+<pre><code class="language-bash">rg &quot;trait Add&quot; spec/en/refs-standard-libraries/200-core/
+rg &quot;fn into&quot; spec/en/refs-standard-libraries/
+</code></pre>
+<hr>
+<h2 id="directory--file-naming"><a class="anchor" tabindex="-1" href="#directory--file-naming" aria-hidden="true">#</a>Directory / file naming</h2>
+<p>This document follows a different directory convention from <code>refs-lang</code>, because the two specifications have different shapes: refs-lang is a flat structure in which chapters 0 through 9 all have equal authority, whereas refs-standard-libraries is a hierarchical structure in which the three tiers act as the key information in cross-references. This structural difference is reflected directly in the number of digits in directory names.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Specification</th><th>Prefix</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>refs-lang</td><td>One digit (<code>002-</code>)</td><td>10 chapters (0-9), all with equal authority - flat shape</td></tr>
+<tr><td>refs-standard-libraries</td><td>Three digits (<code>200-</code>)</td><td>3 tiers × N modules - the tier is key cross-reference information</td></tr>
+</tbody></table></div>
+<p>The concrete file naming rules are as follows. Tier directories have prefixes in units of 100, and module files within them start with a three-digit prefix combining one tier digit and two module digits.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Location</th><th>Form</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Tier</td><td><code>&lt;TNN&gt;-&lt;descriptive-name&gt;/</code></td><td><code>100-bare/</code>, <code>200-core/</code></td></tr>
+<tr><td>Module</td><td><code>&lt;tier&gt;&lt;module&gt;-&lt;name&gt;.md</code></td><td><code>203-ops.md</code>, <code>211-conversion.md</code></td></tr>
+<tr><td></td><td>(one tier digit + two module digits)</td><td></td></tr>
+<tr><td>README</td><td><code>README.md</code> in each tier / chapter</td><td>TOC + overview</td></tr>
+</tbody></table></div>
+<p>Although tier information is encoded in the file path itself, the stable section number (<code>2.3.1</code>, etc.) is the formal notation when citing this document externally. File paths serve only as an auxiliary notation for navigation convenience in IDEs and GitHub.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/README.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../refs-lang/009-tools/910-rok-frontend"><small>Previous</small>9.10. rok - package / build front-end</a><a class="next" href="000-meta/"><small>Next</small>0. Standard library meta</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../search.js" defer></script>
+</body>
+</html>

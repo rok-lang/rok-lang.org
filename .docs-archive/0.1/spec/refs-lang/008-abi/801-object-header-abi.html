@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.1. Object header ABI - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Defines the bit layout of the 16-byte header from Object layout and memory spaces. GC constants such as the header size, the gc_flags bits, the LOS threshold, t...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/801-object-header-abi.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.1. Object header ABI - rok docs">
+<meta property="og:description" content="Defines the bit layout of the 16-byte header from Object layout and memory spaces. GC constants such as the header size, the gc_flags bits, the LOS threshold, t...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/801-object-header-abi.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/801-object-header-abi.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/801-object-header-abi.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="801-object-header-abi">8.1. Object header ABI</a><ul class="toc"><li><a href="#811-exact-layout">8.1.1. Exact layout</a></li><li><a href="#812-type_id-offset-0-u32-little-endian">8.1.2. type_id (offset 0, u32, little-endian)</a></li><li><a href="#813-gc_flags-offset-4-u32">8.1.3. gc_flags (offset 4, u32)</a></li><li><a href="#814-gc_word-offset-8-u64-or-ptr">8.1.4. gc_word (offset 8, u64 or ptr)</a></li><li><a href="#815-payload-offset-16">8.1.5. payload (offset 16+)</a></li><li><a href="#816-alignment-requirements">8.1.6. Alignment requirements</a></li><li><a href="#817-total-size-of-header--payload">8.1.7. Total size of header + payload</a></li><li><a href="#818-example-i32-object">8.1.8. Example: i32 object</a></li><li><a href="#819-example-large-object-buffer-of-listi64">8.1.9. Example: large object (buffer of List&lt;i64&gt;)</a></li><li><a href="#8110-compatibility-when-the-header-changes">8.1.10. Compatibility when the header changes</a></li></ul></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="81-object-header-abi 81-객체-헤더-abi 811-exact-layout 811-정확한-레이아웃 812-type_id-offset-0-u32-little-endian 812-type_id-offset-0-u32-little-endian type_id-assignment type_id-의-할당 reserved-ranges 예약-범위 813-gc_flags-offset-4-u32 813-gc_flags-offset-4-u32 atomicity-requirements atomic-요구 814-gc_word-offset-8-u64-or-ptr 814-gc_word-offset-8-u64-또는-ptr collector-private-information 수집기-전용-정보 815-payload-offset-16 815-payload-offset-16 816-alignment-requirements 816-정렬-요구 817-total-size-of-header--payload 817-헤더--payload-총-크기-계산 818-example-i32-object 818-예-i32-객체 819-example-large-object-buffer-of-listi64 819-예-큰-객체-listi64-의-buffer 8110-compatibility-when-the-header-changes 8110-헤더-변경-시의-호환성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/801-object-header-abi" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="81-object-header-abi"><a class="anchor" tabindex="-1" href="#81-object-header-abi" aria-hidden="true">#</a>8.1. Object header ABI</h1>
+<p>Defines the bit layout of the 16-byte header from <a href="../007-runtime/701-object-layout">Object layout and memory spaces</a>. GC constants such as the header size, the <code>gc_flags</code> bits, the LOS threshold, the starting type id value and the runtime buffer type ids come from a single definition (<code>gc_abi</code>) shared by the compiler and the runtime.</p>
+<h2 id="811-exact-layout"><a class="anchor" tabindex="-1" href="#811-exact-layout" aria-hidden="true">#</a>8.1.1. Exact layout</h2>
+<p>The header has the following form.</p>
+<pre><code>+---------+---------+-----------------+----------------+
+| offset  |  size   |  field          |  type          |
++---------+---------+-----------------+----------------+
+|    0    |    4    |  type_id        |  u32           |
+|    4    |    4    |  gc_flags       |  u32           |
+|    8    |    8    |  gc_word        |  u64 / ptr     |
+|   16    |    var  |  payload        |  per type_id   |
++---------+---------+-----------------+----------------+
+</code></pre>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>The total header size is 16 bytes, 8-byte aligned, identical on 32-bit and 64-bit targets.</p>
+</div>
+<p>Every object is at least 24 bytes (header plus one payload word, <code>MIN_OBJECT_SIZE</code> in <code>gc_abi</code>), so compiled code may load the first payload word of any object it holds a reference to.</p>
+<h2 id="812-type_id-offset-0-u32-little-endian"><a class="anchor" tabindex="-1" href="#812-type_id-offset-0-u32-little-endian" aria-hidden="true">#</a>8.1.2. <code>type_id</code> (offset 0, u32, little-endian)</h2>
+<p><code>type_id</code> is the unique identifier of a type. It is a 32-bit unsigned value stored little-endian; the value <code>0</code> is reserved and denotes the null type or an invalid object. At process start the compiler calls <code>rok_gc_register_type</code> to register each type_id.</p>
+<h3 id="type_id-assignment"><a class="anchor" tabindex="-1" href="#type_id-assignment" aria-hidden="true">#</a>type_id assignment</h3>
+<p>Within one build, the same type has the same id. Ids are not stable across builds, so they are not used for serialization.</p>
+<h3 id="reserved-ranges"><a class="anchor" tabindex="-1" href="#reserved-ranges" aria-hidden="true">#</a>Reserved ranges</h3>
+<p>The reserved id ranges are as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Range</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>invalid / null</td></tr>
+<tr><td><code>1</code></td><td>runtime - GC string (not traced)</td></tr>
+<tr><td><code>2</code></td><td>runtime - word-traced buffer</td></tr>
+<tr><td><code>3</code></td><td>runtime - weak cell (<code>Weak&lt;T&gt;</code>)</td></tr>
+<tr><td><code>4</code> ~ <code>0xFFFF</code></td><td>standard library / runtime (reserved)</td></tr>
+<tr><td><code>0x10000</code> ~</td><td>user / other package types</td></tr>
+</tbody></table></div>
+<p>The exact id mapping of standard library types is defined in the standard library specification. Ids the compiler assigns to user types start at <code>0x10000</code>.</p>
+<h2 id="813-gc_flags-offset-4-u32"><a class="anchor" tabindex="-1" href="#813-gc_flags-offset-4-u32" aria-hidden="true">#</a>8.1.3. <code>gc_flags</code> (offset 4, u32)</h2>
+<p>The <code>gc_flags</code> field holds the exact positions of the <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> state bits, laid out as follows.</p>
+<pre><code>bit  0  : MARK       (mark for the current GC cycle)
+bit  1  : STICKY     (sticky mark-bit, old generation)
+bit  2  : PINNED     (must not move, FFI)
+bit  3  : FORWARDED  (after evacuation; gc_word is the new location)
+bit  4  : LARGE      (LOS object; gc_word is the size)
+bit  5  : IMMORTAL   (never collected)
+bit  6 ~ 31 : reserved / GC implementation-defined
+</code></pre>
+<p>The following bits are used from the implementation-reserved range (<a href="../007-runtime/704-barriers-and-roots#742-write-barrier-incremental-update">7.4.2</a>).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Bit</th><th>Name</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>6</td><td><code>UNLOGGED</code></td><td>Set together with <code>STICKY</code> on objects that survive a collection. Cleared when the write barrier first records the object in the remembered set</td></tr>
+<tr><td>7</td><td><code>CARDED</code></td><td>Set instead of <code>UNLOGGED</code> on old objects of 8 KiB or more. The barrier marks a 512 B card dirty. The card table pointer is the word immediately before the header</td></tr>
+<tr><td>8</td><td><code>NOMOVE</code></td><td>An object whose address is used as a number. Never moved, regardless of lifetime. Set by <code>rok_task_key</code> (<a href="805-extern-symbols">8.5</a>)</td></tr>
+<tr><td>9</td><td><code>NOEVAC</code></td><td>Collector-internal, for one full collection: an ambiguous word (a root, or a word of a runtime word buffer, type id <code>2</code>) refers to the object, so that collection's evacuation leaves it in place (<a href="../007-runtime/703-gc-algorithm#opportunistic-evacuation">7.3.1</a>). Set before evacuation on such objects in candidate blocks, cleared when evacuation visits them</td></tr>
+<tr><td>10</td><td><code>SATB</code></td><td>Set while the barrier records this object's references during concurrent mark. Competing stores wait until it is cleared (<a href="../007-runtime/705-concurrent-collection#753-satb-barrier">7.5.3</a>)</td></tr>
+<tr><td>11</td><td><code>SCANNED</code></td><td>This object has been scanned in concurrent mark</td></tr>
+<tr><td>12</td><td><code>WIPE</code></td><td>A secret buffer (<code>rok_gc_secret_new</code>, <a href="805-extern-symbols#rok_gc_secret_new--rok_gc_secret_wipe">8.5.1</a>). The sweep that frees it zeroes its payload first. Never cleared</td></tr>
+</tbody></table></div>
+<h3 id="atomicity-requirements"><a class="anchor" tabindex="-1" href="#atomicity-requirements" aria-hidden="true">#</a>Atomicity requirements</h3>
+<p>In STW collection, <code>MARK</code> / <code>STICKY</code> / <code>FORWARDED</code> are non-atomic. <code>MARK</code> / <code>SATB</code> / <code>SCANNED</code>, which the marker and mutators touch together during concurrent mark, and clearing <code>UNLOGGED</code>, which mutators race on, are atomic (<a href="../007-runtime/704-barriers-and-roots#742-write-barrier-incremental-update">7.4.2</a>).</p>
+<h2 id="814-gc_word-offset-8-u64-or-ptr"><a class="anchor" tabindex="-1" href="#814-gc_word-offset-8-u64-or-ptr" aria-hidden="true">#</a>8.1.4. <code>gc_word</code> (offset 8, u64 or ptr)</h2>
+<p><code>gc_word</code> is the total size of the object (including the 16-byte header, a multiple of 8). It applies to both Immix objects and LOS objects and is written inline by the allocation fast path (<a href="809-lowering-control#899-gc-alloc-fast--slow-path">8.9.9</a>).</p>
+<p>Only during evacuation in a full collection is the <code>FORWARDED</code> bit of a moved object set, with <code>gc_word</code> pointing to the new address. All references are fixed up within the same collection (<a href="../007-runtime/703-gc-algorithm#731-immix-mark-region">7.3.1</a>) and the old location is then discarded, so mutators never observe forwarding.</p>
+<p>Objects inside a block never have <code>type_id</code> 0. The collector uses 0 to mark free space.</p>
+<h3 id="collector-private-information"><a class="anchor" tabindex="-1" href="#collector-private-information" aria-hidden="true">#</a>Collector-private information</h3>
+<p>The collector may keep its own bookkeeping before the header (at addresses lower than the object address) or in a separate side table. The compiler and other code see only the header and payload starting at the object address; everything outside that belongs to the collector implementation.</p>
+<h2 id="815-payload-offset-16"><a class="anchor" tabindex="-1" href="#815-payload-offset-16" aria-hidden="true">#</a>8.1.5. <code>payload</code> (offset 16+)</h2>
+<p>The compiler determines the payload area according to the field layout registered for the <code>type_id</code>. The format is as follows.</p>
+<ul>
+<li>For <a href="../002-types/203-struct"><code>struct</code></a> / <a href="../002-types/204-enum"><code>enum</code></a> / <a href="../002-types/205-union"><code>union</code></a>, the layout is at the compiler's discretion.
+</li>
+<li>With <code>#[repr(C)]</code>, the C <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> is followed.
+</li>
+<li>With <code>#[repr(packed)]</code>, alignment is ignored.
+</li>
+</ul>
+<p>In the GC mark phase, child pointer offsets are found through the <code>type_id → ScanTable</code> mapping (the format is defined in <a href="802-scan-table">ScanTable serialization format</a>).</p>
+<h2 id="816-alignment-requirements"><a class="anchor" tabindex="-1" href="#816-alignment-requirements" aria-hidden="true">#</a>8.1.6. Alignment requirements</h2>
+<p>The alignment requirement at each location is as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Location</th><th>Alignment</th></tr></thead>
+<tbody>
+<tr><td>Object start (header)</td><td>8 bytes</td></tr>
+<tr><td>payload start (offset 16)</td><td>8 bytes (automatic, since the header is 16 bytes)</td></tr>
+<tr><td>Each field</td><td>The alignment of its type</td></tr>
+</tbody></table></div>
+<p>If a field inside <code>payload</code> requires alignment greater than 8 bytes (e.g. <code>#[repr(align(16))]</code>), the payload start is aligned to that amount: the header sits 16 bytes before an aligned address, and the gap before it belongs to the collector (<a href="#814-gc_word-offset-8-u64-or-ptr">8.1.4</a>).</p>
+<h2 id="817-total-size-of-header--payload"><a class="anchor" tabindex="-1" href="#817-total-size-of-header--payload" aria-hidden="true">#</a>8.1.7. Total size of header + payload</h2>
+<p>The total size of header plus payload is computed as follows.</p>
+<pre><code>total_size = 16 + align_up(payload_size, max(8, payload_align))
+</code></pre>
+<p>where <code>align_up(x, a) = (x + a - 1) &amp; ~(a - 1)</code>.</p>
+<p>This size is the increment of the <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> bump pointer (see <a href="../007-runtime/702-allocation">Allocation</a>).</p>
+<h2 id="818-example-i32-object"><a class="anchor" tabindex="-1" href="#818-example-i32-object" aria-hidden="true">#</a>8.1.8. Example: i32 object</h2>
+<p>The layout of a GC object holding one i32 is as follows.</p>
+<pre><code>offset  0:  type_id = ID_I32     (4 bytes)
+offset  4:  gc_flags = 0          (4 bytes)
+offset  8:  gc_word = 24          (total size, 8 bytes)
+offset 16:  i32 value             (4 bytes)
+offset 20:  padding               (4 bytes, for 8-byte alignment)
+total: 24 bytes
+</code></pre>
+<p>A single i32 takes 24 bytes in total: a 16-byte header, a 4-byte value and 4 bytes of padding.</p>
+<p>This overhead looks large for small objects, but most objects have larger payloads (composite structures), so the ratio shrinks.</p>
+<h2 id="819-example-large-object-buffer-of-listi64"><a class="anchor" tabindex="-1" href="#819-example-large-object-buffer-of-listi64" aria-hidden="true">#</a>8.1.9. Example: large object (buffer of List&lt;i64&gt;)</h2>
+<p>An example list buffer with a 16 KB payload:</p>
+<pre><code>offset    0:  type_id = ID_BUFFER_I64  (4 bytes)
+offset    4:  gc_flags = LARGE          (4 bytes)
+offset    8:  gc_word = 16400            (total size, 8 bytes)
+offset   16:  i64[2048]                 (16384 bytes)
+total: 16 + 16384 = 16400 bytes
+</code></pre>
+<p>The <code>LARGE</code> bit is set, so this is a LOS object. <code>gc_word</code> is the total size (8.1.4).</p>
+<h2 id="8110-compatibility-when-the-header-changes"><a class="anchor" tabindex="-1" href="#8110-compatibility-when-the-header-changes" aria-hidden="true">#</a>8.1.10. Compatibility when the header changes</h2>
+<p>This header layout is the most central part of the ABI. Changes follow these rules.</p>
+<ul>
+<li>It must not change in a minor / patch version (that would break compatibility).
+</li>
+<li>It may change in a major version, in which case the ABI version hash changes with it.
+</li>
+</ul>
+<p>Because of this stability, user packages, the standard library and the runtime that share the same major version are all compatible.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/801-object-header-abi.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>8. Runtime ABI / MLIR lowering overview</a><a class="next" href="802-scan-table"><small>Next</small>8.2. ScanTable serialization format</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

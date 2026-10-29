@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concurrent downloader - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A pool of worker tasks shares out simulated resources (latency faked with task::sleep instead of a network), results come back over a channel, and a sorted repo...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/downloader.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Concurrent downloader - rok docs">
+<meta property="og:description" content="A pool of worker tasks shares out simulated resources (latency faked with task::sleep instead of a network), results come back over a channel, and a sorted repo...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/downloader.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li class="cur"><a aria-current="page" href="downloader">Concurrent downloader</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="concurrent-downloader"><a class="anchor" tabindex="-1" href="#concurrent-downloader" aria-hidden="true">#</a>Concurrent downloader</h1>
+<p>A pool of worker tasks shares out simulated resources (latency faked with <code>task::sleep</code> instead of a network), results come back over a channel, and a sorted report is printed.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// A "concurrent downloader": a pool of worker tasks fetches simulated resources.</span>
+
+<span class="k">enum</span> <span class="t">FetchError</span> {
+    <span class="t">NotFound</span>,
+    <span class="t">Timeout</span>,
+}
+
+<span class="k">enum</span> <span class="t">Status</span> {
+    <span class="t">Done</span>(<span class="t">usize</span>),
+    <span class="t">Failed</span>(<span class="t">FetchError</span>),
+}
+
+<span class="k">struct</span> <span class="t">Outcome</span> {
+    url: <span class="t">str</span>;
+    status: <span class="t">Status</span>;
+}
+
+<span class="k">const</span> <span class="t">WORKERS</span>: <span class="t">i32</span> = <span class="n">3</span>;
+<span class="k">const</span> <span class="t">DEADLINE_MS</span>: <span class="t">i64</span> = <span class="n">250</span>;
+
+<span class="c">// Pretend to download `url`: latency and size are derived from the name.</span>
+<span class="k">async</span> <span class="k">fn</span> fetch(url: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">FetchError</span>) -&gt; <span class="t">usize</span> {
+    <span class="k">let</span> latency = <span class="k">if</span> url.contains(<span class="s">"slow"</span>) { <span class="n">5000</span> } <span class="k">else</span> { (url.len() * <span class="n">7</span> % <span class="n">40</span>) <span class="k">as</span> <span class="t">i64</span> };
+    <span class="k">await</span> task::sleep(<span class="t">Duration</span>::ms(latency));
+    <span class="k">if</span> url.ends_with(<span class="s">".missing"</span>) { <span class="k">throw</span> <span class="t">FetchError</span>::<span class="t">NotFound</span>; }
+    url.len() * <span class="n">1024</span>
+}
+
+<span class="c">// Fetch with a deadline; a fetch that takes too long is cancelled.</span>
+<span class="k">async</span> <span class="k">fn</span> fetch_with_deadline(url: <span class="t">str</span>) -&gt; <span class="t">Status</span> {
+    <span class="k">let</span> t = task::spawn(<span class="k">async</span> {
+        <span class="t">Status</span>::<span class="t">Done</span>(<span class="k">try</span> <span class="k">await</span> fetch(url) <span class="k">catch</span> e { <span class="k">return</span> <span class="t">Status</span>::<span class="t">Failed</span>(e); })
+    });
+    <span class="k">try</span> <span class="k">await</span> task::timeout(<span class="t">Duration</span>::ms(<span class="t">DEADLINE_MS</span>), t) <span class="k">catch</span> _ {
+        t.cancel();
+        <span class="t">Status</span>::<span class="t">Failed</span>(<span class="t">FetchError</span>::<span class="t">Timeout</span>)
+    }
+}
+
+<span class="k">async</span> <span class="k">fn</span> main() {
+    <span class="k">let</span> urls = [
+        <span class="s">"https://example.org/index.html"</span>, <span class="s">"https://example.org/logo.png"</span>,
+        <span class="s">"https://example.org/old.missing"</span>, <span class="s">"https://example.org/style.css"</span>,
+        <span class="s">"https://example.org/slow/video.mp4"</span>, <span class="s">"https://example.org/app.js"</span>,
+        <span class="s">"https://example.org/data.json"</span>, <span class="s">"https://example.org/about.html"</span>,
+    ];
+
+    <span class="c">// Channels are multi-producer, single-consumer: idle workers announce</span>
+    <span class="c">// themselves on `ready`, the dispatcher answers on that worker's own channel.</span>
+    <span class="k">let</span> (ready_tx, ready_rx) = channel::&lt;<span class="t">i32</span>&gt;();
+    <span class="k">let</span> (done_tx, done_rx) = channel::&lt;<span class="t">Outcome</span>&gt;();
+    <span class="k">let</span> jobs: <span class="t">List</span>&lt;<span class="t">Sender</span>&lt;<span class="t">str</span>&gt;&gt; = [];
+    <span class="k">for</span> w <span class="k">in</span> <span class="n">0</span>..<span class="t">WORKERS</span> {
+        <span class="k">let</span> (job_tx, job_rx) = channel::&lt;<span class="t">str</span>&gt;();
+        jobs.push(job_tx);
+        <span class="k">let</span> ready = ready_tx.clone();
+        <span class="k">let</span> done = done_tx.clone();
+        task::spawn(<span class="k">async</span> {
+            <span class="k">loop</span> {
+                <span class="k">try</span>! ready.send(w);
+                <span class="k">let</span> url: <span class="t">str</span> = <span class="k">await</span> job_rx.recv_async() <span class="k">else</span> { <span class="k">break</span>; };
+                <span class="k">try</span>! done.send(<span class="t">Outcome</span> { url: url, status: <span class="k">await</span> fetch_with_deadline(url) });
+            }
+            ready.close();
+            done.close();
+        });
+    }
+    ready_tx.close();
+    done_tx.close();
+
+    <span class="c">// Dispatch every URL to the next idle worker, then tell the workers to stop.</span>
+    <span class="k">for</span> url <span class="k">in</span> urls {
+        <span class="k">let</span> w: <span class="t">i32</span> = <span class="k">await</span> ready_rx.recv_async() <span class="k">else</span> { <span class="k">break</span>; };
+        <span class="k">try</span>! jobs[w <span class="k">as</span> <span class="t">usize</span>].send(url);
+    }
+    <span class="k">for</span> j <span class="k">in</span> jobs { j.close(); }
+
+    <span class="c">// Collect until every worker has closed its `done` sender.</span>
+    <span class="k">let</span> results: <span class="t">List</span>&lt;<span class="t">Outcome</span>&gt; = [];
+    <span class="k">for</span> <span class="k">await</span> r <span class="k">in</span> done_rx { results.push(r); }
+    results.sort_by(|a: <span class="t">Outcome</span>, b: <span class="t">Outcome</span>| a.url.cmp(b.url));
+
+    <span class="k">let</span> ok = <span class="n">0</span>;
+    <span class="k">let</span> bytes: <span class="t">usize</span> = <span class="n">0</span>;
+    <span class="k">for</span> r <span class="k">in</span> results {
+        <span class="k">let</span> name = r.url.strip_prefix(<span class="s">"https://example.org/"</span>) ?? r.url;
+        <span class="k">match</span> r.status {
+            <span class="t">Status</span>::<span class="t">Done</span>(n) =&gt; { ok += <span class="n">1</span>; bytes += n; println(<span class="s">f"{</span>name<span class="s">:&lt;16</span><span class="s">} {</span>n<span class="s">:&gt;7</span><span class="s">} B"</span>); },
+            <span class="t">Status</span>::<span class="t">Failed</span>(<span class="t">FetchError</span>::<span class="t">NotFound</span>) =&gt; println(<span class="s">f"{</span>name<span class="s">:&lt;16</span><span class="s">}   404 not found"</span>),
+            <span class="t">Status</span>::<span class="t">Failed</span>(<span class="t">FetchError</span>::<span class="t">Timeout</span>) =&gt; println(<span class="s">f"{</span>name<span class="s">:&lt;16</span><span class="s">}   timed out"</span>),
+        }
+    }
+    println(<span class="s">f"{</span>ok<span class="s">}/{</span>results.len()<span class="s">} downloaded, {</span>bytes<span class="s">} bytes total"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">about.html         30720 B
+app.js             26624 B
+data.json          29696 B
+index.html         30720 B
+logo.png           28672 B
+old.missing        404 not found
+slow/video.mp4     timed out
+style.css          29696 B
+6/8 downloaded, 176128 bytes total
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Channels have many senders and one receiver (mpsc). A <code>Receiver</code> cannot be cloned, so the workers do not share one job channel. Instead an idle worker announces its number on the <code>ready</code> channel, and the dispatcher sends a URL on that worker's own channel (<a href="../spec/refs-standard-libraries/200-core/217-channel#2174-multi-producer">2.17.4 multi-producer</a>, <a href="../std/core/channel#fn.channel"><code>channel</code></a>).
+</li>
+<li>Each worker gets its own sender via <code>clone()</code> and <code>close()</code>s it when done. <code>for await r in done_rx</code> ends only once every sender is closed, so <code>main</code> closes its original <code>done_tx</code> early (<a href="../learn/12-concurrency">Concurrency</a>).
+</li>
+<li><code>await job_rx.recv_async()</code> suspends the task, not the thread, until a value arrives. When the channel closes it yields <code>none</code>, and the <code>break</code> in the <code>let-else</code> leaves the worker loop.
+</li>
+<li><code>task::timeout</code> throws <code>TimeoutError</code> if the task does not finish in time. A timeout does not stop the task, so it is cancelled explicitly with <code>t.cancel()</code> (<a href="../std/core/task#fn.timeout"><code>task::timeout</code></a>, <a href="../spec/refs-standard-libraries/200-core/218-task#2181-core-api">2.18.1 core API</a>).
+</li>
+<li>Results may arrive in a different order on every run, so they are sorted by URL before printing and the report is always the same.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/downloader.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="csv-report"><small>Previous</small>CSV report</a><a class="next" href="ffi-libc"><small>Next</small>Calling a C library</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3. Functions - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter covers declaring and calling functions, default values and named arguments, and closures you can pass around as values. In rok, a function body is ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/03-functions.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3. Functions - rok docs">
+<meta property="og:description" content="This chapter covers declaring and calling functions, default values and named arguments, and closures you can pass around as values. In rok, a function body is ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/03-functions.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li class="cur"><a aria-current="page" href="03-functions">3. Functions</a><ul class="toc"><li><a href="#declarations-and-return-values">Declarations and return values</a></li><li><a href="#default-values-and-named-arguments">Default values and named arguments</a></li><li><a href="#closures">Closures</a></li><li><a href="#function-types">Function types</a></li><li><a href="#trailing-closures">Trailing closures</a></li><li><a href="#a-preview-of-methods">A preview of methods</a></li><li><a href="#nested-functions-and-the-entry-point">Nested functions and the entry point</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="3-functions"><a class="anchor" tabindex="-1" href="#3-functions" aria-hidden="true">#</a>3. Functions</h1>
+<p>This chapter covers declaring and calling functions, default values and named arguments, and closures you can pass around as values. In rok, a function body is also a block expression, so its last expression is the return value.</p>
+<h2 id="declarations-and-return-values"><a class="anchor" tabindex="-1" href="#declarations-and-return-values" aria-hidden="true">#</a>Declarations and return values</h2>
+<p>Declare a function with <code>fn name(param: Type, ...) -&gt; ReturnType { body }</code>. The last expression of the body (one without a semicolon) is the return value; use <code>return</code> only to exit early.</p>
+<pre><code class="language-rok"><span class="k">fn</span> add(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    a + b
+}
+
+<span class="k">fn</span> sign(n: <span class="t">i32</span>) -&gt; <span class="t">str</span> {
+    <span class="k">if</span> n &lt; <span class="n">0</span> {
+        <span class="k">return</span> <span class="s">"negative"</span>;
+    }
+    <span class="k">if</span> n == <span class="n">0</span> { <span class="s">"zero"</span> } <span class="k">else</span> { <span class="s">"positive"</span> }
+}
+
+<span class="k">fn</span> divmod(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; (<span class="t">i32</span>, <span class="t">i32</span>) {
+    (a / b, a % b)
+}
+
+println(<span class="s">f"{</span>add(<span class="n">2</span>, <span class="n">3</span>)<span class="s">} {</span>sign(-<span class="n">4</span>)<span class="s">} {</span>sign(<span class="n">0</span>)<span class="s">}"</span>);
+<span class="k">let</span> (q, r) = divmod(<span class="n">17</span>, <span class="n">5</span>);
+println(<span class="s">f"17 = 5 * {</span>q<span class="s">} + {</span>r<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">5 negative zero
+17 = 5 * 3 + 2
+</code></pre>
+<p>To return several values, group them in a tuple and destructure it at the call site.</p>
+<p>Return and parameter types can be omitted. An omitted return type is inferred from the last expression (<code>()</code> if it ends with <code>;</code>). An untyped parameter makes the function generic, compiled separately for each argument type it is called with.</p>
+<pre><code class="language-rok"><span class="k">fn</span> double(x: <span class="t">i32</span>) { x * <span class="n">2</span> }   <span class="c">// return type inferred: i32</span>
+<span class="k">fn</span> id(x) { x }                <span class="c">// generic: fn id&lt;T&gt;(x: T) -&gt; T</span>
+println(<span class="s">f"{</span>double(<span class="n">4</span>)<span class="s">} {</span>id(<span class="s">"hi"</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">8 hi
+</code></pre>
+<p>A block <code>{ ... }</code> is an expression outside function bodies too. It is handy for keeping temporaries inside the block and taking out only the result.</p>
+<pre><code class="language-rok"><span class="k">let</span> area = {
+    <span class="k">let</span> w = <span class="n">3</span>;
+    <span class="k">let</span> h = <span class="n">4</span>;
+    w * h
+};
+println(<span class="s">f"{</span>area<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">12
+</code></pre>
+<h2 id="default-values-and-named-arguments"><a class="anchor" tabindex="-1" href="#default-values-and-named-arguments" aria-hidden="true">#</a>Default values and named arguments</h2>
+<p>A parameter can have a default value with <code>= value</code>, and a call can pass arguments by name with <code>name: value</code>. Positional arguments come first, named arguments after.</p>
+<pre><code class="language-rok"><span class="k">fn</span> greet(name: <span class="t">str</span>, greeting: <span class="t">str</span> = <span class="s">"Hello"</span>, punct: <span class="t">str</span> = <span class="s">"!"</span>) -&gt; <span class="t">str</span> {
+    <span class="s">f"{</span>greeting<span class="s">}, {</span>name<span class="s">}{</span>punct<span class="s">}"</span>
+}
+
+println(greet(<span class="s">"rok"</span>));
+println(greet(<span class="s">"rok"</span>, punct: <span class="s">"?"</span>));
+println(greet(name: <span class="s">"Ada"</span>, greeting: <span class="s">"Hi"</span>));
+</code></pre>
+<pre class="output"><code class="language-output">Hello, rok!
+Hello, rok?
+Hi, Ada!
+</code></pre>
+<p>Default values must be known at compile time, such as literals or <code>const</code>s. A variable number of arguments is taken with <code>...T</code>; inside the body it is a read-only slice.</p>
+<pre><code class="language-rok"><span class="k">fn</span> sum(xs: ...<span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> total = <span class="n">0</span>;
+    <span class="k">for</span> x <span class="k">in</span> xs {
+        total += x;
+    }
+    total
+}
+
+println(<span class="s">f"{</span>sum()<span class="s">} {</span>sum(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">0 6
+</code></pre>
+<h2 id="closures"><a class="anchor" tabindex="-1" href="#closures" aria-hidden="true">#</a>Closures</h2>
+<p>A closure is an anonymous function value, written <code>|params| expr</code> or <code>|params| { block }</code>. Parameter types are inferred from context; without context, write them out.</p>
+<pre><code class="language-rok"><span class="k">let</span> double = |x: <span class="t">i32</span>| x * <span class="n">2</span>;
+<span class="k">let</span> describe = |x: <span class="t">i32</span>| -&gt; <span class="t">str</span> {
+    <span class="k">let</span> half = x / <span class="n">2</span>;
+    <span class="s">f"{</span>x<span class="s">} is {</span>half<span class="s">} * 2"</span>
+};
+println(<span class="s">f"{</span>double(<span class="n">21</span>)<span class="s">}"</span>);
+println(describe(<span class="n">10</span>));
+</code></pre>
+<pre class="output"><code class="language-output">42
+10 is 5 * 2
+</code></pre>
+<p>Closures capture surrounding variables <strong>by copying their values</strong>. If an outer variable changes after the closure is created, the closure still remembers the value from creation time. To modify the outer variable itself, request a by-reference capture with a <code>[ref name]</code> capture list.</p>
+<pre><code class="language-rok"><span class="k">let</span> count = <span class="n">0</span>;
+<span class="k">let</span> snapshot = || count + <span class="n">1</span>;
+count = <span class="n">10</span>;
+println(<span class="s">f"snapshot: {</span>snapshot()<span class="s">}"</span>);
+
+<span class="k">let</span> inc = [<span class="k">ref</span> count] || { count += <span class="n">1</span>; };
+inc();
+inc();
+println(<span class="s">f"count: {</span>count<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">snapshot: 1
+count: 12
+</code></pre>
+<p>If you try to assign to a variable captured by value, the compiler tells you to add <code>[ref count]</code>. Heap objects such as <code>List</code> are different: the variable is a reference to the object, so even a by-value capture can mutate the object itself, for example with <code>push</code>.</p>
+<h2 id="function-types"><a class="anchor" tabindex="-1" href="#function-types" aria-hidden="true">#</a>Function types</h2>
+<p>Functions and closures are values of type <code>fn(ParamTypes) -&gt; ReturnType</code>. You can store them in variables, pass them as arguments, return them, and put them in lists.</p>
+<pre><code class="language-rok"><span class="k">fn</span> apply(f: <span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span>, x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    f(x)
+}
+
+<span class="k">fn</span> make_adder(n: <span class="t">i32</span>) -&gt; <span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    |x| x + n
+}
+
+<span class="k">let</span> add5 = make_adder(<span class="n">5</span>);
+println(<span class="s">f"{</span>apply(add5, <span class="n">10</span>)<span class="s">}"</span>);
+
+<span class="k">let</span> ops: <span class="t">List</span>&lt;<span class="k">fn</span>(<span class="t">i32</span>, <span class="t">i32</span>) -&gt; <span class="t">i32</span>&gt; = [|a, b| a + b, |a, b| a * b];
+<span class="k">for</span> op <span class="k">in</span> ops {
+    println(<span class="s">f"{</span>op(<span class="n">6</span>, <span class="n">7</span>)<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">15
+13
+42
+</code></pre>
+<p>The closure returned by <code>make_adder</code> stays alive with <code>n</code> captured.</p>
+<h2 id="trailing-closures"><a class="anchor" tabindex="-1" href="#trailing-closures" aria-hidden="true">#</a>Trailing closures</h2>
+<p>If the last argument is a closure, it can be moved outside the parentheses: <code>f(args) |x| { ... }</code> with parameters, <code>f(args) { ... }</code> without. Patterns such as iteration and resource management then read like built-in syntax.</p>
+<pre><code class="language-rok"><span class="k">fn</span> repeat(times: <span class="t">i32</span>, body: <span class="k">fn</span>(<span class="t">i32</span>)) {
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..times {
+        body(i);
+    }
+}
+
+<span class="k">fn</span> measure(label: <span class="t">str</span>, body: <span class="k">fn</span>() -&gt; <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> r = body();
+    println(<span class="s">f"{</span>label<span class="s">}: {</span>r<span class="s">}"</span>);
+    r
+}
+
+repeat(<span class="n">3</span>) |i| {
+    println(<span class="s">f"tick {</span>i<span class="s">}"</span>);
+};
+<span class="k">let</span> total = measure(<span class="s">"sum"</span>) { <span class="n">1</span> + <span class="n">2</span> + <span class="n">3</span> };
+<span class="k">let</span> evens: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>].iter().filter |x| { x % <span class="n">2</span> == <span class="n">0</span> }.collect();
+println(<span class="s">f"{</span>total<span class="s">} {</span>evens<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">tick 0
+tick 1
+tick 2
+sum: 6
+6 [2, 4]
+</code></pre>
+<h2 id="a-preview-of-methods"><a class="anchor" tabindex="-1" href="#a-preview-of-methods" aria-hidden="true">#</a>A preview of methods</h2>
+<p>Functions inside an <code>impl</code> block are methods. If the first parameter is <code>self</code>, call it as <code>value.method()</code>; without <code>self</code>, it is a static method called as <code>Type::function()</code>. To modify fields inside a method, take <code>ref self</code>. Structs and methods are covered in detail in a later chapter.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Counter</span> { n: <span class="t">i32</span> }
+
+<span class="k">impl</span> <span class="t">Counter</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">Counter</span> { <span class="t">Counter</span> { n: <span class="n">0</span> } }
+    <span class="k">fn</span> bump(<span class="k">ref</span> <span class="k">self</span>) { <span class="k">self</span>.n += <span class="n">1</span>; }
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">i32</span> { <span class="k">self</span>.n }
+}
+
+<span class="k">let</span> c = <span class="t">Counter</span>::new();
+c.bump();
+c.bump();
+println(<span class="s">f"{</span>c.get()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">2
+</code></pre>
+<h2 id="nested-functions-and-the-entry-point"><a class="anchor" tabindex="-1" href="#nested-functions-and-the-entry-point" aria-hidden="true">#</a>Nested functions and the entry point</h2>
+<p>You can declare a function inside a function. A nested function is visible only within its block and, unlike a closure, does <strong>not</strong> capture outer variables. Use it to hide helpers that need no outer state.</p>
+<pre><code class="language-rok"><span class="k">fn</span> hypot_sq(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">fn</span> sq(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x * x }
+    sq(a) + sq(b)
+}
+println(<span class="s">f"{</span>hypot_sq(<span class="n">3</span>, <span class="n">4</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">25
+</code></pre>
+<p>A program starts at the top-level statements of <code>src/main.rok</code> (or a standalone file) or at <code>fn main()</code>. Top-level statements become the body of an implicit <code>main</code> generated by the compiler, so top-level <code>let</code> variables are <strong>local variables</strong> and are not visible inside other function bodies. If a function needs such a value, pass it as an argument or capture it in a closure.</p>
+<pre><code class="language-rok"><span class="k">let</span> base = <span class="n">100</span>;
+<span class="k">let</span> shifted = |x: <span class="t">i32</span>| x + base;
+
+<span class="k">fn</span> scale(x: <span class="t">i32</span>, factor: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    x * factor
+}
+
+println(<span class="s">f"{</span>shifted(<span class="n">1</span>)<span class="s">} {</span>scale(base, <span class="n">3</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">101 300
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>The last expression of a function body is its return value. Use <code>return</code> to exit early.
+</li>
+<li>Parameters can have default values, and calls can name arguments with <code>name: value</code>. <code>...T</code> takes variadic arguments.
+</li>
+<li>A closure <code>|x| expr</code> captures by copying values by default; <code>[ref x]</code> requests a by-reference capture.
+</li>
+<li>A function value has type <code>fn(A) -&gt; R</code>. A closure in the last argument position can be written in trailing form.
+</li>
+<li>A top-level <code>let</code> is a local of the implicit <code>main</code>, so other functions cannot see it.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li><a href="../spec/refs-lang/004-functions/401-function-declaration">Function declarations</a>, <a href="../spec/refs-lang/004-functions/402-parameters">parameters</a>, <a href="../spec/refs-lang/004-functions/403-return">return</a>
+</li>
+<li><a href="../spec/refs-lang/004-functions/404-function-type">Function types</a>, <a href="../spec/refs-lang/004-functions/405-closure">closures</a>, <a href="../spec/refs-lang/004-functions/406-capture-semantics">capture semantics</a>
+</li>
+<li><a href="../spec/refs-lang/004-functions/408-trailing-closure">Trailing closures</a>, <a href="../spec/refs-lang/004-functions/409-method">methods</a>, <a href="../spec/refs-lang/004-functions/410-nested-functions">nested functions</a>
+</li>
+<li><a href="../spec/refs-lang/004-functions/416-entry-point">Entry point</a>, <a href="../spec/refs-lang/003-expressions/309-block-expressions">block expressions</a>
+</li>
+<li>Next chapter: <a href="04-control-flow">4. Control Flow</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/03-functions.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="02-values-and-types"><small>Previous</small>2. Values and Types</a><a class="next" href="04-control-flow"><small>Next</small>4. Control Flow</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

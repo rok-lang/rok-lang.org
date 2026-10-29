@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.17. using expression - deterministic release of resources - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The using keyword (keywords) is an expression form that ties a resource to the lifetime of a block. However the block ends (normal completion, early return, non...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/317-using-expression.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.17. using expression - deterministic release of resources - rok docs">
+<meta property="og:description" content="The using keyword (keywords) is an expression form that ties a resource to the lifetime of a block. However the block ends (normal completion, early return, non...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/317-using-expression.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/317-using-expression.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/317-using-expression.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li class="cur"><a aria-current="page" href="317-using-expression">3.17. using expression - deterministic release of resources</a><ul class="toc"><li><a href="#3171-form">3.17.1. Form</a></li><li><a href="#3172-simplest-example">3.17.2. Simplest example</a></li><li><a href="#3173-combining-with-try">3.17.3. Combining with try</a></li><li><a href="#3174-multiple-resources">3.17.4. Multiple resources</a></li><li><a href="#3175-using-as-an-expression">3.17.5. using as an expression</a></li><li><a href="#3176-when-drop-is-called">3.17.6. When drop is called</a></li><li><a href="#3177-types-that-can-be-bound">3.17.7. Types that can be bound</a></li><li><a href="#3178-comparison-with-other-languages">3.17.8. Comparison with other languages</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="317-using-expression---deterministic-release-of-resources 317-using-표현식---자원의-결정론적-해제 3171-form 3171-형태 3172-simplest-example 3172-가장-간단한-예 3173-combining-with-try 3173-try-와의-결합 3174-multiple-resources 3174-다중-자원 3175-using-as-an-expression 3175-식으로서의-using 3176-when-drop-is-called 3176-drop-호출-시점 3177-types-that-can-be-bound 3177-묶을-수-있는-타입 3178-comparison-with-other-languages 3178-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/317-using-expression" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="317-using-expression---deterministic-release-of-resources"><a class="anchor" tabindex="-1" href="#317-using-expression---deterministic-release-of-resources" aria-hidden="true">#</a>3.17. <code>using</code> expression - deterministic release of resources</h1>
+<p>The <code>using</code> keyword (<a href="../001-lexical/105-keywords">keywords</a>) is an expression form that ties a resource to the lifetime of a block. However the block ends (normal completion, early <code>return</code>, <code>none</code> return by <code>?</code>, error propagation), <code>Drop::drop</code> of the bound resource is always called.</p>
+<p>The GC reclaims memory automatically, but external resources (files, sockets, mutexes, FFI handles, GC pins, etc.) must be released deterministically. <code>using</code> guarantees this determinism syntactically and is the only path by which <code>Drop::drop</code> is called. An ordinary binding is not <code>drop</code>ped when it leaves scope (<a href="../../refs-standard-libraries/200-core/213-marker#2134-drop---cleanup-on-using-release">stdlib 2.13.4</a>).</p>
+<h2 id="3171-form"><a class="anchor" tabindex="-1" href="#3171-form" aria-hidden="true">#</a>3.17.1. Form</h2>
+<pre><code>using_expr     ::= &quot;using&quot; using_binding (&quot;,&quot; using_binding)* block
+using_binding  ::= pattern &quot;=&quot; expr
+</code></pre>
+<p>The components mean:</p>
+<ul>
+<li><code>pattern</code> may be any irrefutable pattern defined in <a href="311-patterns">patterns</a> (identifier, tuple, struct destructuring, etc.). In most cases a single identifier is used. What is released is the whole value of <code>expr</code>.
+</li>
+<li><code>expr</code> is an expression that creates or obtains the resource. Its result type must implement the <a href="../../refs-standard-libraries/200-core/213-marker"><code>Drop</code></a> trait.
+</li>
+<li>If acquiring the resource can fail, mark <code>expr</code> with <code>try</code> (<code>using f = try fs::open(path) { ... }</code>). If acquisition raises an error, control leaves with no resource bound, so no <code>Drop</code> call occurs. The detailed semantics follow <a href="314-error-control-flow">error control flow</a>.
+</li>
+<li>Several bindings joined with <code>,</code> form multiple resources; the detailed behavior is defined in <a href="#3174-multiple-resources">3.17.4 multiple resources</a>.
+</li>
+<li><code>block</code> follows the rules of <a href="309-block-expressions">block expressions</a>, and the value of its last expression is the value of the whole <code>using</code> expression.
+</li>
+</ul>
+<h2 id="3172-simplest-example"><a class="anchor" tabindex="-1" href="#3172-simplest-example" aria-hidden="true">#</a>3.17.2. Simplest example</h2>
+<pre><code class="language-rok"><span class="k">using</span> f = fs::open(path) {
+    f.read_to_end()                   <span class="c">// the last expression is the value of using</span>
+}                                  <span class="c">// ← f.drop() is called automatically here</span>
+</code></pre>
+<p>The return type of <code>fs::open(path)</code> is <code>File</code>, and <code>File: Drop</code>, so it can be the target of <code>using</code>. When the block ends, <code>File::drop</code> is called and the OS handle is closed.</p>
+<h2 id="3173-combining-with-try"><a class="anchor" tabindex="-1" href="#3173-combining-with-try" aria-hidden="true">#</a>3.17.3. Combining with <code>try</code></h2>
+<p>When acquiring the resource can itself fail, mark the acquisition expression with <code>try</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> read_first_line(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span> {
+    <span class="k">using</span> f = <span class="k">try</span> fs::open(path) {     <span class="c">// on failure, IoError propagates</span>
+        <span class="k">try</span> f.read_line()              <span class="c">// try can propagate inside the body too</span>
+    }                                  <span class="c">// if f was bound, it is dropped on both success and error</span>
+}
+</code></pre>
+<p>This form is semantically equivalent to the following expanded code.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = <span class="k">try</span> fs::open(path);
+<span class="k">try</span> {
+    f.read_line()
+} <span class="k">finally</span> {
+    f.drop();          <span class="c">// a call inserted by the compiler - writing it directly is an error</span>
+}
+</code></pre>
+<p>Even if an error propagates inside the body, <code>drop</code> is called at the position corresponding to <code>finally</code>.</p>
+<h2 id="3174-multiple-resources"><a class="anchor" tabindex="-1" href="#3174-multiple-resources" aria-hidden="true">#</a>3.17.4. Multiple resources</h2>
+<p>To bind several resources to one block, nest <code>using</code> or join the bindings with commas. This specification allows both forms, and their meaning is equivalent.</p>
+<pre><code class="language-rok"><span class="k">using</span> a = <span class="t">AcquireA</span>() {
+    <span class="k">using</span> b = <span class="t">AcquireB</span>(a) {
+        body
+    }
+}
+
+<span class="c">// or the shorthand form</span>
+<span class="k">using</span> a = <span class="t">AcquireA</span>(), b = <span class="t">AcquireB</span>(a) {
+    body
+}
+</code></pre>
+<p>Both forms follow <strong>reverse-order release</strong>: <code>b</code> is dropped first, then <code>a</code>. This is the same rule as Java try-with-resources. Releasing in reverse order safely unwinds dependencies (<code>b</code> referring to <code>a</code>).</p>
+<h2 id="3175-using-as-an-expression"><a class="anchor" tabindex="-1" href="#3175-using-as-an-expression" aria-hidden="true">#</a>3.17.5. <code>using</code> as an expression</h2>
+<p><code>using</code> is an expression, not a statement, and its value is the value of the body block.</p>
+<pre><code class="language-rok"><span class="k">let</span> content = <span class="k">using</span> f = <span class="k">try</span> fs::open(path) {
+    <span class="k">try</span> f.read_to_end()
+};
+</code></pre>
+<p>This is the biggest structural difference from function-scoped <code>defer</code> (Go). The <code>using</code> expression follows the relevant rules of <a href="309-block-expressions">block expressions</a> and can be used in any expression position.</p>
+<h2 id="3176-when-drop-is-called"><a class="anchor" tabindex="-1" href="#3176-when-drop-is-called" aria-hidden="true">#</a>3.17.6. When drop is called</h2>
+<p><code>using</code> guarantees <code>drop</code> of the bound resource on all five of the following paths:</p>
+<ul>
+<li>normal completion of the block (last expression evaluated)
+</li>
+<li><code>return</code> inside the body
+</li>
+<li><code>break</code> / <code>continue</code> inside the body
+</li>
+<li><code>none</code> return by <code>?</code> inside the body
+</li>
+<li><code>throw</code> inside the body, and error propagation from calls marked with <code>try</code>
+</li>
+</ul>
+<p>Panics and fatal errors terminate the process immediately, so <code>drop</code> is not called (<a href="314-error-control-flow#3148-panics-and-fatal-errors">3.14.8</a>). This is the general result of a panic, not behavior specific to <code>using</code>.</p>
+<h2 id="3177-types-that-can-be-bound"><a class="anchor" tabindex="-1" href="#3177-types-that-can-be-bound" aria-hidden="true">#</a>3.17.7. Types that can be bound</h2>
+<p>The type of the right-hand expression of <code>using</code> must implement <a href="../../refs-standard-libraries/200-core/213-marker"><code>Drop</code></a> or contain fields that have <code>Drop</code> (drop glue, <a href="../../refs-standard-libraries/200-core/213-marker#2134-drop---cleanup-on-using-release">stdlib 2.13.4</a>). Otherwise it is a compile error.</p>
+<pre><code class="language-rok"><span class="k">using</span> x = <span class="n">42</span> { ... }   <span class="c">// ERROR: using requires a type implementing Drop - i32 does not implement Drop</span>
+</code></pre>
+<p>This restriction ensures only meaningful resources are bound with <code>using</code>, ruling out <code>using</code> on plain values at the specification level.</p>
+<h2 id="3178-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#3178-comparison-with-other-languages" aria-hidden="true">#</a>3.17.8. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Language</th><th>Form</th><th>Scope unit</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>rok</td><td><code>using x = try e { ... }</code></td><td>block</td><td>expression, multiple resources, <code>try</code> integration</td></tr>
+<tr><td>C#</td><td><code>using (var x = e) { ... }</code></td><td>block</td><td>requires <code>IDisposable</code></td></tr>
+<tr><td>Java</td><td><code>try (var x = e) { ... }</code></td><td>try block</td><td>requires <code>AutoCloseable</code>, multiple resources</td></tr>
+<tr><td>Python</td><td><code>with x as f: ...</code></td><td>block</td><td><code>__enter__</code> / <code>__exit__</code></td></tr>
+<tr><td>Swift</td><td><code>defer { x.close() }</code></td><td>function</td><td>must be written explicitly</td></tr>
+<tr><td>Go</td><td><code>defer x.Close()</code></td><td><strong>function</strong></td><td>not block-scoped</td></tr>
+<tr><td>Zig</td><td><code>defer x.close();</code></td><td>block</td><td><code>errdefer</code> variant</td></tr>
+<tr><td>Rust</td><td>(automatic RAII, no keyword)</td><td>block</td><td>no GC - drop point determined automatically</td></tr>
+</tbody></table></div>
+<p>rok's <code>using</code> combines the explicit block pattern of GC languages (C#, Java, Python) with composability as an expression, <code>try</code> integration, and reverse-order release of multiple resources.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/317-using-expression.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="316-let-else"><small>Previous</small>3.16. let-else</a><a class="next" href="../004-functions/"><small>Next</small>4. Functions overview</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

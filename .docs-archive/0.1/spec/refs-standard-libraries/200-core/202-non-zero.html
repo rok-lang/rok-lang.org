@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.2. Niche wrappers - NonZero / NonNan / Finite / Positive - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::num::niche provides wrappers that restrict a value to a subset. Each wrapper is a newtype carrying #[niche(..)] (refs-lang 2.7.4), and the excluded v...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/202-non-zero.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.2. Niche wrappers - NonZero / NonNan / Finite / Positive - rok docs">
+<meta property="og:description" content="rok::core::num::niche provides wrappers that restrict a value to a subset. Each wrapper is a newtype carrying #[niche(..)] (refs-lang 2.7.4), and the excluded v...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/202-non-zero.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/202-non-zero.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/202-non-zero.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li class="cur"><a aria-current="page" href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a><ul class="toc"><li><a href="#221-size">2.2.1. Size</a></li><li><a href="#222-nonzerot---zero-forbidden">2.2.2. NonZero&lt;T&gt; - zero forbidden</a></li><li><a href="#223-nonnanf---nan-forbidden">2.2.3. NonNan&lt;F&gt; - NaN forbidden</a></li><li><a href="#224-finitef---nan-and--forbidden">2.2.4. Finite&lt;F&gt; - NaN and ±∞ forbidden</a></li><li><a href="#225-positivet---negative-values-forbidden">2.2.5. Positive&lt;T&gt; - negative values forbidden</a></li><li><a href="#226-new_unchecked">2.2.6. new_unchecked</a></li><li><a href="#227-validation">2.2.7. Validation</a></li><li><a href="#228-definition-summary">2.2.8. Definition summary</a></li><li><a href="#229-comparison-with-other-languages">2.2.9. Comparison with other languages</a></li></ul></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="22-niche-wrappers---nonzero--nonnan--finite--positive 22-niche-wrapper---nonzero--nonnan--finite--positive 221-size 221-크기 222-nonzerot---zero-forbidden 222-nonzerot---0-금지 223-nonnanf---nan-forbidden 223-nonnanf---nan-금지 224-finitef---nan-and--forbidden 224-finitef---nan--금지 225-positivet---negative-values-forbidden 225-positivet---음수-금지 226-new_unchecked 226-new_unchecked 227-validation 227-검증 228-definition-summary 228-정의-요약 229-comparison-with-other-languages 229-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/202-non-zero" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="22-niche-wrappers---nonzero--nonnan--finite--positive"><a class="anchor" tabindex="-1" href="#22-niche-wrappers---nonzero--nonnan--finite--positive" aria-hidden="true">#</a>2.2. Niche wrappers - <code>NonZero</code> / <code>NonNan</code> / <code>Finite</code> / <code>Positive</code></h1>
+<p><code>rok::core::num::niche</code> provides wrappers that restrict a value to a subset. Each wrapper is a newtype carrying <code>#[niche(..)]</code> (<a href="../../refs-lang/002-types/207-niche-optimization#274-opt-in-niches-niche">refs-lang 2.7.4</a>), and the excluded values become the niche of <code>T | none</code>.</p>
+<h2 id="221-size"><a class="anchor" tabindex="-1" href="#221-size" aria-hidden="true">#</a>2.2.1. Size</h2>
+<p>A <code>T | none</code> with a niche has the size of <code>T</code> (<a href="../../refs-lang/002-types/207-niche-optimization#272-automatic-niches">refs-lang 2.7.2</a>). <code>none</code> is represented by the niche value; the actual bits are chosen by the implementation.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th><code>T | none</code> size</th><th>Niche value of <code>none</code></th></tr></thead>
+<tbody>
+<tr><td><code>i32 | none</code></td><td>8 B (tag)</td><td>none</td></tr>
+<tr><td><code>NonZero&lt;i32&gt; | none</code></td><td>4 B</td><td>0</td></tr>
+<tr><td><code>f64 | none</code></td><td>16 B (tag)</td><td>none</td></tr>
+<tr><td><code>NonNan&lt;f64&gt; | none</code></td><td>8 B</td><td>NaN</td></tr>
+<tr><td><code>Finite&lt;f64&gt; | none</code></td><td>8 B</td><td>NaN, ±∞</td></tr>
+<tr><td><code>Positive&lt;i32&gt; | none</code></td><td>4 B</td><td>negative values</td></tr>
+<tr><td><code>Positive&lt;u32&gt; | none</code></td><td>8 B (tag)</td><td>none</td></tr>
+</tbody></table></div>
+<p>When the niche value is 0 (<code>NonZero</code>), the payload bits are unchanged, so <code>NonZero&lt;T&gt; | none</code> crosses the C ABI as an integer in which 0 is <code>none</code>.</p>
+<h2 id="222-nonzerot---zero-forbidden"><a class="anchor" tabindex="-1" href="#222-nonzerot---zero-forbidden" aria-hidden="true">#</a>2.2.2. <code>NonZero&lt;T&gt;</code> - zero forbidden</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">NicheInt</span> { .. }            <span class="c">// implemented by the 10 integer types</span>
+
+<span class="a">#[niche(0)]</span>
+<span class="k">struct</span> <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt;(<span class="t">T</span>);
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">NicheInt</span>&gt; <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">T</span>) -&gt; <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// UB if value == 0</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+</code></pre>
+<p>Only integer types are accepted. Floating-point types use <code>NonNan</code> / <code>Finite</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Operation</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt; * NonZero&lt;T&gt;</code></td><td><code>NonZero&lt;T&gt;</code>. Panics if the product wraps to 0</td></tr>
+<tr><td><code>NonZero&lt;T&gt; + - / NonZero&lt;T&gt;</code></td><td><code>T</code></td></tr>
+<tr><td><code>T / NonZero&lt;T&gt;</code></td><td><code>T</code>. No division by zero</td></tr>
+</tbody></table></div>
+<p><code>TryFrom&lt;T&gt;</code> throws <code>ZeroError</code> on 0. <code>From&lt;NonZero&lt;T&gt;&gt; for T</code> is lossless.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">NonZero</span>&lt;<span class="t">i32</span>&gt; = <span class="t">NonZero</span>::new(<span class="n">42</span>) ?? panic(<span class="s">"zero"</span>);
+<span class="k">let</span> nz: <span class="t">NonZero</span>&lt;<span class="t">i32</span>&gt; = <span class="k">try</span> <span class="n">7</span>.try_into();
+<span class="k">let</span> v: <span class="t">i32</span> = nz.into();
+</code></pre>
+<h2 id="223-nonnanf---nan-forbidden"><a class="anchor" tabindex="-1" href="#223-nonnanf---nan-forbidden" aria-hidden="true">#</a>2.2.3. <code>NonNan&lt;F&gt;</code> - NaN forbidden</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">NicheFloat</span> { .. }          <span class="c">// implemented by f32, f64</span>
+
+<span class="a">#[niche(F::NAN)]</span>
+<span class="k">struct</span> <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt;(<span class="t">F</span>);
+
+<span class="k">impl</span>&lt;<span class="t">F</span>: <span class="t">NicheFloat</span>&gt; <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">F</span>) -&gt; <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt; | <span class="k">none</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">F</span>) -&gt; <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt;;    <span class="c">// UB if NaN</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">F</span>;
+}
+</code></pre>
+<ul>
+<li>Implements <code>Eq</code>, <code>Ord</code>, <code>Hash</code>. <code>-0.0 == 0.0</code>, and their hashes are equal.
+</li>
+<li>The result of <code>+ - * /</code> is <code>F</code> (∞ − ∞ and the like may be NaN).
+</li>
+<li><code>TryFrom&lt;F&gt;</code> throws <code>ConversionError</code> on NaN.
+</li>
+</ul>
+<h2 id="224-finitef---nan-and--forbidden"><a class="anchor" tabindex="-1" href="#224-finitef---nan-and--forbidden" aria-hidden="true">#</a>2.2.4. <code>Finite&lt;F&gt;</code> - NaN and ±∞ forbidden</h2>
+<pre><code class="language-rok"><span class="a">#[niche(F::NAN, F::INFINITY, F::NEG_INFINITY)]</span>
+<span class="k">struct</span> <span class="t">Finite</span>&lt;<span class="t">F</span>&gt;(<span class="t">F</span>);
+
+<span class="k">impl</span>&lt;<span class="t">F</span>: <span class="t">NicheFloat</span>&gt; <span class="t">Finite</span>&lt;<span class="t">F</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">F</span>) -&gt; <span class="t">Finite</span>&lt;<span class="t">F</span>&gt; | <span class="k">none</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">F</span>) -&gt; <span class="t">Finite</span>&lt;<span class="t">F</span>&gt;;    <span class="c">// UB if NaN / ±∞</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">F</span>;
+}
+</code></pre>
+<ul>
+<li>Implements <code>Eq</code>, <code>Ord</code>, <code>Hash</code>. <code>-0.0 == 0.0</code>.
+</li>
+<li><code>+ - *</code> yield <code>Result&lt;Finite&lt;F&gt;, OverflowError&gt;</code> (<code>Err</code> if the result is ±∞).
+</li>
+<li><code>TryFrom&lt;F&gt;</code> throws <code>ConversionError</code> on NaN / ±∞.
+</li>
+</ul>
+<h2 id="225-positivet---negative-values-forbidden"><a class="anchor" tabindex="-1" href="#225-positivet---negative-values-forbidden" aria-hidden="true">#</a>2.2.5. <code>Positive&lt;T&gt;</code> - negative values forbidden</h2>
+<pre><code class="language-rok"><span class="a">#[niche(T::MIN..=-1)]</span>
+<span class="k">struct</span> <span class="t">Positive</span>&lt;<span class="t">T</span>&gt;(<span class="t">T</span>);
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">NicheInt</span>&gt; <span class="t">Positive</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Positive</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;            <span class="c">// none if negative; 0 is included</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">T</span>) -&gt; <span class="t">Positive</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+</code></pre>
+<p>The value is 0 or greater. An unsigned <code>T</code> has no negative values, so it has no niche.</p>
+<h2 id="226-new_unchecked"><a class="anchor" tabindex="-1" href="#226-new_unchecked" aria-hidden="true">#</a>2.2.6. <code>new_unchecked</code></h2>
+<p><code>new_unchecked</code> is an <code>unsafe fn</code>. Violating the invariant is undefined behavior, and <code>T | none</code> may read the value as <code>none</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = compute();                                <span class="c">// the caller guarantees it is not 0</span>
+<span class="k">let</span> nz: <span class="t">NonZero</span>&lt;<span class="t">i32</span>&gt; = <span class="k">unsafe</span> { <span class="t">NonZero</span>::new_unchecked(n) };
+</code></pre>
+<h2 id="227-validation"><a class="anchor" tabindex="-1" href="#227-validation" aria-hidden="true">#</a>2.2.7. Validation</h2>
+<ul>
+<li>In const position, <code>NonZero::new(0)</code> and the like are evaluated at compile time to <code>none</code>. With <code>?? panic(..)</code> attached it is a compile error (<a href="../../refs-lang/005-modules/502-const#524-constant-expressions-and-the-evaluator">refs-lang 5.2.4</a>).
+</li>
+<li>At runtime, validation uses <code>new</code> (<code>T | none</code>) and <code>try_from</code> (throws).
+</li>
+</ul>
+<h2 id="228-definition-summary"><a class="anchor" tabindex="-1" href="#228-definition-summary" aria-hidden="true">#</a>2.2.8. Definition summary</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Bound</th><th><code>#[niche]</code></th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt;</code></td><td><code>NicheInt</code></td><td><code>0</code></td></tr>
+<tr><td><code>Positive&lt;T&gt;</code></td><td><code>NicheInt</code></td><td><code>T::MIN..=-1</code></td></tr>
+<tr><td><code>NonNan&lt;F&gt;</code></td><td><code>NicheFloat</code></td><td><code>F::NAN</code></td></tr>
+<tr><td><code>Finite&lt;F&gt;</code></td><td><code>NicheFloat</code></td><td><code>F::NAN, F::INFINITY, F::NEG_INFINITY</code></td></tr>
+</tbody></table></div>
+<h2 id="229-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#229-comparison-with-other-languages" aria-hidden="true">#</a>2.2.9. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt;</code></td><td><code>NonZero&lt;T&gt;</code> (integers)</td><td><code>NonZero&lt;T: NicheInt&gt;</code></td></tr>
+<tr><td><code>NonNan</code> / <code>Finite</code></td><td>None (external crate)</td><td>Built in</td></tr>
+<tr><td>Automatic niche</td><td><code>Option&lt;Box&lt;T&gt;&gt;</code> = <code>Box&lt;T&gt;</code></td><td><code>T | none</code></td></tr>
+<tr><td>User niche</td><td>Unstable attribute</td><td><code>#[niche(..)]</code></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/202-non-zero.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="201-numbers"><small>Previous</small>2.1. Numeric types</a><a class="next" href="203-ops"><small>Next</small>2.3. Arithmetic / bitwise / indexing traits</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

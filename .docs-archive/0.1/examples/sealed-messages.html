@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sealed messages - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Encrypt a message so only its recipient can read it, and sign it so the recipient knows who sent it, with nothing but rok::core::crypto and the OS random source...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/sealed-messages.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Sealed messages - rok docs">
+<meta property="og:description" content="Encrypt a message so only its recipient can read it, and sign it so the recipient knows who sent it, with nothing but rok::core::crypto and the OS random source...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/sealed-messages.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li class="cur"><a aria-current="page" href="sealed-messages">Sealed messages</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="sealed-messages"><a class="anchor" tabindex="-1" href="#sealed-messages" aria-hidden="true">#</a>Sealed messages</h1>
+<p>Encrypt a message so only its recipient can read it, and sign it so the recipient knows who sent it, with nothing but <code>rok::core::crypto</code> and the OS random source.</p>
+<div class="callout warning"><p class="callout-title">Warning</p>
+<p>rok's cryptography is new and unaudited. This program shows how the pieces fit; do not protect real secrets with it yet.</p>
+</div>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// Send a signed, encrypted message: X25519 key agreement, HKDF, ChaCha20-Poly1305 and Ed25519.</span>
+<span class="k">use</span> rok::core::crypto::{<span class="t">Aead</span>, <span class="t">AeadAlgorithm</span>, <span class="t">Ed25519</span>, <span class="t">Hkdf</span>, <span class="t">HashAlgorithm</span>, <span class="t">Secret</span>, <span class="t">X25519</span>};
+<span class="k">use</span> rok::std::crypto::random;
+
+<span class="k">struct</span> <span class="t">Sealed</span> {
+    sender_key: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;     <span class="c">// the sender's one-time X25519 public key</span>
+    nonce: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    body: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;           <span class="c">// ciphertext and tag</span>
+    signature: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;      <span class="c">// Ed25519 over sender_key, nonce and body</span>
+}
+
+<span class="c">/// The AEAD key both sides derive from an X25519 shared secret.</span>
+<span class="k">fn</span> derive(shared: <span class="t">Secret</span>) -&gt; <span class="t">Secret</span> {
+    <span class="k">let</span> prk = <span class="t">Hkdf</span>::extract(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>, <span class="s">b"sealed-box v1"</span>, shared);
+    <span class="k">try</span>! <span class="t">Hkdf</span>::expand(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>, prk, <span class="s">"aead key"</span>, <span class="n">32</span>)
+}
+
+<span class="k">fn</span> signed_part(s: <span class="t">Sealed</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt; {
+    <span class="k">let</span> all: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [];
+    <span class="k">for</span> part <span class="k">in</span> [s.sender_key, s.nonce, s.body] { all.extend(part); }
+    all
+}
+
+<span class="k">fn</span> seal(to_public: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;, signing_seed: <span class="t">Secret</span>, text: <span class="t">str</span>) -&gt; <span class="t">Sealed</span> {
+    <span class="k">let</span> eph = random::secret(<span class="n">32</span>);
+    <span class="k">let</span> shared = <span class="k">try</span>! <span class="t">X25519</span>::shared_secret(eph, to_public) ?? panic(<span class="s">"bad peer key"</span>);
+    <span class="k">let</span> nonce = random::bytes(<span class="n">12</span>);
+    <span class="k">let</span> body = <span class="k">try</span>! (<span class="k">try</span>! <span class="t">Aead</span>::new(<span class="t">AeadAlgorithm</span>::<span class="t">ChaCha20Poly1305</span>, derive(shared))).seal(nonce, <span class="s">""</span>, text);
+    <span class="k">let</span> s = <span class="t">Sealed</span> { sender_key: <span class="k">try</span>! <span class="t">X25519</span>::public_key(eph), nonce: nonce, body: body, signature: [] };
+    s.signature = <span class="k">try</span>! <span class="t">Ed25519</span>::sign(signing_seed, signed_part(s));
+    s
+}
+
+<span class="k">fn</span> open(s: <span class="t">Sealed</span>, my_secret: <span class="t">Secret</span>, signer: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">str</span> | <span class="k">none</span> {
+    <span class="k">if</span> !<span class="t">Ed25519</span>::verify(signer, signed_part(s), s.signature) { <span class="k">return</span> <span class="k">none</span>; }
+    <span class="k">let</span> shared = (<span class="k">try</span>! <span class="t">X25519</span>::shared_secret(my_secret, s.sender_key))?;
+    <span class="k">let</span> aead = <span class="k">try</span>! <span class="t">Aead</span>::new(<span class="t">AeadAlgorithm</span>::<span class="t">ChaCha20Poly1305</span>, derive(shared));
+    <span class="k">let</span> plain = (<span class="k">try</span>! aead.open(s.nonce, <span class="s">""</span>, s.body))?;
+    <span class="k">try</span>? <span class="t">str</span>::from_utf8(plain)
+}
+
+<span class="c">// Bob's encryption key pair and Alice's signing key pair.</span>
+<span class="k">let</span> bob_secret = random::secret(<span class="n">32</span>);
+<span class="k">let</span> bob_public = <span class="k">try</span>! <span class="t">X25519</span>::public_key(bob_secret);
+<span class="k">let</span> alice_seed = random::secret(<span class="n">32</span>);
+<span class="k">let</span> alice_public = <span class="k">try</span>! <span class="t">Ed25519</span>::public_key(alice_seed);
+
+<span class="k">let</span> msg = seal(bob_public, alice_seed, <span class="s">"the key is under the mat"</span>);
+println(<span class="s">f"sealed: {</span>msg.body.len()<span class="s">} bytes, signature {</span>msg.signature.len()<span class="s">} bytes"</span>);
+println(<span class="s">f"bob reads: {</span>open(msg, bob_secret, alice_public) ?? <span class="s">"(rejected)"</span><span class="s">}"</span>);
+
+<span class="k">let</span> eve_secret = random::secret(<span class="n">32</span>);
+println(<span class="s">f"eve reads: {</span>open(msg, eve_secret, alice_public) ?? <span class="s">"(rejected)"</span><span class="s">}"</span>);
+
+msg.body[<span class="n">0</span>] = msg.body[<span class="n">0</span>] ^ <span class="n">1u8</span>;
+println(<span class="s">f"tampered: {</span>open(msg, bob_secret, alice_public) ?? <span class="s">"(rejected)"</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">sealed: 40 bytes, signature 64 bytes
+bob reads: the key is under the mat
+eve reads: (rejected)
+tampered: (rejected)
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Each message gets a fresh X25519 key pair. Its secret half and Bob's public key give the same shared secret that Bob computes from his secret and the one-time public key sent along (<a href="../std/core/crypto/x25519"><code>X25519</code></a>, <a href="../spec/refs-standard-libraries/200-core/221-crypto#2213-key-exchange">2.21.3 key exchange</a>).
+</li>
+<li>A raw shared secret is not used as a key directly: <code>Hkdf::extract</code> / <code>expand</code> turn it into a 32-byte AEAD key, with a label (<code>b&quot;sealed-box v1&quot;</code>) that ties the key to this protocol (<a href="../spec/refs-standard-libraries/200-core/221-crypto#2211-hashes-hmac-hkdf">2.21.1</a>).
+</li>
+<li>ChaCha20-Poly1305 encrypts and authenticates. The 24-byte text becomes 40 bytes, the extra 16 being the tag. <code>open</code> returns <code>none</code> for a wrong key or a changed byte, so Eve and the tampered copy are both rejected before any plaintext appears (<a href="../std/core/crypto/aead"><code>Aead</code></a>, <a href="../spec/refs-standard-libraries/200-core/221-crypto#2212-aead">2.21.2</a>).
+</li>
+<li>Alice signs the one-time key, nonce and ciphertext together with Ed25519, so nobody can swap any of them. <code>open</code> checks the signature first (<a href="../std/core/crypto/ed25519"><code>Ed25519</code></a>).
+</li>
+<li>Secret keys and seeds come from <code>random::secret</code>, which puts them straight into secret storage, and the shared secret and derived key are <code>Secret</code>s too, so no key byte lands in an ordinary <code>List</code>. Nonces are public and come from <code>random::bytes</code>. The algorithms never fetch randomness themselves (<a href="../learn/19-crypto-and-tls#key-material-secret">Key material</a>). Optional results are unwrapped with postfix <code>?</code> and <code>??</code> (<a href="../learn/05-sum-types">Sum types</a>).
+</li>
+<li>More in <a href="../learn/19-crypto-and-tls">Cryptography and TLS</a>.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/sealed-messages.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="rokon-config"><small>Previous</small>ROKON configuration</a><a class="next" href="sudoku"><small>Next</small>Sudoku solver</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

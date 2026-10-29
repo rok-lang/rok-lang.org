@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8. Collections and Iterators - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Most programs collect, traverse, and transform many values. This chapter covers the standard collections (List, Dict, Set, and their relatives), slicing, and th...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/08-collections-iterators.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8. Collections and Iterators - rok docs">
+<meta property="og:description" content="Most programs collect, traverse, and transform many values. This chapter covers the standard collections (List, Dict, Set, and their relatives), slicing, and th...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/08-collections-iterators.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li class="cur"><a aria-current="page" href="08-collections-iterators">8. Collections and Iterators</a><ul class="toc"><li><a href="#list">List</a></li><li><a href="#slicing">Slicing</a></li><li><a href="#dict-and-set">Dict and Set</a></li><li><a href="#ordereddict-orderedset-deque">OrderedDict, OrderedSet, Deque</a></li><li><a href="#iterators-and-adapters">Iterators and adapters</a></li><li><a href="#writing-your-own-iterators-iterator-and-yield">Writing your own iterators: Iterator and yield</a></li><li><a href="#advanced-broadcast-operators">Advanced: broadcast operators</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="8-collections-and-iterators"><a class="anchor" tabindex="-1" href="#8-collections-and-iterators" aria-hidden="true">#</a>8. Collections and Iterators</h1>
+<p>Most programs collect, traverse, and transform many values. This chapter covers the standard collections (<code>List</code>, <code>Dict</code>, <code>Set</code>, and their relatives), slicing, and the <code>Iterator</code> that ties them together.</p>
+<h2 id="list"><a class="anchor" tabindex="-1" href="#list" aria-hidden="true">#</a>List</h2>
+<p><code>[1, 2, 3]</code> is a dynamic array, <code>List&lt;T&gt;</code>. Indices start at 0, and negative indices count from the end. An out-of-range <code>xs[i]</code> panics, so read positions that may not exist with <code>get</code>, which returns <code>T | none</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">5</span>, <span class="n">3</span>, <span class="n">8</span>, <span class="n">1</span>];
+xs.push(<span class="n">7</span>);
+println(<span class="s">f"{</span>xs<span class="s">:?</span><span class="s">} len={</span>xs.len()<span class="s">}"</span>);
+println(<span class="s">f"{</span>xs[<span class="n">0</span>]<span class="s">} {</span>xs[-<span class="n">1</span>]<span class="s">} {</span>xs.get(<span class="n">10</span>)<span class="s">:?</span><span class="s">}"</span>);
+
+xs.sort();
+<span class="k">let</span> top = xs.pop();
+println(<span class="s">f"{</span>xs<span class="s">:?</span><span class="s">} popped={</span>top<span class="s">:?</span><span class="s">}"</span>);
+
+xs.insert(<span class="n">0</span>, <span class="n">0</span>);
+xs.remove(<span class="n">1</span>);
+println(<span class="s">f"{</span>xs<span class="s">:?</span><span class="s">} first={</span>xs.first()<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[5, 3, 8, 1, 7] len=5
+5 7 none
+[1, 3, 5, 7] popped=8
+[0, 3, 5, 7] first=0
+</code></pre>
+<p><code>List</code>, <code>Dict</code>, and <code>Set</code> are <strong>reference handles</strong>. <code>let ys = xs;</code> and passing as a function argument share the same collection; call <code>clone()</code> when you need an independent copy.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>];
+<span class="k">let</span> shared = xs;
+<span class="k">let</span> copy = xs.clone();
+shared.push(<span class="n">3</span>);
+copy.push(<span class="n">99</span>);
+println(<span class="s">f"{</span>xs<span class="s">:?</span><span class="s">} {</span>copy<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[1, 2, 3] [1, 2, 99]
+</code></pre>
+<h2 id="slicing"><a class="anchor" tabindex="-1" href="#slicing" aria-hidden="true">#</a>Slicing</h2>
+<p><code>xs[start:end:step]</code> means the same as in Python. Bounds are clamped to the length, so slicing never panics on range. Slicing a <code>List</code> yields a <code>Slice&lt;T&gt;</code> view into the original buffer; copy it with <code>to_list()</code> when you need an independent list.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">40</span>, <span class="n">50</span>];
+println(<span class="s">f"{</span>xs[<span class="n">1</span>:<span class="n">3</span>]<span class="s">:?</span><span class="s">} {</span>xs[:<span class="n">2</span>]<span class="s">:?</span><span class="s">} {</span>xs[-<span class="n">2</span>:]<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span>xs[::<span class="n">2</span>]<span class="s">:?</span><span class="s">} {</span>xs[::-<span class="n">1</span>]<span class="s">:?</span><span class="s">} {</span>xs[<span class="n">3</span>:<span class="n">100</span>]<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> part = xs[<span class="n">1</span>:<span class="n">4</span>];
+println(<span class="s">f"{</span>part.len()<span class="s">} {</span>part[<span class="n">0</span>]<span class="s">} {</span>part.to_list()<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[20, 30] [10, 20] [40, 50]
+[10, 30, 50] [50, 40, 30, 20, 10] [40, 50]
+3 20 [20, 30, 40]
+</code></pre>
+<h2 id="dict-and-set"><a class="anchor" tabindex="-1" href="#dict-and-set" aria-hidden="true">#</a>Dict and Set</h2>
+<p><code>{&quot;key&quot;: value}</code> is a hash map, <code>Dict&lt;K, V&gt;</code>, and <code>{1, 2}</code> is a hash set, <code>Set&lt;T&gt;</code>. An empty <code>{}</code> is a block, so create empty collections with <code>Dict::new()</code> / <code>Set::new()</code>. <code>d[k]</code> panics if the key is missing; <code>d.get(k)</code> returns <code>V | none</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> ages: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = {<span class="s">"kim"</span>: <span class="n">30</span>, <span class="s">"lee"</span>: <span class="n">25</span>};
+ages[<span class="s">"park"</span>] = <span class="n">41</span>;
+ages.remove(<span class="s">"lee"</span>);
+println(<span class="s">f"{</span>ages[<span class="s">"kim"</span>]<span class="s">} {</span>ages.get(<span class="s">"choi"</span>) ?? -<span class="n">1</span><span class="s">} {</span>ages.contains_key(<span class="s">"park"</span>)<span class="s">} {</span>ages.len()<span class="s">}"</span>);
+
+<span class="k">let</span> counts: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = <span class="t">Dict</span>::new();
+<span class="k">for</span> w <span class="k">in</span> [<span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">"a"</span>, <span class="s">"a"</span>] {
+    counts.entry(w).and_modify(|c| c + <span class="n">1</span>).or_insert(<span class="n">1</span>);
+}
+println(<span class="s">f"a={</span>counts[<span class="s">"a"</span>]<span class="s">} b={</span>counts[<span class="s">"b"</span>]<span class="s">}"</span>);
+
+<span class="k">let</span> s: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>};
+<span class="k">let</span> t: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>};
+println(<span class="s">f"{</span>s.contains(<span class="n">2</span>)<span class="s">} {</span>s.intersection(t).len()<span class="s">} {</span>s.<span class="k">union</span>(t).len()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">30 -1 true 2
+a=3 b=1
+true 2 4
+</code></pre>
+<div class="callout warning"><p class="callout-title">Warning</p>
+<p>The iteration order of <code>Dict</code> and <code>Set</code> is unspecified. When order matters, use <code>OrderedDict</code> / <code>OrderedSet</code>, which preserve insertion order.</p>
+</div>
+<h2 id="ordereddict-orderedset-deque"><a class="anchor" tabindex="-1" href="#ordereddict-orderedset-deque" aria-hidden="true">#</a>OrderedDict, OrderedSet, Deque</h2>
+<p><code>OrderedDict</code> and <code>OrderedSet</code> iterate in insertion order. <code>Deque</code> is a queue you can push to and pop from at both ends.</p>
+<pre><code class="language-rok"><span class="k">let</span> od: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = <span class="t">OrderedDict</span>::new();
+od.insert(<span class="s">"zebra"</span>, <span class="n">1</span>);
+od.insert(<span class="s">"apple"</span>, <span class="n">2</span>);
+<span class="k">for</span> (k, v) <span class="k">in</span> od.entries() { println(<span class="s">f"{</span>k<span class="s">}={</span>v<span class="s">}"</span>); }
+
+<span class="k">let</span> tags = <span class="t">OrderedSet</span>::from([<span class="s">"b"</span>, <span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">"c"</span>]);
+println(<span class="s">f"{</span>tags<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> q: <span class="t">Deque</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Deque</span>::new();
+q.push_back(<span class="n">1</span>);
+q.push_back(<span class="n">2</span>);
+q.push_front(<span class="n">0</span>);
+println(<span class="s">f"{</span>q<span class="s">:?</span><span class="s">}"</span>);
+<span class="k">let</span> front = q.pop_front();
+<span class="k">let</span> back = q.pop_back();
+println(<span class="s">f"{</span>front<span class="s">:?</span><span class="s">} {</span>back<span class="s">:?</span><span class="s">} {</span>q<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">zebra=1
+apple=2
+{&quot;b&quot;, &quot;a&quot;, &quot;c&quot;}
+[0, 1, 2]
+0 2 [1]
+</code></pre>
+<h2 id="iterators-and-adapters"><a class="anchor" tabindex="-1" href="#iterators-and-adapters" aria-hidden="true">#</a>Iterators and adapters</h2>
+<p><code>for x in collection</code> drives an <code>Iterator</code>. On the iterator returned by a collection's <code>iter()</code>, you can chain <strong>adapters</strong> such as <code>map</code>, <code>filter</code>, <code>enumerate</code>, <code>zip</code>, <code>take</code>, <code>skip</code>, <code>rev</code>, <code>step_by</code>, and <code>chain</code>. Adapters are lazy: they run only when a method that actually consumes the values, such as <code>collect</code>, <code>sum</code>, <code>fold</code>, or <code>count</code>, is called.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>, <span class="n">6</span>];
+
+<span class="k">let</span> evens: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = xs.iter().filter(|x| x % <span class="n">2</span> == <span class="n">0</span>).map(|x| x * <span class="n">10</span>).collect();
+println(<span class="s">f"{</span>evens<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span>xs.iter().sum()<span class="s">} {</span>xs.iter().count()<span class="s">} {</span>xs.iter().<span class="k">any</span>(|x| x &gt; <span class="n">5</span>)<span class="s">}"</span>);
+println(<span class="s">f"{</span>xs.iter().fold(<span class="n">0</span>, |acc, x| acc + x * x)<span class="s">}"</span>);
+println(<span class="s">f"{</span>xs.iter().find(|x| x &gt; <span class="n">3</span>)<span class="s">:?</span><span class="s">} {</span>xs.iter().position(|x| x == <span class="n">3</span>)<span class="s">:?</span><span class="s">} {</span>xs.iter().max()<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">for</span> (i, x) <span class="k">in</span> xs.iter().enumerate().skip(<span class="n">4</span>) { println(<span class="s">f"{</span>i<span class="s">}: {</span>x<span class="s">}"</span>); }
+
+<span class="k">let</span> names = [<span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">"c"</span>];
+<span class="k">let</span> pairs: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = names.iter().zip(xs.iter()).map(|p| <span class="s">f"{</span>p.<span class="n">0</span><span class="s">}{</span>p.<span class="n">1</span><span class="s">}"</span>).collect();
+println(<span class="s">f"{</span>pairs<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> back: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = xs.iter().rev().take(<span class="n">2</span>).collect();
+<span class="k">let</span> uniq: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">1</span>, <span class="n">2</span>].iter().collect();
+println(<span class="s">f"{</span>back<span class="s">:?</span><span class="s">} {</span>uniq.len()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[20, 40, 60]
+21 6 true
+91
+4 2 6
+4: 5
+5: 6
+[&quot;a1&quot;, &quot;b2&quot;, &quot;c3&quot;]
+[6, 5] 2
+</code></pre>
+<p><code>collect</code> builds whatever the receiving type is (<code>List&lt;i32&gt;</code>, <code>Set&lt;i32&gt;</code>, ...), which is why the <code>let</code> carries a type annotation.</p>
+<h2 id="writing-your-own-iterators-iterator-and-yield"><a class="anchor" tabindex="-1" href="#writing-your-own-iterators-iterator-and-yield" aria-hidden="true">#</a>Writing your own iterators: <code>Iterator</code> and <code>yield</code></h2>
+<p>The <code>Iterator</code> trait requires only the associated type <code>Item</code> and one method, <code>next(ref self) -&gt; Item | none</code>. All the adapters come along as default methods.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Countdown</span> { n: <span class="t">i32</span>; }
+
+<span class="k">impl</span> <span class="t">Iterator</span> <span class="k">for</span> <span class="t">Countdown</span> {
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">i32</span>;
+    <span class="k">fn</span> next(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">i32</span> | <span class="k">none</span> {
+        <span class="k">if</span> <span class="k">self</span>.n == <span class="n">0</span> { <span class="k">return</span> <span class="k">none</span>; }
+        <span class="k">self</span>.n -= <span class="n">1</span>;
+        <span class="k">self</span>.n + <span class="n">1</span>
+    }
+}
+
+<span class="k">let</span> c: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Countdown</span> { n: <span class="n">3</span> }.collect();
+println(<span class="s">f"{</span>c<span class="s">:?</span><span class="s">}"</span>);
+<span class="k">for</span> v <span class="k">in</span> (<span class="t">Countdown</span> { n: <span class="n">5</span> }).filter(|v| v % <span class="n">2</span> == <span class="n">1</span>) { println(<span class="s">f"{</span>v<span class="s">}"</span>); }
+</code></pre>
+<pre class="output"><code class="language-output">[3, 2, 1]
+5
+3
+1
+</code></pre>
+<p>When managing state by hand gets tedious, use a <strong>generator</strong>. A <code>yield fn</code> is a function whose body emits values one at a time with <code>yield value;</code>, and calling it returns an iterator (<code>GenIter&lt;T&gt;</code>). Even an infinite generator is fine: take only as many values as you need with <code>take</code>. In expression position, you can also create one directly with a <code>yield { ... }</code> block.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> fib() -&gt; <span class="t">i64</span> {
+    <span class="k">let</span> a = <span class="n">0i64</span>;
+    <span class="k">let</span> b = <span class="n">1i64</span>;
+    <span class="k">loop</span> {
+        <span class="k">yield</span> a;
+        <span class="k">let</span> t = a + b;
+        a = b;
+        b = t;
+    }
+}
+
+<span class="k">let</span> first: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = fib().take(<span class="n">10</span>).collect();
+println(<span class="s">f"{</span>first<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> squares = <span class="k">yield</span> { <span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..<span class="n">5</span> { <span class="k">yield</span> i * i; } };
+<span class="k">for</span> v <span class="k">in</span> squares { print(<span class="s">f"{</span>v<span class="s">} "</span>); }
+println(<span class="s">""</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+1 4 9 16
+</code></pre>
+<h2 id="advanced-broadcast-operators"><a class="anchor" tabindex="-1" href="#advanced-broadcast-operators" aria-hidden="true">#</a>Advanced: broadcast operators</h2>
+<p>You can skip this section on a first read. Dotted operators such as <code>.+</code>, <code>.*</code>, and <code>.&gt;</code> are element-wise operations. They desugar to traits such as <code>DotAdd</code>, <code>DotMul</code>, and <code>DotGt</code>, so implementing those for your type makes the operators available right away.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Vector</span> { xs: <span class="t">List</span>&lt;<span class="t">f64</span>&gt;; }
+
+<span class="k">impl</span> <span class="t">DotAdd</span> <span class="k">for</span> <span class="t">Vector</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Vector</span>;
+    <span class="k">fn</span> dot_add(<span class="k">self</span>, o: <span class="t">Vector</span>) -&gt; <span class="t">Vector</span> {
+        <span class="t">Vector</span> { xs: <span class="k">self</span>.xs.iter().zip(o.xs.iter()).map(|p| p.<span class="n">0</span> + p.<span class="n">1</span>).collect() }
+    }
+}
+
+<span class="k">impl</span> <span class="t">DotMul</span>&lt;<span class="t">f64</span>&gt; <span class="k">for</span> <span class="t">Vector</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Vector</span>;
+    <span class="k">fn</span> dot_mul(<span class="k">self</span>, k: <span class="t">f64</span>) -&gt; <span class="t">Vector</span> {
+        <span class="t">Vector</span> { xs: <span class="k">self</span>.xs.iter().map(|x| x * k).collect() }
+    }
+}
+
+<span class="k">let</span> a = <span class="t">Vector</span> { xs: [<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>] };
+<span class="k">let</span> b = <span class="t">Vector</span> { xs: [<span class="n">10.0</span>, <span class="n">20.0</span>, <span class="n">30.0</span>] };
+<span class="k">let</span> c = a .+ b .* <span class="n">2.0</span>;
+println(<span class="s">f"{</span>c.xs<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[21, 42, 63]
+</code></pre>
+<p>The spec defines these operators for <code>List</code> and fixed-size arrays as standard, along with <code>f.(xs)</code>, which applies a function to every element by adding a dot after it.</p>
+<pre><code class="language-rok"><span class="k">let</span> a = [<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>];
+<span class="k">let</span> b = [<span class="n">10.0</span>, <span class="n">20.0</span>, <span class="n">30.0</span>];
+<span class="k">let</span> c = a .+ b;              <span class="c">// [11.0, 22.0, 33.0]</span>
+<span class="k">let</span> d = a .* <span class="n">2.0</span>;            <span class="c">// [2.0, 4.0, 6.0]</span>
+<span class="k">let</span> r = <span class="t">f64</span>::sqrt.(a);       <span class="c">// [1.0, 1.414..., 1.732...]</span>
+println(<span class="s">f"{</span>c<span class="s">:?</span><span class="s">} {</span>d<span class="s">:?</span><span class="s">} {</span>r<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[11, 22, 33] [2, 4, 6] [1, 1.4142135623730951, 1.7320508075688772]
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>List</code> provides <code>push</code> / <code>pop</code> / <code>insert</code> / <code>remove</code> / <code>sort</code> / <code>get</code>, <code>Dict</code> provides <code>d[k]</code> / <code>get</code> / <code>entry</code>, and <code>Set</code> provides set operations.
+</li>
+<li>Collections are reference handles. Call <code>clone()</code> when you need a copy.
+</li>
+<li><code>xs[a:b:s]</code> slicing works like Python and never panics. The result is a <code>Slice&lt;T&gt;</code> view.
+</li>
+<li>For ordering, use <code>OrderedDict</code> / <code>OrderedSet</code>; for a double-ended queue, <code>Deque</code>.
+</li>
+<li>Chain adapters after <code>iter()</code> and consume with <code>collect</code> / <code>sum</code> / <code>fold</code>. Implement just <code>next</code> and your own type becomes an iterator.
+</li>
+<li><code>yield fn</code> and <code>yield { }</code> make iterators easy to write.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li><a href="../spec/refs-standard-libraries/200-core/209-collections">stdlib 2.9. Collections</a>, <a href="../spec/refs-standard-libraries/200-core/209-collections#reference-handles">Reference handles</a>
+</li>
+<li><a href="../spec/refs-lang/003-expressions/306-indexing-and-slicing">3.6. Indexing and slicing</a>
+</li>
+<li><a href="../spec/refs-standard-libraries/200-core/207-iter">stdlib 2.7. iter</a>, <a href="../spec/refs-lang/004-functions/411-generators">4.11. Generators</a>
+</li>
+<li><a href="../spec/refs-lang/003-expressions/303-broadcast-operators">3.3. Broadcast operators</a>, <a href="../spec/refs-standard-libraries/200-core/206-broadcast">stdlib 2.6. broadcast</a>
+</li>
+<li>API: <a href="../std/core/collections/list#struct.List"><code>List</code></a>, <a href="../std/core/collections/dict#struct.Dict"><code>Dict</code></a>, <a href="../std/core/collections/set#struct.Set"><code>Set</code></a>, <a href="../std/core/collections/ordered_dict#struct.OrderedDict"><code>OrderedDict</code></a>, <a href="../std/core/collections/ordered_set#struct.OrderedSet"><code>OrderedSet</code></a>, <a href="../std/core/collections/deque#struct.Deque"><code>Deque</code></a>, <a href="../std/core/collections/slice#struct.Slice"><code>Slice</code></a>, <a href="../std/core/iter#trait.Iterator"><code>Iterator</code></a>, <a href="../std/core/iter#struct.GenIter"><code>GenIter</code></a>
+</li>
+<li>Next chapter: <a href="09-strings">9. Strings and f-strings</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/08-collections-iterators.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="07-generics"><small>Previous</small>7. Generics</a><a class="next" href="09-strings"><small>Next</small>9. Strings and f-strings</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

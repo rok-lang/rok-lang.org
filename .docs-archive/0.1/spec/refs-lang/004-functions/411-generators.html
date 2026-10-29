@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.11. Generators (yield) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The yield keyword (keywords) is used in three forms that define generators, functions that produce values one at a time.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/411-generators.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.11. Generators (yield) - rok docs">
+<meta property="og:description" content="The yield keyword (keywords) is used in three forms that define generators, functions that produce values one at a time.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/411-generators.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/411-generators.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/411-generators.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li class="cur"><a aria-current="page" href="411-generators">4.11. Generators (yield)</a><ul class="toc"><li><a href="#4111-three-forms">4.11.1. Three forms</a></li><li><a href="#4112-the-yield-statement-emitting-values">4.11.2. The yield statement: emitting values</a></li><li><a href="#4113-named-generator-functions">4.11.3. Named generator functions</a></li><li><a href="#4114-inline-yield-blocks-values">4.11.4. Inline yield blocks: values</a></li><li><a href="#4115-yield-closures">4.11.5. yield closures</a></li><li><a href="#4116-correspondence-of-the-three-forms">4.11.6. Correspondence of the three forms</a></li><li><a href="#4117-four-positions-of-the-yield-token">4.11.7. Four positions of the yield token</a></li><li><a href="#4118-interaction-with-the-iterator-trait">4.11.8. Interaction with the Iterator trait</a></li><li><a href="#4119-infinite-generators">4.11.9. Infinite generators</a></li><li><a href="#41110-generator-termination">4.11.10. Generator termination</a></li><li><a href="#41111-generator-state">4.11.11. Generator state</a></li><li><a href="#41112-parameters-and-return-of-yield-functions">4.11.12. Parameters and return of yield functions</a></li><li><a href="#41113-generators-as-methods">4.11.13. Generators as methods</a></li></ul></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="411-generators-yield 411-제너레이터-yield 4111-three-forms 4111-세-가지-형태 4112-the-yield-statement-emitting-values 4112-yield-statement-값을-내보내기 4113-named-generator-functions 4113-명명된-제너레이터-함수 4114-inline-yield-blocks-values 4114-인라인-yield-블록-값 4115-yield-closures 4115-yield-클로저 4116-correspondence-of-the-three-forms 4116-세-형태의-대응 4117-four-positions-of-the-yield-token 4117-yield-토큰의-네-가지-등장-위치 4118-interaction-with-the-iterator-trait 4118-iterator-트레잇과의-결합 4119-infinite-generators 4119-무한-제너레이터 41110-generator-termination 41110-제너레이터의-종료 41111-generator-state 41111-제너레이터의-상태 41112-parameters-and-return-of-yield-functions 41112-yield-함수의-매개변수와-반환 41113-generators-as-methods 41113-메서드로서의-제너레이터"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/411-generators" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="411-generators-yield"><a class="anchor" tabindex="-1" href="#411-generators-yield" aria-hidden="true">#</a>4.11. Generators (<code>yield</code>)</h1>
+<p>The <code>yield</code> keyword (<a href="../001-lexical/105-keywords">keywords</a>) is used in three forms that define generators, functions that produce values one at a time.</p>
+<h2 id="4111-three-forms"><a class="anchor" tabindex="-1" href="#4111-three-forms" aria-hidden="true">#</a>4.11.1. Three forms</h2>
+<p>Generators have this grammar:</p>
+<pre><code>generator_fn    ::= &quot;yield&quot; fn_decl
+generator_block ::= &quot;yield&quot; block
+generator_closure ::= &quot;yield&quot; closure_expr
+yield_stmt      ::= &quot;yield&quot; expr? &quot;;&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> name(args) -&gt; <span class="t">R</span> { ... <span class="k">yield</span> expr; ... }     <span class="c">// named generator function</span>
+<span class="k">yield</span> { ... <span class="k">yield</span> expr; ... }                         <span class="c">// inline block (value)</span>
+<span class="k">yield</span> || { ... <span class="k">yield</span> expr; ... }                      <span class="c">// closure modifier</span>
+</code></pre>
+<p>In all three forms, the result is a value of the library type <code>GenIter&lt;T&gt;</code> (implementing <code>Iterator&lt;Item = T&gt;</code>), or <code>TryGenIter&lt;T, E&gt;</code> with <code>throws (E)</code>. This rule is defined in <a href="401-function-declaration#result-types-of-coroutine-functions">4.1.11</a>.</p>
+<h2 id="4112-the-yield-statement-emitting-values"><a class="anchor" tabindex="-1" href="#4112-the-yield-statement-emitting-values" aria-hidden="true">#</a>4.11.2. The <code>yield</code> statement: emitting values</h2>
+<p>The <code>yield</code> statement may be used with or without a value.</p>
+<pre><code class="language-rok"><span class="k">yield</span> expr;
+<span class="k">yield</span>;
+</code></pre>
+<p><code>yield expr;</code> emits the value of <code>expr</code> as the output of the current iteration step and suspends evaluation of the function or block. Evaluation resumes on the next iteration. <code>yield;</code> advances a step without a value (unit).</p>
+<h2 id="4113-named-generator-functions"><a class="anchor" tabindex="-1" href="#4113-named-generator-functions" aria-hidden="true">#</a>4.11.3. Named generator functions</h2>
+<p>A named generator function is written as follows.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> count_up_to(n: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">while</span> i &lt; n {
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+</code></pre>
+<p><code>yield fn</code> is a function declaration marked as a generator; the body emits values with <code>yield expr;</code>. The <code>-&gt; R</code> position gives the type of the yielded values, and the call result is <code>GenIter&lt;R&gt;</code>. <code>-&gt; R</code> must be written; the element type is not inferred from the body. It is called like an ordinary function, and the result is an iterator object.</p>
+<pre><code class="language-rok"><span class="k">let</span> it = count_up_to(<span class="n">5i32</span>);       <span class="c">// it: `GenIter&lt;i32&gt;`</span>
+<span class="k">for</span> x <span class="k">in</span> it { print(x); }         <span class="c">// 0 1 2 3 4</span>
+</code></pre>
+<h2 id="4114-inline-yield-blocks-values"><a class="anchor" tabindex="-1" href="#4114-inline-yield-blocks-values" aria-hidden="true">#</a>4.11.4. Inline <code>yield</code> blocks: values</h2>
+<p>To create an iterator immediately in expression position, use an inline <code>yield</code> block.</p>
+<pre><code class="language-rok"><span class="k">let</span> it = <span class="k">yield</span> {
+    <span class="k">yield</span> <span class="n">1i32</span>;
+    <span class="k">yield</span> <span class="n">2i32</span>;
+    <span class="k">yield</span> <span class="n">3i32</span>;
+};
+</code></pre>
+<p>This form appears in expression position and immediately produces a <code>GenIter&lt;T&gt;</code>. The body is a block from <a href="../003-expressions/309-block-expressions">block expressions</a>. It is the form for writing short generators anonymously inline.</p>
+<h2 id="4115-yield-closures"><a class="anchor" tabindex="-1" href="#4115-yield-closures" aria-hidden="true">#</a>4.11.5. <code>yield</code> closures</h2>
+<p>A <code>yield</code> closure produces a callable generator.</p>
+<pre><code class="language-rok"><span class="k">let</span> make_iter = <span class="k">yield</span> || {
+    <span class="k">yield</span> <span class="n">1i32</span>;
+    <span class="k">yield</span> <span class="n">2i32</span>;
+    <span class="k">yield</span> <span class="n">3i32</span>;
+};
+
+<span class="k">let</span> it = make_iter();             <span class="c">// each call creates a new Iterator</span>
+</code></pre>
+<p><code>yield ||</code> creates a callable generator closure; each call creates a new iterator. Outer captures follow the rules of <a href="406-capture-semantics">Capture Semantics</a>.</p>
+<h2 id="4116-correspondence-of-the-three-forms"><a class="anchor" tabindex="-1" href="#4116-correspondence-of-the-three-forms" aria-hidden="true">#</a>4.11.6. Correspondence of the three forms</h2>
+<p>The three generator forms correspond one-to-one to the three forms (named, block, closure) of <a href="401-function-declaration">function declarations</a>, <a href="405-closure">closures</a> and <a href="../003-expressions/309-block-expressions">block expressions</a>.</p>
+<pre><code>plain        fn f() { ... }       ↔  || { ... }       ↔  { ... } (block)
+yield form   yield fn f() { ... } ↔  yield || { ... } ↔  yield { ... }
+</code></pre>
+<p>That is, <code>yield</code> attaches as a modifier to the same function, block and closure forms and turns them into generators.</p>
+<h2 id="4117-four-positions-of-the-yield-token"><a class="anchor" tabindex="-1" href="#4117-four-positions-of-the-yield-token" aria-hidden="true">#</a>4.11.7. Four positions of the <code>yield</code> token</h2>
+<p>The <code>yield</code> token can appear in four positions.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> name(...) { ... }        <span class="c">// declaration modifier</span>
+<span class="k">yield</span> { ... }                      <span class="c">// block marker</span>
+<span class="k">yield</span> || { ... }                   <span class="c">// closure modifier</span>
+<span class="k">yield</span> expr;                         <span class="c">// statement</span>
+</code></pre>
+<p>These four positions are clearly distinguished by context; the parser decides the form from the next token.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Token after <code>yield</code></th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>fn</code></td><td>declaration modifier</td></tr>
+<tr><td><code>{</code></td><td><a href="../000-meta/007-glossary#block">block</a> marker (expression position)</td></tr>
+<tr><td><code>||</code> or <code>|</code></td><td>closure modifier</td></tr>
+<tr><td>expression-start token</td><td><code>yield</code> statement</td></tr>
+</tbody></table></div>
+<h2 id="4118-interaction-with-the-iterator-trait"><a class="anchor" tabindex="-1" href="#4118-interaction-with-the-iterator-trait" aria-hidden="true">#</a>4.11.8. Interaction with the Iterator trait</h2>
+<p>The result of a generator function is a value implementing the standard library's <code>Iterator&lt;Item = T&gt;</code> trait, so it can be used directly in a <code>for</code> loop from <a href="../003-expressions/313-loop-expressions">loops</a>.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> naturals() -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">loop</span> {
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+
+<span class="k">for</span> n <span class="k">in</span> naturals() {
+    <span class="k">if</span> n &gt; <span class="n">100</span> { <span class="k">break</span>; }
+    print(n);
+}
+</code></pre>
+<p>The exact definition and methods (<code>map</code>, <code>filter</code>, <code>take</code>, <code>collect</code>, etc.) of the <code>Iterator</code> trait are defined in the standard library.</p>
+<h2 id="4119-infinite-generators"><a class="anchor" tabindex="-1" href="#4119-infinite-generators" aria-hidden="true">#</a>4.11.9. Infinite generators</h2>
+<p><code>naturals()</code> above is an infinite generator that produces values endlessly. Such generators can be terminated with <code>break</code> in a <code>for</code> loop, the library's <code>take(n)</code> method and the like.</p>
+<h2 id="41110-generator-termination"><a class="anchor" tabindex="-1" href="#41110-generator-termination" aria-hidden="true">#</a>4.11.10. Generator termination</h2>
+<p>When the body completes normally, the iterator also terminates, and the next <code>next()</code> call returns <code>none</code>.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> finite() -&gt; <span class="t">i32</span> {
+    <span class="k">yield</span> <span class="n">1i32</span>;
+    <span class="k">yield</span> <span class="n">2i32</span>;
+    <span class="k">yield</span> <span class="n">3i32</span>;
+    <span class="c">// function completes normally → iterator terminates</span>
+}
+</code></pre>
+<p>It can also be terminated explicitly with <code>return;</code>.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> early_stop(stop: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">loop</span> {
+        <span class="k">if</span> i &gt;= stop { <span class="k">return</span>; }
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+</code></pre>
+<h2 id="41111-generator-state"><a class="anchor" tabindex="-1" href="#41111-generator-state" aria-hidden="true">#</a>4.11.11. Generator state</h2>
+<p>A generator keeps internal state between calls. The body's local variables, the iteration position and the coroutine frame are preserved until the next <code>next()</code> call.</p>
+<p>This state works on the coroutine infrastructure of <a href="../007-runtime/">7. Runtime Model</a> and operates as a compiler-generated (stackless) state machine. The detailed implementation mechanism is defined in the runtime specification.</p>
+<h2 id="41112-parameters-and-return-of-yield-functions"><a class="anchor" tabindex="-1" href="#41112-parameters-and-return-of-yield-functions" aria-hidden="true">#</a>4.11.12. Parameters and return of <code>yield</code> functions</h2>
+<p>Since a <code>yield fn</code> is a generator, <code>-&gt; T</code> denotes the type of the values yielded in the body, and the call result is <code>GenIter&lt;T&gt;</code>.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> f() -&gt; <span class="t">i32</span> { <span class="k">yield</span> <span class="n">1i32</span>; }
+<span class="c">// call result: `GenIter&lt;i32&gt;`</span>
+</code></pre>
+<p>Parameters are used the same way as in ordinary functions.</p>
+<h2 id="41113-generators-as-methods"><a class="anchor" tabindex="-1" href="#41113-generators-as-methods" aria-hidden="true">#</a>4.11.13. Generators as methods</h2>
+<p><code>yield fn</code> may also be used inside the <code>impl</code> block of a <a href="409-method">method</a> to define generator methods.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">yield</span> <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">T</span> {
+        <span class="k">for</span> x <span class="k">in</span> <span class="k">self</span>.elements { <span class="k">yield</span> x; }
+    }
+}
+</code></pre>
+<p>Calls and behavior are the same as for ordinary instance methods.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/411-generators.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="410-nested-functions"><small>Previous</small>4.10. Nested functions</a><a class="next" href="412-async"><small>Next</small>4.12. Async (async and await)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

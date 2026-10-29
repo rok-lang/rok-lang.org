@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.1. Operator dispatch - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter defines the general principle by which the operator tokens defined in punctuation and operator tokens are converted into trait method calls. The co...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.1. Operator dispatch - rok docs">
+<meta property="og:description" content="This chapter defines the general principle by which the operator tokens defined in punctuation and operator tokens are converted into trait method calls. The co...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="301-operator-dispatch">3.1. Operator dispatch</a><ul class="toc"><li><a href="#311-every-operator-is-a-trait-method">3.1.1. Every operator is a trait method</a></li><li><a href="#312-operator--trait-mapping-lives-in-the-standard-library">3.1.2. Operator → trait mapping lives in the standard library</a></li><li><a href="#313-dispatch-without-a-vtable">3.1.3. Dispatch without a vtable</a></li><li><a href="#314-operations-without-a-mapping">3.1.4. Operations without a mapping</a></li><li><a href="#315-unary-binary-postfix">3.1.5. Unary, binary, postfix</a></li><li><a href="#316-precedence-and-associativity">3.1.6. Precedence and associativity</a></li><li><a href="#317-user-defined-operators">3.1.7. User-Defined operators</a></li><li><a href="#318-unicode-operators">3.1.8. Unicode operators</a></li></ul></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="31-operator-dispatch 31-연산자-디스패치 311-every-operator-is-a-trait-method 311-모든-연산자는-트레잇-메서드 312-operator--trait-mapping-lives-in-the-standard-library 312-연산자--트레잇-매핑은-표준-라이브러리에서 313-dispatch-without-a-vtable 313-디스패치는-vtable-없이 selecting-an-impl impl-고르기 314-operations-without-a-mapping 314-매핑이-없는-연산 315-unary-binary-postfix 315-단항-이항-후위 316-precedence-and-associativity 316-우선순위와-결합 317-user-defined-operators 317-사용자-정의-연산자 318-unicode-operators 318-unicode-연산자"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/301-operator-dispatch" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="31-operator-dispatch"><a class="anchor" tabindex="-1" href="#31-operator-dispatch" aria-hidden="true">#</a>3.1. Operator dispatch</h1>
+<p>This chapter defines the general principle by which the operator tokens defined in <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a> are converted into trait method calls. The concrete matrix of which operator maps to which method of which trait is defined by the standard library.</p>
+<h2 id="311-every-operator-is-a-trait-method"><a class="anchor" tabindex="-1" href="#311-every-operator-is-a-trait-method" aria-hidden="true">#</a>3.1.1. Every operator is a trait method</h2>
+<p>As established in <a href="../000-meta/004-language-vs-standard-libraries">the boundary between the language and the standard libraries</a>, the language provides operator syntax, but the behavior is determined by standard library traits.</p>
+<pre><code>a + b         →   &lt;typeof(a) as Add&lt;typeof(b)&gt;&gt;::add(a, b)
+a - b         →   &lt;typeof(a) as Sub&lt;typeof(b)&gt;&gt;::sub(a, b)
+a * b         →   &lt;typeof(a) as Mul&lt;typeof(b)&gt;&gt;::mul(a, b)
+a &lt; b         →   &lt;typeof(a) as Cmp&lt;typeof(b)&gt;&gt;::lt(a, b)
+-a            →   &lt;typeof(a) as Neg&gt;::neg(a)
+!a            →   &lt;typeof(a) as Not&gt;::not(a)
+</code></pre>
+<p>Every operator follows the same pattern: the language recognizes the token and converts it into a trait method call.</p>
+<h2 id="312-operator--trait-mapping-lives-in-the-standard-library"><a class="anchor" tabindex="-1" href="#312-operator--trait-mapping-lives-in-the-standard-library" aria-hidden="true">#</a>3.1.2. Operator → trait mapping lives in the standard library</h2>
+<p>The exact table of which trait method each operator token maps to is defined by the standard library. This document is responsible only for the existence of the mapping and the dispatch mechanism.</p>
+<p>The standard library attaches mappings to trait methods through the meta-system attributes <code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code>. The exact mechanism is defined in <a href="../006-meta-system/607-operator-magic"><code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code> magic</a>.</p>
+<pre><code>trait Add&lt;Rhs = Self&gt; {
+    type Output;
+    #[infix(&quot;+&quot;)]
+    fn add(self, rhs: Rhs) -&gt; Output;
+}
+
+trait Neg {
+    type Output;
+    #[prefix(&quot;-&quot;)]
+    fn neg(self) -&gt; Output;
+}
+</code></pre>
+<p>The example shows the shape of the traits and method signatures; their meaning arises from the trait specification in Chapter 2 combined with the magic specification in Chapter 6. Chapter 3 defines only that the language converts the token into a call like the above.</p>
+<h2 id="313-dispatch-without-a-vtable"><a class="anchor" tabindex="-1" href="#313-dispatch-without-a-vtable" aria-hidden="true">#</a>3.1.3. Dispatch without a vtable</h2>
+<p>Following the <a href="../002-types/212-trait-as-type-banned">trait-as-type ban</a>, operator call dispatch is designed to resolve without vtable indirection.</p>
+<ul>
+<li>For a static slot, the trait method is determined at compile time and compiled to a direct function call.
+</li>
+<li>For an <code>any</code> slot, the trait method is determined by the runtime tag check of the <a href="../002-types/202-any-slot"><code>any</code> slot</a> and then called directly. The cost is one tag check plus a direct call.
+</li>
+</ul>
+<p>In neither case is there an extra indirect call from a vtable lookup. Keeping the hot loops of scientific and numeric code free of that cost is the motivation for the <a href="../002-types/212-trait-as-type-banned">trait-as-type ban</a>, and this dispatch rule is its consequence.</p>
+<h3 id="selecting-an-impl"><a class="anchor" tabindex="-1" href="#selecting-an-impl" aria-hidden="true">#</a>Selecting an impl</h3>
+<p>A binary operation <code>a op b</code> selects from the impls of that operator's trait for the left operand's type.</p>
+<ul>
+<li>If a type has several impls of the same operator trait (<code>Mul&lt;i64&gt;</code>, <code>Mul&lt;f64&gt;</code>, etc.), the impl whose <code>Rhs</code> matches the right operand's type is selected.
+</li>
+<li>If the left side is a primitive type and the right side is a struct, the impl declared for the primitive type is used (<code>2.0 * d</code> is <code>impl Mul&lt;Duration&gt; for f64</code>).
+</li>
+</ul>
+<p>The same rule is not limited to operators. It applies wherever an impl is selected by the type of the value filling a trait's type parameter: an operator's <code>Rhs</code>, the argument of <code>T::from(x)</code> / <code>T::try_from(x)</code> / <code>Tr::f(x)</code>, the receiver of <code>.into()</code> / <code>.try_into()</code> in a position with a known type, and the argument of a method call <code>x.m(v)</code> or path call <code>T::m(x, v)</code> when the impls differ in that parameter. If that value is an unsuffixed literal, selection proceeds in this order:</p>
+<ol>
+<li>The impl for the literal's default type (<code>i32</code> / <code>f64</code>), if it exists and the value fits that type.
+</li>
+<li>Otherwise, the unique impl whose parameter type can hold the value (for integers, an in-range integer type or <code>int</code>; for reals, <code>f32</code> / <code>f64</code> where the value is finitely representable, or <code>float</code>). <code>d * 2</code> is <code>Duration</code>'s <code>Mul&lt;i64&gt;</code>.
+</li>
+<li>If several such impls exist, a compile error requiring a suffix.
+</li>
+</ol>
+<p>This rule applies only to bare literals and signed literals (<code>-1</code>), not to expressions such as <code>1 + 1</code>. The <code>Self</code> of a static trait method called as <code>Tr::f(..)</code> is determined from the expected type. When no argument fills the trait's parameter, the call's expected type selects the impl (or bound) whose return type it is; otherwise the call is ambiguous (<a href="../004-functions/409-method#496-call-forms-of-free-functions-and-methods">4.9.6</a>).</p>
+<h2 id="314-operations-without-a-mapping"><a class="anchor" tabindex="-1" href="#314-operations-without-a-mapping" aria-hidden="true">#</a>3.1.4. Operations without a mapping</h2>
+<p>If no trait implementation exists for a given pair of types, the operator call is a compile error.</p>
+<pre><code>let a: i32 = 1i32;
+let b: str = &quot;hi&quot;;
+let c = a + b;          // ERROR: no Add impl for (i32, str)
+</code></pre>
+<p>The diagnostic states which trait is missing.</p>
+<pre><code>ERROR: cannot apply '+' to 'i32' and 'str'
+       (no impl Add&lt;str&gt; for i32)
+</code></pre>
+<h2 id="315-unary-binary-postfix"><a class="anchor" tabindex="-1" href="#315-unary-binary-postfix" aria-hidden="true">#</a>3.1.5. Unary, binary, postfix</h2>
+<p>Operators are classified by position into one of three kinds.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Position</th><th>Form</th><th>Mapping mechanism</th></tr></thead>
+<tbody>
+<tr><td>binary (infix)</td><td><code>a OP b</code></td><td><code>#[infix(&quot;OP&quot;)]</code></td></tr>
+<tr><td>prefix unary</td><td><code>OP a</code></td><td><code>#[prefix(&quot;OP&quot;)]</code></td></tr>
+<tr><td>postfix unary</td><td><code>a OP</code></td><td><code>#[postfix(&quot;OP&quot;)]</code></td></tr>
+</tbody></table></div>
+<p>The same token may appear in several positions. For example, <code>-</code> is used both as binary (<code>a - b</code>) and as prefix unary (<code>-a</code>). Position is determined by the context in which the token appears: with an operand only before it, it is postfix; with operands on both sides, it is binary.</p>
+<h2 id="316-precedence-and-associativity"><a class="anchor" tabindex="-1" href="#316-precedence-and-associativity" aria-hidden="true">#</a>3.1.6. Precedence and associativity</h2>
+<p>Besides positional dispatch, operators have precedence and associativity. These are defined in <a href="302-precedence-and-associativity">precedence and associativity</a>.</p>
+<p>Precedence and associativity are not part of the token → trait mapping. The table in 3.2 fixes them at the language level; a registration such as <code>#[infix(&quot;+&quot;)]</code> only connects a token to a trait method.</p>
+<h2 id="317-user-defined-operators"><a class="anchor" tabindex="-1" href="#317-user-defined-operators" aria-hidden="true">#</a>3.1.7. User-Defined operators</h2>
+<p>The standard library gives meaning to the basic operators through <code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code>. User code may use the same mechanism to attach new mappings to additional traits.</p>
+<pre><code>#[infix(&quot;⊕&quot;, like = &quot;+&quot;)]          // the new token follows the level of an existing token
+fn combine(self, rhs: Rhs) -&gt; Output;
+</code></pre>
+<p>A mapping for the same (token, position, type pair) must be unique; a conflict is a compile error.</p>
+<p>To register a character sequence not in the fixed token table of <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a> as a new operator, the token itself must be registered through the same mechanism. The exact procedure is defined in <a href="../006-meta-system/607-operator-magic"><code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code> magic</a>.</p>
+<h2 id="318-unicode-operators"><a class="anchor" tabindex="-1" href="#318-unicode-operators" aria-hidden="true">#</a>3.1.8. Unicode operators</h2>
+<p>For operators outside the ASCII range, such as <code>≤</code>, <code>≥</code>, <code>≠</code>, <code>⊕</code>, <code>∈</code>, the standard library may register them as multiple aliases of the same trait.</p>
+<pre><code>trait Cmp&lt;Rhs = Self&gt; {
+    #[infix(&quot;&lt;=&quot;)]
+    #[infix(&quot;≤&quot;)]
+    fn le(self, rhs: Rhs) -&gt; bool;
+}
+</code></pre>
+<p>Multiple tokens map to the same trait method and behave identically, so either spelling gives the same result.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/301-operator-dispatch.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>3. Expressions overview</a><a class="next" href="302-precedence-and-associativity"><small>Next</small>3.2. Precedence and associativity</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

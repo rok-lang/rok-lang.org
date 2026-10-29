@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.8. trait - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="trait is a container that declares a set of common behavior. A type that implements that behavior satisfies the trait.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/208-trait.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.8. trait - rok docs">
+<meta property="og:description" content="trait is a container that declares a set of common behavior. A type that implements that behavior satisfies the trait.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/208-trait.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/208-trait.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/208-trait.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">2. Type system overview</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. Sum types (A | B)</a></li><li><a href="207-niche-optimization">2.7. Niche optimization</a></li><li class="cur"><a aria-current="page" href="208-trait">2.8. trait</a><ul class="toc"><li><a href="#281-basic-form">2.8.1. Basic form</a></li><li><a href="#282-method-signatures">2.8.2. Method signatures</a></li><li><a href="#283-associated-types">2.8.3. Associated types</a></li><li><a href="#283a-associated-constants">2.8.3a. Associated constants</a></li><li><a href="#284-supertraits">2.8.4. Supertraits</a></li><li><a href="#285-generic-traits">2.8.5. Generic traits</a></li><li><a href="#286-where-clauses-additional-constraints-on-parameters">2.8.6. where clauses: additional constraints on parameters</a></li><li><a href="#287-dispatch-of-trait-methods">2.8.7. Dispatch of trait methods</a></li><li><a href="#288-visibility">2.8.8. Visibility</a></li><li><a href="#289-no-duplicate-definitions-in-the-same-module">2.8.9. No duplicate definitions in the same module</a></li></ul></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. Generics</a></li><li><a href="211-const-generics">2.11. const generics</a></li><li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="28-trait 28-trait 281-basic-form 281-기본-형태 282-method-signatures 282-메서드-시그니처 283-associated-types 283-연관-타입-associated-type defaults 기본값 referring-to-associated-types-from-outside-tassoctype 외부에서의-연관-타입-참조-tassoctype 283a-associated-constants 283a-연관-상수-associated-const 284-supertraits 284-슈퍼트레잇-supertrait 285-generic-traits 285-제네릭-트레잇 286-where-clauses-additional-constraints-on-parameters 286-where-절-매개변수에-추가-제약 287-dispatch-of-trait-methods 287-트레잇-메서드의-디스패치 288-visibility 288-가시성 289-no-duplicate-definitions-in-the-same-module 289-동일-모듈-내-중복-정의-금지"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/208-trait" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="28-trait"><a class="anchor" tabindex="-1" href="#28-trait" aria-hidden="true">#</a>2.8. <code>trait</code></h1>
+<p><code>trait</code> is a container that declares a set of common behavior. A type that implements that behavior satisfies the trait.</p>
+<p>This document defines only the declaration form of traits. The <code>impl</code> block that implements a trait is defined in <a href="209-impl"><code>impl</code></a>.</p>
+<h2 id="281-basic-form"><a class="anchor" tabindex="-1" href="#281-basic-form" aria-hidden="true">#</a>2.8.1. Basic form</h2>
+<p>The grammar of a trait declaration is:</p>
+<pre><code>trait_decl  ::= visibility? &quot;trait&quot; identifier generics? supertraits? where_clause? &quot;{&quot; trait_item* &quot;}&quot;
+supertraits ::= &quot;:&quot; type_expr (&quot;+&quot; type_expr)*
+trait_item  ::= visibility? method_sig
+              | visibility? assoc_type_decl
+              | visibility? method_default
+              | visibility? assoc_const_decl
+method_sig  ::= &quot;fn&quot; identifier &quot;(&quot; param_list? &quot;)&quot; throws_clause? return_type? &quot;;&quot;
+method_default ::= &quot;fn&quot; identifier &quot;(&quot; param_list? &quot;)&quot; throws_clause? return_type? block
+assoc_type_decl ::= &quot;type&quot; identifier (&quot;:&quot; type_expr (&quot;+&quot; type_expr)*)? where_clause? (&quot;=&quot; type_expr)? &quot;;&quot;
+assoc_const_decl ::= &quot;const&quot; identifier &quot;:&quot; type_expr (&quot;=&quot; const_expr)? &quot;;&quot;
+</code></pre>
+<p>Examples of trait declarations:</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Describe</span> {
+    <span class="k">fn</span> describe(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+}
+
+<span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Iterator</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">fn</span> next(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Item</span> | <span class="k">none</span>;
+}
+</code></pre>
+<p>The trait body is enclosed in <code>{ ... }</code>. The body may contain method signatures, associated types, and default method bodies.</p>
+<h2 id="282-method-signatures"><a class="anchor" tabindex="-1" href="#282-method-signatures" aria-hidden="true">#</a>2.8.2. Method signatures</h2>
+<p>A method signature is written as:</p>
+<pre><code class="language-rok"><span class="k">fn</span> name(params) -&gt; <span class="t">ReturnType</span>;
+</code></pre>
+<p>A signature without a body is a method the trait requires; the implementation must provide the body. With a body, it is a default method, and that body is used unless the implementation overrides it. The meaning of the <code>self</code> and <code>ref self</code> parameters is defined in the function specification.</p>
+<p>An example with both a required method and a default method:</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Greeter</span> {
+    <span class="k">fn</span> greet(<span class="k">self</span>) -&gt; <span class="t">str</span>;                          <span class="c">// required</span>
+    <span class="k">fn</span> greet_loudly(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="k">self</span>.greet() }    <span class="c">// default - may be overridden</span>
+}
+</code></pre>
+<h2 id="283-associated-types"><a class="anchor" tabindex="-1" href="#283-associated-types" aria-hidden="true">#</a>2.8.3. Associated types</h2>
+<p>An associated type lets a trait have a different type per implementation.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Iterator</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">fn</span> next(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Item</span> | <span class="k">none</span>;
+}
+</code></pre>
+<p>An associated type is declared as <code>type Name;</code>, and the implementation fills in a concrete type. Within one implementation, an associated type is fixed to exactly one concrete type; an implementation cannot have several possibilities at once.</p>
+<p>An associated type can be used in signatures within the same trait, as in <code>Item | none</code> above. It can also be used in a throws clause, as in <code>throws (Self::X)</code>, in both trait and impl signatures.</p>
+<h3 id="defaults"><a class="anchor" tabindex="-1" href="#defaults" aria-hidden="true">#</a>Defaults</h3>
+<p>An associated type can have a default with <code>type X: Bounds = T;</code>. An impl either omits the associated type to use the default or overrides it with <code>type X = U;</code>. The default is resolved at the trait's definition site, with the trait's parameters substituted.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">TryFrom</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">type</span> <span class="t">Error</span> = <span class="t">ConversionError</span>;
+    <span class="k">fn</span> try_from(value: <span class="t">U</span>) <span class="k">throws</span> (<span class="k">Self</span>::<span class="t">Error</span>) -&gt; <span class="k">Self</span>;
+}
+<span class="k">impl</span> <span class="t">TryFrom</span>&lt;<span class="t">RawPath</span>&gt; <span class="k">for</span> <span class="t">Path</span> { <span class="k">type</span> <span class="t">Error</span> = <span class="t">NonUtf8Error</span>; ... }   <span class="c">// overridden</span>
+<span class="k">impl</span> <span class="t">TryFrom</span>&lt;<span class="t">Celsius</span>&gt; <span class="k">for</span> <span class="t">Kelvin</span> { ... }                           <span class="c">// Error = ConversionError</span>
+</code></pre>
+<p>Inside a trait and all impls (trait impls and inherent impls), both the bare name <code>Item</code> and <code>Self::Item</code> denote the associated type, usable in both method signatures and bodies. In an impl it is the concrete type that impl chose. If an associated type shadows an outer type of the same name (a module's <code>struct Item</code>, a primitive type, etc.), a warning is issued. A trait of the same name is not a type, so no warning is issued (<code>trait IntoFuture { type IntoFuture; }</code> is fine).</p>
+<p>If a type implements two traits that have an associated type of the same name, a bare <code>X</code> / <code>Self::X</code> in that type's impl bodies is ambiguous and is an error. In that case, name the trait with <code>&lt;Self as Tr&gt;::X</code>.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Iterator</span> <span class="k">for</span> <span class="t">Stream</span> { <span class="k">type</span> <span class="t">Item</span> = <span class="t">i32</span>; ... }
+<span class="k">impl</span> <span class="t">Source</span> <span class="k">for</span> <span class="t">Stream</span> { <span class="k">type</span> <span class="t">Item</span> = <span class="t">str</span>; ... }
+
+<span class="k">impl</span> <span class="t">Stream</span> {
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="k">Self</span>::<span class="t">Item</span> { ... }                   <span class="c">// ERROR - Iterator::Item? Source::Item?</span>
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; &lt;<span class="k">Self</span> <span class="k">as</span> <span class="t">Iterator</span>&gt;::<span class="t">Item</span> { ... }     <span class="c">// OK</span>
+}
+</code></pre>
+<h3 id="referring-to-associated-types-from-outside-tassoctype"><a class="anchor" tabindex="-1" href="#referring-to-associated-types-from-outside-tassoctype" aria-hidden="true">#</a>Referring to associated types from outside: <code>T::AssocType</code></h3>
+<p>To refer to the associated type of a trait-bounded parameter from outside, use the <code>T::AssocType</code> notation.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first_item&lt;<span class="t">T</span>: <span class="t">Iterator</span>&gt;(<span class="k">ref</span> it: <span class="t">T</span>) -&gt; <span class="t">T</span>::<span class="t">Item</span> | <span class="k">none</span> { it.next() }
+</code></pre>
+<p>If the bound is a generic trait <code>T: Tr&lt;A&gt;</code>, <code>T::X</code> is the <code>X</code> of the <code>Tr&lt;A&gt;</code> impl, because one type can implement <code>Tr&lt;A&gt;</code> and <code>Tr&lt;B&gt;</code> with different <code>X</code> (<code>&lt;T as Tr&lt;A&gt;&gt;::X</code> is the same, <a href="213-type-paths#2134-fully-qualified-path">2.13.4</a>). Under bounds <code>T: Tr&lt;A&gt; + Tr&lt;B&gt;</code>, or two bound traits that both declare <code>X</code>, a bare <code>T::X</code> is ambiguous and is an error; write <code>&lt;T as Tr&lt;A&gt;&gt;::X</code>. The same holds for associated constants (2.8.3a).</p>
+<p>This notation is associated item access using the <code>::</code> path separator of <a href="../001-lexical/110-punctuation-and-operator-tokens">Punctuation and operator tokens</a>. The general rules of paths (module paths, turbofish, fully qualified form) are defined in <a href="213-type-paths">Type paths</a>.</p>
+<h2 id="283a-associated-constants"><a class="anchor" tabindex="-1" href="#283a-associated-constants" aria-hidden="true">#</a>2.8.3a. Associated constants</h2>
+<p>A trait can declare an associated constant with <code>const N: T;</code> and give it a default with <code>= value</code>. Each <code>impl</code> sets the value (may be omitted if there is a default), and on a type parameter bounded by that trait it is read as <code>T::N</code>.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Shape</span> {
+    <span class="k">const</span> <span class="t">SIDES</span>: <span class="t">u32</span>;
+    <span class="k">const</span> <span class="t">NAME</span>: <span class="t">str</span> = <span class="s">"shape"</span>;
+}
+
+<span class="k">impl</span> <span class="t">Shape</span> <span class="k">for</span> <span class="t">Square</span> { <span class="k">const</span> <span class="t">SIDES</span>: <span class="t">u32</span> = <span class="n">4</span>; }
+
+<span class="k">fn</span> sides&lt;<span class="t">T</span>: <span class="t">Shape</span>&gt;() -&gt; <span class="t">u32</span> { <span class="t">T</span>::<span class="t">SIDES</span> }      <span class="c">// same as &lt;T as Shape&gt;::SIDES</span>
+</code></pre>
+<p>In an <code>impl</code> for a generic type, an associated constant can have a different value per instantiation (<code>impl&lt;const N: usize&gt; Shape for Poly&lt;N&gt; { const SIDES: u32 = N as u32; }</code>). When ambiguous, use the fully qualified form <code>&lt;T as Tr&gt;::N</code> (<a href="213-type-paths#2134-fully-qualified-path">2.13.4</a>).</p>
+<h2 id="284-supertraits"><a class="anchor" tabindex="-1" href="#284-supertraits" aria-hidden="true">#</a>2.8.4. Supertraits</h2>
+<p>A trait can require that it be implemented only for types that satisfy another trait.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Eq</span> {
+    <span class="k">fn</span> eq(<span class="k">self</span>, other: <span class="k">Self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">trait</span> <span class="t">Ord</span>: <span class="t">Eq</span> {
+    <span class="k">fn</span> cmp(<span class="k">self</span>, other: <span class="k">Self</span>) -&gt; <span class="t">Ordering</span>;
+}
+</code></pre>
+<p>Supertraits are written after <code>:</code>. So implementing <code>Ord</code> requires also implementing <code>Eq</code>. Several supertraits are joined with <code>+</code>, as in <code>trait Foo: Bar + Baz</code>. A generic impl must give its target the supertraits for every instantiation its bounds allow; this is checked at the impl.</p>
+<h2 id="285-generic-traits"><a class="anchor" tabindex="-1" href="#285-generic-traits" aria-hidden="true">#</a>2.8.5. Generic traits</h2>
+<p>Traits can also take type parameters.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Convert</span>&lt;<span class="t">Target</span>&gt; {
+    <span class="k">fn</span> convert(<span class="k">self</span>) -&gt; <span class="t">Target</span>;
+}
+</code></pre>
+<p>Type parameters are declared inside <code>&lt;...&gt;</code> after the trait name, and a parameter can have a default, as in <code>Rhs = Self</code>. <code>Self</code> is the keyword denoting the type the trait is implemented for (<a href="../001-lexical/105-keywords">Keywords</a>).</p>
+<p>The exact monomorphization rules for generic traits are defined in <a href="210-generics">Generics</a>.</p>
+<h2 id="286-where-clauses-additional-constraints-on-parameters"><a class="anchor" tabindex="-1" href="#286-where-clauses-additional-constraints-on-parameters" aria-hidden="true">#</a>2.8.6. where clauses: additional constraints on parameters</h2>
+<p>Additional trait bounds can be written on a trait declaration or a method signature.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Sortable</span>&lt;<span class="t">T</span>&gt; <span class="k">where</span> <span class="t">T</span>: <span class="t">Ord</span> {
+    <span class="k">fn</span> sort(<span class="k">ref</span> <span class="k">self</span>);
+}
+
+<span class="k">trait</span> <span class="t">Container</span> {
+    <span class="k">type</span> <span class="t">Item</span> <span class="k">where</span> <span class="t">Item</span>: <span class="t">Clone</span>;
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="t">Item</span>;
+}
+</code></pre>
+<p>Constraints follow the <code>where</code> keyword in the form <code>Type: Trait</code>, separated by commas. Attached to the trait itself, they constrain the whole trait; attached to a method, they constrain only that method.</p>
+<h2 id="287-dispatch-of-trait-methods"><a class="anchor" tabindex="-1" href="#287-dispatch-of-trait-methods" aria-hidden="true">#</a>2.8.7. Dispatch of trait methods</h2>
+<p>When a trait method is called, the compiler looks at the receiver type at the call site and statically calls the method implemented for that type.</p>
+<pre><code class="language-rok"><span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span> };
+<span class="k">let</span> s = p.describe();       <span class="c">// Point's Describe implementation is called statically</span>
+</code></pre>
+<p>This dispatch is always static, because trait-as-type - writing a trait name as a variable, parameter or return type - is forbidden by the <a href="./">Type system overview</a>.</p>
+<p>So when polymorphism is needed, use generics (<a href="210-generics">Generics</a>) or sum types (<a href="206-sum-types">Sum types</a>).</p>
+<h2 id="288-visibility"><a class="anchor" tabindex="-1" href="#288-visibility" aria-hidden="true">#</a>2.8.8. Visibility</h2>
+<p>The visibility of a trait itself and of its methods can be controlled separately. The exact rules are defined in <a href="../005-modules/506-visibility">Visibility</a>.</p>
+<h2 id="289-no-duplicate-definitions-in-the-same-module"><a class="anchor" tabindex="-1" href="#289-no-duplicate-definitions-in-the-same-module" aria-hidden="true">#</a>2.8.9. No duplicate definitions in the same module</h2>
+<p>Declaring two traits with the same name in the same module is a compile error. Declaring two methods with the same name in one trait is a compile error (there is no overloading).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/208-trait.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="207-niche-optimization"><small>Previous</small>2.7. Niche optimization</a><a class="next" href="209-impl"><small>Next</small>2.9. impl</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

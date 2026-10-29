@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.10. rok - package / build front-end - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok is a cargo-style front-end. It owns the manifest rok.rokon and lockfile rok.lock, dependencies, environments, the toolchain pin and script dependencies, and...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/910-rok-frontend.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.10. rok - package / build front-end - rok docs">
+<meta property="og:description" content="rok is a cargo-style front-end. It owns the manifest rok.rokon and lockfile rok.lock, dependencies, environments, the toolchain pin and script dependencies, and...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/910-rok-frontend.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/910-rok-frontend.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/910-rok-frontend.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li class="cur"><a aria-current="page" href="910-rok-frontend">9.10. rok - package / build front-end</a><ul class="toc"><li><a href="#9101-subcommands-and-global-options">9.10.1. Subcommands and global options</a></li><li><a href="#9102-rok-new--rok-init-package-creation">9.10.2. rok new / rok init: package creation</a></li><li><a href="#9103-rokrokon--roklock">9.10.3. rok.rokon / rok.lock</a></li><li><a href="#9104-dependencies-rok-add--remove--update--deps">9.10.4. Dependencies: rok add / remove / update / deps</a></li><li><a href="#9104a-stones-and-rokstonesio">9.10.4a. Stones and rokstones.io</a></li><li><a href="#9104b-native-packages">9.10.4b. Native packages</a></li><li><a href="#9104c-features">9.10.4c. Features</a></li><li><a href="#9105-environments">9.10.5. Environments</a></li><li><a href="#9105a-rok-install--rok-uninstall">9.10.5a. rok install / rok uninstall</a></li><li><a href="#9106-toolchain">9.10.6. toolchain</a></li><li><a href="#9107-inline-manifest-for-single-file-scripts">9.10.7. Inline manifest for single-file scripts</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="910-rok---package--build-front-end 910-rok---패키지--빌드-front-end 9101-subcommands-and-global-options 9101-서브명령과-전역-옵션 9102-rok-new--rok-init-package-creation 9102-rok-new--rok-init-패키지-생성 9103-rokrokon--roklock 9103-rokrokon--roklock roklock-format roklock-형식 9104-dependencies-rok-add--remove--update--deps 9104-의존성-rok-add--remove--update--deps cache 캐시 9104a-stones-and-rokstonesio 9104a-stone-과-rokstonesio version-requirements 버전-요구 which-index 어느-index-인가 index-format index-형식 resolution 해소 rok-search--publish--yank--login--logout rok-search--publish--yank--login--logout 9104b-native-packages 9104b-native-패키지 9104c-features 9104c-features 9105-environments 9105-환경 where-dependencies-come-from 의존성의-출처 9105a-rok-install--rok-uninstall 9105a-rok-install--rok-uninstall 9106-toolchain 9106-toolchain distribution 배포 9107-inline-manifest-for-single-file-scripts 9107-단일-파일-스크립트의-inline-매니페스트"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/910-rok-frontend" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="910-rok---package--build-front-end"><a class="anchor" tabindex="-1" href="#910-rok---package--build-front-end" aria-hidden="true">#</a>9.10. <code>rok</code> - package / build front-end</h1>
+<p><code>rok</code> is a cargo-style front-end. It owns the manifest <code>rok.rokon</code> and lockfile <code>rok.lock</code>, dependencies, environments, the toolchain pin and script dependencies, and delegates compilation to the compiler <code>rokc</code> (<a href="901-rokc-cli">9.1</a>). The runtime is <code>rokr</code> (<code>librokr.a</code>).</p>
+<p>A package without dependencies builds by file conventions alone, without a manifest (<a href="../000-meta/003-source-units#034-the-manifest-rokrokon-is-optional">0.3.4</a>). In that case <code>rok build</code> is equivalent to <code>rokc build</code>.</p>
+<h2 id="9101-subcommands-and-global-options"><a class="anchor" tabindex="-1" href="#9101-subcommands-and-global-options" aria-hidden="true">#</a>9.10.1. Subcommands and global options</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Subcommand</th><th>Action</th></tr></thead>
+<tbody>
+<tr><td><code>new</code>, <code>init</code></td><td>Create a package (9.10.2)</td></tr>
+<tr><td><code>add</code>, <code>remove</code>, <code>update</code>, <code>deps</code></td><td>Dependencies (9.10.4)</td></tr>
+<tr><td><code>search</code>, <code>publish</code>, <code>yank</code>, <code>login</code>, <code>logout</code></td><td>Stones (9.10.4a)</td></tr>
+<tr><td><code>env</code></td><td>Environments (9.10.5)</td></tr>
+<tr><td><code>toolchain</code></td><td>Toolchain (9.10.6)</td></tr>
+<tr><td><code>install</code>, <code>uninstall</code></td><td>Libraries for the REPL / Jupyter, and executables (9.10.5a)</td></tr>
+<tr><td><code>build</code>, <code>check</code>, <code>run</code>, <code>emit</code></td><td>Delegated to <code>rokc</code> with dependencies attached</td></tr>
+<tr><td><code>test</code>, <code>bench</code></td><td><code>rokc</code> builds the harness with dependencies attached; <code>rok</code> runs it (<a href="901-rokc-cli">9.1</a>)</td></tr>
+<tr><td><code>doc</code>, <code>lint</code>, <code>repl [path]</code>, <code>lsp</code></td><td>Delegated to <code>rokc</code> with dependencies attached</td></tr>
+<tr><td><code>fmt</code>, <code>clean</code>, <code>demangle</code>, <code>profdata</code></td><td>Delegated to <code>rokc</code> without dependencies</td></tr>
+<tr><td><code>jupyter</code></td><td>Running the kernel (<code>--connection-file</code>) is delegated; <code>jupyter install [--env &lt;name&gt;]</code> installs the kernelspec (<a href="908-jupyter-integration#983-kernelspec-installation">9.8.3</a>)</td></tr>
+<tr><td><code>version</code>, <code>help</code></td><td></td></tr>
+<tr><td>(none)</td><td>Same as <code>rok repl</code> - starts the REPL</td></tr>
+</tbody></table></div>
+<p>A delegated subcommand runs the <code>rokc</code> subcommand of the same name. <code>rok</code> consumes only its own global options (<code>--env</code> / <code>--offline</code> / <code>--locked</code> / <code>--cwd</code>, anywhere before <code>--</code>), passes the remaining arguments through unchanged, and adds the following. For <code>test</code> and <code>bench</code>, <code>rok</code> has <code>rokc</code> build the harness (<code>--emit-harness</code>) rather than run it, then runs the harness itself (<a href="901-rokc-cli">9.1</a>); the runner is not part of the compiler.</p>
+<ul>
+<li><code>--extern name=&lt;source directory&gt;</code> for each dependency package. They are prepared according to <code>rok.lock</code>, with dependencies before their dependents (the order <code>rok deps</code> prints). Prebuilding is done by <code>rokc</code> (<a href="902-aot-pipeline#prebuilt-dependency-packages">9.2.3</a>).
+</li>
+<li>The package's own features as <code>--cfg feature=&lt;f&gt;</code>, and each dependency's as <code>--extern-feature &lt;name&gt;=&lt;f&gt;</code> (9.10.4c). The feature options <code>--features &lt;f,..&gt;</code> (repeatable; <code>&lt;dep&gt;/&lt;f&gt;</code> too), <code>--all-features</code> and <code>--no-default-features</code> of build / run / test / bench / check / lint / doc / emit / repl / lsp / jupyter / deps are consumed by <code>rok</code> (before <code>--</code>).
+</li>
+<li>The manifest's <code>lints</code> as <code>-A</code> / <code>-W</code> / <code>-D</code> (before the arguments). The manifest is that of the project the path selects: for a <code>.rok</code> file, the nearest directory at or above the file containing <code>src/main.rok</code>, <code>src/lib.rok</code> or <code>rok.rokon</code>. A file in the <code>src/</code> of a package selects that package (<a href="901-rokc-cli#911-general-form">9.1.1</a>). A lone file elsewhere in a directory that has <code>rok.rokon</code> (a script beside a package's <code>src/</code>, or a directory with only <code>rok.rokon</code>) is compiled as a single-file package with that manifest's <code>lints</code> (and <code>lints_from</code>) and dependencies.
+</li>
+<li>Outside a package (environments, scripts), <code>--target-dir</code> set to the <code>target/</code> of that environment or script.
+</li>
+</ul>
+<p><code>rok repl &lt;path&gt;</code> resolves dependencies and lints from the project of that path, as <code>run</code> does, and passes the manifest name (<code>--name</code>).</p>
+<p>Options, output and exit codes follow those of <code>rokc</code> (<a href="901-rokc-cli">9.1</a>). <code>rok</code> treats a closed standard output or standard error the same way as <code>rokc</code> (<a href="901-rokc-cli#916-exit-codes">9.1.6</a>). <code>rokls</code> is a standalone executable equivalent to <code>rok lsp</code>.</p>
+<p>Running just <code>rok [options]</code> with no subcommand starts the REPL, like <code>rok repl</code>.</p>
+<pre><code>rok                 # = rok repl
+rok --env sci       # = rok repl --env sci
+</code></pre>
+<p><code>rok [options] &lt;file&gt; [args..]</code> runs a script: it is <code>rok run -q &lt;file&gt; -- args..</code>. Every argument after the file is passed to the program unchanged, and the exit code is the program's. The word is a file when it contains <code>/</code> (also <code>\</code> on Windows) or has the extension <code>.rok</code>; no subcommand does, so a subcommand is never taken for a file. Together with a shebang line (<a href="../001-lexical/102-lexical-structure#shebang-line">1.2.3</a>), <code>./script.rok args</code> runs the script.</p>
+<p>The path of a delegated command is its first argument that is neither an option nor an option's value, so options may come before it (<code>rok run --release t.rok</code>).</p>
+<p>The global options of <code>rok</code> are:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>--env &lt;name&gt;</code></td><td>Work in that named environment (the REPL, Jupyter, <code>rok install</code>); an error on a command that works on a package (<a href="#9105-environments">9.10.5</a>)</td></tr>
+<tr><td><code>--offline</code></td><td>Do not use the network. git dependencies must be in the cache</td></tr>
+<tr><td><code>--locked</code></td><td>If <code>rok.lock</code> would need to change, do not change it and fail (for CI)</td></tr>
+<tr><td><code>--cwd &lt;dir&gt;</code></td><td>Change directory before running</td></tr>
+<tr><td><code>-q</code>, <code>--quiet</code></td><td>Reduce output</td></tr>
+</tbody></table></div>
+<p>Environment variables are <code>ROK_HOME</code> (default <code>~/.rok</code>), <code>ROK_ENV</code> (9.10.5), <code>ROK_TOOLCHAIN</code> (9.10.6), <code>ROK_REGISTRY</code> (the index) and <code>ROK_REGISTRY_TOKEN</code> (the registry API token) (9.10.4a), and <code>ROK_DIST</code> (the release server, 9.10.6).</p>
+<h2 id="9102-rok-new--rok-init-package-creation"><a class="anchor" tabindex="-1" href="#9102-rok-new--rok-init-package-creation" aria-hidden="true">#</a>9.10.2. <code>rok new</code> / <code>rok init</code>: package creation</h2>
+<pre><code>rok new [--lib] [--bin] &lt;name&gt;
+rok init [--lib] [--bin] [dir]
+rok init --script &lt;file.rok&gt;
+</code></pre>
+<p><code>rok new</code> creates the directory <code>&lt;name&gt;</code> and fills in default files. <code>--bin</code> (the default) creates <code>src/main.rok</code>, which prints a greeting; <code>--lib</code> creates <code>src/lib.rok</code> with an example function and one <code>#[test]</code>; both together create both, <code>src/main.rok</code> then calling the library's function through <code>use &lt;name&gt;::add;</code> (<a href="../000-meta/003-source-units#031-executables-and-libraries">0.3.1</a>). It is an error if <code>&lt;name&gt;</code> already exists.</p>
+<p><code>rok init</code> turns an existing directory (the current directory if omitted) into a package. It is an error if that directory already contains <code>src/main.rok</code> or <code>src/lib.rok</code>.</p>
+<p><code>rok init --script &lt;file.rok&gt;</code> turns a script (<a href="#9107-inline-manifest-for-single-file-scripts">9.10.7</a>) into a package in the script's directory, named after the file (without <code>.rok</code>). <code>rok.rokon</code> gets the merged <code>deps</code> (and <code>native</code>) of the script's blocks, paths rewritten relative to it; the script becomes <code>src/main.rok</code> and every file its <code>mod</code>s load moves under <code>src/</code> at the same relative path, each without its block. It is an error if the script is inside a package, a moved file or <code>rok.rokon</code> already exists, or a submodule file is outside the script's directory.</p>
+<p>Both commands also write <code>rok.rokon</code> in canonical form (<a href="../../refs-standard-libraries/300-std/309-rokon#394-canonical-form">ROKON 3.9.4</a>) and a <code>.gitignore</code> containing <code>target/</code>, and run <code>git init</code> if not inside a git repository. <code>init</code> uses the directory name, adjusted to the naming rules (9.10.3), as the package name.</p>
+<pre><code>hello/
+├── .gitignore        &lt;- target/
+├── rok.rokon
+└── src/
+    └── main.rok
+</code></pre>
+<h2 id="9103-rokrokon--roklock"><a class="anchor" tabindex="-1" href="#9103-rokrokon--roklock" aria-hidden="true">#</a>9.10.3. <code>rok.rokon</code> / <code>rok.lock</code></h2>
+<p><code>rok.rokon</code> at the package root is the manifest, and <code>rok.lock</code> in the same place is the lockfile. Both are in <a href="../../refs-standard-libraries/300-std/309-rokon">ROKON</a> format. The names are spelled exactly this way (all lowercase). Files differing only in case (<code>Rok.rokon</code> etc.) are ignored with a warning and not read.</p>
+<p>The manifest is a single ROKON value, a <code>Package { .. }</code> struct (the root name <code>Package</code> may be omitted). It is only read, never compiled or executed.</p>
+<pre><code class="language-rokon"><span class="t">Package</span> {
+    name: <span class="s">"geom"</span>,                    <span class="c">// string, optional</span>
+    version: <span class="s">"0.3.1"</span>,                <span class="c">// string, optional</span>
+    toolchain: <span class="s">"0.4"</span>,                <span class="c">// string, optional - toolchain pin (9.10.6)</span>
+    description: <span class="s">"2D geometry"</span>,      <span class="c">// string, optional</span>
+    license: <span class="s">"MIT OR Apache-2.0"</span>,    <span class="c">// string, optional (SPDX expression)</span>
+    repository: <span class="s">"https://example.com/geom.git"</span>,   <span class="c">// string, optional</span>
+    deps: {                          <span class="c">// package name (string) -&gt; Dep</span>
+        <span class="s">"util"</span>: <span class="t">Dep</span>::path(<span class="s">"../util"</span>),
+        <span class="s">"parser"</span>: <span class="t">Dep</span>::git(<span class="s">"https://example.com/parser.git"</span>, tag: <span class="s">"v1.2"</span>),
+        <span class="s">"http"</span>: <span class="s">"0.9"</span>,                                   <span class="c">// stone (= Dep::version("0.9"))</span>
+        <span class="s">"json"</span>: <span class="t">Dep</span>::version(<span class="s">"^1.4"</span>, optional: <span class="k">true</span>),    <span class="c">// only with a feature (9.10.4c)</span>
+        <span class="s">"csv"</span>: <span class="t">Dep</span>::version(<span class="s">"^0.3"</span>, registry: <span class="s">"https://example.com/index"</span>),
+    },
+    dev_deps: {                      <span class="c">// same form as deps. test / bench only</span>
+        <span class="s">"fixtures"</span>: <span class="t">Dep</span>::path(<span class="s">"tests/fixtures"</span>),
+    },
+    features: { <span class="s">"default"</span>: [<span class="s">"json"</span>], <span class="s">"json"</span>: [<span class="s">"dep:json"</span>], <span class="s">"tls"</span>: [<span class="s">"http/tls"</span>], <span class="s">"full"</span>: [<span class="s">"json"</span>, <span class="s">"tls"</span>] },
+    native: { <span class="s">"zlib"</span>: <span class="s">"^1.3"</span>, <span class="s">"png"</span>: <span class="t">Dep</span>::native(url: <span class="s">"vendor/png.rokon"</span>, sha256: <span class="s">"&lt;64 hex&gt;"</span>) },
+    lints_from: <span class="s">".."</span>,                <span class="c">// string, optional - start from ../rok.rokon's lints</span>
+    lints: { <span class="s">"dead_code"</span>: <span class="s">"allow"</span>, <span class="s">"nonstandard_style"</span>: <span class="s">"deny"</span> },
+}
+</code></pre>
+<ul>
+<li>Values are ROKON literals (strings, <code>{ &quot;k&quot;: v }</code> dicts, the empty dict <code>{}</code>) and <code>Dep::path(&quot;..&quot;)</code> / <code>Dep::git(&quot;url&quot;, rev | tag | branch: &quot;..&quot;)</code> / <code>Dep::version(&quot;req&quot;, registry: &quot;url&quot;)</code>. <code>Dep::git</code> takes at most one of <code>rev</code> / <code>tag</code> / <code>branch</code>, and <code>registry</code> of <code>Dep::version</code> is optional. A dependency value that is a single string is shorthand for <code>Dep::version</code>.
+</li>
+<li><code>Dep::path</code> / <code>Dep::git</code> / <code>Dep::version</code> also take <code>optional: true</code>, <code>features: [&quot;&lt;f&gt;&quot;, ..]</code> and <code>default_features: false</code> (9.10.4c); an optional dev dependency is an error.
+</li>
+<li><code>Dep::registry</code> is for <code>rok.lock</code> only; using it in <code>rok.rokon</code> is an error.
+</li>
+<li>Package names (keys of <code>deps</code>, <code>name</code>) are lowercase ASCII <code>[a-z0-9_-]+</code> beginning with a letter (beginning with a digit, <code>-</code> or <code>_</code> is an error). The name <code>rok</code> is reserved for the standard library: a package, dependency, native package or registry name <code>rok</code> is an error (<code>`rok` is reserved for the standard library; name the package something else, e.g. `rok_util`</code>), and so is <code>rok new</code> / <code>rok init</code> / <code>rok add</code> with it. Code must be able to name the package too, so its code name (below) may not be a keyword (1.5: <code>fn</code>, <code>match</code>, <code>self</code>, ..) or a path start (5.5.7: <code>pkg</code>, <code>sup</code>); <code>use pkg::add;</code> in an executable always means its own root (<code>`pkg` already names a package's own root (`pkg::`), so code can't name a package called that; name the package something else, e.g. `pkg_util`</code>). Keys are strings (<code>&quot;rok-syntax&quot;: Dep::version(&quot;^0.1&quot;)</code>).
+</li>
+<li>In code, the name with <code>-</code> replaced by <code>_</code> is the top-level path referring to that package (<code>rok-syntax</code> → <code>use rok_syntax::..</code>, <code>--extern rok_syntax=..</code>).
+</li>
+<li>In the registry and within one dependency graph, names are compared treating <code>-</code> and <code>_</code> as equal and ignoring case. So <code>rok-syntax</code> and <code>rok_syntax</code> cannot coexist.
+</li>
+<li>A dependency must have a <code>src/lib.rok</code>; that library is what its dependents get, whether or not the package also has <code>src/main.rok</code>. A dependency with only <code>src/main.rok</code> is an error that says it is a program, for <code>rok install</code>. Transitive dependencies are the <code>deps</code> of the dependency package (<code>dev_deps</code> are not transitive).
+</li>
+<li><code>native</code> maps native package names (their own namespace: a package and a native package may share a name) to <code>Dep::native(&quot;req&quot;[, registry: &quot;url&quot;])</code>, a requirement string, or <code>Dep::native(url: &quot;&lt;url or path relative to the manifest&gt;&quot;, sha256: &quot;&lt;64 hex digits&gt;&quot;)</code> (9.10.4b). <code>Dep::native</code> in <code>deps</code> / <code>dev_deps</code> is an error. Native dependencies of every package in the graph are linked into executables (those reached only through <code>dev_deps</code>, only for test / bench).
+</li>
+<li><code>lints</code> sets lint levels (lint or group name → <code>&quot;allow&quot;</code> | <code>&quot;warn&quot;</code> | <code>&quot;deny&quot;</code>, <a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">6.2.9</a>). They are treated as if prepended to the CLI flags of every <code>rokc</code> command <code>rok</code> runs, so CLI <code>-A/-W/-D</code> and attributes in code override them.
+</li>
+<li><code>lints_from</code> names a directory (relative to this manifest's directory, or absolute) whose <code>rok.rokon</code> supplies starting lint levels. That manifest's <code>lints</code>, after its own <code>lints_from</code> chain, are applied first, and this manifest's <code>lints</code> follow, so an entry here overrides the same lint or group from the chain (all entries are passed as <code>-A</code>/<code>-W</code>/<code>-D</code> in this order; later flags win). It applies only to the package being built or checked (and to an environment's manifest); dependencies' manifests are never consulted for lints. It is an error if the directory does not exist, contains no <code>rok.rokon</code>, or if the chain returns to a manifest already in it (a cycle). <code>rok env import</code> rewrites a relative <code>lints_from</code> as an absolute path. A script's <code>//! ```rokon</code> block may not use it.
+</li>
+<li>Errors: unknown fields / <code>Dep</code> kinds / named arguments, duplicates, <code>features</code> that break the rules of 9.10.4c, package names violating the rules, syntax that is not ROKON, anything other than a single <code>Package { .. }</code>, trailing tokens. Diagnostics show the location with <code>file:line:col</code> and a caret.
+</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>Dependency source</th><th>Form</th><th>Pinned in <code>rok.lock</code></th></tr></thead>
+<tbody>
+<tr><td>path</td><td><code>Dep::path(&quot;..&quot;)</code> (path relative to the manifest)</td><td>No (always current content)</td></tr>
+<tr><td>git</td><td><code>Dep::git(&quot;url&quot;)</code>, optionally one of <code>rev:</code> / <code>tag:</code> / <code>branch:</code></td><td>Commit and tree hash</td></tr>
+<tr><td>stone</td><td><code>Dep::version(&quot;req&quot;[, registry: &quot;url&quot;])</code> or the string <code>&quot;req&quot;</code> (<a href="#9104a-stones-and-rokstonesio">9.10.4a</a>)</td><td>Version, commit, tree hash</td></tr>
+<tr><td>native</td><td><code>Dep::native(&quot;req&quot;)</code> / <code>Dep::native(url:, sha256:)</code> (<a href="#9104b-native-packages">9.10.4b</a>)</td><td>Version and entry SHA-256 (index); none (the hash pins it)</td></tr>
+</tbody></table></div>
+<p>rok has no build scripts: no code from a package runs at build time. C / C++ libraries come in as prebuilt native packages (9.10.4b).</p>
+<p>Within one build, one name is one package. If the same name is required from different sources (different paths, or different urls / commits), it is an error showing both requirers.</p>
+<h3 id="roklock-format"><a class="anchor" tabindex="-1" href="#roklock-format" aria-hidden="true">#</a><code>rok.lock</code> format</h3>
+<p><code>rok.lock</code> is ROKON (canonical form) written deterministically by <code>rok</code>. After a header comment it holds one <code>Locked</code> per git package and stone, in name order. Path dependencies are not pinned and do not appear.</p>
+<pre><code class="language-rokon"><span class="c">// rok.lock: generated by `rok`; do not edit. Commit it with your sources.</span>
+<span class="t">Lock</span> {
+    version: <span class="n">1</span>,
+    packages: [
+        <span class="t">Locked</span> {
+            name: <span class="s">"parser"</span>,
+            source: <span class="t">Dep</span>::git(<span class="s">"https://example.com/parser.git"</span>, tag: <span class="s">"v1.2"</span>),
+            commit: <span class="s">"4f0c2a9e1b7d3c58a6e09f21d4b8c7a3e5f60123"</span>,
+            tree: <span class="s">"9a1e7c3b5d2f4a6081c9e3b7d5f2a4c6e8b0d1f3"</span>,
+        },
+        <span class="t">Locked</span> {
+            name: <span class="s">"json"</span>,
+            vers: <span class="s">"1.4.2"</span>,
+            source: <span class="t">Dep</span>::registry(<span class="s">"https://github.com/rok-lang/rokstones.io-index"</span>),
+            commit: <span class="s">"0b6d.."</span>,
+            tree: <span class="s">"77e1.."</span>,
+        },
+    ],
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>version</code></td><td>Lock format version (<code>1</code>)</td></tr>
+<tr><td><code>name</code></td><td>The <code>deps</code> key in <code>rok.rokon</code></td></tr>
+<tr><td><code>vers</code></td><td>Stones only. The resolved version</td></tr>
+<tr><td><code>source</code></td><td>For git, the <code>Dep::git(..)</code> exactly as written in <code>rok.rokon</code>; for stones, <code>Dep::registry(&quot;&lt;index url&gt;&quot;)</code></td></tr>
+<tr><td><code>commit</code></td><td>The resolved commit (40 hex digits)</td></tr>
+<tr><td><code>tree</code></td><td>The git tree hash of that commit. Used to verify the cached checkout</td></tr>
+</tbody></table></div>
+<ul>
+<li>The <code>source</code> of <code>Locked</code> is <code>Dep::git(..)</code> or <code>Dep::registry(..)</code>.
+</li>
+<li>A missing <code>packages</code> field is read as an empty list.
+</li>
+<li>Features are not recorded: the lock pins every package of the graph, optional ones included, so it does not depend on the features a build enables.
+</li>
+<li>Native packages from an index are pinned in an optional <code>natives: [LockedNative { name, vers, source: Dep::registry(&quot;&lt;index&gt;&quot;), sha256 }]</code>, sorted by name and written only when non-empty. <code>sha256</code> is the SHA-256 of the entry's canonical index line with <code>yanked: false</code>; a changed entry is a &quot;run <code>rok update</code>&quot; error.
+</li>
+<li>If <code>version</code> is not <code>1</code>, it is an &quot;unsupported lockfile version&quot; error.
+</li>
+<li>Every error raised while reading the lock appends &quot;(delete rok.lock and run <code>rok update</code> to make it again)&quot;.
+</li>
+</ul>
+<h2 id="9104-dependencies-rok-add--remove--update--deps"><a class="anchor" tabindex="-1" href="#9104-dependencies-rok-add--remove--update--deps" aria-hidden="true">#</a>9.10.4. Dependencies: <code>rok add</code> / <code>remove</code> / <code>update</code> / <code>deps</code></h2>
+<pre><code>rok add &lt;name&gt; --path &lt;dir&gt; [--dev]
+rok add &lt;name&gt; --git &lt;url&gt; [--rev &lt;rev&gt; | --tag &lt;tag&gt; | --branch &lt;branch&gt;] [--dev]
+rok add &lt;name&gt;[@&lt;req&gt;] [--registry &lt;url&gt;] [--dev]      # stone
+rok add &lt;name&gt; .. [--features &lt;f,..&gt;] [--no-default-features] [--optional]   # with any of the above
+rok remove &lt;name&gt;
+rok add .. &lt;file.rok&gt;                    # into a script's //! rokon block
+rok remove [--native] &lt;name&gt; &lt;file.rok&gt;
+rok update [name...]
+rok deps [--dev] [--features &lt;f,..&gt;] [--all-features] [--no-default-features]
+</code></pre>
+<ul>
+<li><code>add</code> / <code>remove</code> edit <code>rok.rokon</code>, preserving comments and layout. <code>--dev</code> adds to <code>dev_deps</code>. <code>add</code> / <code>remove</code> edit the package's <code>rok.rokon</code>. Given a script file as the last argument, <code>add</code> / <code>remove</code> edit that file's <code>//! rokon</code> block instead (9.10.7): a missing block is created after the shebang line and the leading <code>//!</code> lines (written in canonical form; an existing block keeps its layout and comments), a block left empty is removed, a path is written relative to the script, and <code>--dev</code> / <code>--optional</code> are errors. A script inside a package is an error (it uses the package's <code>rok.rokon</code>). Outside a package without a script, or with <code>--env</code>, they are an error naming <code>rok add &lt;name&gt; &lt;file.rok&gt;</code> and <code>rok install</code> / <code>rok uninstall</code> (<a href="#9105a-rok-install--rok-uninstall">9.10.5a</a>). Adding a stone without a requirement writes <code>^&lt;newest version&gt;</code>. <code>--features</code>, <code>--no-default-features</code> and <code>--optional</code> are written into the <code>Dep::..</code>; <code>--optional</code> also adds the feature <code>&quot;&lt;name&gt;&quot;: [&quot;dep:&lt;name&gt;&quot;]</code> unless the package has a feature of that name.
+</li>
+<li>Builds use the commits and versions in <code>rok.lock</code>. Newly declared dependencies are added to the lock and removed ones are cleaned up, but only <code>update</code> moves something already pinned. Given names, <code>update</code> re-resolves only those packages; otherwise it re-resolves all git dependencies and stones.
+</li>
+<li><code>deps</code> prints the resolved dependency packages as lines <code>&lt;code name&gt;=&lt;path of its src/lib.rok&gt;</code> (the code name has <code>-</code> replaced by <code>_</code>), dependencies first (<code>--dev</code> includes dev dependencies). Each such line is followed by its <code>--extern-feature=&lt;code name&gt;=&lt;f&gt;</code> lines; <code>deps</code> takes the feature options and <code>--dev</code>. For each native package (dependents first, for the host) it also prints <code># native &lt;name&gt; &lt;vers&gt;</code> followed by its <code>rokc</code> arguments, one per line.
+</li>
+<li><code>rok.lock</code> is committed to version control.
+</li>
+<li><code>rok update</code> re-resolves <code>rok.lock</code>; <code>rok toolchain update</code> replaces the toolchain (9.10.6).
+</li>
+</ul>
+<h3 id="cache"><a class="anchor" tabindex="-1" href="#cache" aria-hidden="true">#</a>Cache</h3>
+<p>Fetched git sources are kept in <code>$ROK_HOME/cache/</code> and shared by all projects.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Path</th><th>Contents</th></tr></thead>
+<tbody>
+<tr><td><code>cache/git/db/&lt;repo&gt;-&lt;hash&gt;/</code></td><td>Bare clone of the repository (one per url)</td></tr>
+<tr><td><code>cache/registry/db/&lt;repo&gt;-&lt;hash&gt;/</code></td><td>Bare clone of the stone index (one per index)</td></tr>
+<tr><td><code>cache/git/checkouts/&lt;commit&gt;/</code></td><td>Checkout of a commit. Verified by tree hash before use, and re-extracted if different</td></tr>
+<tr><td><code>cache/scripts/&lt;hash&gt;/</code></td><td><code>rok.lock</code> and <code>target/</code> of a script; <code>&lt;hash&gt;</code> covers the script's path and the path and block of every file it reaches (<a href="#9107-inline-manifest-for-single-file-scripts">9.10.7</a>)</td></tr>
+<tr><td><code>cache/native/&lt;sha256&gt;/</code></td><td>A native archive, unpacked after its SHA-256 matched; never fetched again (9.10.4b)</td></tr>
+<tr><td><code>cache/native/meta/&lt;sha256&gt;.rokon</code></td><td>A <code>Dep::native(url:)</code> file</td></tr>
+</tbody></table></div>
+<h2 id="9104a-stones-and-rokstonesio"><a class="anchor" tabindex="-1" href="#9104a-stones-and-rokstonesio" aria-hidden="true">#</a>9.10.4a. Stones and rokstones.io</h2>
+<p>A package in a registry is called a <strong>stone</strong>. The default registry is <strong>rokstones.io</strong>, whose index is the separate git repository <code>https://github.com/rok-lang/rokstones.io-index</code>.</p>
+<h3 id="version-requirements"><a class="anchor" tabindex="-1" href="#version-requirements" aria-hidden="true">#</a>Version requirements</h3>
+<p>Same as Cargo.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Requirement</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>1.2.3</code>, <code>^1.2.3</code></td><td><code>&gt;=1.2.3, &lt;2.0.0</code> (<code>^0.2.3</code> is <code>&lt;0.3.0</code>, <code>^0.0.3</code> is <code>&lt;0.0.4</code>)</td></tr>
+<tr><td><code>~1.2.3</code></td><td><code>&gt;=1.2.3, &lt;1.3.0</code></td></tr>
+<tr><td><code>=1.2.3</code></td><td>Exactly</td></tr>
+<tr><td><code>&gt;=</code> <code>&gt;</code> <code>&lt;</code> <code>&lt;=</code></td><td>Comparison</td></tr>
+<tr><td><code>*</code>, <code>1.*</code>, <code>1.2.x</code></td><td>Wildcard</td></tr>
+<tr><td><code>&gt;=1.2, &lt;1.5</code></td><td>Comma means all must be satisfied</td></tr>
+</tbody></table></div>
+<p>A pre-release version (<code>1.3.0-beta.1</code>) matches only when the requirement names a pre-release of the same major.minor.patch.</p>
+<h3 id="which-index"><a class="anchor" tabindex="-1" href="#which-index" aria-hidden="true">#</a>Which index</h3>
+<p>The order is <code>ROK_REGISTRY</code> &gt; <code>Config { registry: &quot;&lt;url&gt;&quot; }</code> in <code>$ROK_HOME/config.rokon</code> &gt; the default (the rokstones.io index). The <code>registry:</code> of <code>Dep::version</code> and <code>rok add --registry</code> set the index for that one dependency.</p>
+<h3 id="index-format"><a class="anchor" tabindex="-1" href="#index-format" aria-hidden="true">#</a>Index format</h3>
+<p>The root of the index repository has a <code>config.rokon</code>, <code>Config { api: &quot;&lt;url&gt;&quot; }</code>: the base URL of the registry's API (<code>https://rokstones.io</code> for rokstones.io). It must be <code>https://</code>, except <code>http://127.0.0.1</code> and <code>http://localhost</code>. A stone is one file at the shard path of its published lowercase name (<code>-</code> kept as is).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Name length</th><th>Path</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>1/a</code></td></tr>
+<tr><td>2</td><td><code>2/ab</code></td></tr>
+<tr><td>3</td><td><code>3/a/abc</code></td></tr>
+<tr><td>4 or more</td><td><code>ab/cd/abcd..</code></td></tr>
+</tbody></table></div>
+<p>Each line of the file is one version, as single-line ROKON in canonical form. Older versions come first.</p>
+<pre><code class="language-rokon"><span class="t">Stone</span> { name: <span class="s">"json"</span>, vers: <span class="s">"1.4.2"</span>, deps: [{ name: <span class="s">"util"</span>, req: <span class="s">"^0.3"</span>, kind: <span class="s">"normal"</span> }], source: <span class="t">Dep</span>::git(<span class="s">"https://example.com/json.git"</span>, rev: <span class="s">"0b6d.."</span>), cksum: <span class="s">"77e1.."</span>, yanked: <span class="k">false</span> }
+</code></pre>
+<ul>
+<li>The <code>kind</code> in <code>deps</code> is <code>&quot;normal&quot;</code>, <code>&quot;dev&quot;</code> or <code>&quot;native&quot;</code>; <code>registry</code> is optional.
+</li>
+<li>A stone with features has <code>features: { &quot;&lt;name&gt;&quot;: [&quot;&lt;entry&gt;&quot;, ..] }</code> after <code>deps</code>, checked as in 9.10.4c. A <code>normal</code> dependency may have <code>optional: true</code>, <code>features: [..]</code> and <code>default_features: false</code> (written only when not the default); <code>dev</code> / <code>native</code> ones may not be optional, and native ones have no features. <code>rok publish</code> writes them from <code>rok.rokon</code>; resolution reads them from the entry. After checkout the entry's <code>features</code> must equal those of the stone's <code>rok.rokon</code> at that commit (in any order); otherwise it is an error.
+</li>
+<li><code>native/&lt;shard path&gt;</code> holds native packages, one <code>Native { .. }</code> per line (<a href="#9104b-native-packages">9.10.4b</a>).
+</li>
+<li><code>description</code>, <code>license</code> and <code>repository</code> from the manifest appear as optional trailing fields.
+</li>
+<li>The package is at the root of the <code>source</code> repository. <code>cksum</code> is the git tree hash of that commit, verified after checkout.
+</li>
+</ul>
+<h3 id="resolution"><a class="anchor" tabindex="-1" href="#resolution" aria-hidden="true">#</a>Resolution</h3>
+<ul>
+<li>Among matching versions, the highest non-yanked one is chosen. A version pinned in the lock is kept as long as it still matches (even if yanked since).
+</li>
+<li>In one dependency graph, one name is one version. Transitive dependencies follow the <code>deps</code> of the index entry.
+</li>
+<li>If two requirements do not overlap, it is an error stating both. There is no backtracking; writing a requirement at the root that both accept resolves it.
+</li>
+<li>The lock is checked against the index. If the <code>rev</code> of a pinned version has changed, it is a &quot;run <code>rok update</code>&quot; error.
+</li>
+<li><code>--offline</code> uses the cached index and respects <code>--locked</code>.
+</li>
+</ul>
+<h3 id="rok-search--publish--yank--login--logout"><a class="anchor" tabindex="-1" href="#rok-search--publish--yank--login--logout" aria-hidden="true">#</a><code>rok search</code> / <code>publish</code> / <code>yank</code> / <code>login</code> / <code>logout</code></h3>
+<pre><code>rok search [--native] &lt;query&gt;
+rok login [&lt;token&gt;]
+rok logout
+rok publish [--index &lt;checkout&gt;] [--commit]
+rok yank [--native] --vers &lt;version&gt; [--undo] [--index &lt;checkout&gt;] [name]   # name required with --native
+</code></pre>
+<ul>
+<li><p><code>search</code> searches the index by name and prints one line per match: <code>&lt;name&gt; &lt;newest version&gt; - &lt;description&gt;</code> (the description part omitted when the entry has none). Index lookups accept either spelling, <code>-</code> or <code>_</code>.</p>
+</li>
+<li><p><code>publish</code> is a dry run by default. It requires a clean work tree, the package at the repository root, and a <code>src/lib.rok</code>, a <code>src/main.rok</code> or both. A stone with only <code>src/main.rok</code> is a program: <code>rok install</code> builds it, and it cannot be a dependency. Normal path / git dependencies are rejected, and path / git dev dependencies are dropped. It checks for conflicts with the same version and with names equal under <code>-</code> / <code>_</code> and case folding. A name already owned under a different spelling is rejected. A dry run without <code>--index</code> only prints the entry; with <code>--index</code> it is also checked against that checkout. The entry's source is the url of git remote <code>origin</code> as configured (before <code>insteadOf</code> rewrites); it must be <code>https://</code>, except <code>http://127.0.0.1</code> and <code>http://localhost</code>.</p>
+</li>
+<li><p>With <code>--commit</code>, <code>publish</code> adds the entry: with <code>--index</code>, as a commit &quot;Publish &lt;name&gt; &lt;vers&gt;&quot; in that checkout (not pushed); without it, through the registry API of the configured index (&quot;Which index&quot;), which adds it to the index. The client never writes to the index repository itself.</p>
+</li>
+<li><p><code>yank</code> sets (or with <code>--undo</code> clears) <code>yanked</code> for that version: with <code>--index</code>, as a commit in that checkout; otherwise through the registry API.</p>
+</li>
+<li><p>The registry API is at <code>api</code> of the index's <code>config.rokon</code>. Requests carry <code>Authorization: Bearer &lt;token&gt;</code>, and bodies are single-line ROKON (<code>application/rokon; charset=utf-8</code>):</p>
+<ul>
+<li><code>GET &lt;api&gt;/api/v1/me</code> → <code>Me { login: &quot;..&quot;, publish: &lt;bool&gt; }</code>
+</li>
+<li><code>POST &lt;api&gt;/api/v1/publish</code>, body the index line (<code>Stone { .. }</code> / <code>Native { .. }</code>) → <code>Published { name, vers, file }</code>
+</li>
+<li><code>POST &lt;api&gt;/api/v1/yank</code>, body <code>Yank { name, vers, undo: &lt;bool&gt;, native: &lt;bool&gt; }</code> → <code>Yanked { name, vers, yanked }</code>
+</li>
+</ul>
+<p>A failure is a 4xx / 5xx status with <code>Error { message: &quot;..&quot; }</code>, whose message <code>rok</code> reports; 401 means the token is not valid.</p>
+</li>
+<li><p>The registry API needs a token; an <code>--index</code> checkout needs none. The token is <code>ROK_REGISTRY_TOKEN</code> if set and non-empty, else the one <code>rok login</code> saved. Without either, it is an error &quot;run <code>rok login</code> first&quot;.</p>
+</li>
+<li><p><code>rok login</code> takes a rokstones.io account token, created on the website (<code>&lt;api&gt;/me</code>, signed in with GitHub; currently only the registry's maintainers can create one). When the token is omitted it is read from standard input, not echoed (echo is restored on Ctrl-C). <code>login</code> asks <code>/api/v1/me</code>: it refuses a token the API rejects, and an account whose <code>publish</code> is false (&quot;this account cannot publish yet: publishing is open to rokstones.io maintainers only&quot;), saving nothing. Otherwise it saves <code>Credentials { token: &quot;..&quot; }</code> in <code>$ROK_HOME/credentials.rokon</code> (mode 0600 on Unix) and prints &quot;Logged in as &lt;login&gt;&quot;. <code>rok logout</code> removes that file.</p>
+</li>
+<li><p>The token reaches <code>curl</code> only on its standard input: never on a command line or in the environment, and never printed (errors show <code>***</code>).</p>
+</li>
+</ul>
+<h2 id="9104b-native-packages"><a class="anchor" tabindex="-1" href="#9104b-native-packages" aria-hidden="true">#</a>9.10.4b. Native packages</h2>
+<p>rok compiles no C. A native package is a prebuilt archive per target triple plus a value:</p>
+<pre><code class="language-rokon"><span class="t">Native</span> {
+    name: <span class="s">"png"</span>, vers: <span class="s">"1.6.43"</span>,
+    deps: { <span class="s">"zlib"</span>: <span class="t">Dep</span>::native(<span class="s">"^1.3"</span>) },
+    targets: {
+        <span class="s">"x86_64-unknown-linux-gnu"</span>: <span class="t">Artifact</span> {
+            url: <span class="s">"https://example.com/png-1.6.43-x86_64-linux.tar.gz"</span>,
+            sha256: <span class="s">"&lt;64 hex&gt;"</span>,
+            links: { <span class="s">"png16"</span>: <span class="s">"static"</span> },
+            runtime: [],
+        },
+    },
+    yanked: <span class="k">false</span>, description: <span class="s">"PNG codec"</span>, license: <span class="s">"Libpng"</span>, repository: <span class="s">"https://example.com/png"</span>,
+}
+</code></pre>
+<p>The value is one index line, or a file for <code>Dep::native(url:, sha256:)</code>, whose artifact urls may be relative to it.</p>
+<ul>
+<li>The archive (any tar-readable format) holds <code>lib/</code>: <code>lib&lt;n&gt;.a</code>, <code>lib&lt;n&gt;.dylib</code> / <code>lib&lt;n&gt;.so</code>, Windows <code>&lt;n&gt;.lib</code> (static or import library). It also holds the <code>runtime</code> files and license files. Nothing in it is run.
+</li>
+<li>Hashes are mandatory. An archive is checked before unpacking, and is refused if it has absolute or <code>..</code> paths, links leaving it, or lacks a named library or runtime file.
+</li>
+<li>On Apple targets runtime dylibs must have an <code>@rpath/</code> install name.
+</li>
+<li>Builds use the target triple's artifact; a missing one is an error listing the triples it has.
+</li>
+<li><code>rok</code> passes <code>rokc</code> <code>-L &lt;archive&gt;/lib</code>, <code>-l kind=name</code> per link and <code>--native-runtime</code> per runtime file, dependents before dependencies.
+</li>
+</ul>
+<pre><code>rok add --native &lt;name&gt;[@&lt;req&gt;]
+rok remove --native &lt;name&gt;
+rok search --native &lt;query&gt;
+rok publish --native &lt;file&gt; [--index &lt;dir&gt;] [--commit]
+rok yank --native --vers &lt;version&gt; [--undo] [--index &lt;dir&gt;] &lt;name&gt;
+</code></pre>
+<p><code>publish --native</code> fetches and checks every target, and requires absolute urls, a license file, and dependencies from an index only. <code>--commit</code> and <code>yank --native</code> follow the stone rules: an <code>--index</code> checkout, else the registry API with the token (<code>native: true</code> in <code>Yank</code>).</p>
+<ul>
+<li>On ELF targets a runtime library's soname must equal its file name. A <code>dylib</code> link for a <code>-musl</code> target is an error.
+</li>
+<li><code>repl</code> / <code>jupyter</code> load native packages: shared libraries through the system loader, static archives linked into the session. <code>check</code> / <code>lint</code> / <code>doc</code> link nothing.
+</li>
+<li>Copies beside an executable are build outputs.
+</li>
+</ul>
+<h2 id="9104c-features"><a class="anchor" tabindex="-1" href="#9104c-features" aria-hidden="true">#</a>9.10.4c. Features</h2>
+<p>A package declares features in <code>features</code>, a dict from feature name to the list of what the feature enables. Names are <code>[a-z0-9][a-z0-9_-]*</code>, words that say what they are (<code>http1</code>, <code>http2</code>, <code>tls</code>). Each entry is one of:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Entry</th><th>Enables</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;f&gt;</code></td><td>Feature <code>f</code> of this package</td></tr>
+<tr><td><code>dep:&lt;d&gt;</code></td><td>The optional dependency <code>d</code></td></tr>
+<tr><td><code>&lt;d&gt;/&lt;f&gt;</code></td><td>Feature <code>f</code> of dependency <code>d</code>, and <code>d</code> itself if it is optional</td></tr>
+<tr><td><code>&lt;d&gt;?/&lt;f&gt;</code></td><td>Feature <code>f</code> of the optional dependency <code>d</code>, only if something else enables <code>d</code></td></tr>
+</tbody></table></div>
+<ul>
+<li><code>default</code> is an ordinary feature that is on unless turned off: <code>--no-default-features</code> for the package being built, <code>default_features: false</code> on a dependency.
+</li>
+<li>An optional dependency (<code>optional: true</code>) is in the build only when a <code>dep:&lt;d&gt;</code> or <code>&lt;d&gt;/&lt;f&gt;</code> entry of an enabled feature enables it. There is no implicit feature of its name, and it is an error if no entry enables it.
+</li>
+<li>It is an error if an entry names a feature or dependency (of <code>deps</code>) the package does not have, if <code>dep:</code> or <code>?</code> names a non-optional dependency, or if features form a cycle. Diagnostics show <code>file:line:col</code>. It is an error if a dependency is asked for a feature it does not have.
+</li>
+<li>Resolution: the lock covers the whole graph. The build then starts from the root package's features (<code>default</code> unless turned off, <code>--features</code>, or every feature with <code>--all-features</code>) and follows every enabled dependency, with the features it asks of it plus its <code>default</code>. Features are additive and unified: each package has one feature set for the whole graph. The root's <code>dev_deps</code> and the features they ask count only for <code>test</code> / <code>bench</code>. The result does not depend on the order of anything.
+</li>
+<li><code>--features</code> takes the root's feature names and <code>&lt;dep&gt;/&lt;f&gt;</code> for its direct dependencies.
+</li>
+<li>Each package is compiled with <code>cfg(feature = &quot;&lt;f&gt;&quot;)</code> for exactly its enabled features (<a href="../006-meta-system/603-cfg#636-where-parameters-come-from">6.3.6</a>). Native packages have no features.
+</li>
+<li>A script's <code>```rokon</code> block has no <code>features</code> (9.10.7).
+</li>
+</ul>
+<h2 id="9105-environments"><a class="anchor" tabindex="-1" href="#9105-environments" aria-hidden="true">#</a>9.10.5. Environments</h2>
+<p>Environments replace conda / venv. There is no activation step.</p>
+<ul>
+<li>A package (a directory with <code>src/main.rok</code>, <code>src/lib.rok</code> or <code>rok.rokon</code>) uses the dependencies of its own <code>rok.rokon</code> and nothing else; it never sees libraries installed into an environment. Neither does a script. A command that works on a package is an error with <code>--env</code>.
+</li>
+<li>A named environment keeps <code>rok.rokon</code>, <code>rok.lock</code> and <code>target/</code> in <code>$ROK_HOME/envs/&lt;name&gt;/</code>. Its <code>deps</code> are the libraries installed with <code>rok install</code> (<a href="#9105a-rok-install--rok-uninstall">9.10.5a</a>), for the REPL and Jupyter; only <code>rok install</code> / <code>rok uninstall</code> and <code>rok env import</code> change them. Path dependencies in it are absolute. Installed libraries are prebuilt into its <code>target/</code>.
+</li>
+<li>The environment used outside a package (the REPL, Jupyter, the language server, <code>rok install</code>) is chosen in the order <code>--env &lt;name&gt;</code> &gt; <code>ROK_ENV</code> &gt; <code>rok env use</code> (<code>$ROK_HOME/envs/CURRENT</code>) &gt; <code>default</code>; <code>default</code> is created by the first <code>rok install</code> into it. Inside a package, <code>rok repl</code> / <code>jupyter</code> / <code>lsp</code> without a path use the package, or with <code>--env</code> that environment.
+</li>
+</ul>
+<h3 id="where-dependencies-come-from"><a class="anchor" tabindex="-1" href="#where-dependencies-come-from" aria-hidden="true">#</a>Where dependencies come from</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Compiled as</th><th>Dependencies</th><th>Lock</th><th>Prebuilt into</th></tr></thead>
+<tbody>
+<tr><td>A package</td><td>its <code>rok.rokon</code> <code>deps</code> (<code>dev_deps</code> for test / bench)</td><td><code>&lt;package&gt;/rok.lock</code></td><td><code>&lt;package&gt;/target/&lt;profile&gt;/deps/</code></td></tr>
+<tr><td>A script</td><td>the merged <code>deps</code> of the <code>//! rokon</code> blocks of it and of the files its <code>mod</code>s load</td><td><code>cache/scripts/&lt;hash&gt;/rok.lock</code></td><td><code>cache/scripts/&lt;hash&gt;/target/</code></td></tr>
+<tr><td>The REPL / Jupyter outside a package</td><td>the active environment's installed libraries</td><td>the environment's</td><td>the environment's <code>target/</code></td></tr>
+</tbody></table></div>
+<pre><code>rok env create &lt;name&gt;
+rok env list                      # marks the current environment with *
+rok env remove &lt;name&gt;
+rok env use &lt;name&gt;                # changes the default environment outside projects
+rok env export &lt;name&gt; &lt;dir&gt;       # writes rok.rokon / rok.lock to &lt;dir&gt;
+rok env import &lt;name&gt; &lt;dir | rok.rokon&gt;    # creates from a project or export (relative paths made absolute)
+rok env shell [name]              # $SHELL with ROK_ENV=&lt;name&gt;
+rok repl --env &lt;name&gt;
+</code></pre>
+<p><code>:add &lt;dep&gt; ..</code> in the REPL runs <code>rok install &lt;dep&gt; ..</code> into the current environment, or <code>rok add</code> in a package's session; it then re-reads the dependencies and attaches them to the session.</p>
+<h2 id="9105a-rok-install--rok-uninstall"><a class="anchor" tabindex="-1" href="#9105a-rok-install--rok-uninstall" aria-hidden="true">#</a>9.10.5a. <code>rok install</code> / <code>rok uninstall</code></h2>
+<pre><code>rok install &lt;name&gt;[@&lt;req&gt;] [--registry &lt;url&gt;]
+rok install [&lt;name&gt;] --path &lt;dir | file.rok&gt;
+rok install [&lt;name&gt;] --git &lt;url&gt; [--rev &lt;rev&gt; | --tag &lt;tag&gt; | --branch &lt;branch&gt;]
+rok install .. [--features &lt;f,..&gt;] [--no-default-features] [--lib] [--force]
+rok install --native &lt;name&gt;[@&lt;req&gt;] [--registry &lt;url&gt;]
+rok install --list
+rok uninstall [--native] &lt;name&gt;..
+</code></pre>
+<ul>
+<li>The package at the source is fetched into the cache first (<a href="#9104-dependencies-rok-add--remove--update--deps">9.10.4</a>). A package with <code>src/main.rok</code>, or a script file, is an executable: it is built with <code>--release</code> and its executable placed in <code>$ROK_HOME/bin/&lt;name&gt;</code>, as with <code>cargo install</code>. A git or stone package is built from a scratch copy of its checkout; a path package in place; a script file in place. <code>$ROK_HOME/installs.rokon</code> (<code>Package { deps: { &quot;&lt;name&gt;&quot;: &lt;source&gt; } }</code>) records each executable and its exact source (a stone as <code>=&lt;version&gt;</code>, a git package with its <code>rev:</code>). When the package also has <code>src/lib.rok</code>, <code>rok install</code> says so and that <code>--lib</code> installs the library instead.
+</li>
+<li>A package with only <code>src/lib.rok</code>, or any package with <code>src/lib.rok</code> given <code>--lib</code>, is a library and goes into the active environment, as with <code>pip install</code>, for <code>rok repl</code>, <code>rok jupyter</code> and <code>:add</code> (<a href="#9105-environments">9.10.5</a>): it is written into the environment's <code>rok.rokon</code> (a stone without a requirement as <code>^&lt;newest version&gt;</code>, a path as an absolute path), resolved into its <code>rok.lock</code>, and prebuilt into its <code>target/</code>. Scripts do not see it: a script gets a library with <code>rok add &lt;name&gt; &lt;file.rok&gt;</code>; the output line names this. If it does not build, nothing is installed. <code>--lib</code> on a package without <code>src/lib.rok</code>, or on a script, is an error.
+</li>
+<li><code>&lt;name&gt;</code> is the library's top-level name, or the executable's file name. If omitted, it is the package's <code>name</code>, else the directory name (path), the repository name without <code>.git</code> (git), or the file stem (script). It follows the naming rules of <a href="#9103-rokrokon--roklock">9.10.3</a>.
+</li>
+<li><code>--features</code> / <code>--no-default-features</code> go into the library's <code>Dep</code>, or to the executable's build; <code>--dev</code> / <code>--optional</code> are errors. <code>--native</code> adds a native package to the environment's <code>native</code> (<a href="#9104b-native-packages">9.10.4b</a>).
+</li>
+<li>The proxies <code>rok</code>, <code>rokc</code>, <code>rokls</code> (<a href="#9106-toolchain">9.10.6</a>) are never replaced, and neither is a file in <code>$ROK_HOME/bin</code> that <code>rok install</code> did not put there (an error). Installing an executable again: one from the same stone version or git commit with the same features is kept, not rebuilt (<code>`tool` 0.1.0 is installed already (&lt;path&gt;); to rebuild it, run `rok install tool --force`</code>), and <code>--force</code> rebuilds it (<code>Reinstalled</code>); another version replaces it (<code>Upgraded tool from 0.1.0 to 0.2.0</code>, <code>Downgraded ...</code>), and another git commit too (<code>Replaced &lt;url&gt; at &lt;commit&gt; with ...</code>). One from a path or a script file is always rebuilt, as with <code>cargo install --path</code>. Library installs are unchanged.
+</li>
+<li><code>--list</code> prints <code>libraries (environment `&lt;env&gt;`):</code> and <code>executables (&lt;bin dir&gt;):</code>, each followed by <code>  &lt;name&gt; &lt;source&gt;</code> lines in install order.
+</li>
+<li><code>rok uninstall &lt;name&gt;..</code> removes each from the active environment's libraries (re-resolving its lock), or else removes the executable <code>rok install</code> put in <code>$ROK_HOME/bin</code>; <code>--native</code> removes a native package from the environment. A name that is neither is an error.
+</li>
+<li>Apart from <code>rok install</code>, only <code>rok toolchain</code> (toolchains, proxies, <code>config.rokon</code>), <code>rok login</code> (<code>credentials.rokon</code>), <code>rok env</code> (environments) and the caches write under <code>$ROK_HOME</code>.
+</li>
+</ul>
+<h2 id="9106-toolchain"><a class="anchor" tabindex="-1" href="#9106-toolchain" aria-hidden="true">#</a>9.10.6. toolchain</h2>
+<p><code>rok</code> / <code>rokc</code> / <code>rokls</code> in <code>$ROK_HOME/bin/</code> are proxies that run the same executable of the active toolchain (rustup-style). The active toolchain is chosen in this order:</p>
+<ol>
+<li><code>+&lt;version&gt;</code> on the command line (<code>rok +0.4 build</code>)
+</li>
+<li>The environment variable <code>ROK_TOOLCHAIN</code>
+</li>
+<li><code>toolchain: &quot;X&quot;</code> in the manifest (the nearest <code>rok.rokon</code>)
+</li>
+<li>The default (<code>Config { registry, toolchain }</code> in <code>$ROK_HOME/config.rokon</code>)
+</li>
+</ol>
+<p>A version prefix matches versions under it (<code>0.3</code> is the highest <code>0.3.*</code>). If no toolchain matches, it is an error suggesting <code>rok toolchain install</code>.</p>
+<pre><code>rok toolchain list
+rok toolchain install &lt;version&gt; --from &lt;dir | archive | url&gt;
+rok toolchain default [&lt;version&gt;]          # without an argument, prints the current default
+rok toolchain remove &lt;version&gt;
+rok toolchain update [&lt;version&gt;]
+rok toolchain clean                        # remove every installed toolchain but the default
+</code></pre>
+<ul>
+<li>An installation is <code>$ROK_HOME/toolchains/&lt;version&gt;-&lt;triple&gt;/</code> and is self-contained (<a href="902-aot-pipeline#9219-installation-layout">9.2.19</a>). <code>install</code> requires <code>--from</code>.
+</li>
+<li><code>install</code> verifies with <code>bin/rokc --version --verbose</code>; the version and host must match.
+</li>
+<li>The first installed toolchain becomes the default, and the <code>bin/</code> proxies are created at that point.
+</li>
+<li><code>rok toolchain update</code> replaces the default toolchain under <code>$ROK_HOME</code>. Without an argument it installs the latest release; with a version it installs that version. The installed toolchain becomes the default and the <code>bin/</code> proxies are rewritten; on Windows a running proxy is renamed before its copy replaces it. It downloads the release archive and verifies its SHA-256 (Distribution, below), unpacks it apart and moves it into place, then checks that the proxies run it; on failure the previous default and proxies are restored and the new toolchain is removed. Earlier toolchains stay installed. A version already installed is made the default without a download. <code>rok update</code> re-resolves <code>rok.lock</code>; <code>rok toolchain update</code> replaces the toolchain (9.10.4).
+</li>
+<li><code>rok toolchain clean</code> removes every installed toolchain except the current default, an opt-in tidy-up for the earlier versions that <code>update</code> leaves installed. A version a project pins is removed too, so reinstall it if a build needs it; with no default set it is an error.
+</li>
+</ul>
+<h3 id="distribution"><a class="anchor" tabindex="-1" href="#distribution" aria-hidden="true">#</a>Distribution</h3>
+<ul>
+<li>A release archive is <code>rok-&lt;version&gt;-&lt;triple&gt;.tar.gz</code> (Windows <code>.zip</code>), containing the toolchain layout; outside Windows a <code>rok-&lt;version&gt;-&lt;triple&gt;.tar.xz</code> with the same files sits beside it. Each archive has <code>&lt;archive&gt;.sha256</code> beside it: the archive's SHA-256 in hex, optionally followed by the file name (sha256sum format).
+</li>
+<li><code>install.sh</code>, <code>install.ps1</code> and <code>rok toolchain install --from &lt;url&gt;</code> download <code>&lt;url&gt;.sha256</code> from the same place and refuse an archive whose SHA-256 differs; a missing <code>.sha256</code> is an error. An archive given by path is checked against <code>&lt;path&gt;.sha256</code> when that file exists. Signatures are not defined; HTTPS vouches for the origin.
+</li>
+<li><code>install.sh</code> (<a href="https://rok-lang.org/install.sh">https://rok-lang.org/install.sh</a>) installs into <code>$ROK_HOME</code> from an archive or from GitHub releases of the <code>rok-lang</code> organization. It downloads the <code>.tar.xz</code> where tar can read it (macOS, or <code>xz</code> on <code>PATH</code>) and the release has one, else the <code>.tar.gz</code>. <code>rok toolchain install</code> downloads the <code>.tar.gz</code>.
+</li>
+<li>Releases are served from <code>$ROK_DIST</code> (default <code>https://github.com/rok-lang/rok/releases</code>): <code>&lt;dist&gt;/download/v&lt;version&gt;/&lt;archive&gt;</code> with its <code>.sha256</code>, and <code>&lt;dist&gt;/latest/download/rok-version</code> holding the latest release's version.
+</li>
+</ul>
+<h2 id="9107-inline-manifest-for-single-file-scripts"><a class="anchor" tabindex="-1" href="#9107-inline-manifest-for-single-file-scripts" aria-hidden="true">#</a>9.10.7. Inline manifest for single-file scripts</h2>
+<p>An anonymous package (<a href="../004-functions/416-entry-point#4168-single-file-execution">4.16.8</a>) gets its dependencies only from <code>```rokon</code> blocks holding <code>Package { deps: { .. } }</code> (and <code>native</code>) inside the <code>//!</code> lines at the very start (after a shebang line) of its file and of each file its <code>mod</code>s load (like uv's inline script metadata). Libraries installed into an environment are never used. A block may contain only <code>deps</code> and <code>native</code> (no <code>features</code>, so no optional dependencies). Code blocks of other languages are ignored. Paths in a block are relative to the file that holds it. The blocks are merged; one library given different entries in two files is an error naming both files and both entries. Running a submodule file directly uses only the blocks of the files that run reaches. <code>rok add &lt;name&gt; .. &lt;file.rok&gt;</code> / <code>rok remove &lt;name&gt; &lt;file.rok&gt;</code> write a block (<a href="#9104-dependencies-rok-add--remove--update--deps">9.10.4</a>), and <code>rok init --script</code> turns a script into a package (<a href="#9102-rok-new--rok-init-package-creation">9.10.2</a>). A script keeps its lockfile and builds in <code>cache/scripts/&lt;hash&gt;/</code>, keyed by its path and the path and block of every file it reaches. A script's executable is cached by everything it is built from, every file it includes and its libraries included. A <code>use x::..</code> of a package a script lacks is an error whose help is the command to run, <code>run `rok add x &lt;file&gt;` </code>, with a note when the active environment has <code>x</code>; in a package it suggests <code>rok add x</code>. <code>import x</code> (and <code>include</code> / <code>require</code>) is an error whose help is <code>mod x;</code> when <code>x.rok</code> is beside the file, <code>use</code> when <code>x</code> is a path root or a module the file declares, and otherwise <code>rok add x &lt;file&gt;</code>.</p>
+<pre><code class="language-rok"><span class="c">//! ```rokon</span>
+<span class="c">//! Package {</span>
+<span class="c">//!     deps: { "util": Dep::git("https://example.com/util.git", tag: "v1") },</span>
+<span class="c">//! }</span>
+<span class="c">//! ```</span>
+
+<span class="k">use</span> util::greet;
+greet();
+</code></pre>
+<p>Running a single-file script reuses its executable. <code>rokc run</code> of an anonymous package keeps the executable in <code>&lt;target&gt;/&lt;profile&gt;/scripts/&lt;key&gt;/</code>, where <code>&lt;target&gt;</code> is the script's <code>target/</code> (under <code>cache/scripts/&lt;hash&gt;/</code>, beside its <code>rok.lock</code>). <code>&lt;key&gt;</code> is a hash of everything the build is made from: the toolchain, the build options, lint levels and target, the source and every file it includes, the runtime and the C library the toolchain ships for the target, and the dependencies passed to it with their prebuilt libraries. When the key matches, nothing is compiled and the warnings of the build that made the executable are printed again. A new executable is written under a scratch name and renamed into place, so concurrent runs of one script are safe. An entry unused for a day is removed when another is built.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/910-rok-frontend.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="909-debug-tools"><small>Previous</small>9.9. Debug / diagnostic tools</a><a class="next" href="../../refs-standard-libraries/"><small>Next</small>rok standard library reference</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

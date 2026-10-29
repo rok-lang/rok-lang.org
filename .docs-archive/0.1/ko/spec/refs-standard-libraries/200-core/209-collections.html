@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.9. 컬렉션 - List / Dict / Set / Tuple / Slice - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::collections 모듈은 범용 컨테이너를 제공합니다. 모든 컬렉션은 GC heap 에 할당되며, #[literal(...)] 로 바인딩된 리터럴 문법을 통해 직접 생성할 수 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/209-collections.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.9. 컬렉션 - List / Dict / Set / Tuple / Slice - rok docs">
+<meta property="og:description" content="rok::core::collections 모듈은 범용 컨테이너를 제공합니다. 모든 컬렉션은 GC heap 에 할당되며, #[literal(...)] 로 바인딩된 리터럴 문법을 통해 직접 생성할 수 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/209-collections.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/209-collections.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/209-collections.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li class="cur"><a aria-current="page" href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a><ul class="toc"><li><a href="#291-리터럴-문법---literalquery-바인딩">2.9.1. 리터럴 문법 - #[literal(query)] 바인딩</a></li><li><a href="#292-listt---동적-배열">2.9.2. List&lt;T&gt; - 동적 배열</a></li><li><a href="#293-dictk-v---hash-map">2.9.3. Dict&lt;K, V&gt; - hash map</a></li><li><a href="#294-sett---hash-set">2.9.4. Set&lt;T&gt; - hash set</a></li><li><a href="#295-ordereddictk-v--orderedsett---insertion-order">2.9.5. OrderedDict&lt;K, V&gt; / OrderedSet&lt;T&gt; - insertion-order</a></li><li><a href="#295a-dequet---양끝-큐">2.9.5a. Deque&lt;T&gt; - 양끝 큐</a></li><li><a href="#295b-binaryheapt---우선순위-큐">2.9.5b. BinaryHeap&lt;T&gt; - 우선순위 큐</a></li><li><a href="#296-tuple---고정-heterogeneous">2.9.6. Tuple&lt;...&gt; - 고정 heterogeneous</a></li><li><a href="#297-slicet---view">2.9.7. Slice&lt;T&gt; - view</a></li><li><a href="#298-index--indexset--sliceable-트레잇-매핑">2.9.8. Index / IndexSet / Sliceable 트레잇 매핑</a></li><li><a href="#299-intoiterator--fromiterator">2.9.9. IntoIterator / FromIterator</a></li><li><a href="#2910-모듈-매핑">2.9.10. 모듈 매핑</a></li><li><a href="#2911-다른-언어와의-비교">2.9.11. 다른 언어와의 비교</a></li><li><a href="#2912-gcbuft---raw-gc-buffer">2.9.12. GcBuf&lt;T&gt; - raw GC buffer</a></li></ul></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="29-컬렉션---list--dict--set--tuple--slice 29-collections---list--dict--set--tuple--slice 291-리터럴-문법---literalquery-바인딩 291-literal-syntax---literalquery-binding dict--set-모호성-해결 resolving-the-dict--set-ambiguity -의-타입 the-type-of- 참조-핸들 reference-handles 292-listt---동적-배열 292-listt---dynamic-array 핵심-메서드 core-methods 사용-예 examples 트레잇-구현 trait-implementations 비교--해시--debug---공통-규칙 comparison--hashing--debug---common-rules 용량과-제거---공통-규칙 capacity-and-removal---common-rules 293-dictk-v---hash-map 293-dictk-v---hash-map 핵심-메서드-1 core-methods-1 사용-예-1 examples-1 indexk indexk lazy-view lazy-views 294-sett---hash-set 294-sett---hash-set 295-ordereddictk-v--orderedsett---insertion-order 295-ordereddictk-v--orderedsett---insertion-order 생성 construction 295a-dequet---양끝-큐 295a-dequet---double-ended-queue 295b-binaryheapt---우선순위-큐 295b-binaryheapt---priority-queue 296-tuple---고정-heterogeneous 296-tuple---fixed-heterogeneous 트레잇-구현-1 trait-implementations-1 함수-다중-반환 multiple-return-values 297-slicet---view 297-slicet---view 핵심-메서드-2 core-methods-2 사용-예-2 examples-2 variadic-args-와의-통합 integration-with-variadic-args 298-index--indexset--sliceable-트레잇-매핑 298-index--indexset--sliceable-trait-mapping 299-intoiterator--fromiterator 299-intoiterator--fromiterator 2910-모듈-매핑 2910-module-mapping 2911-다른-언어와의-비교 2911-comparison-with-other-languages 2912-gcbuft---raw-gc-buffer 2912-gcbuft---raw-gc-buffer"><a href="../../../../spec/refs-standard-libraries/200-core/209-collections" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="29-컬렉션---list--dict--set--tuple--slice"><a class="anchor" tabindex="-1" href="#29-컬렉션---list--dict--set--tuple--slice" aria-hidden="true">#</a>2.9. 컬렉션 - <code>List</code> / <code>Dict</code> / <code>Set</code> / <code>Tuple</code> / <code>Slice</code></h1>
+<p><code>rok::core::collections</code> 모듈은 범용 컨테이너를 제공합니다. 모든 컬렉션은 GC heap 에 할당되며, <code>#[literal(...)]</code> 로 바인딩된 리터럴 문법을 통해 직접 생성할 수 있습니다.</p>
+<p>이 장에서는 다음 6 가지 컬렉션의 권위 시그니처를 정의합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>컬렉션</th><th>리터럴 문법</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>[1, 2, 3]</code></td><td>동적 배열 (insertion order)</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>{&quot;a&quot;: 1, &quot;b&quot;: 2}</code></td><td>hash map (HashMap, 순서 없음)</td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><code>{1, 2, 3}</code></td><td>hash set (순서 없음)</td></tr>
+<tr><td><code>OrderedDict&lt;K, V&gt;</code></td><td><code>OrderedDict::from([...])</code></td><td>insertion-order 보존 dict</td></tr>
+<tr><td><code>OrderedSet&lt;T&gt;</code></td><td><code>OrderedSet::from([...])</code></td><td>insertion-order 보존 set</td></tr>
+<tr><td><code>Tuple&lt;...&gt;</code></td><td><code>(1, &quot;a&quot;, true)</code></td><td>고정 크기 heterogeneous</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>xs[1:3]</code></td><td>컨테이너의 zero-copy view</td></tr>
+</tbody></table></div>
+<h2 id="291-리터럴-문법---literalquery-바인딩"><a class="anchor" tabindex="-1" href="#291-리터럴-문법---literalquery-바인딩" aria-hidden="true">#</a>2.9.1. 리터럴 문법 - <code>#[literal(query)]</code> 바인딩</h2>
+<p>리터럴 문법은 <a href="../../refs-lang/006-meta-system/605-literal-magic">refs-lang 6.5 <code>#[literal]</code></a> 의 <strong>query DSL</strong> 로 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[literal( "[" {expr} % "," * "]" )]</span>
+<span class="k">struct</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="a">#[literal( "{" {expr ":" expr} % "," * "}" )]</span>
+<span class="k">struct</span> <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="a">#[literal( "{" {expr} % "," + "}" )]</span>
+<span class="k">struct</span> <span class="t">Set</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="a">#[literal( "(" expr "," {expr} % "," * ")" )]</span>
+<span class="k">struct</span> <span class="t">Tuple</span> { <span class="c">/* ... */</span> }
+</code></pre>
+<p>리터럴 query 문법의 의미는 다음과 같습니다. 먼저 <code>{...} % sep *</code> 는 0 회 이상 sep 으로 구분된 반복을 나타내고, <code>{...} % sep +</code> 는 1 회 이상의 반복을 의미하며, 원소가 하나인 Set 은 후행 콤마로 <code>{1,}</code> 라고 써서 block <code>{1}</code> 과 구분합니다. 토큰열 매칭의 경우 lexer 단계에서 직접 구분한 뒤 parser 가 query 매칭을 수행합니다.</p>
+<h3 id="dict--set-모호성-해결"><a class="anchor" tabindex="-1" href="#dict--set-모호성-해결" aria-hidden="true">#</a>Dict / Set 모호성 해결</h3>
+<pre><code class="language-rok">{<span class="s">"a"</span>: <span class="n">1</span>}      <span class="c">// Dict - `:` 패턴</span>
+{<span class="n">1</span>, <span class="n">2</span>}        <span class="c">// Set - 값만</span>
+{<span class="n">1</span>,}          <span class="c">// Set (단일 원소 - 후행 콤마)</span>
+{<span class="n">1</span>}           <span class="c">// 항상 block - 슬롯이 Set 이어도 마찬가지</span>
+{ x = <span class="n">1</span> }     <span class="c">// block expression - `{` 다음 토큰이 statement-like</span>
+</code></pre>
+<p>parser 가 내용만 보고 결정합니다. <code>expr &quot;:&quot;</code> 형태이면 Dict, 콤마가 있으면 Set, 그 밖에는 block 입니다. 받는 슬롯의 타입은 판정에 쓰지 않습니다.</p>
+<h3 id="-의-타입"><a class="anchor" tabindex="-1" href="#-의-타입" aria-hidden="true">#</a><code>[...]</code> 의 타입</h3>
+<p><code>[1, 2, 3]</code> 은 기대 타입이 없으면 <code>List&lt;T&gt;</code> 입니다. 고정 크기 배열 <code>[T; N]</code> 은 <code>let a: [i32; 3] = [1, 2, 3];</code> 처럼 기대 타입을 <code>[T; N]</code> 으로 적었을 때만 만들어집니다. 고정 배열은 컴파일러가 직접 만들며 핸들러를 거치지 않습니다.</p>
+<p>고정 배열은 원소가 구현하면 <code>Clone</code> / <code>Copy</code> / <code>Default</code> / <code>Debug</code> / <code>PartialEq</code> / <code>Eq</code> / <code>PartialOrd</code> / <code>Ord</code> / <code>Hash</code> 를 구현하고, <code>len()</code> 과 <code>is_empty()</code> 를 가집니다. 순서 비교는 사전식이므로 비교 연산자 (<code>==</code>, <code>&lt;</code> 등) 를 바로 쓸 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: [<span class="t">i32</span>; <span class="n">3</span>] = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+a.len();                 <span class="c">//→ 3</span>
+a == [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];          <span class="c">//→ true</span>
+a &lt; [<span class="n">1</span>, <span class="n">2</span>, <span class="n">4</span>];           <span class="c">//→ true (사전식)</span>
+</code></pre>
+<h3 id="참조-핸들"><a class="anchor" tabindex="-1" href="#참조-핸들" aria-hidden="true">#</a>참조 핸들</h3>
+<p><code>List</code>, <code>Dict</code>, <code>Set</code> 값은 GC heap 객체를 가리키는 참조 핸들입니다. <code>let ys = xs;</code> 나 인자 전달은 핸들을 복사하므로 같은 컬렉션을 공유합니다. 그래서 컬렉션을 바꾸는 메서드도 <code>ref self</code> 가 아니라 <code>self</code> 를 받습니다. 독립된 사본이 필요하면 <code>clone()</code> 을 부릅니다. 구조체 원소는 값입니다: <code>xs[i]</code> 와 <code>d[k]</code> 는 사본을 돌려주고, 변경은 <code>xs[i] = v</code> 로 저장합니다 (<a href="../../refs-lang/002-types/203-struct#238-값-의미">refs-lang 2.3.8</a>). <code>keys</code> / <code>values</code> / <code>entries</code> 는 컬렉션을 복사하지 않는 lazy iterator 를 돌려줍니다.</p>
+<h2 id="292-listt---동적-배열"><a class="anchor" tabindex="-1" href="#292-listt---동적-배열" aria-hidden="true">#</a>2.9.2. <code>List&lt;T&gt;</code> - 동적 배열</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// 내부: ptr + len + capacity</span>
+}
+</code></pre>
+<p>내부적으로는 연속 메모리 buffer 와 <code>len</code> / <code>capacity</code> 로 구성되며, amortized O(1) push/pop 와 O(1) random access 를 제공합니다.</p>
+<h3 id="핵심-메서드"><a class="anchor" tabindex="-1" href="#핵심-메서드" aria-hidden="true">#</a>핵심 메서드</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> capacity(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+
+    <span class="k">fn</span> push(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> pop(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> insert(<span class="k">self</span>, idx: <span class="t">usize</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> remove(<span class="k">self</span>, idx: <span class="t">usize</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+    <span class="k">fn</span> truncate(<span class="k">self</span>, len: <span class="t">usize</span>);              <span class="c">// 앞의 len 개만 남김; 더 적으면 그대로</span>
+    <span class="k">fn</span> drain(<span class="k">self</span>, r: <span class="t">Range</span>&lt;<span class="t">usize</span>&gt;) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;; <span class="c">// r 의 원소를 순서대로 빼서 돌려줌; r 이 거꾸로이거나 len() 을 넘어 끝나면 panic</span>
+
+    <span class="k">fn</span> get(<span class="k">self</span>, idx: <span class="t">usize</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;       <span class="c">// safe - out-of-bounds → none</span>
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> last(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+
+    <span class="k">fn</span> extend&lt;<span class="t">I</span>: <span class="t">IntoIterator</span>&lt;<span class="t">Item</span> = <span class="t">T</span>&gt;&gt;(<span class="k">self</span>, iter: <span class="t">I</span>);
+    <span class="k">fn</span> sort(<span class="k">self</span>) <span class="k">where</span> <span class="t">T</span>: <span class="t">Ord</span>;                  <span class="c">// 오름차순, stable</span>
+    <span class="k">fn</span> sort_by(<span class="k">self</span>, cmp: <span class="k">fn</span>(<span class="t">T</span>, <span class="t">T</span>) -&gt; <span class="t">Ordering</span>); <span class="c">// stable</span>
+    <span class="k">fn</span> reserve(<span class="k">self</span>, additional: <span class="t">usize</span>);
+    <span class="k">fn</span> shrink_to_fit(<span class="k">self</span>);
+    <span class="k">fn</span> reverse(<span class="k">self</span>);                            <span class="c">// 제자리</span>
+
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">ListIter</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> into_iter(<span class="k">self</span>) -&gt; <span class="t">ListIntoIter</span>&lt;<span class="t">T</span>&gt;;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">List</span>&lt;<span class="t">str</span>&gt; {
+    <span class="k">fn</span> join(<span class="k">self</span>, sep: <span class="t">str</span>) -&gt; <span class="t">str</span>;              <span class="c">// 원소를 sep 로 이어 붙임</span>
+}
+
+<span class="k">impl</span> <span class="t">List</span>&lt;<span class="t">u8</span>&gt; {
+    <span class="k">fn</span> find&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, needle: <span class="t">B</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;   <span class="c">// self[:].find(needle)</span>
+}
+</code></pre>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+xs.push(<span class="n">1</span>);
+xs.push(<span class="n">2</span>);
+xs.push(<span class="n">3</span>);
+
+<span class="k">let</span> ys: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+ys[<span class="n">0</span>];                    <span class="c">//→ 10  (Index trait)</span>
+ys[<span class="n">100</span>];                  <span class="c">//→ panic (IndexError)</span>
+ys.get(<span class="n">100</span>);              <span class="c">//→ none</span>
+
+<span class="k">for</span> x <span class="k">in</span> ys {
+    <span class="k">use</span>(x);               <span class="c">//→ 10, 20, 30</span>
+}
+
+<span class="k">let</span> total: <span class="t">i32</span> = ys.into_iter().sum();   <span class="c">//→ 60</span>
+</code></pre>
+<h3 id="트레잇-구현"><a class="anchor" tabindex="-1" href="#트레잇-구현" aria-hidden="true">#</a>트레잇 구현</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>구현 조건</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>IntoIterator</code></td><td>항상</td><td><code>for x in xs</code></td></tr>
+<tr><td><code>FromIterator&lt;T&gt;</code></td><td>항상</td><td><code>(0..5).collect::&lt;List&lt;i32&gt;&gt;()</code></td></tr>
+<tr><td><code>Index&lt;usize&gt;</code></td><td>항상</td><td><code>xs[i]</code></td></tr>
+<tr><td><code>IndexSet&lt;usize, T&gt;</code></td><td>항상</td><td><code>xs[i] = v</code></td></tr>
+<tr><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code></td><td>항상</td><td><code>xs[1:3]</code></td></tr>
+<tr><td><code>Display</code></td><td><strong>아님</strong></td><td><strong>수동 출력 권장</strong></td></tr>
+<tr><td><code>Debug</code></td><td><code>T: Debug</code></td><td><code>f&quot;{xs:?}&quot;</code> → <code>[1, 2, 3]</code></td></tr>
+<tr><td><code>Clone</code></td><td><code>T: Clone</code></td><td>깊은 복제</td></tr>
+<tr><td><code>PartialEq</code></td><td><code>T: PartialEq</code></td><td>element-wise</td></tr>
+<tr><td><code>Eq</code>/<code>Ord</code>/<code>Hash</code></td><td>T 의 같은 트레잇 시</td><td>lexicographic</td></tr>
+</tbody></table></div>
+<h3 id="비교--해시--debug---공통-규칙"><a class="anchor" tabindex="-1" href="#비교--해시--debug---공통-규칙" aria-hidden="true">#</a>비교 / 해시 / Debug - 공통 규칙</h3>
+<ul>
+<li><code>List&lt;T&gt;</code> 는 <code>PartialEq</code> / <code>Eq</code> / <code>Hash</code> 를 순서대로 원소별로 구현합니다.
+</li>
+<li><code>Dict&lt;K, V&gt;</code> 와 <code>Set&lt;T&gt;</code> 는 순서와 무관하게 비교하고 해시합니다. 같은 원소 (키와 값) 를 가지면 같습니다.
+</li>
+<li>세 컬렉션 모두 원소가 그 트레잇을 구현하면 <code>Debug</code> 를 구현하며, 순회 순서대로 출력합니다.
+</li>
+<li>따라서 원소가 <code>Eq + Hash</code> 인 컬렉션은 <code>Set</code> 원소나 <code>Dict</code> 키가 될 수 있습니다 (<code>Set&lt;List&lt;i32&gt;&gt;</code>).
+</li>
+</ul>
+<h3 id="용량과-제거---공통-규칙"><a class="anchor" tabindex="-1" href="#용량과-제거---공통-규칙" aria-hidden="true">#</a>용량과 제거 - 공통 규칙</h3>
+<ul>
+<li><code>reserve</code>, <code>with_capacity</code>, <code>repeat</code>, 확장에서 크기가 overflow 하면 최적화 수준과 무관하게 &quot;capacity overflow&quot; 로 panic 합니다.
+</li>
+<li>원소를 빼면 (<code>pop</code>, <code>remove</code>, <code>clear</code>, <code>truncate</code>, <code>drain</code> 등) 참조도 놓습니다. GC 는 그 컬렉션을 통해 더 이상 그 원소를 보지 않습니다.
+</li>
+</ul>
+<h2 id="293-dictk-v---hash-map"><a class="anchor" tabindex="-1" href="#293-dictk-v---hash-map" aria-hidden="true">#</a>2.9.3. <code>Dict&lt;K, V&gt;</code> - hash map</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Dict</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; {
+    <span class="c">// 내부: HashMap (open addressing 또는 chain)</span>
+}
+</code></pre>
+<p>평균적으로 O(1) lookup / insert / remove 성능을 제공하며, 순서는 보장하지 않으므로 iteration 순서가 비결정적입니다.</p>
+<h3 id="핵심-메서드-1"><a class="anchor" tabindex="-1" href="#핵심-메서드-1" aria-hidden="true">#</a>핵심 메서드</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>) -&gt; <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> insert(<span class="k">self</span>, k: <span class="t">K</span>, v: <span class="t">V</span>) -&gt; <span class="t">V</span> | <span class="k">none</span>;       <span class="c">// 기존 V 반환 / 없으면 none</span>
+    <span class="k">fn</span> remove(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">V</span> | <span class="k">none</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">V</span> | <span class="k">none</span>;
+    <span class="k">fn</span> contains_key(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> keys(<span class="k">self</span>) -&gt; <span class="t">KeysIter</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+    <span class="k">fn</span> values(<span class="k">self</span>) -&gt; <span class="t">ValuesIter</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+    <span class="k">fn</span> entries(<span class="k">self</span>) -&gt; <span class="t">EntriesIter</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;            <span class="c">// (K, V) 쌍</span>
+
+    <span class="k">fn</span> entry(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;          <span class="c">// 그 키의 자리 (있든 없든)</span>
+}
+
+<span class="k">struct</span> <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; { <span class="c">/* dict + key */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">fn</span> key(<span class="k">self</span>) -&gt; <span class="t">K</span>;
+    <span class="k">fn</span> or_insert(<span class="k">self</span>, v: <span class="t">V</span>) -&gt; <span class="t">V</span>;                   <span class="c">// 없으면 v 를 넣고, 그 값</span>
+    <span class="k">fn</span> or_insert_with(<span class="k">self</span>, f: <span class="k">fn</span>() -&gt; <span class="t">V</span>) -&gt; <span class="t">V</span>;      <span class="c">// 없으면 f() 를 넣고, 그 값</span>
+    <span class="k">fn</span> and_modify(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">V</span>) -&gt; <span class="t">V</span>) -&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;   <span class="c">// 있으면 f(값) 으로 바꿈</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>: <span class="t">Default</span>&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">fn</span> or_default(<span class="k">self</span>) -&gt; <span class="t">V</span>;                         <span class="c">// 없으면 V::default() 를 넣고, 그 값</span>
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> counts: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = {};
+<span class="k">for</span> w <span class="k">in</span> words {
+    counts.entry(w).and_modify(|n| n + <span class="n">1</span>).or_insert(<span class="n">1</span>);
+}
+</code></pre>
+<h3 id="사용-예-1"><a class="anchor" tabindex="-1" href="#사용-예-1" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">let</span> d: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = {<span class="s">"a"</span>: <span class="n">1</span>, <span class="s">"b"</span>: <span class="n">2</span>};
+d[<span class="s">"a"</span>];                   <span class="c">//→ 1</span>
+d[<span class="s">"c"</span>];                   <span class="c">//→ panic (IndexError - 키 없음)</span>
+d.get(<span class="s">"c"</span>);               <span class="c">//→ none</span>
+
+d.insert(<span class="s">"c"</span>, <span class="n">3</span>);
+d.contains_key(<span class="s">"c"</span>);      <span class="c">//→ true</span>
+
+<span class="k">for</span> (k, v) <span class="k">in</span> d.entries() {
+    log(<span class="s">"{k} = {v}"</span>);
+}
+</code></pre>
+<h3 id="indexk"><a class="anchor" tabindex="-1" href="#indexk" aria-hidden="true">#</a><code>Index&lt;K&gt;</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; <span class="t">Index</span>&lt;<span class="t">K</span>&gt; <span class="k">for</span> <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">V</span>;
+    <span class="k">fn</span> index(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">V</span> {
+        <span class="k">self</span>.get(k) ?? panic(<span class="s">"key not found"</span>)
+    }
+}
+</code></pre>
+<p><code>d[k]</code> 표기는 키의 존재가 보장됨을 가정하므로, 안전한 접근이 필요할 때는 <code>.get(k)</code> 를 사용합니다.</p>
+<h3 id="lazy-view"><a class="anchor" tabindex="-1" href="#lazy-view" aria-hidden="true">#</a>lazy view</h3>
+<p><code>keys</code> / <code>values</code> / <code>entries</code> 는 사본이 아니라 현재 table 을 그대로 보는 lazy view 입니다. 순회 도중 dict 를 바꾸면 결과는 정해지지 않지만 (원소를 빠뜨리거나 두 번 볼 수 있음), 메모리 안전성은 지켜집니다.</p>
+<h2 id="294-sett---hash-set"><a class="anchor" tabindex="-1" href="#294-sett---hash-set" aria-hidden="true">#</a>2.9.4. <code>Set&lt;T&gt;</code> - hash set</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Set</span>&lt;<span class="t">T</span>: <span class="t">Hash</span> + <span class="t">Eq</span>&gt; {
+    <span class="c">// 내부: Dict&lt;T, ()&gt;</span>
+}
+</code></pre>
+<p>순서는 보장되지 않으며, 평균 O(1) 성능을 제공합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Hash</span> + <span class="t">Eq</span>&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> insert(<span class="k">self</span>, x: <span class="t">T</span>) -&gt; <span class="t">bool</span>;        <span class="c">// true if 새로 들어감</span>
+    <span class="k">fn</span> remove(<span class="k">self</span>, x: <span class="t">T</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> contains(<span class="k">self</span>, x: <span class="t">T</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> <span class="k">union</span>(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> intersection(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> difference(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> symmetric_difference(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> is_subset(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_superset(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_disjoint(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>};
+s.contains(<span class="n">2</span>);            <span class="c">//→ true</span>
+s.insert(<span class="n">4</span>);
+
+<span class="k">let</span> a: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>};
+<span class="k">let</span> b: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>};
+<span class="k">let</span> u = a.<span class="k">union</span>(b);       <span class="c">//→ {1, 2, 3, 4}</span>
+<span class="k">let</span> i = a.intersection(b);<span class="c">//→ {2, 3}</span>
+</code></pre>
+<h2 id="295-ordereddictk-v--orderedsett---insertion-order"><a class="anchor" tabindex="-1" href="#295-ordereddictk-v--orderedsett---insertion-order" aria-hidden="true">#</a>2.9.5. <code>OrderedDict&lt;K, V&gt;</code> / <code>OrderedSet&lt;T&gt;</code> - insertion-order</h2>
+<p>이들은 <code>Dict</code> / <code>Set</code> 와 동일한 API 를 제공하면서도 <strong>insertion-order 를 보존</strong>한다는 점이 특징이며, Python 3.7+ 의 <code>dict</code> 나 Java 의 LinkedHashMap 과 동등한 의미를 가집니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">OrderedDict</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; { <span class="c">/* ... */</span> }
+<span class="k">struct</span> <span class="t">OrderedSet</span>&lt;<span class="t">T</span>: <span class="t">Hash</span> + <span class="t">Eq</span>&gt; { <span class="c">/* ... */</span> }
+</code></pre>
+<p>config, JSON-like 구조, 출력 reproducibility 처럼 순서 보존이 필요한 상황에서 사용하면 적합하며, 순서를 담는 indices vector 때문에 약간의 오버헤드가 발생합니다.</p>
+<ul>
+<li><code>OrderedDict</code> 는 <code>new</code> / <code>with_capacity</code> / <code>from</code> / <code>len</code> / <code>is_empty</code> / <code>insert</code> / <code>get</code> / <code>contains_key</code> / <code>remove</code> / <code>clear</code> / <code>keys</code> / <code>values</code> / <code>entries</code> 와 <code>d[k]</code>, <code>d[k] = v</code> 를 가집니다. <code>keys</code> / <code>values</code> / <code>entries</code> 는 삽입 순서로 돕니다. 이미 있는 키에 <code>insert</code> 하면 값만 바뀌고 순서는 그대로입니다.
+</li>
+<li><code>OrderedSet</code> 은 <code>new</code> / <code>from</code> / <code>len</code> / <code>is_empty</code> / <code>insert</code> / <code>remove</code> / <code>contains</code> / <code>iter</code> / <code>to_list</code> 와 집합 연산 <code>union</code> / <code>intersection</code> / <code>difference</code> / <code>symmetric_difference</code> / <code>is_subset</code> / <code>is_superset</code> / <code>is_disjoint</code> 를 가집니다. 집합 연산의 결과는 왼쪽 피연산자의 순서를 먼저 따릅니다.
+</li>
+<li>둘 다 <code>Default</code>, <code>Clone</code>, <code>IntoIterator</code>, <code>FromIterator</code>, <code>PartialEq</code> (순서 무관), <code>Debug</code> 를 구현합니다.
+</li>
+</ul>
+<h3 id="생성"><a class="anchor" tabindex="-1" href="#생성" aria-hidden="true">#</a>생성</h3>
+<p>리터럴 문법은 별도로 두지 않으며, 생성자 호출 형태로만 만듭니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> d = <span class="t">OrderedDict</span>::from([(<span class="s">"a"</span>, <span class="n">1</span>), (<span class="s">"b"</span>, <span class="n">2</span>)]);
+<span class="k">let</span> s = <span class="t">OrderedSet</span>::from([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]);
+</code></pre>
+<h2 id="295a-dequet---양끝-큐"><a class="anchor" tabindex="-1" href="#295a-dequet---양끝-큐" aria-hidden="true">#</a>2.9.5a. <code>Deque&lt;T&gt;</code> - 양끝 큐</h2>
+<p>ring buffer 위의 양끝 큐입니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Deque</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">Deque</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>) -&gt; <span class="t">Deque</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> push_back(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> push_front(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> pop_front(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> pop_back(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> front(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> back(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">DequeIter</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// 앞에서 뒤로</span>
+}
+</code></pre>
+<p><code>d[i]</code> / <code>d[i] = v</code> (범위 밖이면 panic), <code>IntoIterator</code>, <code>Default</code>, <code>Debug</code> 를 구현합니다.</p>
+<h2 id="295b-binaryheapt---우선순위-큐"><a class="anchor" tabindex="-1" href="#295b-binaryheapt---우선순위-큐" aria-hidden="true">#</a>2.9.5b. <code>BinaryHeap&lt;T&gt;</code> - 우선순위 큐</h2>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Ord</span>&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt;;                 <span class="c">// max-heap: 가장 큰 것이 먼저</span>
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> by(before: <span class="k">fn</span>(<span class="t">T</span>, <span class="t">T</span>) -&gt; <span class="t">bool</span>) -&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// before(a, b) 이면 a 가 먼저</span>
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> peek(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> push(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> pop(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+    <span class="k">fn</span> retain(<span class="k">self</span>, keep: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">bool</span>);
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">ListIter</span>&lt;<span class="t">T</span>&gt;;              <span class="c">// 순서 없음</span>
+}
+</code></pre>
+<h2 id="296-tuple---고정-heterogeneous"><a class="anchor" tabindex="-1" href="#296-tuple---고정-heterogeneous" aria-hidden="true">#</a>2.9.6. <code>Tuple&lt;...&gt;</code> - 고정 heterogeneous</h2>
+<pre><code class="language-rok"><span class="a">#[literal( "(" expr "," {expr} % "," * ")" )]</span>
+<span class="k">struct</span> <span class="t">Tuple</span> { <span class="c">/* heterogeneous, 컴파일 타임 결정 */</span> }
+</code></pre>
+<p>튜플은 언어 고유이며 리터럴 핸들러로 등록할 수 없습니다 (<a href="../../refs-lang/006-meta-system/605-literal-magic#657-사용자-정의-리터럴">refs-lang 6.5.7</a>). 튜플 식은 콤마가 하나 이상 있어야 합니다. <code>(e)</code> 는 그룹 식이고, 항이 하나인 튜플은 <code>(e,)</code> 입니다.</p>
+<p>각 위치별로 서로 다른 타입을 가질 수 있으며, 길이는 컴파일 타임에 고정됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> t: <span class="t">Tuple</span>&lt;<span class="t">i32</span>, <span class="t">str</span>, <span class="t">bool</span>&gt; = (<span class="n">42</span>, <span class="s">"hello"</span>, <span class="k">true</span>);
+<span class="k">let</span> n = t.<span class="n">0</span>;              <span class="c">//→ 42</span>
+<span class="k">let</span> s = t.<span class="n">1</span>;              <span class="c">//→ "hello"</span>
+<span class="k">let</span> b = t.<span class="n">2</span>;              <span class="c">//→ true</span>
+
+<span class="c">// 패턴 분해</span>
+<span class="k">let</span> (n, s, b) = t;
+</code></pre>
+<h3 id="트레잇-구현-1"><a class="anchor" tabindex="-1" href="#트레잇-구현-1" aria-hidden="true">#</a>트레잇 구현</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>조건</th></tr></thead>
+<tbody>
+<tr><td><code>Clone</code></td><td>모든 컴포넌트 <code>Clone</code></td></tr>
+<tr><td><code>Copy</code></td><td>모든 컴포넌트 <code>Copy</code></td></tr>
+<tr><td><code>Debug</code></td><td>모든 컴포넌트 <code>Debug</code></td></tr>
+<tr><td><code>PartialEq</code></td><td>모든 컴포넌트 <code>PartialEq</code></td></tr>
+<tr><td><code>Eq</code></td><td>모든 컴포넌트 <code>Eq</code></td></tr>
+<tr><td><code>PartialOrd</code></td><td>모든 컴포넌트 <code>PartialOrd</code></td></tr>
+<tr><td><code>Ord</code></td><td>모든 컴포넌트 <code>Ord</code></td></tr>
+<tr><td><code>Hash</code></td><td>모든 컴포넌트 <code>Hash</code></td></tr>
+</tbody></table></div>
+<p>표의 트레잇은 항 1 ~ 12 개의 튜플에 대해 <code>rok::core::tuple</code> 이 제공합니다. <code>PartialOrd</code> / <code>Ord</code> 는 사전식 (첫 항부터, 처음 다른 항이 결정) 이며, 그래서 <code>&lt;</code> / <code>&lt;=</code> / <code>&gt;</code> / <code>&gt;=</code> 를 튜플에 바로 쓸 수 있습니다 (<code>(1, &quot;b&quot;) &lt; (1, &quot;c&quot;)</code>).</p>
+<p><code>Display</code> 는 자동으로 도출되지 않으므로 필요할 때마다 직접 구현하는 편이 권장됩니다.</p>
+<h3 id="함수-다중-반환"><a class="anchor" tabindex="-1" href="#함수-다중-반환" aria-hidden="true">#</a>함수 다중 반환</h3>
+<p><a href="../../refs-lang/004-functions/403-return#435-다중-반환-튜플로-묶기">refs-lang 4.3.5 다중 반환</a> 의 multi-return 은 Tuple 반환으로 처리됩니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> divmod(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; (<span class="t">i32</span>, <span class="t">i32</span>) {
+    (a / b, a % b)
+}
+
+<span class="k">let</span> (q, r) = divmod(<span class="n">17</span>, <span class="n">5</span>);     <span class="c">//→ q = 3, r = 2</span>
+</code></pre>
+<h2 id="297-slicet---view"><a class="anchor" tabindex="-1" href="#297-slicet---view" aria-hidden="true">#</a>2.9.7. <code>Slice&lt;T&gt;</code> - view</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// GC 버퍼 + 시작 위치 + 길이 + stride (1 = 연속, k = step, 음수 = 역순)</span>
+}
+</code></pre>
+<p><code>xs[1:3]</code> / <code>xs[::2]</code> / <code>xs[1:]</code> 와 같은 표현의 결과입니다 (<a href="203-ops#234-인덱싱-트레잇">2.3.4 <code>Sliceable</code></a>). view 는 원소를 복사하지 않고 원본의 GC 버퍼를 가리키며, view 가 살아 있는 동안 그 버퍼도 살아 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>원본</th><th>view 가 보는 것</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td>리스트의 현재 버퍼. 원소 쓰기는 보이고, 리스트가 자라 버퍼를 옮긴 뒤의 변경은 보이지 않음</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>같은 버퍼 (view 의 view)</td></tr>
+<tr><td><code>[T; N]</code></td><td>배열의 사본 (배열은 값)</td></tr>
+</tbody></table></div>
+<h3 id="핵심-메서드-2"><a class="anchor" tabindex="-1" href="#핵심-메서드-2" aria-hidden="true">#</a>핵심 메서드</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> last(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> step(<span class="k">self</span>, k: <span class="t">isize</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">T</span>&gt;;     <span class="c">// k 번째마다, k &lt; 0 이면 끝에서부터. k == 0 은 panic</span>
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">SliceIter</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> to_list(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// 새 List 할당</span>
+}
+
+<span class="k">impl</span> <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt; {
+    <span class="k">fn</span> find&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, needle: <span class="t">B</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;   <span class="c">// 처음 나타나는 offset; 빈 needle 은 0</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Index</span>&lt;<span class="t">usize</span>&gt; <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }               <span class="c">// s[i] - 범위 밖이면 panic</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Sliceable</span>&lt;<span class="t">Range</span>&lt;<span class="t">usize</span>&gt;&gt; <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }    <span class="c">// s[a:b] - view 의 view, 범위는 길이에 맞춰 잘라 맞춤</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">IntoIterator</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">PartialEq</span>&gt; <span class="t">PartialEq</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Debug</span>&gt; <span class="t">Debug</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }
+</code></pre>
+<p>바이트 문자열은 <code>find</code> 의 needle 로 넘길 수 있습니다 (그 <code>Slice&lt;u8&gt;</code> 규칙, <a href="../../refs-lang/001-lexical/107-string-literals#175-바이트-문자열">refs-lang 1.7.5</a>).</p>
+<p><code>Slice</code> 는 읽기 전용입니다 (<code>IndexSet</code> 없음). 음수 인덱스는 끝에서부터 셉니다 (<a href="../../refs-lang/003-expressions/306-indexing-and-slicing#361-인덱싱-arri">refs-lang 3.6.1</a>).</p>
+<h3 id="사용-예-2"><a class="anchor" tabindex="-1" href="#사용-예-2" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>];
+<span class="k">let</span> s1: <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt; = xs[<span class="n">1</span>:<span class="n">4</span>];           <span class="c">//→ view of [2, 3, 4]</span>
+<span class="k">let</span> s2: <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt; = xs[::<span class="n">2</span>];           <span class="c">//→ view of [1, 3, 5]</span>
+<span class="k">let</span> s3: <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt; = xs[..];            <span class="c">//→ view of all</span>
+
+s1.len();                               <span class="c">//→ 3</span>
+s1.iter().sum::&lt;<span class="t">i32</span>&gt;();                 <span class="c">//→ 9</span>
+xs[<span class="n">2</span>] = <span class="n">30</span>;
+s1[<span class="n">1</span>];                                  <span class="c">//→ 30 - 리스트의 원소 쓰기가 보임</span>
+
+<span class="k">let</span> owned: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = s1.to_list();    <span class="c">//→ [2, 30, 4] (새 List)</span>
+</code></pre>
+<h3 id="variadic-args-와의-통합"><a class="anchor" tabindex="-1" href="#variadic-args-와의-통합" aria-hidden="true">#</a>variadic args 와의 통합</h3>
+<p><code>fn f(xs: ...T)</code> 의 <code>xs</code> 는 <code>Slice&lt;T&gt;</code> view 입니다 (<a href="../../refs-lang/004-functions/402-parameters#425-variadic-t">refs-lang 4.2.5</a>). 개별 인자와 리스트 spread (<code>f(..ys)</code>) 를 같은 모양으로 받습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> sum(xs: ...<span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> total = <span class="n">0</span>;
+    <span class="k">for</span> x <span class="k">in</span> xs {            <span class="c">// xs: Slice&lt;i32&gt;</span>
+        total = total + x;   <span class="c">// 재할당은 `let` 없이</span>
+    }
+    total
+}
+
+sum(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>);                <span class="c">//→ 6</span>
+sum(..[<span class="n">4</span>, <span class="n">5</span>]);               <span class="c">//→ 9 (리스트 spread)</span>
+</code></pre>
+<h2 id="298-index--indexset--sliceable-트레잇-매핑"><a class="anchor" tabindex="-1" href="#298-index--indexset--sliceable-트레잇-매핑" aria-hidden="true">#</a>2.9.8. <code>Index</code> / <code>IndexSet</code> / <code>Sliceable</code> 트레잇 매핑</h2>
+<p><a href="203-ops">2.3 ops</a> 의 트레잇이 컨테이너의 <code>[]</code>, <code>[i] = v</code>, <code>[a:b]</code> 의 의미를 정의합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>컨테이너</th><th><code>Index&lt;I&gt;</code></th><th><code>IndexSet&lt;I, V&gt;</code></th><th><code>Sliceable&lt;R&gt;</code></th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>Index&lt;usize&gt;</code> → T</td><td><code>IndexSet&lt;usize, T&gt;</code></td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>Slice&lt;T&gt;</code></td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>Index&lt;K&gt;</code> → V</td><td><code>IndexSet&lt;K, V&gt;</code></td><td><strong>없음</strong></td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><strong>없음</strong></td><td><strong>없음</strong></td><td><strong>없음</strong></td></tr>
+<tr><td><code>Tuple&lt;...&gt;</code></td><td><strong>컴파일러 직접</strong> (<code>.0</code>/.1)</td><td><strong>컴파일러 직접</strong></td><td><strong>없음</strong></td></tr>
+<tr><td><code>[T; N]</code></td><td><code>Index&lt;usize&gt;</code> → T</td><td><code>IndexSet&lt;usize, T&gt;</code></td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>Slice&lt;T&gt;</code> (사본)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>Index&lt;usize&gt;</code> → T</td><td><strong>없음</strong> (read-only view)</td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>Slice&lt;T&gt;</code></td></tr>
+<tr><td><code>str</code></td><td><strong>없음</strong> (직접 byte 접근 거부)</td><td><strong>없음</strong></td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>str</code> (사본, UTF-8 경계 검사)</td></tr>
+</tbody></table></div>
+<p><code>str</code> 의 <code>s[10]</code> 은 UTF-8 멀티바이트 문자의 안전성을 위해 의도적으로 제공되지 않습니다. 따라서 문자 단위 접근에는 <code>s.chars()</code> 를, 부분 추출에는 <code>s[10..15]</code> (slice 로서 멀티바이트 경계가 검증됩니다) 를 사용합니다.</p>
+<h2 id="299-intoiterator--fromiterator"><a class="anchor" tabindex="-1" href="#299-intoiterator--fromiterator" aria-hidden="true">#</a>2.9.9. <code>IntoIterator</code> / <code>FromIterator</code></h2>
+<p>모든 컨테이너는 <code>IntoIterator</code> 를 구현합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>컨테이너</th><th><code>Item</code></th><th>순서</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>T</code></td><td>첫 → 마지막</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>(K, V)</code></td><td><strong>비결정</strong></td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><code>T</code></td><td><strong>비결정</strong></td></tr>
+<tr><td><code>OrderedDict&lt;K, V&gt;</code></td><td><code>(K, V)</code></td><td>insertion order</td></tr>
+<tr><td><code>OrderedSet&lt;T&gt;</code></td><td><code>T</code></td><td>insertion order</td></tr>
+<tr><td><code>Tuple&lt;T...&gt;</code></td><td><strong>구현하지 않음</strong></td><td>(heterogeneous - Iterator 의미 X)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>T</code></td><td>view 순서 (stride 적용)</td></tr>
+</tbody></table></div>
+<p>또한 <code>FromIterator&lt;T&gt;</code> 는 <code>collect::&lt;C&gt;()</code> 가 어떤 컨테이너를 만들지 결정합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = (<span class="n">0</span>..<span class="n">5</span>).collect();
+<span class="k">let</span> s: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = (<span class="n">0</span>..<span class="n">5</span>).collect();
+<span class="k">let</span> d: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = [(<span class="s">"a"</span>, <span class="n">1</span>), (<span class="s">"b"</span>, <span class="n">2</span>)].into_iter().collect();
+</code></pre>
+<h2 id="2910-모듈-매핑"><a class="anchor" tabindex="-1" href="#2910-모듈-매핑" aria-hidden="true">#</a>2.9.10. 모듈 매핑</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>컨테이너</th><th>모듈</th><th>내부 구조</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>rok::core::collections::list</code></td><td>Rust <code>Vec</code> 영감</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>rok::core::collections::dict</code></td><td>open addressing</td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><code>rok::core::collections::set</code></td><td><code>Dict&lt;T, ()&gt;</code> 위</td></tr>
+<tr><td><code>OrderedDict</code></td><td><code>rok::core::collections::ordered_dict</code></td><td>linked-hash 또는 indices</td></tr>
+<tr><td><code>OrderedSet</code></td><td><code>rok::core::collections::ordered_set</code></td><td>(위와 동일)</td></tr>
+<tr><td><code>Deque&lt;T&gt;</code></td><td><code>rok::core::collections::deque</code></td><td>ring buffer</td></tr>
+<tr><td><code>BinaryHeap&lt;T&gt;</code></td><td><code>rok::core::collections::heap</code></td><td><code>List</code> 위의 implicit binary tree</td></tr>
+<tr><td><code>Tuple</code></td><td><strong>컴파일러 내장</strong> + 표준 라이브러리 hook</td><td><code>#[literal(...)]</code> + 컴파일러 lookup</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>rok::core::collections::slice</code></td><td>struct ptr + len + stride</td></tr>
+</tbody></table></div>
+<h2 id="2911-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#2911-다른-언어와의-비교" aria-hidden="true">#</a>2.9.11. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>Python</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>동적 배열</td><td><code>Vec&lt;T&gt;</code></td><td><code>list</code></td><td><code>List&lt;T&gt;</code></td></tr>
+<tr><td>hash map</td><td><code>HashMap&lt;K, V&gt;</code></td><td><code>dict</code> (insertion-ordered)</td><td><code>Dict&lt;K, V&gt;</code> + <code>OrderedDict&lt;K, V&gt;</code></td></tr>
+<tr><td>hash set</td><td><code>HashSet&lt;T&gt;</code></td><td><code>set</code></td><td><code>Set&lt;T&gt;</code> + <code>OrderedSet&lt;T&gt;</code></td></tr>
+<tr><td>고정 hetero</td><td><code>(T1, T2)</code> tuple</td><td><code>tuple</code></td><td><code>Tuple&lt;T1, T2&gt;</code></td></tr>
+<tr><td>view</td><td><code>&amp;[T]</code> / <code>&amp;str</code></td><td><strong>slice 객체</strong></td><td><code>Slice&lt;T&gt;</code></td></tr>
+<tr><td>리터럴</td><td><code>vec![...]</code> (매크로)</td><td><code>[...]</code> <code>{...}</code> <code>(...)</code></td><td><code>[...]</code> <code>{...}</code> <code>(...)</code> (<code>#[literal]</code>)</td></tr>
+<tr><td>ordered map</td><td><code>BTreeMap</code> (정렬 맵)</td><td><strong>기본 dict</strong></td><td>별도 <code>OrderedDict</code></td></tr>
+</tbody></table></div>
+<p>rok 의 가장 큰 차이점은 다음과 같습니다. 첫째로 6 가지 컬렉션이 모두 1급 리터럴 문법을 가지므로 <code>vec![]</code> 같은 매크로를 사용하지 않습니다. 둘째로 <code>Dict</code> / <code>Set</code> 의 insertion order 는 보장되지 않으며, 이는 Python 3.7+ 와 다른 점이므로 순서가 필요한 경우에는 <code>OrderedDict</code> 를 명시적으로 사용해야 합니다. 셋째로 <code>Slice&lt;T&gt;</code> 가 stride 를 가지는 view 이기 때문에 <code>xs[::2]</code> 같은 표현조차 zero-copy 로 처리됩니다.</p>
+<h2 id="2912-gcbuft---raw-gc-buffer"><a class="anchor" tabindex="-1" href="#2912-gcbuft---raw-gc-buffer" aria-hidden="true">#</a>2.9.12. <code>GcBuf&lt;T&gt;</code> - raw GC buffer</h2>
+<p><code>rok::core::collections::raw</code> 의 <code>GcBuf&lt;T&gt;</code> 는 <code>List</code> / <code>Dict</code> 같은 컬렉션 구현이 쓰는 고정 길이 GC buffer 이며, 컴파일러가 아는 타입입니다. <code>GcBuf</code> 는 <code>rok::bare</code> (<code>rok::bare::mem</code>) 가 정의하며 여기서 다시 내보냅니다. 런타임의 word-traced buffer (type id <code>2</code>, <a href="../../refs-lang/008-abi/802-scan-table#8212-런타임-예약-type-id">refs-lang 8.2.12</a>) 위에 놓입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* 컴파일러가 아는 표현 */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt; {
+    <span class="a">#[intrinsic("rok.buf_new")]</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> new(len: <span class="t">usize</span>) -&gt; <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;;           <span class="c">// 모든 word 를 0 (null) 으로</span>
+    <span class="a">#[intrinsic("rok.buf_get")]</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">T</span>;        <span class="c">// 경계 검사 없음 (길이는 소유자가 관리)</span>
+    <span class="a">#[intrinsic("rok.buf_set")]</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> set(<span class="k">self</span>, i: <span class="t">usize</span>, v: <span class="t">T</span>);       <span class="c">// write barrier 포함</span>
+}
+</code></pre>
+<p>한 원소는 한 word 를 차지합니다. 일반 사용자 코드는 <code>List&lt;T&gt;</code> 를 쓰며, <code>GcBuf&lt;T&gt;</code> 는 컬렉션 구현을 위한 것입니다.</p>
+<p><code>GcBuf&lt;T&gt;</code> 와 그 primitive (<code>buf_new</code> / <code>buf_get</code> / <code>buf_set</code>, <code>new</code> / <code>get</code> / <code>set</code>, <code>GcBuf</code> 인덱싱) 는 <code>unsafe</code> 입니다. 컬렉션이 지키는 원소 타입과 초기화 검사를 건너뛰기 때문입니다.</p>
+<pre><code class="language-rok"><span class="a">#[intrinsic("rok.buf_same")]</span>
+<span class="k">fn</span> buf_same&lt;<span class="t">T</span>&gt;(a: <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;, b: <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;   <span class="c">// 같은 buffer 인가 (내용이 아니라 정체). 아무것도 고정하지 않음</span>
+<span class="a">#[intrinsic("rok.buf_erase")]</span>
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> buf_erase&lt;<span class="t">T</span>&gt;(buf: <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">GcBuf</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// 어떤 GC 객체든 받는 런타임 매개변수를 위해 GcBuf&lt;u8&gt; 로 타입을 바꿈</span>
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/209-collections.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="208-stream"><small>Previous</small>2.8. stream - async iterator</a><a class="next" href="210-fmt"><small>Next</small>2.10. fmt - 포맷 트레잇</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

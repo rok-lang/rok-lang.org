@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.13. 스트림 (async yield) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="async 와 yield 두 수식어를 함께 쓴 형태는 비동기 제너레이터, 즉 여러 값을 시간 차로 내보내는 함수를 정의합니다. 그 결과는 라이브러리 타입 AsyncStream&lt;T&gt; (Stream&lt;Item = T&gt; 구현) 의 값이며, throws (E) 면 TryAsyncStream&lt;T,...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/413-stream.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.13. 스트림 (async yield) - rok docs">
+<meta property="og:description" content="async 와 yield 두 수식어를 함께 쓴 형태는 비동기 제너레이터, 즉 여러 값을 시간 차로 내보내는 함수를 정의합니다. 그 결과는 라이브러리 타입 AsyncStream&lt;T&gt; (Stream&lt;Item = T&gt; 구현) 의 값이며, throws (E) 면 TryAsyncStream&lt;T,...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/413-stream.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/413-stream.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/413-stream.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">4. 함수 개요</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li><a href="405-closure">4.5. 클로저</a></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li><a href="409-method">4.9. 메서드</a></li><li><a href="410-nested-functions">4.10. 중첩 함수</a></li><li><a href="411-generators">4.11. 제너레이터 (yield)</a></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li class="cur"><a aria-current="page" href="413-stream">4.13. 스트림 (async yield)</a><ul class="toc"><li><a href="#4131-세-가지-정의-형태">4.13.1. 세 가지 정의 형태</a></li><li><a href="#4132-동기-비동기-제너레이터-스트림의-관계">4.13.2. 동기, 비동기, 제너레이터, 스트림의 관계</a></li><li><a href="#4133-본체에서-사용하는-두-키워드">4.13.3. 본체에서 사용하는 두 키워드</a></li><li><a href="#4134-호출과-소비">4.13.4. 호출과 소비</a></li><li><a href="#4135-for-await-형태">4.13.5. for await 형태</a></li><li><a href="#4136-yield-와-await-의-평가-흐름">4.13.6. yield 와 await 의 평가 흐름</a></li><li><a href="#4137-stream-트레잇">4.13.7. Stream 트레잇</a></li><li><a href="#4138-라이브러리-함수와의-결합">4.13.8. 라이브러리 함수와의 결합</a></li><li><a href="#4139-무한-스트림">4.13.9. 무한 스트림</a></li><li><a href="#41310-채널이나-파이프와의-비교">4.13.10. 채널이나 파이프와의 비교</a></li><li><a href="#41311-메서드로서의-async-yield">4.13.11. 메서드로서의 async yield</a></li></ul></li><li><a href="414-throws">4.14. throws 시그니처</a></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li><a href="416-entry-point">4.16. 진입점</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="413-스트림-async-yield 413-streams-async-yield 4131-세-가지-정의-형태 4131-three-definition-forms 4132-동기-비동기-제너레이터-스트림의-관계 4132-relationship-of-sync-async-generators-and-streams 4133-본체에서-사용하는-두-키워드 4133-two-keywords-in-the-body 4134-호출과-소비 4134-calling-and-consuming 4135-for-await-형태 4135-the-for-await-form 4136-yield-와-await-의-평가-흐름 4136-evaluation-flow-of-yield-and-await 4137-stream-트레잇 4137-the-stream-trait 4138-라이브러리-함수와의-결합 4138-combining-with-library-functions 4139-무한-스트림 4139-infinite-streams 41310-채널이나-파이프와의-비교 41310-comparison-with-channels-and-pipes 41311-메서드로서의-async-yield 41311-async-yield-on-methods"><a href="../../../../spec/refs-lang/004-functions/413-stream" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="413-스트림-async-yield"><a class="anchor" tabindex="-1" href="#413-스트림-async-yield" aria-hidden="true">#</a>4.13. 스트림 (<code>async yield</code>)</h1>
+<p><code>async</code> 와 <code>yield</code> 두 수식어를 함께 쓴 형태는 비동기 제너레이터, 즉 여러 값을 시간 차로 내보내는 함수를 정의합니다. 그 결과는 라이브러리 타입 <code>AsyncStream&lt;T&gt;</code> (<code>Stream&lt;Item = T&gt;</code> 구현) 의 값이며, <code>throws (E)</code> 면 <code>TryAsyncStream&lt;T, E&gt;</code> 입니다 (<a href="401-function-declaration#코루틴-함수의-결과-타입">4.1.11</a>).</p>
+<h2 id="4131-세-가지-정의-형태"><a class="anchor" tabindex="-1" href="#4131-세-가지-정의-형태" aria-hidden="true">#</a>4.13.1. 세 가지 정의 형태</h2>
+<p>스트림을 정의하는 문법은 다음 세 가지로 정리할 수 있습니다.</p>
+<pre><code>stream_fn       ::= &quot;async&quot; &quot;yield&quot; fn_decl
+stream_block    ::= &quot;async&quot; &quot;yield&quot; block
+stream_closure  ::= &quot;async&quot; &quot;yield&quot; closure_expr
+</code></pre>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> name(args) -&gt; <span class="t">R</span> { ... <span class="k">await</span> ...; ... <span class="k">yield</span> ...; }   <span class="c">// 명명된</span>
+<span class="k">async</span> <span class="k">yield</span> { ... <span class="k">await</span> ...; <span class="k">yield</span> ...; }                           <span class="c">// 인라인 블록</span>
+<span class="k">async</span> <span class="k">yield</span> || { ... <span class="k">await</span> ...; <span class="k">yield</span> ...; }                        <span class="c">// 클로저 수식어</span>
+</code></pre>
+<p>이는 <a href="411-generators">제너레이터</a> 와 <a href="412-async">비동기</a> 의 세 형태가 합쳐져 작동하는 모습이라 할 수 있습니다.</p>
+<h2 id="4132-동기-비동기-제너레이터-스트림의-관계"><a class="anchor" tabindex="-1" href="#4132-동기-비동기-제너레이터-스트림의-관계" aria-hidden="true">#</a>4.13.2. 동기, 비동기, 제너레이터, 스트림의 관계</h2>
+<p>네 형태의 관계는 아래 표와 같이 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>호출 결과</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>fn</code></td><td><code>R</code></td><td>즉시 한 값</td></tr>
+<tr><td><code>async fn</code></td><td><code>AsyncFuture&lt;R&gt;</code></td><td>미래의 한 값</td></tr>
+<tr><td><code>yield fn</code></td><td><code>GenIter&lt;R&gt;</code></td><td>동기적으로 여러 값</td></tr>
+<tr><td><code>async yield fn</code></td><td><code>AsyncStream&lt;R&gt;</code></td><td>시간 차로 여러 값</td></tr>
+</tbody></table></div>
+<p>이는 직교하는 두 차원, 즉 지연 여부 (sync/async) 와 값의 수 (단일/복수) 의 모든 조합에 해당합니다.</p>
+<h2 id="4133-본체에서-사용하는-두-키워드"><a class="anchor" tabindex="-1" href="#4133-본체에서-사용하는-두-키워드" aria-hidden="true">#</a>4.13.3. 본체에서 사용하는 두 키워드</h2>
+<p><code>async yield</code> 함수의 본체에서는 <code>await</code> 와 <code>yield</code> 두 키워드를 모두 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> read_lines(file: <span class="t">str</span>) -&gt; <span class="t">str</span> {
+    <span class="k">let</span> f = <span class="k">await</span> open(file);
+    <span class="k">loop</span> {
+        <span class="k">let</span> line = <span class="k">await</span> f.read_line();
+        <span class="k">match</span> line {
+            l: <span class="t">str</span> =&gt; <span class="k">yield</span> l,
+            <span class="k">none</span>   =&gt; <span class="k">break</span>,
+        }
+    }
+}
+</code></pre>
+<p>여기서 <code>await expr;</code> 는 Future 가 완료될 때까지 함수를 일시 중단시키며, <code>yield expr;</code> 는 값을 산출하고 Stream 의 다음 단계로 진행하기 전까지 일시 중단시킵니다. 이렇게 두 일시 중단 메커니즘이 한 함수 안에 공존하게 되는데, 어떤 시점에 어떤 종류로 중단되었는지는 코루틴 프레임이 추적합니다.</p>
+<h2 id="4134-호출과-소비"><a class="anchor" tabindex="-1" href="#4134-호출과-소비" aria-hidden="true">#</a>4.13.4. 호출과 소비</h2>
+<p>스트림을 호출하고 소비하는 모습은 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> run() {
+    <span class="k">let</span> s = read_lines(<span class="s">"data.txt"</span>);   <span class="c">// s: `AsyncStream&lt;str&gt;`</span>
+
+    <span class="k">for</span> <span class="k">await</span> line <span class="k">in</span> s {              <span class="c">// 비동기 for</span>
+        process(line);
+    }
+}
+</code></pre>
+<p>호출 자체는 즉시 <strong>Stream</strong> 객체를 반환하며, 실제 소비는 비동기 <code>for</code> 루프, 즉 <code>for await</code> 형태로 이루어집니다.</p>
+<p><code>for await</code> 는 <a href="../003-expressions/313-loop-expressions">루프</a> 의 <code>for</code> 의 비동기 변형이라 할 수 있습니다. 각 반복이 <code>await</code> 를 포함하면서 스트림에서 다음 값을 비동기적으로 기다리는 방식입니다.</p>
+<h2 id="4135-for-await-형태"><a class="anchor" tabindex="-1" href="#4135-for-await-형태" aria-hidden="true">#</a>4.13.5. <code>for await</code> 형태</h2>
+<p><code>for await</code> 의 기본 형태는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> pat <span class="k">in</span> stream { body }
+</code></pre>
+<p><code>for await</code> 는 비동기 반복을 위한 키워드 결합으로, 매 반복마다 <code>await stream.next()</code> 효과를 일으키며, 본체는 일반 <code>for</code> 본체와 동일하게 작성합니다.</p>
+<p>이 형태는 <code>async fn</code>, <code>async {}</code>, <code>async ||</code> 본체 안에서만 사용할 수 있다는 점에 유의해야 합니다.</p>
+<h2 id="4136-yield-와-await-의-평가-흐름"><a class="anchor" tabindex="-1" href="#4136-yield-와-await-의-평가-흐름" aria-hidden="true">#</a>4.13.6. <code>yield</code> 와 <code>await</code> 의 평가 흐름</h2>
+<p>두 키워드가 함께 작동하는 흐름은 아래 예시로 살펴볼 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> paginate() -&gt; <span class="t">Page</span> {
+    <span class="k">let</span> next = <span class="s">"/start"</span>;
+    <span class="k">loop</span> {
+        <span class="k">let</span> page = <span class="k">await</span> fetch(next);
+        <span class="k">yield</span> page;
+        <span class="k">match</span> page.next_url {
+            url: <span class="t">str</span> =&gt; next = url,
+            <span class="k">none</span>     =&gt; <span class="k">break</span>,
+        }
+    }
+}
+</code></pre>
+<p>먼저 <code>await fetch(...)</code> 가 페이지를 받기까지 기다리고, 이어서 <code>yield page</code> 가 그 페이지를 산출한 뒤 소비자가 다음 값을 요청할 때까지 일시 중단됩니다. 그리고 소비자가 다음 값을 요청하면 함수가 재개되어 다음 페이지를 가져오게 됩니다.</p>
+<h2 id="4137-stream-트레잇"><a class="anchor" tabindex="-1" href="#4137-stream-트레잇" aria-hidden="true">#</a>4.13.7. Stream 트레잇</h2>
+<p>이 결과 객체는 표준 라이브러리의 <code>AsyncStream&lt;T&gt;</code> (<code>Stream&lt;Item = T&gt;</code> 구현) 입니다. 의미상으로는 Iterator 와 Future 가 결합된 형태이며, 다음 값을 기다리는 메커니즘입니다.</p>
+<p>자세한 시그니처와 메서드 (<code>map</code>, <code>filter</code>, <code>take</code>, <code>merge</code>, <code>zip</code> 등) 는 표준 라이브러리에서 정의됩니다.</p>
+<h2 id="4138-라이브러리-함수와의-결합"><a class="anchor" tabindex="-1" href="#4138-라이브러리-함수와의-결합" aria-hidden="true">#</a>4.13.8. 라이브러리 함수와의 결합</h2>
+<p>스트림의 변환과 결합은 표준 라이브러리 함수로 제공됩니다.</p>
+<pre><code class="language-rok">stream::merge(s1, s2)             <span class="c">// 두 스트림 합침</span>
+stream::zip(s1, s2)               <span class="c">// 짝지어 동시 진행</span>
+stream::throttle(s, delay)        <span class="c">// 속도 제한</span>
+</code></pre>
+<p>자세한 함수와 메서드는 표준 라이브러리 사양에서 정의됩니다.</p>
+<h2 id="4139-무한-스트림"><a class="anchor" tabindex="-1" href="#4139-무한-스트림" aria-hidden="true">#</a>4.13.9. 무한 스트림</h2>
+<p>스트림은 다음과 같이 자연스럽게 무한히 이어질 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> ticks() -&gt; <span class="t">Time</span> {
+    <span class="k">loop</span> {
+        <span class="k">yield</span> now();
+        <span class="k">await</span> sleep(<span class="n">1</span>.second());
+    }
+}
+
+<span class="k">async</span> <span class="k">fn</span> run() {
+    <span class="k">for</span> <span class="k">await</span> t <span class="k">in</span> ticks() {
+        <span class="k">if</span> should_stop() { <span class="k">break</span>; }
+        print(t);
+    }
+}
+</code></pre>
+<p>이러한 무한 스트림은 소비자가 <code>break</code> 로 빠져나오거나, 라이브러리의 <code>take(n)</code> 같은 변환을 통해 종료시킬 수 있습니다.</p>
+<h2 id="41310-채널이나-파이프와의-비교"><a class="anchor" tabindex="-1" href="#41310-채널이나-파이프와의-비교" aria-hidden="true">#</a>4.13.10. 채널이나 파이프와의 비교</h2>
+<p>표준 라이브러리의 <code>Channel&lt;T&gt;</code> 도 시간 차로 여러 값을 옮기는 메커니즘이지만, 스트림과는 다음과 같은 차이가 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>Stream&lt;Item = T&gt;</code></th><th><code>Channel&lt;T&gt;</code></th></tr></thead>
+<tbody>
+<tr><td>정의</td><td><code>async yield</code> 함수의 결과</td><td>라이브러리 타입</td></tr>
+<tr><td>생산자와 소비자</td><td>한 함수 안에 통합</td><td>분리된 두 endpoint</td></tr>
+<tr><td>다대다</td><td>별도 결합 (merge 등)</td><td>자연스러움 (sender 여러 개)</td></tr>
+</tbody></table></div>
+<p>요약하자면, <code>Stream</code> 은 한 비동기 계산이 시간 차로 값을 만들어 내는 모델이고, <code>Channel</code> 은 여러 동시 작업이 값을 주고받는 모델입니다. 두 추상화는 서로 보완적인 관계라고 할 수 있습니다.</p>
+<h2 id="41311-메서드로서의-async-yield"><a class="anchor" tabindex="-1" href="#41311-메서드로서의-async-yield" aria-hidden="true">#</a>4.13.11. 메서드로서의 <code>async</code> <code>yield</code></h2>
+<p><code>async yield</code> 는 메서드 형태로도 자유롭게 정의할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Database</span> {
+    <span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> iter_rows(<span class="k">self</span>, sql: <span class="t">str</span>) -&gt; <span class="t">Row</span> {
+        <span class="k">let</span> cursor = <span class="k">await</span> <span class="k">self</span>.query(sql);
+        <span class="k">loop</span> {
+            <span class="k">let</span> row = <span class="k">await</span> cursor.next();
+            <span class="k">match</span> row {
+                r: <span class="t">Row</span> =&gt; <span class="k">yield</span> r,
+                <span class="k">none</span>   =&gt; <span class="k">break</span>,
+            }
+        }
+    }
+}
+
+<span class="k">async</span> <span class="k">fn</span> run(db: <span class="t">Db</span>) {
+    <span class="k">for</span> <span class="k">await</span> row <span class="k">in</span> db.iter_rows(<span class="s">"SELECT ..."</span>) {
+        process(row);
+    }
+}
+</code></pre>
+<p>이처럼 일반 메서드와 마찬가지로 <code>async yield</code> 메서드도 자유롭게 정의해 사용할 수 있습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/413-stream.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="412-async"><small>Previous</small>4.12. 비동기 (async 와 await)</a><a class="next" href="414-throws"><small>Next</small>4.14. throws 시그니처</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

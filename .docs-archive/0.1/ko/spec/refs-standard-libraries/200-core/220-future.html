@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.20. future - Future / await 통합 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::future 모듈은 async 메커니즘의 권위 트레잇을 제공합니다. await expr 의 desugar 는 이 장에서 정의하는 Future 트레잇 dispatch 로 lower 됩니다. 이 장은 48 개의 lang slot 가운데 future_trait 를 정의하는...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/220-future.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.20. future - Future / await 통합 - rok docs">
+<meta property="og:description" content="rok::core::future 모듈은 async 메커니즘의 권위 트레잇을 제공합니다. await expr 의 desugar 는 이 장에서 정의하는 Future 트레잇 dispatch 로 lower 됩니다. 이 장은 48 개의 lang slot 가운데 future_trait 를 정의하는...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/220-future.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/220-future.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/220-future.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li class="cur"><a aria-current="page" href="220-future">2.20. future - Future / await 통합</a><ul class="toc"><li><a href="#2201-future---async-결과">2.20.1. Future - async 결과</a></li><li><a href="#2202-context--waker">2.20.2. Context / Waker</a></li><li><a href="#2203-await-expr-desugar">2.20.3. await expr desugar</a></li><li><a href="#2204-async-fn--async----async---">2.20.4. async fn / async { } / async || { }</a></li><li><a href="#2205-intofuture---await-가능한-값">2.20.5. IntoFuture - await 가능한 값</a></li><li><a href="#2206-async--await-의-color-of-functions">2.20.6. async / await 의 &quot;color of functions&quot;</a></li><li><a href="#2207-for-await---stream-소비">2.20.7. for await - Stream 소비</a></li><li><a href="#2208-async-yield---stream-생성">2.20.8. async yield - Stream 생성</a></li><li><a href="#2208a-asyncfuturet--tryasyncfuturet-e---비동기-함수의-값">2.20.8a. AsyncFuture&lt;T&gt; / TryAsyncFuture&lt;T, E&gt; - 비동기 함수의 값</a></li><li><a href="#2209-모듈-매핑">2.20.9. 모듈 매핑</a></li><li><a href="#22010-다른-언어와의-비교">2.20.10. 다른 언어와의 비교</a></li></ul></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="220-future---future--await-통합 220-future---future--await-integration 2201-future---async-결과 2201-future---async-result 2202-context--waker 2202-context--waker 2203-await-expr-desugar 2203-await-expr-desugaring 2204-async-fn--async----async--- 2204-async-fn--async----async--- 2205-intofuture---await-가능한-값 2205-intofuture---awaitable-values 2206-async--await-의-color-of-functions 2206-the-color-of-functions-of-async--await sync-환경에서-future-결과-받기 getting-a-futures-result-in-a-sync-context 2207-for-await---stream-소비 2207-for-await---consuming-a-stream 2208-async-yield---stream-생성 2208-async-yield---producing-a-stream 2208a-asyncfuturet--tryasyncfuturet-e---비동기-함수의-값 2208a-asyncfuturet--tryasyncfuturet-e---values-of-async-functions 2209-모듈-매핑 2209-module-mapping 22010-다른-언어와의-비교 22010-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/200-core/220-future" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="220-future---future--await-통합"><a class="anchor" tabindex="-1" href="#220-future---future--await-통합" aria-hidden="true">#</a>2.20. future - <code>Future</code> / <code>await</code> 통합</h1>
+<p><code>rok::core::future</code> 모듈은 async 메커니즘의 권위 트레잇을 제공합니다. <code>await expr</code> 의 desugar 는 이 장에서 정의하는 <code>Future</code> 트레잇 dispatch 로 lower 됩니다. 이 장은 48 개의 lang slot 가운데 <code>future_trait</code> 를 정의하는 자리이기도 합니다.</p>
+<h2 id="2201-future---async-결과"><a class="anchor" tabindex="-1" href="#2201-future---async-결과" aria-hidden="true">#</a>2.20.1. <code>Future</code> - async 결과</h2>
+<p><code>Future</code> 는 비동기 계산의 결과를 표현하는 핵심 트레잇이며, 결과 타입은 associated type <code>Output</code> 입니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang("future_trait")]</span>
+<span class="k">trait</span> <span class="t">Future</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="k">fn</span> poll(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">Output</span>&gt;;
+}
+
+<span class="k">enum</span> <span class="t">Poll</span>&lt;<span class="t">T</span>&gt; {
+    <span class="t">Ready</span>(<span class="t">T</span>),
+    <span class="t">Pending</span>,
+}
+</code></pre>
+<p><code>poll(ctx)</code> 의 동작은 두 가지 결과로 갈립니다. <code>Ready(v)</code> 가 반환되면 결과가 준비된 상태이며 <code>v</code> 가 그대로 반환되고, <code>Pending</code> 이 반환되면 아직 결과가 없는 상태이므로 <code>ctx</code> 의 waker 가 깨워 줄 때 다시 poll 됩니다.</p>
+<p>이 모델은 Rust 의 <code>Future</code> 와 <code>rok::core::task::Poll</code> 와 동형이며, <strong>stackless coroutine</strong> 으로 컴파일됩니다 (컴파일러가 만든 상태 기계, <a href="../../refs-lang/007-runtime/708-coroutine">refs-lang 7.8</a>).</p>
+<h2 id="2202-context--waker"><a class="anchor" tabindex="-1" href="#2202-context--waker" aria-hidden="true">#</a>2.20.2. <code>Context</code> / <code>Waker</code></h2>
+<p><code>Context</code> 와 <code>Waker</code> 는 poll 과 scheduler 사이의 통신 채널을 형성합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Context</span> {
+    waker: <span class="t">Waker</span>;
+}
+
+<span class="k">struct</span> <span class="t">Waker</span> {
+    <span class="c">// 내부: scheduler 와 통신하는 callback</span>
+}
+
+<span class="k">impl</span> <span class="t">Waker</span> {
+    <span class="k">fn</span> wake(<span class="k">self</span>);              <span class="c">// 자신을 다시 schedule 하라 신호</span>
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">Waker</span>;
+}
+</code></pre>
+<p><code>poll</code> 이 <code>Pending</code> 을 반환할 때 내부적으로 Waker 가 등록되며, 이후 이벤트 (I/O 또는 timer) 가 발생하면 waker 가 호출되어 task 가 다시 schedule 됩니다. 다만 대부분의 사용자는 <code>Waker</code> 를 직접 다루지 않습니다. <code>await</code> 가 이 과정을 자동으로 처리해 주기 때문입니다.</p>
+<h2 id="2203-await-expr-desugar"><a class="anchor" tabindex="-1" href="#2203-await-expr-desugar" aria-hidden="true">#</a>2.20.3. <code>await expr</code> desugar</h2>
+<p>가장 흔한 사용 형태는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = <span class="k">await</span> some_future;
+</code></pre>
+<p>이 표현은 개념적으로 다음과 같이 desugar 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> __f = <span class="t">IntoFuture</span>::into_future(some_future);
+<span class="k">let</span> v = <span class="k">loop</span> {
+    <span class="k">match</span> __f.poll(<span class="k">ref</span> <span class="t">CURRENT_CONTEXT</span>) {
+        <span class="t">Ready</span>(v)  =&gt; <span class="k">break</span> v,
+        <span class="t">Pending</span>   =&gt; yield_to_scheduler(),
+    }
+};
+</code></pre>
+<p>컴파일러는 이를 상태 기계로 바꾸며, 각 <code>await</code> 자리는 <strong>suspend point</strong> 가 됩니다. frame 변수만 GC heap 에 자리잡은 coroutine state 에 보관됩니다.</p>
+<h2 id="2204-async-fn--async----async---"><a class="anchor" tabindex="-1" href="#2204-async-fn--async----async---" aria-hidden="true">#</a>2.20.4. <code>async fn</code> / <code>async { }</code> / <code>async || { }</code></h2>
+<p>세 가지 형태가 모두 **<code>AsyncFuture&lt;T&gt;</code>**을 반환합니다 (<a href="../../refs-lang/004-functions/401-function-declaration#코루틴-함수의-결과-타입">refs-lang 4.1.11</a>).</p>
+<pre><code class="language-rok"><span class="c">// (a) named function</span>
+<span class="k">async</span> <span class="k">fn</span> fetch(url: <span class="t">str</span>) -&gt; <span class="t">Response</span> {
+    <span class="k">let</span> raw = <span class="k">await</span> get(url);
+    <span class="k">await</span> parse(raw)
+}
+<span class="k">await</span> fetch(<span class="s">"/"</span>);       <span class="c">// fetch("/"): AsyncFuture&lt;Response&gt;</span>
+
+<span class="c">// (b) inline block (값)</span>
+<span class="k">let</span> f = <span class="k">async</span> { <span class="k">await</span> compute() };       <span class="c">// AsyncFuture&lt;T&gt;</span>
+<span class="k">await</span> f;
+
+<span class="c">// (c) closure</span>
+<span class="k">let</span> g = <span class="k">async</span> || { <span class="k">await</span> compute() };    <span class="c">// 호출하면 Future&lt;Output = T&gt; 구현 값을 돌려주는 closure</span>
+<span class="k">await</span> g();
+</code></pre>
+<p>이 <strong>3 형태</strong> 의 권위는 <a href="../../refs-lang/004-functions/412-async">refs-lang 4.12 async</a> 에 있습니다.</p>
+<h2 id="2205-intofuture---await-가능한-값"><a class="anchor" tabindex="-1" href="#2205-intofuture---await-가능한-값" aria-hidden="true">#</a>2.20.5. <code>IntoFuture</code> - await 가능한 값</h2>
+<p><code>IntoFuture</code> 는 await 의 통일된 진입점입니다. <code>Future</code> 뿐 아니라 <code>Thread</code> 처럼 스스로는 <code>Future</code> 가 아닌 핸들도 이 트레잇을 통해 <code>await</code> 할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">IntoFuture</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">type</span> <span class="t">IntoFuture</span>: <span class="t">Future</span>&lt;<span class="t">Output</span> = <span class="t">Output</span>&gt;;
+
+    <span class="k">fn</span> into_future(<span class="k">self</span>) -&gt; <span class="t">IntoFuture</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">F</span>: <span class="t">Future</span>&gt; <span class="t">IntoFuture</span> <span class="k">for</span> <span class="t">F</span> {               <span class="c">// Task&lt;T&gt;: Future&lt;Output = T&gt; 도 여기에 포함</span>
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">F</span>::<span class="t">Output</span>;
+    <span class="k">type</span> <span class="t">IntoFuture</span> = <span class="t">F</span>;
+    <span class="k">fn</span> into_future(<span class="k">self</span>) -&gt; <span class="t">F</span> { <span class="k">self</span> }
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Send</span>&gt; <span class="t">IntoFuture</span> <span class="k">for</span> <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt; { <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>; <span class="k">type</span> <span class="t">IntoFuture</span> = <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt;; ... }
+</code></pre>
+<p><code>JoinHandle&lt;T&gt;</code> 의 impl 은 스레드 join 을 blocking pool (<code>task::spawn_blocking</code>, <a href="218-task">2.18</a>) 에서 하므로 기다리는 task 만 기다립니다. 이 impl 은 이 타입이 <code>Future</code> 를 구현하지 않는 동안에만 blanket impl 과 겹치지 않아 합법입니다 (<a href="../../refs-lang/002-types/209-impl#일관성-coherence">refs-lang 2.9.5</a>).</p>
+<p><code>await expr</code> 는 먼저 <code>IntoFuture::into_future(expr)</code> 를 호출하고, 그 결과에 <code>Future::poll</code> 을 반복합니다 (2.20.3). <a href="208-stream">2.8 stream</a> 의 <code>for await</code> 가 <code>IntoStream</code> 을 다루는 방식과 같습니다.</p>
+<p><code>future_trait</code> 만 lang slot 으로 등록되며, <code>IntoFuture</code> 는 일반 트레잇으로 둡니다. 컴파일러가 <code>await</code> desugar 에서 <code>IntoFuture::into_future</code> 를 직접 호출하므로, <code>IntoStream</code> 과 마찬가지로 별도 lang slot 이 필요하지 않습니다.</p>
+<h2 id="2206-async--await-의-color-of-functions"><a class="anchor" tabindex="-1" href="#2206-async--await-의-color-of-functions" aria-hidden="true">#</a>2.20.6. async / await 의 &quot;color of functions&quot;</h2>
+<p>JavaScript 와 Python 에는 잘 알려진 <strong>function color</strong> 문제가 있습니다. async 함수와 sync 함수가 자유롭게 섞이지 못한다는 것입니다 (async 안에서만 await 가 가능하고, sync 함수에서는 async 호출이 차단됩니다).</p>
+<p>rok 의 정책은 다음과 같습니다.</p>
+<ul>
+<li><code>async fn</code> 과 <code>await</code> 가 색깔을 명시합니다
+</li>
+<li><code>for</code> 와 <code>for await</code> 가 색깔을 명시합니다
+</li>
+<li>색깔 통일은 시도하지 않습니다. JS, Python, C#, Swift 가 모두 같은 모델을 따릅니다
+</li>
+</ul>
+<p>이렇게 색깔을 분리하는 이유는 <strong>scheduler 협력</strong> 을 보장하기 위함입니다. &quot;이 자리는 suspend 가 가능하다&quot; 는 정보가 명시되어야 컴파일러가 coroutine state machine 을 만들 수 있기 때문입니다.</p>
+<pre><code class="language-rok"><span class="c">// sync fn 안에서 await 호출 - 컴파일 에러</span>
+<span class="k">fn</span> sync_caller() {
+    <span class="k">let</span> v = <span class="k">await</span> some_future;       <span class="c">// ERROR - async 함수 안에서만 await 가능</span>
+}
+
+<span class="k">async</span> <span class="k">fn</span> async_caller() {
+    <span class="k">let</span> v = <span class="k">await</span> some_future;       <span class="c">// OK</span>
+}
+</code></pre>
+<h3 id="sync-환경에서-future-결과-받기"><a class="anchor" tabindex="-1" href="#sync-환경에서-future-결과-받기" aria-hidden="true">#</a>sync 환경에서 future 결과 받기</h3>
+<p>sync 환경에서 future 의 결과를 받아야 할 때는 <code>block_on</code> 을 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = task::block_on(some_future);    <span class="c">// 현재 thread 가 executor 에 붙어 끝까지 실행</span>
+</code></pre>
+<p><code>block_on</code> 은 최상위 (main 또는 sync caller) 에서만 사용해야 합니다. nested async 안에서 <code>block_on</code> 을 사용하면 deadlock 의 위험이 있습니다.</p>
+<h2 id="2207-for-await---stream-소비"><a class="anchor" tabindex="-1" href="#2207-for-await---stream-소비" aria-hidden="true">#</a>2.20.7. <code>for await</code> - Stream 소비</h2>
+<p>Stream 을 소비할 때는 <code>for await</code> 형태를 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> event <span class="k">in</span> stream {            <span class="c">// Stream&lt;Item = T&gt; 소비 (async)</span>
+    handle(event);
+}
+
+<span class="k">for</span> x <span class="k">in</span> iterator {                    <span class="c">// Iterator&lt;Item = T&gt; 소비 (sync)</span>
+    <span class="k">use</span>(x);
+}
+</code></pre>
+<p><code>for await</code> 의 권위는 <a href="208-stream">2.8 stream</a> 의 <code>Stream</code> 트레잇에 있습니다.</p>
+<h2 id="2208-async-yield---stream-생성"><a class="anchor" tabindex="-1" href="#2208-async-yield---stream-생성" aria-hidden="true">#</a>2.20.8. <code>async yield</code> - Stream 생성</h2>
+<p>반대로 Stream 을 생성할 때는 <code>async yield</code> 를 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> ticks(interval: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> {
+    <span class="k">loop</span> {
+        <span class="k">await</span> task::sleep(interval);
+        <span class="k">yield</span> <span class="t">Instant</span>::now();
+    }
+}
+
+<span class="k">for</span> <span class="k">await</span> t <span class="k">in</span> ticks(<span class="t">Duration</span>::ms(<span class="n">100</span>)) {
+    log(<span class="s">"tick at {t}"</span>);
+}
+</code></pre>
+<p><code>async yield</code> 는 async 와 yield 의 결합이며, Stream 을 생성합니다. syntax 권위는 <a href="../../refs-lang/004-functions/413-stream">refs-lang 4.13 stream</a> 에 있습니다.</p>
+<h2 id="2208a-asyncfuturet--tryasyncfuturet-e---비동기-함수의-값"><a class="anchor" tabindex="-1" href="#2208a-asyncfuturet--tryasyncfuturet-e---비동기-함수의-값" aria-hidden="true">#</a>2.20.8a. <code>AsyncFuture&lt;T&gt;</code> / <code>TryAsyncFuture&lt;T, E&gt;</code> - 비동기 함수의 값</h2>
+<p><code>async fn</code> 호출과 <code>async { .. }</code> 블록의 값입니다 (<a href="../../refs-lang/004-functions/401-function-declaration#코루틴-함수의-결과-타입">refs-lang 4.1.11</a>).</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">AsyncFuture</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* 비공개 */</span> }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Future</span> <span class="k">for</span> <span class="t">AsyncFuture</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>;
+    <span class="k">fn</span> poll(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// 본체를 다음 대기 지점까지 진행</span>
+}
+
+<span class="k">struct</span> <span class="t">TryAsyncFuture</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; { <span class="c">/* 비공개 */</span> }    <span class="c">// async fn .. throws (E)</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; <span class="t">TryAsyncFuture</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; {
+    <span class="k">fn</span> poll(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span>&gt;;
+}
+</code></pre>
+<p><code>TryAsyncFuture</code> 는 <code>poll</code> 이 던지므로 <code>Future</code> 를 구현하지 않습니다. <code>try await</code> 로 기다립니다. 비공개 필드는 사양으로 정하지 않습니다. 복사본은 같은 코루틴 frame 을 공유하므로 진행 위치도 공유합니다.</p>
+<h2 id="2209-모듈-매핑"><a class="anchor" tabindex="-1" href="#2209-모듈-매핑" aria-hidden="true">#</a>2.20.9. 모듈 매핑</h2>
+<p>각 항목의 모듈 위치와 lang slot / 역할은 아래와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>모듈</th><th>역할</th></tr></thead>
+<tbody>
+<tr><td><code>Future</code></td><td><code>rok::core::future::Future</code></td><td><code>#[lang(&quot;future_trait&quot;)]</code></td></tr>
+<tr><td><code>Poll&lt;T&gt;</code></td><td><code>rok::core::future::poll</code></td><td>enum Ready/Pending</td></tr>
+<tr><td><code>Context</code></td><td><code>rok::core::future::context</code></td><td>waker holder</td></tr>
+<tr><td><code>Waker</code></td><td><code>rok::core::future::waker</code></td><td>scheduler callback</td></tr>
+<tr><td><code>IntoFuture</code></td><td><code>rok::core::future::into_future</code></td><td>일반 트레잇 (lang slot X)</td></tr>
+<tr><td><code>task::block_on</code></td><td><code>rok::core::task</code></td><td>sync entry point</td></tr>
+</tbody></table></div>
+<h2 id="22010-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#22010-다른-언어와의-비교" aria-hidden="true">#</a>2.20.10. 다른 언어와의 비교</h2>
+<p>각 언어의 비동기 모델을 비교하면 아래 표와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>C#</th><th>Swift</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>모델</td><td>poll-based</td><td>callback (state)</td><td>continuation</td><td>poll-based (Rust 동형)</td></tr>
+<tr><td><code>async fn</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>await</code></td><td>postfix <code>.await</code></td><td>prefix <code>await</code></td><td>prefix <code>await</code></td><td>prefix <code>await</code></td></tr>
+<tr><td>coroutine 구현</td><td>컴파일러 generated</td><td>컴파일러 generated</td><td>컴파일러 generated</td><td>컴파일러 상태 기계</td></tr>
+<tr><td>Stackless</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>color 통일</td><td>✗ (sync/async 분리)</td><td>✗</td><td>✗</td><td>✗ (산업 표준 채택)</td></tr>
+<tr><td>await 일반화</td><td><code>Future</code> + 외부 lib</td><td><code>Task&lt;T&gt;</code> 통일</td><td><code>Task</code> + AsyncSequence</td><td><code>IntoFuture</code> 일반화</td></tr>
+</tbody></table></div>
+<p>rok 의 가장 큰 차이점은 다음 두 가지입니다.</p>
+<ol>
+<li><strong>prefix <code>await</code></strong>: C#, Swift, JS 와 같은 방식이며, 권위는 <a href="../../refs-lang/004-functions/412-async">refs-lang 4.12</a> 에 있습니다. 결과에 체이닝하려면 괄호로 묶습니다 (<code>(await x).method()</code>).
+</li>
+<li><code>IntoFuture</code> 일반 트레잇을 도입하여 Task, Thread 도 동일하게 await 될 수 있습니다. Swift 의 <code>Task</code> 통일과 비슷한 발상이지만, 고유 타입을 보존한 후 trait 으로 일반화한다는 점이 다릅니다.
+</li>
+</ol>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/220-future.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="219-par"><small>Previous</small>2.19. par - 병렬 처리 API</a><a class="next" href="221-crypto"><small>Next</small>2.21. crypto:: - 암호 알고리즘</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

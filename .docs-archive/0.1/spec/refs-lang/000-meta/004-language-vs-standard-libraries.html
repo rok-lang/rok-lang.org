@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.4. Boundary between the language and the standard libraries - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This document declares the boundary between what the language defines and what the standard libraries define. This boundary is a core decision of the rok specif...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/004-language-vs-standard-libraries.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.4. Boundary between the language and the standard libraries - rok docs">
+<meta property="og:description" content="This document declares the boundary between what the language defines and what the standard libraries define. This boundary is a core decision of the rok specif...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/004-language-vs-standard-libraries.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/004-language-vs-standard-libraries.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/004-language-vs-standard-libraries.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">0. Introduction</a></p><ul class="pages"><li><a href="001-execution-modes">0.1. Execution engines and user surfaces</a></li><li><a href="002-pipeline">0.2. Compilation pipeline</a></li><li><a href="003-source-units">0.3. Source units</a></li><li class="cur"><a aria-current="page" href="004-language-vs-standard-libraries">0.4. Boundary between the language and the standard libraries</a><ul class="toc"><li><a href="#041-what-the-language-defines">0.4.1. What the language defines</a></li><li><a href="#042-what-the-standard-libraries-define">0.4.2. What the standard libraries define</a></li><li><a href="#043-consequences-of-the-boundary">0.4.3. Consequences of the boundary</a></li><li><a href="#044-implementation-limits">0.4.4. Implementation limits</a></li></ul></li><li><a href="005-standard-libraries-tiers">0.5. Standard library tiers</a></li><li><a href="006-platform-targets">0.6. Platform targets</a></li><li><a href="007-glossary">0.7. Glossary</a></li><li><a href="008-notation">0.8. Notation</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="04-boundary-between-the-language-and-the-standard-libraries 04-언어와-표준-라이브러리의-경계 041-what-the-language-defines 041-언어가-정의하는-것 1-logic-flow 1-로직-흐름 2-container-syntax 2-컨테이너-문법 3-meta-system 3-메타-시스템 4-variables--visibility--modules 4-변수--가시성--모듈 5-operator-syntax 5-연산자-구문 042-what-the-standard-libraries-define 042-표준-라이브러리가-정의하는-것 043-consequences-of-the-boundary 043-경계가-만드는-결과 syntax-is-the-language-behavior-is-the-library syntax-는-언어-동작은-라이브러리 scope-of-language-level-questions 언어-수준-질문의-범위 what-is-delegated-to-the-library-level 라이브러리-수준으로-위임되는-것 044-implementation-limits 044-구현-한도"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/000-meta/004-language-vs-standard-libraries" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="04-boundary-between-the-language-and-the-standard-libraries"><a class="anchor" tabindex="-1" href="#04-boundary-between-the-language-and-the-standard-libraries" aria-hidden="true">#</a>0.4. Boundary between the language and the standard libraries</h1>
+<p>This document declares the boundary between what the language defines and what the standard libraries define. This boundary is a core decision of the rok specification, and all subsequent specification documents are written on the premise of it.</p>
+<h2 id="041-what-the-language-defines"><a class="anchor" tabindex="-1" href="#041-what-the-language-defines" aria-hidden="true">#</a>0.4.1. What the language defines</h2>
+<p>The scope the language specification covers directly falls into the following five categories.</p>
+<h3 id="1-logic-flow"><a class="anchor" tabindex="-1" href="#1-logic-flow" aria-hidden="true">#</a>1. Logic flow</h3>
+<p>The first category is the syntax that moves values along and its meaning. It includes branches, loops, pattern matching, exception handling and labeled jumps; the syntax of async and generators, i.e. their declarator and operator keywords, also belongs to this category.</p>
+<h3 id="2-container-syntax"><a class="anchor" tabindex="-1" href="#2-container-syntax" aria-hidden="true">#</a>2. Container syntax</h3>
+<p>The second category is the forms for defining user types. A product type (record) groups several fields into one; a sum type (tagged) holds one of several variants. An untagged <code>union</code> is a device for interpreting the same memory as several types; a trait is a means of declaring a bundle of behavior; and an <code>impl</code> block is where concrete implementations of traits and methods go. Finally, generics enable forms that take types as parameters.</p>
+<h3 id="3-meta-system"><a class="anchor" tabindex="-1" href="#3-meta-system" aria-hidden="true">#</a>3. Meta-system</h3>
+<p>The third category is the attribute system, which attaches to the previous two categories and binds behavior. It consists of the standard attributes, a fixed set of names the language recognizes, and the template system for user-defined attributes and derive.</p>
+<h3 id="4-variables--visibility--modules"><a class="anchor" tabindex="-1" href="#4-variables--visibility--modules" aria-hidden="true">#</a>4. Variables / visibility / modules</h3>
+<p>The fourth category is the conventions for names and exposure. It includes the variable declaration keywords, reference modifiers, and global and constant keywords, together with visibility levels and the name-exposure conventions at module and package level.</p>
+<h3 id="5-operator-syntax"><a class="anchor" tabindex="-1" href="#5-operator-syntax" aria-hidden="true">#</a>5. Operator syntax</h3>
+<p>The last category is the shape of notations such as <code>a + b</code>, <code>s[1:3]</code>, <code>x.f</code> and <code>f(args)</code>.</p>
+<p>The language does not, however, define what behavior these notations mean. A notation obtains its meaning by desugaring into trait methods registered in the standard libraries.</p>
+<h2 id="042-what-the-standard-libraries-define"><a class="anchor" tabindex="-1" href="#042-what-the-standard-libraries-define" aria-hidden="true">#</a>0.4.2. What the standard libraries define</h2>
+<p>The standard libraries are responsible for almost all meaning outside the five categories above. Specifically: numeric and character types and their operations; operator semantics such as arithmetic, comparison, logic, bitwise, indexing and ranges, all defined as trait <code>impl</code>s in the standard libraries; the conversion matrix containing all rules for conversion between types; and collections, typified by lists, maps, sets, tuples and strings. In addition, abstractions such as iterators, streams and futures; concurrency primitives typified by atomic, mutex and channel; task, thread and parallel execution APIs; I/O, time, randomness and networking; and all error types are defined by the standard libraries.</p>
+<p>The language does not know the names of these library elements. The compiler recognizes a specific library type only through attribute bindings of the meta-system, and those bindings are themselves written inside the standard libraries.</p>
+<h2 id="043-consequences-of-the-boundary"><a class="anchor" tabindex="-1" href="#043-consequences-of-the-boundary" aria-hidden="true">#</a>0.4.3. Consequences of the boundary</h2>
+<h3 id="syntax-is-the-language-behavior-is-the-library"><a class="anchor" tabindex="-1" href="#syntax-is-the-language-behavior-is-the-library" aria-hidden="true">#</a>Syntax is the language, behavior is the library</h3>
+<p>The first consequence of this split is a division of labor between notation and meaning.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>The language defines every notation, but the meaning of an operation applied to values is
+determined by trait methods registered in the standard libraries.</p>
+</div>
+<div class="table-wrap"><table>
+<thead><tr><th>Notation</th><th>What the language decides</th><th>What the library decides</th></tr></thead>
+<tbody>
+<tr><td><code>a + b</code></td><td>Token sequence, precedence</td><td>Which trait method <code>+</code> is, result type</td></tr>
+<tr><td><code>s[1:3]</code></td><td>Shape of slice notation</td><td>Indexing, bounds checking, result type</td></tr>
+<tr><td><code>x.f()</code></td><td>Shape of method call</td><td>Method dispatch rules</td></tr>
+<tr><td><code>let x = 1</code></td><td>Shape of declaration</td><td>Type of the literal <code>1</code></td></tr>
+</tbody></table></div>
+<h3 id="scope-of-language-level-questions"><a class="anchor" tabindex="-1" href="#scope-of-language-level-questions" aria-hidden="true">#</a>Scope of language-level questions</h3>
+<p>The second consequence of this split is a criterion for classifying questions. When facing any design or implementation decision, first determine whether it is a language-level question or a library-level question.</p>
+<p>Questions that remain at the language level are limited to the following areas. First, compiler semantics: name resolution, closure capture, visibility and error diagnostics. Second, syntax decisions: escapes, precedence, literal suffixes, the shape of slice notation, etc. Third, run-time calling conventions and the memory model, including object layout and calling convention. Fourth, resource management: lifetimes and the exception propagation mechanism. Fifth, type system rules: the trait-as-type ban, gradual typing, niche optimization, etc.</p>
+<h3 id="what-is-delegated-to-the-library-level"><a class="anchor" tabindex="-1" href="#what-is-delegated-to-the-library-level" aria-hidden="true">#</a>What is delegated to the library level</h3>
+<p>Operations on almost all values outside the list above are the library's decision. This specification therefore does not prescribe the semantics of such operations directly.</p>
+<p>Instead, the specification states the following: which trait method call the operation desugars into; the location convention for which library tier defines that trait; and the form of the compile error that occurs when it is not defined.</p>
+<p>This split is how rok's design slogan, &quot;a small language, rich libraries&quot;, is realized at the specification level.</p>
+<h2 id="044-implementation-limits"><a class="anchor" tabindex="-1" href="#044-implementation-limits" aria-hidden="true">#</a>0.4.4. Implementation limits</h2>
+<p>The language sets no fixed limits on nesting, chain length, value size or compile-time evaluation. An implementation may set its own; they are implementation-defined, not language requirements. rok's are:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Limit</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Parser nesting depth</td><td>256</td></tr>
+<tr><td>Operator / postfix chain links (<a href="../003-expressions/302-precedence-and-associativity#326a-implementation-limits">3.2.6a</a>)</td><td>4096</td></tr>
+<tr><td>Value type size (<a href="../002-types/206-sum-types">2.6.3</a>)</td><td>65536 flattened scalar slots or 4 GiB</td></tr>
+<tr><td><code>const</code> evaluation (<a href="../005-modules/502-const">5.2.4</a>)</td><td>4,000,000 steps, call depth 128</td></tr>
+</tbody></table></div>
+<p>Exceeding one is a compile error.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/000-meta/004-language-vs-standard-libraries.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="003-source-units"><small>Previous</small>0.3. Source units</a><a class="next" href="005-standard-libraries-tiers"><small>Next</small>0.5. Standard library tiers</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

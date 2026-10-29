@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.12. reflect - Reflect / Inspect - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::reflect module provides the authoritative signatures for runtime type information and field introspection. The detailed semantics are governed by...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/212-reflect.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.12. reflect - Reflect / Inspect - rok docs">
+<meta property="og:description" content="The rok::core::reflect module provides the authoritative signatures for runtime type information and field introspection. The detailed semantics are governed by...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/212-reflect.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/212-reflect.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/212-reflect.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li class="cur"><a aria-current="page" href="212-reflect">2.12. reflect - Reflect / Inspect</a><ul class="toc"><li><a href="#2121-two-level-traits">2.12.1. Two-level traits</a></li><li><a href="#2122-reflect---both-static-and-instance">2.12.2. Reflect - both static and instance</a></li><li><a href="#2123-inspect---opt-in-fields--methods">2.12.3. Inspect - opt-in fields / methods</a></li><li><a href="#2124-repl-output">2.12.4. REPL output</a></li><li><a href="#2125-module-mapping">2.12.5. Module mapping</a></li><li><a href="#2126-comparison-with-other-languages">2.12.6. Comparison with other languages</a></li></ul></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="212-reflect---reflect--inspect 212-reflect---reflect--inspect 2121-two-level-traits 2121-두-단계-트레잇 2122-reflect---both-static-and-instance 2122-reflect---정적--인스턴스-모두 static-vs-instance 정적-vs-인스턴스-차이 no-global-functions 글로벌-함수-없음 2123-inspect---opt-in-fields--methods 2123-inspect---opt-in-필드--메서드 derive-example derive-예 using-meta-blocks 메타-블록-활용 where-dynamic-dispatch-is-needed 동적-dispatch-가-필요한-자리 2124-repl-output 2124-repl-출력 2125-module-mapping 2125-모듈-매핑 2126-comparison-with-other-languages 2126-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/212-reflect" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="212-reflect---reflect--inspect"><a class="anchor" tabindex="-1" href="#212-reflect---reflect--inspect" aria-hidden="true">#</a>2.12. reflect - <code>Reflect</code> / <code>Inspect</code></h1>
+<p>The <code>rok::core::reflect</code> module provides the authoritative signatures for runtime type information and <strong>field introspection</strong>. The detailed semantics are governed by <a href="../../refs-lang/006-meta-system/610-reflection">refs-lang 6.10 reflection</a>; this chapter covers only the standard library's trait shapes.</p>
+<h2 id="2121-two-level-traits"><a class="anchor" tabindex="-1" href="#2121-two-level-traits" aria-hidden="true">#</a>2.12.1. Two-level traits</h2>
+<p>Reflection is split into two levels of traits.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Automatic / opt-in</th><th>Provides</th><th>Where used</th></tr></thead>
+<tbody>
+<tr><td><code>Reflect</code></td><td><strong>automatic</strong> (every type)</td><td>type_name / size / align</td><td>available through the implicit <code>rok::**</code> (rarely used)</td></tr>
+<tr><td><code>Inspect</code></td><td>opt-in (<code>#[derive(Inspect)]</code>)</td><td>field_names / get_field / methods</td><td>trait available through the implicit <code>rok::**</code>, derive is explicit</td></tr>
+</tbody></table></div>
+<p>The split into automatic and opt-in controls binary size. If every struct carried field reflection metadata, the binary would grow; the opt-in scheme generates the metadata only for the types that need it.</p>
+<h2 id="2122-reflect---both-static-and-instance"><a class="anchor" tabindex="-1" href="#2122-reflect---both-static-and-instance" aria-hidden="true">#</a>2.12.2. <code>Reflect</code> - both static and instance</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Reflect</span> {
+    <span class="k">fn</span> type_name() -&gt; <span class="t">str</span>;        <span class="c">// static - T::type_name()</span>
+    <span class="k">fn</span> size() -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> align() -&gt; <span class="t">usize</span>;
+
+    <span class="k">fn</span> type_name_of(<span class="k">self</span>) -&gt; <span class="t">str</span>; <span class="c">// instance - x.type_name_of() (any / sum also OK)</span>
+    <span class="k">fn</span> size_of(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+}
+</code></pre>
+<p>This trait is implemented automatically for every type; the compiler attaches the type info to the binary automatically.</p>
+<p>The compiler provides <code>Reflect</code> for every type; there is no impl in source.</p>
+<ul>
+<li>A hand-written <code>impl Reflect for T</code> is an error. The bound <code>T: Reflect</code> always holds.
+</li>
+<li>If a type has its own method with the same name, such as <code>size()</code> / <code>type_name()</code>, that method shadows the reflection method.
+</li>
+<li>The name (<code>type_name</code>) carries no module path (<code>List&lt;i64&gt;</code>, <code>Config</code>). The static name of a sum type is written in canonical order (<a href="../../refs-lang/002-types/206-sum-types#264-set-semantics">2.6.4</a>) (<code>f64 | i32</code>, with <code>none</code> last). Instance forms such as <code>type_name_of(self)</code> report the member present at runtime (for a sum) or the content of an <code>any</code>.
+</li>
+<li><code>rok::core::reflect::cast&lt;T&gt;(value: any) -&gt; T | none</code> extracts a <code>T</code> from an <code>any</code> using the same rules as <code>set_field</code>. <code>rok::core::reflect::methods_of&lt;T&gt;() -&gt; List&lt;MethodInfo&gt;</code> is the list of <code>T</code>'s inherent methods.
+</li>
+</ul>
+<h3 id="static-vs-instance"><a class="anchor" tabindex="-1" href="#static-vs-instance" aria-hidden="true">#</a>Static vs instance</h3>
+<pre><code class="language-rok"><span class="t">i32</span>::type_name();          <span class="c">//→ "i32"           (static - decided at compile time)</span>
+<span class="t">i32</span>::size();               <span class="c">//→ 4</span>
+<span class="t">i32</span>::align();              <span class="c">//→ 4</span>
+
+<span class="k">let</span> x: <span class="t">i32</span> = <span class="n">42</span>;
+x.type_name_of();          <span class="c">//→ "i32"           (instance - usually the same as static)</span>
+
+<span class="k">let</span> y: <span class="t">i32</span> | <span class="t">f64</span> = <span class="n">42i32</span>;
+y.type_name_of();          <span class="c">//→ "i32"           (runtime dispatch - checks the sum tag)</span>
+
+<span class="k">let</span> z: <span class="k">any</span> = <span class="s">"hello"</span>;
+z.type_name_of();          <span class="c">//→ "str"           (runtime - any slot dispatch)</span>
+</code></pre>
+<p><code>type_name_of</code> is a runtime dispatch, so for a sum type or <code>any</code> it returns the name of the variant currently held.</p>
+<h3 id="no-global-functions"><a class="anchor" tabindex="-1" href="#no-global-functions" aria-hidden="true">#</a>No global functions</h3>
+<pre><code class="language-rok">typeof(x);                 <span class="c">// ERROR - no global typeof</span>
+sizeof(<span class="t">T</span>);                 <span class="c">// ERROR - no global sizeof</span>
+</code></pre>
+<p>Instead, everything is uniformly a method.</p>
+<pre><code class="language-rok">x.type_name_of()           <span class="c">// instance</span>
+<span class="t">T</span>::type_name()             <span class="c">// static</span>
+<span class="t">T</span>::size()
+<span class="t">T</span>::align()
+</code></pre>
+<p>This is part of <a href="../../refs-lang/003-expressions/305-member-access-and-method-call">refs-lang 3.5 Member access and method calls</a>: all introspection is unified in method form.</p>
+<h2 id="2123-inspect---opt-in-fields--methods"><a class="anchor" tabindex="-1" href="#2123-inspect---opt-in-fields--methods" aria-hidden="true">#</a>2.12.3. <code>Inspect</code> - opt-in fields / methods</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Inspect</span>: <span class="t">Reflect</span> {
+    <span class="k">fn</span> field_names() -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt;;
+    <span class="k">fn</span> get_field(<span class="k">self</span>, name: <span class="t">str</span>) -&gt; <span class="k">any</span> | <span class="k">none</span>;            <span class="c">// private fields too</span>
+    <span class="k">fn</span> set_field(<span class="k">ref</span> <span class="k">self</span>, name: <span class="t">str</span>, value: <span class="k">any</span>) -&gt; <span class="t">bool</span>;  <span class="c">// whether it succeeded</span>
+    <span class="k">fn</span> methods() -&gt; <span class="t">List</span>&lt;<span class="t">MethodInfo</span>&gt;;
+}
+
+<span class="k">struct</span> <span class="t">MethodInfo</span> {
+    name: <span class="t">str</span>;
+    arity: <span class="t">usize</span>;              <span class="c">// number of arguments excluding self</span>
+    is_static: <span class="t">bool</span>;           <span class="c">// method that does not take self</span>
+    arg_types: <span class="t">List</span>&lt;<span class="t">str</span>&gt;;      <span class="c">// argument type names excluding self</span>
+    return_type: <span class="t">str</span>;
+}
+</code></pre>
+<ul>
+<li><code>get_field</code> returns the field's value as <code>any</code>, or <code>none</code> for an unknown name. Private fields can be read too.
+</li>
+<li><code>set_field</code> assigns and returns <code>true</code> when the value's type is <strong>exactly the same</strong> as the field's type, or when an integer of a different integer type <strong>fits without loss</strong> (<code>u.set_field(&quot;id&quot;, 42)</code> into a <code>u64</code> field). Otherwise it does not assign and returns <code>false</code>. There are no other conversions (e.g. <code>i32</code> → <code>f64</code>).
+</li>
+<li><code>methods()</code> returns <strong>only the type's inherent methods</strong> (excluding trait methods), sorted by name. Methods of a generic <code>impl</code> show the types as written (<code>T</code>).
+</li>
+<li>Derived on an <code>enum</code>, there are no fields (<code>field_names()</code> is an empty list, <code>get_field</code> is <code>none</code>, <code>set_field</code> is <code>false</code>); only <code>methods()</code> is meaningful.
+</li>
+</ul>
+<h3 id="derive-example"><a class="anchor" tabindex="-1" href="#derive-example" aria-hidden="true">#</a>Derive example</h3>
+<pre><code class="language-rok"><span class="a">#[derive(Inspect)]</span>
+<span class="k">struct</span> <span class="t">User</span> {
+    id: <span class="t">u64</span>;
+    name: <span class="t">str</span>;
+    email: <span class="t">str</span>;
+}
+
+<span class="k">let</span> u = <span class="t">User</span> { id: <span class="n">1</span>, name: <span class="s">"Alice"</span>, email: <span class="s">"a@b"</span> };
+
+<span class="t">User</span>::field_names();       <span class="c">//→ ["id", "name", "email"]</span>
+u.get_field(<span class="s">"name"</span>);       <span class="c">//→ any("Alice")</span>
+u.set_field(<span class="s">"id"</span>, <span class="n">42</span>);     <span class="c">//→ true</span>
+u.id;                      <span class="c">//→ 42</span>
+</code></pre>
+<h3 id="using-meta-blocks"><a class="anchor" tabindex="-1" href="#using-meta-blocks" aria-hidden="true">#</a>Using meta blocks</h3>
+<p><code>#[derive(Inspect)]</code> is implemented as a meta block in <code>rok::core::reflect</code> (<a href="../../refs-lang/006-meta-system/608-meta-blocks">refs-lang 6.8</a>, <a href="../../refs-lang/006-meta-system/609-template-tokens">6.9</a>). In summary:</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(Inspect)]</span>
+<span class="k">pub</span> @derive {
+    <span class="k">impl</span> rok::core::reflect::<span class="t">Inspect</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> field_names() -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt; {
+            <span class="k">let</span> names: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = <span class="t">List</span>::new();
+            @if_struct {
+                @for_fields { names.push(@field.name.as_str()); }
+            }
+            <span class="k">return</span> names;
+        }
+
+        <span class="k">fn</span> get_field(<span class="k">self</span>, name: <span class="t">str</span>) -&gt; <span class="k">any</span> | <span class="k">none</span> {
+            @if_struct {
+                @for_fields {
+                    <span class="k">if</span> name == @field.name.as_str() { <span class="k">return</span> <span class="k">self</span>.@field; }
+                }
+            }
+            <span class="k">return</span> <span class="k">none</span>;
+        }
+
+        <span class="k">fn</span> set_field(<span class="k">ref</span> <span class="k">self</span>, name: <span class="t">str</span>, value: <span class="k">any</span>) -&gt; <span class="t">bool</span> {
+            @if_struct {
+                @for_fields {
+                    <span class="k">if</span> name == @field.name.as_str() {
+                        <span class="k">match</span> rok::core::reflect::cast::&lt;@field.<span class="k">type</span>&gt;(value) {
+                            v: @field.<span class="k">type</span> =&gt; { <span class="k">self</span>.@field = v; <span class="k">return</span> <span class="k">true</span>; },
+                            <span class="k">none</span> =&gt; { <span class="k">return</span> <span class="k">false</span>; },
+                        }
+                    }
+                }
+            }
+            <span class="k">return</span> <span class="k">false</span>;
+        }
+
+        <span class="k">fn</span> methods() -&gt; <span class="t">List</span>&lt;rok::core::reflect::<span class="t">MethodInfo</span>&gt; {
+            <span class="k">return</span> rok::core::reflect::methods_of::&lt;@<span class="k">Self</span>&gt;();
+        }
+    }
+}
+</code></pre>
+<p>For meta block details see <a href="../../refs-lang/006-meta-system/608-meta-blocks">refs-lang 6.8 Meta blocks</a>.</p>
+<h3 id="where-dynamic-dispatch-is-needed"><a class="anchor" tabindex="-1" href="#where-dynamic-dispatch-is-needed" aria-hidden="true">#</a>Where dynamic dispatch is needed</h3>
+<p><code>Inspect</code> is used in domains that need access by field name, such as config objects, serializers and debuggers. In ordinary code <code>Reflect</code> alone is enough.</p>
+<pre><code class="language-rok"><span class="k">fn</span> dump_struct&lt;<span class="t">T</span>: <span class="t">Inspect</span>&gt;(x: <span class="t">T</span>) {
+    <span class="k">for</span> name <span class="k">in</span> <span class="t">T</span>::field_names() {
+        <span class="k">if</span> <span class="k">let</span> v: <span class="k">any</span> = x.get_field(name) {
+            println(<span class="s">f"{</span>name<span class="s">} = {</span>v.type_name_of()<span class="s">}: {</span>v<span class="s">:?</span><span class="s">}"</span>);
+        }
+    }
+}
+</code></pre>
+<h2 id="2124-repl-output"><a class="anchor" tabindex="-1" href="#2124-repl-output" aria-hidden="true">#</a>2.12.4. REPL output</h2>
+<p>The REPL's automatic printing of the last expression combines this chapter's <code>Reflect::type_name_of</code> with <code>Debug</code> from <a href="210-fmt">2.10 fmt</a> (<a href="../../refs-lang/006-meta-system/610-reflection#6103-repl--jupyter-auto-printing">refs-lang 6.10.3</a>).</p>
+<pre><code>&gt; let x = 42i32;
+&gt; x
+i32: 42
+
+&gt; [1, 2, 3]
+List&lt;i32&gt;: [1, 2, 3]
+
+&gt; User { id: 1, name: &quot;Alice&quot; }
+User: User { id: 1, name: &quot;Alice&quot; }
+</code></pre>
+<p>The display form is <code>{type_name_of}: {Debug}</code>. For a type without <code>Debug</code>, only the type name is printed.</p>
+<h2 id="2125-module-mapping"><a class="anchor" tabindex="-1" href="#2125-module-mapping" aria-hidden="true">#</a>2.12.5. Module mapping</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>Location</th><th>Mechanism</th></tr></thead>
+<tbody>
+<tr><td><code>Reflect</code> (automatic)</td><td>compiler + <code>rok::core::reflect</code></td><td>type info table - attached to the binary</td></tr>
+<tr><td><code>Inspect</code> derive</td><td><code>rok::core::reflect</code> + meta block <code>#[impl_derive]</code></td><td>code generation from template tokens</td></tr>
+<tr><td><code>MethodInfo</code></td><td><code>rok::core::reflect</code></td><td>plain struct</td></tr>
+<tr><td><code>any</code> type</td><td>compiler built-in</td><td>type tag + payload</td></tr>
+</tbody></table></div>
+<h2 id="2126-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#2126-comparison-with-other-languages" aria-hidden="true">#</a>2.12.6. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>Java</th><th>Python</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Type name</td><td><code>std::any::type_name::&lt;T&gt;()</code></td><td><code>getClass()</code></td><td><code>type(x).__name__</code></td><td><code>x.type_name_of()</code> method</td></tr>
+<tr><td>Field introspection</td><td><strong>none</strong> (libraries such as <code>bincode</code>)</td><td>Reflection API</td><td><code>vars(x)</code> <code>getattr</code></td><td><code>x.get_field(name)</code> (opt-in)</td></tr>
+<tr><td>Runtime dispatch</td><td><code>dyn Trait</code> (vtable)</td><td>automatic</td><td>automatic</td><td>sum type tag + <code>any</code> / <code>any Trait</code> (opt-in)</td></tr>
+<tr><td>Automatic impl</td><td><strong>none</strong></td><td>every object</td><td>every object</td><td><code>Reflect</code> automatic, <code>Inspect</code> opt-in</td></tr>
+<tr><td>Memory cost</td><td>0</td><td>metadata for every class</td><td>dict for every object</td><td>only <code>Reflect</code> automatic (opt-in split)</td></tr>
+</tbody></table></div>
+<p>rok differs in two main ways. First, the two-level split provides the lightweight <code>Reflect</code> automatically and the heavyweight <code>Inspect</code> as opt-in. This is more memory-efficient than the all-automatic model of Java or Python and more ergonomic than Rust's all-manual model. Second, for method consistency there are <strong>no</strong> global functions such as <code>typeof(x)</code>; all introspection is provided in method form.</p>
+<p>The detailed reflection semantics are governed by <a href="../../refs-lang/006-meta-system/610-reflection">refs-lang 6.10</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/212-reflect.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="211-conversion"><small>Previous</small>2.11. Conversion traits</a><a class="next" href="213-marker"><small>Next</small>2.13. marker - Clone / Copy / Drop</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

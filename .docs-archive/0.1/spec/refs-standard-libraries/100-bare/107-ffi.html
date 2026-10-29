@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::bare::ffi module provides the mechanism for defining external functions and data compatible with the C ABI. It works together with the extern &quot;C&quot; { ......">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/107-ffi.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr - rok docs">
+<meta property="og:description" content="The rok::bare::ffi module provides the mechanism for defining external functions and data compatible with the C ABI. It works together with the extern &quot;C&quot; { ......">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/107-ffi.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/107-ffi.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/107-ffi.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile memory access</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li class="cur"><a aria-current="page" href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a><ul class="toc"><li><a href="#171-extern-c-block">1.7.1. extern &quot;C&quot; block</a></li><li><a href="#172-cstr--cstring---null-terminated-string">1.7.2. CStr / CString - null-terminated string</a></li><li><a href="#173-cptrt-and-nullability">1.7.3. CPtr&lt;T&gt; and nullability</a></li><li><a href="#174-using-block---raii">1.7.4. using block - RAII</a></li><li><a href="#175-safe-wrapper-pattern---separating-sys-and-safe">1.7.5. Safe wrapper pattern - separating sys and safe</a></li><li><a href="#176-automatic-binding-generation">1.7.6. Automatic binding generation</a></li><li><a href="#177-division-of-call-safety-responsibility">1.7.7. Division of call-safety responsibility</a></li><li><a href="#178-comparison-with-other-languages">1.7.8. Comparison with other languages</a></li></ul></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="17-ffi---extern-c--cstr--cstring--cptr 17-ffi---extern-c--cstr--cstring--cptr 171-extern-c-block 171-extern-c-block linkname---specifying-a-library linkname---library-지정 calling-convention 호출-규약-calling-convention str-parameters-and-returns str-매개변수와-반환 172-cstr--cstring---null-terminated-string 172-cstr--cstring---null-terminated-string cstring---owned-null-terminated cstring---owned-null-terminated example---strlen 사용-예---strlen 173-cptrt-and-nullability 173-cptrt-와-nullable 174-using-block---raii 174-using-블록---raii 175-safe-wrapper-pattern---separating-sys-and-safe 175-안전-wrapper-패턴---sys--safe-분리 176-automatic-binding-generation 176-자동-binding-생성 177-division-of-call-safety-responsibility 177-호출-안전-책임-분배 178-comparison-with-other-languages 178-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/107-ffi" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="17-ffi---extern-c--cstr--cstring--cptr"><a class="anchor" tabindex="-1" href="#17-ffi---extern-c--cstr--cstring--cptr" aria-hidden="true">#</a>1.7. FFI - <code>extern &quot;C&quot;</code> / <code>CStr</code> / <code>CString</code> / <code>CPtr</code></h1>
+<p>The <code>rok::bare::ffi</code> module provides the mechanism for defining external functions and data compatible with the C ABI. It works together with the <code>extern &quot;C&quot; { ... }</code> block defined by <a href="../../refs-lang/005-modules/509-extern-block">refs-lang 5.9 extern block</a>.</p>
+<p>This chapter covers only traditional C FFI; FFI based on the WASM Component Model is described separately in <a href="108-wit">1.8 wit</a>.</p>
+<h2 id="171-extern-c-block"><a class="anchor" tabindex="-1" href="#171-extern-c-block" aria-hidden="true">#</a>1.7.1. <code>extern &quot;C&quot;</code> block</h2>
+<p>The most basic form is:</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="c">// function declarations</span>
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+    <span class="k">fn</span> strlen(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">usize</span>;
+
+    <span class="c">// global (read-only)</span>
+    <span class="k">static</span> errno: <span class="t">i32</span>;
+
+    <span class="c">// global (mutable) - the `mut` keyword is allowed _only here_</span>
+    <span class="k">static</span> <span class="k">mut</span> atexit_count: <span class="t">u64</span>;
+}
+</code></pre>
+<p>The <code>mut</code> keyword appearing here is defined in <a href="../../refs-lang/001-lexical/105-keywords">refs-lang 1.5 keywords</a> and has meaning only in this position. Note that it cannot be used on ordinary variables.</p>
+<h3 id="linkname---specifying-a-library"><a class="anchor" tabindex="-1" href="#linkname---specifying-a-library" aria-hidden="true">#</a><code>#[link(&quot;name&quot;)]</code> - specifying a library</h3>
+<p>To specify a library explicitly, use the <code>#[link]</code> attribute.</p>
+<pre><code class="language-rok"><span class="a">#[link("c")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+}
+
+<span class="a">#[link("m")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> cos(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+    <span class="k">fn</span> sin(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+}
+</code></pre>
+<p>The linker attaches flags such as <code>-lc</code> or <code>-lm</code> automatically.</p>
+<h3 id="calling-convention"><a class="anchor" tabindex="-1" href="#calling-convention" aria-hidden="true">#</a>Calling convention</h3>
+<p>Various calling conventions can be chosen depending on the platform and interface.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> { ... }              <span class="c">// System V (Unix) / Microsoft x64 (Windows)</span>
+<span class="k">extern</span> <span class="s">"system"</span> { ... }         <span class="c">// Windows: stdcall on x86, C on x64 / aarch64</span>
+<span class="k">extern</span> <span class="s">"fastcall"</span> { ... }       <span class="c">// x86 fastcall</span>
+<span class="k">extern</span> <span class="s">"stdcall"</span> { ... }        <span class="c">// x86 stdcall</span>
+<span class="k">extern</span> <span class="s">"aapcs"</span> { ... }          <span class="c">// ARM AAPCS</span>
+<span class="k">extern</span> <span class="s">"thiscall"</span> { ... }       <span class="c">// C++ this pointer (x86 only)</span>
+</code></pre>
+<p>The default <code>&quot;C&quot;</code> is enough for most users. The other conventions appear mainly when dealing with the <strong>Windows API</strong> or C++ interfaces.</p>
+<h3 id="str-parameters-and-returns"><a class="anchor" tabindex="-1" href="#str-parameters-and-returns" aria-hidden="true">#</a><code>str</code> parameters and returns</h3>
+<p>A <code>str</code> parameter of an <code>extern &quot;C&quot;</code> function is passed as a NUL-terminated <code>char*</code>, and a returned <code>char*</code> becomes a <code>str</code> whose length is measured with <code>strlen</code> (<a href="../../refs-lang/005-modules/509-extern-block#594-ffi-compatible-types">refs-lang 5.9.4</a>). <code>(ptr, len)</code> passing belongs to the runtime ABI <code>extern &quot;rok&quot;</code> (<a href="../../refs-lang/005-modules/509-extern-block#592-abi-specifiers">5.9.2</a>).</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> puts(s: <span class="t">str</span>) -&gt; <span class="t">i32</span>;          <span class="c">// "hi" → NUL-terminated char*</span>
+    <span class="k">fn</span> getenv(name: <span class="t">str</span>) -&gt; <span class="t">CPtr</span>&lt;c_char&gt;;   <span class="c">// may be null - received as CPtr</span>
+}
+</code></pre>
+<h2 id="172-cstr--cstring---null-terminated-string"><a class="anchor" tabindex="-1" href="#172-cstr--cstring---null-terminated-string" aria-hidden="true">#</a>1.7.2. <code>CStr</code> / <code>CString</code> - null-terminated string</h2>
+<p><code>CStr</code> is the borrowed type for handling C strings.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">CStr</span> {
+    <span class="c">// internal: null-terminated UTF-8 or raw bytes (bytes on Unix, UTF-16 separately on Windows)</span>
+}
+
+<span class="k">impl</span> <span class="t">CStr</span> {
+    <span class="k">fn</span> from_ptr(p: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">CStr</span> | <span class="k">none</span>;
+                                    <span class="c">// null pointer → none</span>
+                                    <span class="c">// no null terminator - undefined (caller's responsibility)</span>
+
+    <span class="k">fn</span> from_bytes_with_nul(bytes: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">FromBytesWithNulError</span>) -&gt; <span class="t">CStr</span>;
+                                    <span class="c">// checked - last byte is 0, no interior 0</span>
+    <span class="k">fn</span> from_bytes_with_nul_unchecked(bytes: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">CStr</span>;
+
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;c_char&gt;;
+    <span class="k">fn</span> as_bytes(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;            <span class="c">// excluding the null terminator</span>
+    <span class="k">fn</span> as_bytes_with_nul(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// including the null terminator</span>
+    <span class="k">fn</span> to_str(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">Utf8Error</span>) -&gt; <span class="t">str</span>;  <span class="c">// UTF-8 conversion</span>
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                     <span class="c">// excluding the null terminator</span>
+}
+</code></pre>
+<p><code>from_ptr</code> copies the C string in. <code>CStr</code> / <code>CString</code> keep bytes and NUL in one GC object; <code>as_ptr</code> is valid as <code>str::as_ptr</code> is (<a href="../200-core/215-string#2152-str---immutable-utf-8-string">2.15.2</a>): while a variable holding the <code>CStr</code> / <code>CString</code> is in scope in a function where a pointer value can appear.</p>
+<h3 id="cstring---owned-null-terminated"><a class="anchor" tabindex="-1" href="#cstring---owned-null-terminated" aria-hidden="true">#</a><code>CString</code> - owned, null-terminated</h3>
+<p>When an owned form is needed, use <code>CString</code>.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">CString</span> { <span class="c">/* GC heap, null-terminated */</span> }
+
+<span class="k">impl</span> <span class="t">CString</span> {
+    <span class="k">fn</span> new(bytes: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">NulError</span>) -&gt; <span class="t">CString</span>;
+                                        <span class="c">// rejects interior null bytes</span>
+    <span class="k">fn</span> from_str(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NulError</span>) -&gt; <span class="t">CString</span>;
+
+    <span class="k">fn</span> as_c_str(<span class="k">self</span>) -&gt; <span class="t">CStr</span>;
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;c_char&gt;;
+    <span class="k">fn</span> into_bytes(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;     <span class="c">// owned bytes (excluding null)</span>
+    <span class="k">fn</span> into_bytes_with_nul(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+}
+</code></pre>
+<h3 id="example---strlen"><a class="anchor" tabindex="-1" href="#example---strlen" aria-hidden="true">#</a>Example - strlen</h3>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> strlen(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">usize</span>;
+}
+
+<span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;
+<span class="k">let</span> cs = <span class="k">try</span> <span class="t">CString</span>::from_str(s);
+<span class="k">let</span> n = <span class="k">unsafe</span> { strlen(cs.as_ptr()) };       <span class="c">//→ 5</span>
+</code></pre>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Conversion between <code>str</code> and <code>CStr</code> <strong>requires an allocation</strong> (a null terminator must be added). <code>str</code> is generally not null-terminated, so converting explicitly only at FFI sites is recommended.</p>
+</div>
+<h2 id="173-cptrt-and-nullability"><a class="anchor" tabindex="-1" href="#173-cptrt-and-nullability" aria-hidden="true">#</a>1.7.3. <code>CPtr&lt;T&gt;</code> and nullability</h2>
+<p>The authoritative definition is in <a href="101-ptr#115-cptrt---c-compatible-nullable">1.1.5 CPtr</a>. When a C function returns <code>T*</code>, the possibility of null must be made explicit, and this is the type used there.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> fopen(path: <span class="t">ConstPtr</span>&lt;c_char&gt;, mode: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">CPtr</span>&lt;<span class="t">FILE</span>&gt;;
+    <span class="k">fn</span> fclose(file: <span class="t">CPtr</span>&lt;<span class="t">FILE</span>&gt;) -&gt; <span class="t">i32</span>;
+}
+
+<span class="k">struct</span> <span class="t">FILE</span>;        <span class="c">// opaque</span>
+
+<span class="k">let</span> path = <span class="k">try</span> <span class="t">CString</span>::from_str(<span class="s">"data.txt"</span>);
+<span class="k">let</span> mode = <span class="k">try</span> <span class="t">CString</span>::from_str(<span class="s">"r"</span>);
+<span class="k">let</span> f: <span class="t">CPtr</span>&lt;<span class="t">FILE</span>&gt; = <span class="k">unsafe</span> { fopen(path.as_ptr(), mode.as_ptr()) };
+
+<span class="k">match</span> f.as_ptr() {
+    file: <span class="t">Ptr</span>&lt;<span class="t">FILE</span>&gt; =&gt; {
+        <span class="c">// use</span>
+        <span class="k">unsafe</span> { fclose(f) };
+    }
+    <span class="k">none</span> =&gt; panic(<span class="s">"fopen failed"</span>),
+}
+</code></pre>
+<h2 id="174-using-block---raii"><a class="anchor" tabindex="-1" href="#174-using-block---raii" aria-hidden="true">#</a>1.7.4. <code>using</code> block - RAII</h2>
+<p>The GC does not guarantee finalizers. This is a principle every GC language learns: RAII for external resources must be handled with <strong>explicit <code>using</code></strong>.</p>
+<pre><code class="language-rok"><span class="k">using</span> f = <span class="k">try</span> rok::bare::ffi::fopen(path, <span class="s">"r"</span>) {
+    <span class="k">let</span> buf = <span class="k">try</span> f.read_to_end();
+    process(buf);
+}     <span class="c">// ← automatic fclose at end of scope (Drop)</span>
+
+<span class="c">// without using - resources may leak</span>
+<span class="k">let</span> f = <span class="k">try</span> rok::bare::ffi::fopen(path, <span class="s">"r"</span>);
+<span class="k">try</span> process(f);                                <span class="c">// fclose skipped when an error propagates</span>
+rok::bare::ffi::fclose(f);                        <span class="c">// guaranteed only if _explicit_</span>
+</code></pre>
+<p>The <code>using</code> syntax itself is governed by <a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 using expression</a> and works integrated with the <code>Drop</code> trait of <a href="../200-core/213-marker">2.13 marker</a>.</p>
+<h2 id="175-safe-wrapper-pattern---separating-sys-and-safe"><a class="anchor" tabindex="-1" href="#175-safe-wrapper-pattern---separating-sys-and-safe" aria-hidden="true">#</a>1.7.5. Safe wrapper pattern - separating sys and safe</h2>
+<p>The standard idiom in the Rust ecosystem is to separate a <code>*-sys</code> crate (raw FFI) from a same-named crate (safe wrapper). rok recommends the same pattern.</p>
+<pre><code class="language-rok"><span class="c">// libc-sys module - raw FFI</span>
+<span class="k">mod</span> c {
+    <span class="a">#[link("c")]</span>
+    <span class="k">extern</span> <span class="s">"C"</span> {
+        <span class="k">pub</span> <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+        <span class="k">pub</span> <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+        <span class="k">pub</span> <span class="k">fn</span> strdup(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">CPtr</span>&lt;c_char&gt;;
+    }
+}
+
+<span class="c">// libc - safe wrapper</span>
+<span class="k">pub</span> <span class="k">fn</span> alloc_buffer(size: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">AllocError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt; {
+    <span class="k">let</span> p = <span class="k">unsafe</span> { c::malloc(size) };
+    <span class="k">match</span> p.as_ptr() {
+        ptr: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; =&gt; {
+            <span class="c">// unsafe → safe boundary</span>
+            <span class="k">let</span> bytes = <span class="k">unsafe</span> { <span class="t">Slice</span>::from_raw_parts(ptr, size).to_list() };
+            <span class="k">unsafe</span> { c::free(p) };
+            bytes
+        }
+        <span class="k">none</span> =&gt; { <span class="k">throw</span> <span class="t">AllocError</span>::<span class="t">OutOfMemory</span>; }
+    }
+}
+</code></pre>
+<p>This separation confines unsafe code to a narrow area. User code then calls only the safe wrapper, which secures safety.</p>
+<h2 id="176-automatic-binding-generation"><a class="anchor" tabindex="-1" href="#176-automatic-binding-generation" aria-hidden="true">#</a>1.7.6. Automatic binding generation</h2>
+<p><code>rokc bindgen</code> (<a href="../../refs-lang/009-tools/901-rokc-cli#rokc-bindgen-c-header-bindings">refs-lang 9.1</a>) generates rok declarations from a C header through libclang, which the toolchain ships in its <code>lib/</code> and which only this command loads.</p>
+<pre><code class="language-bash">rokc bindgen libfoo.h &gt; libfoo_sys.rok
+rokc bindgen libfoo.h --target x86_64-pc-windows-msvc -o libfoo_sys.rok -- -I include -DFOO=1
+</code></pre>
+<p>The output is for one target (<code>--target</code>, default the host): sizes, layouts and integer widths are clang's for it. Arguments after <code>--</code> are passed to clang. The machine's system headers are used for its own platform, for Apple targets (the SDK) and for MSVC targets on an MSVC host; for any other target clang gets only its built-in headers unless <code>--sysroot</code> is given, and the target's headers are passed after <code>--</code> (<code>-isystem &lt;dir&gt;</code>). The declarations of the header and of the non-system headers it includes are written out (for a header in a system directory, also those of the headers it includes from its own directory tree), together with the declarations of other headers that they use. A header clang rejects is an error (exit 1) with clang's diagnostics.</p>
+<p>The mapping conventions are:</p>
+<ul>
+<li>C integer and floating-point types become the rok primitive of their size on the target (<code>int</code> → <code>i32</code>, <code>long</code> → <code>i32</code> or <code>i64</code>, <code>char</code> → <code>c_char</code>, <code>_Bool</code> → <code>bool</code>); <code>size_t</code> / <code>uintptr_t</code> → <code>usize</code>, <code>ssize_t</code> / <code>intptr_t</code> / <code>ptrdiff_t</code> → <code>isize</code>. A system header's typedef of such a type is that type.
+</li>
+<li>typedefs become rok type aliases.
+</li>
+<li>structs and unions map to <code>#[repr(C)] struct</code> / <code>union</code> (<code>#[repr(C, align(N))]</code> or <code>#[repr(packed)]</code> where clang's layout needs it). A run of bitfields becomes one byte-array field <code>_bitfieldN</code> covering its storage. A layout rok cannot express (<code>#pragma pack(N)</code> with N &gt; 1, a bitfield in a union) becomes a struct of the same size and alignment holding <code>_opaque: [u8; N]</code>. A struct declared but not defined becomes <code>struct Name;</code> (opaque).
+</li>
+<li>enums become an alias of their integer type and one <code>const</code> per enumerator (<code>pub type color = u32; pub const RED: color = 0;</code>); an unnamed enum is its constants.
+</li>
+<li>object pointers (<code>T*</code>, <code>const T*</code>) become <code>CPtr&lt;T&gt;</code>; <code>void*</code> becomes <code>CPtr&lt;u8&gt;</code>.
+</li>
+<li>functions become <code>extern &quot;C&quot; fn</code> (a C variadic: <code>...</code>); stdcall functions on 32-bit x86 Windows go into <code>extern &quot;system&quot;</code>. Globals become <code>static</code> (<code>static mut</code> unless const). Static and inline functions are skipped (no symbol to link).
+</li>
+<li>function pointers become <code>unsafe extern &quot;C&quot; fn(...) -&gt; R | none</code> (<a href="../../refs-lang/005-modules/509-extern-block#c-function-pointer-types">refs-lang 5.9.4</a>; NULL = <code>none</code>).
+</li>
+<li>object-like macros that evaluate to an integer, floating-point or string constant become <code>const</code> items.
+</li>
+<li>a C name that is a rok keyword or primitive type name gets a trailing <code>_</code>; functions and statics keep their C symbol with <code>#[link_name]</code>.
+</li>
+<li>anything else (128-bit integers, <code>_Float16</code>, <code>long double</code> wider than 8 bytes, vector and block types, variadic function pointers, thread-local variables, other calling conventions) is skipped with a <code>// skipped ...</code> comment. A struct written as bytes (<code>_opaque</code>) is never passed by value: a function or function pointer that takes or returns one, directly or inside another struct, is skipped, since C classifies it by its fields.
+</li>
+</ul>
+<h2 id="177-division-of-call-safety-responsibility"><a class="anchor" tabindex="-1" href="#177-division-of-call-safety-responsibility" aria-hidden="true">#</a>1.7.7. Division of call-safety responsibility</h2>
+<p>Who is responsible for what at the call site:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>Responsible party</th></tr></thead>
+<tbody>
+<tr><td>Pointer null check</td><td>rok code, for C → rok</td></tr>
+<tr><td>Buffer length validation</td><td>rok code (must know the length)</td></tr>
+<tr><td>String null-termination</td><td>Automatic on CString creation</td></tr>
+<tr><td>GC pin</td><td>rok code (for long-running FFI)</td></tr>
+<tr><td>Freeing memory (<code>free</code>)</td><td>rok code or safe wrapper</td></tr>
+<tr><td>Matching calling convention</td><td>The extern declarer</td></tr>
+<tr><td>Thread safety</td><td>Per the C library's documentation</td></tr>
+<tr><td>Errno / GetLastError</td><td>Read immediately after the call</td></tr>
+</tbody></table></div>
+<h2 id="178-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#178-comparison-with-other-languages" aria-hidden="true">#</a>1.7.8. Comparison with other languages</h2>
+<p>Widening the comparison makes rok's position clearer.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>C</th><th>Rust</th><th>Zig</th><th>Go</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>External functions</td><td>(direct)</td><td><code>extern &quot;C&quot; { ... }</code></td><td><code>extern &quot;...&quot;</code></td><td><code>import &quot;C&quot;</code> (cgo)</td><td><code>extern &quot;C&quot; { ... }</code></td></tr>
+<tr><td>Calling convention</td><td>(one default)</td><td><code>extern &quot;system&quot;</code> etc.</td><td><code>extern &quot;C&quot;</code> etc.</td><td><code>&quot;C&quot;</code> only</td><td>multiple (<code>&quot;C&quot;</code>/<code>&quot;system&quot;</code>/etc.)</td></tr>
+<tr><td>C string</td><td><code>char*</code></td><td><code>CStr</code> / <code>CString</code></td><td><code>[*:0]u8</code></td><td><code>C.CString</code> / <code>C.GoString</code></td><td><code>CStr</code> / <code>CString</code></td></tr>
+<tr><td>nullable ptr</td><td>(default)</td><td><code>Option&lt;*const T&gt;</code></td><td><code>?*T</code></td><td><code>*C.struct_T</code> (always nullable)</td><td><code>CPtr&lt;T&gt;</code></td></tr>
+<tr><td>binding tool</td><td><strong>none</strong></td><td><code>bindgen</code> / <code>cbindgen</code></td><td><code>@cImport</code></td><td><code>cgo</code></td><td><code>rokc bindgen</code></td></tr>
+<tr><td>GC pin</td><td><strong>N/A</strong></td><td><strong>N/A</strong></td><td><strong>N/A</strong></td><td><code>runtime.Pinner</code> (1.21+)</td><td><code>rok::bare::gc::pin</code></td></tr>
+<tr><td>RAII / using</td><td>(manual)</td><td><code>Drop</code></td><td><code>defer</code></td><td><code>defer</code></td><td><code>using</code> block (Drop)</td></tr>
+</tbody></table></div>
+<p>rok's biggest differences come down to three points.</p>
+<ol>
+<li>Integration of the GC and FFI. Using the <code>Pinned&lt;T&gt;</code> guard together with <code>using</code> blocks prevents both resource leaks and missed pins.
+</li>
+<li>A strict pointer model. <code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code> / <code>ManyPtr&lt;T&gt;</code> / <code>CPtr&lt;T&gt;</code> are separate (<a href="101-ptr">1.1</a>).
+</li>
+<li>Enforced safe wrappers. <code>as</code> casts are rejected and only named casts are allowed (<a href="102-cast">1.2</a>).
+</li>
+</ol>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/107-ffi.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="106-gc-pin"><small>Previous</small>1.6. Pinned&lt;T&gt; - GC pinning</a><a class="next" href="108-wit"><small>Next</small>1.8. WASM component model - ffi.wit</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.2. AOT build pipeline - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter defines the step-by-step flow of rokc build. It makes the overall picture given in Execution engines and user surfaces and Compile pipeline concret...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/902-aot-pipeline.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.2. AOT build pipeline - rok docs">
+<meta property="og:description" content="This chapter defines the step-by-step flow of rokc build. It makes the overall picture given in Execution engines and user surfaces and Compile pipeline concret...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/902-aot-pipeline.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/902-aot-pipeline.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/902-aot-pipeline.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li class="cur"><a aria-current="page" href="902-aot-pipeline">9.2. AOT build pipeline</a><ul class="toc"><li><a href="#921-steps">9.2.1. Steps</a></li><li><a href="#922-package-discovery">9.2.2. Package discovery</a></li><li><a href="#923-dependency-resolution">9.2.3. Dependency resolution</a></li><li><a href="#924-source-parsing">9.2.4. Source parsing</a></li><li><a href="#925-name--visibility-resolution">9.2.5. Name / visibility resolution</a></li><li><a href="#926-type-checking">9.2.6. Type checking</a></li><li><a href="#927-rok-hir-construction">9.2.7. rok-hir construction</a></li><li><a href="#928-specialize-monomorphization">9.2.8. specialize: monomorphization</a></li><li><a href="#929-rok-mir-construction">9.2.9. rok-mir construction</a></li><li><a href="#9210-backend-selection">9.2.10. Backend selection</a></li><li><a href="#9211-native-backend">9.2.11. Native backend</a></li><li><a href="#9212-mlir--llvm-backend">9.2.12. MLIR → LLVM backend</a></li><li><a href="#9213-archives">9.2.13. Archives</a></li><li><a href="#9214-linking-for-executables">9.2.14. Linking (for executables)</a></li><li><a href="#9215-output">9.2.15. Output</a></li><li><a href="#9216-incremental-build">9.2.16. Incremental build</a></li><li><a href="#9217-separation-of-compiler-and-runtime">9.2.17. Separation of compiler and runtime</a></li><li><a href="#9218-embedded-toolchain">9.2.18. Embedded toolchain</a></li><li><a href="#9219-installation-layout">9.2.19. Installation layout</a></li></ul></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="92-aot-build-pipeline 92-aot-빌드-파이프라인 921-steps 921-단계 922-package-discovery 922-패키지-발견 923-dependency-resolution 923-의존성-해소 prebuilt-dependency-packages 미리-빌드한-의존-패키지 924-source-parsing 924-소스-파싱 scanner-pre-pass scanner-pre-pass 925-name--visibility-resolution 925-이름--가시성-해소 926-type-checking 926-타입-검사 927-rok-hir-construction 927-rok-hir-생성 928-specialize-monomorphization 928-specialize-단형화 929-rok-mir-construction 929-rok-mir-생성 9210-backend-selection 9210-backend-선택 9211-native-backend 9211-native-backend 9212-mlir--llvm-backend 9212-mlir--llvm-backend 9213-archives 9213-archive 9214-linking-for-executables 9214-링킹-실행-파일의-경우 9215-output 9215-산출물 9216-incremental-build 9216-증분-빌드 front-end front-end codegen-units codegen-unit 9217-separation-of-compiler-and-runtime 9217-컴파일러와-런타임의-분리 9218-embedded-toolchain 9218-내장-toolchain 9219-installation-layout 9219-설치-레이아웃"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/902-aot-pipeline" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="92-aot-build-pipeline"><a class="anchor" tabindex="-1" href="#92-aot-build-pipeline" aria-hidden="true">#</a>9.2. AOT build pipeline</h1>
+<p>This chapter defines the step-by-step flow of <code>rokc build</code>. It makes the overall picture given in <a href="../000-meta/001-execution-modes">Execution engines and user surfaces</a> and <a href="../000-meta/002-pipeline">Compile pipeline</a> concrete in terms of commands and file flow.</p>
+<h2 id="921-steps"><a class="anchor" tabindex="-1" href="#921-steps" aria-hidden="true">#</a>9.2.1. Steps</h2>
+<p>The build proceeds in 11 steps, all inside <code>rokc</code>.</p>
+<pre><code>1. package discovery       (find package root)
+2. dependency resolve      (resolve deps to sources or prebuilt .rokhir + .a)
+3. source parse            (.rok → AST)
+4. name / visibility       (resolve)
+5. type check              (type check)
+6. rok-hir build           (HIR build)
+7. specialize              (collect call-sites + monomorphize)
+8. rok-mir build
+9. code generation         (native at -O0; MLIR → LLVM at -O1 and above)
+10. archive / link         (lld)
+11. artifact .a / executable
+</code></pre>
+<blockquote>
+<p>In order: package discovery, dependency resolution, source parsing, name / visibility resolution, type checking, rok-hir construction, specialization (call-site collection and monomorphization), rok-mir construction, code generation to objects, archiving or linking, and finally the output: an <code>.a</code> archive or an executable.</p>
+</blockquote>
+<p>The input, output and responsibility of each step are kept clearly separate.</p>
+<h2 id="922-package-discovery"><a class="anchor" tabindex="-1" href="#922-package-discovery" aria-hidden="true">#</a>9.2.2. Package discovery</h2>
+<p>Starting from the path of <code>rokc build [path]</code> and searching upward, a directory containing <code>src/main.rok</code> or <code>src/lib.rok</code> is located (starting from the containing directory if path is a file); the search moves up one directory at a time.</p>
+<p>If found, that directory is the package root and its <code>src/</code> the package's source (see <a href="../000-meta/003-source-units">Source units</a>). The other cases:</p>
+<ul>
+<li>If path is a file outside the found package's <code>src/</code> (a script or tool beside the package's source), or no package is found walking upward, it is an anonymous executable package consisting of that single file (<a href="../004-functions/416-entry-point#4168-single-file-execution">4.16.8</a>). Its file submodules are beside it.
+</li>
+<li>If path is a directory and there is no package, it is an error.
+</li>
+</ul>
+<p>The package name is the name of the package directory (for an anonymous package, the file name without <code>.rok</code>) and becomes the output name (9.2.15). A package with both root files is built as two targets: its library first, then its executable, which mounts the library as dependency <code>&lt;name&gt;</code> (<a href="../000-meta/003-source-units#library-and-executable-in-one-package">0.3.1</a>).</p>
+<h2 id="923-dependency-resolution"><a class="anchor" tabindex="-1" href="#923-dependency-resolution" aria-hidden="true">#</a>9.2.3. Dependency resolution</h2>
+<p>This step handles external package references (<code>use external_pkg::...</code>) in <a href="../005-modules/507-paths">paths</a> and <a href="../005-modules/505-use"><code>use</code></a>.</p>
+<p><code>rokc</code> does not resolve dependencies itself. The front-end <code>rok</code> (<a href="910-rok-frontend">9.10</a>) prepares path / git dependency packages according to <code>rok.rokon</code> / <code>rok.lock</code> and passes the root of each package to <code>rokc</code> via <code>--extern</code>.</p>
+<pre><code>rokc build --extern util=../util --extern parser=target/debug/deps/libparser.a
+</code></pre>
+<p><code>--extern name=&lt;path&gt;</code> mounts one dependency package at the top-level path <code>name</code>. <code>name</code> is the identifier obtained from the <code>deps</code> key in <code>rok.rokon</code> by replacing <code>-</code> with <code>_</code>. The path takes two forms.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Path</th><th>Dependency package</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;dir&gt;</code> / <code>&lt;dir&gt;/src/lib.rok</code></td><td>Source. That <code>src/lib.rok</code> is compiled together in the same build</td></tr>
+<tr><td><code>&lt;name&gt;.rokhir</code> / <code>lib&lt;name&gt;.a</code></td><td>Prebuilt package. Given either one, the sibling file in the same directory is located. ROKHIR (<a href="904-rokhir-bytecode">9.4</a>) is read for declarations and generics, and the archive is linked</td></tr>
+</tbody></table></div>
+<ul>
+<li>User code uses that package's items via <code>use name::..</code>.
+</li>
+<li><code>pkg::</code> inside a dependency package refers to that dependency package itself.
+</li>
+<li>A dependency package is a separate package. Only <code>pub</code> items are usable from outside; <code>pub(pkg)</code> / <code>pub(sub)</code> / private items are not (<a href="../005-modules/507-paths#5714-paths-between-packages">5.7.14</a>).
+</li>
+<li>It is an error for a module of the user package to have the same name as a dependency package.
+</li>
+</ul>
+<p><code>rokc build</code> on a package with <code>src/lib.rok</code> produces <code>lib&lt;name&gt;.a</code> and <code>&lt;name&gt;.rokhir</code>, and with <code>src/main.rok</code> the executable <code>&lt;name&gt;</code>; a package with both produces all three, the executable linked against that library. <code>--name &lt;n&gt;</code> sets the package name (the output name and mount name); the default is the directory name.</p>
+<h3 id="prebuilt-dependency-packages"><a class="anchor" tabindex="-1" href="#prebuilt-dependency-packages" aria-hidden="true">#</a>Prebuilt dependency packages</h3>
+<p><code>rokc</code> prebuilds each source <code>--extern</code> <strong>once</strong>, in the order given, into <code>target/[&lt;triple&gt;/]&lt;profile&gt;/deps/</code>. Each dependency package sees all previously built dependency packages. Subsequent compilation uses these <code>lib&lt;name&gt;.a</code> and <code>&lt;name&gt;.rokhir</code> instead of the source.</p>
+<pre><code>target/&lt;profile&gt;/deps/
+├── lib&lt;name&gt;.a
+├── &lt;name&gt;.rokhir
+└── &lt;name&gt;.fp               # fingerprint
+</code></pre>
+<p>If the fingerprint matches, it is not rebuilt. The fingerprint includes:</p>
+<ul>
+<li>The identity of <code>rokc</code> (the same value as the ROKHIR producer)
+</li>
+<li>Build options: <code>--release</code> / <code>-O*</code>, <code>-g</code>, <code>--target</code>, <code>--cfg</code> (without its <code>feature</code> keys), <code>--bootstrap</code>
+</li>
+<li>The dependency's features (<code>--extern-feature</code>)
+</li>
+<li>All files under that dependency package's <code>src/</code>, and its <code>rok.rokon</code>
+</li>
+<li>The fingerprints of dependency packages built before it
+</li>
+</ul>
+<p>A prebuilt package's interface is read with the features it was built with (its ROKHIR meta, <a href="904-rokhir-bytecode#946-meta">9.4.6</a>), not the consumer's.</p>
+<p>Every command that compiles uses this path: <code>build</code> / <code>run</code> / <code>test</code> / <code>bench</code> / <code>check</code> / <code>lint</code> / <code>doc</code> / <code>lsp</code> / <code>repl</code> / <code>jupyter</code>, single-file scripts, and named environments. The REPL host also links the prebuilt archives. If there is neither a package nor <code>--target-dir</code>, they are placed under <code>rokc-target/</code> in the system temporary directory.</p>
+<p>The standard library is built from source (<a href="903-package-archive#936-standard-library">9.3.6</a>) and kept prebuilt in <code>rokc</code>'s cache (9.2.19).</p>
+<h2 id="924-source-parsing"><a class="anchor" tabindex="-1" href="#924-source-parsing" aria-hidden="true">#</a>9.2.4. Source parsing</h2>
+<p>All <code>.rok</code> files are parsed into an AST according to the lexical / syntactic rules from <a href="../001-lexical/101-source-files">Source files</a> through <a href="../001-lexical/110-punctuation-and-operator-tokens">Punctuation and operator tokens</a>.</p>
+<p>A directory module of <a href="../005-modules/504-modules">Modules</a> combines all its .rok files into the body of one module.</p>
+<p>The manifest <code>rok.rokon</code> at the package root (<a href="910-rok-frontend#9103-rokrokon--roklock">9.10.3</a>) is not a module file. The manifest is read as a single <a href="../../refs-standard-libraries/300-std/309-rokon">ROKON</a> value (<code>Package { .. }</code>); top-level statement rules do not apply to it and it is not compiled.</p>
+<h3 id="scanner-pre-pass"><a class="anchor" tabindex="-1" href="#scanner-pre-pass" aria-hidden="true">#</a>Scanner pre-pass</h3>
+<p>The scanner pre-pass of the <a href="../006-meta-system/606-keyword-magic"><code>#[keyword]</code> magic</a> is also performed in this step. All .rok files are first scanned shallowly, <code>#[keyword(...)]</code>, <code>#[infix(...)]</code>, <code>#[literal(...)]</code> registrations are collected, and the registrations are passed to the real lexer / parser.</p>
+<h2 id="925-name--visibility-resolution"><a class="anchor" tabindex="-1" href="#925-name--visibility-resolution" aria-hidden="true">#</a>9.2.5. Name / visibility resolution</h2>
+<p>Every path and identifier is mapped to an item according to the rules of <a href="../005-modules/505-use"><code>use</code> (imports)</a>, <a href="../005-modules/506-visibility">Visibility</a>, <a href="../005-modules/507-paths">Paths</a> and <a href="../005-modules/508-re-export">Re-export (<code>pub use</code>)</a>.</p>
+<p>This step applies the implicit <code>rok::core::**</code> import (see <a href="../000-meta/005-standard-libraries-tiers">Standard library tiers</a>; <code>rok::bare::*</code> and <code>rok::std::*</code> are excluded as they require explicit import), performs visibility checks reporting improper access as errors, and checks for import conflicts.</p>
+<h2 id="926-type-checking"><a class="anchor" tabindex="-1" href="#926-type-checking" aria-hidden="true">#</a>9.2.6. Type checking</h2>
+<p>The type of every expression is determined by the rules of <a href="../002-types/">2. Type system</a>.</p>
+<p>This includes deciding between gradual and static slots (see <a href="../002-types/202-any-slot"><code>any</code> slot</a>), checking trait bounds (see <a href="../002-types/210-generics">Generics</a>), and fixing the result types of branches (see <a href="../003-expressions/">3. Expressions</a>). Narrowing of sum types and <code>any</code> slots is handled here as well.</p>
+<h2 id="927-rok-hir-construction"><a class="anchor" tabindex="-1" href="#927-rok-hir-construction" aria-hidden="true">#</a>9.2.7. rok-hir construction</h2>
+<p>The type-checked AST is converted into the rok-hir (<a href="../000-meta/007-glossary#hir-high-level-ir--mir-mid-level-ir">HIR</a>) data structure.</p>
+<p>HIR is an intermediate representation rich in type information, reflecting all results of steps 4-5 above. It is structurally compressed so that identical types and identifiers share a representation.</p>
+<h2 id="928-specialize-monomorphization"><a class="anchor" tabindex="-1" href="#928-specialize-monomorphization" aria-hidden="true">#</a>9.2.8. specialize: monomorphization</h2>
+<p>Monomorphization of <a href="../002-types/210-generics">generics</a> and <a href="../002-types/211-const-generics">const generics</a> is performed.</p>
+<pre><code>1. Collect all call sites.
+2. Determine the concrete type tuple of each call.
+3. Create a separate specialized HIR per (item_id, type_tuple).
+4. Cache. Each (item_id, type_tuple) only once.
+</code></pre>
+<p>Functions unreachable from the program's roots (<code>main</code>, exported symbols, <code>#[export_name]</code> items, symbols referenced by the runtime) are not emitted. The same holds for library builds: functions not reachable from the package's <code>pub</code> items and those roots are not put into the archive.</p>
+<p>This step is what lets <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> make direct calls without vtables (see <a href="../002-types/212-trait-as-type-banned">trait-as-type ban</a>).</p>
+<h2 id="929-rok-mir-construction"><a class="anchor" tabindex="-1" href="#929-rok-mir-construction" aria-hidden="true">#</a>9.2.9. rok-mir construction</h2>
+<p>The <a href="../000-meta/007-glossary#specialize">specialized</a> HIR is converted into rok-mir (MIR).</p>
+<p>MIR is an IR one level lower than HIR. In this step operator desugaring is completed (see <a href="../003-expressions/301-operator-dispatch">Operator dispatch</a>), the decision tree of pattern matching is determined (see <a href="../003-expressions/312-match-expression"><code>match</code> expression</a>), and the frame layout of closures and coroutines is fixed.</p>
+<h2 id="9210-backend-selection"><a class="anchor" tabindex="-1" href="#9210-backend-selection" aria-hidden="true">#</a>9.2.10. Backend selection</h2>
+<p>The optimization level selects the code generator by default (<a href="../000-meta/002-pipeline#024-backends">0.2.4</a>); <code>-C backend=native|llvm</code> or <code>ROK_BACKEND</code> overrides it.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Level</th><th>Backend</th></tr></thead>
+<tbody>
+<tr><td><code>-O0</code></td><td>native</td></tr>
+<tr><td><code>-O1</code> <code>-O2</code> <code>-O3</code> <code>-Os</code></td><td>MLIR → LLVM</td></tr>
+</tbody></table></div>
+<p>The native backend supports {aarch64, x86_64} × {macOS, Linux}. Other targets, modules that use <a href="../../refs-standard-libraries/100-bare/109-mlir"><code>__mlir_op</code> / <code>__mlir_type</code></a>, builds with MLIR plugins, and builds with <code>-C profile-generate</code> / <code>-C profile-use</code> use the MLIR → LLVM backend at every level. The REPL follows the same selection (9.6.1). Both backends follow the runtime ABI of <a href="../008-abi/">8</a>, so objects from either link together, including prebuilt dependencies built at another level.</p>
+<h2 id="9211-native-backend"><a class="anchor" tabindex="-1" href="#9211-native-backend" aria-hidden="true">#</a>9.2.11. Native backend</h2>
+<p>The native backend generates machine code and the object file (Mach-O, ELF) straight from rok-mir, with no intermediate IR, for aarch64 and x86_64 on macOS and Linux. It aims at compile speed: debug builds and REPL cells need no LLVM. With <code>-g</code> it emits DWARF line and frame information.</p>
+<h2 id="9212-mlir--llvm-backend"><a class="anchor" tabindex="-1" href="#9212-mlir--llvm-backend" aria-hidden="true">#</a>9.2.12. MLIR → LLVM backend</h2>
+<p>rok-mir is lowered to standard MLIR (<a href="../008-abi/807-mlir-dialects">8.7</a>). <code>rokc</code> parses that MLIR in process, runs the MLIR pass pipeline down to the LLVM dialect, translates it to LLVM IR, optimizes it at the requested level and generates the object for the target triple. A module whose IR exceeds 1 MiB is split into parts that are code-generated in parallel. All of this runs in-process with no external tools; the intermediate forms are written only for <code>--emit</code> (<a href="909-debug-tools#991-intermediate-output---emit">9.9.1</a>).</p>
+<pre><code>target/debug/build/foo.o
+</code></pre>
+<h2 id="9213-archives"><a class="anchor" tabindex="-1" href="#9213-archives" aria-hidden="true">#</a>9.2.13. Archives</h2>
+<p>A library package puts its objects, one per codegen unit (9.2.16), into a standard <code>ar</code> archive written by <code>rokc</code> itself, and writes the interface file <code>foo.rokhir</code> (<a href="904-rokhir-bytecode">ROKHIR format</a>) next to it.</p>
+<pre><code>target/debug/libfoo.a
+target/debug/foo.rokhir
+</code></pre>
+<h2 id="9214-linking-for-executables"><a class="anchor" tabindex="-1" href="#9214-linking-for-executables" aria-hidden="true">#</a>9.2.14. Linking (for executables)</h2>
+<p>An executable is linked by the embedded lld:</p>
+<pre><code>foo.o + &lt;deps&gt;/lib*.a + &lt;sysroot&gt;/lib/librokr.a + target libc  →  target/debug/foo
+</code></pre>
+<p>A Mach-O executable links against the macOS SDK (Xcode Command Line Tools). A Windows executable links against import libraries <code>rokc</code> builds from module definitions it carries (derived from mingw-w64), with rok's own startup over the UCRT; no MSVC tools or Windows SDK are needed. rok's Windows startup runs the C initializers in <code>.CRT$XCA</code>..<code>.CRT$XCZ</code> before <code>main</code>. For x86 Windows the import names come from mingw-w64's <code>lib32</code> definitions, with stdcall <code>@N</code> decoration, and images link with <code>/SAFESEH:NO</code>. Linux targets, native or cross, always link the shipped C library in <code>&lt;sysroot&gt;/lib/rok/targets/&lt;triple&gt;/</code>: musl statically, glibc through link stubs (executables need glibc 2.34 or later). Other libraries are found through <code>-L</code> and <code>LIBRARY_PATH</code>. The dynamic loaders named for 32-bit glibc targets are <code>/lib/ld-linux.so.2</code> (i686) and <code>/lib/ld-linux-armhf.so.3</code> (armv7hf). If <code>ROK_CC</code> is set, that C compiler driver performs the final link instead (<code>$ROK_CC &lt;objects&gt; &lt;archives&gt; -o &lt;out&gt;</code>); this is an optional override. Shared libraries given with <code>--native-runtime</code> are copied beside the executable, which gets rpath <code>@loader_path</code> (Mach-O) / <code>$ORIGIN</code> (ELF); Windows loads DLLs from the executable's directory. Executables are dead-stripped: unreferenced functions and data are removed; a <code>release</code> build also folds identical functions (<a href="#9215-output">9.2.15</a>). When the executable has debug information on Apple targets, the embedded <code>dsymutil</code> (LLVM's, linked into <code>rokc</code>) writes a <code>.dSYM</code> bundle next to the executable.</p>
+<h2 id="9215-output"><a class="anchor" tabindex="-1" href="#9215-output" aria-hidden="true">#</a>9.2.15. Output</h2>
+<p>Output is placed in <strong>per-profile</strong> directories, as in cargo. The profiles are <code>debug</code> (default) and <code>release</code>; the profile is <code>release</code> when the optimization level is <code>-O2</code> / <code>-O3</code> / <code>-Os</code> (including <code>--release</code>).</p>
+<p>The profiles differ as in cargo:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Profile</th><th>Optimization</th><th>Debug information</th><th>Link</th></tr></thead>
+<tbody>
+<tr><td><code>debug</code></td><td><code>-O0</code>, <code>-O1</code></td><td>on</td><td>unreferenced code and data removed</td></tr>
+<tr><td><code>release</code></td><td><code>-O2</code>, <code>-O3</code>, <code>-Os</code></td><td>only with <code>-g</code></td><td>also identical functions folded (not one whose address an object marks as taken); without <code>-g</code>, no symbols beyond what the loader needs</td></tr>
+</tbody></table></div>
+<p>Debug information belongs to the executable or archive a build makes (<code>build</code>, <code>run</code>, <code>test</code>), not to <code>--emit</code> output or REPL and Jupyter cells. A panic names its source location in either profile. A build's objects are linked from one place beside the output, so the same inputs make the same executable. Profiles have no settings in <code>rok.rokon</code>.</p>
+<pre><code>target/
+├── debug/                      # profile (default)
+│   ├── foo                     # executable (src/main.rok)
+│   ├── libfoo.a                # library archive (src/lib.rok)
+│   ├── foo.rokhir              # library interface (9.4)
+│   ├── build/                  # intermediates and --emit output (foo.mlir, ...)
+│   └── deps/                   # prebuilt dependencies (lib&lt;dep&gt;.a, &lt;dep&gt;.rokhir, &lt;dep&gt;.fp)
+├── release/                    # --release
+│   └── ...
+├── aarch64-unknown-linux-gnu/  # cross build (--target=&lt;triple&gt;)
+│   └── debug/ ...
+└── doc/                        # rok doc / rokc doc
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Output</th><th>Path</th></tr></thead>
+<tbody>
+<tr><td>Executable</td><td><code>target/&lt;profile&gt;/&lt;name&gt;</code></td></tr>
+<tr><td>Library</td><td><code>target/&lt;profile&gt;/lib&lt;name&gt;.a</code></td></tr>
+<tr><td><code>--emit=&lt;kind&gt;</code></td><td><code>target/&lt;profile&gt;/build/&lt;name&gt;.&lt;ext&gt;</code> (<code>hir</code> <code>mir</code> <code>mlir</code> <code>ll</code> <code>s</code> <code>o</code>)</td></tr>
+<tr><td>Intermediates</td><td><code>target/&lt;profile&gt;/build/</code></td></tr>
+<tr><td>Dependencies</td><td><code>target/&lt;profile&gt;/deps/</code> (<code>lib&lt;dep&gt;.a</code>, <code>&lt;dep&gt;.rokhir</code>, <code>&lt;dep&gt;.fp</code>, 9.2.3)</td></tr>
+<tr><td>Cross build</td><td><code>target/&lt;triple&gt;/&lt;profile&gt;/...</code> (same structure as above)</td></tr>
+<tr><td>Documentation</td><td><code>target/doc/</code></td></tr>
+<tr><td>Incremental</td><td><code>target/&lt;profile&gt;/incremental/&lt;name&gt;/</code> (an executable's codegen units), <code>.../lib&lt;name&gt;/</code> (a library's), and <code>.../&lt;name&gt;-&lt;hash&gt;/</code> per target root (the front end), 9.2.16</td></tr>
+</tbody></table></div>
+<p>A package with both root files has both outputs, <code>target/&lt;profile&gt;/&lt;name&gt;</code> and <code>target/&lt;profile&gt;/lib&lt;name&gt;.a</code> (+ <code>&lt;name&gt;.rokhir</code>); <code>-o</code> names the executable.</p>
+<p>The name <code>foo</code> is the package name (9.2.2). <code>-o</code> changes the path of a single output; <code>--target-dir=&lt;dir&gt;</code> and the environment variable <code>ROKC_TARGET_DIR</code> change the location of <code>target/</code> itself. <code>rokc clean</code> / <code>rok clean</code> delete the whole <code>target/</code>. A library's ROKHIR is <code>foo.rokhir</code> next to the archive (<a href="904-rokhir-bytecode">9.4</a>).</p>
+<h2 id="9216-incremental-build"><a class="anchor" tabindex="-1" href="#9216-incremental-build" aria-hidden="true">#</a>9.2.16. Incremental build</h2>
+<p>Incremental builds work at three levels: a package whose inputs did not change is not built at all; a package that is built takes the parses and lowered bodies of its unchanged files and functions from the last build (front end, below); and its code is compiled by codegen units, of which only the changed ones are compiled again. If the fingerprint of the previous build equals the current one, <code>rokc build</code> / <code>rokc run</code> print <code>Fresh</code> and skip the build. The fingerprint includes:</p>
+<ul>
+<li>The compiler's identity (the same value as the ROKHIR producer), build options, diagnostic format (<code>--message-format</code>, color), input / output paths, <code>ROK_CC</code> if set
+</li>
+<li>The files under <code>src/</code> of the package and its dependencies, their <code>rok.rokon</code>, and every other file the build read (<code>#[path]</code> / <code>include_str!</code> outside <code>src/</code>)
+</li>
+<li>Files read by <code>include_str!</code> / <code>include_bytes!</code> (<a href="../006-meta-system/611-include">6.11</a>), with their contents
+</li>
+<li>The lint levels (<code>-A</code> / <code>-W</code> / <code>-D</code>, and the manifest's <code>lints</code> through them)
+</li>
+<li>The runtime library, the C runtime objects, C library and linker the toolchain ships for the target (<a href="#9219-installation-layout">9.2.19</a>), the <code>.a</code> of prebuilt dependencies, MLIR plugin files, a <code>-C profile-use</code> file and the profile runtime, each by its size, modification time and file identity (inode and status change time; on Windows its creation time), so a copy that keeps the modification time is a change
+</li>
+<li>The size, modification time and file identity of the outputs
+</li>
+</ul>
+<p>Warnings emitted by a build, lint warnings and the back end's included, are recorded, and a <code>Fresh</code> build prints them again.</p>
+<p>A native build without <code>--cfg</code>, <code>--target</code>, MLIR plugins, profile options or <code>-O3</code> links the prebuilt standard library from <code>lib/rok-cache/</code> (9.2.19), one folder per hash of toolchain, options and sources, built on first use under a lock. At <code>-O3</code> the standard library is compiled with the program (whole-program optimization). The REPL compiles the standard library from source.</p>
+<h3 id="front-end"><a class="anchor" tabindex="-1" href="#front-end" aria-hidden="true">#</a>Front end</h3>
+<p>A build of a package (<code>check</code>, <code>build</code>, <code>run</code>, <code>test</code>, <code>bench</code>, <code>doc</code>, <code>lint</code>) keeps what its front end computed under <code>target/&lt;profile&gt;/incremental/&lt;name&gt;-&lt;hash&gt;/</code>, where <code>&lt;hash&gt;</code> names the package root (each target of a package with both root files has its own, <code>&lt;hash&gt;</code> naming its root), with one subdirectory per kind of build (target, cfg, test or not, which libraries are prebuilt). The next build of the same kind takes from it:</p>
+<ul>
+<li>The parse of each file whose text and parse inputs (the build's extension operators, the package's keywords, meta blocks and <code>#[literal]</code> patterns, and cfg) are unchanged.
+</li>
+<li>The lowering (name resolution, type checking, generic instantiation) of each plain function body: a non-generic, non-<code>const</code> function, or a method of a non-generic <code>impl</code>. It is reused when its own text and position are unchanged, the program's interface is unchanged, every signature, instance and other fact the lowering read is the same now, and the text before every position its result names outside the body is unchanged.
+</li>
+<li>The interface is every item except the plain bodies whose return type is written (or <code>()</code>) and the plain functions' parameters and return types; a body whose return type is inferred is part of it (its callers read the type). A body edit lowers that body again, and an edit of a body whose return type is inferred also lowers the bodies that read its type; a plain function's signature edit lowers it and the bodies that read its signature; any other change to an item (a type, a trait, an <code>impl</code> header, a generic function, a <code>use</code>) lowers every body again.
+</li>
+<li>Functions, types and instances a reused lowering made are numbered as in a clean build; diagnostics, the program and its symbols are those of a clean build.
+</li>
+</ul>
+<p>Signatures, <code>impl</code> registration, coherence and the whole-program checks run in every build. What collecting the library's items made (the standard library's and the dependencies'), and the library files' pre-pass parses, are kept in the toolchain's cache (<code>lib/rok-cache/library/</code>, one file per hash of toolchain, build flags and library sources) for every build, a lone file's too; <code>ROKC_INCREMENTAL</code> neither moves nor disables them. Nothing kept is required: a missing, damaged or stale entry is computed again. A lone file outside any package keeps no parses or bodies of its own unless <code>ROKC_INCREMENTAL</code> names a directory. <code>ROKC_INCREMENTAL=&lt;dir&gt;</code> keeps the results under <code>&lt;dir&gt;/&lt;name&gt;-&lt;hash&gt;/</code>; <code>ROKC_INCREMENTAL=0</code> turns them off. <code>ROKC_INCR_VERIFY=1</code> also lowers every body again and fails the build if a reused lowering differs. <code>-v</code> reports how many files' parses and bodies were reused.</p>
+<h3 id="codegen-units"><a class="anchor" tabindex="-1" href="#codegen-units" aria-hidden="true">#</a>Codegen units</h3>
+<p>Within a package, a build that is not <code>Fresh</code> reuses compiled code by codegen units. rokc divides a package's code (an executable's or a library's) into units: each module of the package is one, and so is each module of a library whose instances it compiles (instances may be spread over several units by their type arguments), plus one unit for what the program has once (statics, the C <code>main</code>, GC type registration).</p>
+<ul>
+<li>A unit is compiled only when its key changed since the last build into the same target directory. Otherwise its result, kept under <code>target/&lt;profile&gt;/incremental/&lt;name&gt;/</code> (a library's: <code>lib&lt;name&gt;/</code>), is reused; then everything is linked.
+</li>
+<li>An anonymous file's units are kept in the target directory used without a package (<code>--target-dir</code>, <code>ROKC_TARGET_DIR</code>, else <code>&lt;system temporary directory&gt;/rokc-target/</code>), under <code>[&lt;triple&gt;/]&lt;profile&gt;/incremental/&lt;stem&gt;-&lt;hash of its path&gt;/</code>. The default <code>rokc-target/</code> is a cache: at most once a day, rokc removes its files that no build wrote for a week.
+</li>
+<li>A unit's key covers its functions' code, the signatures and code-generation facts of what it uses from other units (a function's signature change recompiles its callers' units), the statics and GC types it uses, the target, the optimization level, the code generation options, the compiler's identity and, under <code>-g</code>, the paths of the source files its debug info names (adding a file recompiles only the units that refer to it).
+</li>
+<li>Symbols and GC type ids do not depend on what other units contain (a unit reads GC type ids from symbols the package's shared unit defines; <a href="905-symbol-mangling#957-collision-avoidance-typehash-stability">9.5.7</a>), so the output is the one a clean build makes.
+</li>
+<li>Optimized builds still inline across units (ThinLTO, whose per-unit results are cached too).
+</li>
+<li>Profile-guided builds (<code>-C profile-generate</code>, <code>-C profile-use</code>), and builds with MLIR plugins or passes are compiled whole.
+</li>
+<li><code>-v</code> reports how many units were reused and compiled; <code>-vv</code> names the compiled ones.
+</li>
+</ul>
+<h2 id="9217-separation-of-compiler-and-runtime"><a class="anchor" tabindex="-1" href="#9217-separation-of-compiler-and-runtime" aria-hidden="true">#</a>9.2.17. Separation of compiler and runtime</h2>
+<p><code>rokc</code> uses zero third-party crates, plus one pinned, statically linked LLVM (22.1.8).</p>
+<p>The pipeline keeps the compiler and runtime apart: <code>rokc</code> does not reference the runtime (<code>librokr.a</code>) at build time.</p>
+<p>Instead it only emits calls to <code>extern &quot;C&quot;</code> symbols (<a href="../008-abi/805-extern-symbols">Extern &quot;C&quot; symbols</a>), and at link time the user build links <code>librokr.a</code> alongside.</p>
+<p>This separation lets <code>rokc</code> and <code>librokr.a</code> evolve under independent SemVer.</p>
+<h2 id="9218-embedded-toolchain"><a class="anchor" tabindex="-1" href="#9218-embedded-toolchain" aria-hidden="true">#</a>9.2.18. Embedded toolchain</h2>
+<p><code>rokc</code> is self-contained: LLVM 22.1.8 with MLIR and lld is built into it, not looked up on <code>PATH</code>. It runs no external compiler, assembler or linker. Cross-compilation is built in: the toolchain ships the C library (musl, glibc link stubs) for its supported Linux targets.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Needed from the system</th><th>Target</th></tr></thead>
+<tbody>
+<tr><td>macOS SDK (Xcode Command Line Tools; not redistributable)</td><td>Apple targets</td></tr>
+<tr><td>nothing (shipped C library)</td><td>Linux targets</td></tr>
+<tr><td>nothing (import libraries built from shipped module definitions; UCRT)</td><td>Windows targets</td></tr>
+<tr><td><code>ROK_CC</code> (optional)</td><td>Overrides the final link (9.2.14)</td></tr>
+</tbody></table></div>
+<h2 id="9219-installation-layout"><a class="anchor" tabindex="-1" href="#9219-installation-layout" aria-hidden="true">#</a>9.2.19. Installation layout</h2>
+<p>The installation layout follows rustup / cargo. The default of <code>ROK_HOME</code> is <code>~/.rok</code> (<code>%USERPROFILE%\.rok</code> on Windows).</p>
+<pre><code>$ROK_HOME/
+├── bin/                         # proxy: runs the same-named executable of the active toolchain
+│   ├── rok
+│   ├── rokc
+│   ├── rokls
+│   └── &lt;name&gt;                   # an executable installed by rok install (9.10.5a)
+├── toolchains/
+│   └── &lt;version&gt;-&lt;triple&gt;/      # self-contained toolchain
+│       ├── bin/{rok, rokc, rokls}
+│       └── lib/
+│           ├── librokr.a        # runtime
+│           ├── libclang.{so,dylib,dll}  # libclang, loaded only by rokc bindgen (std 1.7.6)
+│           ├── clang/&lt;major&gt;/include/   # clang's built-in headers (its resource directory)
+│           ├── rok/lldb/rok_lldb.py      # lldb formatters for -g programs (9.9.6)
+│           ├── rok/targets/&lt;triple&gt;/   # what --target links: the runtime (librokr.a / rokr.lib), Linux C library,
+│           │                           #   libclang_rt.profile.a (Windows clang_rt.profile.lib); the host's included
+│           └── rok/{core, std, bare}/src/   # standard library sources: each tier is laid out as a package, root src/lib.rok (5.4)
+├── cache/                       # git, registry, native, scripts (9.10.4)
+├── envs/&lt;name&gt;/, envs/CURRENT   # named environments: rok.rokon, rok.lock, target/ (9.10.5)
+├── installs.rokon               # what rok install put in bin/, and where from
+└── config.rokon                 # Config { registry, toolchain }
+</code></pre>
+<p><code>rokc</code> finds the standard library and runtime relative to its own executable (sysroot = the executable's <code>..</code>) and does not look at <code>ROK_HOME</code>. Each tier of the standard library is laid out like a library package: its root module is <code>lib/rok/&lt;tier&gt;/src/lib.rok</code> and its modules are under <code>lib/rok/&lt;tier&gt;/src/</code>. A <code>rokc</code> built in the implementation repository reads the same layout from the repository's <code>library/&lt;tier&gt;/src/</code>. Its own cache is the toolchain's <code>lib/rok-cache/</code> (a repository build uses <code>target/&lt;profile&gt;/rok-cache/</code>). It holds the prebuilt standard library, keyed by toolchain, build options and sources (9.2.16), and in <code>.facts/</code> the cached target data layout and tool facts. Selection of the active toolchain is defined by <a href="910-rok-frontend#9106-toolchain">9.10.6</a>.</p>
+<p>A Linux (glibc) toolchain needs glibc 2.34 or later, as the executables it builds do (9.2.14).</p>
+<p>A release may be accompanied by an MLIR plugin development archive (<code>rok-mlir-dev-&lt;version&gt;-&lt;triple&gt;</code>: the pinned LLVM / MLIR headers and, on Windows, <code>rokc.lib</code>) (<a href="../../refs-standard-libraries/100-bare/110-mlir-plugin">stdlib 1.10.2</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/902-aot-pipeline.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="901-rokc-cli"><small>Previous</small>9.1. rokc CLI interface</a><a class="next" href="903-package-archive"><small>Next</small>9.3. Package archive (.a) format</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

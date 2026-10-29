@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>15. ROKON - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter shows how to read and write configuration files in ROKON (Rok Object Notation), rok's data format. There is no new syntax to learn: a ROKON file us...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/15-rokon.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="15. ROKON - rok docs">
+<meta property="og:description" content="This chapter shows how to read and write configuration files in ROKON (Rok Object Notation), rok's data format. There is no new syntax to learn: a ROKON file us...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/15-rokon.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li class="cur"><a aria-current="page" href="15-rokon">15. ROKON</a><ul class="toc"><li><a href="#the-format-at-a-glance">The format at a glance</a></li><li><a href="#deriverokon-with-from_str--to_string">#[derive(Rokon)] with from_str / to_string</a></li><li><a href="#enums-tuple-structs-dict">Enums, tuple structs, Dict</a></li><li><a href="#bad-input-and-errors">Bad input and errors</a></li><li><a href="#reading-without-a-type-value">Reading without a type: Value</a></li><li><a href="#reading-and-writing-configuration-files">Reading and writing configuration files</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="15-rokon"><a class="anchor" tabindex="-1" href="#15-rokon" aria-hidden="true">#</a>15. ROKON</h1>
+<p>This chapter shows how to read and write configuration files in ROKON (Rok Object Notation), rok's data format. There is no new syntax to learn: a ROKON file uses the same literal syntax you write values with in rok source. The package manifest <code>rok.rokon</code> uses this format too.</p>
+<h2 id="the-format-at-a-glance"><a class="anchor" tabindex="-1" href="#the-format-at-a-glance" aria-hidden="true">#</a>The format at a glance</h2>
+<p>A file holds one value, usually a single struct.</p>
+<pre><code class="language-rokon"><span class="c">// app.rokon</span>
+<span class="t">Config</span> {
+    name: <span class="s">"demo"</span>,
+    retries: <span class="n">3</span>,
+    ratio: <span class="n">0.75</span>,
+    tags: [<span class="s">"a"</span>, <span class="s">"b"</span>],
+    limits: { <span class="s">"cpu"</span>: <span class="n">2</span>, <span class="s">"mem"</span>: <span class="n">512</span> },
+    mode: <span class="t">Mode</span>::<span class="t">Fast</span>,
+    proxy: <span class="k">none</span>,
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Basic values</td><td><code>none</code>, <code>true</code>, <code>42</code>, <code>0xff</code>, <code>3.14</code>, <code>'a'</code>, <code>&quot;text&quot;</code></td></tr>
+<tr><td>List / tuple</td><td><code>[1, 2, 3]</code>, <code>(&quot;x&quot;, 1)</code></td></tr>
+<tr><td>dict</td><td><code>{ &quot;k&quot;: 1, &quot;j&quot;: 2 }</code> (keys are values)</td></tr>
+<tr><td>struct</td><td><code>Point { x: 1, y: 2 }</code>, <code>Pair(1, 2)</code></td></tr>
+<tr><td>enum variant</td><td><code>Mode::Fast</code>, <code>Shape::Circle(1.0)</code>, <code>Shape::Rect { w: 2, h: 3 }</code></td></tr>
+</tbody></table></div>
+<p><code>//</code> comments and trailing commas are allowed. &quot;Code&quot; such as variables, operators, function calls, and f-strings is not. ROKON is pure data that never executes.</p>
+<h2 id="deriverokon-with-from_str--to_string"><a class="anchor" tabindex="-1" href="#deriverokon-with-from_str--to_string" aria-hidden="true">#</a><code>#[derive(Rokon)]</code> with <code>from_str</code> / <code>to_string</code></h2>
+<p>Put <code>#[derive(Rokon)]</code> on a struct or enum and you can read it with <code>from_str</code> and write it with <code>to_string</code> from <code>rok::std::rokon</code>. The variable's type annotation decides which type is read.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::rokon;
+<span class="k">use</span> rok::std::rokon::<span class="t">RokonError</span>;
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">enum</span> <span class="t">Mode</span> { <span class="t">Fast</span>, <span class="t">Slow</span> }
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Server</span> { host: <span class="t">str</span>; port: <span class="t">u16</span> = <span class="n">80</span>; tls: <span class="t">bool</span> | <span class="k">none</span>; }
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Config</span> {
+    name: <span class="t">str</span>;
+    mode: <span class="t">Mode</span>;
+    servers: <span class="t">List</span>&lt;<span class="t">Server</span>&gt;;
+    limits: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt;;
+}
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">RokonError</span>) {
+    <span class="k">let</span> text = r#<span class="s">"
+Config {
+    name: "</span>demo<span class="s">",
+    mode: Mode::Fast,
+    servers: [
+        Server { host: "</span>a.example<span class="s">", port: 8080, tls: true },
+        Server { host: "</span>b.example<span class="s">" },
+    ],
+    limits: { "</span>cpu<span class="s">": 2, "</span>mem<span class="s">": 512 },
+}
+"</span>#;
+    <span class="k">let</span> cfg: <span class="t">Config</span> = <span class="k">try</span> rokon::from_str(text);
+    println(<span class="s">f"{</span>cfg.name<span class="s">}: {</span>cfg.servers.len()<span class="s">} servers"</span>);
+    <span class="k">for</span> s <span class="k">in</span> cfg.servers {
+        println(<span class="s">f"  {</span>s.host<span class="s">}:{</span>s.port<span class="s">} tls={</span>s.tls ?? <span class="k">false</span><span class="s">}"</span>);
+    }
+    println(<span class="s">f"cpu limit: {</span>cfg.limits[<span class="s">"cpu"</span>]<span class="s">}"</span>);
+    println(rokon::to_string(cfg));
+}
+</code></pre>
+<pre class="output"><code class="language-output">demo: 2 servers
+  a.example:8080 tls=true
+  b.example:80 tls=false
+cpu limit: 2
+Config {
+    name: &quot;demo&quot;,
+    mode: Mode::Fast,
+    servers: [
+        Server { host: &quot;a.example&quot;, port: 8080, tls: true },
+        Server { host: &quot;b.example&quot;, port: 80, tls: none },
+    ],
+    limits: { &quot;cpu&quot;: 2, &quot;mem&quot;: 512 },
+}
+</code></pre>
+<p>Nested structs, lists, and enums are all read the same way. When a field is missing, as in the second server, these rules apply:</p>
+<ul>
+<li>If the field has a <code>= default</code>, that value (<code>port: u16 = 80</code>).
+</li>
+<li>If the type is <code>T | none</code>, <code>none</code> (<code>tls</code>).
+</li>
+<li>Otherwise, an error.
+</li>
+</ul>
+<p><code>to_string</code> writes the <strong>canonical form</strong>: 4-space indentation, one line if it fits in 100 columns, otherwise one element per line with a trailing comma. Reading the canonical form back yields the same value.</p>
+<h2 id="enums-tuple-structs-dict"><a class="anchor" tabindex="-1" href="#enums-tuple-structs-dict" aria-hidden="true">#</a>Enums, tuple structs, Dict</h2>
+<p>Enum variants are always written with their full path, like <code>Enum::Variant</code>. Tuple structs are written <code>Name(a, b)</code>. Standard collections and tuples are read directly, without a derive.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::rokon;
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">enum</span> <span class="t">Shape</span> {
+    <span class="t">Dot</span>,
+    <span class="t">Circle</span>(<span class="t">f64</span>),
+    <span class="t">Rect</span> { w: <span class="t">i32</span>; h: <span class="t">i32</span>; },
+}
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Point</span>(<span class="t">i32</span>, <span class="t">i32</span>);
+
+<span class="k">let</span> shapes: <span class="t">List</span>&lt;<span class="t">Shape</span>&gt; = <span class="k">try</span>! rokon::from_str(<span class="s">"[Shape::Dot, Shape::Circle(1.5), Shape::Rect { w: 3, h: 2 }]"</span>);
+<span class="k">for</span> s <span class="k">in</span> shapes {
+    <span class="k">let</span> d = <span class="k">match</span> s {
+        <span class="t">Shape</span>::<span class="t">Dot</span> =&gt; <span class="s">"dot"</span>,
+        <span class="t">Shape</span>::<span class="t">Circle</span>(r) =&gt; <span class="s">f"circle r={</span>r<span class="s">}"</span>,
+        <span class="t">Shape</span>::<span class="t">Rect</span> { w, h } =&gt; <span class="s">f"rect {</span>w<span class="s">}x{</span>h<span class="s">}"</span>,
+    };
+    println(d);
+}
+
+println(rokon::to_string(<span class="t">Point</span>(<span class="n">3</span>, -<span class="n">4</span>)));
+<span class="k">let</span> p: <span class="t">Point</span> = <span class="k">try</span>! rokon::from_str(<span class="s">"Point(1, 2)"</span>);
+println(<span class="s">f"{</span>p.<span class="n">0</span><span class="s">} {</span>p.<span class="n">1</span><span class="s">}"</span>);
+
+<span class="k">let</span> ages: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = <span class="k">try</span>! rokon::from_str(r#<span class="s">"{ "</span>kim<span class="s">": 31, "</span>lee<span class="s">": 27 }"</span>#);
+println(<span class="s">f"lee is {</span>ages[<span class="s">"lee"</span>]<span class="s">}"</span>);
+<span class="k">let</span> pair: (<span class="t">str</span>, <span class="t">List</span>&lt;<span class="t">i32</span>&gt;) = <span class="k">try</span>! rokon::from_str(r#<span class="s">"("</span>primes<span class="s">", [2, 3, 5])"</span>#);
+println(<span class="s">f"{</span>pair.<span class="n">0</span><span class="s">}: {</span>pair.<span class="n">1</span><span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">dot
+circle r=1.5
+rect 3x2
+Point(3, -4)
+1 2
+lee is 27
+primes: [2, 3, 5]
+</code></pre>
+<div class="callout tip"><p class="callout-title">Tip</p>
+<p><code>Dict</code> and <code>Set</code> are written in hash order, so the order of <code>to_string</code> output is not guaranteed to be the same across runs. To keep the order when writing to a file, use <code>OrderedDict</code> / <code>OrderedSet</code>.</p>
+</div>
+<h2 id="bad-input-and-errors"><a class="anchor" tabindex="-1" href="#bad-input-and-errors" aria-hidden="true">#</a>Bad input and errors</h2>
+<p><code>from_str</code> throws <code>RokonError</code> when something is wrong. Messages have the form <code>line:column: description</code>, so a person can find the spot in the file right away.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::rokon;
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Server</span> { host: <span class="t">str</span>; port: <span class="t">u16</span>; }
+
+<span class="k">fn</span> check(text: <span class="t">str</span>) {
+    <span class="k">let</span> s: <span class="t">Server</span> = <span class="k">try</span> rokon::from_str(text) <span class="k">catch</span> e {
+        println(<span class="s">f"error: {</span>e<span class="s">}"</span>);
+        <span class="k">return</span>;
+    };
+    println(<span class="s">f"ok: {</span>s.host<span class="s">}:{</span>s.port<span class="s">}"</span>);
+}
+
+check(r#<span class="s">"Server { host: "</span>h<span class="s">", port: 22 }"</span>#);
+check(r#<span class="s">"Server { host: "</span>h<span class="s">" }"</span>#);
+check(r#<span class="s">"Server { host: "</span>h<span class="s">", port: 70000 }"</span>#);
+check(r#<span class="s">"Server { host: h, port: 22 }"</span>#);
+check(r#<span class="s">"Server { host: "</span>h<span class="s">", port: 22, user: "</span>me<span class="s">" }"</span>#);
+check(r#<span class="s">"Client { host: "</span>h<span class="s">", port: 22 }"</span>#);
+</code></pre>
+<pre class="output"><code class="language-output">ok: h:22
+error: 1:1: missing field `port` in Server
+error: 1:27: integer 70000 is out of range for u16
+error: 1:16: bare identifier `h` is not allowed in ROKON (strings are quoted, variants are written `Enum::h`)
+error: 1:31: unknown field `user` in Server
+error: 1:1: expected Server, found `Client { .. }`
+</code></pre>
+<p>Note that an unknown field is also an error, so a misspelled configuration key is never silently ignored.</p>
+<h2 id="reading-without-a-type-value"><a class="anchor" tabindex="-1" href="#reading-without-a-type-value" aria-hidden="true">#</a>Reading without a type: <code>Value</code></h2>
+<p>Data whose structure you don't know in advance can be read into the <code>Value</code> enum with <code>rokon::parse</code>. <code>Value</code> has variants such as <code>None</code>, <code>Int</code>, <code>Str</code>, <code>List</code>, <code>Dict</code>, <code>Struct</code>, and <code>Variant</code>, and <code>kind()</code> returns the name of the kind.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::rokon;
+<span class="k">use</span> rok::std::rokon::<span class="t">Value</span>;
+
+<span class="k">let</span> v = <span class="k">try</span>! rokon::parse(r#<span class="s">"Site { title: "</span>rok<span class="s">", pages: 12, draft: false }"</span>#);
+<span class="k">match</span> v {
+    <span class="t">Value</span>::<span class="t">Struct</span> { name, fields } =&gt; {
+        println(<span class="s">f"struct {</span>name ?? <span class="s">"(anonymous)"</span><span class="s">}"</span>);
+        <span class="k">for</span> (k, x) <span class="k">in</span> fields {
+            println(<span class="s">f"  {</span>k<span class="s">}: {</span>x.kind()<span class="s">} = {</span>x<span class="s">}"</span>);
+        }
+    },
+    _ =&gt; println(<span class="s">f"not a struct: {</span>v.kind()<span class="s">}"</span>),
+}
+</code></pre>
+<pre class="output"><code class="language-output">struct Site
+  title: string = &quot;rok&quot;
+  pages: integer = 12
+  draft: bool = false
+</code></pre>
+<h2 id="reading-and-writing-configuration-files"><a class="anchor" tabindex="-1" href="#reading-and-writing-configuration-files" aria-hidden="true">#</a>Reading and writing configuration files</h2>
+<p>Combined with <code>fs</code> from chapter 13, this handles configuration files. The program that builds this site does exactly that: it reads <code>site.rokon</code> from the site repository into a <code>#[derive(Rokon)] struct Site</code>, and fields with defaults can be omitted from the file.</p>
+<p>The example below writes a configuration to a temporary file, reads it, modifies it, and writes it back. <code>load</code> can throw both <code>IoError</code> and <code>RokonError</code>, and the caller catches each kind separately.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::fs;
+<span class="k">use</span> rok::std::env;
+<span class="k">use</span> rok::std::rokon;
+<span class="k">use</span> rok::std::rokon::<span class="t">RokonError</span>;
+<span class="k">use</span> rok::std::io::<span class="t">IoError</span>;
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Site</span> {
+    title: <span class="t">str</span>;
+    tagline: <span class="t">str</span>;
+    spec: <span class="t">str</span> = <span class="s">"../spec/ko"</span>;
+    out: <span class="t">str</span> = <span class="s">"public"</span>;
+}
+
+<span class="k">fn</span> load(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span> | <span class="t">RokonError</span>) -&gt; <span class="t">Site</span> {
+    <span class="k">try</span> rokon::from_str(<span class="k">try</span> fs::read_to_str(path))
+}
+
+<span class="k">let</span> path = (env::temp_dir() / <span class="s">f"rok_learn15_{</span>env::pid()<span class="s">}.rokon"</span>).as_str();
+<span class="k">try</span>! fs::write(path, r#<span class="s">"// Site configuration
+Site {
+    title: "</span>rok<span class="s">",
+    tagline: "</span>small language, rich library<span class="s">",
+}
+"</span>#);
+<span class="k">let</span> site = <span class="k">try</span>! load(path);
+println(<span class="s">f"{</span>site.title<span class="s">} -&gt; {</span>site.out<span class="s">}"</span>);
+
+site.out = <span class="s">"dist"</span>;
+<span class="k">try</span>! fs::write(path, rokon::to_string(site) + <span class="s">"\n"</span>);
+print(<span class="k">try</span>! fs::read_to_str(path));
+
+<span class="k">try</span>! fs::write(path, <span class="s">"Site { title: 1 }"</span>);
+<span class="k">try</span> load(path) <span class="k">catch</span> e: <span class="t">RokonError</span> { println(<span class="s">f"bad config: {</span>e<span class="s">}"</span>); };
+<span class="k">try</span>! fs::remove_file(path);
+<span class="k">try</span> load(path) <span class="k">catch</span> e: <span class="t">IoError</span> { println(<span class="s">f"missing: {</span>e.kind()<span class="s">:?</span><span class="s">}"</span>); };
+</code></pre>
+<pre class="output"><code class="language-output">rok -&gt; public
+Site { title: &quot;rok&quot;, tagline: &quot;small language, rich library&quot;, spec: &quot;../spec/ko&quot;, out: &quot;dist&quot; }
+bad config: 1:15: expected str, found integer
+missing: NotFound
+</code></pre>
+<p>Notice also that rewriting with <code>to_string</code> drops comments. Files that people edit are better left for programs not to overwrite. <code>rok fmt</code> only fixes indentation in <code>.rokon</code> files and leaves comments and layout alone.</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>ROKON is a data format that uses rok literal syntax as is; the file extension is <code>.rokon</code>.
+</li>
+<li>Add <code>#[derive(Rokon)]</code>, read with <code>rokon::from_str</code>, write with <code>rokon::to_string</code>.
+</li>
+<li>A missing field takes its <code>= default</code>, or <code>none</code> if its type is <code>T | none</code>; otherwise it is an error. Unknown fields are errors too.
+</li>
+<li>Error messages have the form <code>line:column: description</code>.
+</li>
+<li>If you don't know the structure, use <code>rokon::parse</code> to get a <code>Value</code>.
+</li>
+<li>Use <code>OrderedDict</code> for maps whose order matters.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-standard-libraries/300-std/309-rokon">3.9 ROKON</a>, <a href="../spec/refs-lang/002-types/203-struct#233-field-default-values">Field defaults</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend">The rok.rokon manifest</a>
+</li>
+<li>API: <a href="../std/std/rokon">rok::std::rokon</a>
+</li>
+<li>Next chapter: <a href="16-tools">16. Tools</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/15-rokon.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="14-ffi"><small>Previous</small>14. FFI Basics</a><a class="next" href="16-tools"><small>Next</small>16. Tools</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

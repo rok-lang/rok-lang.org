@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::std::net module provides low-level network primitives together with TLS 1.3 as one bundle. High-level protocols such as HTTP, HTTP/2 and HTTP/3 are del...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/302-net.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3) - rok docs">
+<meta property="og:description" content="The rok::std::net module provides low-level network primitives together with TLS 1.3 as one bundle. High-level protocols such as HTTP, HTTP/2 and HTTP/3 are del...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/302-net.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/302-net.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/302-net.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - file system</a></li><li class="cur"><a aria-current="page" href="302-net">3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a><ul class="toc"><li><a href="#320-common-rules">3.2.0. Common rules</a></li><li><a href="#321-tcp">3.2.1. TCP</a></li><li><a href="#322-udp">3.2.2. UDP</a></li><li><a href="#323-unix-domain-socket">3.2.3. Unix domain socket</a></li><li><a href="#324-socketaddr--ipaddr">3.2.4. SocketAddr / IpAddr</a></li><li><a href="#325-tls-13---nettls">3.2.5. TLS 1.3 - net::tls</a></li><li><a href="#326-convenience-functions">3.2.6. Convenience functions</a></li><li><a href="#327-zerocopy-hooks-advanced">3.2.7. zerocopy hooks (advanced)</a></li><li><a href="#328-module-mapping">3.2.8. Module mapping</a></li></ul></li><li><a href="303-time">3.3. time:: - time</a></li><li><a href="304-thread">3.4. thread:: - OS threads (1:1 model)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / standard I/O</a></li><li><a href="306-env">3.6. env:: - environment variables / args / directories</a></li><li><a href="307-process">3.7. process:: - child processes</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python-style)</a></li><li><a href="309-rokon">3.9. rokon:: - the ROKON data format</a></li><li><a href="310-crypto">3.10. crypto:: - the OS random source</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="32-net---networking-tcp--udp--unix--tls-13 32-net---네트워크-tcp--udp--unix--tls-13 320-common-rules 320-공통-규칙 blocking-and-_async blocking-과-_async 321-tcp 321-tcp examples 사용-예 322-udp 322-udp 323-unix-domain-socket 323-unix-domain-socket 324-socketaddr--ipaddr 324-socketaddr--ipaddr 325-tls-13---nettls 325-tls-13---nettls example 사용-예-1 326-convenience-functions 326-편의-함수 327-zerocopy-hooks-advanced 327-zerocopy-hooks-advanced 328-module-mapping 328-모듈-매핑"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/300-std/302-net" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="32-net---networking-tcp--udp--unix--tls-13"><a class="anchor" tabindex="-1" href="#32-net---networking-tcp--udp--unix--tls-13" aria-hidden="true">#</a>3.2. <code>net::</code> - networking (TCP / UDP / Unix + TLS 1.3)</h1>
+<p>The <code>rok::std::net</code> module provides low-level network primitives together with <strong>TLS 1.3</strong> as one bundle. High-level protocols such as HTTP, HTTP/2 and HTTP/3 are deliberately out of scope and delegated to separate packages such as <code>rok/http</code>. This choice also avoids Go's path, where the standard library froze at 1.0 and stopped evolving.</p>
+<h2 id="320-common-rules"><a class="anchor" tabindex="-1" href="#320-common-rules" aria-hidden="true">#</a>3.2.0. Common rules</h2>
+<ul>
+<li>Data being written (<code>write</code> / <code>write_all</code> / <code>send</code> / <code>send_to</code> and their <code>_async</code> forms) accepts <code>str</code>, <code>List&lt;u8&gt;</code> and <code>Slice&lt;u8&gt;</code> through <code>AsBytes</code> (<a href="305-io#351-asbytes">3.5.1</a>). The read buffer is a <code>List&lt;u8&gt;</code>. <code>read(buf)</code> fills the first <code>n</code> bytes of a <code>buf</code> whose length was set up in advance and returns <code>n</code>. <code>0</code> is the end of the stream.
+</li>
+<li>Socket types are OS handles. Copying a value shares the same socket; only <code>try_clone</code> duplicates the fd.
+</li>
+<li>Sockets implement <code>Drop</code>, so they are closed on leaving a <code>using</code> block (<a href="../200-core/213-marker#2134-drop---cleanup-on-using-release">2.13.4</a>). Otherwise, close them with <code>close()</code>. Using a closed socket is an <code>IoError</code> (<code>InvalidInput</code>). A <code>*_async</code> operation pending on the socket when another task closes it completes with that error; after <code>shutdown(Read | Both)</code> a pending read completes with 0.
+</li>
+<li><code>TcpStream</code> implements <code>Reader</code> + <code>Writer</code> (<a href="305-io#351a-reader--writer-traits">3.5.1</a>).
+</li>
+</ul>
+<h3 id="blocking-and-_async"><a class="anchor" tabindex="-1" href="#blocking-and-_async" aria-hidden="true">#</a>Blocking and <code>*_async</code></h3>
+<p>Methods come in two sets.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>How it waits</th></tr></thead>
+<tbody>
+<tr><td><code>accept</code>, <code>read</code>, <code>write</code> ..</td><td>Blocks the calling OS thread (and, inside a task, its worker)</td></tr>
+<tr><td><code>accept_async</code>, <code>read_async</code> ..</td><td>Suspends only the task; the worker runs other tasks</td></tr>
+</tbody></table></div>
+<p><code>*_async</code> methods are <code>async fn</code>s, used as <code>try await s.read_async(buf)</code>. Waiting for readiness is the job of the <a href="../../refs-lang/007-runtime/707-io-and-timer">I/O driver</a>. An ordinary function cannot suspend a stackless coroutine, so the sync call of the same name does not suspend on its own inside a task.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>blocking</th><th>async</th></tr></thead>
+<tbody>
+<tr><td><code>TcpListener::accept</code></td><td><code>TcpListener::accept_async</code></td></tr>
+<tr><td><code>TcpStream::connect</code></td><td><code>TcpStream::connect_async</code></td></tr>
+<tr><td><code>TcpStream::read</code></td><td><code>TcpStream::read_async</code></td></tr>
+<tr><td><code>TcpStream::read_to_end</code></td><td><code>TcpStream::read_to_end_async</code></td></tr>
+<tr><td><code>TcpStream::write</code></td><td><code>TcpStream::write_async</code></td></tr>
+<tr><td><code>TcpStream::write_all</code></td><td><code>TcpStream::write_all_async</code></td></tr>
+<tr><td><code>TcpStream::write_str</code></td><td><code>TcpStream::write_str_async</code></td></tr>
+<tr><td><code>UdpSocket::send_to</code></td><td><code>UdpSocket::send_to_async</code></td></tr>
+<tr><td><code>UdpSocket::recv_from</code></td><td><code>UdpSocket::recv_from_async</code></td></tr>
+<tr><td><code>UdpSocket::send</code></td><td><code>UdpSocket::send_async</code></td></tr>
+<tr><td><code>UdpSocket::recv</code></td><td><code>UdpSocket::recv_async</code></td></tr>
+<tr><td><code>tcp_connect</code></td><td><code>tcp_connect_async</code></td></tr>
+<tr><td><code>tls::Client::new</code> / <code>with_config</code></td><td><code>tls::Client::new_async</code> / <code>with_config_async</code></td></tr>
+<tr><td><code>tls::Server::new</code></td><td><code>tls::Server::new_async</code></td></tr>
+<tr><td><code>tls::Client::read</code> ... <code>key_update</code> (and <code>Server</code>)</td><td><code>read_async</code> ... <code>key_update_async</code></td></tr>
+</tbody></table></div>
+<p>Timeouts apply only to the blocking side (<code>set_read_timeout</code> / <code>set_write_timeout</code>; exceeding them gives <code>TimedOut</code>). On the async side, wrap with <code>task::timeout</code> (waits on a task) or <code>task::select</code> (<a href="../200-core/218-task#select---the-first-future-to-finish">2.18.1</a>). <code>select</code> cancels the losing side, which makes it a good fit for abandoning a read.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Got</span> { <span class="t">Data</span>(<span class="t">usize</span>), <span class="t">Timeout</span> }
+
+<span class="k">let</span> (_, got) = <span class="k">await</span> task::select([
+    <span class="k">async</span> { <span class="t">Got</span>::<span class="t">Data</span>(<span class="k">try</span> <span class="k">await</span> s.read_async(buf) <span class="k">catch</span> _ { <span class="n">0</span> }) },
+    <span class="k">async</span> { <span class="k">await</span> task::sleep(<span class="t">Duration</span>::sec(<span class="n">5</span>)); <span class="t">Got</span>::<span class="t">Timeout</span> },
+]);
+</code></pre>
+<p>With <code>set_nonblocking(true)</code>, blocking methods do not wait and throw <code>WouldBlock</code>.</p>
+<p>On <code>wasm32-wasi</code>, <code>std::net</code> (TCP / UDP connect, bind, listen, accept, DNS) works through <code>wasi:sockets</code>; the host must grant network access (e.g. wasmtime <code>-S inherit-network -S allow-ip-name-lookup</code>). On <code>wasm32-wasi-threads</code> only <code>TcpListener::inherited()</code> listeners work; connect / bind / DNS throw <code>Unsupported</code>.</p>
+<h2 id="321-tcp"><a class="anchor" tabindex="-1" href="#321-tcp" aria-hidden="true">#</a>3.2.1. TCP</h2>
+<p>TCP is built around two types, <code>TcpListener</code> and <code>TcpStream</code>. The listener handles bind and the accept flow; the stream exposes reading, writing and option control.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">TcpListener</span> { <span class="c">/* OS handle */</span> }
+<span class="k">struct</span> <span class="t">TcpStream</span> { <span class="c">/* OS handle */</span> }
+
+<span class="k">impl</span> <span class="t">TcpListener</span> {
+    <span class="k">fn</span> bind(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpListener</span>;      <span class="c">// SO_REUSEADDR, backlog 128</span>
+    <span class="k">fn</span> inherited() -&gt; <span class="t">List</span>&lt;<span class="t">TcpListener</span>&gt;;                            <span class="c">// listeners the host hands to the process</span>
+    <span class="k">fn</span> accept(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">TcpStream</span>, <span class="t">SocketAddr</span>);
+    <span class="k">async</span> <span class="k">fn</span> accept_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">TcpStream</span>, <span class="t">SocketAddr</span>);
+    <span class="k">fn</span> local_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;              <span class="c">// the actual port after binding to port 0</span>
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpListener</span>;
+    <span class="k">fn</span> set_nonblocking(<span class="k">self</span>, nb: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> incoming(<span class="k">self</span>) -&gt; <span class="t">Incoming</span>;       <span class="c">// implements Iterator&lt;Item = Result&lt;TcpStream, IoError&gt;&gt;</span>
+    <span class="k">fn</span> fd(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> close(<span class="k">self</span>);
+}
+
+<span class="k">impl</span> <span class="t">TcpStream</span> {
+    <span class="k">fn</span> connect(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+    <span class="k">fn</span> connect_timeout(addr: <span class="t">SocketAddr</span>, dur: <span class="t">Duration</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+    <span class="k">async</span> <span class="k">fn</span> connect_async(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+
+    <span class="k">fn</span> read(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> read_to_end(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                  <span class="c">// to the end</span>
+    <span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> write_all&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> write_str(<span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> flush(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                                 <span class="c">// no-op (no buffer)</span>
+    <span class="c">// + read_async / read_to_end_async / write_async / write_all_async / write_str_async</span>
+
+    <span class="k">fn</span> peer_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> local_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> shutdown(<span class="k">self</span>, how: <span class="t">Shutdown</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+    <span class="k">fn</span> fd(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> close(<span class="k">self</span>);
+
+    <span class="c">// TCP options</span>
+    <span class="k">fn</span> set_nodelay(<span class="k">self</span>, nodelay: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);           <span class="c">// TCP_NODELAY</span>
+    <span class="k">fn</span> set_keepalive(<span class="k">self</span>, alive: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>); <span class="c">// SO_KEEPALIVE + idle (seconds), none = off</span>
+    <span class="k">fn</span> set_read_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_write_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> read_timeout(<span class="k">self</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> write_timeout(<span class="k">self</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> set_nonblocking(<span class="k">self</span>, nb: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+
+<span class="k">impl</span> <span class="t">Reader</span> <span class="k">for</span> <span class="t">TcpStream</span> { ... }
+<span class="k">impl</span> <span class="t">Writer</span> <span class="k">for</span> <span class="t">TcpStream</span> { ... }
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">TcpStream</span> { ... }          <span class="c">// close</span>
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">TcpListener</span> { ... }
+
+<span class="k">enum</span> <span class="t">Shutdown</span> { <span class="t">Read</span>, <span class="t">Write</span>, <span class="t">Both</span> }
+</code></pre>
+<p><code>TcpListener::inherited()</code> returns the listeners the host hands to the process: WASI pre-opened sockets, systemd <code>LISTEN_FDS</code> socket activation on Unix, and none on Windows.</p>
+<p><code>Incoming</code> never ends. Each element calls <code>accept</code> once, and its errors come out as <code>Err</code> elements. If the peer closes during a write, the process is not terminated by <code>SIGPIPE</code>; the write yields an <code>IoError</code> (<code>BrokenPipe</code>).</p>
+<h3 id="examples"><a class="anchor" tabindex="-1" href="#examples" aria-hidden="true">#</a>Examples</h3>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net::{tcp_listen, <span class="t">TcpListener</span>, <span class="t">TcpStream</span>};
+
+<span class="c">// blocking - this thread waits in accept and handle</span>
+<span class="k">using</span> l = <span class="k">try</span> tcp_listen(<span class="s">"127.0.0.1:8080"</span>) {
+    <span class="k">for</span> c <span class="k">in</span> l.incoming() {
+        handle(<span class="k">try</span> c.get());
+    }
+}
+
+<span class="c">// async - one task per connection; while waiting, the worker runs other tasks</span>
+<span class="k">async</span> <span class="k">fn</span> serve_all(l: <span class="t">TcpListener</span>) <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">loop</span> {
+        <span class="k">let</span> (s, peer) = <span class="k">try</span> <span class="k">await</span> l.accept_async();
+        task::spawn(serve(s));          <span class="c">// async fn serve(s: TcpStream)</span>
+    }
+}
+</code></pre>
+<h2 id="322-udp"><a class="anchor" tabindex="-1" href="#322-udp" aria-hidden="true">#</a>3.2.2. UDP</h2>
+<p>For UDP, a single <code>UdpSocket</code> type covers every role. Datagram send/receive is the baseline, and once a peer is fixed with <code>connect</code>, <code>send</code> / <code>recv</code> alone suffice. Options such as multicast membership and TTL are exposed too, and with workloads like QUIC in mind it includes segment size control for GSO/GRO.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">UdpSocket</span> { <span class="c">/* OS handle */</span> }
+
+<span class="k">impl</span> <span class="t">UdpSocket</span> {
+    <span class="k">fn</span> bind(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UdpSocket</span>;
+
+    <span class="k">fn</span> send_to&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>, addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> recv_from(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">usize</span>, <span class="t">SocketAddr</span>);
+    <span class="k">fn</span> connect(<span class="k">self</span>, addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>);             <span class="c">// fix the peer</span>
+    <span class="k">fn</span> send&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> recv(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="c">// + send_to_async / recv_from_async / send_async / recv_async</span>
+
+    <span class="k">fn</span> local_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> peer_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> set_broadcast(<span class="k">self</span>, on: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);              <span class="c">// SO_BROADCAST</span>
+    <span class="k">fn</span> set_read_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_write_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_nonblocking(<span class="k">self</span>, nb: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UdpSocket</span>;
+    <span class="k">fn</span> fd(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> close(<span class="k">self</span>);
+
+    <span class="c">// multicast (IPv4)</span>
+    <span class="k">fn</span> join_multicast_v4(<span class="k">self</span>, addr: <span class="t">Ipv4Addr</span>, iface: <span class="t">Ipv4Addr</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> leave_multicast_v4(<span class="k">self</span>, addr: <span class="t">Ipv4Addr</span>, iface: <span class="t">Ipv4Addr</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_multicast_loop_v4(<span class="k">self</span>, on: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_multicast_ttl_v4(<span class="k">self</span>, ttl: <span class="t">u32</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="c">// for QUIC (GSO / GRO)</span>
+    <span class="k">fn</span> set_segment_size(<span class="k">self</span>, size: <span class="t">u16</span>) <span class="k">throws</span> (<span class="t">IoError</span>);           <span class="c">// UDP_SEGMENT, Unsupported outside Linux</span>
+}
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">UdpSocket</span> { ... }          <span class="c">// close</span>
+</code></pre>
+<p><code>recv_from</code> / <code>recv</code> receive a single datagram into <code>buf</code>. The remainder of a datagram longer than <code>buf</code> is discarded.</p>
+<h2 id="323-unix-domain-socket"><a class="anchor" tabindex="-1" href="#323-unix-domain-socket" aria-hidden="true">#</a>3.2.3. Unix domain socket</h2>
+<p>Unix domain sockets come in three types: <code>UnixListener</code>, <code>UnixStream</code> and <code>UnixDatagram</code>. Their overall shape resembles TCP, but since they communicate only within the same host they use file paths as identifiers, and they provide convenience methods such as <code>pair()</code>, corresponding to <code>socketpair(2)</code>. Fd passing through <code>SCM_RIGHTS</code> is meaningful only on Unix sockets, so it is split out into <code>send_with_fd</code> / <code>recv_with_fd</code>.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">UnixListener</span> { <span class="c">/* unix only */</span> }
+<span class="k">struct</span> <span class="t">UnixStream</span> { <span class="c">/* unix only */</span> }
+<span class="k">struct</span> <span class="t">UnixDatagram</span> { <span class="c">/* unix only */</span> }
+
+<span class="a">#[cfg(target_family = "unix")]</span>
+<span class="k">impl</span> <span class="t">UnixListener</span> {
+    <span class="k">fn</span> bind(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UnixListener</span>;
+    <span class="k">fn</span> accept(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">UnixStream</span>, <span class="t">Path</span> | <span class="k">none</span>);   <span class="c">// peer's bound path</span>
+    <span class="c">// ... similar to TcpListener</span>
+}
+
+<span class="a">#[cfg(target_family = "unix")]</span>
+<span class="k">impl</span> <span class="t">UnixStream</span> {
+    <span class="k">fn</span> connect(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UnixStream</span>;
+    <span class="k">fn</span> pair() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">UnixStream</span>, <span class="t">UnixStream</span>);          <span class="c">// socketpair</span>
+
+    <span class="c">// SCM_RIGHTS - fd passing</span>
+    <span class="k">fn</span> send_with_fd(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;, fd: <span class="t">RawFd</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> recv_with_fd(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">usize</span>, <span class="t">RawFd</span> | <span class="k">none</span>);
+}
+</code></pre>
+<h2 id="324-socketaddr--ipaddr"><a class="anchor" tabindex="-1" href="#324-socketaddr--ipaddr" aria-hidden="true">#</a>3.2.4. SocketAddr / IpAddr</h2>
+<p>Address representation centers on the <code>SocketAddr</code> enum, the union of IPv4 and IPv6. Each variant exposes the IP and port, and for IPv6 also the flow info and scope id, so they can be inspected directly when needed. String parsing works through <code>FromStr</code> implementations, and DNS lookup of host names is provided by separate functions.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">SocketAddr</span> {
+    <span class="t">V4</span>(<span class="t">SocketAddrV4</span>),
+    <span class="t">V6</span>(<span class="t">SocketAddrV6</span>),
+}
+
+<span class="k">struct</span> <span class="t">SocketAddrV4</span> { ip: <span class="t">Ipv4Addr</span>; port: <span class="t">u16</span>; }
+<span class="k">struct</span> <span class="t">SocketAddrV6</span> { ip: <span class="t">Ipv6Addr</span>; port: <span class="t">u16</span>; flow_info: <span class="t">u32</span>; scope_id: <span class="t">u32</span>; }
+
+<span class="k">impl</span> <span class="t">SocketAddr</span> {
+    <span class="k">fn</span> v4(ip: <span class="t">Ipv4Addr</span>, port: <span class="t">u16</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> v6(ip: <span class="t">Ipv6Addr</span>, port: <span class="t">u16</span>) -&gt; <span class="t">SocketAddr</span>;    <span class="c">// flow_info = scope_id = 0</span>
+    <span class="k">fn</span> port(<span class="k">self</span>) -&gt; <span class="t">u16</span>;
+    <span class="k">fn</span> with_port(<span class="k">self</span>, port: <span class="t">u16</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> is_ipv4(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ipv6(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">struct</span> <span class="t">Ipv4Addr</span> { octets: [<span class="t">u8</span>; <span class="n">4</span>]; }
+<span class="k">struct</span> <span class="t">Ipv6Addr</span> { segments: [<span class="t">u16</span>; <span class="n">8</span>]; }
+
+<span class="k">impl</span> <span class="t">Ipv4Addr</span> {
+    <span class="k">const</span> <span class="t">LOCALHOST</span>: <span class="t">Ipv4Addr</span> = <span class="t">Ipv4Addr</span> { octets: [<span class="n">127</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">1</span>] };
+    <span class="k">const</span> <span class="t">UNSPECIFIED</span>: <span class="t">Ipv4Addr</span> = <span class="t">Ipv4Addr</span> { octets: [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>] };
+    <span class="k">fn</span> new(a: <span class="t">u8</span>, b: <span class="t">u8</span>, c: <span class="t">u8</span>, d: <span class="t">u8</span>) -&gt; <span class="t">Ipv4Addr</span>;
+    <span class="k">fn</span> to_bits(<span class="k">self</span>) -&gt; <span class="t">u32</span>;
+    <span class="k">fn</span> is_loopback(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_unspecified(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_multicast(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">impl</span> <span class="t">Ipv6Addr</span> {
+    <span class="k">const</span> <span class="t">LOCALHOST</span>: <span class="t">Ipv6Addr</span>;           <span class="c">// ::1</span>
+    <span class="k">const</span> <span class="t">UNSPECIFIED</span>: <span class="t">Ipv6Addr</span>;         <span class="c">// ::</span>
+    <span class="k">fn</span> new(a: <span class="t">u16</span>, b: <span class="t">u16</span>, c: <span class="t">u16</span>, d: <span class="t">u16</span>, e: <span class="t">u16</span>, f: <span class="t">u16</span>, g: <span class="t">u16</span>, h: <span class="t">u16</span>) -&gt; <span class="t">Ipv6Addr</span>;
+    <span class="k">fn</span> is_loopback(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="c">// parsing / printing - all three types implement FromStr (Err = ParseError), Display, Debug, PartialEq</span>
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">SocketAddr</span> { ... }       <span class="c">// "127.0.0.1:8080" / "[::1]:8080"</span>
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">Ipv4Addr</span> { ... }
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">Ipv6Addr</span> { ... }         <span class="c">// "::" abbreviation allowed</span>
+
+<span class="c">// DNS (getaddrinfo)</span>
+<span class="k">fn</span> resolve(host: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">SocketAddr</span>&gt;;
+<span class="k">fn</span> resolve_one(host: <span class="t">str</span>, port: <span class="t">u16</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+</code></pre>
+<p><code>resolve</code> obtains a list of addresses with the OS's <code>getaddrinfo</code> and blocks the calling thread. <code>host</code> accepts:</p>
+<div class="table-wrap"><table>
+<thead><tr><th><code>host</code></th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>A socket address (<code>&quot;10.0.0.1:80&quot;</code>, <code>&quot;[::1]:80&quot;</code>)</td><td>That single address (no lookup)</td></tr>
+<tr><td><code>&quot;name:port&quot;</code></td><td>The addresses of <code>name</code>, with port <code>port</code></td></tr>
+<tr><td><code>&quot;[v6]:port&quot;</code></td><td>That IPv6 address, with port <code>port</code></td></tr>
+<tr><td>A name or IP only</td><td>Its addresses, with port 0</td></tr>
+</tbody></table></div>
+<p><code>resolve_one</code> takes the name and port separately and returns the first address. If the name is not found it is an <code>IoError</code> (<code>NotFound</code>), and the message includes the resolver's description.</p>
+<h2 id="325-tls-13---nettls"><a class="anchor" tabindex="-1" href="#325-tls-13---nettls" aria-hidden="true">#</a>3.2.5. TLS 1.3 - <code>net::tls</code></h2>
+<p>TLS lives in the <code>net::tls</code> submodule and assumes 1.3 only from the start. <code>ClientConfig</code> and <code>ServerConfig</code> express certificates, cipher suites and the ALPN protocol list, and the post-quantum option enables ML-KEM hybrid key exchange. After the handshake, <code>Client</code> / <code>Server</code> behave like plaintext streams, so existing I/O code can sit on top almost unchanged.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net::tls;
+
+<span class="k">struct</span> <span class="t">ClientConfig</span> {
+    root_certs: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;          <span class="c">// trust anchors</span>
+    cipher_suites: <span class="t">List</span>&lt;<span class="t">CipherSuite</span>&gt;;       <span class="c">// TLS 1.3 suites, preference order</span>
+    alpn_protocols: <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">u8</span>&gt;&gt;;         <span class="c">// ["h2", "http/1.1"], etc.</span>
+    enable_pq: <span class="t">bool</span>;                        <span class="c">// post-quantum (X25519MLKEM768 hybrid)</span>
+    client_cert_chain: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;   <span class="c">// sent when the server asks: leaf first; empty: none</span>
+    client_key: <span class="t">PrivateKey</span> | <span class="k">none</span>;          <span class="c">// the client leaf's key</span>
+    session_cache: <span class="t">SessionCache</span> | <span class="k">none</span>;     <span class="c">// tickets to resume from; none: never resume</span>
+    early_data: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                   <span class="c">// 0-RTT data, else the first data after the handshake</span>
+}
+
+<span class="k">impl</span> <span class="t">ClientConfig</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">ClientConfig</span>;               <span class="c">// system_roots(), all suites, no ALPN, enable_pq = true,</span>
+                                            <span class="c">// no client certificate, SessionCache::new(), no early data</span>
+}
+
+<span class="k">struct</span> <span class="t">ServerConfig</span> {
+    cert_chain: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;          <span class="c">// leaf first, then intermediates</span>
+    private_key: <span class="t">PrivateKey</span>;                <span class="c">// the leaf's key</span>
+    cipher_suites: <span class="t">List</span>&lt;<span class="t">CipherSuite</span>&gt;;
+    alpn_protocols: <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">u8</span>&gt;&gt;;
+    client_roots: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;        <span class="c">// non-empty: ask for a client certificate, validated against these</span>
+    require_client_cert: <span class="t">bool</span>;              <span class="c">// with client_roots: refuse a client without one</span>
+    ocsp_response: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                <span class="c">// DER OCSPResponse stapled when asked; empty: none</span>
+    ticket_store: <span class="t">TicketStore</span> | <span class="k">none</span>;       <span class="c">// resumption; none: no tickets</span>
+    max_early_data: <span class="t">u32</span>;                    <span class="c">// 0-RTT bytes accepted per connection; 0: none</span>
+}
+
+<span class="k">impl</span> <span class="t">ServerConfig</span> {
+    <span class="k">fn</span> new(cert_chain: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;, private_key: <span class="t">PrivateKey</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">ServerConfig</span>;
+        <span class="c">// the key must belong to cert_chain[0]; all suites, no ALPN, no client certificates,</span>
+        <span class="c">// no OCSP response, TicketStore::new(), require_client_cert = true, max_early_data = 0</span>
+}
+
+<span class="k">struct</span> <span class="t">SessionCache</span> {                       <span class="c">// the client's tickets by server name; copies share them</span>
+    <span class="k">fn</span> new() -&gt; <span class="t">SessionCache</span>;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+}
+
+<span class="k">struct</span> <span class="t">TicketStore</span> {                        <span class="c">// the server's resumable sessions; copies share them</span>
+    <span class="k">fn</span> new() -&gt; <span class="t">TicketStore</span>;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+}
+
+<span class="k">enum</span> <span class="t">CipherSuite</span> { <span class="t">Aes128GcmSha256</span>, <span class="t">Aes256GcmSha384</span>, <span class="t">ChaCha20Poly1305Sha256</span> }
+
+<span class="k">struct</span> <span class="t">Certificate</span> {
+    <span class="k">fn</span> from_der(der: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Certificate</span>;
+    <span class="k">fn</span> from_pem(text: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;
+    <span class="k">fn</span> der(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> dns_names(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt;;
+    <span class="k">fn</span> not_before(<span class="k">self</span>) -&gt; <span class="t">i64</span>;             <span class="c">// Unix seconds</span>
+    <span class="k">fn</span> not_after(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+}
+
+<span class="k">struct</span> <span class="t">PrivateKey</span> {                         <span class="c">// Ed25519, ECDSA P-256 / P-384, RSA (2048..4096 bits), RSASSA-PSS</span>
+    <span class="k">fn</span> from_der(der: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">PrivateKey</span>;   <span class="c">// PKCS #8</span>
+    <span class="k">fn</span> from_pem(text: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">PrivateKey</span>;  <span class="c">// PRIVATE KEY, EC PRIVATE KEY or RSA PRIVATE KEY</span>
+}
+
+<span class="k">fn</span> system_roots() <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;   <span class="c">// the OS trust store (read on each call)</span>
+
+<span class="k">enum</span> <span class="t">TlsErrorKind</span> { <span class="t">Io</span>, <span class="t">Certificate</span>, <span class="t">Protocol</span>, <span class="t">PeerAlert</span> }
+<span class="k">struct</span> <span class="t">TlsError</span> { kind: <span class="t">TlsErrorKind</span>; msg: <span class="t">str</span>; alert: <span class="t">u8</span>; }
+
+<span class="k">struct</span> <span class="t">Client</span> {
+    <span class="k">fn</span> new(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+    <span class="k">fn</span> with_config(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>, cfg: <span class="t">ClientConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+    <span class="k">async</span> <span class="k">fn</span> new_async(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+    <span class="k">async</span> <span class="k">fn</span> with_config_async(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>, cfg: <span class="t">ClientConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+
+    <span class="k">fn</span> read(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> read_to_end(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> write_all&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> flush(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> close_notify(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> key_update(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> close(<span class="k">self</span>);
+
+    <span class="k">async</span> <span class="k">fn</span> read_async(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_to_end_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">async</span> <span class="k">fn</span> write_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> write_all_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> flush_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> close_notify_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> key_update_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> negotiated_alpn(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>;
+    <span class="k">fn</span> peer_certificates(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;
+    <span class="k">fn</span> resumed(<span class="k">self</span>) -&gt; <span class="t">bool</span>;               <span class="c">// the handshake resumed a session</span>
+    <span class="k">fn</span> early_data_accepted(<span class="k">self</span>) -&gt; <span class="t">bool</span>;   <span class="c">// early_data went out as 0-RTT data</span>
+}
+
+<span class="k">struct</span> <span class="t">Server</span> {
+    <span class="k">fn</span> new(stream: <span class="t">TcpStream</span>, cfg: <span class="t">ServerConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Server</span>;
+    <span class="k">async</span> <span class="k">fn</span> new_async(stream: <span class="t">TcpStream</span>, cfg: <span class="t">ServerConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Server</span>;
+    <span class="c">// read, read_to_end, write, write_all, flush, close_notify, key_update,</span>
+    <span class="c">// close, their *_async forms, negotiated_alpn and peer_certificates</span>
+    <span class="c">// as on Client, and:</span>
+    <span class="k">fn</span> server_name(<span class="k">self</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;     <span class="c">// the client's SNI</span>
+    <span class="k">fn</span> resumed(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> early_data(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;        <span class="c">// the 0-RTT data accepted; read returns what follows</span>
+}
+</code></pre>
+<p><code>Client</code> and <code>Server</code> implement <code>Reader</code> and <code>Writer</code> (3.5.1) and <code>Drop</code> (closing the socket after a close_notify). Copies share one connection; a connection is used by one thread at a time (<code>!Sync</code>) and by one operation at a time.</p>
+<p>The <code>*_async</code> methods follow 3.2.0: they suspend only the task while the socket is not ready, and the handshake (<code>new_async</code>, <code>with_config_async</code>) does the same between the peer's messages. The blocking and async forms may be mixed on one connection.</p>
+<p>The stack is implementation-provided and written in rok on <code>rok::core::crypto</code> (2.21): no operating-system or third-party TLS library is used, and users never call one. Only TLS 1.3 (RFC 8446) is spoken; TLS 1.2 and earlier are refused. The handshake supports X25519 and the X25519MLKEM768 hybrid (ML-KEM-768 + X25519, <code>enable_pq</code>), HelloRetryRequest (for a group or a cookie), ALPN, SNI, KeyUpdate, close_notify, client certificates, OCSP stapling, and resumption with 0-RTT data.</p>
+<p>Resumption: a server with a <code>ticket_store</code> sends one NewSessionTicket after each handshake; the store keeps the session (at most 4096, the oldest dropped; lifetime 2 hours) and redeems a ticket at most once. A client with a <code>session_cache</code> keeps the tickets it receives under the server name it connected to (at most 64), and offers the newest live one whose cipher suite's hash it also offers, once (psk_dhe_ke only: the resumed handshake still does a fresh key exchange). A resumed connection skips certificate authentication; <code>peer_certificates()</code> returns the original connection's chain. A ticket is received while the client reads.</p>
+<p>0-RTT: when <code>early_data</code> is non-empty and the ticket allows that many bytes, the client sends it as early data with the ClientHello; otherwise, or if the server declines, it is sent as the first application data after the handshake (<code>early_data_accepted()</code> tells which). A server accepts early data only with <code>max_early_data &gt; 0</code>, on the first offered ticket, without HelloRetryRequest, with the ticket's cipher suite and ALPN protocol, and when the client's ticket age is within 10 seconds of the server's; it hands the data out through <code>early_data()</code> and skips early data it declines. Since every ticket is redeemed once from its <code>TicketStore</code>, a replayed ClientHello resumes nothing and its early data is skipped (RFC 8446 8.1); servers that should reject each other's replays must share one store. Early data is still not forward-secret with respect to the ticket and should be idempotent.</p>
+<p>Client certificates: a server with non-empty <code>client_roots</code> sends a CertificateRequest; the client's chain is validated against <code>client_roots</code> like a server's (below) with extendedKeyUsage clientAuth and no name check, and its CertificateVerify checked. A client without a certificate fails the handshake with certificate_required if <code>require_client_cert</code>, else continues with no <code>peer_certificates()</code>. A client answers a CertificateRequest with <code>client_cert_chain</code> and a CertificateVerify by <code>client_key</code> when the server accepts a scheme for that key, else with an empty Certificate. A <code>client_key</code> that does not belong to the first certificate makes <code>Client::with_config</code> fail before anything is sent.</p>
+<p>Server authentication: the certificate path is built from the peer's chain to one of <code>root_certs</code> and validated per RFC 5280 (signatures, validity at the current time, basicConstraints, keyUsage, extendedKeyUsage serverAuth, DNS and IP name constraints; unknown critical extensions fail). The server name is matched against subjectAltName only (RFC 6125: case-insensitive, a wildcard is the whole leftmost label); an IP literal is matched against iPAddress entries and sends no SNI. Accepted signatures: Ed25519, ECDSA P-256 / P-384 with SHA-256/384/512, RSA PKCS #1 v1.5 (certificates only) and RSA-PSS with SHA-256/384/512 (2048-4096-bit keys, rsaEncryption or id-RSASSA-PSS; in certificates any salt length, honoring an id-RSASSA-PSS key's hash and minimum salt). Revocation: the client asks for an OCSP response (status_request). A stapled response must be a successful basic OCSP response (RFC 6960) signed by the leaf's issuer or by a certificate the issuer issued with extendedKeyUsage OCSPSigning, with a SHA-1 or SHA-2 CertID naming the leaf, thisUpdate not more than 5 minutes ahead and nextUpdate present and not past; status revoked fails with certificate_revoked, any other problem (unknown status included) with bad_certificate_status_response. A leaf with the TLS feature extension for status_request (RFC 7633) requires a stapled response. Without a staple and without that extension the certificate is accepted; CRLs and OCSP queries over the network are not used.</p>
+<p>A certificate that is expired or not yet valid fails with certificate_expired, one whose extendedKeyUsage does not allow the role with unsupported_certificate, one with no path to <code>root_certs</code> with unknown_ca, and any other failure with bad_certificate. An extension in ServerHello, HelloRetryRequest, EncryptedExtensions or a Certificate entry that the client did not request fails with unsupported_extension. A failed handshake sends its alert, then closes the stream.</p>
+<p>Either side signs its CertificateVerify with its key's scheme: <code>ed25519</code>, <code>ecdsa_secp256r1_sha256</code>, <code>ecdsa_secp384r1_sha384</code>, for an rsaEncryption certificate the first of <code>rsa_pss_rsae_sha256</code> / <code>_sha384</code> / <code>_sha512</code> the peer offers, and for an id-RSASSA-PSS certificate the first of <code>rsa_pss_pss_sha256</code> / <code>_sha384</code> / <code>_sha512</code> the peer offers that the key's parameters allow. <code>PrivateKey</code> reads PKCS #8 (Ed25519, id-ecPublicKey on P-256 / P-384, rsaEncryption, id-RSASSA-PSS), RFC 5915 <code>EC PRIVATE KEY</code> and PKCS #1 <code>RSA PRIVATE KEY</code>. <code>ServerConfig::new</code> fails (<code>TlsErrorKind::Certificate</code>) when the key's public half is not the leaf's.</p>
+<p>The stack keeps its traffic, handshake and resumption secrets, record keys, key-exchange secrets, ticket PSKs and Ed25519 / EC private keys in secret storage (<a href="../200-core/221-crypto#2215-security-considerations">2.21.5</a>), and wipes them on KeyUpdate, at the end of the handshake and on close.</p>
+<p><code>system_roots()</code> reads the OS trust store: the macOS keychain anchors (plus admin / user certificates trusted unconditionally), the Windows <code>ROOT</code> store, the first CA bundle found on Linux (<code>/etc/ssl/certs/ca-certificates.crt</code>, <code>/etc/pki/tls/certs/ca-bundle.crt</code>, ...). <code>SSL_CERT_FILE</code> overrides it. wasm targets have no store: pass <code>root_certs</code>.</p>
+<p><code>read</code> returns 0 after the peer's close_notify; a connection that ends without one is an <code>IoError</code> (<code>UnexpectedEof</code>); a protocol failure is an <code>IoError</code> (<code>InvalidData</code>) after a fatal alert is sent. TLS records are written whole, so <code>write</code> writes all of <code>buf</code>.</p>
+<h3 id="example"><a class="anchor" tabindex="-1" href="#example" aria-hidden="true">#</a>Example</h3>
+<p>Actual use is simple: put a TLS client on top of a plaintext TCP connection and call plaintext I/O on it.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net::{tcp_connect, tls};
+
+<span class="k">let</span> conn = <span class="k">try</span> tcp_connect(<span class="s">"example.com:443"</span>);
+<span class="k">let</span> tls_conn = <span class="k">try</span> tls::<span class="t">Client</span>::new(conn, <span class="s">"example.com"</span>);
+<span class="k">try</span> tls_conn.write_all(<span class="s">b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"</span>);
+<span class="k">let</span> resp = <span class="k">try</span> tls_conn.read_to_end();
+<span class="k">try</span> tls_conn.close_notify();
+</code></pre>
+<h2 id="326-convenience-functions"><a class="anchor" tabindex="-1" href="#326-convenience-functions" aria-hidden="true">#</a>3.2.6. Convenience functions</h2>
+<p>Common patterns are wrapped in short helpers. Forms that take a string perform DNS resolution with <code>resolve</code> (3.2.4), so a host name can be passed directly, as in <code>tcp_connect(&quot;example.com:80&quot;)</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> tcp_connect(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+<span class="k">async</span> <span class="k">fn</span> tcp_connect_async(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+<span class="k">fn</span> tcp_listen(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpListener</span>;
+<span class="k">fn</span> udp_bind(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UdpSocket</span>;
+</code></pre>
+<p><code>tcp_connect</code> tries the resolved addresses in order and returns the first that connects; if all fail, it throws the last error. <code>tcp_listen</code> / <code>udp_bind</code> bind to the first address.</p>
+<h2 id="327-zerocopy-hooks-advanced"><a class="anchor" tabindex="-1" href="#327-zerocopy-hooks-advanced" aria-hidden="true">#</a>3.2.7. zerocopy hooks (advanced)</h2>
+<p>For places where throughput is cost, such as proxies or file servers, zerocopy hooks are exposed separately. Most users do not need them; the goal is only to keep them within reach when they really are needed.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">TcpStream</span> {
+    <span class="k">fn</span> sendfile(<span class="k">self</span>, <span class="k">ref</span> file: <span class="t">File</span>, offset: <span class="t">u64</span>, count: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+                                            <span class="c">// sendfile(2) / TransmitFile</span>
+    <span class="k">fn</span> splice(<span class="k">self</span>, <span class="k">ref</span> src: <span class="t">File</span>, count: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+                                            <span class="c">// Linux splice(2)</span>
+
+    <span class="k">fn</span> write_zerocopy(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+                                            <span class="c">// MSG_ZEROCOPY (Linux 4.14+)</span>
+}
+</code></pre>
+<h2 id="328-module-mapping"><a class="anchor" tabindex="-1" href="#328-module-mapping" aria-hidden="true">#</a>3.2.8. Module mapping</h2>
+<p>Per-platform support is summarized below. Core features work on both desktop OSes and wasi, but items that depend on Linux-specific facilities, such as Unix sockets and zerocopy hooks, are enabled only in limited places.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>linux/macos/windows</th><th>wasi</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td>TCP</td><td>✓</td><td>✓</td><td>wasi:sockets</td></tr>
+<tr><td>UDP</td><td>✓</td><td>✓</td><td>wasi:sockets</td></tr>
+<tr><td>Unix socket</td><td>linux/macos</td><td>✗</td><td>Windows partial (named pipes separate)</td></tr>
+<tr><td>TLS 1.3</td><td>✓</td><td>✓ (no trust store: pass <code>root_certs</code>)</td><td>rok's own, on <code>rok::core::crypto</code></td></tr>
+<tr><td>sendfile</td><td>linux</td><td>✗</td><td></td></tr>
+<tr><td>splice</td><td>linux</td><td>✗</td><td></td></tr>
+<tr><td>MSG_ZEROCOPY</td><td>linux 4.14+</td><td>✗</td><td></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/300-std/302-net.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="301-fs"><small>Previous</small>3.1. fs:: - file system</a><a class="next" href="303-time"><small>Next</small>3.3. time:: - time</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12. Concurrency - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The right way to do several things at once depends on the goal. Threads and par suit computations that use multiple CPUs, while async tasks suit I/O with lots o...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/12-concurrency.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="12. Concurrency - rok docs">
+<meta property="og:description" content="The right way to do several things at once depends on the goal. Threads and par suit computations that use multiple CPUs, while async tasks suit I/O with lots o...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/12-concurrency.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li class="cur"><a aria-current="page" href="12-concurrency">12. Concurrency</a><ul class="toc"><li><a href="#threads">Threads</a></li><li><a href="#channels">Channels</a></li><li><a href="#mutex-and-atomic">Mutex and Atomic</a></li><li><a href="#handing-values-to-other-threads">Handing values to other threads</a></li><li><a href="#async-and-tasks">async and tasks</a></li><li><a href="#par-structured-parallelism">par: structured parallelism</a></li><li><a href="#streams">Streams</a></li><li><a href="#pitfalls">Pitfalls</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="12-concurrency"><a class="anchor" tabindex="-1" href="#12-concurrency" aria-hidden="true">#</a>12. Concurrency</h1>
+<p>The right way to do several things at once depends on the goal. Threads and <code>par</code> suit computations that use multiple CPUs, while <code>async</code> tasks suit I/O with lots of waiting. This chapter looks at each tool through short examples and also covers channels, <code>Mutex</code>, and <code>Atomic</code> for exchanging data safely.</p>
+<div class="callout tip"><p class="callout-title">Tip</p>
+<p>The output order of concurrently running code can differ from run to run. The examples in this chapter collect results with <code>join</code> or sort them before printing, so they always produce the same output.</p>
+</div>
+<p>Which of these need a <code>use</code>? Everything in <code>rok::core</code> is always in scope: <code>task</code>, <code>par</code>, <code>channel</code>, <code>Mutex</code>, <code>Atomic</code>, <code>Duration</code>. Only the modules of <code>rok::std</code>, which talk to the operating system, are imported by hand, so threads start with <code>use rok::std::thread;</code> just as files start with <code>use rok::std::fs;</code>.</p>
+<h2 id="threads"><a class="anchor" tabindex="-1" href="#threads" aria-hidden="true">#</a>Threads</h2>
+<p><code>rok::std::thread::spawn</code> runs a closure on a new OS thread and returns a <code>JoinHandle</code>. <code>join()</code> waits for that thread to finish and takes out the closure's return value. If the thread ended in a panic, it throws <code>JoinError</code>, so the example adds <code>try</code>.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> handles: <span class="t">List</span>&lt;thread::<span class="t">JoinHandle</span>&lt;<span class="t">i32</span>&gt;&gt; = [];
+<span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..=<span class="n">4</span> {
+    handles.push(thread::spawn(|| i * i));
+}
+
+<span class="k">let</span> results: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+<span class="k">for</span> h <span class="k">in</span> handles {
+    results.push(<span class="k">try</span> h.join());
+}
+println(<span class="s">f"{</span>results<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> named = <span class="k">try</span> thread::<span class="t">Builder</span>::new().name(<span class="s">"worker"</span>).spawn(|| {
+    thread::current().name() ?? <span class="s">"?"</span>
+});
+println(<span class="k">try</span> named.join());
+</code></pre>
+<pre class="output"><code class="language-output">[1, 4, 9, 16]
+worker
+</code></pre>
+<p>Because the example joins only after creating all the handles, the four threads run concurrently. Results are collected in handle order, so the output order is fixed.</p>
+<h2 id="channels"><a class="anchor" tabindex="-1" href="#channels" aria-hidden="true">#</a>Channels</h2>
+<p>The simplest way to pass values between threads is a channel. <code>channel()</code> returns a sending <code>Sender</code> and a receiving <code>Receiver</code>. A <code>Sender</code> can be duplicated with <code>clone()</code>, and once every <code>Sender</code> is <code>close()</code>d, the <code>for</code> loop on the receiving side ends.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">str</span>&gt;();
+<span class="k">let</span> workers: <span class="t">List</span>&lt;thread::<span class="t">JoinHandle</span>&lt;()&gt;&gt; = [];
+<span class="k">for</span> id <span class="k">in</span> <span class="n">0</span>..<span class="n">3</span> {
+    <span class="k">let</span> tx = tx.clone();
+    workers.push(thread::spawn(|| {
+        <span class="k">for</span> j <span class="k">in</span> <span class="n">0</span>..<span class="n">2</span> {
+            <span class="k">try</span>! tx.send(<span class="s">f"w{</span>id<span class="s">}-{</span>j<span class="s">}"</span>);
+        }
+        tx.close();
+    }));
+}
+tx.close();
+
+<span class="k">let</span> got: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+<span class="k">for</span> msg <span class="k">in</span> rx {
+    got.push(msg);
+}
+<span class="k">for</span> w <span class="k">in</span> workers { <span class="k">try</span> w.join(); }
+
+got.sort();
+println(<span class="s">f"{</span>got<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[&quot;w0-0&quot;, &quot;w0-1&quot;, &quot;w1-0&quot;, &quot;w1-1&quot;, &quot;w2-0&quot;, &quot;w2-1&quot;]
+</code></pre>
+<p>rok values are managed by the GC, so a <code>Sender</code> is not closed automatically when it goes out of scope. The side that has finished sending must call <code>close()</code> itself for the receiver to know it is done. To bound the channel's capacity, use <code>channel_bounded(n)</code>.</p>
+<h2 id="mutex-and-atomic"><a class="anchor" tabindex="-1" href="#mutex-and-atomic" aria-hidden="true">#</a><code>Mutex</code> and <code>Atomic</code></h2>
+<p>When several threads modify the same value, you need synchronization. For a single integer counter use <code>Atomic</code>; wrap other values in a <code>Mutex</code>. The guard returned by <code>Mutex::lock()</code> must be bound with <code>using</code> so the lock is released when the block ends (the same rule as <code>using</code> in <a href="10-errors">chapter 10</a>).</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> counter = <span class="t">Atomic</span>::new(<span class="n">0</span>);
+<span class="k">let</span> log = <span class="t">Mutex</span>::new([]);
+
+<span class="k">let</span> hs: <span class="t">List</span>&lt;thread::<span class="t">JoinHandle</span>&lt;()&gt;&gt; = [];
+<span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..=<span class="n">5</span> {
+    hs.push(thread::spawn(|| {
+        counter.fetch_add(i);
+        <span class="k">using</span> g = log.lock() {
+            g.get().push(i * <span class="n">10</span>);
+        }
+    }));
+}
+<span class="k">for</span> h <span class="k">in</span> hs { <span class="k">try</span> h.join(); }
+
+<span class="k">let</span> items = <span class="k">using</span> g = log.lock() { g.get().clone() };   <span class="c">// a copy: the list itself stays behind the lock</span>
+items.sort();
+println(<span class="s">f"sum = {</span>counter.load()<span class="s">}, items = {</span>items<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">sum = 15, items = [10, 20, 30, 40, 50]
+</code></pre>
+<p>Only <code>using</code> releases a guard, so the compiler refuses a guard that nothing releases: binding it with a plain <code>let</code> (or <code>if let</code>), or dropping the result of <code>lock()</code> on the floor. The same holds for the <code>read()</code> / <code>write()</code> guards of <code>RwLock</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> g = m.lock();
+</code></pre>
+<pre><code class="language-text">error[E200]: `g` holds a `MutexGuard` that is never released: only `using` releases a lock guard, so bind it with `using g = .. { .. }` (stdlib 2.16.3)
+</code></pre>
+<h3 id="read-only-data-frozen"><a class="anchor" tabindex="-1" href="#read-only-data-frozen" aria-hidden="true">#</a>Read-only data: <code>Frozen</code></h3>
+<p>You can skip this subsection on a first read.</p>
+<p>Data that is made once and then only read, such as settings, lookup tables or trust anchors, needs no lock. Wrap it in <code>Frozen&lt;T&gt;</code>: any thread can read it at any time. <code>Frozen::new</code> keeps its own copy, so nothing outside can change what it holds, and <code>get()</code> gives each reader a copy of its own, so a reader that changes its copy changes nothing the others see.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">struct</span> <span class="t">Settings</span> {
+    name: <span class="t">str</span>;
+    limits: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;;
+}
+
+<span class="k">static</span> <span class="t">SETTINGS</span>: <span class="t">Frozen</span>&lt;<span class="t">Settings</span>&gt; = <span class="t">Frozen</span>::new(<span class="t">Settings</span> { name: <span class="s">"demo"</span>, limits: [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>] });
+
+<span class="k">let</span> hs: <span class="t">List</span>&lt;thread::<span class="t">JoinHandle</span>&lt;<span class="t">i32</span>&gt;&gt; = [];
+<span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="n">3</span> {
+    hs.push(thread::spawn(|| {
+        <span class="k">let</span> s = <span class="t">SETTINGS</span>.get();      <span class="c">// this thread's own copy</span>
+        s.limits.push(i);            <span class="c">// changes the copy only</span>
+        s.limits[<span class="n">0</span>] + s.limits.len() <span class="k">as</span> <span class="t">i32</span>
+    }));
+}
+<span class="k">let</span> total = <span class="n">0</span>;
+<span class="k">for</span> h <span class="k">in</span> hs { total += <span class="k">try</span> h.join(); }
+<span class="k">let</span> s = <span class="t">SETTINGS</span>.get();
+println(<span class="s">f"{</span>s.name<span class="s">} {</span>s.limits<span class="s">:?</span><span class="s">} {</span>total<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">demo [10, 20, 30] 42
+</code></pre>
+<p>Each <code>get</code> copies the collections inside the value, so keep big read-only parts out of that copy: give them a <code>Frozen</code> field of their own and read it only where it is needed, as in <code>table: Frozen&lt;List&lt;Entry&gt;&gt;</code>. Parts that are <code>Sync</code> already, such as a <code>Mutex</code> or a cache that locks itself, are shared, not copied.</p>
+<h2 id="handing-values-to-other-threads"><a class="anchor" tabindex="-1" href="#handing-values-to-other-threads" aria-hidden="true">#</a>Handing values to other threads</h2>
+<p>This section is about the rule the compiler enforces when a value moves between threads. You can skim it on a first read and come back when the compiler points you here.</p>
+<p><code>Mutex::new(xs)</code>, <code>RwLock::new(xs)</code> and <code>tx.send(xs)</code> <em>hand <code>xs</code> over</em>: from then on it belongs to the lock or to the receiver. rok has no move semantics, so the compiler tracks hand-offs instead: using <code>xs</code> afterwards is a compile error, because it would race with whoever owns it now. The check follows the value through copies (<code>let ys = xs</code>), struct fields, the objects that hold it, the elements of collections, closure captures and function calls.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> ys = xs;                  <span class="c">// the same list</span>
+<span class="k">let</span> m = <span class="t">Mutex</span>::new(xs);
+ys.push(<span class="n">4</span>);
+</code></pre>
+<pre><code class="language-text">error[E202]: `ys` shares `xs`, which was moved into the `Mutex` at line 3
+  --&gt; main.rok:4:1
+   |
+ 3 | let m = Mutex::new(xs);
+   |         -------------- `xs` moved into the `Mutex` here
+ 4 | ys.push(4);
+   | ^^
+   |
+   = help: it belongs to the `Mutex` now; use it through the lock: `using g = m.lock() { g.get().push(4) }`, or hand over `xs.clone()` to keep a separate copy (stdlib 2.13.9)
+</code></pre>
+<p>Use the value through the lock, or hand over a <code>clone()</code> if you still need your own copy.</p>
+<p>Elements count too. What you read out of a collection and the collection itself are one value, so sending <code>rows</code> and then pushing to <code>first = rows[0]</code> is the same race:</p>
+<pre><code class="language-text">error[E202]: `first` shares `rows`, which was sent through a channel at line 4
+  --&gt; main.rok:5:1
+   |
+ 4 | try! tx.send(rows);
+   |      ------------- `rows` sent here
+ 5 | first.push(9);
+   | ^^^^^
+   |
+   = help: the receiver owns it now; hand over `rows.clone()` to keep a separate copy, or give `first` a new value before using it again (stdlib 2.13.9)
+</code></pre>
+<p>To hand out the elements one by one, take each one out first. <code>pop</code> and <code>remove</code> take an element out of its collection, so the collection stays usable. This is the usual work queue:</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> jobs = [[<span class="n">3</span>, <span class="n">1</span>, <span class="n">2</span>], [<span class="n">9</span>, <span class="n">7</span>], [<span class="n">5</span>, <span class="n">4</span>, <span class="n">6</span>]];
+<span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">List</span>&lt;<span class="t">i32</span>&gt;&gt;();
+<span class="k">let</span> worker = thread::spawn(|| {
+    <span class="k">let</span> total = <span class="n">0</span>;
+    <span class="k">for</span> job <span class="k">in</span> rx {
+        job.sort();
+        total += job[<span class="n">0</span>];
+    }
+    total
+});
+<span class="k">while</span> <span class="k">let</span> job: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = jobs.pop() {
+    <span class="k">try</span>! tx.send(job);         <span class="c">// `pop` took it out of `jobs`, so `jobs` stays usable</span>
+}
+tx.close();
+println(<span class="s">f"smallest items add up to {</span><span class="k">try</span> worker.join()<span class="s">}, jobs left: {</span>jobs.len()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">smallest items add up to 12, jobs left: 0
+</code></pre>
+<p>A lock guard's value works the same way. What <code>g.get()</code> returns is the object the <code>Mutex</code> protects, so it can't leave the <code>using</code> block: once the block ends, the lock no longer guards it.</p>
+<pre><code class="language-text">error[E202]: `xs` came out of the `Mutex` at line 2, and `g`'s `using` block released the lock
+  --&gt; main.rok:3:1
+   |
+ 2 | let xs = using g = m.lock() { g.get() };
+   |          ----- `xs` taken out of the lock here
+ 3 | xs.push(4);
+   | ^^
+   |
+   = help: the lock no longer protects `xs`; use it inside the `using` block, or keep a separate copy there with `g.get().clone()` (stdlib 2.13.9)
+</code></pre>
+<h3 id="what-the-receiver-gets"><a class="anchor" tabindex="-1" href="#what-the-receiver-gets" aria-hidden="true">#</a>What the receiver gets</h3>
+<p>A hand-off also copies at run time: the new owner gets its own copy of every collection the value reaches (lists, dicts, deques, string buffers and the collections built on them, at any depth). So even a route the compiler can't see never leaves two threads with one list. You don't write anything for this, and in a program the compiler accepts you never notice it, except in two ways:</p>
+<ul>
+<li><strong>It costs time in proportion to what it copies.</strong> Numbers, <code>str</code> and structs without collections cost nothing extra; a list of plain numbers is one memory copy, so a list of a million numbers takes well under a millisecond. Send large data once, not piece by piece in a hot loop.
+</li>
+<li><strong>The copy keeps its own sharing.</strong> Two handles to one list in the sent value are still one list on the other side, and a slice keeps viewing the list it came from:
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> data = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>];
+<span class="k">let</span> (tx, rx) = channel::&lt;(<span class="t">List</span>&lt;<span class="t">i32</span>&gt;, <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt;)&gt;();
+<span class="k">try</span>! tx.send((data, data[<span class="n">0</span>:<span class="n">2</span>]));
+
+<span class="k">if</span> <span class="k">let</span> (list, head): (<span class="t">List</span>&lt;<span class="t">i32</span>&gt;, <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt;) = rx.recv() {
+    list[<span class="n">0</span>] = <span class="n">10</span>;           <span class="c">// the view still sees the list it came from</span>
+    println(<span class="s">f"{</span>list<span class="s">:?</span><span class="s">} {</span>head<span class="s">:?</span><span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">[10, 2, 3, 4] [10, 2]
+</code></pre>
+<p>Values built at compile time, such as the default of a field (<code>log: Mutex&lt;List&lt;str&gt;&gt; = Mutex::new([])</code>), are not copied: nothing else can reach them yet.</p>
+<p>Two kinds of values can't cross threads at all, because a copy can't make them safe:</p>
+<ul>
+<li><strong><code>any Tr</code> needs a <code>Sync</code> bound.</strong> Copies of an <code>any</code> share its box, so an <code>any Tr</code> is <code>Send</code> only when the trait has both <code>Send</code> and <code>Sync</code> as supertraits. The error says what to change: <code>an any crosses threads only when its bound has both Send and Sync, since copies share its box: give the trait Sync as a supertrait, or send the concrete type</code>.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">trait</span> <span class="t">Shape</span>: <span class="t">Send</span> + <span class="t">Sync</span> { <span class="k">fn</span> area(<span class="k">self</span>) -&gt; <span class="t">f64</span>; }
+<span class="k">struct</span> <span class="t">Sq</span> { s: <span class="t">f64</span>; }
+<span class="k">impl</span> <span class="t">Shape</span> <span class="k">for</span> <span class="t">Sq</span> { <span class="k">fn</span> area(<span class="k">self</span>) -&gt; <span class="t">f64</span> { <span class="k">self</span>.s * <span class="k">self</span>.s } }
+
+<span class="k">let</span> (tx, rx) = channel::&lt;<span class="k">any</span> <span class="t">Shape</span>&gt;();
+<span class="k">let</span> h = thread::spawn(|| {
+    <span class="k">if</span> <span class="k">let</span> s: <span class="k">any</span> <span class="t">Shape</span> = rx.recv() { s.area() } <span class="k">else</span> { <span class="n">0.0</span> }
+});
+<span class="k">try</span>! tx.send(<span class="t">Sq</span> { s: <span class="n">3.0</span> });
+println(<span class="s">f"{</span><span class="k">try</span> h.join()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">9
+</code></pre>
+<ul>
+<li><strong>A <code>Weak</code> stays on its thread.</strong> A hand-off can't copy what a <code>Weak</code> (<code>rok::bare::gc</code>) names, so <code>Weak&lt;T&gt;</code> is not <code>Send</code>; send the <code>GcPtr</code> instead.
+</li>
+</ul>
+<p>Inside <code>unsafe</code> the compiler stops checking hand-offs, so using a value after sending it is your responsibility; the run-time copy still happens. <code>Handoff::new</code> and <code>Mutex::new_unshared</code> are the two <code>unsafe</code> ways to hand a value over <em>without</em> the copy, for a value you just made and nothing else can reach. A handle you keep from a guard past its <code>using</code> block, and <code>par</code> items that share one list, are never copied for you: there the compiler's check is the only guard, so don't switch it off with <code>unsafe</code> there.</p>
+<h2 id="async-and-tasks"><a class="anchor" tabindex="-1" href="#async-and-tasks" aria-hidden="true">#</a><code>async</code> and tasks</h2>
+<p>For work with long waits, such as I/O, <code>async</code> is better because it does not tie up a thread per job. Calling an <code>async fn</code> returns a Future immediately, and <code>await</code> waits for its result. Launching Futures as separate tasks with <code>task::spawn</code> lets several make progress at once, and <code>task::join</code> collects all results <strong>in the order they were spawned</strong>.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch(id: <span class="t">i32</span>) -&gt; <span class="t">str</span> {
+    <span class="k">await</span> task::sleep(<span class="t">Duration</span>::ms((<span class="n">40</span> - id * <span class="n">10</span>) <span class="k">as</span> <span class="t">i64</span>));
+    <span class="s">f"item-{</span>id<span class="s">}"</span>
+}
+
+<span class="k">let</span> tasks = [task::spawn(fetch(<span class="n">1</span>)), task::spawn(fetch(<span class="n">2</span>)), task::spawn(fetch(<span class="n">3</span>))];
+<span class="k">let</span> items = <span class="k">await</span> task::join(tasks);
+println(<span class="s">f"{</span>items<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> f = fetch(<span class="n">3</span>);
+println(<span class="s">"not started waiting yet"</span>);
+println(<span class="k">await</span> f);
+</code></pre>
+<pre class="output"><code class="language-output">[&quot;item-1&quot;, &quot;item-2&quot;, &quot;item-3&quot;]
+not started waiting yet
+item-3
+</code></pre>
+<p><code>await</code> is a prefix operator that binds as tightly as <code>-</code> or <code>!</code>: it applies to the call right after it, and the rest of the expression works on the result. <code>await answer() == 42</code> compares the awaited value; it does not await a comparison.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> answer() -&gt; <span class="t">i32</span> { <span class="n">42</span> }
+
+println(<span class="s">f"{</span><span class="k">await</span> answer() == <span class="n">42</span><span class="s">} {</span><span class="k">await</span> answer() + <span class="n">1</span><span class="s">}"</span>);
+<span class="k">let</span> r = <span class="k">try</span> <span class="k">await</span> task::timeout(<span class="t">Duration</span>::ms(<span class="n">50</span>), task::spawn(answer()));
+println(<span class="s">f"{</span>r<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">true 43
+42
+</code></pre>
+<p>As the last line shows, <code>try await f()</code> reads left to right: await the future, then propagate its error.</p>
+<p>If the top-level statements contain an <code>await</code>, the whole program runs as an <code>async fn main</code>, so you can use <code>await</code> directly in a script. You cannot use <code>await</code> in the body of an ordinary <code>fn</code>.</p>
+<p>Set a time limit with <code>task::timeout</code>. When the time runs out, it throws <code>TimeoutError</code>.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> slow() -&gt; <span class="t">i32</span> {
+    <span class="k">await</span> task::sleep(<span class="t">Duration</span>::ms(<span class="n">200</span>));
+    <span class="n">1</span>
+}
+
+<span class="k">let</span> r = <span class="k">try</span> <span class="k">await</span> task::timeout(<span class="t">Duration</span>::ms(<span class="n">10</span>), task::spawn(slow()))
+    <span class="k">catch</span> e: <span class="t">TimeoutError</span> { -<span class="n">1</span> };
+println(<span class="s">f"{</span>r<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">-1
+</code></pre>
+<p>Channels work in async code too. <code>for await</code> waits for values without blocking the task.</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">i32</span>&gt;();
+<span class="k">let</span> producer = task::spawn(<span class="k">async</span> {
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..=<span class="n">3</span> {
+        <span class="k">try</span>! tx.send(i);
+        <span class="k">await</span> task::sleep(<span class="t">Duration</span>::ms(<span class="n">5</span>));
+    }
+    tx.close();
+    <span class="s">"producer done"</span>
+});
+
+<span class="k">let</span> sum = <span class="n">0</span>;
+<span class="k">for</span> <span class="k">await</span> v <span class="k">in</span> rx {
+    println(<span class="s">f"got {</span>v<span class="s">}"</span>);
+    sum += v;
+}
+println(<span class="s">f"{</span><span class="k">await</span> producer<span class="s">}, sum = {</span>sum<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">got 1
+got 2
+got 3
+producer done, sum = 6
+</code></pre>
+<p><code>task::spawn</code> hands its future to the task the same way a channel send hands over a value: the task works on its own copy of the lists and other collections the future captured. Using one of them in the spawning code afterwards is an error, because the changes the task makes would not show up there:</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> total(xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> t = <span class="n">0</span>;
+    <span class="k">for</span> x <span class="k">in</span> xs { t += x; }
+    t
+}
+
+<span class="k">let</span> data = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> t = task::spawn(total(data));
+data.push(<span class="n">4</span>);
+</code></pre>
+<pre><code class="language-text">error[E202]: `data` was spawned as a task at line 8
+ 9 | data.push(4);
+   | ^^^^
+   = help: the task works on its own copy, so changes it makes are not seen here: return them from the task (`await`), hand over `data.clone()` to keep a separate copy, or share read-only data through `Frozen` (stdlib 2.18.1)
+</code></pre>
+<p>Return what the task changed and take it back with <code>await</code>:</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> grow(xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;) -&gt; <span class="t">List</span>&lt;<span class="t">i32</span>&gt; {
+    xs.push(<span class="n">4</span>);
+    xs
+}
+
+<span class="k">let</span> data = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> t = task::spawn(grow(data));
+data = <span class="k">await</span> t;
+println(<span class="s">f"{</span>data<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[1, 2, 3, 4]
+</code></pre>
+<h2 id="par-structured-parallelism"><a class="anchor" tabindex="-1" href="#par-structured-parallelism" aria-hidden="true">#</a><code>par</code>: structured parallelism</h2>
+<p>When you apply the same computation to many pieces of data, you do not need to manage threads yourself. <code>rok::core::par</code> distributes the work over a worker pool, and by the time a function returns, all the work is done. <code>map</code> and <code>filter</code> preserve the input order.</p>
+<pre><code class="language-rok"><span class="k">fn</span> is_prime(n: <span class="t">i32</span>) -&gt; <span class="t">bool</span> {
+    <span class="k">if</span> n &lt; <span class="n">2</span> { <span class="k">return</span> <span class="k">false</span>; }
+    <span class="k">let</span> d = <span class="n">2</span>;
+    <span class="k">while</span> d * d &lt;= n {
+        <span class="k">if</span> n % d == <span class="n">0</span> { <span class="k">return</span> <span class="k">false</span>; }
+        d += <span class="n">1</span>;
+    }
+    <span class="k">true</span>
+}
+
+<span class="k">let</span> squares = par::map(<span class="n">1</span>..=<span class="n">8</span>, |x| x * x);
+println(<span class="s">f"{</span>squares<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> count = <span class="t">Atomic</span>::new(<span class="n">0</span>);
+par::for_each(<span class="n">1</span>..=<span class="n">10000</span>, |n| {
+    <span class="k">if</span> is_prime(n) { count.fetch_add(<span class="n">1</span>); }
+});
+println(<span class="s">f"primes below 10000: {</span>count.load()<span class="s">}"</span>);
+
+<span class="k">let</span> evens = par::filter([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>, <span class="n">6</span>], |x| x % <span class="n">2</span> == <span class="n">0</span>);
+<span class="k">let</span> total = par::reduce([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>], <span class="n">0</span>, |a, b| a + b);
+println(<span class="s">f"{</span>evens<span class="s">:?</span><span class="s">} {</span>total<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[1, 4, 9, 16, 25, 36, 49, 64]
+primes below 10000: 1229
+[2, 4, 6] 10
+</code></pre>
+<p><code>reduce</code> folds each chunk separately and then combines the results, so you must pass an associative function (<code>+</code>, <code>max</code>, and so on) for the result to be deterministic.</p>
+<p>For exactly two jobs, use <code>par::join</code>; when the number is decided at run time, use <code>par::scope</code>. Every job <code>spawn</code>ed inside a scope finishes before the scope ends.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = par::join(|| (<span class="n">1</span>..=<span class="n">100</span>).sum(), || <span class="s">"done"</span>);
+println(<span class="s">f"{</span>a<span class="s">} {</span>b<span class="s">}"</span>);
+
+par::scope(|s| {
+    <span class="k">let</span> left = s.spawn(|| (<span class="n">1</span>..=<span class="n">50</span>).sum());
+    <span class="k">let</span> right = s.spawn(|| (<span class="n">51</span>..=<span class="n">100</span>).sum());
+    println(<span class="s">f"{</span>left.join() + right.join()<span class="s">}"</span>);
+});
+</code></pre>
+<pre class="output"><code class="language-output">5050 done
+5050
+</code></pre>
+<p><code>par</code> gives each item to a worker, so two items must not share a list or other collection: two workers would change it at once. Before it starts, <code>par</code> checks that the items reach different collections. If two of them share one, those items run one after another on the calling thread, which is correct but no longer parallel, and <code>par</code> warns once for that call:</p>
+<pre><code class="language-rok"><span class="k">let</span> shared = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+par::for_each([shared, shared], |xs| { xs.sort(); });
+</code></pre>
+<pre><code class="language-text">warning: par::for_each at main.rok:2:1: two items reach one collection or future, so they run one at a time on this thread; give each item its own copy, or share read-only data through `Frozen` (stdlib 2.19.1)
+</code></pre>
+<p>Slices that cover different parts of one list do not count as sharing, so splitting a big list into chunks stays parallel. The check visits every collection the items reach, which costs a little per collection on each call.</p>
+<h2 id="streams"><a class="anchor" tabindex="-1" href="#streams" aria-hidden="true">#</a>Streams</h2>
+<p>An <code>async yield fn</code> creates a stream that produces values one at a time, asynchronously. Think of it as the async version of a generator; consume it with <code>for await</code>.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> ticks(n: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..=n {
+        <span class="k">await</span> task::sleep(<span class="t">Duration</span>::ms(<span class="n">5</span>));
+        <span class="k">yield</span> i * <span class="n">10</span>;
+    }
+}
+
+<span class="k">for</span> <span class="k">await</span> t <span class="k">in</span> ticks(<span class="n">3</span>) {
+    println(<span class="s">f"tick {</span>t<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">tick 10
+tick 20
+tick 30
+</code></pre>
+<p>The <code>Stream</code> trait has combinators such as <code>map</code>, <code>filter</code>, <code>take</code>, and <code>throttle</code> (<a href="../std/core/stream#trait.Stream"><code>Stream</code> API</a>).</p>
+<h2 id="pitfalls"><a class="anchor" tabindex="-1" href="#pitfalls" aria-hidden="true">#</a>Pitfalls</h2>
+<p><strong>A <code>[ref x]</code> capture can't cross threads.</strong> A <code>[ref x]</code> cell (<a href="03-functions">chapter 3</a>) has no synchronization, so the compiler rejects it in a closure given to <code>thread::spawn</code>, <code>task::spawn</code>, or <code>par::*</code>, where two threads could change it at once.</p>
+<pre><code class="language-text">error[E200]: `[ref count]` can't be used in a closure that may run on another thread: both threads could change `count` at once (spec 4.6.9)
+   = help: write `let count = Atomic::new(count);` before the closure, capture `count` without `ref`, and use `count.load()` / `count.store(..)`; or return the value from the closure instead
+</code></pre>
+<p>Share an <code>Atomic</code> (for a number) or a <code>Mutex</code> (for anything else) instead, or return the value from the thread and combine the results after <code>join</code>.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> count = <span class="t">Atomic</span>::new(<span class="n">0</span>);
+<span class="k">let</span> hs: <span class="t">List</span>&lt;thread::<span class="t">JoinHandle</span>&lt;()&gt;&gt; = [];
+<span class="k">for</span> _ <span class="k">in</span> <span class="n">0</span>..<span class="n">4</span> {
+    hs.push(thread::spawn(|| {
+        <span class="k">for</span> _ <span class="k">in</span> <span class="n">0</span>..<span class="n">10000</span> { count.fetch_add(<span class="n">1</span>); }
+    }));
+}
+<span class="k">for</span> h <span class="k">in</span> hs { <span class="k">try</span> h.join(); }
+println(<span class="s">f"{</span>count.load()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">40000
+</code></pre>
+<p><strong>A <code>static</code> must be <code>Sync</code>.</strong> A <code>static</code> is visible to every thread, so its type must be safe to share. <code>static XS: List&lt;i32&gt; = [];</code> is an error; wrap the list in a <code>Mutex</code>.</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">SEEN</span>: <span class="t">Mutex</span>&lt;<span class="t">List</span>&lt;<span class="t">i32</span>&gt;&gt; = <span class="t">Mutex</span>::new([]);
+
+<span class="k">fn</span> record(x: <span class="t">i32</span>) {
+    <span class="k">using</span> g = <span class="t">SEEN</span>.lock() { g.get().push(x); }
+}
+
+record(<span class="n">1</span>);
+record(<span class="n">2</span>);
+println(<span class="s">f"{</span><span class="k">using</span> g = <span class="t">SEEN</span>.lock() { g.get().clone() }<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[1, 2]
+</code></pre>
+<p><strong>Threads you don't join are killed when <code>main</code> returns.</strong> The program ends when <code>main</code> does, and threads that are still running stop with it, halfway through. Keep the <code>JoinHandle</code> and <code>join</code> it. <code>rok check</code> and <code>rok lint</code> warn about a handle that is never joined:</p>
+<pre><code class="language-text">warning[E503]: this thread is never joined, so the program may end before it finishes
+  --&gt; main.rok:3:1
+   |
+ 3 | thread::spawn(|| println(&quot;hi&quot;));
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: join it with `try thread::spawn(|| println(&quot;hi&quot;)).join()`, or write `thread::spawn(|| println(&quot;hi&quot;)).detach()` to let it run on its own
+</code></pre>
+<p>If the thread really should outlive your interest in it, call <code>detach()</code> on the handle.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> t = thread::spawn(|| {
+    thread::sleep(<span class="t">Duration</span>::ms(<span class="n">10</span>));
+    println(<span class="s">"thread done"</span>);
+});
+println(<span class="s">"main done"</span>);
+<span class="k">try</span> t.join();               <span class="c">// without this line, "thread done" may never print</span>
+</code></pre>
+<pre class="output"><code class="language-output">main done
+thread done
+</code></pre>
+<p><strong>Futures are lazy.</strong> Calling an <code>async fn</code> only creates a future; its body runs when you <code>await</code> it (or hand it to <code>task::spawn</code>). A future that is never awaited never runs. It is not an error, but <code>rok check</code> and <code>rok lint</code> warn: <code>the future is never awaited, so its body never runs</code>, and suggests writing <code>await f</code>. A <code>Task</code> from <code>task::spawn</code> gets no warning when you drop it: a spawned task runs on its own (fire-and-forget).</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> work() -&gt; <span class="t">i32</span> {
+    println(<span class="s">"work ran"</span>);
+    <span class="n">1</span>
+}
+
+<span class="k">let</span> f = work();             <span class="c">// nothing runs yet</span>
+println(<span class="s">"before await"</span>);
+println(<span class="s">f"{</span><span class="k">await</span> f<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">before await
+work ran
+1
+</code></pre>
+<p><strong><code>task::spawn</code> needs an async <code>main</code>.</strong> Tasks run on an executor, and the executor is started by an <code>async fn main</code>. A script becomes one as soon as its top level contains an <code>await</code>; without one, <code>task::spawn</code> panics.</p>
+<pre><code class="language-text">thread 'main' panicked at .../library/core/src/task.rok:723:18:
+no task executor is running: await inside `async fn main` or `task::block_on`
+</code></pre>
+<p>So <code>await</code> the tasks you spawn, as in the examples above. To call async code from an ordinary <code>fn</code>, use <code>task::block_on</code>, which runs the future to completion and returns its value.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> work() -&gt; <span class="t">i32</span> { <span class="n">7</span> }
+
+<span class="k">fn</span> compute() -&gt; <span class="t">i32</span> {
+    task::block_on(work())
+}
+
+println(<span class="s">f"{</span>compute()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">7
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>thread::spawn</code> starts an OS thread; get its result with <code>try h.join()</code>.
+</li>
+<li>Create channels with <code>channel()</code>, and <code>close()</code> each <code>Sender</code> yourself once it is done sending.
+</li>
+<li><code>rok::core</code> (<code>task</code>, <code>par</code>, <code>channel</code>, <code>Mutex</code>, <code>Atomic</code>) is always in scope; <code>rok::std::thread</code> needs a <code>use</code>.
+</li>
+<li>Protect shared values with <code>Atomic</code> or <code>Mutex</code>. Lock guards must be bound with <code>using</code>; anything else is a compile error. <code>[ref x]</code> captures can't cross threads, and a <code>static</code> must be <code>Sync</code>.
+</li>
+<li>A value handed to <code>Mutex::new</code> or <code>send</code> belongs to its new owner: using it afterwards, or using one of its elements, is a compile error (<code>E202</code>). Use it through the lock, hand over a <code>clone()</code>, or take elements out with <code>pop</code> / <code>remove</code> before sending them. What <code>g.get()</code> returns stays inside the <code>using</code> block.
+</li>
+<li>The receiver gets its own copy of the collections in the value; the copy keeps its sharing and costs time in proportion to its size. <code>any Tr</code> crosses threads only with <code>Send + Sync</code> on the trait, and a <code>Weak</code> never does.
+</li>
+<li>Share data that is only read through <code>Frozen&lt;T&gt;</code>: every <code>get()</code> is the reader's own copy, so keep big read-only parts in a <code>Frozen</code> field of their own.
+</li>
+<li><code>await</code> is a prefix operator on the call after it (<code>await f() == x</code> compares the result). Use <code>async fn</code> / <code>await</code> and <code>task::spawn</code> / <code>task::join</code> to run wait-heavy work concurrently.
+</li>
+<li><code>task::spawn</code> hands its future over like a send: the task works on its own copy of what the future captured, so return its changes with <code>await</code>.
+</li>
+<li>Join your threads and await your futures: un-joined threads die with <code>main</code>, and a future runs only when awaited; the lints warn about both. A dropped <code>task::spawn</code> task still runs. <code>task::spawn</code> needs an async <code>main</code> (or <code>task::block_on</code>).
+</li>
+<li>For data-parallel computation, <code>par::map</code>, <code>par::for_each</code>, <code>par::join</code>, and <code>par::scope</code> keep things simple. Items that share a collection run one at a time, with a warning.
+</li>
+<li>Create and consume streams with <code>async yield fn</code> and <code>for await</code>.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/004-functions/412-async">Async (<code>async</code> / <code>await</code>)</a>, <a href="../spec/refs-lang/003-expressions/302-precedence-and-associativity">Operator precedence</a>, <a href="../spec/refs-lang/004-functions/413-stream">Streams</a>, <a href="../spec/refs-lang/003-expressions/317-using-expression"><code>using</code></a>, <a href="../spec/refs-lang/004-functions/406-capture-semantics">Captures across threads</a>, <a href="../spec/refs-lang/005-modules/503-static"><code>static</code></a>
+</li>
+<li>Standard library spec: <a href="../spec/refs-standard-libraries/200-core/216-sync">sync</a>, <a href="../spec/refs-standard-libraries/200-core/217-channel">channel</a>, <a href="../spec/refs-standard-libraries/200-core/218-task">task</a>, <a href="../spec/refs-standard-libraries/200-core/219-par">par</a>
+</li>
+<li>API: <a href="../std/std/thread#fn.spawn"><code>thread::spawn</code></a>, <a href="../std/core/task#fn.spawn"><code>task::spawn</code></a>, <a href="../std/core/task#fn.join"><code>task::join</code></a>, <a href="../std/core/channel#fn.channel"><code>channel</code></a>, <a href="../std/core/sync#struct.Mutex"><code>Mutex</code></a>, <a href="../std/core/sync#struct.Atomic"><code>Atomic</code></a>, <a href="../std/core/par#fn.map"><code>par::map</code></a>, <a href="../std/core/par#fn.scope"><code>par::scope</code></a>
+</li>
+<li>Next chapter: <a href="13-io">13. File and Network IO</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/12-concurrency.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="11-modules-packages"><small>Previous</small>11. Modules and Packages</a><a class="next" href="13-io"><small>Next</small>13. File and Network IO</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

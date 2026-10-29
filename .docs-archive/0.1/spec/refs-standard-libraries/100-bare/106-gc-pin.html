@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.6. Pinned&lt;T&gt; - GC pinning - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::bare::gc module defines a mechanism for temporarily fixing an object on the GC heap so that it cannot move. When a raw Ptr&lt;T&gt; points to a GC object and...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.6. Pinned&lt;T&gt; - GC pinning - rok docs">
+<meta property="og:description" content="The rok::bare::gc module defines a mechanism for temporarily fixing an object on the GC heap so that it cannot move. When a raw Ptr&lt;T&gt; points to a GC object and...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile memory access</a></li><li class="cur"><a aria-current="page" href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a><ul class="toc"><li><a href="#161-motivation---why-pinning-is-needed">1.6.1. Motivation - why pinning is needed</a></li><li><a href="#162-pinnedt-guard">1.6.2. Pinned&lt;T&gt; guard</a></li><li><a href="#163-gcptrt-vs-ptrt---separation-at-the-type-level">1.6.3. GcPtr&lt;T&gt; vs Ptr&lt;T&gt; - separation at the type level</a></li><li><a href="#164-gc-side-mechanism-of-pin--unpin">1.6.4. GC-side mechanism of pin / unpin</a></li><li><a href="#165-limits---where-pinning-is-unnecessary">1.6.5. Limits - where pinning is unnecessary</a></li><li><a href="#166-extraction-methods">1.6.6. Extraction methods</a></li><li><a href="#167-gc-runtime-linkage">1.6.7. GC runtime linkage</a></li><li><a href="#168-comparison-with-other-languages">1.6.8. Comparison with other languages</a></li><li><a href="#169-weakt---weak-references">1.6.9. Weak&lt;T&gt; - weak references</a></li></ul></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="16-pinnedt---gc-pinning 16-pinnedt---gc-pinning 161-motivation---why-pinning-is-needed 161-동기---pinning-이-필요한-이유 162-pinnedt-guard 162-pinnedt-guard example---ffi-call 사용-예---ffi-호출 163-gcptrt-vs-ptrt---separation-at-the-type-level 163-gcptrt-vs-ptrt---type-level-분리 operations 연산 internal-implementation---the-form-of-gcptr 내부-구현---gcptr-의-형태 164-gc-side-mechanism-of-pin--unpin 164-pin--unpin-의-gc-측-메커니즘 overhead overhead 165-limits---where-pinning-is-unnecessary 165-한계---pin-안-해도-될-자리 166-extraction-methods 166-추출-메서드 167-gc-runtime-linkage 167-gc-runtime-연계 168-comparison-with-other-languages 168-다른-언어와의-비교 169-weakt---weak-references 169-weakt---약한-참조"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/106-gc-pin" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="16-pinnedt---gc-pinning"><a class="anchor" tabindex="-1" href="#16-pinnedt---gc-pinning" aria-hidden="true">#</a>1.6. <code>Pinned&lt;T&gt;</code> - GC pinning</h1>
+<p>The <code>rok::bare::gc</code> module defines a mechanism for temporarily fixing an object on the GC heap so that it cannot move. When a raw <code>Ptr&lt;T&gt;</code> points to a GC object and the object moves, the pointer becomes invalid; this chapter covers how that conflict is resolved.</p>
+<p>This is the most important chapter of rok's unsafe tier: it explains head-on how the conflict between pointers and the GC is reconciled.</p>
+<h2 id="161-motivation---why-pinning-is-needed"><a class="anchor" tabindex="-1" href="#161-motivation---why-pinning-is-needed" aria-hidden="true">#</a>1.6.1. Motivation - why pinning is needed</h2>
+<p>The Immix mark-region GC of <a href="../../refs-lang/007-runtime/703-gc-algorithm">refs-lang 7.3 GC algorithm</a> performs <strong>evacuation</strong> (moving objects by copying). An object's address can therefore change freely between GC cycles.</p>
+<pre><code>  GC cycle start:    obj at 0x1000
+  GC evacuation:     obj at 0x2000  (copied, then forwarded)
+  GC cycle end:      obj at 0x2000
+</code></pre>
+<p>For managed code (<code>GcPtr&lt;T&gt;</code>), the GC traces roots and updates every ptr automatically. A raw <code>Ptr&lt;T&gt;</code>, however, is invisible to the GC, so it is not updated and becomes a <strong>stale ptr</strong>.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];                 <span class="c">// GcPtr (updated automatically)</span>
+<span class="k">let</span> raw: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::list_data(xs); <span class="c">// raw ptr</span>
+                                                <span class="c">// ↓ a GC cycle may occur</span>
+gc::collect();
+<span class="k">unsafe</span> { raw.read() };                          <span class="c">// UB - raw is stale</span>
+</code></pre>
+<p>The solution is <strong>pinning</strong>: explicitly telling the GC &quot;do not move this object&quot;.</p>
+<h2 id="162-pinnedt-guard"><a class="anchor" tabindex="-1" href="#162-pinnedt-guard" aria-hidden="true">#</a>1.6.2. <code>Pinned&lt;T&gt;</code> guard</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt; {
+    obj: <span class="t">T</span>;
+    <span class="c">// internal: registered in the GC's pin set</span>
+}
+
+<span class="k">trait</span> <span class="t">Pinnable</span> {}                       <span class="c">// List&lt;T&gt;, str, GcPtr&lt;T&gt;</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; {}
+<span class="k">impl</span> <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">str</span> {}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {}
+
+<span class="k">fn</span> pin&lt;<span class="t">T</span>: <span class="t">Pinnable</span>&gt;(obj: <span class="t">T</span>) -&gt; <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt;;
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> obj(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Drop</span> <span class="k">for</span> <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        <span class="c">// removed from the GC pin set</span>
+    }
+}
+</code></pre>
+<p>It is a guard bound with <code>using</code>. While the <code>Pinned&lt;T&gt;</code> returned by <code>pin()</code> is inside a <code>using</code> block, the GC does not move the object; on leaving the block <code>Pinned::drop</code> is called and the object is unpinned. A <code>Pinned&lt;T&gt;</code> obtained without <code>using</code> is not released automatically. Pins count: an object moves again only after as many unpins.</p>
+<h3 id="example---ffi-call"><a class="anchor" tabindex="-1" href="#example---ffi-call" aria-hidden="true">#</a>Example - FFI call</h3>
+<pre><code class="language-rok"><span class="k">let</span> buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = read_input();
+
+<span class="k">using</span> pin = rok::bare::gc::pin(buf) {
+    <span class="k">let</span> raw: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = pin.as_data_ptr();
+    <span class="k">unsafe</span> {
+        ffi::process(raw, buf.len());          <span class="c">// FFI uses buf's data</span>
+    }
+}     <span class="c">// ← automatic unpin at end of scope</span>
+</code></pre>
+<p>The <code>using</code> block here follows the RAII form defined by <a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 using expression</a>.</p>
+<h2 id="163-gcptrt-vs-ptrt---separation-at-the-type-level"><a class="anchor" tabindex="-1" href="#163-gcptrt-vs-ptrt---separation-at-the-type-level" aria-hidden="true">#</a>1.6.3. <code>GcPtr&lt;T&gt;</code> vs <code>Ptr&lt;T&gt;</code> - separation at the type level</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* compiler-managed - roots traced automatically */</span> }
+<span class="k">struct</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;   { <span class="c">/* raw - no root tracking */</span> }
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>GcPtr&lt;T&gt;</code></th><th><code>Ptr&lt;T&gt;</code></th></tr></thead>
+<tbody>
+<tr><td>GC root</td><td><strong>Traced automatically</strong></td><td><strong>Not traced</strong></td></tr>
+<tr><td>On move</td><td><strong>Updated automatically</strong></td><td><strong>Stale</strong></td></tr>
+<tr><td>Used in</td><td>Ordinary code (<code>List</code>/<code>Dict</code>/...)</td><td>unsafe + FFI only</td></tr>
+<tr><td>Created by</td><td>GC alloc (<code>List::new()</code> etc.)</td><td><code>gc::pin().as_data_ptr()</code> or <code>alloc::alloc(layout)</code></td></tr>
+<tr><td>Valid for</td><td>As long as the object is reachable</td><td>Only within the pin guard's scope</td></tr>
+</tbody></table></div>
+<p>Because the type system separates the two kinds, user code normally deals only with <code>GcPtr</code> (invisibly wrapped in <code>List&lt;T&gt;</code> etc.). <code>Ptr&lt;T&gt;</code> appears explicitly only after entering unsafe.</p>
+<h3 id="operations"><a class="anchor" tabindex="-1" href="#operations" aria-hidden="true">#</a>Operations</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;;           <span class="c">// a new GC cell holding value</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> set(<span class="k">self</span>, value: <span class="t">T</span>);                 <span class="c">// every copy of the GcPtr sees it</span>
+    <span class="k">fn</span> same(<span class="k">self</span>, other: <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>; <span class="c">// identity: the same cell</span>
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {}
+</code></pre>
+<h3 id="internal-implementation---the-form-of-gcptr"><a class="anchor" tabindex="-1" href="#internal-implementation---the-form-of-gcptr" aria-hidden="true">#</a>Internal implementation - the form of GcPtr</h3>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// internal: usually a plain `*T` - the GC traces it externally via the root set</span>
+    <span class="c">// for a local variable, kept in a shadow stack frame slot emitted by the compiler</span>
+}
+</code></pre>
+<p>rok's GC traces the root set through a <strong>per-thread shadow stack</strong> emitted directly by the compiler (<a href="../../refs-lang/007-runtime/704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">refs-lang 7.4.1</a>).</p>
+<h2 id="164-gc-side-mechanism-of-pin--unpin"><a class="anchor" tabindex="-1" href="#164-gc-side-mechanism-of-pin--unpin" aria-hidden="true">#</a>1.6.4. GC-side mechanism of pin / unpin</h2>
+<pre><code>GC pin set structure.
+  - hash table: Ptr&lt;Object&gt; → pin count
+  - during evacuation the GC _skips_ objects with pin count &gt; 0
+
+pin(obj):
+  1. check the pin bit in obj's header (or register in the pin set)
+  2. count++
+  3. return Pinned&lt;T&gt;
+
+drop(Pinned):
+  1. count--
+  2. if count == 0, clear the pin bit
+</code></pre>
+<p>This structure is effectively isomorphic to Go 1.21's <code>runtime.Pinner</code>. See <a href="https://pkg.go.dev/runtime#Pinner">pkg.go.dev/runtime#Pinner</a> for details.</p>
+<h3 id="overhead"><a class="anchor" tabindex="-1" href="#overhead" aria-hidden="true">#</a>overhead</h3>
+<p>The costs are:</p>
+<ul>
+<li>One pin is just an O(1) hash insert
+</li>
+<li>One unpin is likewise an O(1) hash remove
+</li>
+<li>A pin set check is added within a GC cycle, but its cost is small
+</li>
+</ul>
+<p>In most cases this is not on a hot path, because FFI calls themselves are not that frequent.</p>
+<h2 id="165-limits---where-pinning-is-unnecessary"><a class="anchor" tabindex="-1" href="#165-limits---where-pinning-is-unnecessary" aria-hidden="true">#</a>1.6.5. Limits - where pinning is unnecessary</h2>
+<p>Pinning is <strong>unnecessary</strong> in the following situations.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Place</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>Ordinary method calls</td><td>GcPtr is updated automatically - no raw ptr is created</td></tr>
+<tr><td>Operations between GcPtrs</td><td>All traced by the GC</td></tr>
+<tr><td>Short FFI (no GC)</td><td>When the GC is guaranteed not to run during the FFI</td></tr>
+<tr><td>Immortal const</td><td>Already does not move (string literals, etc.)</td></tr>
+<tr><td>Non-moving regions</td><td>LOS (large object space), pinned region</td></tr>
+</tbody></table></div>
+<p>Short FFI calls get automatic treatment: if the compiler can guarantee that the GC does not run during the FFI call, the pin is omitted automatically. In the general case, however, an <strong>explicit pin</strong> is recommended.</p>
+<h2 id="166-extraction-methods"><a class="anchor" tabindex="-1" href="#166-extraction-methods" aria-hidden="true">#</a>1.6.6. Extraction methods</h2>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinned</span>&lt;<span class="t">List</span>&lt;<span class="t">T</span>&gt;&gt; {
+    <span class="k">fn</span> as_data_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;          <span class="c">// start of the List's buffer</span>
+    <span class="k">fn</span> as_data_many_ptr(<span class="k">self</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;; <span class="c">// many ptr</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinned</span>&lt;<span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;&gt; {
+    <span class="k">fn</span> as_value_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;         <span class="c">// the cell's value</span>
+}
+
+<span class="k">impl</span> <span class="t">Pinned</span>&lt;<span class="t">str</span>&gt; {
+    <span class="k">fn</span> as_bytes_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// UTF-8 bytes</span>
+    <span class="k">fn</span> as_c_str(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;c_char&gt;;   <span class="c">// null termination not guaranteed - convert separately</span>
+}
+</code></pre>
+<p>These container methods are the extraction API, valid for as long as the <code>Pinned</code> is held. (<code>str::as_ptr</code> and <code>CStr::as_ptr</code> give an address without a pin, under the narrower rule of <a href="../200-core/215-string#2152-str---immutable-utf-8-string">2.15.2</a>.) There is no generic <code>as_ptr</code>; <code>as_value_ptr</code> is named apart from <code>List</code>'s <code>as_data_ptr</code>. Each container gets dedicated extraction methods, so data can be taken out in a form matching each container's layout, such as the buffer start or a null-terminated form.</p>
+<h2 id="167-gc-runtime-linkage"><a class="anchor" tabindex="-1" href="#167-gc-runtime-linkage" aria-hidden="true">#</a>1.6.7. GC runtime linkage</h2>
+<p>Each item maps to GC runtime calls as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>Runtime call</th></tr></thead>
+<tbody>
+<tr><td><code>Pinned&lt;T&gt;</code></td><td><code>rok_gc_pin</code> / <code>rok_gc_unpin</code></td></tr>
+<tr><td><code>pin&lt;T&gt;()</code></td><td>(same as above)</td></tr>
+<tr><td><code>GcPtr&lt;T&gt;</code></td><td>shadow stack frame slot (compiler-emitted)</td></tr>
+<tr><td><code>as_data_ptr</code> etc.</td><td>depends on each container's layout</td></tr>
+<tr><td><code>Weak&lt;T&gt;</code></td><td><code>rok_gc_weak_new</code> / <code>rok_gc_weak_get</code> (1.6.9)</td></tr>
+</tbody></table></div>
+<h2 id="168-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#168-comparison-with-other-languages" aria-hidden="true">#</a>1.6.8. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Java JNI</th><th>.NET fixed</th><th>Go 1.21 Pinner</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>pin API</td><td><code>Get*Critical</code></td><td><code>fixed (T* p = ...)</code></td><td><code>runtime.Pinner</code></td><td><code>rok::bare::gc::pin(obj)</code></td></tr>
+<tr><td>RAII guard</td><td>explicit <code>Release</code></td><td>block scope</td><td><code>defer pin.Unpin()</code></td><td><code>using</code> block (automatic drop)</td></tr>
+<tr><td>Type separation</td><td><strong>none</strong> (all <code>jobject</code>)</td><td><strong>none</strong></td><td><strong>none</strong> (all ptrs alike)</td><td><code>GcPtr&lt;T&gt;</code> vs <code>Ptr&lt;T&gt;</code></td></tr>
+<tr><td>Expiry check after pin</td><td><strong>none</strong></td><td>compiler (block scope)</td><td><strong>none</strong> (manual)</td><td>type system + scope</td></tr>
+<tr><td>Multiple pins</td><td>overlapping OK</td><td><strong>restricted</strong></td><td>overlapping OK</td><td>overlapping OK (count)</td></tr>
+</tbody></table></div>
+<p>rok diverges from other languages at two main points.</p>
+<ol>
+<li>The type system enforces it. <code>GcPtr&lt;T&gt;</code> and <code>Ptr&lt;T&gt;</code> are distinct types and automatic conversion is rejected; the only way across is through a pin guard.
+</li>
+<li>Release is based on the <code>using</code> block. <code>Pinned&lt;T&gt;</code> is dropped on leaving the <code>using</code> block, so an unpin is never missed. This is safer than Go's manual <code>defer</code> approach.
+</li>
+</ol>
+<blockquote>
+<p>This policy is the backbone of rok's pointer model: the point where the two domains, unsafe and the GC, meet safely.</p>
+</blockquote>
+<h2 id="169-weakt---weak-references"><a class="anchor" tabindex="-1" href="#169-weakt---weak-references" aria-hidden="true">#</a>1.6.9. <code>Weak&lt;T&gt;</code> - weak references</h2>
+<pre><code class="language-rok"><span class="c">// rok::bare::gc</span>
+<span class="k">struct</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(target: <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Weak</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;        <span class="c">// none once the target is freed</span>
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; {}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; {}    <span class="c">// a hand-off cannot copy what it names (2.13.9)</span>
+</code></pre>
+<p>A weak reference does not keep its object alive. Once a collection frees the object, every <code>Weak</code> to it reads <code>none</code>; a collection that moves the object updates the <code>Weak</code>. This is the library interface of the <code>WEAK_REF</code> scan kind (<a href="../../refs-lang/008-abi/802-scan-table#828-weak_ref">refs-lang 8.2.8</a>).</p>
+<p>At run time a <code>Weak</code> is a GC cell of type id <code>3</code> (<a href="../../refs-lang/008-abi/802-scan-table#8212-runtime-reserved-type-ids">refs-lang 8.2.12</a>) holding one <code>WEAK_REF</code> word, made by <code>rok_gc_weak_new</code> and read by <code>rok_gc_weak_get</code> (<a href="../../refs-lang/008-abi/805-extern-symbols#8512-auxiliary-symbols-appendix-non-normative">refs-lang 8.5.12</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/106-gc-pin.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="105-volatile"><small>Previous</small>1.5. volatile memory access</a><a class="next" href="107-ffi"><small>Next</small>1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

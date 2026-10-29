@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.6. broadcast - element-wise 연산자 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::ops::broadcast 모듈은 Julia 식 dot 연산자에 대한 트레잇 권위를 제공합니다. dot 연산자(.+ / .* / .== / f.(x)) 는 element-wise 의미를 문법 자체에 시각적으로 분리하여 드러내므로, 사용자 정의 *(예: matrix m...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/206-broadcast.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.6. broadcast - element-wise 연산자 - rok docs">
+<meta property="og:description" content="rok::core::ops::broadcast 모듈은 Julia 식 dot 연산자에 대한 트레잇 권위를 제공합니다. dot 연산자(.+ / .* / .== / f.(x)) 는 element-wise 의미를 문법 자체에 시각적으로 분리하여 드러내므로, 사용자 정의 *(예: matrix m...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/206-broadcast.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/206-broadcast.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/206-broadcast.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li class="cur"><a aria-current="page" href="206-broadcast">2.6. broadcast - element-wise 연산자</a><ul class="toc"><li><a href="#261-동기---왜-별도-dot-연산자인가요">2.6.1. 동기 - 왜 별도 dot 연산자인가요</a></li><li><a href="#262-19-트레잇---operator-매핑">2.6.2. 19 트레잇 - operator 매핑</a></li><li><a href="#263-트레잇-시그니처---통일-형태">2.6.3. 트레잇 시그니처 - 통일 형태</a></li><li><a href="#264-의미-정의---element-wise">2.6.4. 의미 정의 - element-wise</a></li><li><a href="#265-함수-broadcast---fx">2.6.5. 함수 broadcast - f.(x)</a></li><li><a href="#266-loop-fusion">2.6.6. loop fusion</a></li><li><a href="#267-트레잇-구현-매트릭스">2.6.7. 트레잇 구현 매트릭스</a></li><li><a href="#268-numpy-식-broadcasting-규칙">2.6.8. NumPy 식 broadcasting 규칙</a></li><li><a href="#269-다른-언어와의-비교">2.6.9. 다른 언어와의 비교</a></li></ul></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="26-broadcast---element-wise-연산자 26-broadcast---element-wise-operators 261-동기---왜-별도-dot-연산자인가요 261-motivation---why-separate-dot-operators 262-19-트레잇---operator-매핑 262-19-traits---operator-mapping 산술-6 arithmetic-6 비교-6 comparison-6 논리-2 logical-2 비트-3 bitwise-3 shift-2 shift-2 263-트레잇-시그니처---통일-형태 263-trait-signatures---uniform-form 함수-broadcast---트레잇-x function-broadcast---no-trait 264-의미-정의---element-wise 264-semantics---element-wise 산술-dot---같은-모양-두-컨테이너 arithmetic-dot---two-containers-of-the-same-shape scalar-broadcast scalar-broadcast 비교-dot---containerbool-반환 comparison-dot---returns-containerbool 나머지-dot----와- remainder-dot----and- 논리-dot----와- logical-dot----and- 비트--shift-dot bitwise--shift-dot 265-함수-broadcast---fx 265-function-broadcast---fx 266-loop-fusion 266-loop-fusion 267-트레잇-구현-매트릭스 267-trait-implementation-matrix 268-numpy-식-broadcasting-규칙 268-numpy-style-broadcasting-rules 269-다른-언어와의-비교 269-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/200-core/206-broadcast" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="26-broadcast---element-wise-연산자"><a class="anchor" tabindex="-1" href="#26-broadcast---element-wise-연산자" aria-hidden="true">#</a>2.6. broadcast - element-wise 연산자</h1>
+<p><code>rok::core::ops::broadcast</code> 모듈은 Julia 식 dot 연산자에 대한 트레잇 권위를 제공합니다. dot 연산자(<code>.+</code> / <code>.*</code> / <code>.==</code> / <code>f.(x)</code>) 는 element-wise 의미를 문법 자체에 시각적으로 분리하여 드러내므로, 사용자 정의 <code>*</code>(예: matrix multiply 등) 과 혼동될 여지를 미리 차단합니다.</p>
+<p>이 장에서는 19 개의 broadcast 트레잇과 함수 broadcast desugar 규칙을 함께 정의합니다.</p>
+<h2 id="261-동기---왜-별도-dot-연산자인가요"><a class="anchor" tabindex="-1" href="#261-동기---왜-별도-dot-연산자인가요" aria-hidden="true">#</a>2.6.1. 동기 - 왜 별도 dot 연산자인가요</h2>
+<p>NumPy 나 MATLAB 에서 <code>*</code> 가 배열에서는 element-wise 로, 행렬에서는 곱셈으로 의미가 바뀌는 <strong>silent ambiguity</strong> 는 흔히 버그의 원인이 되어 왔습니다(PEP 465 의 <code>@</code> 도입 동기 역시 같은 맥락입니다).</p>
+<p>이에 비해 rok 의 정책은 다음과 같이 명확합니다.</p>
+<pre><code class="language-rok">m * n       <span class="c">// 사용자 정의 Mul - matrix multiplication, dot product, etc.</span>
+m .* n      <span class="c">// element-wise (Hadamard product) - 항상 broadcast</span>
+</code></pre>
+<p>dot 접두사(<code>.</code>) 가 시각적인 신호 역할을 하여 element-wise 의도를 명시하며, 컴파일러가 이를 강제합니다. 즉 List/Vec/Matrix 등 어떤 컨테이너에서든 <code>.+</code> 는 일관되게 <code>DotAdd::dot_add</code> 로 dispatch 됩니다.</p>
+<h2 id="262-19-트레잇---operator-매핑"><a class="anchor" tabindex="-1" href="#262-19-트레잇---operator-매핑" aria-hidden="true">#</a>2.6.2. 19 트레잇 - operator 매핑</h2>
+<p>전체 트레잇은 산술(6) + 비교(6) + 논리(2) + 비트(3) + shift(2) = <strong>19</strong>개로 구성됩니다.</p>
+<div class="callout note"><p class="callout-title">참고</p>
+<p>이 장은 19 트레잇을 기준으로 정의하며, 산술 6종, 비교 6종, 논리 2종, 비트 3종, shift 2종을 모두 포함합니다. dot 비교(<code>.==</code>/<code>.!=</code>/<code>.&lt;</code>/<code>.&gt;</code>/<code>.&lt;=</code>/<code>.&gt;=</code>) 는 <a href="205-cmp#258-broadcast-비교-트레잇">2.5.8 broadcast 비교</a>
+에서 <strong>간단 시그니처</strong> 만 제시했고, 이 장이 <strong>전체 권위</strong> 를 갖습니다.</p>
+</div>
+<h3 id="산술-6"><a class="anchor" tabindex="-1" href="#산술-6" aria-hidden="true">#</a>산술 (6)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>operator</th><th>precedence</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>DotAdd</code></td><td><code>.+</code></td><td>7 (left)</td><td>element-wise 덧셈</td></tr>
+<tr><td><code>DotSub</code></td><td><code>.-</code></td><td>7 (left)</td><td>element-wise 뺄셈</td></tr>
+<tr><td><code>DotMul</code></td><td><code>.*</code></td><td>8 (left)</td><td>element-wise 곱 (Hadamard)</td></tr>
+<tr><td><code>DotDiv</code></td><td><code>./</code></td><td>8 (left)</td><td>element-wise 나눗셈</td></tr>
+<tr><td><code>DotRem</code></td><td><code>.%</code></td><td>8 (left)</td><td>element-wise 나머지 (Rem)</td></tr>
+<tr><td><code>DotModulo</code></td><td><code>.%%</code></td><td>8 (left)</td><td>element-wise floored modulo</td></tr>
+</tbody></table></div>
+<h3 id="비교-6"><a class="anchor" tabindex="-1" href="#비교-6" aria-hidden="true">#</a>비교 (6)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>operator</th><th>precedence</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>DotEq</code></td><td><code>.==</code></td><td>4 (none)</td><td>element-wise == → <code>Container&lt;bool&gt;</code></td></tr>
+<tr><td><code>DotNe</code></td><td><code>.!=</code></td><td>4 (none)</td><td>element-wise !=</td></tr>
+<tr><td><code>DotLt</code></td><td><code>.&lt;</code></td><td>4 (none)</td><td>element-wise &lt;</td></tr>
+<tr><td><code>DotGt</code></td><td><code>.&gt;</code></td><td>4 (none)</td><td>element-wise &gt;</td></tr>
+<tr><td><code>DotLe</code></td><td><code>.&lt;=</code></td><td>4 (none)</td><td>element-wise &lt;=</td></tr>
+<tr><td><code>DotGe</code></td><td><code>.&gt;=</code></td><td>4 (none)</td><td>element-wise &gt;=</td></tr>
+</tbody></table></div>
+<h3 id="논리-2"><a class="anchor" tabindex="-1" href="#논리-2" aria-hidden="true">#</a>논리 (2)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>operator</th><th>precedence</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>DotLogicalAnd</code></td><td><code>.&amp;&amp;</code></td><td>3 (left)</td><td>element-wise 논리 AND (no short-circuit)</td></tr>
+<tr><td><code>DotLogicalOr</code></td><td><code>.||</code></td><td>2 (left)</td><td>element-wise 논리 OR (no short-circuit)</td></tr>
+</tbody></table></div>
+<div class="callout important"><p class="callout-title">중요</p>
+<p><strong><code>.&amp;&amp;</code> / <code>.||</code> 는 short-circuit 평가를 하지 않습니다</strong>. 일반 <code>&amp;&amp;</code> / <code>||</code> 와 달리, broadcast 가 fused loop 으로 lower 되는 특성상 양쪽 인자가 항상 평가됩니다. 의미적으로는 bool 컨테이너에 대한 element-wise 논리 결합과 동일합니다. 부수효과가 있는 함수 호출을 한쪽 인자에 두면 항상 실행되니 주의가 필요합니다.</p>
+</div>
+<h3 id="비트-3"><a class="anchor" tabindex="-1" href="#비트-3" aria-hidden="true">#</a>비트 (3)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>operator</th><th>precedence</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>DotBitAnd</code></td><td><code>.&amp;</code></td><td>6 (left)</td><td>element-wise &amp;</td></tr>
+<tr><td><code>DotBitOr</code></td><td><code>.|</code></td><td>5 (left)</td><td>element-wise |</td></tr>
+<tr><td><code>DotBitXor</code></td><td><code>.^</code></td><td>6 (left)</td><td>element-wise ^</td></tr>
+</tbody></table></div>
+<h3 id="shift-2"><a class="anchor" tabindex="-1" href="#shift-2" aria-hidden="true">#</a>shift (2)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>operator</th><th>precedence</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>DotShl</code></td><td><code>.&lt;&lt;</code></td><td>9 (left)</td><td>element-wise &lt;&lt;</td></tr>
+<tr><td><code>DotShr</code></td><td><code>.&gt;&gt;</code></td><td>9 (left)</td><td>element-wise &gt;&gt;</td></tr>
+</tbody></table></div>
+<p>precedence 와 associativity 는 일반 트레잇(<a href="203-ops">2.3 ops</a>, <a href="205-cmp">2.5 cmp</a>) 과 동형으로 맞추어 두었습니다.</p>
+<h2 id="263-트레잇-시그니처---통일-형태"><a class="anchor" tabindex="-1" href="#263-트레잇-시그니처---통일-형태" aria-hidden="true">#</a>2.6.3. 트레잇 시그니처 - 통일 형태</h2>
+<p>모든 dot 트레잇은 다음과 같이 통일된 형태를 따릅니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">DotAdd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".+")]</span>
+    <span class="k">fn</span> dot_add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotMul</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".*")]</span>
+    <span class="k">fn</span> dot_mul(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotModulo</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".%%")]</span>
+    <span class="k">fn</span> dot_modulo(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotEq</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".==")]</span>
+    <span class="k">fn</span> dot_eq(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotLogicalAnd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".&amp;&amp;")]</span>
+    <span class="k">fn</span> dot_logical_and(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>산술 dot 트레잇은 <code>Add</code>/<code>Sub</code>/<code>Mul</code>/<code>Div</code>/<code>Rem</code>/<code>Modulo</code> 와 완전히 대칭을 이루며, <code>Output</code> associated type 에 infix 어트리뷰트를 부착하는 형태입니다. 여섯 비교 dot 트레잇 (<code>DotEq</code>, <code>DotNe</code>, <code>DotLt</code>, <code>DotGt</code>, <code>DotLe</code>, <code>DotGe</code>) 도 같은 형태이며, 각자 <code>Output</code> 을 가지고 그것은 보통 <code>Container&lt;bool&gt;</code> 입니다. 논리 dot 트레잇 (<code>DotLogicalAnd</code> / <code>DotLogicalOr</code>) 은 <code>Container&lt;bool&gt;</code> 양쪽을 받아 <code>Container&lt;bool&gt;</code> 을 돌려주는 형태가 일반적이며, short-circuit 이 없으므로 양쪽 컨테이너가 모두 끝까지 평가됩니다.</p>
+<h3 id="함수-broadcast---트레잇-x"><a class="anchor" tabindex="-1" href="#함수-broadcast---트레잇-x" aria-hidden="true">#</a>함수 broadcast - 트레잇 X</h3>
+<p>함수 broadcast 는 다음과 같은 형태로 사용됩니다.</p>
+<pre><code class="language-rok">f.(x)              <span class="c">// 함수 broadcast</span>
+f.(a, b)           <span class="c">// 여러 인자</span>
+</code></pre>
+<p>함수 broadcast 는 별도의 트레잇을 두지 않고 다음과 같이 desugar 됩니다.</p>
+<pre><code class="language-rok">f.(x)        →  x.into_iter().map(f).collect()
+g.(a, b)     →  a.into_iter().zip(b.into_iter()).map(|(x, y)| g(x, y)).collect()
+</code></pre>
+<p><a href="207-iter">2.7 iter</a> 의 <code>map</code>/<code>zip</code> 으로 직접 dispatch 되며, broadcast 모듈이 별도의 트레잇을 두지 않습니다. 이는 함수 자체가 dispatch 대상이 아니라 callable 이라는 차이에서 비롯됩니다.</p>
+<h2 id="264-의미-정의---element-wise"><a class="anchor" tabindex="-1" href="#264-의미-정의---element-wise" aria-hidden="true">#</a>2.6.4. 의미 정의 - element-wise</h2>
+<h3 id="산술-dot---같은-모양-두-컨테이너"><a class="anchor" tabindex="-1" href="#산술-dot---같은-모양-두-컨테이너" aria-hidden="true">#</a>산술 dot - 같은 모양 두 컨테이너</h3>
+<p>같은 모양을 가진 두 컨테이너에 대한 산술 dot 연산은 다음과 같이 동작합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+
+<span class="k">let</span> c = a .+ b;          <span class="c">//→ [11, 22, 33]</span>
+<span class="k">let</span> d = a .* b;          <span class="c">//→ [10, 40, 90]</span>
+<span class="k">let</span> e = b .- a;          <span class="c">//→ [9, 18, 27]</span>
+<span class="k">let</span> f = b ./ a;          <span class="c">//→ [10, 10, 10]</span>
+</code></pre>
+<p>길이가 일치하지 않으면 런타임 panic 이 발생합니다. 다만 컴파일 타임에 size 를 알 수 있다면 컴파일 에러로 잡힙니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: [<span class="t">i32</span>; <span class="n">3</span>] = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> y: [<span class="t">i32</span>; <span class="n">4</span>] = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>];
+<span class="k">let</span> z = x .+ y;          <span class="c">// ERROR (컴파일 - 고정 size 다름)</span>
+
+<span class="k">let</span> p: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> q: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>];
+<span class="k">let</span> r = p .+ q;          <span class="c">// panic at runtime - length mismatch</span>
+</code></pre>
+<h3 id="scalar-broadcast"><a class="anchor" tabindex="-1" href="#scalar-broadcast" aria-hidden="true">#</a>scalar broadcast</h3>
+<p>스칼라와 컨테이너를 함께 사용하면 다음과 같이 동작합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> s = a .+ <span class="n">10</span>;         <span class="c">//→ [11, 12, 13]  (scalar broadcast)</span>
+<span class="k">let</span> m = <span class="n">2</span> .* a;          <span class="c">//→ [2, 4, 6]</span>
+<span class="k">let</span> t = a ./ <span class="n">2</span>;          <span class="c">//→ [0, 1, 1]    (i32 truncate)</span>
+</code></pre>
+<p>이 경우 별도의 impl (<code>DotAdd&lt;T&gt; for List&lt;T&gt;</code>, 그리고 scalar 가 왼쪽인 형태의 <code>DotAdd&lt;List&lt;T&gt;&gt; for T</code>) 이 scalar 쪽을 처리합니다. 고정 배열 <code>[T; N]</code> 에는 scalar 가 왼쪽인 impl 이 없습니다.</p>
+<h3 id="비교-dot---containerbool-반환"><a class="anchor" tabindex="-1" href="#비교-dot---containerbool-반환" aria-hidden="true">#</a>비교 dot - <code>Container&lt;bool&gt;</code> 반환</h3>
+<p>비교 dot 연산자는 결과로 <code>Container&lt;bool&gt;</code> 을 반환합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">5</span>, <span class="n">3</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">2</span>, <span class="n">5</span>, <span class="n">1</span>];
+
+a .== b;                 <span class="c">//→ [false, true, false]</span>
+a .&lt; b;                  <span class="c">//→ [true, false, false]</span>
+a .&gt;= b;                 <span class="c">//→ [false, true, true]</span>
+
+a .&lt; <span class="n">4</span>;                  <span class="c">//→ [true, false, true]   (scalar broadcast)</span>
+</code></pre>
+<h3 id="나머지-dot----와-"><a class="anchor" tabindex="-1" href="#나머지-dot----와-" aria-hidden="true">#</a>나머지 dot - <code>.%</code> 와 <code>.%%</code></h3>
+<p>나머지 계열 dot 연산자는 일반 <code>%</code> / <code>%%</code> 와 동일한 의미를 element-wise 로 적용합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [-<span class="n">7</span>, <span class="n">5</span>, -<span class="n">3</span>, <span class="n">8</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">3</span>, <span class="n">3</span>, <span class="n">3</span>, <span class="n">3</span>];
+
+a .% b;                  <span class="c">//→ [-1, 2, 0, 2]   (Rem - 부호는 좌측 따름)</span>
+a .%% b;                 <span class="c">//→ [2, 2, 0, 2]    (Modulo - 항상 [0, 3))</span>
+</code></pre>
+<h3 id="논리-dot----와-"><a class="anchor" tabindex="-1" href="#논리-dot----와-" aria-hidden="true">#</a>논리 dot - <code>.&amp;&amp;</code> 와 <code>.||</code></h3>
+<p>논리 dot 연산자는 두 <code>Container&lt;bool&gt;</code> 의 element-wise 논리 결합을 산출합니다. 점 없는 형태와 달리 short-circuit 이 없으므로, 양쪽 컨테이너가 항상 끝까지 평가됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">List</span>&lt;<span class="t">bool</span>&gt; = [<span class="k">true</span>, <span class="k">false</span>, <span class="k">true</span>, <span class="k">false</span>];
+<span class="k">let</span> q: <span class="t">List</span>&lt;<span class="t">bool</span>&gt; = [<span class="k">true</span>, <span class="k">true</span>, <span class="k">false</span>, <span class="k">false</span>];
+
+p .&amp;&amp; q;                 <span class="c">//→ [true, false, false, false]</span>
+p .|| q;                 <span class="c">//→ [true, true, true, false]</span>
+
+<span class="c">// 비교 결과를 결합하는 패턴 - 가장 흔한 사용</span>
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">5</span>, <span class="n">3</span>, <span class="n">8</span>];
+(xs .&gt;= <span class="n">2</span>) .&amp;&amp; (xs .&lt; <span class="n">6</span>);  <span class="c">//→ [false, true, true, false]</span>
+</code></pre>
+<h3 id="비트--shift-dot"><a class="anchor" tabindex="-1" href="#비트--shift-dot" aria-hidden="true">#</a>비트 / shift dot</h3>
+<p>비트 및 shift 계열 dot 연산자도 같은 방식으로 동작합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0b1100</span>, <span class="n">0b1010</span>, <span class="n">0b0011</span>];
+<span class="k">let</span> ys: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0b1010</span>, <span class="n">0b1010</span>, <span class="n">0b1111</span>];
+
+xs .&amp; ys;                <span class="c">//→ [0b1000, 0b1010, 0b0011]</span>
+xs .| ys;                <span class="c">//→ [0b1110, 0b1010, 0b1111]</span>
+xs .^ ys;                <span class="c">//→ [0b0110, 0b0000, 0b1100]</span>
+
+<span class="k">let</span> ns: <span class="t">List</span>&lt;<span class="t">u32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">4</span>];
+ns .&lt;&lt; <span class="n">2</span>;                <span class="c">//→ [4, 8, 16]</span>
+</code></pre>
+<h2 id="265-함수-broadcast---fx"><a class="anchor" tabindex="-1" href="#265-함수-broadcast---fx" aria-hidden="true">#</a>2.6.5. 함수 broadcast - <code>f.(x)</code></h2>
+<p>함수 broadcast 는 일반 함수 호출 자리에 dot 을 붙여 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [<span class="n">0.0</span>, <span class="n">0.5</span>, <span class="n">1.0</span>];
+
+<span class="k">let</span> s = sin.(xs);                    <span class="c">//→ [0.0, 0.479..., 0.841...]</span>
+<span class="k">let</span> r = <span class="t">f64</span>::sqrt.(xs);              <span class="c">//→ [0.0, 0.707..., 1.0]</span>
+<span class="k">let</span> g = (|x: <span class="t">f64</span>| x * <span class="n">2.0</span>).(xs);     <span class="c">//→ [0.0, 1.0, 2.0]</span>
+</code></pre>
+<p>여러 인자를 동시에 broadcast 하는 것도 가능합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [<span class="n">10.0</span>, <span class="n">20.0</span>, <span class="n">30.0</span>];
+
+<span class="k">let</span> r = <span class="t">f64</span>::pow.(a, b);             <span class="c">//→ [1.0, 4_194_304.0, ...]</span>
+<span class="k">let</span> m = max.(a, b);                  <span class="c">//→ [10.0, 20.0, 30.0]</span>
+</code></pre>
+<p><code>List</code>, <code>Slice</code>, 배열인 인자는 함께 순회하고, 그 밖의 인자는 매 호출에 그대로 넘깁니다 (<code>pow.(xs, 2.0)</code>). 순회하는 인자는 길이가 같아야 하며 런타임에 검사합니다. 인자 개수에는 <strong>제한이 없어</strong> 임의의 N-ary 함수까지 적용할 수 있습니다.</p>
+<h2 id="266-loop-fusion"><a class="anchor" tabindex="-1" href="#266-loop-fusion" aria-hidden="true">#</a>2.6.6. loop fusion</h2>
+<p>연속해서 등장하는 dot 연산은 컴파일러가 단일 loop 로 합쳐 줍니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> result = sin.(a) .+ cos.(b) .* <span class="n">2.0</span>;
+</code></pre>
+<p>일반적인 lowering 이라면 3 개의 임시 List 할당과 3회의 loop 가 필요합니다. rok 은 중간 컬렉션 없는 단일 loop 를 보장하며, 그 방법 (예: <code>linalg.generic</code> op) 은 컴파일러가 고릅니다.</p>
+<pre><code class="language-rok"><span class="c">// 개념적으로는 다음과 같은 단일 elementwise 호출과 같습니다.</span>
+<span class="k">let</span> result = elementwise(a, b, |x, y| sin(x) + cos(y) * <span class="n">2.0</span>);
+</code></pre>
+<h2 id="267-트레잇-구현-매트릭스"><a class="anchor" tabindex="-1" href="#267-트레잇-구현-매트릭스" aria-hidden="true">#</a>2.6.7. 트레잇 구현 매트릭스</h2>
+<p>각 컨테이너 타입에 대한 dot 트레잇 impl 은 다음과 같이 매핑됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>컨테이너</th><th>DotAdd</th><th>DotMul</th><th>DotEq</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td>T:Add</td><td>T:Mul</td><td>T:PartialEq</td><td>element-wise, 길이 일치</td></tr>
+<tr><td><code>[T; N]</code> (고정)</td><td>T:Add</td><td>T:Mul</td><td>T:PartialEq</td><td>고정 N - 컴파일 타임</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>T:Add</td><td>T:Mul</td><td>T:PartialEq</td><td>view - element-wise</td></tr>
+<tr><td><code>i32</code>/<code>f64</code>/etc.</td><td><strong>없음</strong></td><td><strong>없음</strong></td><td><strong>없음</strong></td><td>스칼라끼리는 일반 <code>+</code>/<code>*</code>/<code>==</code> 사용</td></tr>
+<tr><td><code>T | none</code></td><td>(연산자)</td><td>(연산자)</td><td>(연산자)</td><td>option propagation (<code>none .+ x = none</code>)</td></tr>
+</tbody></table></div>
+<p><code>T | none</code> 의 dot 의미는 option propagation 입니다. 즉 어느 한쪽이 <code>none</code> 이면 결과도 <code>none</code> 으로 전파됩니다. 이것은 라이브러리 impl 없이 연산자 수준에서 처리합니다.</p>
+<p><code>Matrix&lt;T&gt;</code> / <code>Tensor&lt;T&gt;</code> 같은 수치 컨테이너는 외부 라이브러리에서 정의되며, 그곳에서 동일한 dot 트레잇을 직접 구현하여 NumPy 식 broadcasting 규칙을 따르도록 되어 있습니다.</p>
+<h2 id="268-numpy-식-broadcasting-규칙"><a class="anchor" tabindex="-1" href="#268-numpy-식-broadcasting-규칙" aria-hidden="true">#</a>2.6.8. NumPy 식 broadcasting 규칙</h2>
+<p>차원이 다른 배열 간의 broadcast 는 NumPy 방식을 따릅니다. 1차원과 0차원(스칼라) 이 만나면 scalar 가 모든 원소에 적용되고, 같은 차원에 같은 shape 이라면 pointwise 로 동작하며, 다른 shape 일 경우에는 trailing dim 부터 일치시키되 1 이면 stretch 됩니다.</p>
+<p>본 절은 dot 트레잇의 일반 의미만 정의하며, 다차원 broadcasting 규칙의 전체 권위는 외부 텐서 라이브러리에 위임됩니다. rok 표준 라이브러리는 1 차원 컨테이너 (<code>List&lt;T&gt;</code>, <code>[T; N]</code>, <code>Slice&lt;T&gt;</code>) 의 element-wise 의미만 책임집니다.</p>
+<h2 id="269-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#269-다른-언어와의-비교" aria-hidden="true">#</a>2.6.9. 다른 언어와의 비교</h2>
+<p>다른 주요 언어와 비교하면 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>NumPy</th><th>Julia</th><th>MATLAB</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>element-wise</td><td><code>*</code> (silent)</td><td><code>.*</code> (명시)</td><td><code>.*</code> (명시)</td><td><code>.*</code> (명시)</td></tr>
+<tr><td>matrix mul</td><td><code>@</code> (PEP 465)</td><td><code>*</code></td><td><code>*</code></td><td><code>*</code> (사용자 정의 Mul)</td></tr>
+<tr><td>element-wise add</td><td><code>+</code> (silent)</td><td><code>.+</code></td><td><code>.+</code></td><td><code>.+</code></td></tr>
+<tr><td>함수 broadcast</td><td><code>np.vectorize(f)(x)</code></td><td><code>f.(x)</code></td><td><code>arrayfun(f, x)</code></td><td><code>f.(x)</code></td></tr>
+<tr><td>loop fusion</td><td><strong>없음</strong></td><td><code>@.</code> 매크로 (자동)</td><td><strong>없음</strong></td><td>dot chain 자동 (MLIR)</td></tr>
+<tr><td>comparison</td><td><code>==</code> returns array</td><td><code>.==</code></td><td><code>==</code> (혼란)</td><td><code>.==</code></td></tr>
+<tr><td>dot 별도 트레잇</td><td><strong>없음</strong></td><td><strong>없음</strong> (<code>*</code> overload 만)</td><td><strong>없음</strong></td><td><strong>DotAdd/DotMul/...</strong> (19 개)</td></tr>
+</tbody></table></div>
+<p>rok 이 다른 언어와 가장 크게 다른 지점은 두 가지로 요약할 수 있습니다. 첫째, dot 연산자가 모두 별도의 트레잇을 갖습니다. Julia 가 <code>+</code> 를 overload 한 위에 dot syntax 만 얹은 형태인 데 비해, rok 에서는 <code>Add</code> 와 <code>DotAdd</code> 가 서로 다른 트레잇이며 <code>Matrix * Matrix</code> 와 <code>Matrix .* Matrix</code> 가 완전히 다른 dispatch 를 따릅니다. 둘째, 컴파일러가 dot 사용을 강제합니다. 일반 <code>*</code> 로는 broadcast 가 <strong>불가능</strong> 하므로, 사용자 코드에 의존하지 않는 결정론적 분리가 보장됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/206-broadcast.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="205-cmp"><small>Previous</small>2.5. 비교 트레잇</a><a class="next" href="207-iter"><small>Next</small>2.7. iter - 반복 트레잇</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::ptr 모듈은 raw pointer 다섯 종을 정의합니다. 설계 기조는 Zig 식 arity-encoded 모델을 따르는 것으로, 가리키는 개수 (arity) 와 mutability 를 타입 자체에 인코딩하여 silent coercion 을 원천 차단합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/101-ptr.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr - rok docs">
+<meta property="og:description" content="rok::bare::ptr 모듈은 raw pointer 다섯 종을 정의합니다. 설계 기조는 Zig 식 arity-encoded 모델을 따르는 것으로, 가리키는 개수 (arity) 와 mutability 를 타입 자체에 인코딩하여 silent coercion 을 원천 차단합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/101-ptr.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/101-ptr.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/101-ptr.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a><ul class="toc"><li><a href="#111-5-pointer-종류">1.1.1. 5 pointer 종류</a></li><li><a href="#112-ptrt---strict-provenance-api">1.1.2. Ptr&lt;T&gt; - strict provenance API</a></li><li><a href="#113-constptrt---read-only">1.1.3. ConstPtr&lt;T&gt; - read-only</a></li><li><a href="#114-manyptrt---연속-n개-길이-모름">1.1.4. ManyPtr&lt;T&gt; - 연속 N개, 길이 모름</a></li><li><a href="#115-cptrt---c-호환-nullable">1.1.5. CPtr&lt;T&gt; - C 호환 nullable</a></li><li><a href="#116-변환-매트릭스">1.1.6. 변환 매트릭스</a></li><li><a href="#117-다른-언어와의-비교">1.1.7. 다른 언어와의 비교</a></li></ul></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="11-pointer-계열---ptr--constptr--manyptr--cptr 11-pointer-family---ptr--constptr--manyptr--cptr 111-5-pointer-종류 111-the-5-pointer-kinds send--sync send--sync 자동-niche automatic-niche 112-ptrt---strict-provenance-api 112-ptrt---strict-provenance-api strict-provenance---escape-hatch-분리 strict-provenance---separated-escape-hatch 사용-예---pointer-산술 example---pointer-arithmetic 113-constptrt---read-only 113-constptrt---read-only 114-manyptrt---연속-n개-길이-모름 114-manyptrt---n-contiguous-length-unknown 115-cptrt---c-호환-nullable 115-cptrt---c-compatible-nullable 116-변환-매트릭스 116-conversion-matrix 117-다른-언어와의-비교 117-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/100-bare/101-ptr" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="11-pointer-계열---ptr--constptr--manyptr--cptr"><a class="anchor" tabindex="-1" href="#11-pointer-계열---ptr--constptr--manyptr--cptr" aria-hidden="true">#</a>1.1. Pointer 계열 - <code>Ptr</code> / <code>ConstPtr</code> / <code>ManyPtr</code> / <code>CPtr</code></h1>
+<p><code>rok::bare::ptr</code> 모듈은 raw pointer 다섯 종을 정의합니다. 설계 기조는 Zig 식 arity-encoded 모델을 따르는 것으로, 가리키는 개수 (arity) 와 mutability 를 타입 자체에 인코딩하여 silent coercion 을 원천 차단합니다.</p>
+<h2 id="111-5-pointer-종류"><a class="anchor" tabindex="-1" href="#111-5-pointer-종류" aria-hidden="true">#</a>1.1.1. 5 pointer 종류</h2>
+<p>다섯 종류가 어떻게 갈라지는지는 다음 표에 한눈에 들어옵니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>의미</th><th>C 대응</th><th>nullable</th></tr></thead>
+<tbody>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>mutable, 정확히 1 개 T</td><td><code>T*</code></td><td>✗ (<code>Ptr&lt;T&gt; | none</code> 사용)</td></tr>
+<tr><td><code>ConstPtr&lt;T&gt;</code></td><td>const, 정확히 1 개 T</td><td><code>const T*</code></td><td>✗</td></tr>
+<tr><td><code>ManyPtr&lt;T&gt;</code></td><td>mutable, 연속 N개 T (길이 모름)</td><td><code>T*</code> (배열)</td><td>✗</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>mutable, 연속 N개 T (길이 포함)</td><td>(T*, len)</td><td>✗ (별도 niche)</td></tr>
+<tr><td><code>CPtr&lt;T&gt;</code></td><td>C 호환 <strong>nullable</strong> + 1 개</td><td><code>T*</code> (nullable)</td><td>✓ (자동)</td></tr>
+</tbody></table></div>
+<p><code>Ptr</code>, <code>ConstPtr</code>, <code>ManyPtr</code>, <code>CPtr</code> 은 <code>#[repr(transparent)]</code> 입니다: <code>extern &quot;C&quot;</code> 를 건너면 C 포인터입니다.</p>
+<p>이 가운데 <code>Slice&lt;T&gt;</code> 는 <a href="../200-core/209-collections">2.9 collections</a> 에서 정의되는 안전한 view 이며, 본 모듈은 거기에서 <strong>underlying ptr</strong> 을 추출하는 경로만 정의합니다.</p>
+<h3 id="send--sync"><a class="anchor" tabindex="-1" href="#send--sync" aria-hidden="true">#</a><code>Send</code> / <code>Sync</code></h3>
+<p>원시 포인터 <code>Ptr&lt;T&gt;</code> 와 <code>CPtr&lt;T&gt;</code> 는 <code>!Send</code>, <code>!Sync</code> 입니다 (<a href="../200-core/213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a>). 포인터를 담은 타입을 스레드 사이로 넘기려면 작성자가 <code>unsafe impl Send</code> 로 보증해야 합니다.</p>
+<h3 id="자동-niche"><a class="anchor" tabindex="-1" href="#자동-niche" aria-hidden="true">#</a>자동 niche</h3>
+<p><code>Ptr&lt;T&gt;</code>, <code>ConstPtr&lt;T&gt;</code>, <code>ManyPtr&lt;T&gt;</code> 는 null pointer 자리를 niche 로 쓸 수 있어, <code>none</code> 을 끼워 넣어도 추가 태그가 필요 없습니다. 다만 이것은 최적화이며 보장이 아닙니다. 구현은 <code>Ptr&lt;T&gt; | none</code> 을 일반 태그 합 타입으로 표현해도 됩니다.</p>
+<pre><code class="language-rok">sizeof::&lt;<span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt;&gt;()         <span class="c">//→ 8 (64-bit target)</span>
+sizeof::&lt;<span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; | <span class="k">none</span>&gt;() <span class="c">//→ 8 (niche 를 쓰는 구현 - 보장 아님)</span>
+</code></pre>
+<p>한편 <code>CPtr&lt;T&gt;</code> 는 그 자체로 nullable 이라 별도의 sentinel 이 필요 없고, <code>none</code> 표현은 단순히 <code>CPtr::null()</code> 입니다.</p>
+<p>자세한 niche 메커니즘은 <a href="../200-core/202-non-zero">2.2 non-zero</a> 에서 다룹니다.</p>
+<h2 id="112-ptrt---strict-provenance-api"><a class="anchor" tabindex="-1" href="#112-ptrt---strict-provenance-api" aria-hidden="true">#</a>1.1.2. <code>Ptr&lt;T&gt;</code> - strict provenance API</h2>
+<p>가장 기본이 되는 <code>Ptr&lt;T&gt;</code> 의 공개 API 는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque - (address, provenance) pair */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// 생성</span>
+    <span class="k">fn</span> dangling() -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;           <span class="c">// valid alignment, invalid address (unique)</span>
+    <span class="k">fn</span> null() -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;         <span class="c">// 항상 none</span>
+
+    <span class="c">// provenance-preserving (strict provenance, 안전 우선)</span>
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;             <span class="c">// 주소만 (provenance 손실)</span>
+    <span class="k">fn</span> with_addr(<span class="k">self</span>, addr: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+                                        <span class="c">// provenance 보존, address 변경</span>
+    <span class="k">fn</span> map_addr(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">usize</span>) -&gt; <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="c">// 산술 (provenance 보존)</span>
+    <span class="k">fn</span> offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;       <span class="c">// count * sizeof(T) byte offset</span>
+    <span class="k">fn</span> add(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> sub(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> byte_offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;  <span class="c">// byte 단위 offset</span>
+
+    <span class="k">fn</span> distance(<span class="k">self</span>, origin: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">isize</span>;     <span class="c">// self.addr() - origin.addr()</span>
+    <span class="k">fn</span> is_aligned(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> align_offset(<span class="k">self</span>, align: <span class="t">usize</span>) -&gt; <span class="t">usize</span>;
+
+    <span class="c">// dereference (UB if invalid)</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> read(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> write(<span class="k">self</span>, value: <span class="t">T</span>);
+    <span class="k">unsafe</span> <span class="k">fn</span> read_volatile(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> write_volatile(<span class="k">self</span>, value: <span class="t">T</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="c">// module functions of rok::bare::ptr</span>
+<span class="k">fn</span> addr_of&lt;<span class="t">T</span>&gt;(place: <span class="t">T</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+<span class="k">fn</span> many_addr_of&lt;<span class="t">T</span>&gt;(place: <span class="t">T</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+<span class="k">fn</span> expose_provenance&lt;<span class="t">T</span>&gt;(p: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">usize</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> from_exposed_provenance&lt;<span class="t">T</span>&gt;(addr: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+</code></pre>
+<p><code>addr_of</code> / <code>many_addr_of</code> 는 place 식을 받습니다: 지역 변수나 <code>static</code> (<code>extern &quot;C&quot;</code> <code>static</code> 포함), 또는 그 필드나 원소. 지역 변수를 가리키는 포인터는 그 변수가 스코프에 있는 동안, static 을 가리키는 포인터는 실행 내내 유효합니다 (static 은 data section 에 있고, lazy 초기화 static 은 주소를 취하기 전에 초기화되며, static 이 가진 GC 참조는 루트입니다). <code>mut</code> 가 아닌 static 을 가리키는 포인터로 쓰면 undefined behavior 입니다. 주소를 취한 변수는 그 스코프 동안 GC 루트로 남고, 루트는 pin 되므로 가리키는 대상은 움직이지 않습니다. coroutine 본체에서는 포인터가 다음 중단 지점까지만 유효합니다. 그런 포인터를 중단 지점 뒤에 쓰면 컴파일 에러입니다.</p>
+<h3 id="strict-provenance---escape-hatch-분리"><a class="anchor" tabindex="-1" href="#strict-provenance---escape-hatch-분리" aria-hidden="true">#</a>Strict provenance - escape hatch 분리</h3>
+<p><code>usize → Ptr&lt;T&gt;</code> 변환은 기본적으로 거부됩니다. provenance 가 손실된 ptr 을 dereference 하는 순간 UB 가 발생하기 때문입니다. 그래서 정상 경로와 escape hatch 가 명확하게 분리됩니다.</p>
+<pre><code class="language-rok"><span class="c">// 권장 - provenance 보존</span>
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> q = p.with_addr(p.addr() + <span class="n">4</span>);     <span class="c">// 4 byte 다음 - provenance 그대로</span>
+
+<span class="c">// 비권장 - provenance 새로 (FFI / hardware register 자리에서만)</span>
+<span class="k">use</span> rok::bare::ptr::{expose_provenance, from_exposed_provenance};
+
+<span class="k">let</span> exposed: <span class="t">usize</span> = expose_provenance(p);   <span class="c">// p 의 provenance 를 "노출"</span>
+<span class="k">let</span> r: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = <span class="k">unsafe</span> { from_exposed_provenance(exposed) };
+                                              <span class="c">// 새로 만든 ptr 이 노출된 provenance 중</span>
+                                              <span class="c">// 하나를 가진다고 _가정_</span>
+</code></pre>
+<p>이 설계의 권위 있는 출발점은 <a href="https://www.ralfj.de/blog/2022/04/11/provenance-exposed.html">Ralf Jung 의 &quot;Pointers Are Complicated&quot;</a> 글이며, 2024 년 12 월에 안정화된 Rust 1.84 의 <code>rok::core::ptr::with_exposed_provenance</code> 와 동형 모델입니다.</p>
+<h3 id="사용-예---pointer-산술"><a class="anchor" tabindex="-1" href="#사용-예---pointer-산술" aria-hidden="true">#</a>사용 예 - pointer 산술</h3>
+<p>실제로 산술이 어떻게 쓰이는지는 다음 짧은 예제에서 확인할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> arr: [<span class="t">i32</span>; <span class="n">5</span>] = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">40</span>, <span class="n">50</span>];
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::addr_of(arr[<span class="n">0</span>]);
+
+<span class="k">let</span> p3 = p.add(<span class="n">3</span>);                    <span class="c">// arr[3] 의 ptr</span>
+<span class="k">unsafe</span> {
+    <span class="k">let</span> v = p3.read();                <span class="c">//→ 40</span>
+}
+
+<span class="c">// byte 산술 (struct field offset)</span>
+<span class="k">struct</span> <span class="t">Header</span> { magic: <span class="t">u32</span>; size: <span class="t">u64</span>; }
+<span class="k">let</span> h: <span class="t">Ptr</span>&lt;<span class="t">Header</span>&gt; = ...;
+<span class="k">let</span> size_ptr: <span class="t">Ptr</span>&lt;<span class="t">u64</span>&gt; = h.byte_offset(<span class="n">4</span>).cast::&lt;<span class="t">u64</span>&gt;();
+                                      <span class="c">// Header.size 의 위치</span>
+                                      <span class="c">// (정렬 검증 필요 - 1.2 cast 참조)</span>
+</code></pre>
+<h2 id="113-constptrt---read-only"><a class="anchor" tabindex="-1" href="#113-constptrt---read-only" aria-hidden="true">#</a>1.1.3. <code>ConstPtr&lt;T&gt;</code> - read-only</h2>
+<p>읽기 전용 변종은 write 계열이 빠진 형태입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> dangling() -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> with_addr(<span class="k">self</span>, addr: <span class="t">usize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> add(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> sub(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">unsafe</span> <span class="k">fn</span> read(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> read_volatile(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="c">// write 메서드 없음 - read-only</span>
+}
+</code></pre>
+<p><code>Ptr&lt;T&gt;</code> 와의 변환은 방향에 따라 안전성이 다릅니다. const 를 부여하는 쪽은 자유롭지만, 제거하는 쪽은 이름 있는 cast <code>rok::bare::const_cast</code> 를 거쳐야 합니다 (호출은 안전하고, 결과를 통한 쓰기가 <code>unsafe</code>).</p>
+<pre><code class="language-rok"><span class="k">let</span> m: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> c: <span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt; = m.as_const();        <span class="c">// Ptr → ConstPtr (안전)</span>
+
+<span class="k">let</span> c: <span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> m: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::const_cast(c);    <span class="c">// ConstPtr → Ptr (호출은 안전, m 을 통한 쓰기는 unsafe - 1.2 cast)</span>
+</code></pre>
+<p>따라서 const 제거는 오로지 <strong>명시적</strong> 경로로만 일어나며, silent 변환은 받아들여지지 않습니다.</p>
+<h2 id="114-manyptrt---연속-n개-길이-모름"><a class="anchor" tabindex="-1" href="#114-manyptrt---연속-n개-길이-모름" aria-hidden="true">#</a>1.1.4. <code>ManyPtr&lt;T&gt;</code> - 연속 N개, 길이 모름</h2>
+<p>다음으로 길이 정보 없이 여러 개를 가리키는 타입입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> with_addr(<span class="k">self</span>, addr: <span class="t">usize</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> offset(<span class="k">self</span>, count: <span class="t">isize</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> add(<span class="k">self</span>, count: <span class="t">usize</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">unsafe</span> <span class="k">fn</span> read(<span class="k">self</span>, idx: <span class="t">usize</span>) -&gt; <span class="t">T</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> write(<span class="k">self</span>, idx: <span class="t">usize</span>, value: <span class="t">T</span>);
+
+    <span class="c">// 길이 정보 없음 - index 호출자가 보장</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> slice(<span class="k">self</span>, len: <span class="t">usize</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">T</span>&gt;;        <span class="c">// length 부착하여 Slice 만듬</span>
+}
+</code></pre>
+<p>C 의 <code>T*</code> (배열) 을 받아 들일 때 쓰이며, 길이 정보가 빠져 있으므로 OOB 회피 책임은 호출자에게 있습니다. GC heap 밖의 메모리에 대한 <code>slice</code> 의 원소가 GC 참조를 가지면 undefined behaviour 입니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> read_buffer(out: <span class="t">ManyPtr</span>&lt;<span class="t">u8</span>&gt;, len: <span class="t">usize</span>) -&gt; <span class="t">usize</span>;
+}
+
+<span class="k">let</span> buf: [<span class="t">u8</span>; <span class="n">1024</span>] = [<span class="n">0</span>; <span class="n">1024</span>];
+<span class="k">let</span> read_count = <span class="k">unsafe</span> {
+    read_buffer(rok::bare::ptr::many_addr_of(buf[<span class="n">0</span>]), <span class="n">1024</span>)
+};
+</code></pre>
+<h2 id="115-cptrt---c-호환-nullable"><a class="anchor" tabindex="-1" href="#115-cptrt---c-호환-nullable" aria-hidden="true">#</a>1.1.5. <code>CPtr&lt;T&gt;</code> - C 호환 nullable</h2>
+<p>C ABI 와 직결되는 nullable 변종은 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque - nullable */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> null() -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> from_ptr(p: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;       <span class="c">// non-null</span>
+    <span class="k">fn</span> from_const(p: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> is_null(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;        <span class="c">// null → none</span>
+    <span class="k">fn</span> as_const(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+
+    <span class="k">fn</span> addr(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                  <span class="c">// null = 0</span>
+}
+</code></pre>
+<p>C 함수가 nullable <code>T*</code> 를 주고 받는 경계에서 자연스럽게 자리 잡으며, 전형적인 사용은 다음과 같이 흘러갑니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;       <span class="c">// 실패 시 null</span>
+    <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+}
+
+<span class="k">let</span> buf: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt; = <span class="k">unsafe</span> { malloc(<span class="n">1024</span>) };
+<span class="k">match</span> buf.as_ptr() {
+    p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; =&gt; <span class="k">use</span>(p),
+    <span class="k">none</span>       =&gt; panic(<span class="s">"malloc failed"</span>),
+}
+<span class="k">unsafe</span> { free(buf) };
+</code></pre>
+<p><code>Ptr&lt;T&gt; | none</code> 은 자동 niche 덕분에 ABI 가 호환되지만, <code>-1</code> 처럼 <strong>명시 sentinel</strong> 이 별도로 필요한 자리에는 <code>CPtr</code> 만으로 부족합니다. 그러한 경우에는 newtype 에 <code>#[niche(-1)]</code> 를 붙여 별도로 모델링하는 것이 정석입니다.</p>
+<h2 id="116-변환-매트릭스"><a class="anchor" tabindex="-1" href="#116-변환-매트릭스" aria-hidden="true">#</a>1.1.6. 변환 매트릭스</h2>
+<p>이상의 다섯 타입 사이를 오가는 길은 다음 매트릭스 한 장으로 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th><code>Ptr&lt;T&gt;</code></th><th><code>ConstPtr&lt;T&gt;</code></th><th><code>ManyPtr&lt;T&gt;</code></th><th><code>CPtr&lt;T&gt;</code></th><th><code>Slice&lt;T&gt;</code></th><th><code>usize</code></th></tr></thead>
+<tbody>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>-</td><td><code>.as_const()</code> 안전</td><td><code>.as_many()</code> 안전</td><td><code>CPtr::from_ptr()</code></td><td><code>rok::bare::ptr::slice(p, len)</code></td><td><code>.addr()</code> provenance loss</td></tr>
+<tr><td><code>ConstPtr&lt;T&gt;</code></td><td><code>rok::bare::const_cast</code></td><td>-</td><td><code>.as_many()</code></td><td><code>CPtr::from_const()</code></td><td><code>rok::bare::ptr::slice</code></td><td><code>.addr()</code></td></tr>
+<tr><td><code>ManyPtr&lt;T&gt;</code></td><td><code>.as_one()</code> 안전</td><td><code>.as_const()</code></td><td>-</td><td><code>CPtr::from_ptr(...)</code></td><td><code>.slice(len)</code> unsafe</td><td><code>.addr()</code></td></tr>
+<tr><td><code>CPtr&lt;T&gt;</code></td><td><code>.as_ptr()? </code></td><td><code>.as_const()?</code></td><td>manual</td><td>-</td><td>manual</td><td><code>.addr()</code></td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>(안전 view 의 raw 추출)</td><td><code>.as_ptr()</code> (ConstPtr)</td><td><code>.as_many_ptr()</code></td><td>manual</td><td>-</td><td><code>.as_ptr().addr()</code></td></tr>
+<tr><td><code>usize</code></td><td><code>from_exposed_provenance</code> ⚠</td><td><code>from_exposed_provenance</code> ⚠</td><td>manual</td><td><code>CPtr::from_addr</code></td><td>manual</td><td>-</td></tr>
+</tbody></table></div>
+<p>⚠ 표시는 provenance 를 새로 만들어 내는 escape hatch 임을 뜻합니다.</p>
+<h2 id="117-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#117-다른-언어와의-비교" aria-hidden="true">#</a>1.1.7. 다른 언어와의 비교</h2>
+<p>같은 문제를 풀어 온 다른 언어들과 견주어 보면 rok 의 위치가 분명해집니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>C</th><th>Rust</th><th>Zig</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>1 개 ptr</td><td><code>T*</code></td><td><code>*const T</code> / <code>*mut T</code></td><td><code>*T</code> / <code>*const T</code></td><td><code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code></td></tr>
+<tr><td>다수 ptr</td><td><code>T*</code> (모호)</td><td><code>*const T</code> (모호)</td><td><code>[*]T</code></td><td><code>ManyPtr&lt;T&gt;</code></td></tr>
+<tr><td>length-aware</td><td><strong>없음</strong></td><td><code>&amp;[T]</code></td><td><code>[]T</code></td><td><code>Slice&lt;T&gt;</code></td></tr>
+<tr><td>nullable</td><td>(모든 ptr)</td><td><code>Option&lt;*const T&gt;</code></td><td><code>?*T</code></td><td><code>CPtr&lt;T&gt;</code> 또는 <code>Ptr&lt;T&gt; | none</code></td></tr>
+<tr><td>arity 분리</td><td><strong>없음</strong></td><td><strong>부분</strong> (slice 별도)</td><td>✓ (<code>*T</code> / <code>[*]T</code> 분리)</td><td>✓ (Zig 모델)</td></tr>
+<tr><td>strict provenance</td><td><strong>없음</strong></td><td>✓ (1.84+)</td><td><strong>없음</strong></td><td>✓ (Rust 모델)</td></tr>
+<tr><td><code>as</code> cast 거부</td><td><strong>허용</strong></td><td><strong>허용</strong> (warning 만)</td><td><strong>명시 <code>@ptrCast</code></strong></td><td><strong>완전 거부</strong></td></tr>
+</tbody></table></div>
+<p>표가 보여 주듯 rok 의 결정 가운데 가장 무게가 큰 것은 다음 셋입니다. 첫째로 Zig 식 arity 분리를 받아들여 다섯 종을 명확히 갈라 놓았고, 둘째로 strict provenance 에서 Rust 2024 모델을 채택했으며, 셋째로 명시 cast 를 강제하여 pointer 자리에서는 <code>as</code> 를 아예 쓸 수 없게 만들었습니다. 이 세 결정이 맞물려 C 와 Rust 양쪽이 안고 있던 pointer 함정 대부분을 회피합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/101-ptr.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>1. Unsafe tier</a><a class="next" href="102-cast"><small>Next</small>1.2. cast 연산 - 명시 named cast</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -43,18 +43,9 @@ python3 -m http.server -d public/www 8401    # rok-lang.org
 python3 -m http.server -d public/docs 8403   # docs.rok-lang.org
 ```
 
-## Release and deploy
+## Serve
 
-Each release's docs are built once, from the `vX.Y.Z` branches of docs and spec and the release tag of rok, and kept on the `docs-archive` branch; every build wraps them in the current chrome.
-
-```bash
-# At a release, after tagging rok and spec and cutting the vX.Y.Z branches:
-ROK=<the release's rok> scripts/release-docs.sh 0.1 v0.1.4
-git push origin docs-archive
-
-# Build everything for a deploy, from main:
-scripts/assemble.sh          # docs-archive -> public/docs/, then build dev + home site
-```
+`rok_lang_org serve` runs both sites from content bundles (one ROKON file per branch of docs, www and spec, built by `rok-content bundle` in [rok-lang/web](https://github.com/rok-lang/web)). It archives each release in `versions.rokon` once, from the `vX.Y.Z` branches of docs and spec and the release tag of rok, wraps every archive in the current chrome, and rebuilds when a bundle changes. `serve.rok` lists its environment.
 
 Deployment itself lives in a private repository.
 
@@ -70,7 +61,7 @@ Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: 
 | `src/check.rok`  | Code block extraction and parallel compile / run / output comparison |
 | `src/apidoc.rok` | API pages from the standard library sources |
 | `src/layout.rok` | Page frames: header, navigation, sidebar, footer, 404 |
-| `scripts/`       | `release-docs.sh`, `assemble.sh` |
+| `src/serve.rok`  | The server: bundles, release archives, rebuilds, routing |
 | `static/`        | `style.css`, `search.js`, logos, `og.png` |
 
 Markdown and ` ```rok ` / ` ```rokon ` highlighting come from the [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) stones (path dependencies until switched to their rokstones.io versions).

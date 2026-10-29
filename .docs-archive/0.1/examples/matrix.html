@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matrix operations - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A small matrix type that implements the operator and index traits, so you can write a * b, a .* b and m[i, j].">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/matrix.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Matrix operations - rok docs">
+<meta property="og:description" content="A small matrix type that implements the operator and index traits, so you can write a * b, a .* b and m[i, j].">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/matrix.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li class="cur"><a aria-current="page" href="matrix">Matrix operations</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="matrix-operations"><a class="anchor" tabindex="-1" href="#matrix-operations" aria-hidden="true">#</a>Matrix operations</h1>
+<p>A small matrix type that implements the operator and index traits, so you can write <code>a * b</code>, <code>a .* b</code> and <code>m[i, j]</code>.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// A dense row-major matrix of f64.</span>
+<span class="k">struct</span> <span class="t">Matrix</span> {
+    rows: <span class="t">usize</span>;
+    cols: <span class="t">usize</span>;
+    data: <span class="t">List</span>&lt;<span class="t">f64</span>&gt;;
+}
+
+<span class="k">impl</span> <span class="t">Matrix</span> {
+    <span class="k">fn</span> zeros(rows: <span class="t">usize</span>, cols: <span class="t">usize</span>) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> data: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = <span class="t">List</span>::new();
+        <span class="k">for</span> _ <span class="k">in</span> <span class="n">0</span>..rows * cols { data.push(<span class="n">0.0</span>); }
+        <span class="t">Matrix</span> { rows: rows, cols: cols, data: data }
+    }
+
+    <span class="k">fn</span> from_rows(rows: <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">f64</span>&gt;&gt;) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> m = <span class="t">Matrix</span>::zeros(rows.len(), rows[<span class="n">0</span>].len());
+        <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..m.rows {
+            <span class="k">for</span> j <span class="k">in</span> <span class="n">0</span>..m.cols { m[i, j] = rows[i][j]; }
+        }
+        m
+    }
+
+    <span class="k">fn</span> identity(n: <span class="t">usize</span>) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> m = <span class="t">Matrix</span>::zeros(n, n);
+        <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..n { m[i, i] = <span class="n">1.0</span>; }
+        m
+    }
+
+    <span class="k">fn</span> transpose(<span class="k">self</span>) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> t = <span class="t">Matrix</span>::zeros(<span class="k">self</span>.cols, <span class="k">self</span>.rows);
+        <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.rows {
+            <span class="k">for</span> j <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.cols { t[j, i] = <span class="k">self</span>[i, j]; }
+        }
+        t
+    }
+}
+
+<span class="c">// m[i, j] reads an element ...</span>
+<span class="k">impl</span> <span class="t">Index</span>&lt;(<span class="t">usize</span>, <span class="t">usize</span>)&gt; <span class="k">for</span> <span class="t">Matrix</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">f64</span>;
+    <span class="k">fn</span> index(<span class="k">self</span>, idx: (<span class="t">usize</span>, <span class="t">usize</span>)) -&gt; <span class="t">f64</span> {
+        <span class="k">self</span>.data[idx.<span class="n">0</span> * <span class="k">self</span>.cols + idx.<span class="n">1</span>]
+    }
+}
+
+<span class="c">// ... and m[i, j] = v writes one.</span>
+<span class="k">impl</span> <span class="t">IndexSet</span>&lt;(<span class="t">usize</span>, <span class="t">usize</span>)&gt; <span class="k">for</span> <span class="t">Matrix</span> {
+    <span class="k">type</span> <span class="t">Value</span> = <span class="t">f64</span>;
+    <span class="k">fn</span> index_set(<span class="k">ref</span> <span class="k">self</span>, idx: (<span class="t">usize</span>, <span class="t">usize</span>), value: <span class="t">f64</span>) {
+        <span class="k">self</span>.data[idx.<span class="n">0</span> * <span class="k">self</span>.cols + idx.<span class="n">1</span>] = value;
+    }
+}
+
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">Matrix</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Matrix</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Matrix</span>) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> out = <span class="t">Matrix</span>::zeros(<span class="k">self</span>.rows, <span class="k">self</span>.cols);
+        <span class="k">for</span> k <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.data.len() { out.data[k] = <span class="k">self</span>.data[k] + rhs.data[k]; }
+        out
+    }
+}
+
+<span class="k">impl</span> <span class="t">Mul</span> <span class="k">for</span> <span class="t">Matrix</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Matrix</span>;
+    <span class="k">fn</span> mul(<span class="k">self</span>, rhs: <span class="t">Matrix</span>) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> out = <span class="t">Matrix</span>::zeros(<span class="k">self</span>.rows, rhs.cols);
+        <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.rows {
+            <span class="k">for</span> j <span class="k">in</span> <span class="n">0</span>..rhs.cols {
+                <span class="k">let</span> sum = <span class="n">0.0</span>;
+                <span class="k">for</span> k <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.cols { sum += <span class="k">self</span>[i, k] * rhs[k, j]; }
+                out[i, j] = sum;
+            }
+        }
+        out
+    }
+}
+
+<span class="c">// Scalar scaling: Matrix * f64.</span>
+<span class="k">impl</span> <span class="t">Mul</span>&lt;<span class="t">f64</span>&gt; <span class="k">for</span> <span class="t">Matrix</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Matrix</span>;
+    <span class="k">fn</span> mul(<span class="k">self</span>, k: <span class="t">f64</span>) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> out = <span class="t">Matrix</span>::zeros(<span class="k">self</span>.rows, <span class="k">self</span>.cols);
+        <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.data.len() { out.data[i] = <span class="k">self</span>.data[i] * k; }
+        out
+    }
+}
+
+<span class="c">// Element-wise (Hadamard) product: a .* b.</span>
+<span class="k">impl</span> <span class="t">DotMul</span> <span class="k">for</span> <span class="t">Matrix</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Matrix</span>;
+    <span class="k">fn</span> dot_mul(<span class="k">self</span>, rhs: <span class="t">Matrix</span>) -&gt; <span class="t">Matrix</span> {
+        <span class="k">let</span> out = <span class="t">Matrix</span>::zeros(<span class="k">self</span>.rows, <span class="k">self</span>.cols);
+        <span class="k">for</span> k <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.data.len() { out.data[k] = <span class="k">self</span>.data[k] * rhs.data[k]; }
+        out
+    }
+}
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Matrix</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.rows {
+            <span class="k">try</span> f.write_str(<span class="s">"["</span>);
+            <span class="k">for</span> j <span class="k">in</span> <span class="n">0</span>..<span class="k">self</span>.cols {
+                <span class="k">try</span> f.write_str(<span class="s">f"{</span><span class="k">self</span>[i, j]<span class="s">:6.1</span><span class="s">}"</span>);
+            }
+            <span class="k">try</span> f.write_str(<span class="s">" ]\n"</span>);
+        }
+    }
+}
+
+<span class="k">let</span> a = <span class="t">Matrix</span>::from_rows([[<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>], [<span class="n">4.0</span>, <span class="n">5.0</span>, <span class="n">6.0</span>]]);
+<span class="k">let</span> b = <span class="t">Matrix</span>::from_rows([[<span class="n">7.0</span>, <span class="n">8.0</span>], [<span class="n">9.0</span>, <span class="n">10.0</span>], [<span class="n">11.0</span>, <span class="n">12.0</span>]]);
+
+println(<span class="s">f"A =\n{</span>a<span class="s">}"</span>);
+println(<span class="s">f"A^T =\n{</span>a.transpose()<span class="s">}"</span>);
+println(<span class="s">f"A * B =\n{</span>a * b<span class="s">}"</span>);
+println(<span class="s">f"A + A =\n{</span>a + a<span class="s">}"</span>);
+println(<span class="s">f"A .* A =\n{</span>a .* a<span class="s">}"</span>);
+println(<span class="s">f"A * 0.5 =\n{</span>a * <span class="n">0.5</span><span class="s">}"</span>);
+
+<span class="k">let</span> i3 = <span class="t">Matrix</span>::identity(<span class="n">3</span>);
+<span class="k">let</span> same = a * i3;
+println(<span class="s">f"A * I == A: {</span>same.data == a.data<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">A =
+[   1.0   2.0   3.0 ]
+[   4.0   5.0   6.0 ]
+
+A^T =
+[   1.0   4.0 ]
+[   2.0   5.0 ]
+[   3.0   6.0 ]
+
+A * B =
+[  58.0  64.0 ]
+[ 139.0 154.0 ]
+
+A + A =
+[   2.0   4.0   6.0 ]
+[   8.0  10.0  12.0 ]
+
+A .* A =
+[   1.0   4.0   9.0 ]
+[  16.0  25.0  36.0 ]
+
+A * 0.5 =
+[   0.5   1.0   1.5 ]
+[   2.0   2.5   3.0 ]
+
+A * I == A: true
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Every operator in rok is a trait method call. With <code>impl Add for Matrix</code>, <code>a + a</code> desugars to <code>Add::add(a, a)</code> (<a href="../spec/refs-lang/003-expressions/301-operator-dispatch">3.1 Operator dispatch</a>, <a href="../std/core/ops#trait.Add"><code>Add</code></a>, <a href="../std/core/ops#trait.Mul"><code>Mul</code></a>).
+</li>
+<li>The same operator can be implemented several times with different right-hand types. <code>impl Mul for Matrix</code> is the matrix product and <code>impl Mul&lt;f64&gt; for Matrix</code> is scalar multiplication; the compiler picks the impl from the operand types.
+</li>
+<li>Dot-prefixed operators such as <code>.*</code> desugar to a separate trait family for element-wise operations (<a href="../std/core/ops#trait.DotMul"><code>DotMul</code></a>), so the matrix product <code>*</code> and the Hadamard product <code>.*</code> can live side by side (<a href="../spec/refs-lang/003-expressions/303-broadcast-operators">3.3 Broadcast operators</a>).
+</li>
+<li>Comma indices are grouped into a tuple, so reading <code>m[i, j]</code> goes through <a href="../std/core/#trait.Index"><code>Index&lt;(usize, usize)&gt;</code></a> and writing <code>m[i, j] = v</code> through <a href="../std/core/#trait.IndexSet"><code>IndexSet</code></a>. The write method takes <code>ref self</code> to modify the matrix in place (<a href="../spec/refs-lang/003-expressions/306-indexing-and-slicing">3.6 Indexing and slicing</a>).
+</li>
+<li>Thanks to <code>impl Display for Matrix</code>, <code>{a}</code> in an f-string prints the whole matrix. Each element uses <code>{x:6.1}</code> for width and precision (<a href="../learn/06-structs-enums-traits">Structs, enums and traits</a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/matrix.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="json-parser"><small>Previous</small>JSON parser</a><a class="next" href="notebook"><small>Next</small>Exploring data in a Jupyter notebook</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

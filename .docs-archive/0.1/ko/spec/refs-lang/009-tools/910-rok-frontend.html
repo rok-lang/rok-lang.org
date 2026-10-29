@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.10. rok - 패키지 / 빌드 front-end - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok 는 cargo 식 front-end 입니다. 매니페스트 rok.rokon 과 lockfile rok.lock, 의존성, 환경, toolchain 고정, 스크립트 의존성을 맡고, 컴파일은 컴파일러 rokc (9.1) 를 불러 처리합니다. 런타임은 rokr (librokr.a) 입니...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/910-rok-frontend.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.10. rok - 패키지 / 빌드 front-end - rok docs">
+<meta property="og:description" content="rok 는 cargo 식 front-end 입니다. 매니페스트 rok.rokon 과 lockfile rok.lock, 의존성, 환경, toolchain 고정, 스크립트 의존성을 맡고, 컴파일은 컴파일러 rokc (9.1) 를 불러 처리합니다. 런타임은 rokr (librokr.a) 입니...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/910-rok-frontend.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/910-rok-frontend.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/910-rok-frontend.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">9. 실행 / 툴 개요</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI 인터페이스</a></li><li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a></li><li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a></li><li><a href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a></li><li><a href="906-jit-engine">9.6. JIT 엔진</a></li><li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a></li><li><a href="908-jupyter-integration">9.8. Jupyter 커널 통합</a></li><li><a href="909-debug-tools">9.9. 디버그 / 진단 도구</a></li><li class="cur"><a aria-current="page" href="910-rok-frontend">9.10. rok - 패키지 / 빌드 front-end</a><ul class="toc"><li><a href="#9101-서브명령과-전역-옵션">9.10.1. 서브명령과 전역 옵션</a></li><li><a href="#9102-rok-new--rok-init-패키지-생성">9.10.2. rok new / rok init: 패키지 생성</a></li><li><a href="#9103-rokrokon--roklock">9.10.3. rok.rokon / rok.lock</a></li><li><a href="#9104-의존성-rok-add--remove--update--deps">9.10.4. 의존성: rok add / remove / update / deps</a></li><li><a href="#9104a-stone-과-rokstonesio">9.10.4a. stone 과 rokstones.io</a></li><li><a href="#9104b-native-패키지">9.10.4b. Native 패키지</a></li><li><a href="#9104c-features">9.10.4c. Features</a></li><li><a href="#9105-환경">9.10.5. 환경</a></li><li><a href="#9105a-rok-install--rok-uninstall">9.10.5a. rok install / rok uninstall</a></li><li><a href="#9106-toolchain">9.10.6. toolchain</a></li><li><a href="#9107-단일-파일-스크립트의-inline-매니페스트">9.10.7. 단일 파일 스크립트의 inline 매니페스트</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="910-rok---패키지--빌드-front-end 910-rok---package--build-front-end 9101-서브명령과-전역-옵션 9101-subcommands-and-global-options 9102-rok-new--rok-init-패키지-생성 9102-rok-new--rok-init-package-creation 9103-rokrokon--roklock 9103-rokrokon--roklock roklock-형식 roklock-format 9104-의존성-rok-add--remove--update--deps 9104-dependencies-rok-add--remove--update--deps 캐시 cache 9104a-stone-과-rokstonesio 9104a-stones-and-rokstonesio 버전-요구 version-requirements 어느-index-인가 which-index index-형식 index-format 해소 resolution rok-search--publish--yank--login--logout rok-search--publish--yank--login--logout 9104b-native-패키지 9104b-native-packages 9104c-features 9104c-features 9105-환경 9105-environments 의존성의-출처 where-dependencies-come-from 9105a-rok-install--rok-uninstall 9105a-rok-install--rok-uninstall 9106-toolchain 9106-toolchain 배포 distribution 9107-단일-파일-스크립트의-inline-매니페스트 9107-inline-manifest-for-single-file-scripts"><a href="../../../../spec/refs-lang/009-tools/910-rok-frontend" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="910-rok---패키지--빌드-front-end"><a class="anchor" tabindex="-1" href="#910-rok---패키지--빌드-front-end" aria-hidden="true">#</a>9.10. <code>rok</code> - 패키지 / 빌드 front-end</h1>
+<p><code>rok</code> 는 cargo 식 front-end 입니다. 매니페스트 <code>rok.rokon</code> 과 lockfile <code>rok.lock</code>, 의존성, 환경, toolchain 고정, 스크립트 의존성을 맡고, 컴파일은 컴파일러 <code>rokc</code> (<a href="901-rokc-cli">9.1</a>) 를 불러 처리합니다. 런타임은 <code>rokr</code> (<code>librokr.a</code>) 입니다.</p>
+<p>의존성이 없는 패키지는 매니페스트 없이 파일 규약만으로 빌드됩니다 (<a href="../000-meta/003-source-units#034-매니페스트-rokrokon-는-선택">0.3.4</a>). 이때 <code>rok build</code> 는 <code>rokc build</code> 와 같습니다.</p>
+<h2 id="9101-서브명령과-전역-옵션"><a class="anchor" tabindex="-1" href="#9101-서브명령과-전역-옵션" aria-hidden="true">#</a>9.10.1. 서브명령과 전역 옵션</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>서브명령</th><th>동작</th></tr></thead>
+<tbody>
+<tr><td><code>new</code>, <code>init</code></td><td>패키지 생성 (9.10.2)</td></tr>
+<tr><td><code>add</code>, <code>remove</code>, <code>update</code>, <code>deps</code></td><td>의존성 (9.10.4)</td></tr>
+<tr><td><code>search</code>, <code>publish</code>, <code>yank</code>, <code>login</code>, <code>logout</code></td><td>stone (9.10.4a)</td></tr>
+<tr><td><code>env</code></td><td>환경 (9.10.5)</td></tr>
+<tr><td><code>toolchain</code></td><td>toolchain (9.10.6)</td></tr>
+<tr><td><code>install</code>, <code>uninstall</code></td><td>REPL / Jupyter 용 라이브러리와 실행 파일 (9.10.5a)</td></tr>
+<tr><td><code>build</code>, <code>check</code>, <code>run</code>, <code>emit</code></td><td>의존성을 붙여 <code>rokc</code> 에 위임</td></tr>
+<tr><td><code>test</code>, <code>bench</code></td><td><code>rokc</code> 가 의존성을 붙여 하네스를 빌드하고, <code>rok</code> 가 실행 (<a href="901-rokc-cli">9.1</a>)</td></tr>
+<tr><td><code>doc</code>, <code>lint</code>, <code>repl [path]</code>, <code>lsp</code></td><td>의존성을 붙여 <code>rokc</code> 에 위임</td></tr>
+<tr><td><code>fmt</code>, <code>clean</code>, <code>demangle</code>, <code>profdata</code></td><td>의존성 없이 <code>rokc</code> 에 위임</td></tr>
+<tr><td><code>jupyter</code></td><td>커널 실행 (<code>--connection-file</code>) 은 위임, <code>jupyter install [--env &lt;name&gt;]</code> 은 kernelspec 설치 (<a href="908-jupyter-integration#983-kernelspec-설치">9.8.3</a>)</td></tr>
+<tr><td><code>version</code>, <code>help</code></td><td></td></tr>
+<tr><td>(없음)</td><td><code>rok repl</code> 과 같음 - REPL 시작</td></tr>
+</tbody></table></div>
+<p>위임하는 서브명령은 같은 이름의 <code>rokc</code> 서브명령을 실행합니다. <code>rok</code> 는 자기 전역 옵션 (<code>--env</code> / <code>--offline</code> / <code>--locked</code> / <code>--cwd</code>, <code>--</code> 앞 어디든) 만 소비하고, 나머지 인자는 그대로 넘기며 다음을 더합니다. <code>test</code> 와 <code>bench</code> 는 <code>rok</code> 가 <code>rokc</code> 로 하네스를 빌드하게만 하고 (<code>--emit-harness</code>) 실행은 직접 하므로 (<a href="901-rokc-cli">9.1</a>), 러너는 컴파일러에 속하지 않습니다.</p>
+<ul>
+<li>의존 패키지마다 <code>--extern name=&lt;소스 디렉토리&gt;</code>. <code>rok.lock</code> 을 따라 준비하며, 의존되는 쪽이 의존하는 쪽보다 앞입니다 (<code>rok deps</code> 가 출력하는 순서). 미리 빌드는 <code>rokc</code> 가 합니다 (<a href="902-aot-pipeline#미리-빌드한-의존-패키지">9.2.3</a>).
+</li>
+<li>패키지 자신의 feature 는 <code>--cfg feature=&lt;f&gt;</code> 로, 각 의존 패키지의 feature 는 <code>--extern-feature &lt;name&gt;=&lt;f&gt;</code> 로 (9.10.4c). build / run / test / bench / check / lint / doc / emit / repl / lsp / jupyter / deps 의 feature 옵션 <code>--features &lt;f,..&gt;</code> (여러 번 가능, <code>&lt;dep&gt;/&lt;f&gt;</code> 도), <code>--all-features</code>, <code>--no-default-features</code> 는 <code>rok</code> 이 소비합니다 (<code>--</code> 앞).
+</li>
+<li>매니페스트의 <code>lints</code> 를 <code>-A</code> / <code>-W</code> / <code>-D</code> 로 (인자 앞에). 매니페스트는 경로가 고르는 프로젝트의 것입니다: <code>.rok</code> 파일이면 그 파일 위치나 그 위에서 <code>src/main.rok</code>, <code>src/lib.rok</code>, <code>rok.rokon</code> 중 하나가 있는 가장 가까운 디렉토리. 패키지 <code>src/</code> 안의 파일은 그 패키지를 고릅니다 (<a href="901-rokc-cli#911-일반-형태">9.1.1</a>). <code>rok.rokon</code> 이 있는 디렉토리의 그 밖의 단독 파일 (패키지 <code>src/</code> 옆의 스크립트, 또는 <code>rok.rokon</code> 만 있는 디렉토리) 은 그 매니페스트의 <code>lints</code> (와 <code>lints_from</code>) 와 의존성을 가진 단일 파일 패키지로 컴파일합니다.
+</li>
+<li>패키지 밖 (환경, 스크립트) 이면 <code>--target-dir</code> 에 그 환경이나 스크립트의 <code>target/</code>.
+</li>
+</ul>
+<p><code>rok repl &lt;path&gt;</code> 는 <code>run</code> 처럼 그 경로의 프로젝트에서 의존성과 lint 를 정하고, 매니페스트 이름을 넘깁니다 (<code>--name</code>).</p>
+<p>옵션과 출력, 종료 코드는 <code>rokc</code> 의 것 (<a href="901-rokc-cli">9.1</a>) 을 따릅니다. <code>rok</code> 는 닫힌 표준 출력이나 표준 에러를 <code>rokc</code> 와 같은 방식으로 다룹니다 (<a href="901-rokc-cli#916-종료-코드">9.1.6</a>). <code>rokls</code> 는 <code>rok lsp</code> 와 같은 독립 실행 파일입니다.</p>
+<p>서브명령 없이 <code>rok [옵션]</code> 만 실행하면 <code>rok repl</code> 과 같이 REPL 을 시작합니다.</p>
+<pre><code>rok                 # = rok repl
+rok --env sci       # = rok repl --env sci
+</code></pre>
+<p><code>rok [options] &lt;file&gt; [args..]</code> 은 스크립트를 실행합니다: <code>rok run -q &lt;file&gt; -- args..</code> 와 같습니다. 파일 뒤의 모든 인자는 그대로 프로그램에 넘기며, 종료 코드는 프로그램의 것입니다. 그 단어는 <code>/</code> (Windows 에서는 <code>\</code> 도) 를 담거나 확장자가 <code>.rok</code> 이면 파일입니다. 그런 서브명령은 없으므로 서브명령을 파일로 오인하는 일은 없습니다. shebang 줄 (<a href="../001-lexical/102-lexical-structure#shebang-줄">1.2.3</a>) 과 함께 쓰면 <code>./script.rok args</code> 가 스크립트를 실행합니다.</p>
+<p>위임하는 명령의 경로는 옵션도 옵션의 값도 아닌 첫 인자이므로, 옵션이 그 앞에 와도 됩니다 (<code>rok run --release t.rok</code>).</p>
+<p><code>rok</code> 의 전역 옵션은 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>옵션</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>--env &lt;name&gt;</code></td><td>그 이름 있는 환경에서 작업함 (REPL, Jupyter, <code>rok install</code>). 패키지에 작용하는 명령에서는 에러 (<a href="#9105-환경">9.10.5</a>)</td></tr>
+<tr><td><code>--offline</code></td><td>네트워크를 쓰지 않음. git 의존은 캐시에 있어야 함</td></tr>
+<tr><td><code>--locked</code></td><td><code>rok.lock</code> 을 바꿔야 하면 바꾸지 않고 에러 (CI 용)</td></tr>
+<tr><td><code>--cwd &lt;dir&gt;</code></td><td>디렉토리를 바꾼 뒤 실행</td></tr>
+<tr><td><code>-q</code>, <code>--quiet</code></td><td>출력을 줄임</td></tr>
+</tbody></table></div>
+<p>환경 변수는 <code>ROK_HOME</code> (기본 <code>~/.rok</code>), <code>ROK_ENV</code> (9.10.5), <code>ROK_TOOLCHAIN</code> (9.10.6), <code>ROK_REGISTRY</code> (index) 와 <code>ROK_REGISTRY_TOKEN</code> (registry API 토큰) (9.10.4a), 그리고 <code>ROK_DIST</code> (릴리스 서버, 9.10.6) 입니다.</p>
+<h2 id="9102-rok-new--rok-init-패키지-생성"><a class="anchor" tabindex="-1" href="#9102-rok-new--rok-init-패키지-생성" aria-hidden="true">#</a>9.10.2. <code>rok new</code> / <code>rok init</code>: 패키지 생성</h2>
+<pre><code>rok new [--lib] [--bin] &lt;name&gt;
+rok init [--lib] [--bin] [dir]
+rok init --script &lt;file.rok&gt;
+</code></pre>
+<p><code>rok new</code> 는 <code>&lt;name&gt;</code> 디렉토리를 만들고 기본 파일을 채웁니다. <code>--bin</code> (기본값) 은 인사말을 출력하는 <code>src/main.rok</code> 를, <code>--lib</code> 는 예시 함수와 <code>#[test]</code> 하나를 담은 <code>src/lib.rok</code> 를 만듭니다. 둘을 함께 주면 둘 다 만들며, 그러면 <code>src/main.rok</code> 는 <code>use &lt;name&gt;::add;</code> 로 라이브러리의 함수를 부릅니다 (<a href="../000-meta/003-source-units#031-실행-파일과-라이브러리">0.3.1</a>). <code>&lt;name&gt;</code> 이 이미 있으면 에러입니다.</p>
+<p><code>rok init</code> 은 이미 있는 디렉토리 (생략하면 현재 디렉토리) 를 패키지로 만듭니다. 그 디렉토리에 <code>src/main.rok</code> 나 <code>src/lib.rok</code> 가 이미 있으면 에러입니다.</p>
+<p><code>rok init --script &lt;file.rok&gt;</code> 은 스크립트 (<a href="#9107-단일-파일-스크립트의-inline-매니페스트">9.10.7</a>) 를 그 스크립트의 디렉토리에서 파일 이름 (<code>.rok</code> 를 뗀 것) 을 딴 패키지로 바꿉니다. <code>rok.rokon</code> 은 스크립트 블록들을 합친 <code>deps</code> (와 <code>native</code>) 를 받으며, 경로는 그것 기준으로 다시 씁니다. 스크립트는 <code>src/main.rok</code> 가 되고, 그 <code>mod</code> 가 읽는 모든 파일은 같은 상대 경로로 <code>src/</code> 아래로 옮기며, 각각 블록은 뺍니다. 스크립트가 패키지 안에 있거나, 옮길 파일이나 <code>rok.rokon</code> 이 이미 있거나, 서브모듈 파일이 스크립트의 디렉토리 밖에 있으면 에러입니다.</p>
+<p>두 명령은 정규 형식 (<a href="../../refs-standard-libraries/300-std/309-rokon#394-정규-형식">ROKON 3.9.4</a>) 의 <code>rok.rokon</code> 과 <code>target/</code> 을 담은 <code>.gitignore</code> 도 쓰며, git 저장소 안이 아니면 <code>git init</code> 을 합니다. <code>init</code> 은 디렉토리 이름을 이름 규칙 (9.10.3) 에 맞게 바꿔 패키지 이름으로 씁니다.</p>
+<pre><code>hello/
+├── .gitignore        &lt;- target/
+├── rok.rokon
+└── src/
+    └── main.rok
+</code></pre>
+<h2 id="9103-rokrokon--roklock"><a class="anchor" tabindex="-1" href="#9103-rokrokon--roklock" aria-hidden="true">#</a>9.10.3. <code>rok.rokon</code> / <code>rok.lock</code></h2>
+<p>패키지 루트의 <code>rok.rokon</code> 이 매니페스트이고, 같은 자리의 <code>rok.lock</code> 이 lockfile 입니다. 둘 다 <a href="../../refs-standard-libraries/300-std/309-rokon">ROKON</a> 형식입니다. 이름은 이 철자 그대로 (모두 소문자) 입니다. 대소문자만 다른 파일 (<code>Rok.rokon</code> 등) 은 경고와 함께 무시하며, 읽지 않습니다.</p>
+<p>매니페스트는 ROKON 값 하나, 즉 <code>Package { .. }</code> struct 입니다 (루트 이름 <code>Package</code> 는 생략 가능). 읽기만 하며 컴파일하거나 실행하지 않습니다.</p>
+<pre><code class="language-rokon"><span class="t">Package</span> {
+    name: <span class="s">"geom"</span>,                    <span class="c">// 문자열, 선택</span>
+    version: <span class="s">"0.3.1"</span>,                <span class="c">// 문자열, 선택</span>
+    toolchain: <span class="s">"0.4"</span>,                <span class="c">// 문자열, 선택 - toolchain 고정 (9.10.6)</span>
+    description: <span class="s">"2D geometry"</span>,      <span class="c">// 문자열, 선택</span>
+    license: <span class="s">"MIT OR Apache-2.0"</span>,    <span class="c">// 문자열, 선택 (SPDX 식)</span>
+    repository: <span class="s">"https://example.com/geom.git"</span>,   <span class="c">// 문자열, 선택</span>
+    deps: {                          <span class="c">// 패키지 이름 (문자열) -&gt; Dep</span>
+        <span class="s">"util"</span>: <span class="t">Dep</span>::path(<span class="s">"../util"</span>),
+        <span class="s">"parser"</span>: <span class="t">Dep</span>::git(<span class="s">"https://example.com/parser.git"</span>, tag: <span class="s">"v1.2"</span>),
+        <span class="s">"http"</span>: <span class="s">"0.9"</span>,                                   <span class="c">// stone (= Dep::version("0.9"))</span>
+        <span class="s">"json"</span>: <span class="t">Dep</span>::version(<span class="s">"^1.4"</span>, optional: <span class="k">true</span>),    <span class="c">// feature 가 켤 때만 (9.10.4c)</span>
+        <span class="s">"csv"</span>: <span class="t">Dep</span>::version(<span class="s">"^0.3"</span>, registry: <span class="s">"https://example.com/index"</span>),
+    },
+    dev_deps: {                      <span class="c">// deps 와 같은 형태. test / bench 에서만</span>
+        <span class="s">"fixtures"</span>: <span class="t">Dep</span>::path(<span class="s">"tests/fixtures"</span>),
+    },
+    features: { <span class="s">"default"</span>: [<span class="s">"json"</span>], <span class="s">"json"</span>: [<span class="s">"dep:json"</span>], <span class="s">"tls"</span>: [<span class="s">"http/tls"</span>], <span class="s">"full"</span>: [<span class="s">"json"</span>, <span class="s">"tls"</span>] },
+    native: { <span class="s">"zlib"</span>: <span class="s">"^1.3"</span>, <span class="s">"png"</span>: <span class="t">Dep</span>::native(url: <span class="s">"vendor/png.rokon"</span>, sha256: <span class="s">"&lt;64 hex&gt;"</span>) },
+    lints_from: <span class="s">".."</span>,                <span class="c">// 문자열, 선택 - ../rok.rokon 의 lints 에서 시작</span>
+    lints: { <span class="s">"dead_code"</span>: <span class="s">"allow"</span>, <span class="s">"nonstandard_style"</span>: <span class="s">"deny"</span> },
+}
+</code></pre>
+<ul>
+<li>값은 ROKON 의 리터럴 (문자열, <code>{ &quot;k&quot;: v }</code> dict, 빈 dict <code>{}</code>) 과 <code>Dep::path(&quot;..&quot;)</code> / <code>Dep::git(&quot;url&quot;, rev | tag | branch: &quot;..&quot;)</code> / <code>Dep::version(&quot;req&quot;, registry: &quot;url&quot;)</code> 입니다. <code>Dep::git</code> 의 <code>rev</code> / <code>tag</code> / <code>branch</code> 는 많아야 하나이고, <code>Dep::version</code> 의 <code>registry</code> 는 선택입니다. 의존성 값이 문자열 하나면 <code>Dep::version</code> 의 줄임입니다.
+</li>
+<li><code>Dep::path</code> / <code>Dep::git</code> / <code>Dep::version</code> 은 <code>optional: true</code>, <code>features: [&quot;&lt;f&gt;&quot;, ..]</code>, <code>default_features: false</code> 도 받습니다 (9.10.4c). optional 인 dev 의존은 에러입니다.
+</li>
+<li><code>Dep::registry</code> 는 <code>rok.lock</code> 전용이며 <code>rok.rokon</code> 에 쓰면 에러입니다.
+</li>
+<li>패키지 이름 (<code>deps</code> 의 키, <code>name</code>) 은 <code>[a-z0-9_-]+</code> 의 소문자 ASCII 이며 글자로 시작합니다 (숫자, <code>-</code>, <code>_</code> 로 시작하면 에러). 이름 <code>rok</code> 은 표준 라이브러리용으로 예약되어 있습니다: 패키지, 의존 패키지, native 패키지, registry 이름이 <code>rok</code> 이면 에러이며 (<code>`rok` is reserved for the standard library; name the package something else, e.g. `rok_util`</code>), 그것으로 <code>rok new</code> / <code>rok init</code> / <code>rok add</code> 해도 마찬가지입니다. 코드가 패키지를 이름으로 부를 수 있어야 하므로, 코드 이름 (아래) 은 키워드 (1.5: <code>fn</code>, <code>match</code>, <code>self</code>, ..) 나 경로 시작점 (5.5.7: <code>pkg</code>, <code>sup</code>) 일 수 없습니다. 실행 파일의 <code>use pkg::add;</code> 는 언제나 자기 루트를 가리킵니다 (<code>`pkg` already names a package's own root (`pkg::`), so code can't name a package called that; name the package something else, e.g. `pkg_util`</code>). 키는 문자열입니다 (<code>&quot;rok-syntax&quot;: Dep::version(&quot;^0.1&quot;)</code>).
+</li>
+<li>코드에서는 <code>-</code> 를 <code>_</code> 로 바꾼 이름이 그 패키지를 가리키는 최상위 경로입니다 (<code>rok-syntax</code> → <code>use rok_syntax::..</code>, <code>--extern rok_syntax=..</code>).
+</li>
+<li>레지스트리와 한 의존 그래프 안에서 이름은 <code>-</code> 와 <code>_</code> 를 같게, 대소문자를 구분하지 않고 비교합니다. 그래서 <code>rok-syntax</code> 와 <code>rok_syntax</code> 는 함께 있을 수 없습니다.
+</li>
+<li>의존 패키지는 <code>src/lib.rok</code> 를 가져야 하며, 그 패키지에 <code>src/main.rok</code> 도 있든 없든 그 라이브러리가 의존하는 쪽이 얻는 것입니다. <code>src/main.rok</code> 만 있는 의존 패키지는 그것이 <code>rok install</code> 용 프로그램이라고 알리는 에러입니다. 전이 의존은 의존 패키지의 <code>deps</code> 입니다 (<code>dev_deps</code> 는 전이되지 않음).
+</li>
+<li><code>native</code> 는 native 패키지 이름 (자기 이름 공간: 패키지와 native 패키지는 같은 이름을 쓸 수 있음) 을 <code>Dep::native(&quot;req&quot;[, registry: &quot;url&quot;])</code>, 요구 문자열, 또는 <code>Dep::native(url: &quot;&lt;url 또는 매니페스트 기준 경로&gt;&quot;, sha256: &quot;&lt;64 자리 hex&gt;&quot;)</code> 에 대응시킵니다 (9.10.4b). <code>deps</code> / <code>dev_deps</code> 의 <code>Dep::native</code> 는 에러입니다. 그래프의 모든 패키지의 native 의존이 실행 파일에 링크됩니다 (<code>dev_deps</code> 로만 닿는 것은 test / bench 에서만).
+</li>
+<li><code>lints</code> 는 lint 수준을 정합니다 (lint 나 그룹 이름 → <code>&quot;allow&quot;</code> | <code>&quot;warn&quot;</code> | <code>&quot;deny&quot;</code>, <a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-린트-제어">6.2.9</a>). <code>rok</code> 이 실행하는 모든 <code>rokc</code> 명령의 CLI 플래그 앞에 붙은 것처럼 다뤄지므로, CLI <code>-A/-W/-D</code> 와 코드의 속성이 이를 덮습니다.
+</li>
+<li><code>lints_from</code> 은 시작 lint 수준을 주는 <code>rok.rokon</code> 이 있는 디렉토리를 가리킵니다 (이 매니페스트의 디렉토리 기준 상대 경로, 또는 절대 경로). 그 매니페스트의 <code>lints</code> 를 그 자신의 <code>lints_from</code> 사슬 뒤에 먼저 적용하고, 이 매니페스트의 <code>lints</code> 가 그 뒤에 오므로, 여기 항목이 사슬의 같은 lint 나 그룹을 덮습니다 (모든 항목은 이 순서로 <code>-A</code>/<code>-W</code>/<code>-D</code> 로 넘어가며 뒤의 플래그가 이깁니다). 빌드하거나 검사하는 패키지 (와 환경의 매니페스트) 에만 적용되며, 의존 패키지의 매니페스트는 lint 에 쓰지 않습니다. 디렉토리가 없거나, <code>rok.rokon</code> 이 없거나, 사슬이 이미 지난 매니페스트로 돌아오면 (순환) 에러입니다. <code>rok env import</code> 는 상대 <code>lints_from</code> 을 절대 경로로 바꿔 씁니다. 스크립트의 <code>//! ```rokon</code> 블록에서는 쓸 수 없습니다.
+</li>
+<li>에러: 모르는 필드 / <code>Dep</code> 종류 / 이름 있는 인자, 중복, 9.10.4c 의 규칙을 어기는 <code>features</code>, 규칙에 맞지 않는 패키지 이름, ROKON 이 아닌 문법, <code>Package { .. }</code> 하나가 아닌 것, 뒤에 남은 토큰. 진단은 <code>file:line:col</code> 과 caret 으로 위치를 보여 줍니다.
+</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>의존성 출처</th><th>형태</th><th><code>rok.lock</code> 에 고정</th></tr></thead>
+<tbody>
+<tr><td>path</td><td><code>Dep::path(&quot;..&quot;)</code> (매니페스트 기준 상대 경로)</td><td>없음 (늘 현재 내용)</td></tr>
+<tr><td>git</td><td><code>Dep::git(&quot;url&quot;)</code>, 선택으로 <code>rev:</code> / <code>tag:</code> / <code>branch:</code> 중 하나</td><td>커밋과 tree hash</td></tr>
+<tr><td>stone</td><td><code>Dep::version(&quot;req&quot;[, registry: &quot;url&quot;])</code> 또는 문자열 <code>&quot;req&quot;</code> (<a href="#9104a-stone-과-rokstonesio">9.10.4a</a>)</td><td>버전, 커밋, tree hash</td></tr>
+<tr><td>native</td><td><code>Dep::native(&quot;req&quot;)</code> / <code>Dep::native(url:, sha256:)</code> (<a href="#9104b-native-패키지">9.10.4b</a>)</td><td>버전과 항목 SHA-256 (index), 없음 (해시가 고정)</td></tr>
+</tbody></table></div>
+<p>rok 에는 build script 가 없습니다: 빌드 시점에 패키지의 코드는 실행되지 않습니다. C / C++ 라이브러리는 미리 빌드된 native 패키지로 들어옵니다 (9.10.4b).</p>
+<p>한 빌드 안에서 한 이름은 한 패키지입니다. 같은 이름이 서로 다른 출처 (다른 경로, 또는 다른 url / 커밋) 로 요구되면 두 요구처를 보여 주는 에러입니다.</p>
+<h3 id="roklock-형식"><a class="anchor" tabindex="-1" href="#roklock-형식" aria-hidden="true">#</a><code>rok.lock</code> 형식</h3>
+<p><code>rok.lock</code> 은 <code>rok</code> 가 결정적으로 쓰는 ROKON (정규 형식) 입니다. 머리 주석 뒤에 git 패키지와 stone 마다 <code>Locked</code> 하나를 이름 순으로 둡니다. path 의존은 고정하지 않으므로 나오지 않습니다.</p>
+<pre><code class="language-rokon"><span class="c">// rok.lock: generated by `rok`; do not edit. Commit it with your sources.</span>
+<span class="t">Lock</span> {
+    version: <span class="n">1</span>,
+    packages: [
+        <span class="t">Locked</span> {
+            name: <span class="s">"parser"</span>,
+            source: <span class="t">Dep</span>::git(<span class="s">"https://example.com/parser.git"</span>, tag: <span class="s">"v1.2"</span>),
+            commit: <span class="s">"4f0c2a9e1b7d3c58a6e09f21d4b8c7a3e5f60123"</span>,
+            tree: <span class="s">"9a1e7c3b5d2f4a6081c9e3b7d5f2a4c6e8b0d1f3"</span>,
+        },
+        <span class="t">Locked</span> {
+            name: <span class="s">"json"</span>,
+            vers: <span class="s">"1.4.2"</span>,
+            source: <span class="t">Dep</span>::registry(<span class="s">"https://github.com/rok-lang/rokstones.io-index"</span>),
+            commit: <span class="s">"0b6d.."</span>,
+            tree: <span class="s">"77e1.."</span>,
+        },
+    ],
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><code>version</code></td><td>lock 형식 버전 (<code>1</code>)</td></tr>
+<tr><td><code>name</code></td><td><code>rok.rokon</code> 의 <code>deps</code> 키</td></tr>
+<tr><td><code>vers</code></td><td>stone 만. 해소된 버전</td></tr>
+<tr><td><code>source</code></td><td>git 은 <code>rok.rokon</code> 에 적은 <code>Dep::git(..)</code> 그대로, stone 은 <code>Dep::registry(&quot;&lt;index url&gt;&quot;)</code></td></tr>
+<tr><td><code>commit</code></td><td>해소된 커밋 (40 자리 16 진수)</td></tr>
+<tr><td><code>tree</code></td><td>그 커밋의 git tree hash. 캐시의 checkout 을 검증하는 데 씀</td></tr>
+</tbody></table></div>
+<ul>
+<li><code>Locked</code> 의 <code>source</code> 는 <code>Dep::git(..)</code> 또는 <code>Dep::registry(..)</code> 입니다.
+</li>
+<li><code>packages</code> 필드가 없으면 빈 리스트로 읽습니다.
+</li>
+<li>feature 는 기록하지 않습니다: lock 은 optional 인 것을 포함해 그래프의 모든 패키지를 고정하므로, 빌드가 켜는 feature 에 의존하지 않습니다.
+</li>
+<li>index 의 native 패키지는 선택 필드 <code>natives: [LockedNative { name, vers, source: Dep::registry(&quot;&lt;index&gt;&quot;), sha256 }]</code> 에 고정하며, 이름 순으로 정렬하고 비어 있지 않을 때만 씁니다. <code>sha256</code> 은 <code>yanked: false</code> 로 둔 항목의 정규 index 줄의 SHA-256 이며, 항목이 바뀌면 &quot;run <code>rok update</code>&quot; 에러입니다.
+</li>
+<li><code>version</code> 이 <code>1</code> 이 아니면 &quot;unsupported lockfile version&quot; 에러입니다.
+</li>
+<li>lock 을 읽다 난 모든 에러는 &quot;(delete rok.lock and run <code>rok update</code> to make it again)&quot; 를 덧붙입니다.
+</li>
+</ul>
+<h2 id="9104-의존성-rok-add--remove--update--deps"><a class="anchor" tabindex="-1" href="#9104-의존성-rok-add--remove--update--deps" aria-hidden="true">#</a>9.10.4. 의존성: <code>rok add</code> / <code>remove</code> / <code>update</code> / <code>deps</code></h2>
+<pre><code>rok add &lt;name&gt; --path &lt;dir&gt; [--dev]
+rok add &lt;name&gt; --git &lt;url&gt; [--rev &lt;rev&gt; | --tag &lt;tag&gt; | --branch &lt;branch&gt;] [--dev]
+rok add &lt;name&gt;[@&lt;req&gt;] [--registry &lt;url&gt;] [--dev]      # stone
+rok add &lt;name&gt; .. [--features &lt;f,..&gt;] [--no-default-features] [--optional]   # 위의 어느 것과도
+rok remove &lt;name&gt;
+rok add .. &lt;file.rok&gt;                    # 스크립트의 //! rokon 블록에
+rok remove [--native] &lt;name&gt; &lt;file.rok&gt;
+rok update [name...]
+rok deps [--dev] [--features &lt;f,..&gt;] [--all-features] [--no-default-features]
+</code></pre>
+<ul>
+<li><code>add</code> / <code>remove</code> 는 <code>rok.rokon</code> 을 고치며, 주석과 배치를 보존합니다. <code>--dev</code> 는 <code>dev_deps</code> 에 넣습니다. <code>add</code> / <code>remove</code> 는 패키지의 <code>rok.rokon</code> 을 고칩니다. 마지막 인자로 스크립트 파일을 주면 <code>add</code> / <code>remove</code> 는 대신 그 파일의 <code>//! rokon</code> 블록을 고칩니다 (9.10.7): 블록이 없으면 shebang 줄과 맨 앞의 <code>//!</code> 줄 뒤에 만들고 (정규 형식으로 쓰며, 이미 있는 블록은 배치와 주석을 유지함), 비게 된 블록은 지우며, path 는 스크립트 기준으로 쓰고, <code>--dev</code> / <code>--optional</code> 은 에러입니다. 패키지 안의 스크립트는 에러입니다 (패키지의 <code>rok.rokon</code> 을 씀). 스크립트 없이 패키지 밖에서, 또는 <code>--env</code> 와 함께 쓰면 <code>rok add &lt;name&gt; &lt;file.rok&gt;</code> 와 <code>rok install</code> / <code>rok uninstall</code> 을 알리는 에러입니다 (<a href="#9105a-rok-install--rok-uninstall">9.10.5a</a>). stone 을 요구 없이 더하면 <code>^&lt;가장 새 버전&gt;</code> 을 적습니다. <code>--features</code>, <code>--no-default-features</code>, <code>--optional</code> 은 <code>Dep::..</code> 에 적습니다. <code>--optional</code> 은 패키지에 같은 이름의 feature 가 없으면 feature <code>&quot;&lt;name&gt;&quot;: [&quot;dep:&lt;name&gt;&quot;]</code> 도 더합니다.
+</li>
+<li>빌드는 <code>rok.lock</code> 의 커밋과 버전을 씁니다. 새로 선언된 의존은 lock 에 더하고 지운 의존은 정리하지만, 이미 고정된 것을 옮기는 것은 <code>update</code> 뿐입니다. <code>update</code> 는 이름을 주면 그 패키지만, 없으면 모든 git 의존과 stone 을 다시 해소합니다.
+</li>
+<li><code>deps</code> 는 해소한 의존 패키지를 <code>&lt;코드 이름&gt;=&lt;그 src/lib.rok 경로&gt;</code> 줄로 (코드 이름은 <code>-</code> 를 <code>_</code> 로 바꾼 것), 의존되는 쪽이 먼저 오는 순서로 출력합니다 (<code>--dev</code> 는 dev 의존 포함). 각 줄 뒤에는 그 <code>--extern-feature=&lt;코드 이름&gt;=&lt;f&gt;</code> 줄들이 옵니다. <code>deps</code> 는 feature 옵션과 <code>--dev</code> 를 받습니다. native 패키지마다 (의존하는 쪽이 먼저, host 용) <code># native &lt;name&gt; &lt;vers&gt;</code> 와 그 <code>rokc</code> 인자를 한 줄에 하나씩 출력합니다.
+</li>
+<li><code>rok.lock</code> 은 버전 관리에 함께 넣습니다.
+</li>
+<li><code>rok update</code> 는 <code>rok.lock</code> 을 다시 해소하고, <code>rok toolchain update</code> 는 toolchain 을 교체합니다 (9.10.6).
+</li>
+</ul>
+<h3 id="캐시"><a class="anchor" tabindex="-1" href="#캐시" aria-hidden="true">#</a>캐시</h3>
+<p>가져온 git 소스는 <code>$ROK_HOME/cache/</code> 에 두고 모든 프로젝트가 공유합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>경로</th><th>내용</th></tr></thead>
+<tbody>
+<tr><td><code>cache/git/db/&lt;repo&gt;-&lt;hash&gt;/</code></td><td>저장소의 bare clone (url 마다 하나)</td></tr>
+<tr><td><code>cache/registry/db/&lt;repo&gt;-&lt;hash&gt;/</code></td><td>stone index 의 bare clone (index 마다 하나)</td></tr>
+<tr><td><code>cache/git/checkouts/&lt;commit&gt;/</code></td><td>커밋의 checkout. 쓰기 전에 tree hash 로 검증하고, 다르면 다시 풀어 놓음</td></tr>
+<tr><td><code>cache/scripts/&lt;hash&gt;/</code></td><td>스크립트의 <code>rok.lock</code> 과 <code>target/</code>. <code>&lt;hash&gt;</code> 는 스크립트의 경로와, 그것이 닿는 모든 파일의 경로와 블록을 덮음 (<a href="#9107-단일-파일-스크립트의-inline-매니페스트">9.10.7</a>)</td></tr>
+<tr><td><code>cache/native/&lt;sha256&gt;/</code></td><td>SHA-256 이 맞은 뒤 푼 native archive. 다시 받지 않음 (9.10.4b)</td></tr>
+<tr><td><code>cache/native/meta/&lt;sha256&gt;.rokon</code></td><td><code>Dep::native(url:)</code> 파일</td></tr>
+</tbody></table></div>
+<h2 id="9104a-stone-과-rokstonesio"><a class="anchor" tabindex="-1" href="#9104a-stone-과-rokstonesio" aria-hidden="true">#</a>9.10.4a. stone 과 rokstones.io</h2>
+<p>레지스트리의 패키지를 <strong>stone</strong> 이라 합니다. 기본 레지스트리는 <strong>rokstones.io</strong> 이며, index 는 별도 git 저장소 <code>https://github.com/rok-lang/rokstones.io-index</code> 입니다.</p>
+<h3 id="버전-요구"><a class="anchor" tabindex="-1" href="#버전-요구" aria-hidden="true">#</a>버전 요구</h3>
+<p>Cargo 와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>요구</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><code>1.2.3</code>, <code>^1.2.3</code></td><td><code>&gt;=1.2.3, &lt;2.0.0</code> (<code>^0.2.3</code> 은 <code>&lt;0.3.0</code>, <code>^0.0.3</code> 은 <code>&lt;0.0.4</code>)</td></tr>
+<tr><td><code>~1.2.3</code></td><td><code>&gt;=1.2.3, &lt;1.3.0</code></td></tr>
+<tr><td><code>=1.2.3</code></td><td>정확히</td></tr>
+<tr><td><code>&gt;=</code> <code>&gt;</code> <code>&lt;</code> <code>&lt;=</code></td><td>비교</td></tr>
+<tr><td><code>*</code>, <code>1.*</code>, <code>1.2.x</code></td><td>와일드카드</td></tr>
+<tr><td><code>&gt;=1.2, &lt;1.5</code></td><td>쉼표는 모두 만족</td></tr>
+</tbody></table></div>
+<p>pre-release 버전 (<code>1.3.0-beta.1</code>) 은 요구가 같은 major.minor.patch 의 pre-release 를 적었을 때만 맞습니다.</p>
+<h3 id="어느-index-인가"><a class="anchor" tabindex="-1" href="#어느-index-인가" aria-hidden="true">#</a>어느 index 인가</h3>
+<p><code>ROK_REGISTRY</code> &gt; <code>$ROK_HOME/config.rokon</code> 의 <code>Config { registry: &quot;&lt;url&gt;&quot; }</code> &gt; 기본 (rokstones.io index) 순입니다. <code>Dep::version</code> 의 <code>registry:</code> 와 <code>rok add --registry</code> 는 그 의존 하나의 index 를 정합니다.</p>
+<h3 id="index-형식"><a class="anchor" tabindex="-1" href="#index-형식" aria-hidden="true">#</a>index 형식</h3>
+<p>index 저장소의 루트에는 <code>config.rokon</code>, <code>Config { api: &quot;&lt;url&gt;&quot; }</code> 가 있습니다: registry API 의 기준 URL 입니다 (rokstones.io 는 <code>https://rokstones.io</code>). <code>https://</code> 여야 하며, <code>http://127.0.0.1</code> 과 <code>http://localhost</code> 만 예외입니다. stone 하나는 publish 된 소문자 이름 (<code>-</code> 는 그대로) 의 shard 경로에 있는 파일 하나입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>이름 길이</th><th>경로</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>1/a</code></td></tr>
+<tr><td>2</td><td><code>2/ab</code></td></tr>
+<tr><td>3</td><td><code>3/a/abc</code></td></tr>
+<tr><td>4 이상</td><td><code>ab/cd/abcd..</code></td></tr>
+</tbody></table></div>
+<p>파일의 각 줄은 버전 하나이며, 정규 형식의 한 줄 ROKON 입니다. 오래된 버전이 먼저입니다.</p>
+<pre><code class="language-rokon"><span class="t">Stone</span> { name: <span class="s">"json"</span>, vers: <span class="s">"1.4.2"</span>, deps: [{ name: <span class="s">"util"</span>, req: <span class="s">"^0.3"</span>, kind: <span class="s">"normal"</span> }], source: <span class="t">Dep</span>::git(<span class="s">"https://example.com/json.git"</span>, rev: <span class="s">"0b6d.."</span>), cksum: <span class="s">"77e1.."</span>, yanked: <span class="k">false</span> }
+</code></pre>
+<ul>
+<li><code>deps</code> 의 <code>kind</code> 는 <code>&quot;normal&quot;</code>, <code>&quot;dev&quot;</code>, <code>&quot;native&quot;</code> 중 하나이며, <code>registry</code> 는 선택입니다.
+</li>
+<li>feature 가 있는 stone 은 <code>deps</code> 뒤에 <code>features: { &quot;&lt;name&gt;&quot;: [&quot;&lt;entry&gt;&quot;, ..] }</code> 를 가지며, 9.10.4c 처럼 검사합니다. <code>normal</code> 의존은 <code>optional: true</code>, <code>features: [..]</code>, <code>default_features: false</code> 를 가질 수 있습니다 (기본값이 아닐 때만 적음). <code>dev</code> / <code>native</code> 의존은 optional 일 수 없고, native 의존에는 feature 가 없습니다. <code>rok publish</code> 가 <code>rok.rokon</code> 에서 이것들을 적고, 해소는 항목에서 읽습니다. checkout 한 뒤 항목의 <code>features</code> 는 그 commit 의 stone 의 <code>rok.rokon</code> 의 것과 같아야 하며 (순서 무관), 그렇지 않으면 에러입니다.
+</li>
+<li><code>native/&lt;shard path&gt;</code> 는 native 패키지를 한 줄에 <code>Native { .. }</code> 하나씩 담습니다 (<a href="#9104b-native-패키지">9.10.4b</a>).
+</li>
+<li>매니페스트의 <code>description</code>, <code>license</code>, <code>repository</code> 는 선택인 뒤쪽 필드로 들어갑니다.
+</li>
+<li>패키지는 <code>source</code> 저장소의 루트에 있습니다. <code>cksum</code> 은 그 커밋의 git tree hash 이며, checkout 뒤에 검증합니다.
+</li>
+</ul>
+<h3 id="해소"><a class="anchor" tabindex="-1" href="#해소" aria-hidden="true">#</a>해소</h3>
+<ul>
+<li>맞는 버전 가운데 yank 되지 않은 가장 높은 것을 고릅니다. lock 에 고정된 버전은 여전히 맞으면 (그 뒤 yank 되었더라도) 그대로 둡니다.
+</li>
+<li>한 의존 그래프에서 이름 하나는 버전 하나입니다. 전이 의존은 index 항목의 <code>deps</code> 를 따릅니다.
+</li>
+<li>두 요구가 겹치지 않으면 두 요구를 밝히는 에러입니다. backtracking 은 없으며, 둘 다 받아들이는 요구를 루트에 적으면 풀립니다.
+</li>
+<li>lock 은 index 와 대조합니다. 고정된 버전의 <code>rev</code> 가 바뀌었으면 &quot;run <code>rok update</code>&quot; 에러입니다.
+</li>
+<li><code>--offline</code> 은 캐시된 index 를 쓰고, <code>--locked</code> 를 지킵니다.
+</li>
+</ul>
+<h3 id="rok-search--publish--yank--login--logout"><a class="anchor" tabindex="-1" href="#rok-search--publish--yank--login--logout" aria-hidden="true">#</a><code>rok search</code> / <code>publish</code> / <code>yank</code> / <code>login</code> / <code>logout</code></h3>
+<pre><code>rok search [--native] &lt;query&gt;
+rok login [&lt;token&gt;]
+rok logout
+rok publish [--index &lt;checkout&gt;] [--commit]
+rok yank [--native] --vers &lt;version&gt; [--undo] [--index &lt;checkout&gt;] [name]   # --native 면 name 필수
+</code></pre>
+<ul>
+<li><p><code>search</code> 는 index 에서 이름으로 찾아, 찾은 것마다 한 줄 <code>&lt;name&gt; &lt;newest version&gt; - &lt;description&gt;</code> 을 출력합니다 (항목에 description 이 없으면 그 부분은 생략). index 조회는 <code>-</code> / <code>_</code> 어느 쪽 철자든 받습니다.</p>
+</li>
+<li><p><code>publish</code> 는 기본이 dry run 입니다. 깨끗한 work tree, 저장소 루트의 패키지, 그리고 <code>src/lib.rok</code>, <code>src/main.rok</code>, 또는 둘 다를 요구합니다. <code>src/main.rok</code> 만 있는 stone 은 프로그램입니다: <code>rok install</code> 이 그것을 빌드하며, 의존 패키지가 될 수 없습니다. path / git 의 normal 의존은 거부하고, path / git 의 dev 의존은 뺍니다. 같은 버전과, <code>-</code> / <code>_</code> 와 대소문자를 같게 본 이름의 충돌을 검사합니다. 다른 철자가 이미 가진 이름은 거부합니다. <code>--index</code> 없는 dry run 은 항목만 출력하고, <code>--index</code> 가 있으면 그 checkout 에 대해서도 검사합니다. 항목의 source 는 설정된 그대로의 (<code>insteadOf</code> 재작성 전) git remote <code>origin</code> url 이며, <code>https://</code> 여야 합니다. <code>http://127.0.0.1</code> 과 <code>http://localhost</code> 만 예외입니다.</p>
+</li>
+<li><p><code>--commit</code> 이면 <code>publish</code> 는 항목을 더합니다: <code>--index</code> 가 있으면 그 checkout 에 &quot;Publish &lt;name&gt; &lt;vers&gt;&quot; 커밋으로 (push 하지 않음), 없으면 설정된 index (&quot;Which index&quot;) 의 registry API 로 더하며, API 가 그것을 index 에 넣습니다. 클라이언트는 index 저장소에 직접 쓰지 않습니다.</p>
+</li>
+<li><p><code>yank</code> 는 그 버전의 <code>yanked</code> 를 켭니다 (<code>--undo</code> 면 끕니다): <code>--index</code> 가 있으면 그 checkout 의 커밋으로, 없으면 registry API 로.</p>
+</li>
+<li><p>registry API 는 index 의 <code>config.rokon</code> 의 <code>api</code> 에 있습니다. 요청은 <code>Authorization: Bearer &lt;token&gt;</code> 을 실으며, body 는 한 줄 ROKON (<code>application/rokon; charset=utf-8</code>) 입니다:</p>
+<ul>
+<li><code>GET &lt;api&gt;/api/v1/me</code> → <code>Me { login: &quot;..&quot;, publish: &lt;bool&gt; }</code>
+</li>
+<li><code>POST &lt;api&gt;/api/v1/publish</code>, body 는 index 줄 (<code>Stone { .. }</code> / <code>Native { .. }</code>) → <code>Published { name, vers, file }</code>
+</li>
+<li><code>POST &lt;api&gt;/api/v1/yank</code>, body <code>Yank { name, vers, undo: &lt;bool&gt;, native: &lt;bool&gt; }</code> → <code>Yanked { name, vers, yanked }</code>
+</li>
+</ul>
+<p>실패는 4xx / 5xx 상태와 <code>Error { message: &quot;..&quot; }</code> 이며, <code>rok</code> 는 그 message 를 보고합니다. 401 은 토큰이 유효하지 않다는 뜻입니다.</p>
+</li>
+<li><p>registry API 에는 토큰이 필요하며, <code>--index</code> checkout 에는 필요 없습니다. 토큰은 <code>ROK_REGISTRY_TOKEN</code> 이 설정되어 비어 있지 않으면 그것, 아니면 <code>rok login</code> 이 저장한 것입니다. 둘 다 없으면 &quot;run <code>rok login</code> first&quot; 에러입니다.</p>
+</li>
+<li><p><code>rok login</code> 은 웹사이트에서 만든 rokstones.io 계정 토큰을 받습니다 (<code>&lt;api&gt;/me</code>, GitHub 로 로그인. 지금은 registry 의 maintainer 만 만들 수 있음). 생략하면 표준 입력에서 화면에 보이지 않게 읽습니다 (Ctrl-C 에도 echo 를 되돌림). <code>login</code> 은 <code>/api/v1/me</code> 에 물어, API 가 거부하는 토큰과 <code>publish</code> 가 false 인 계정 (&quot;this account cannot publish yet: publishing is open to rokstones.io maintainers only&quot;) 은 아무것도 저장하지 않고 거절합니다. 그 밖이면 <code>$ROK_HOME/credentials.rokon</code> 에 <code>Credentials { token: &quot;..&quot; }</code> 를 저장하고 (Unix 에서는 mode 0600) &quot;Logged in as &lt;login&gt;&quot; 을 출력합니다. <code>rok logout</code> 은 그 파일을 지웁니다.</p>
+</li>
+<li><p>토큰은 <code>curl</code> 의 표준 입력으로만 전달되며, 명령줄이나 환경에 들어가지 않고 출력되지도 않습니다 (에러는 <code>***</code> 로 보임).</p>
+</li>
+</ul>
+<h2 id="9104b-native-패키지"><a class="anchor" tabindex="-1" href="#9104b-native-패키지" aria-hidden="true">#</a>9.10.4b. Native 패키지</h2>
+<p>rok 은 C 를 컴파일하지 않습니다. native 패키지는 target triple 마다의 미리 빌드된 archive 와 다음 값입니다:</p>
+<pre><code class="language-rokon"><span class="t">Native</span> {
+    name: <span class="s">"png"</span>, vers: <span class="s">"1.6.43"</span>,
+    deps: { <span class="s">"zlib"</span>: <span class="t">Dep</span>::native(<span class="s">"^1.3"</span>) },
+    targets: {
+        <span class="s">"x86_64-unknown-linux-gnu"</span>: <span class="t">Artifact</span> {
+            url: <span class="s">"https://example.com/png-1.6.43-x86_64-linux.tar.gz"</span>,
+            sha256: <span class="s">"&lt;64 hex&gt;"</span>,
+            links: { <span class="s">"png16"</span>: <span class="s">"static"</span> },
+            runtime: [],
+        },
+    },
+    yanked: <span class="k">false</span>, description: <span class="s">"PNG codec"</span>, license: <span class="s">"Libpng"</span>, repository: <span class="s">"https://example.com/png"</span>,
+}
+</code></pre>
+<p>이 값은 index 한 줄이거나, <code>Dep::native(url:, sha256:)</code> 의 파일이며 파일의 artifact url 은 그 파일 기준 상대 경로일 수 있습니다.</p>
+<ul>
+<li>archive (tar 로 읽을 수 있는 어떤 형식이든) 는 <code>lib/</code> 를 담습니다: <code>lib&lt;n&gt;.a</code>, <code>lib&lt;n&gt;.dylib</code> / <code>lib&lt;n&gt;.so</code>, Windows <code>&lt;n&gt;.lib</code> (static 또는 import library). <code>runtime</code> 파일과 라이선스 파일도 담습니다. 그 안의 어떤 것도 실행하지 않습니다.
+</li>
+<li>해시는 필수입니다. archive 는 풀기 전에 검사하며, 절대 경로나 <code>..</code> 경로, 밖으로 나가는 링크가 있거나, 이름 붙은 라이브러리나 runtime 파일이 없으면 거부합니다.
+</li>
+<li>Apple 대상에서 runtime dylib 은 <code>@rpath/</code> install name 을 가져야 합니다.
+</li>
+<li>빌드는 target triple 의 artifact 를 씁니다. 없으면 가진 triple 들을 나열하는 에러입니다.
+</li>
+<li><code>rok</code> 는 <code>rokc</code> 에 <code>-L &lt;archive&gt;/lib</code>, link 마다 <code>-l kind=name</code>, runtime 파일마다 <code>--native-runtime</code> 을 넘기며, 의존하는 쪽이 의존되는 쪽보다 앞입니다.
+</li>
+</ul>
+<pre><code>rok add --native &lt;name&gt;[@&lt;req&gt;]
+rok remove --native &lt;name&gt;
+rok search --native &lt;query&gt;
+rok publish --native &lt;file&gt; [--index &lt;dir&gt;] [--commit]
+rok yank --native --vers &lt;version&gt; [--undo] [--index &lt;dir&gt;] &lt;name&gt;
+</code></pre>
+<p><code>publish --native</code> 는 모든 target 을 받아 검사하며, 절대 url, 라이선스 파일, index 에서 온 의존성만을 요구합니다. <code>--commit</code> 과 <code>yank --native</code> 는 stone 과 같은 규칙을 따릅니다: <code>--index</code> checkout, 없으면 토큰으로 registry API (<code>Yank</code> 의 <code>native: true</code>).</p>
+<ul>
+<li>ELF 대상에서 runtime 라이브러리의 soname 은 파일 이름과 같아야 합니다. <code>-musl</code> 대상의 <code>dylib</code> link 는 에러입니다.
+</li>
+<li><code>repl</code> / <code>jupyter</code> 는 native 패키지를 로드합니다: 공유 라이브러리는 시스템 loader 로, static archive 는 세션에 링크합니다. <code>check</code> / <code>lint</code> / <code>doc</code> 는 아무것도 링크하지 않습니다.
+</li>
+<li>실행 파일 옆의 사본은 빌드 산출물입니다.
+</li>
+</ul>
+<h2 id="9104c-features"><a class="anchor" tabindex="-1" href="#9104c-features" aria-hidden="true">#</a>9.10.4c. Features</h2>
+<p>패키지는 <code>features</code> 에 feature 를 선언합니다. feature 이름에서 그 feature 가 켜는 것들의 리스트로 가는 dict 입니다. 이름은 <code>[a-z0-9][a-z0-9_-]*</code> 이며, 무엇인지 말해 주는 단어입니다 (<code>http1</code>, <code>http2</code>, <code>tls</code>). 각 항목은 다음 중 하나입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>켜는 것</th></tr></thead>
+<tbody>
+<tr><td><code>&lt;f&gt;</code></td><td>이 패키지의 feature <code>f</code></td></tr>
+<tr><td><code>dep:&lt;d&gt;</code></td><td>optional 의존 <code>d</code></td></tr>
+<tr><td><code>&lt;d&gt;/&lt;f&gt;</code></td><td>의존 <code>d</code> 의 feature <code>f</code>, 그리고 <code>d</code> 가 optional 이면 <code>d</code> 자체</td></tr>
+<tr><td><code>&lt;d&gt;?/&lt;f&gt;</code></td><td>optional 의존 <code>d</code> 의 feature <code>f</code>. 다른 무언가가 <code>d</code> 를 켤 때만</td></tr>
+</tbody></table></div>
+<ul>
+<li><code>default</code> 는 끄지 않는 한 켜져 있는 보통의 feature 입니다. 빌드하는 패키지는 <code>--no-default-features</code> 로, 의존에서는 <code>default_features: false</code> 로 끕니다.
+</li>
+<li>optional 의존 (<code>optional: true</code>) 은 켜진 feature 의 <code>dep:&lt;d&gt;</code> 나 <code>&lt;d&gt;/&lt;f&gt;</code> 항목이 켤 때만 빌드에 들어갑니다. 그 이름의 묵시 feature 는 없으며, 켜는 항목이 하나도 없으면 에러입니다.
+</li>
+<li>항목이 패키지에 없는 feature 나 (<code>deps</code> 의) 의존을 가리키거나, <code>dep:</code> 나 <code>?</code> 가 optional 이 아닌 의존을 가리키거나, feature 가 순환하면 에러입니다. 진단은 <code>file:line:col</code> 을 보여 줍니다. 의존 패키지에 없는 feature 를 요구해도 에러입니다.
+</li>
+<li>해소: lock 은 그래프 전체를 덮습니다. 빌드는 루트 패키지의 feature (끄지 않으면 <code>default</code>, <code>--features</code>, <code>--all-features</code> 이면 모든 feature) 에서 시작해, 켜진 의존마다 그 의존에 요구한 feature 와 그 의존의 <code>default</code> 를 가지고 따라갑니다. feature 는 더해지기만 하고 합쳐집니다: 패키지마다 그래프 전체에서 feature 집합은 하나입니다. 루트의 <code>dev_deps</code> 와 그것들이 요구하는 feature 는 <code>test</code> / <code>bench</code> 에서만 셉니다. 결과는 어떤 것의 순서에도 의존하지 않습니다.
+</li>
+<li><code>--features</code> 는 루트의 feature 이름과, 직접 의존에 대한 <code>&lt;dep&gt;/&lt;f&gt;</code> 를 받습니다.
+</li>
+<li>각 패키지는 켜진 feature 에 대해서만 정확히 <code>cfg(feature = &quot;&lt;f&gt;&quot;)</code> 로 컴파일됩니다 (<a href="../006-meta-system/603-cfg#636-매개변수의-출처">6.3.6</a>). native 패키지에는 feature 가 없습니다.
+</li>
+<li>스크립트의 <code>```rokon</code> 블록에는 <code>features</code> 가 없습니다 (9.10.7).
+</li>
+</ul>
+<h2 id="9105-환경"><a class="anchor" tabindex="-1" href="#9105-환경" aria-hidden="true">#</a>9.10.5. 환경</h2>
+<p>환경은 conda / venv 를 대신합니다. 활성화 단계는 없습니다.</p>
+<ul>
+<li>패키지 (<code>src/main.rok</code>, <code>src/lib.rok</code>, <code>rok.rokon</code> 중 하나가 있는 디렉토리) 는 자기 <code>rok.rokon</code> 의 의존성만 씁니다. 환경에 설치한 라이브러리는 결코 보지 않습니다. 스크립트도 마찬가지입니다. 패키지에 작용하는 명령을 <code>--env</code> 와 함께 쓰면 에러입니다.
+</li>
+<li>이름 있는 환경은 <code>$ROK_HOME/envs/&lt;name&gt;/</code> 에 <code>rok.rokon</code>, <code>rok.lock</code>, <code>target/</code> 을 둡니다. 그 <code>deps</code> 는 REPL 과 Jupyter 를 위해 <code>rok install</code> (<a href="#9105a-rok-install--rok-uninstall">9.10.5a</a>) 로 설치한 라이브러리이며, 그것을 바꾸는 것은 <code>rok install</code> / <code>rok uninstall</code> 과 <code>rok env import</code> 뿐입니다. 그 안의 path 의존은 절대 경로입니다. 설치한 라이브러리는 그 <code>target/</code> 에 미리 빌드합니다.
+</li>
+<li>패키지 밖 (REPL, Jupyter, language server, <code>rok install</code>) 에서 쓸 환경은 <code>--env &lt;name&gt;</code> &gt; <code>ROK_ENV</code> &gt; <code>rok env use</code> (<code>$ROK_HOME/envs/CURRENT</code>) &gt; <code>default</code> 순으로 정합니다. <code>default</code> 는 거기로 처음 <code>rok install</code> 할 때 만들어집니다. 패키지 안에서 경로 없는 <code>rok repl</code> / <code>jupyter</code> / <code>lsp</code> 는 그 패키지를 쓰며, <code>--env</code> 가 있으면 그 환경을 씁니다.
+</li>
+</ul>
+<h3 id="의존성의-출처"><a class="anchor" tabindex="-1" href="#의존성의-출처" aria-hidden="true">#</a>의존성의 출처</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>컴파일 대상</th><th>의존성</th><th>Lock</th><th>미리 빌드하는 곳</th></tr></thead>
+<tbody>
+<tr><td>패키지</td><td>그 <code>rok.rokon</code> 의 <code>deps</code> (test / bench 는 <code>dev_deps</code>)</td><td><code>&lt;package&gt;/rok.lock</code></td><td><code>&lt;package&gt;/target/&lt;profile&gt;/deps/</code></td></tr>
+<tr><td>스크립트</td><td>그것과 그 <code>mod</code> 가 읽는 파일들의 <code>//! rokon</code> 블록을 합친 <code>deps</code></td><td><code>cache/scripts/&lt;hash&gt;/rok.lock</code></td><td><code>cache/scripts/&lt;hash&gt;/target/</code></td></tr>
+<tr><td>패키지 밖의 REPL / Jupyter</td><td>활성 환경에 설치한 라이브러리</td><td>환경의 것</td><td>환경의 <code>target/</code></td></tr>
+</tbody></table></div>
+<pre><code>rok env create &lt;name&gt;
+rok env list                      # 현재 환경에 * 표시
+rok env remove &lt;name&gt;
+rok env use &lt;name&gt;                # 프로젝트 밖의 기본 환경을 바꿈
+rok env export &lt;name&gt; &lt;dir&gt;       # rok.rokon / rok.lock 을 &lt;dir&gt; 에 씀
+rok env import &lt;name&gt; &lt;dir | rok.rokon&gt;    # 프로젝트나 export 에서 만듦 (상대 path 는 절대로)
+rok env shell [name]              # ROK_ENV=&lt;name&gt; 인 $SHELL
+rok repl --env &lt;name&gt;
+</code></pre>
+<p>REPL 의 <code>:add &lt;dep&gt; ..</code> 는 현재 환경으로 <code>rok install &lt;dep&gt; ..</code> 을, 패키지의 세션에서는 <code>rok add</code> 를 실행합니다. 그 뒤 의존성을 다시 읽어 세션에 붙입니다.</p>
+<h2 id="9105a-rok-install--rok-uninstall"><a class="anchor" tabindex="-1" href="#9105a-rok-install--rok-uninstall" aria-hidden="true">#</a>9.10.5a. <code>rok install</code> / <code>rok uninstall</code></h2>
+<pre><code>rok install &lt;name&gt;[@&lt;req&gt;] [--registry &lt;url&gt;]
+rok install [&lt;name&gt;] --path &lt;dir | file.rok&gt;
+rok install [&lt;name&gt;] --git &lt;url&gt; [--rev &lt;rev&gt; | --tag &lt;tag&gt; | --branch &lt;branch&gt;]
+rok install .. [--features &lt;f,..&gt;] [--no-default-features] [--lib] [--force]
+rok install --native &lt;name&gt;[@&lt;req&gt;] [--registry &lt;url&gt;]
+rok install --list
+rok uninstall [--native] &lt;name&gt;..
+</code></pre>
+<ul>
+<li>소스의 패키지는 먼저 캐시로 가져옵니다 (<a href="#9104-의존성-rok-add--remove--update--deps">9.10.4</a>). <code>src/main.rok</code> 가 있는 패키지나 스크립트 파일은 실행 파일입니다: <code>cargo install</code> 처럼 <code>--release</code> 로 빌드해 그 실행 파일을 <code>$ROK_HOME/bin/&lt;name&gt;</code> 에 둡니다. git 이나 stone 패키지는 checkout 의 임시 사본에서, path 패키지와 스크립트 파일은 제자리에서 빌드합니다. <code>$ROK_HOME/installs.rokon</code> (<code>Package { deps: { &quot;&lt;name&gt;&quot;: &lt;source&gt; } }</code>) 이 각 실행 파일과 그 정확한 출처 (stone 은 <code>=&lt;version&gt;</code>, git 패키지는 그 <code>rev:</code> 와 함께) 를 기록합니다. 패키지에 <code>src/lib.rok</code> 도 있으면 <code>rok install</code> 은 그것을 알리고, <code>--lib</code> 가 대신 라이브러리를 설치한다고 알립니다.
+</li>
+<li><code>src/lib.rok</code> 만 있는 패키지, 또는 <code>--lib</code> 를 준 <code>src/lib.rok</code> 가 있는 패키지는 라이브러리이며, <code>pip install</code> 처럼 <code>rok repl</code>, <code>rok jupyter</code>, <code>:add</code> 를 위해 활성 환경 (<a href="#9105-환경">9.10.5</a>) 에 들어갑니다: 환경의 <code>rok.rokon</code> 에 적고 (요구 없는 stone 은 <code>^&lt;가장 새 버전&gt;</code>, path 는 절대 경로), 그 <code>rok.lock</code> 으로 해소하며, 그 <code>target/</code> 에 미리 빌드합니다. 스크립트는 그것을 보지 않습니다: 스크립트는 <code>rok add &lt;name&gt; &lt;file.rok&gt;</code> 로 라이브러리를 얻으며, 출력 줄이 이것을 알립니다. 빌드되지 않으면 아무것도 설치하지 않습니다. <code>src/lib.rok</code> 가 없는 패키지나 스크립트에 <code>--lib</code> 를 주면 에러입니다.
+</li>
+<li><code>&lt;name&gt;</code> 은 라이브러리의 최상위 이름, 또는 실행 파일의 파일 이름입니다. 생략하면 패키지의 <code>name</code>, 없으면 디렉토리 이름 (path), <code>.git</code> 을 뗀 저장소 이름 (git), 파일 stem (스크립트) 입니다. <a href="#9103-rokrokon--roklock">9.10.3</a> 의 이름 규칙을 따릅니다.
+</li>
+<li><code>--features</code> / <code>--no-default-features</code> 는 라이브러리의 <code>Dep</code> 에, 또는 실행 파일의 빌드에 들어가며, <code>--dev</code> / <code>--optional</code> 은 에러입니다. <code>--native</code> 는 환경의 <code>native</code> 에 native 패키지를 더합니다 (<a href="#9104b-native-패키지">9.10.4b</a>).
+</li>
+<li>proxy <code>rok</code>, <code>rokc</code>, <code>rokls</code> (<a href="#9106-toolchain">9.10.6</a>) 는 결코 교체하지 않으며, <code>rok install</code> 이 두지 않은 <code>$ROK_HOME/bin</code> 의 파일도 마찬가지입니다 (에러). 실행 파일을 다시 설치할 때: 같은 stone 버전이나 git commit 에 같은 feature 인 것은 다시 빌드하지 않고 유지하며 (<code>`tool` 0.1.0 is installed already (&lt;path&gt;); to rebuild it, run `rok install tool --force`</code>), <code>--force</code> 가 다시 빌드합니다 (<code>Reinstalled</code>). 다른 버전은 그것을 교체하며 (<code>Upgraded tool from 0.1.0 to 0.2.0</code>, <code>Downgraded ...</code>), 다른 git commit 도 마찬가지입니다 (<code>Replaced &lt;url&gt; at &lt;commit&gt; with ...</code>). path 나 스크립트 파일에서 온 것은 <code>cargo install --path</code> 처럼 언제나 다시 빌드합니다. 라이브러리 설치는 그대로입니다.
+</li>
+<li><code>--list</code> 는 <code>libraries (environment `&lt;env&gt;`):</code> 와 <code>executables (&lt;bin dir&gt;):</code> 를 출력하며, 각각 뒤에 설치 순서대로 <code>  &lt;name&gt; &lt;source&gt;</code> 줄이 옵니다.
+</li>
+<li><code>rok uninstall &lt;name&gt;..</code> 은 각 이름을 활성 환경의 라이브러리에서 지우거나 (lock 을 다시 해소), 아니면 <code>rok install</code> 이 <code>$ROK_HOME/bin</code> 에 둔 실행 파일을 지웁니다. <code>--native</code> 는 환경에서 native 패키지를 지웁니다. 둘 다 아닌 이름은 에러입니다.
+</li>
+<li><code>rok install</code> 말고 <code>$ROK_HOME</code> 아래에 쓰는 것은 <code>rok toolchain</code> (toolchain, proxy, <code>config.rokon</code>), <code>rok login</code> (<code>credentials.rokon</code>), <code>rok env</code> (환경), 그리고 캐시뿐입니다.
+</li>
+</ul>
+<h2 id="9106-toolchain"><a class="anchor" tabindex="-1" href="#9106-toolchain" aria-hidden="true">#</a>9.10.6. toolchain</h2>
+<p><code>$ROK_HOME/bin/</code> 의 <code>rok</code> / <code>rokc</code> / <code>rokls</code> 는 활성 toolchain 의 같은 실행 파일을 실행하는 proxy 입니다 (rustup 식). 활성 toolchain 은 다음 순서로 정합니다.</p>
+<ol>
+<li>명령줄의 <code>+&lt;version&gt;</code> (<code>rok +0.4 build</code>)
+</li>
+<li>환경 변수 <code>ROK_TOOLCHAIN</code>
+</li>
+<li>매니페스트의 <code>toolchain: &quot;X&quot;</code> (가장 가까운 <code>rok.rokon</code>)
+</li>
+<li>기본 (<code>$ROK_HOME/config.rokon</code> 의 <code>Config { registry, toolchain }</code>)
+</li>
+</ol>
+<p>버전 접두는 그 아래 버전과 맞습니다 (<code>0.3</code> 은 <code>0.3.*</code> 의 가장 높은 것). 맞는 toolchain 이 없으면 <code>rok toolchain install</code> 을 안내하는 에러입니다.</p>
+<pre><code>rok toolchain list
+rok toolchain install &lt;version&gt; --from &lt;dir | archive | url&gt;
+rok toolchain default [&lt;version&gt;]          # 인자 없으면 지금의 기본을 출력
+rok toolchain remove &lt;version&gt;
+rok toolchain update [&lt;version&gt;]
+rok toolchain clean                        # 기본값을 제외한 설치된 모든 toolchain 제거
+</code></pre>
+<ul>
+<li>설치본은 <code>$ROK_HOME/toolchains/&lt;version&gt;-&lt;triple&gt;/</code> 이며 자기 완결입니다 (<a href="902-aot-pipeline#9219-설치-레이아웃">9.2.19</a>). <code>install</code> 은 <code>--from</code> 이 필수입니다.
+</li>
+<li><code>install</code> 은 <code>bin/rokc --version --verbose</code> 로 검증하며, 버전과 host 가 맞아야 합니다.
+</li>
+<li>처음 설치한 toolchain 이 기본이 되고, 이때 <code>bin/</code> proxy 를 만듭니다.
+</li>
+<li><code>rok toolchain update</code> 는 <code>$ROK_HOME</code> 아래의 기본 toolchain 을 교체합니다. 인자가 없으면 최신 릴리스를, 버전을 주면 그 버전을 설치합니다. 설치한 toolchain 이 기본값이 되고 <code>bin/</code> proxy 를 다시 씁니다. Windows 에서는 실행 중인 proxy 의 이름을 바꾼 뒤 그 사본으로 교체합니다. 릴리스 archive 를 받아 SHA-256 을 검증하고 (아래 배포), 따로 풀어 제자리로 옮긴 뒤 proxy 가 그것을 실행하는지 확인합니다. 실패하면 이전 기본값과 proxy 를 되돌리고 새 toolchain 을 지웁니다. 이전 toolchain 들은 설치된 채로 남습니다. 이미 설치된 버전은 다운로드 없이 기본값이 됩니다. <code>rok update</code> 는 <code>rok.lock</code> 을 다시 해소하고, <code>rok toolchain update</code> 는 toolchain 을 교체합니다 (9.10.4).
+</li>
+<li><code>rok toolchain clean</code> 은 지금의 기본값을 제외한 설치된 모든 toolchain 을 지웁니다. <code>update</code> 가 남겨 둔 이전 버전을 정리하는 선택적(opt-in) 명령입니다. 프로젝트가 고정한 버전도 함께 지워지므로 빌드에 필요하면 다시 설치해야 하며, 기본 toolchain 이 없으면 에러입니다.
+</li>
+</ul>
+<h3 id="배포"><a class="anchor" tabindex="-1" href="#배포" aria-hidden="true">#</a>배포</h3>
+<ul>
+<li>릴리스 archive 는 <code>rok-&lt;version&gt;-&lt;triple&gt;.tar.gz</code> (Windows 는 <code>.zip</code>) 이며, 안은 toolchain 레이아웃입니다. Windows 가 아니면 같은 파일을 담은 <code>rok-&lt;version&gt;-&lt;triple&gt;.tar.xz</code> 도 옆에 있습니다. 각 archive 옆에 <code>&lt;archive&gt;.sha256</code> 이 있습니다: archive 의 SHA-256 을 hex 로 적고, 그 뒤에 파일 이름이 올 수 있습니다 (sha256sum 형식).
+</li>
+<li><code>install.sh</code>, <code>install.ps1</code>, <code>rok toolchain install --from &lt;url&gt;</code> 은 같은 곳에서 <code>&lt;url&gt;.sha256</code> 을 받아, SHA-256 이 다른 archive 를 거부합니다. <code>.sha256</code> 이 없으면 에러입니다. 경로로 준 archive 는 <code>&lt;path&gt;.sha256</code> 이 있을 때 그것과 대조합니다. 서명은 정의하지 않으며, 출처는 HTTPS 가 보증합니다.
+</li>
+<li><code>install.sh</code> (<a href="https://rok-lang.org/install.sh">https://rok-lang.org/install.sh</a>) 는 archive 나 <code>rok-lang</code> 조직의 GitHub release 에서 <code>$ROK_HOME</code> 에 설치합니다. tar 가 읽을 수 있고 (macOS, 또는 <code>PATH</code> 에 <code>xz</code>) 릴리스에 있으면 <code>.tar.xz</code> 를, 아니면 <code>.tar.gz</code> 를 받습니다. <code>rok toolchain install</code> 은 <code>.tar.gz</code> 를 받습니다.
+</li>
+<li>릴리스는 <code>$ROK_DIST</code> (기본값 <code>https://github.com/rok-lang/rok/releases</code>) 에서 제공됩니다: <code>&lt;dist&gt;/download/v&lt;version&gt;/&lt;archive&gt;</code> 와 그 <code>.sha256</code>, 그리고 최신 릴리스의 버전을 담은 <code>&lt;dist&gt;/latest/download/rok-version</code>.
+</li>
+</ul>
+<h2 id="9107-단일-파일-스크립트의-inline-매니페스트"><a class="anchor" tabindex="-1" href="#9107-단일-파일-스크립트의-inline-매니페스트" aria-hidden="true">#</a>9.10.7. 단일 파일 스크립트의 inline 매니페스트</h2>
+<p>익명 패키지 (<a href="../004-functions/416-entry-point#4168-단일-파일-실행">4.16.8</a>) 는 의존성을 그 파일과 그 <code>mod</code> 가 읽는 각 파일의 맨 앞 (shebang 줄 뒤) <code>//!</code> 줄 안에 <code>Package { deps: { .. } }</code> (와 <code>native</code>) 를 담은 <code>```rokon</code> 블록에서만 얻습니다 (uv 의 inline script metadata 와 같음). 환경에 설치한 라이브러리는 결코 쓰지 않습니다. 블록에는 <code>deps</code> 와 <code>native</code> 만 둘 수 있습니다 (<code>features</code> 가 없으므로 optional 의존도 없음). 다른 언어의 코드 블록은 무시합니다. 블록 안의 path 는 그 블록을 담은 파일 기준입니다. 블록들은 합쳐지며, 두 파일이 한 라이브러리에 서로 다른 항목을 주면 두 파일과 두 항목을 알리는 에러입니다. 서브모듈 파일을 직접 실행하면 그 실행이 닿는 파일들의 블록만 씁니다. <code>rok add &lt;name&gt; .. &lt;file.rok&gt;</code> / <code>rok remove &lt;name&gt; &lt;file.rok&gt;</code> 이 블록을 쓰며 (<a href="#9104-의존성-rok-add--remove--update--deps">9.10.4</a>), <code>rok init --script</code> 는 스크립트를 패키지로 바꿉니다 (<a href="#9102-rok-new--rok-init-패키지-생성">9.10.2</a>). 스크립트는 그 lockfile 과 빌드를 <code>cache/scripts/&lt;hash&gt;/</code> 에 두며, key 는 그 경로와 그것이 닿는 모든 파일의 경로와 블록입니다. 스크립트의 실행 파일은 그것이 포함하는 모든 파일과 그 라이브러리를 포함해 빌드를 이루는 모든 것으로 캐시합니다. 스크립트에 없는 패키지의 <code>use x::..</code> 는 실행할 명령 <code>run `rok add x &lt;file&gt;` </code> 을 help 로 주는 에러이며, 활성 환경에 <code>x</code> 가 있으면 note 를 덧붙입니다. 패키지 안에서는 <code>rok add x</code> 를 제안합니다. <code>import x</code> (와 <code>include</code> / <code>require</code>) 는 에러이며, help 는 파일 옆에 <code>x.rok</code> 가 있으면 <code>mod x;</code>, <code>x</code> 가 경로 루트이거나 파일이 선언한 모듈이면 <code>use</code>, 그 밖에는 <code>rok add x &lt;file&gt;</code> 입니다.</p>
+<pre><code class="language-rok"><span class="c">//! ```rokon</span>
+<span class="c">//! Package {</span>
+<span class="c">//!     deps: { "util": Dep::git("https://example.com/util.git", tag: "v1") },</span>
+<span class="c">//! }</span>
+<span class="c">//! ```</span>
+
+<span class="k">use</span> util::greet;
+greet();
+</code></pre>
+<p>단일 파일 스크립트의 실행은 그 실행 파일을 재사용합니다. 익명 패키지의 <code>rokc run</code> 은 실행 파일을 <code>&lt;target&gt;/&lt;profile&gt;/scripts/&lt;key&gt;/</code> 에 두며, <code>&lt;target&gt;</code> 은 스크립트의 <code>target/</code> (<code>cache/scripts/&lt;hash&gt;/</code> 아래, 그 <code>rok.lock</code> 옆) 입니다. <code>&lt;key&gt;</code> 는 빌드를 이루는 모든 것의 해시입니다: toolchain, 빌드 옵션, lint 수준과 target, 소스와 그것이 포함하는 모든 파일, toolchain 이 그 target 용으로 배포하는 런타임과 C 라이브러리, 그리고 미리 빌드한 라이브러리와 함께 넘긴 의존 패키지. key 가 맞으면 아무것도 컴파일하지 않으며, 그 실행 파일을 만든 빌드의 경고를 다시 출력합니다. 새 실행 파일은 임시 이름으로 쓴 뒤 제자리로 이름을 바꾸므로, 한 스크립트를 동시에 실행해도 안전합니다. 하루 동안 쓰지 않은 항목은 다른 항목을 빌드할 때 지웁니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/009-tools/910-rok-frontend.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="909-debug-tools"><small>Previous</small>9.9. 디버그 / 진단 도구</a><a class="next" href="../../refs-standard-libraries/"><small>Next</small>rok 표준 라이브러리 참조</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

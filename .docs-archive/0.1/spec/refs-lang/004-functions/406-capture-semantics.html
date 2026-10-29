@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.6. Capture semantics - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A closure can capture variables from the outer environment. This chapter defines the rules that determine whether a capture copies a value or holds a reference.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/406-capture-semantics.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.6. Capture semantics - rok docs">
+<meta property="og:description" content="A closure can capture variables from the outer environment. This chapter defines the rules that determine whether a capture copies a value or holds a reference.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/406-capture-semantics.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/406-capture-semantics.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/406-capture-semantics.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li class="cur"><a aria-current="page" href="406-capture-semantics">4.6. Capture semantics</a><ul class="toc"><li><a href="#461-default-value-copy">4.6.1. Default: value copy</a></li><li><a href="#462-reference-capture-the-ref-x-capture-list">4.6.2. Reference capture: the [ref x] capture list</a></li><li><a href="#463-tokenization-of-capture-lists">4.6.3. Tokenization of capture lists</a></li><li><a href="#464-reassigning-an-outer-variable-in-the-body--ref-required">4.6.4. Reassigning an outer variable in the body → ref required</a></li><li><a href="#465-ref-shorthand-none">4.6.5. ref shorthand (none)</a></li><li><a href="#466-automatic-handling-of-loop-variables">4.6.6. Automatic handling of loop variables</a></li><li><a href="#467-capturing-structs-and-reference-handles">4.6.7. Capturing structs and reference handles</a></li><li><a href="#468-ref-capture-vs-object-mutation">4.6.8. ref capture vs object mutation</a></li><li><a href="#469-additional-constraints-in-parallel-and-concurrent-contexts">4.6.9. Additional constraints in parallel and concurrent contexts</a></li><li><a href="#4610-lifetime-of-captured-variables">4.6.10. Lifetime of captured variables</a></li></ul></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="46-capture-semantics 46-캡처-의미론 461-default-value-copy 461-기본-값-복사 462-reference-capture-the-ref-x-capture-list 462-참조-캡처-ref-x-캡처-리스트 multiple-and-mixed-captures 다중-캡처와-혼합-캡처 463-tokenization-of-capture-lists 463-캡처-리스트의-토큰화 464-reassigning-an-outer-variable-in-the-body--ref-required 464-본체에서-외부-변수-재할당-시도--ref-강제 465-ref-shorthand-none 465-ref-단축-없음 466-automatic-handling-of-loop-variables 466-루프-변수-자동-처리 467-capturing-structs-and-reference-handles 467-구조체와-참조-핸들의-캡처 468-ref-capture-vs-object-mutation 468-ref-캡처-vs-객체-변경의-차이 469-additional-constraints-in-parallel-and-concurrent-contexts 469-병렬과-동시성-문맥의-추가-제약 4610-lifetime-of-captured-variables 4610-캡처-변수의-가시-범위"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/406-capture-semantics" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="46-capture-semantics"><a class="anchor" tabindex="-1" href="#46-capture-semantics" aria-hidden="true">#</a>4.6. Capture semantics</h1>
+<p>A <a href="405-closure">closure</a> can capture variables from the outer environment. This chapter defines the rules that determine whether a capture copies a value or holds a reference.</p>
+<h2 id="461-default-value-copy"><a class="anchor" tabindex="-1" href="#461-default-value-copy" aria-hidden="true">#</a>4.6.1. Default: value copy</h2>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>The default meaning of a capture is <strong>value copy</strong>. When the closure is created, a snapshot of the outer variable's value is taken.</p>
+</div>
+<pre><code class="language-rok"><span class="k">let</span> count = <span class="n">0</span>;
+<span class="k">let</span> f = || { count + <span class="n">1</span> };         <span class="c">// the value 0 of count is copied</span>
+count = <span class="n">10</span>;
+f();                               <span class="c">// 1 (f holds 0)</span>
+</code></pre>
+<p>This decision has three motivations. First, explicitness: the capture mode is clearly visible in the code. Second, blocking side effects: it prevents the pitfall of a closure silently modifying an outer variable. Third, friendliness to scientific and numeric code: it avoids Julia's 100x boxing pitfall, where reference captures are boxed into dynamic slots and degrade performance.</p>
+<pre><code>capture_list    ::= &quot;[&quot; capture_item (&quot;,&quot; capture_item)* &quot;,&quot;? &quot;]&quot;
+capture_item    ::= &quot;ref&quot; identifier | identifier
+</code></pre>
+<h2 id="462-reference-capture-the-ref-x-capture-list"><a class="anchor" tabindex="-1" href="#462-reference-capture-the-ref-x-capture-list" aria-hidden="true">#</a>4.6.2. Reference capture: the <code>[ref x]</code> capture list</h2>
+<p>To capture a reference to an outer variable's binding, use an explicit capture list.</p>
+<pre><code class="language-rok"><span class="k">let</span> count = <span class="n">0</span>;
+<span class="k">let</span> inc = [<span class="k">ref</span> count] || { count = count + <span class="n">1</span> };
+<span class="k">let</span> dec = [<span class="k">ref</span> count] || { count = count - <span class="n">1</span> };
+
+inc(); inc(); dec();
+<span class="c">// count = 1</span>
+</code></pre>
+<p>The list is written before the closure definition, as <code>[ref var, ref var, ...]</code>. Variables in the list are held in a shared cell (boxing); the outer scope and the closure use the same cell, so reassigning inside the closure is reflected in the outer variable. The cell is a GC object, so the closure may outlive the variable's scope. Variables not in the list are captured by value as usual.</p>
+<h3 id="multiple-and-mixed-captures"><a class="anchor" tabindex="-1" href="#multiple-and-mixed-captures" aria-hidden="true">#</a>Multiple and mixed captures</h3>
+<pre><code class="language-rok"><span class="k">let</span> counter = <span class="n">0</span>;
+<span class="k">let</span> config = load_config();
+
+<span class="k">let</span> handler = [<span class="k">ref</span> counter] || {
+    counter = counter + <span class="n">1</span>;        <span class="c">// ref - reflected in the outer variable</span>
+    print(config.version);         <span class="c">// value - snapshot of config at capture time</span>
+};
+</code></pre>
+<p>Only the variables named in the capture list are <code>ref</code> captures; the rest are automatically captured by value.</p>
+<h2 id="463-tokenization-of-capture-lists"><a class="anchor" tabindex="-1" href="#463-tokenization-of-capture-lists" aria-hidden="true">#</a>4.6.3. Tokenization of capture lists</h2>
+<p><code>[ref x] || body</code> is tokenized as follows: <code>[</code>, <code>ref</code>, <code>x</code>, <code>]</code> form the bracketed capture list, and <code>||</code> or <code>|x|</code> marks the start of the closure.</p>
+<p>Ambiguity is resolved by the longest-match rule of <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a> and by context. If <code>[...]</code> is immediately followed by <code>||</code> or <code>|x|</code>, it is a capture list; otherwise it is ordinary indexing or an array literal.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];               <span class="c">// List literal</span>
+<span class="k">let</span> f = [<span class="k">ref</span> count] || { ... };   <span class="c">// capture list + closure</span>
+arr[<span class="k">ref</span> count]                     <span class="c">// ERROR - ref cannot be used in indexing</span>
+</code></pre>
+<h2 id="464-reassigning-an-outer-variable-in-the-body--ref-required"><a class="anchor" tabindex="-1" href="#464-reassigning-an-outer-variable-in-the-body--ref-required" aria-hidden="true">#</a>4.6.4. Reassigning an outer variable in the body → <code>ref</code> required</h2>
+<p>Attempting to reassign a value-captured outer variable in the closure body is a compile error.</p>
+<pre><code class="language-rok"><span class="k">let</span> count = <span class="n">0</span>;
+<span class="k">let</span> f = || { count = count + <span class="n">1</span> };
+<span class="c">// ERROR: 'count' is value-captured.</span>
+<span class="c">//        To mutate the outer variable, add `[ref count]` capture list.</span>
+</code></pre>
+<p>This rule guides the user to state a <code>ref</code> capture deliberately.</p>
+<h2 id="465-ref-shorthand-none"><a class="anchor" tabindex="-1" href="#465-ref-shorthand-none" aria-hidden="true">#</a>4.6.5. <code>ref</code> shorthand (none)</h2>
+<pre><code class="language-rok"><span class="k">ref</span> || { ... }                    <span class="c">// not adopted</span>
+</code></pre>
+<p>There is no shorthand that <code>ref</code>-captures everything. A capture can become <code>ref</code> only through an explicit list, so that the code clearly shows which variables are held by reference.</p>
+<h2 id="466-automatic-handling-of-loop-variables"><a class="anchor" tabindex="-1" href="#466-automatic-handling-of-loop-variables" aria-hidden="true">#</a>4.6.6. Automatic handling of loop variables</h2>
+<p>Because value capture is the default, each iteration's loop variable keeps its own value.</p>
+<pre><code class="language-rok"><span class="k">let</span> fns: <span class="t">List</span>&lt;<span class="k">fn</span>() -&gt; <span class="t">i32</span>&gt; = [];
+<span class="k">for</span> i <span class="k">in</span> <span class="n">0i32</span>..<span class="n">5i32</span> {
+    fns.push(|| i);               <span class="c">// copies the value of i in each iteration</span>
+}
+fns[<span class="n">0</span>]();                          <span class="c">// 0</span>
+fns[<span class="n">4</span>]();                          <span class="c">// 4</span>
+</code></pre>
+<p>No separate rule like Go 1.22's per-iteration scope is needed; value capture produces the intended meaning automatically.</p>
+<h2 id="467-capturing-structs-and-reference-handles"><a class="anchor" tabindex="-1" href="#467-capturing-structs-and-reference-handles" aria-hidden="true">#</a>4.6.7. Capturing structs and reference handles</h2>
+<p>Value capture copies the value into the closure. A <a href="../002-types/203-struct"><code>struct</code></a> is a value type, so the closure holds its own copy; a field write inside the closure does not reach the outer variable. Use <code>[ref p]</code> for that.</p>
+<p>Collections (<code>List</code>, <code>Dict</code>, <code>Set</code>, <code>StrBuf</code>, ...) are reference handles (<a href="../../refs-standard-libraries/200-core/209-collections#reference-handles">stdlib 2.9</a>). Value capture copies the handle, so the object is shared.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> f = || { xs.push(<span class="n">4</span>) };        <span class="c">// copies the handle - same List</span>
+f();
+<span class="c">// xs == [1, 2, 3, 4]</span>
+
+<span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">0.0</span>, y: <span class="n">0.0</span> };
+<span class="k">let</span> g = [<span class="k">ref</span> p] || { p.x = <span class="n">1.0</span> }; <span class="c">// ref capture - writes the outer p</span>
+g();
+<span class="c">// p.x == 1.0</span>
+</code></pre>
+<p>For an independent copy of a collection, call <code>.clone()</code>.</p>
+<h2 id="468-ref-capture-vs-object-mutation"><a class="anchor" tabindex="-1" href="#468-ref-capture-vs-object-mutation" aria-hidden="true">#</a>4.6.8. <code>ref</code> capture vs object mutation</h2>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+
+<span class="c">// value capture - mutating the object is OK, reassigning the binding is not</span>
+<span class="k">let</span> f = || {
+    xs.push(<span class="n">4</span>);                   <span class="c">// OK - object mutation</span>
+    <span class="c">// xs = [];                    // ERROR - binding reassignment</span>
+};
+
+<span class="c">// ref capture - reassigning the binding is also allowed</span>
+<span class="k">let</span> g = [<span class="k">ref</span> xs] || {
+    xs = [];                      <span class="c">// OK - the outer xs becomes []</span>
+};
+</code></pre>
+<p>For a reference handle, value capture and object mutation go together, since the object is shared. <code>ref</code> capture is used when the binding itself must be reassigned.</p>
+<p>This distinction is the same as the <code>self</code> and <code>ref self</code> model of <a href="../002-types/209-impl"><code>impl</code></a>.</p>
+<h2 id="469-additional-constraints-in-parallel-and-concurrent-contexts"><a class="anchor" tabindex="-1" href="#469-additional-constraints-in-parallel-and-concurrent-contexts" aria-hidden="true">#</a>4.6.9. Additional constraints in parallel and concurrent contexts</h2>
+<p>Every capture of a <code>fn() + Send</code> closure (one passed to <code>task::spawn</code>, <code>par::for_each</code>, <code>thread::spawn</code>, etc.) must be <code>Send + Sync</code> (<a href="404-function-type#send--sync-bounds">4.4</a>). A <code>[ref x]</code> cell is written by both the closure and the code that created it, so it is never <code>Send</code> or <code>Sync</code>, whatever the type of <code>x</code>: a closure with a <code>[ref]</code> capture - or one that captures such a closure, or a future made by an <code>async [ref x] ||</code> closure - fits no <code>+ Send</code> / <code>+ Sync</code> slot. Same-thread uses (<code>spawn_local</code>, ordinary calls) are unaffected. Collections are <code>!Sync</code> (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---thread-boundary-markers">stdlib 2.13.9</a>) and cannot be value-captured this way either.</p>
+<pre><code class="language-rok"><span class="k">let</span> buf: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+par::for_each(xs, [<span class="k">ref</span> buf] |x| { buf.push(x) });
+<span class="c">// ERROR: a [ref buf] cell cannot cross threads</span>
+</code></pre>
+<p>Instead, use a reduce (<code>par::reduce(xs, 0, |a, b| a + b)</code>), share through <code>Mutex</code> / <code>RwLock</code> / <code>Atomic</code> / channels, or return the value from the thread (<code>join()</code>).</p>
+<p>A value shared this way belongs to its new owner: after <code>Mutex::new(buf)</code> or <code>tx.send(buf)</code>, using <code>buf</code> is a compile error (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---thread-boundary-markers">stdlib 2.13.9</a>). Use it through the lock, or hand over <code>buf.clone()</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> m = <span class="t">Mutex</span>::new(buf);
+buf.push(<span class="n">1</span>);
+<span class="c">// ERROR: `buf` was moved into the `Mutex`; use it through the lock: using g = m.lock() { g.get().push(1) }</span>
+</code></pre>
+<p>The detailed parallelism and concurrency rules are defined by the standard library specification; this chapter covers only the language-level capture mechanism.</p>
+<h2 id="4610-lifetime-of-captured-variables"><a class="anchor" tabindex="-1" href="#4610-lifetime-of-captured-variables" aria-hidden="true">#</a>4.6.10. Lifetime of captured variables</h2>
+<p>Captured variables live as long as the closure value. Even after the closure leaves the outer scope, the captured values are kept inside the closure object.</p>
+<pre><code class="language-rok"><span class="k">fn</span> make_counter() -&gt; <span class="k">fn</span>() -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> count = <span class="n">0</span>;
+    [<span class="k">ref</span> count] || { count = count + <span class="n">1</span>; count }
+    <span class="c">// count is captured by ref - kept until the closure goes away</span>
+}
+
+<span class="k">let</span> c = make_counter();
+c();                               <span class="c">// 1</span>
+c();                               <span class="c">// 2</span>
+c();                               <span class="c">// 3</span>
+</code></pre>
+<p>In this example, <code>count</code> stays alive, attached to the closure object, after the outer function returns. The <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> manages this lifetime (<a href="../007-runtime/">7. Runtime Model</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/406-capture-semantics.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="405-closure"><small>Previous</small>4.5. Closures</a><a class="next" href="407-ref-keyword"><small>Next</small>4.7. The ref Keyword</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

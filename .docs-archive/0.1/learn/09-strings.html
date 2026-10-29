@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9. Strings and f-strings - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Strings show up in almost every program. This chapter covers str and StrBuf, the commonly used methods, the different kinds of literals, and the format specifie...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/09-strings.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9. Strings and f-strings - rok docs">
+<meta property="og:description" content="Strings show up in almost every program. This chapter covers str and StrBuf, the commonly used methods, the different kinds of literals, and the format specifie...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/09-strings.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li class="cur"><a aria-current="page" href="09-strings">9. Strings and f-strings</a><ul class="toc"><li><a href="#str-immutable-utf-8">str: immutable UTF-8</a></li><li><a href="#common-methods">Common methods</a></li><li><a href="#strbuf-building-piece-by-piece">StrBuf: building piece by piece</a></li><li><a href="#literals-escapes-raw-strings-line-continuation">Literals: escapes, raw strings, line continuation</a></li><li><a href="#byte-strings-b">Byte strings b&quot;...&quot;</a></li><li><a href="#embedding-files-include_str--include_bytes">Embedding files: include_str! / include_bytes!</a></li><li><a href="#f-string-holes">f-string holes</a></li><li><a href="#format-specifiers">Format specifiers</a></li><li><a href="#printing-your-own-types-display-and-debug">Printing your own types: Display and Debug</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="9-strings-and-f-strings"><a class="anchor" tabindex="-1" href="#9-strings-and-f-strings" aria-hidden="true">#</a>9. Strings and f-strings</h1>
+<p>Strings show up in almost every program. This chapter covers <code>str</code> and <code>StrBuf</code>, the commonly used methods, the different kinds of literals, and the format specifiers of the f-strings you have been using all along.</p>
+<h2 id="str-immutable-utf-8"><a class="anchor" tabindex="-1" href="#str-immutable-utf-8" aria-hidden="true">#</a><code>str</code>: immutable UTF-8</h2>
+<p>A <code>str</code> is a sequence of UTF-8 bytes and never changes once created. That is why <code>len()</code> returns the number of <strong>bytes</strong>, not characters. To count characters (code points), use <code>char_count()</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> s = <span class="s">"hello, 세계"</span>;
+println(<span class="s">f"{</span>s.len()<span class="s">} bytes, {</span>s.char_count()<span class="s">} chars"</span>);
+println(s[<span class="n">0</span>..<span class="n">5</span>]);
+
+<span class="k">for</span> c <span class="k">in</span> <span class="s">"가나"</span>.chars() {
+    println(<span class="s">f"{</span>c<span class="s">} = U+{</span>c <span class="k">as</span> <span class="t">u32</span><span class="s">:X</span><span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">13 bytes, 9 chars
+hello
+가 = U+AC00
+나 = U+B098
+</code></pre>
+<p>Here the Korean text is deliberate: each Hangul syllable takes 3 bytes in UTF-8, so <code>&quot;hello, 세계&quot;</code> is 13 bytes but only 9 characters.</p>
+<p>A slice <code>s[a..b]</code> also cuts at byte positions. Since a Hangul character is 3 bytes, you must not cut anywhere other than a character boundary; a cut inside a character panics and names the byte:</p>
+<pre><code class="language-rok"><span class="k">let</span> s = <span class="s">"hello, 세계"</span>;
+println(s[<span class="n">0</span>..<span class="n">8</span>]);
+</code></pre>
+<pre><code class="language-text">thread 'main' panicked at main.rok:2:9:
+string slice is not on a char boundary: byte 8 is inside `세` (bytes 7..10)
+string offsets count bytes; to work by character, use `chars()` or `char_indices()`
+</code></pre>
+<p>To work character by character, use <code>chars()</code> or <code>char_indices()</code>.</p>
+<p>A single character is a <code>char</code>, written in single quotes. It holds one Unicode scalar value and has methods for classification and conversion.</p>
+<pre><code class="language-rok"><span class="k">let</span> c = <span class="s">'A'</span>;
+println(<span class="s">f"{</span>c<span class="s">} {</span>c.is_ascii_uppercase()<span class="s">} {</span>c.to_ascii_lowercase()<span class="s">}"</span>);
+println(<span class="s">f"{</span><span class="s">'7'</span>.is_ascii_digit()<span class="s">} {</span><span class="s">'세'</span>.len_utf8()<span class="s">} {</span><span class="s">'\u{1F600}'</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">A true a
+true 3 😀
+</code></pre>
+<h2 id="common-methods"><a class="anchor" tabindex="-1" href="#common-methods" aria-hidden="true">#</a>Common methods</h2>
+<p>Methods on <code>str</code> do not modify the original; they return a new value. Operations that may find nothing return <code>T | none</code>, so they pair well with <code>??</code> and <code>if let</code> from chapter 5.</p>
+<pre><code class="language-rok"><span class="k">let</span> line = <span class="s">"  name = rok  "</span>;
+<span class="k">let</span> t = line.trim();
+println(<span class="s">f"[{</span>t<span class="s">}]"</span>);
+println(<span class="s">f"{</span>t.starts_with(<span class="s">"name"</span>)<span class="s">} {</span>t.contains(<span class="s">"="</span>)<span class="s">} {</span>t.find(<span class="s">"rok"</span>) ?? <span class="n">99</span><span class="s">}"</span>);
+
+<span class="k">if</span> <span class="k">let</span> (k, v): (<span class="t">str</span>, <span class="t">str</span>) = t.split_once(<span class="s">" = "</span>) {
+    println(<span class="s">f"key={</span>k<span class="s">} value={</span>v<span class="s">}"</span>);
+}
+
+<span class="k">let</span> parts: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = <span class="s">"a,b,,c"</span>.split(<span class="s">","</span>).collect();
+println(<span class="s">f"{</span>parts<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span><span class="s">"ab"</span>.repeat(<span class="n">3</span>)<span class="s">} {</span>t.to_uppercase()<span class="s">} {</span>t.replace(<span class="s">"rok"</span>, <span class="s">"ROK"</span>)<span class="s">}"</span>);
+
+<span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span>! <span class="s">"42"</span>.parse();
+println(<span class="s">f"{</span>n + <span class="n">1</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[name = rok]
+true true 7
+key=name value=rok
+[&quot;a&quot;, &quot;b&quot;, &quot;&quot;, &quot;c&quot;]
+ababab NAME = ROK name = ROK
+43
+</code></pre>
+<p><code>parse</code> is a function that throws an error on failure, so the example adds <code>try!</code>. Errors are covered in the <a href="10-errors">next chapter</a>. Other methods include <code>lines()</code>, <code>split_whitespace()</code>, <code>strip_prefix()</code>, and <code>trim_start()</code> (<a href="../std/core/str#impl.str"><code>str</code> API</a>).</p>
+<h2 id="strbuf-building-piece-by-piece"><a class="anchor" tabindex="-1" href="#strbuf-building-piece-by-piece" aria-hidden="true">#</a><code>StrBuf</code>: building piece by piece</h2>
+<p>Because <code>str</code> is immutable, concatenating with <code>+</code> in a loop creates a new string every time. When building a string piece by piece, write into a <code>StrBuf</code> buffer and take the result out with <code>to_str()</code> when done.</p>
+<pre><code class="language-rok"><span class="k">let</span> b = <span class="t">StrBuf</span>::new();
+<span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..=<span class="n">5</span> {
+    <span class="k">if</span> !b.is_empty() { b.push_str(<span class="s">", "</span>); }
+    b.push_str(<span class="s">f"{</span>i * i<span class="s">}"</span>);
+}
+b.push(<span class="s">'!'</span>);
+<span class="k">let</span> s = b.to_str();
+println(<span class="s">f"{</span>s<span class="s">} ({</span>s.len()<span class="s">} bytes)"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">1, 4, 9, 16, 25! (16 bytes)
+</code></pre>
+<p>For joining two strings once, <code>+</code> is enough. Unlike C or Python, however, adjacent string literals (<code>&quot;abc&quot; &quot;def&quot;</code>) are not joined automatically. Writing that is a compile error; if you want to join them, write <code>+</code> (<a href="../spec/refs-lang/001-lexical/107-string-literals#174-automatic-concatenation-of-adjacent-strings">1.7.4</a>).</p>
+<pre><code class="language-rok"><span class="k">let</span> greeting = <span class="s">"hello, "</span> + <span class="s">"world"</span>;
+println(greeting);
+</code></pre>
+<pre class="output"><code class="language-output">hello, world
+</code></pre>
+<h2 id="literals-escapes-raw-strings-line-continuation"><a class="anchor" tabindex="-1" href="#literals-escapes-raw-strings-line-continuation" aria-hidden="true">#</a>Literals: escapes, raw strings, line continuation</h2>
+<p>Ordinary strings process escapes such as <code>\n</code>, <code>\t</code>, <code>\&quot;</code>, <code>\\</code>, and <code>\u{..}</code>. For paths or regular expressions full of backslashes, raw strings <code>r&quot;...&quot;</code> are more convenient. If you need a <code>&quot;</code> inside, surround the string with the same number of <code>#</code> on each side.</p>
+<pre><code class="language-rok">println(<span class="s">"tab:\t| quote:\" | snow: \u{2603}"</span>);
+println(<span class="s">r"C:\path\to\file\n"</span>);
+println(r#<span class="s">"she said "</span>hi<span class="s">""</span>#);
+println(<span class="s">"one long \
+         line"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">tab:	| quote:&quot; | snow: ☃
+C:\path\to\file\n
+she said &quot;hi&quot;
+one long line
+</code></pre>
+<p>As in the last example, a <code>\</code> at the end of a line removes both the newline and the leading whitespace of the next line. This rule does not apply in raw strings either (<a href="../spec/refs-lang/001-lexical/107-string-literals#172-raw-strings">1.7.2</a>).</p>
+<h2 id="byte-strings-b"><a class="anchor" tabindex="-1" href="#byte-strings-b" aria-hidden="true">#</a>Byte strings <code>b&quot;...&quot;</code></h2>
+<p>Protocols and file formats speak bytes, not text. A byte string <code>b&quot;...&quot;</code> is a fixed array <code>[u8; N]</code> of its bytes. Write ASCII directly and anything else as <code>\xHH</code> (any value <code>\x00</code>-<code>\xFF</code>). Where a <code>Slice&lt;u8&gt;</code> is expected, the same literal is a view of that array, so it can be passed straight to functions that take bytes.</p>
+<pre><code class="language-rok"><span class="k">let</span> magic = <span class="s">b"\x7FELF"</span>;                  <span class="c">// [u8; 4]</span>
+println(<span class="s">f"{</span>magic.len()<span class="s">} {</span>magic<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">fn</span> starts_with(data: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;, prefix: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">bool</span> {
+    data.len() &gt;= prefix.len() &amp;&amp; data[:prefix.len()] == prefix
+}
+println(<span class="s">f"{</span>starts_with(<span class="s">b"\x7FELF\x02\x01"</span>, <span class="s">b"\x7FELF"</span>)<span class="s">}"</span>);
+
+<span class="k">let</span> req: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt; = <span class="s">b"GET / HTTP/1.1\r\n"</span>;
+println(<span class="s">f"{</span>req[:<span class="n">3</span>]<span class="s">:?</span><span class="s">} {</span><span class="k">try</span>! <span class="t">str</span>::from_utf8(req[:<span class="n">3</span>])<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">4 [127, 69, 76, 70]
+true
+[71, 69, 84] GET
+</code></pre>
+<p>A non-ASCII character written directly in a byte string, or an escape above <code>\xFF</code>, is a compile error; line continuation is not supported.</p>
+<h2 id="embedding-files-include_str--include_bytes"><a class="anchor" tabindex="-1" href="#embedding-files-include_str--include_bytes" aria-hidden="true">#</a>Embedding files: <code>include_str!</code> / <code>include_bytes!</code></h2>
+<p>To ship a template, a test fixture or an icon inside the executable, embed the file at compile time. <code>include_str!(&quot;path&quot;)</code> is the file's contents as a <code>str</code>, and <code>include_bytes!(&quot;path&quot;)</code> its bytes as a <code>[u8; N]</code>, like a byte string. The path is relative to the source file that contains the call, and the result is a constant, so it can initialize a <code>const</code> or <code>static</code>.</p>
+<pre><code class="language-text">app/
+└── src/
+    ├── main.rok
+    └── page.html        // &lt;h1&gt;{title}&lt;/h1&gt;
+</code></pre>
+<pre><code class="language-rok"><span class="c">// app/src/main.rok</span>
+<span class="k">const</span> <span class="t">PAGE</span>: <span class="t">str</span> = include_str!(<span class="s">"page.html"</span>);
+<span class="k">static</span> <span class="t">LOGO</span>: [<span class="t">u8</span>; <span class="n">1406</span>] = include_bytes!(<span class="s">"logo.png"</span>);
+
+print(<span class="t">PAGE</span>.replace(<span class="s">"{title}"</span>, <span class="s">"Hello"</span>));
+</code></pre>
+<p>A missing file is a compile error, and so is a file that is not valid UTF-8 for <code>include_str!</code>. Editing the included file rebuilds what uses it.</p>
+<h2 id="f-string-holes"><a class="anchor" tabindex="-1" href="#f-string-holes" aria-hidden="true">#</a>f-string holes</h2>
+<p>Any expression can go inside the <code>{ }</code> of an <code>f&quot;...&quot;</code>. The rules are the same as Python 3.12 (PEP 701): you can reuse the outer quote character inside a hole, and f-strings can be nested. To write a literal brace, use <code>{{</code> and <code>}}</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> d = {<span class="s">"lang"</span>: <span class="s">"rok"</span>};
+<span class="k">let</span> words = [<span class="s">"a"</span>, <span class="s">"b"</span>];
+println(<span class="s">f"{</span>d[<span class="s">"lang"</span>]<span class="s">} has {</span>words.len()<span class="s">} words: {</span>words[<span class="n">0</span>] + words[<span class="n">1</span>]<span class="s">}"</span>);
+println(<span class="s">f"nested: {</span><span class="s">f"[{</span><span class="n">1</span> + <span class="n">1</span><span class="s">}]"</span><span class="s">}"</span>);
+println(<span class="s">f"{{literal braces}}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">rok has 2 words: ab
+nested: [2]
+{literal braces}
+</code></pre>
+<p>Inside a hole you do not use escapes like <code>\&quot;</code>; just write the quotes as they are. For text or holes that span multiple lines, use <code>f&quot;&quot;&quot;...&quot;&quot;&quot;</code>.</p>
+<h2 id="format-specifiers"><a class="anchor" tabindex="-1" href="#format-specifiers" aria-hidden="true">#</a>Format specifiers</h2>
+<p>Put a <code>:</code> after the expression in a hole to specify a format. The syntax is <code>[fill][align][sign][#][0][width][.precision][type]</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> pi = <span class="n">3.14159</span>;
+println(<span class="s">f"[{</span>pi<span class="s">:.2</span><span class="s">}] [{</span>pi<span class="s">:8.3</span><span class="s">}] [{</span>pi<span class="s">:e</span><span class="s">}]"</span>);
+println(<span class="s">f"[{</span><span class="n">42</span><span class="s">:&gt;6</span><span class="s">}] [{</span><span class="n">42</span><span class="s">:&lt;6</span><span class="s">}] [{</span><span class="n">42</span><span class="s">:^6</span><span class="s">}] [{</span><span class="n">42</span><span class="s">:*^6</span><span class="s">}]"</span>);
+println(<span class="s">f"[{</span><span class="s">"ab"</span><span class="s">:5</span><span class="s">}] [{</span><span class="s">"ab"</span><span class="s">:&gt;5</span><span class="s">}] [{</span><span class="n">7</span><span class="s">:03</span><span class="s">}] [{</span><span class="n">5</span><span class="s">:+</span><span class="s">}]"</span>);
+println(<span class="s">f"{</span><span class="n">255</span><span class="s">:x</span><span class="s">} {</span><span class="n">255</span><span class="s">:#X</span><span class="s">} {</span><span class="n">5</span><span class="s">:b</span><span class="s">} {</span>-<span class="n">1i8</span><span class="s">:x</span><span class="s">}"</span>);
+println(<span class="s">f"{</span><span class="s">"hi"</span><span class="s">:?</span><span class="s">} {</span>[<span class="n">1</span>, <span class="n">2</span>]<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[3.14] [   3.142] [3.14159e0]
+[    42] [42    ] [  42  ] [**42**]
+[ab   ] [   ab] [007] [+5]
+ff 0xFF 101 ff
+&quot;hi&quot; [1, 2]
+</code></pre>
+<p>Without an explicit alignment, numbers are right-aligned and everything else is left-aligned. <code>?</code> selects the <code>Debug</code> format, which shows strings with their quotes and escapes. Specifiers are checked against the hole's type at compile time, so a mistake like <code>{s:x}</code> (with <code>s: str</code>) is an immediate error.</p>
+<p>To choose the width or precision at run time, put another hole inside the specifier. Both <code>{..}</code> and <code>${..}</code> work (<a href="../spec/refs-lang/001-lexical/107-string-literals#dynamic-format-specifiers">dynamic format specifiers</a>).</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="n">2.0</span> / <span class="n">3.0</span>;
+<span class="k">for</span> prec <span class="k">in</span> <span class="n">1</span>..=<span class="n">3</span> {
+    <span class="k">let</span> width = prec + <span class="n">4</span>;
+    println(<span class="s">f"[{</span>x<span class="s">:&gt;${</span>width<span class="s">}.${</span>prec<span class="s">}f</span><span class="s">}] [{</span>x<span class="s">:.{</span>prec<span class="s">}f</span><span class="s">}]"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">[  0.7] [0.7]
+[  0.67] [0.67]
+[  0.667] [0.667]
+</code></pre>
+<h2 id="printing-your-own-types-display-and-debug"><a class="anchor" tabindex="-1" href="#printing-your-own-types-display-and-debug" aria-hidden="true">#</a>Printing your own types: <code>Display</code> and <code>Debug</code></h2>
+<p><code>f&quot;{x}&quot;</code> calls the <code>Display</code> trait and <code>f&quot;{x:?}&quot;</code> calls <code>Debug</code>. <code>Debug</code> can be implemented automatically with <code>#[derive(Debug)]</code>, while <code>Display</code>, which is meant for users, you implement yourself. <code>fmt</code> writes text into the <code>Formatter</code> it receives.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">i32</span>; y: <span class="t">i32</span>; }
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Point</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">try</span> f.write_str(<span class="s">f"({</span><span class="k">self</span>.x<span class="s">}, {</span><span class="k">self</span>.y<span class="s">})"</span>);
+    }
+}
+
+<span class="a">#[derive(Debug)]</span>
+<span class="k">enum</span> <span class="t">Shape</span> { <span class="t">Circle</span>(<span class="t">f64</span>), <span class="t">Rect</span> { w: <span class="t">f64</span>; h: <span class="t">f64</span>; } }
+
+<span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1</span>, y: -<span class="n">2</span> };
+println(<span class="s">f"{</span>p<span class="s">} | {</span>p<span class="s">:?</span><span class="s">} | [{</span>p<span class="s">:&gt;10</span><span class="s">}]"</span>);
+println(<span class="s">f"{</span>[p, <span class="t">Point</span> { x: <span class="n">3</span>, y: <span class="n">4</span> }]<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span><span class="t">Shape</span>::<span class="t">Circle</span>(<span class="n">1.5</span>)<span class="s">:?</span><span class="s">} {</span><span class="t">Shape</span>::<span class="t">Rect</span> { w: <span class="n">2.5</span>, h: <span class="n">3.0</span> }<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">(1, -2) | Point { x: 1, y: -2 } | [   (1, -2)]
+[Point { x: 1, y: -2 }, Point { x: 3, y: 4 }]
+Circle(1.5) Rect { w: 2.5, h: 3 }
+</code></pre>
+<p>Width and alignment (<code>{p:&gt;10}</code>) apply to the whole output written by <code>fmt</code>. Once you implement <code>Display</code>, you can put the type directly anywhere in an f-string, and with <code>Debug</code>, a <code>List</code> or <code>Dict</code> holding that type also prints with <code>{:?}</code>. <code>3.0</code> prints as <code>3</code> because the default float output is &quot;the shortest representation that reads back as the same value&quot;.</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>str</code> is immutable UTF-8. <code>len()</code> and slicing work in bytes; handle characters with <code>chars()</code>.
+</li>
+<li>Build strings piece by piece in a <code>StrBuf</code> and take them out with <code>to_str()</code>. Literals are not joined automatically; join them with <code>+</code>.
+</li>
+<li>Raw strings <code>r&quot;...&quot;</code> and <code>r#&quot;...&quot;#</code> do not process escapes.
+</li>
+<li><code>b&quot;...&quot;</code> is a <code>[u8; N]</code> (or a <code>Slice&lt;u8&gt;</code> where one is expected). <code>include_str!</code> / <code>include_bytes!</code> embed a file at compile time.
+</li>
+<li>An f-string hole takes any expression, including the same quote character as is. <code>{{</code> and <code>}}</code> are literal braces.
+</li>
+<li>Specifiers such as <code>:.2</code>, <code>:&gt;8</code>, <code>:x</code>, and <code>:?</code> set the format, and <code>${..}</code> makes them dynamic.
+</li>
+<li>Implement <code>Display</code> for your own types and derive <code>Debug</code>.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/001-lexical/107-string-literals">String literals and f-strings</a>, <a href="../spec/refs-lang/001-lexical/108-character-literals">Character literals</a>, <a href="../spec/refs-lang/001-lexical/107-string-literals#175-byte-strings">Byte strings</a>, <a href="../spec/refs-lang/006-meta-system/611-include">File embedding</a>
+</li>
+<li>Standard library spec: <a href="../spec/refs-standard-libraries/200-core/210-fmt">fmt</a>, <a href="../spec/refs-standard-libraries/200-core/215-string">Strings</a>
+</li>
+<li>API: <a href="../std/core/str#impl.str"><code>str</code> methods</a>, <a href="../std/core/str#struct.StrBuf"><code>StrBuf</code></a>, <a href="../std/core/fmt#trait.Display"><code>Display</code></a>, <a href="../std/core/fmt#struct.Formatter"><code>Formatter</code></a>
+</li>
+<li>Next chapter: <a href="10-errors">10. Error Handling</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/09-strings.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="08-collections-iterators"><small>Previous</small>8. Collections and Iterators</a><a class="next" href="10-errors"><small>Next</small>10. Error Handling</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

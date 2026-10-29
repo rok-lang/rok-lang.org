@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.5. io:: - Reader / Writer / standard I/O - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::std::io module provides byte stream abstractions together with standard I/O (stdin/stdout/stderr). There are no separate AsyncRead/AsyncWrite traits. T...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/305-io.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.5. io:: - Reader / Writer / standard I/O - rok docs">
+<meta property="og:description" content="The rok::std::io module provides byte stream abstractions together with standard I/O (stdin/stdout/stderr). There are no separate AsyncRead/AsyncWrite traits. T...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/305-io.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/305-io.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/305-io.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - file system</a></li><li><a href="302-net">3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - time</a></li><li><a href="304-thread">3.4. thread:: - OS threads (1:1 model)</a></li><li class="cur"><a aria-current="page" href="305-io">3.5. io:: - Reader / Writer / standard I/O</a><ul class="toc"><li><a href="#350-ioerror">3.5.0. IoError</a></li><li><a href="#351-asbytes">3.5.1. AsBytes</a></li><li><a href="#351a-reader--writer-traits">3.5.1a. Reader / Writer traits</a></li><li><a href="#352-standard-io">3.5.2. Standard I/O</a></li><li><a href="#353-bufreader--bufwriter--linewriter">3.5.3. BufReader / BufWriter / LineWriter</a></li><li><a href="#354-copy---iocopyreader-writer">3.5.4. copy - io::copy(reader, writer)</a></li><li><a href="#355-examples">3.5.5. Examples</a></li></ul></li><li><a href="306-env">3.6. env:: - environment variables / args / directories</a></li><li><a href="307-process">3.7. process:: - child processes</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python-style)</a></li><li><a href="309-rokon">3.9. rokon:: - the ROKON data format</a></li><li><a href="310-crypto">3.10. crypto:: - the OS random source</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="35-io---reader--writer--standard-io 35-io---reader--writer--표준-입출력 350-ioerror 350-ioerror 351-asbytes 351-asbytes 351a-reader--writer-traits 351a-reader--writer-트레잇 352-standard-io 352-표준-입출력 353-bufreader--bufwriter--linewriter 353-bufreader--bufwriter--linewriter 354-copy---iocopyreader-writer 354-copy---iocopyreader-writer 355-examples 355-사용-예"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/300-std/305-io" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="35-io---reader--writer--standard-io"><a class="anchor" tabindex="-1" href="#35-io---reader--writer--standard-io" aria-hidden="true">#</a>3.5. <code>io::</code> - <code>Reader</code> / <code>Writer</code> / standard I/O</h1>
+<p>The <code>rok::std::io</code> module provides byte stream abstractions together with standard I/O (stdin/stdout/stderr). There are no separate <code>AsyncRead</code>/<code>AsyncWrite</code> traits. The APIs of this module block the calling OS thread. A stackless coroutine cannot be suspended inside an ordinary function, so a sync call does not become async on its own inside a task; I/O that suspends only the task is provided as per-type <code>*_async</code> methods (sockets <a href="302-net#320-common-rules">3.2.0</a>, files <a href="301-fs#314a-asynchronous-file-io-_async">3.1.4a</a>).</p>
+<h2 id="350-ioerror"><a class="anchor" tabindex="-1" href="#350-ioerror" aria-hidden="true">#</a>3.5.0. <code>IoError</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">IoError</span> {
+    kind: <span class="t">IoErrorKind</span>;
+    code: <span class="t">i32</span>;            <span class="c">// OS errno</span>
+    message: <span class="t">str</span>;         <span class="c">// OS message (strerror)</span>
+}
+
+<span class="k">enum</span> <span class="t">IoErrorKind</span> {
+    <span class="t">Other</span>,                <span class="c">// any other errno</span>
+    <span class="t">NotFound</span>,             <span class="c">// ENOENT</span>
+    <span class="t">PermissionDenied</span>,     <span class="c">// EACCES, EPERM</span>
+    <span class="t">AlreadyExists</span>,        <span class="c">// EEXIST</span>
+    <span class="t">NotADirectory</span>,        <span class="c">// ENOTDIR</span>
+    <span class="t">IsADirectory</span>,         <span class="c">// EISDIR</span>
+    <span class="t">DirectoryNotEmpty</span>,    <span class="c">// ENOTEMPTY</span>
+    <span class="t">InvalidInput</span>,         <span class="c">// EINVAL</span>
+    <span class="t">BrokenPipe</span>,           <span class="c">// EPIPE</span>
+    <span class="t">Interrupted</span>,          <span class="c">// EINTR</span>
+    <span class="t">WouldBlock</span>,           <span class="c">// EAGAIN</span>
+    <span class="t">TimedOut</span>,             <span class="c">// ETIMEDOUT, time limit</span>
+    <span class="t">StorageFull</span>,          <span class="c">// ENOSPC</span>
+    <span class="t">CrossesDevices</span>,       <span class="c">// EXDEV</span>
+    <span class="t">Unsupported</span>,          <span class="c">// ENOTSUP, ENOSYS</span>
+    <span class="t">UnexpectedEof</span>,        <span class="c">// ended before the expected bytes (read_exact, etc.)</span>
+    <span class="t">InvalidData</span>,          <span class="c">// data does not match the format (UTF-8, etc.)</span>
+}
+</code></pre>
+<p><code>kind</code> is determined from errno (<code>UnexpectedEof</code> / <code>InvalidData</code> are set by the library); the original value remains in <code>code</code> and the OS's description in <code>message</code>.</p>
+<h2 id="351-asbytes"><a class="anchor" tabindex="-1" href="#351-asbytes" aria-hidden="true">#</a>3.5.1. <code>AsBytes</code></h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">AsBytes</span> { <span class="k">fn</span> byte_slice(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;; }   <span class="c">// need not be UTF-8</span>
+<span class="k">impl</span> <span class="t">AsBytes</span> <span class="k">for</span> <span class="t">str</span> { .. }
+<span class="k">impl</span> <span class="t">AsBytes</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">u8</span>&gt; { .. }
+<span class="k">impl</span> <span class="t">AsBytes</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt; { .. }
+<span class="k">impl</span>&lt;<span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; <span class="t">AsBytes</span> <span class="k">for</span> [<span class="t">u8</span>; <span class="t">N</span>] { .. }   <span class="c">// a view of a copy (b"...", include_bytes!)</span>
+</code></pre>
+<p>The data argument of write functions (<code>fs</code>, <code>net</code>, <code>Writer</code>) accepts <code>AsBytes</code>. <code>AsBytes</code> is defined in <code>rok::core</code> (beside <code>Slice</code>, <code>rok::core::collections::slice</code>) and re-exported as <code>rok::std::io::AsBytes</code>.</p>
+<h2 id="351a-reader--writer-traits"><a class="anchor" tabindex="-1" href="#351a-reader--writer-traits" aria-hidden="true">#</a>3.5.1a. <code>Reader</code> / <code>Writer</code> traits</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Reader</span> {
+    <span class="k">fn</span> read(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;   <span class="c">// fills buf[0..n], 0 = end</span>
+
+    <span class="c">// default methods</span>
+    <span class="k">fn</span> read_exact(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>);      <span class="c">// all of buf; UnexpectedEof if short</span>
+    <span class="k">fn</span> read_to_end(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> read_to_str(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;             <span class="c">// UTF-8 validation</span>
+    <span class="k">fn</span> read_line(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;               <span class="c">// includes `\n`, "" at the end</span>
+    <span class="k">fn</span> lines(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Lines</span>&lt;<span class="k">Self</span>&gt;;     <span class="c">// implements Iterator&lt;Item = Result&lt;str, IoError&gt;&gt;</span>
+    <span class="k">fn</span> bytes(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Bytes</span>&lt;<span class="k">Self</span>&gt;;     <span class="c">// implements Iterator&lt;Item = Result&lt;u8, IoError&gt;&gt;</span>
+    <span class="k">fn</span> raw_fd(<span class="k">self</span>) -&gt; <span class="t">RawFd</span>;              <span class="c">// the OS descriptor io::copy may hand to the kernel; -1 (default) if none, or if the stream buffers, times out or is non-blocking</span>
+}
+
+<span class="k">trait</span> <span class="t">Writer</span> {
+    <span class="k">fn</span> write(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> flush(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="c">// default</span>
+    <span class="k">fn</span> write_all(<span class="k">ref</span> <span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> write_str(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> write_fmt(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);     <span class="c">// writes the result of an f-string</span>
+    <span class="k">fn</span> raw_fd(<span class="k">self</span>) -&gt; <span class="t">RawFd</span>;              <span class="c">// the OS descriptor io::copy may hand to the kernel; -1 (default) if none, or if the stream buffers, times out or is non-blocking</span>
+}
+
+<span class="k">trait</span> <span class="t">Seek</span> {
+    <span class="k">fn</span> seek(<span class="k">ref</span> <span class="k">self</span>, pos: <span class="t">SeekFrom</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+
+    <span class="c">// default</span>
+    <span class="k">fn</span> rewind(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                         <span class="c">// seek(Start(0))</span>
+    <span class="k">fn</span> stream_position(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;         <span class="c">// seek(Current(0))</span>
+}
+</code></pre>
+<p>Byte buffers are passed as <code>List&lt;u8&gt;</code> until <code>Slice&lt;u8&gt;</code> is available. <code>read</code> fills a <code>buf</code> whose length was set up in advance (<code>List</code> is a handle, so the caller sees the result). Trait methods take <code>ref self</code>; inherent methods of handle types take <code>self</code>.</p>
+<p>These three traits are implemented consistently by <code>File</code>, <code>TcpStream</code>, <code>UnixStream</code> and <code>stdin/out/err</code>, so the same code can handle many kinds of streams.</p>
+<h2 id="352-standard-io"><a class="anchor" tabindex="-1" href="#352-standard-io" aria-hidden="true">#</a>3.5.2. Standard I/O</h2>
+<p>Next, standard I/O, the most common I/O channel of a process.</p>
+<pre><code class="language-rok"><span class="k">fn</span> stdin() -&gt; <span class="t">Stdin</span>;
+<span class="k">fn</span> stdout() -&gt; <span class="t">Stdout</span>;
+<span class="k">fn</span> stderr() -&gt; <span class="t">Stderr</span>;
+
+<span class="k">struct</span> <span class="t">Stdin</span> { <span class="c">/* read line / bytes / etc. */</span> }
+<span class="k">struct</span> <span class="t">Stdout</span> { <span class="c">/* line-buffered on a tty, block-buffered on a pipe */</span> }
+<span class="k">struct</span> <span class="t">Stderr</span> { <span class="c">/* unbuffered */</span> }
+
+<span class="k">impl</span> <span class="t">Reader</span> <span class="k">for</span> <span class="t">Stdin</span> { ... }
+<span class="k">impl</span> <span class="t">Writer</span> <span class="k">for</span> <span class="t">Stdout</span> { ... }
+<span class="k">impl</span> <span class="t">Writer</span> <span class="k">for</span> <span class="t">Stderr</span> { ... }
+
+<span class="k">impl</span> <span class="t">Stdin</span> {
+    <span class="k">fn</span> lock(<span class="k">self</span>) -&gt; <span class="t">StdinLock</span>;          <span class="c">// exclusive lock - multithread-safe</span>
+    <span class="k">fn</span> read_line(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> lines(<span class="k">self</span>) -&gt; <span class="t">Lines</span>&lt;<span class="t">Stdin</span>&gt;;      <span class="c">// implements Iterator&lt;Item = Result&lt;str, IoError&gt;&gt;</span>
+}
+</code></pre>
+<p><code>stdout()</code> shares the same runtime buffer as <code>print</code> / <code>println</code>, so output order is preserved even when they are mixed. This buffer is flushed when the process ends, when <code>flush()</code> is called, and when the buffer fills. <code>stderr</code> writes immediately without a buffer. <code>stdin()</code> also uses a single shared buffer.</p>
+<p><code>print</code> / <code>println</code> / <code>eprint</code> / <code>eprintln</code>, commonly used with stdout/stderr, live in <code>rok::core::print::*</code>, so they are exposed automatically through the <a href="../000-meta/002-import">implicit <code>use rok::core::**;</code></a> without a separate import.</p>
+<h2 id="353-bufreader--bufwriter--linewriter"><a class="anchor" tabindex="-1" href="#353-bufreader--bufwriter--linewriter" aria-hidden="true">#</a>3.5.3. <code>BufReader</code> / <code>BufWriter</code> / <code>LineWriter</code></h2>
+<p>Using raw streams directly tends to accumulate system call costs, so the standard library provides the following buffering wrappers.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">BufReader</span>&lt;<span class="t">R</span>: <span class="t">Reader</span>&gt; { <span class="c">/* internal buffer */</span> }
+<span class="k">struct</span> <span class="t">BufWriter</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; { <span class="c">/* internal buffer */</span> }
+<span class="k">struct</span> <span class="t">LineWriter</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; { <span class="c">/* line-buffered */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">R</span>: <span class="t">Reader</span>&gt; <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt; {
+    <span class="k">fn</span> new(inner: <span class="t">R</span>) -&gt; <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>, inner: <span class="t">R</span>) -&gt; <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt;;
+    <span class="k">fn</span> into_inner(<span class="k">self</span>) -&gt; <span class="t">R</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">R</span>: <span class="t">Reader</span>&gt; <span class="t">Reader</span> <span class="k">for</span> <span class="t">BufReader</span>&lt;<span class="t">R</span>&gt; { ... }
+
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt; {
+    <span class="k">fn</span> new(inner: <span class="t">W</span>) -&gt; <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>, inner: <span class="t">W</span>) -&gt; <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt;;
+    <span class="k">fn</span> into_inner(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">W</span>;     <span class="c">// flushes the remaining buffer, then returns</span>
+}
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">Writer</span> <span class="k">for</span> <span class="t">BufWriter</span>&lt;<span class="t">W</span>&gt; { ... }
+
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">LineWriter</span>&lt;<span class="t">W</span>&gt; {                    <span class="c">// flush on every write containing \n</span>
+    <span class="k">fn</span> new(inner: <span class="t">W</span>) -&gt; <span class="t">LineWriter</span>&lt;<span class="t">W</span>&gt;;
+}
+<span class="k">impl</span>&lt;<span class="t">W</span>: <span class="t">Writer</span>&gt; <span class="t">Writer</span> <span class="k">for</span> <span class="t">LineWriter</span>&lt;<span class="t">W</span>&gt; { ... }
+</code></pre>
+<p><code>BufWriter</code> implements <code>Drop</code>, so it flushes the remaining buffer when leaving a <code>using</code> block. Errors at that point are ignored; to check for errors, call <code>flush()</code> directly before leaving. <code>LineWriter</code> flushes on every write that contains <code>\n</code>.</p>
+<pre><code class="language-rok"></code></pre>
+<p>In short, the main benefit is fewer system calls when small reads are frequent.</p>
+<h2 id="354-copy---iocopyreader-writer"><a class="anchor" tabindex="-1" href="#354-copy---iocopyreader-writer" aria-hidden="true">#</a>3.5.4. <code>copy</code> - <code>io::copy(reader, writer)</code></h2>
+<p>Simple copying between streams has its own function.</p>
+<pre><code class="language-rok"><span class="k">fn</span> copy&lt;<span class="t">R</span>: <span class="t">Reader</span>, <span class="t">W</span>: <span class="t">Writer</span>&gt;(<span class="k">ref</span> reader: <span class="t">R</span>, <span class="k">ref</span> writer: <span class="t">W</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+</code></pre>
+<p>Internally it <em>uses <code>splice</code> / <code>sendfile</code> / <code>copy_file_range</code></em> where possible, but from user code a single call is all it takes. Given two descriptors (<code>raw_fd</code>), the kernel path is picked per descriptor kind; otherwise <code>read</code> / <code>write</code>.</p>
+<h2 id="355-examples"><a class="anchor" tabindex="-1" href="#355-examples" aria-hidden="true">#</a>3.5.5. Examples</h2>
+<p>A typical use combining the pieces so far:</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::io::{stdin, stdout, <span class="t">BufReader</span>, <span class="t">BufWriter</span>};
+
+<span class="c">// line-by-line processing</span>
+<span class="k">let</span> stdin = stdin().lock();
+<span class="k">for</span> line <span class="k">in</span> stdin.lines() {
+    <span class="k">let</span> line = <span class="k">try</span> line.get();       <span class="c">// iterator elements are Result - get() returns to the error flow</span>
+    process(line);
+}
+
+<span class="c">// buffered writes</span>
+<span class="k">let</span> f = <span class="k">try</span> fs::create(<span class="s">"output.txt"</span>);
+<span class="k">let</span> buf = <span class="t">BufWriter</span>::new(f);
+<span class="k">for</span> x <span class="k">in</span> xs {
+    <span class="k">try</span> buf.write_str(<span class="s">f"{</span>x<span class="s">}\n"</span>);
+}
+<span class="k">try</span> buf.flush();    <span class="c">// explicit flush - avoids a silent failure at release time</span>
+
+<span class="c">// copy</span>
+<span class="k">let</span> src = <span class="k">try</span> fs::open(<span class="s">"a.txt"</span>);
+<span class="k">let</span> dst = <span class="k">try</span> fs::create(<span class="s">"b.txt"</span>);
+<span class="k">try</span> io::copy(<span class="k">ref</span> src, <span class="k">ref</span> dst);
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/300-std/305-io.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="304-thread"><small>Previous</small>3.4. thread:: - OS threads (1:1 model)</a><a class="next" href="306-env"><small>Next</small>3.6. env:: - environment variables / args / directories</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

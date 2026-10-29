@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.8. trait - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="trait 는 공통 동작 묶음을 선언하는 컨테이너입니다. 어떤 타입이 그 동작을 구현하면 그 타입은 그 트레잇을 충족합니다 (satisfies).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/208-trait.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.8. trait - rok docs">
+<meta property="og:description" content="trait 는 공통 동작 묶음을 선언하는 컨테이너입니다. 어떤 타입이 그 동작을 구현하면 그 타입은 그 트레잇을 충족합니다 (satisfies).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/208-trait.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/208-trait.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/208-trait.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li class="cur"><a aria-current="page" href="208-trait">2.8. trait</a><ul class="toc"><li><a href="#281-기본-형태">2.8.1. 기본 형태</a></li><li><a href="#282-메서드-시그니처">2.8.2. 메서드 시그니처</a></li><li><a href="#283-연관-타입-associated-type">2.8.3. 연관 타입 (associated type)</a></li><li><a href="#283a-연관-상수-associated-const">2.8.3a. 연관 상수 (associated const)</a></li><li><a href="#284-슈퍼트레잇-supertrait">2.8.4. 슈퍼트레잇 (supertrait)</a></li><li><a href="#285-제네릭-트레잇">2.8.5. 제네릭 트레잇</a></li><li><a href="#286-where-절-매개변수에-추가-제약">2.8.6. where 절. 매개변수에 추가 제약</a></li><li><a href="#287-트레잇-메서드의-디스패치">2.8.7. 트레잇 메서드의 디스패치</a></li><li><a href="#288-가시성">2.8.8. 가시성</a></li><li><a href="#289-동일-모듈-내-중복-정의-금지">2.8.9. 동일 모듈 내 중복 정의 금지</a></li></ul></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. 제네릭</a></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="28-trait 28-trait 281-기본-형태 281-basic-form 282-메서드-시그니처 282-method-signatures 283-연관-타입-associated-type 283-associated-types 기본값 defaults 외부에서의-연관-타입-참조-tassoctype referring-to-associated-types-from-outside-tassoctype 283a-연관-상수-associated-const 283a-associated-constants 284-슈퍼트레잇-supertrait 284-supertraits 285-제네릭-트레잇 285-generic-traits 286-where-절-매개변수에-추가-제약 286-where-clauses-additional-constraints-on-parameters 287-트레잇-메서드의-디스패치 287-dispatch-of-trait-methods 288-가시성 288-visibility 289-동일-모듈-내-중복-정의-금지 289-no-duplicate-definitions-in-the-same-module"><a href="../../../../spec/refs-lang/002-types/208-trait" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="28-trait"><a class="anchor" tabindex="-1" href="#28-trait" aria-hidden="true">#</a>2.8. <code>trait</code></h1>
+<p><code>trait</code> 는 공통 동작 묶음을 선언하는 컨테이너입니다. 어떤 타입이 그 동작을 구현하면 그 타입은 그 트레잇을 충족합니다 (satisfies).</p>
+<p>본 문서는 트레잇의 선언 형태만 정의합니다. 트레잇을 구현하는 <code>impl</code> 블록은 <a href="209-impl"><code>impl</code></a> 에서 정의합니다.</p>
+<h2 id="281-기본-형태"><a class="anchor" tabindex="-1" href="#281-기본-형태" aria-hidden="true">#</a>2.8.1. 기본 형태</h2>
+<p>트레잇 선언의 문법은 다음과 같습니다.</p>
+<pre><code>trait_decl  ::= visibility? &quot;trait&quot; identifier generics? supertraits? where_clause? &quot;{&quot; trait_item* &quot;}&quot;
+supertraits ::= &quot;:&quot; type_expr (&quot;+&quot; type_expr)*
+trait_item  ::= visibility? method_sig
+              | visibility? assoc_type_decl
+              | visibility? method_default
+              | visibility? assoc_const_decl
+method_sig  ::= &quot;fn&quot; identifier &quot;(&quot; param_list? &quot;)&quot; throws_clause? return_type? &quot;;&quot;
+method_default ::= &quot;fn&quot; identifier &quot;(&quot; param_list? &quot;)&quot; throws_clause? return_type? block
+assoc_type_decl ::= &quot;type&quot; identifier (&quot;:&quot; type_expr (&quot;+&quot; type_expr)*)? where_clause? (&quot;=&quot; type_expr)? &quot;;&quot;
+assoc_const_decl ::= &quot;const&quot; identifier &quot;:&quot; type_expr (&quot;=&quot; const_expr)? &quot;;&quot;
+</code></pre>
+<p>다음은 트레잇 선언의 예시입니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Describe</span> {
+    <span class="k">fn</span> describe(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+}
+
+<span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Iterator</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">fn</span> next(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Item</span> | <span class="k">none</span>;
+}
+</code></pre>
+<p>트레잇의 본체는 <code>{ ... }</code> 로 둘러쌉니다. 그리고 본체 안에는 메서드 시그니처, 연관 타입 (associated type), 기본 메서드 본체를 둘 수 있습니다.</p>
+<h2 id="282-메서드-시그니처"><a class="anchor" tabindex="-1" href="#282-메서드-시그니처" aria-hidden="true">#</a>2.8.2. 메서드 시그니처</h2>
+<p>메서드 시그니처는 다음과 같이 적습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> 이름(매개변수들) -&gt; 반환타입;
+</code></pre>
+<p>본체 없이 시그니처만 적으면 트레잇이 요구하는 메서드이며, 이때는 구현체가 본체를 제공해야 합니다. 반면 본체가 있으면 기본 메서드가 되고, 구현체가 덮어쓰지 않으면 그 본체를 그대로 씁니다. 또한 <code>self</code> 와 <code>ref self</code> 매개변수의 의미는 함수 사양에서 정의합니다.</p>
+<p>다음은 요구 메서드와 기본 메서드를 함께 보여 주는 예시입니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Greeter</span> {
+    <span class="k">fn</span> greet(<span class="k">self</span>) -&gt; <span class="t">str</span>;                          <span class="c">// 요구</span>
+    <span class="k">fn</span> greet_loudly(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="k">self</span>.greet() }    <span class="c">// 기본 - 덮어쓰기 가능</span>
+}
+</code></pre>
+<h2 id="283-연관-타입-associated-type"><a class="anchor" tabindex="-1" href="#283-연관-타입-associated-type" aria-hidden="true">#</a>2.8.3. 연관 타입 (associated type)</h2>
+<p>연관 타입은 트레잇이 구현 별로 다른 타입을 가지도록 선언하는 장치입니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Iterator</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">fn</span> next(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Item</span> | <span class="k">none</span>;
+}
+</code></pre>
+<p>연관 타입은 <code>type 이름;</code> 형태로 선언하며, 구현체는 그 자리에 구체 타입을 채웁니다. 그리고 한 구현체에서 한 연관 타입은 정확히 하나의 구체 타입으로 정해지므로, 한 구현이 여러 가능성을 동시에 가질 수는 없습니다.</p>
+<p>연관 타입은 같은 트레잇 안의 시그니처에서 쓸 수 있습니다. 위의 <code>Item | none</code> 이 그 예입니다. <code>throws (Self::X)</code> 처럼 throws 절에도 쓸 수 있으며, 트레잇과 impl 시그니처 모두에서 됩니다.</p>
+<h3 id="기본값"><a class="anchor" tabindex="-1" href="#기본값" aria-hidden="true">#</a>기본값</h3>
+<p>연관 타입은 <code>type X: Bounds = T;</code> 로 기본값을 가질 수 있습니다. impl 은 그 연관 타입을 생략해 기본값을 쓰거나, <code>type X = U;</code> 로 덮어씁니다. 기본값은 트레잇이 정의된 자리에서, 트레잇의 매개변수를 대입해 해소합니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">TryFrom</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">type</span> <span class="t">Error</span> = <span class="t">ConversionError</span>;
+    <span class="k">fn</span> try_from(value: <span class="t">U</span>) <span class="k">throws</span> (<span class="k">Self</span>::<span class="t">Error</span>) -&gt; <span class="k">Self</span>;
+}
+<span class="k">impl</span> <span class="t">TryFrom</span>&lt;<span class="t">RawPath</span>&gt; <span class="k">for</span> <span class="t">Path</span> { <span class="k">type</span> <span class="t">Error</span> = <span class="t">NonUtf8Error</span>; ... }   <span class="c">// 덮어씀</span>
+<span class="k">impl</span> <span class="t">TryFrom</span>&lt;<span class="t">Celsius</span>&gt; <span class="k">for</span> <span class="t">Kelvin</span> { ... }                           <span class="c">// Error = ConversionError</span>
+</code></pre>
+<p>트레잇 안과 모든 impl (트레잇 impl 과 고유 impl) 안에서 맨 이름 <code>Item</code> 과 <code>Self::Item</code> 은 둘 다 그 연관 타입을 가리키며, 메서드 시그니처와 본문 모두에서 쓸 수 있습니다. impl 에서는 그 impl 이 정한 구체 타입입니다. 연관 타입이 바깥의 같은 이름 타입 (모듈의 <code>struct Item</code>, 원시 타입 등) 을 가리면 경고가 납니다. 같은 이름의 트레잇은 타입이 아니므로 경고하지 않습니다 (<code>trait IntoFuture { type IntoFuture; }</code> 는 괜찮습니다).</p>
+<p>한 타입이 같은 이름의 연관 타입을 가진 트레잇 둘을 구현하면, 그 타입의 impl 본문에서 맨 <code>X</code> / <code>Self::X</code> 는 어느 쪽인지 모호하므로 에러입니다. 이때는 <code>&lt;Self as Tr&gt;::X</code> 로 트레잇을 밝힙니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Iterator</span> <span class="k">for</span> <span class="t">Stream</span> { <span class="k">type</span> <span class="t">Item</span> = <span class="t">i32</span>; ... }
+<span class="k">impl</span> <span class="t">Source</span> <span class="k">for</span> <span class="t">Stream</span> { <span class="k">type</span> <span class="t">Item</span> = <span class="t">str</span>; ... }
+
+<span class="k">impl</span> <span class="t">Stream</span> {
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="k">Self</span>::<span class="t">Item</span> { ... }                   <span class="c">// ERROR - Iterator::Item? Source::Item?</span>
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; &lt;<span class="k">Self</span> <span class="k">as</span> <span class="t">Iterator</span>&gt;::<span class="t">Item</span> { ... }     <span class="c">// OK</span>
+}
+</code></pre>
+<h3 id="외부에서의-연관-타입-참조-tassoctype"><a class="anchor" tabindex="-1" href="#외부에서의-연관-타입-참조-tassoctype" aria-hidden="true">#</a>외부에서의 연관 타입 참조. <code>T::AssocType</code></h3>
+<p>트레잇 매개변수의 연관 타입을 외부에서 참조할 때는 <code>T::AssocType</code> 표기를 씁니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first_item&lt;<span class="t">T</span>: <span class="t">Iterator</span>&gt;(<span class="k">ref</span> it: <span class="t">T</span>) -&gt; <span class="t">T</span>::<span class="t">Item</span> | <span class="k">none</span> { it.next() }
+</code></pre>
+<p>bound 가 제네릭 트레잇 <code>T: Tr&lt;A&gt;</code> 이면 <code>T::X</code> 는 <code>Tr&lt;A&gt;</code> impl 의 <code>X</code> 입니다. 한 타입이 <code>Tr&lt;A&gt;</code> 와 <code>Tr&lt;B&gt;</code> 를 서로 다른 <code>X</code> 로 구현할 수 있기 때문입니다 (<code>&lt;T as Tr&lt;A&gt;&gt;::X</code> 도 같음, <a href="213-type-paths#2134-완전-자격-형태-fully-qualified-path">2.13.4</a>). bound 가 <code>T: Tr&lt;A&gt; + Tr&lt;B&gt;</code> 이거나 bound 의 두 트레잇이 모두 <code>X</code> 를 선언하면, 맨 <code>T::X</code> 는 모호하므로 에러입니다. <code>&lt;T as Tr&lt;A&gt;&gt;::X</code> 로 적습니다. 연관 상수도 마찬가지입니다 (2.8.3a).</p>
+<p>이 표기는 <a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a> 의 <code>::</code> 경로 구분자를 쓴 연관 항목 접근입니다. 한편 경로의 일반 규칙 (모듈 경로·turbofish·완전 자격 형태) 은 <a href="213-type-paths">타입 경로</a> 에서 정의합니다.</p>
+<h2 id="283a-연관-상수-associated-const"><a class="anchor" tabindex="-1" href="#283a-연관-상수-associated-const" aria-hidden="true">#</a>2.8.3a. 연관 상수 (associated const)</h2>
+<p>트레잇은 <code>const N: T;</code> 로 연관 상수를 선언할 수 있으며, <code>= 값</code> 으로 기본값을 줄 수 있습니다. 각 <code>impl</code> 이 값을 정하고 (기본값이 있으면 생략 가능), 그 트레잇으로 제약된 타입 매개변수에서는 <code>T::N</code> 으로 읽습니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Shape</span> {
+    <span class="k">const</span> <span class="t">SIDES</span>: <span class="t">u32</span>;
+    <span class="k">const</span> <span class="t">NAME</span>: <span class="t">str</span> = <span class="s">"shape"</span>;
+}
+
+<span class="k">impl</span> <span class="t">Shape</span> <span class="k">for</span> <span class="t">Square</span> { <span class="k">const</span> <span class="t">SIDES</span>: <span class="t">u32</span> = <span class="n">4</span>; }
+
+<span class="k">fn</span> sides&lt;<span class="t">T</span>: <span class="t">Shape</span>&gt;() -&gt; <span class="t">u32</span> { <span class="t">T</span>::<span class="t">SIDES</span> }      <span class="c">// &lt;T as Shape&gt;::SIDES 와 같음</span>
+</code></pre>
+<p>제네릭 타입에 대한 <code>impl</code> 에서는 연관 상수가 인스턴스화마다 다른 값을 가질 수 있습니다 (<code>impl&lt;const N: usize&gt; Shape for Poly&lt;N&gt; { const SIDES: u32 = N as u32; }</code>). 모호할 때는 완전 자격 형태 <code>&lt;T as Tr&gt;::N</code> 을 씁니다 (<a href="213-type-paths#2134-완전-자격-형태-fully-qualified-path">2.13.4</a>).</p>
+<h2 id="284-슈퍼트레잇-supertrait"><a class="anchor" tabindex="-1" href="#284-슈퍼트레잇-supertrait" aria-hidden="true">#</a>2.8.4. 슈퍼트레잇 (supertrait)</h2>
+<p>어떤 트레잇이 다른 트레잇을 충족하는 타입에만 구현될 수 있도록 요구할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Eq</span> {
+    <span class="k">fn</span> eq(<span class="k">self</span>, other: <span class="k">Self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">trait</span> <span class="t">Ord</span>: <span class="t">Eq</span> {
+    <span class="k">fn</span> cmp(<span class="k">self</span>, other: <span class="k">Self</span>) -&gt; <span class="t">Ordering</span>;
+}
+</code></pre>
+<p>슈퍼트레잇은 <code>:</code> 뒤에 적습니다. 따라서 <code>Ord</code> 를 구현하려면 <code>Eq</code> 도 함께 구현해야 합니다. 또한 여러 슈퍼트레잇을 함께 요구할 때는 <code>+</code> 로 묶어 <code>trait Foo: Bar + Baz</code> 처럼 적습니다. 제네릭 impl 은 그 bound 가 허용하는 모든 인스턴스에 대해 대상에 슈퍼트레잇을 갖춰 주어야 하며, 이것은 impl 에서 검사합니다.</p>
+<h2 id="285-제네릭-트레잇"><a class="anchor" tabindex="-1" href="#285-제네릭-트레잇" aria-hidden="true">#</a>2.8.5. 제네릭 트레잇</h2>
+<p>트레잇에도 타입 매개변수를 줄 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Convert</span>&lt;<span class="t">Target</span>&gt; {
+    <span class="k">fn</span> convert(<span class="k">self</span>) -&gt; <span class="t">Target</span>;
+}
+</code></pre>
+<p>타입 매개변수는 트레잇 이름 뒤 <code>&lt;...&gt;</code> 안에 선언하며, 매개변수에는 <code>Rhs = Self</code> 처럼 기본값을 줄 수도 있습니다. 그리고 <code>Self</code> 는 트레잇이 구현될 타입을 가리키는 키워드입니다 (<a href="../001-lexical/105-keywords">키워드</a>).</p>
+<p>제네릭 트레잇의 정확한 단형화 규칙은 <a href="210-generics">제네릭</a> 에서 정의합니다.</p>
+<h2 id="286-where-절-매개변수에-추가-제약"><a class="anchor" tabindex="-1" href="#286-where-절-매개변수에-추가-제약" aria-hidden="true">#</a>2.8.6. where 절. 매개변수에 추가 제약</h2>
+<p>트레잇 선언이나 메서드 시그니처에 추가 트레잇 바운드를 적을 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Sortable</span>&lt;<span class="t">T</span>&gt; <span class="k">where</span> <span class="t">T</span>: <span class="t">Ord</span> {
+    <span class="k">fn</span> sort(<span class="k">ref</span> <span class="k">self</span>);
+}
+
+<span class="k">trait</span> <span class="t">Container</span> {
+    <span class="k">type</span> <span class="t">Item</span> <span class="k">where</span> <span class="t">Item</span>: <span class="t">Clone</span>;
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="t">Item</span>;
+}
+</code></pre>
+<p>제약은 <code>where</code> 키워드 뒤에 <code>타입: 트레잇</code> 형태로 콤마로 구분해 적습니다. 그리고 트레잇 자체에 부착하면 전체 트레잇의 제약이 되고, 메서드에 부착하면 그 메서드만의 제약이 됩니다.</p>
+<h2 id="287-트레잇-메서드의-디스패치"><a class="anchor" tabindex="-1" href="#287-트레잇-메서드의-디스패치" aria-hidden="true">#</a>2.8.7. 트레잇 메서드의 디스패치</h2>
+<p>트레잇 메서드를 호출하면 컴파일러는 호출 지점의 수신자 타입을 보고 해당 타입에 구현된 메서드를 정적으로 호출합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span> };
+<span class="k">let</span> s = p.describe();       <span class="c">// Point 의 Describe 구현이 정적으로 호출됨</span>
+</code></pre>
+<p>이 디스패치는 항상 정적입니다. 트레잇 이름을 변수, 매개변수, 반환 타입에 적는 트레잇-as-타입이 <a href="./">타입 시스템 개요</a> 에서 금지되기 때문입니다.</p>
+<p>따라서 다형성이 필요하면 제네릭 (<a href="210-generics">제네릭</a>) 또는 합 타입 (<a href="206-sum-types">합 타입</a>) 을 씁니다.</p>
+<h2 id="288-가시성"><a class="anchor" tabindex="-1" href="#288-가시성" aria-hidden="true">#</a>2.8.8. 가시성</h2>
+<p>트레잇 자체와 그 메서드의 가시성은 따로 조절할 수 있습니다. 정확한 규칙은 <a href="../005-modules/506-visibility">가시성</a> 에서 정의합니다.</p>
+<h2 id="289-동일-모듈-내-중복-정의-금지"><a class="anchor" tabindex="-1" href="#289-동일-모듈-내-중복-정의-금지" aria-hidden="true">#</a>2.8.9. 동일 모듈 내 중복 정의 금지</h2>
+<p>같은 모듈 안에서 같은 이름의 트레잇을 두 번 선언하면 컴파일 에러입니다. 한 트레잇에 같은 이름의 메서드를 두 번 선언해도 컴파일 에러입니다 (오버로딩 없음).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/208-trait.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="207-niche-optimization"><small>Previous</small>2.7. niche 최적화</a><a class="next" href="209-impl"><small>Next</small>2.9. impl</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

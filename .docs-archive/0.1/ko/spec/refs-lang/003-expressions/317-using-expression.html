@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.17. using 표현식 - 자원의 결정론적 해제 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="using 키워드 (키워드) 는 자원을 한 블록의 수명에 묶어 두기 위한 표현식 형태입니다. 블록이 어떤 경로로 끝나든 (정상 종료, 조기 return, ? 의 none 반환, 에러 전파) 묶인 자원의 Drop::drop 이 반드시 호출됩니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/317-using-expression.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.17. using 표현식 - 자원의 결정론적 해제 - rok docs">
+<meta property="og:description" content="using 키워드 (키워드) 는 자원을 한 블록의 수명에 묶어 두기 위한 표현식 형태입니다. 블록이 어떤 경로로 끝나든 (정상 종료, 조기 return, ? 의 none 반환, 에러 전파) 묶인 자원의 Drop::drop 이 반드시 호출됩니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/317-using-expression.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/317-using-expression.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/317-using-expression.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li><a href="316-let-else">3.16. let-else</a></li><li class="cur"><a aria-current="page" href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a><ul class="toc"><li><a href="#3171-형태">3.17.1. 형태</a></li><li><a href="#3172-가장-간단한-예">3.17.2. 가장 간단한 예</a></li><li><a href="#3173-try-와의-결합">3.17.3. try 와의 결합</a></li><li><a href="#3174-다중-자원">3.17.4. 다중 자원</a></li><li><a href="#3175-식으로서의-using">3.17.5. 식으로서의 using</a></li><li><a href="#3176-drop-호출-시점">3.17.6. drop 호출 시점</a></li><li><a href="#3177-묶을-수-있는-타입">3.17.7. 묶을 수 있는 타입</a></li><li><a href="#3178-다른-언어와의-비교">3.17.8. 다른 언어와의 비교</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="317-using-표현식---자원의-결정론적-해제 317-using-expression---deterministic-release-of-resources 3171-형태 3171-form 3172-가장-간단한-예 3172-simplest-example 3173-try-와의-결합 3173-combining-with-try 3174-다중-자원 3174-multiple-resources 3175-식으로서의-using 3175-using-as-an-expression 3176-drop-호출-시점 3176-when-drop-is-called 3177-묶을-수-있는-타입 3177-types-that-can-be-bound 3178-다른-언어와의-비교 3178-comparison-with-other-languages"><a href="../../../../spec/refs-lang/003-expressions/317-using-expression" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="317-using-표현식---자원의-결정론적-해제"><a class="anchor" tabindex="-1" href="#317-using-표현식---자원의-결정론적-해제" aria-hidden="true">#</a>3.17. <code>using</code> 표현식 - 자원의 결정론적 해제</h1>
+<p><code>using</code> 키워드 (<a href="../001-lexical/105-keywords">키워드</a>) 는 자원을 한 블록의 수명에 묶어 두기 위한 표현식 형태입니다. 블록이 어떤 경로로 끝나든 (정상 종료, 조기 <code>return</code>, <code>?</code> 의 <code>none</code> 반환, 에러 전파) 묶인 자원의 <code>Drop::drop</code> 이 반드시 호출됩니다.</p>
+<p>GC 가 메모리는 자동으로 회수해 주지만 외부 자원 (file, socket, mutex, FFI 핸들, GC pin 등) 은 결정론적으로 해제되어야 합니다. <code>using</code> 은 이 결정론을 문법으로 보장하며, <code>Drop::drop</code> 이 호출되는 유일한 경로입니다. 일반 바인딩은 scope 를 벗어나도 <code>drop</code> 되지 않습니다 (<a href="../../refs-standard-libraries/200-core/213-marker#2134-drop---using-해제-시-정리">stdlib 2.13.4</a>).</p>
+<h2 id="3171-형태"><a class="anchor" tabindex="-1" href="#3171-형태" aria-hidden="true">#</a>3.17.1. 형태</h2>
+<pre><code>using_expr     ::= &quot;using&quot; using_binding (&quot;,&quot; using_binding)* block
+using_binding  ::= pattern &quot;=&quot; expr
+</code></pre>
+<p>각 구성 요소의 의미는 다음과 같이 정리됩니다.</p>
+<ul>
+<li><code>pattern</code> 은 <a href="311-patterns">패턴</a> 에서 정의한 반박 불가능한 (irrefutable) 패턴이면 무엇이든 됩니다 (식별자, 튜플, struct 분해 등). 대부분의 경우 단일 식별자를 씁니다. 해제되는 것은 <code>expr</code> 의 값 전체입니다.
+</li>
+<li><code>expr</code> 은 자원을 만들거나 받아오는 식입니다. 이 식의 결과 타입은 <a href="../../refs-standard-libraries/200-core/213-marker"><code>Drop</code></a> 트레잇을 구현해야 합니다.
+</li>
+<li>자원 획득이 실패할 수 있으면 <code>expr</code> 을 <code>try</code> 로 표시합니다 (<code>using f = try fs::open(path) { ... }</code>). 획득이 에러를 내면 자원이 아예 묶이지 않은 상태에서 빠져나가므로 <code>Drop</code> 호출도 일어나지 않습니다. 자세한 의미는 <a href="314-error-control-flow">에러 제어 흐름</a> 을 따릅니다.
+</li>
+<li><code>,</code> 로 여러 binding 을 이어 적으면 다중 자원이 되며, 자세한 동작은 <a href="#3174-다중-자원">3.17.4 다중 자원</a> 에서 정의합니다.
+</li>
+<li><code>block</code> 은 <a href="309-block-expressions">블록 표현식</a> 의 규칙을 그대로 따르며, 그 마지막 식의 값이 <code>using</code> 식 전체의 값이 됩니다.
+</li>
+</ul>
+<h2 id="3172-가장-간단한-예"><a class="anchor" tabindex="-1" href="#3172-가장-간단한-예" aria-hidden="true">#</a>3.17.2. 가장 간단한 예</h2>
+<pre><code class="language-rok"><span class="k">using</span> f = fs::open(path) {
+    f.read_to_end()                   <span class="c">// 마지막 식이 using 의 값</span>
+}                                  <span class="c">// ← 여기서 f.drop() 자동 호출</span>
+</code></pre>
+<p><code>fs::open(path)</code> 의 반환 타입은 <code>File</code> 이고 <code>File: Drop</code> 이므로 <code>using</code> 의 대상이 됩니다. 블록이 끝나면 <code>File::drop</code> 이 호출되어 OS 핸들이 close 됩니다.</p>
+<h2 id="3173-try-와의-결합"><a class="anchor" tabindex="-1" href="#3173-try-와의-결합" aria-hidden="true">#</a>3.17.3. <code>try</code> 와의 결합</h2>
+<p>자원 획득 자체가 실패할 수 있는 경우 획득 식을 <code>try</code> 로 표시합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> read_first_line(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span> {
+    <span class="k">using</span> f = <span class="k">try</span> fs::open(path) {     <span class="c">// 실패하면 IoError 가 전파됨</span>
+        <span class="k">try</span> f.read_line()              <span class="c">// 본체 안에서도 try 로 전파 가능</span>
+    }                                  <span class="c">// f 가 묶였다면 정상/에러 모두 drop</span>
+}
+</code></pre>
+<p>이 형태는 의미상 다음 풀어쓴 코드와 동등합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = <span class="k">try</span> fs::open(path);
+<span class="k">try</span> {
+    f.read_line()
+} <span class="k">finally</span> {
+    f.drop();          <span class="c">// 컴파일러가 넣는 호출 - 사용자가 직접 쓰면 에러</span>
+}
+</code></pre>
+<p>본체 안에서 에러가 전파되더라도 <code>finally</code> 에 해당하는 자리에서 <code>drop</code> 이 호출됩니다.</p>
+<h2 id="3174-다중-자원"><a class="anchor" tabindex="-1" href="#3174-다중-자원" aria-hidden="true">#</a>3.17.4. 다중 자원</h2>
+<p>여러 자원을 한 블록에 묶어 두려면 <code>using</code> 을 중첩하거나 콤마로 이어 적습니다. 본 사양은 두 형태를 모두 허용하며 의미는 동등합니다.</p>
+<pre><code class="language-rok"><span class="k">using</span> a = <span class="t">AcquireA</span>() {
+    <span class="k">using</span> b = <span class="t">AcquireB</span>(a) {
+        body
+    }
+}
+
+<span class="c">// 또는 단축 형태</span>
+<span class="k">using</span> a = <span class="t">AcquireA</span>(), b = <span class="t">AcquireB</span>(a) {
+    body
+}
+</code></pre>
+<p>위 두 형태 모두 <code>b</code> 가 먼저, <code>a</code> 가 다음에 drop 되는 <strong>역순 해제</strong> 를 따릅니다. Java try-with-resources 와 같은 규칙입니다. 역순으로 해제해야 의존 관계 (<code>b</code> 가 <code>a</code> 를 참조) 가 안전하게 풀립니다.</p>
+<h2 id="3175-식으로서의-using"><a class="anchor" tabindex="-1" href="#3175-식으로서의-using" aria-hidden="true">#</a>3.17.5. 식으로서의 <code>using</code></h2>
+<p><code>using</code> 은 문이 아니라 표현식이며, 그 값은 본체 블록의 값이 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> content = <span class="k">using</span> f = <span class="k">try</span> fs::open(path) {
+    <span class="k">try</span> f.read_to_end()
+};
+</code></pre>
+<p>이 점이 함수 단위 <code>defer</code> (Go) 와의 가장 큰 구조적 차이입니다. <code>using</code> 표현식은 <a href="309-block-expressions">블록 표현식</a> 의 일부 규칙을 그대로 따르며, 다른 표현식 자리 어디에서도 사용할 수 있습니다.</p>
+<h2 id="3176-drop-호출-시점"><a class="anchor" tabindex="-1" href="#3176-drop-호출-시점" aria-hidden="true">#</a>3.17.6. drop 호출 시점</h2>
+<p><code>using</code> 은 다음 다섯 경로 모두에서 묶인 자원의 <code>drop</code> 을 보장합니다.</p>
+<ul>
+<li>블록의 정상 종료 (마지막 식 평가 완료)
+</li>
+<li>본체 안의 <code>return</code>
+</li>
+<li>본체 안의 <code>break</code> / <code>continue</code>
+</li>
+<li>본체 안의 <code>?</code> 에 의한 <code>none</code> 반환
+</li>
+<li>본체 안의 <code>throw</code> 및 <code>try</code> 로 표시한 호출의 에러 전파
+</li>
+</ul>
+<p>panic 과 fatal 에러는 프로세스를 곧바로 종료하므로 <code>drop</code> 을 호출하지 않습니다 (<a href="314-error-control-flow#3148-panic-과-fatal-에러">3.14.8</a>). 이는 panic 의 일반 결과이며 <code>using</code> 한정 동작이 아닙니다.</p>
+<h2 id="3177-묶을-수-있는-타입"><a class="anchor" tabindex="-1" href="#3177-묶을-수-있는-타입" aria-hidden="true">#</a>3.17.7. 묶을 수 있는 타입</h2>
+<p><code>using</code> 의 우변 식의 타입은 <a href="../../refs-standard-libraries/200-core/213-marker"><code>Drop</code></a> 을 구현하거나, <code>Drop</code> 을 가진 필드를 담아야 합니다 (drop glue, <a href="../../refs-standard-libraries/200-core/213-marker#2134-drop---using-해제-시-정리">stdlib 2.13.4</a>). 둘 다 아니면 컴파일 에러입니다.</p>
+<pre><code class="language-rok"><span class="k">using</span> x = <span class="n">42</span> { ... }   <span class="c">// ERROR: using 에는 Drop 구현 타입이 필요 - i32 는 Drop 을 구현하지 않음</span>
+</code></pre>
+<p>이 제약은 의미가 있는 자원만 <code>using</code> 으로 묶이도록 강제합니다. 단순 값에 <code>using</code> 이 등장하는 일을 사양 차원에서 차단합니다.</p>
+<h2 id="3178-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#3178-다른-언어와의-비교" aria-hidden="true">#</a>3.17.8. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>언어</th><th>형태</th><th>스코프 단위</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>rok</td><td><code>using x = try e { ... }</code></td><td>block</td><td>표현식, 다중 자원, <code>try</code> 통합</td></tr>
+<tr><td>C#</td><td><code>using (var x = e) { ... }</code></td><td>block</td><td><code>IDisposable</code> 필요</td></tr>
+<tr><td>Java</td><td><code>try (var x = e) { ... }</code></td><td>try block</td><td><code>AutoCloseable</code> 필요, 다중 자원</td></tr>
+<tr><td>Python</td><td><code>with x as f: ...</code></td><td>block</td><td><code>__enter__</code> / <code>__exit__</code></td></tr>
+<tr><td>Swift</td><td><code>defer { x.close() }</code></td><td>function</td><td>명시적 작성 필요</td></tr>
+<tr><td>Go</td><td><code>defer x.Close()</code></td><td><strong>function</strong></td><td>블록 단위 X</td></tr>
+<tr><td>Zig</td><td><code>defer x.close();</code></td><td>block</td><td><code>errdefer</code> 변형</td></tr>
+<tr><td>Rust</td><td>(RAII 자동, 별도 키워드 없음)</td><td>block</td><td>GC 없음 - drop 시점 자동 결정</td></tr>
+</tbody></table></div>
+<p>rok 의 <code>using</code> 은 GC 언어 (C#, Java, Python) 의 명시적 블록 패턴과 식 (expression) 으로서의 합성성, <code>try</code> 통합, 다중 자원 역순 해제를 결합한 형태입니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/317-using-expression.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="316-let-else"><small>Previous</small>3.16. let-else</a><a class="next" href="../004-functions/"><small>Next</small>4. 함수 개요</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

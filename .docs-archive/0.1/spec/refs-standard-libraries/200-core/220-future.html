@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.20. future - Future / await integration - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::future module provides the authoritative traits of the async mechanism. The desugaring of await expr lowers to dispatch on the Future trait defin...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/220-future.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.20. future - Future / await integration - rok docs">
+<meta property="og:description" content="The rok::core::future module provides the authoritative traits of the async mechanism. The desugaring of await expr lowers to dispatch on the Future trait defin...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/220-future.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/220-future.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/220-future.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li class="cur"><a aria-current="page" href="220-future">2.20. future - Future / await integration</a><ul class="toc"><li><a href="#2201-future---async-result">2.20.1. Future - async result</a></li><li><a href="#2202-context--waker">2.20.2. Context / Waker</a></li><li><a href="#2203-await-expr-desugaring">2.20.3. await expr desugaring</a></li><li><a href="#2204-async-fn--async----async---">2.20.4. async fn / async { } / async || { }</a></li><li><a href="#2205-intofuture---awaitable-values">2.20.5. IntoFuture - awaitable values</a></li><li><a href="#2206-the-color-of-functions-of-async--await">2.20.6. The &quot;color of functions&quot; of async / await</a></li><li><a href="#2207-for-await---consuming-a-stream">2.20.7. for await - consuming a Stream</a></li><li><a href="#2208-async-yield---producing-a-stream">2.20.8. async yield - producing a Stream</a></li><li><a href="#2208a-asyncfuturet--tryasyncfuturet-e---values-of-async-functions">2.20.8a. AsyncFuture&lt;T&gt; / TryAsyncFuture&lt;T, E&gt; - values of async functions</a></li><li><a href="#2209-module-mapping">2.20.9. Module mapping</a></li><li><a href="#22010-comparison-with-other-languages">2.20.10. Comparison with other languages</a></li></ul></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="220-future---future--await-integration 220-future---future--await-통합 2201-future---async-result 2201-future---async-결과 2202-context--waker 2202-context--waker 2203-await-expr-desugaring 2203-await-expr-desugar 2204-async-fn--async----async--- 2204-async-fn--async----async--- 2205-intofuture---awaitable-values 2205-intofuture---await-가능한-값 2206-the-color-of-functions-of-async--await 2206-async--await-의-color-of-functions getting-a-futures-result-in-a-sync-context sync-환경에서-future-결과-받기 2207-for-await---consuming-a-stream 2207-for-await---stream-소비 2208-async-yield---producing-a-stream 2208-async-yield---stream-생성 2208a-asyncfuturet--tryasyncfuturet-e---values-of-async-functions 2208a-asyncfuturet--tryasyncfuturet-e---비동기-함수의-값 2209-module-mapping 2209-모듈-매핑 22010-comparison-with-other-languages 22010-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/220-future" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="220-future---future--await-integration"><a class="anchor" tabindex="-1" href="#220-future---future--await-integration" aria-hidden="true">#</a>2.20. future - <code>Future</code> / <code>await</code> integration</h1>
+<p>The <code>rok::core::future</code> module provides the authoritative traits of the async mechanism. The desugaring of <code>await expr</code> lowers to dispatch on the <code>Future</code> trait defined in this chapter. This chapter also defines <code>future_trait</code>, one of the 48 lang slots.</p>
+<h2 id="2201-future---async-result"><a class="anchor" tabindex="-1" href="#2201-future---async-result" aria-hidden="true">#</a>2.20.1. <code>Future</code> - async result</h2>
+<p><code>Future</code> is the core trait representing the result of an asynchronous computation; the result type is the associated type <code>Output</code>.</p>
+<pre><code class="language-rok"><span class="a">#[lang("future_trait")]</span>
+<span class="k">trait</span> <span class="t">Future</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="k">fn</span> poll(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">Output</span>&gt;;
+}
+
+<span class="k">enum</span> <span class="t">Poll</span>&lt;<span class="t">T</span>&gt; {
+    <span class="t">Ready</span>(<span class="t">T</span>),
+    <span class="t">Pending</span>,
+}
+</code></pre>
+<p><code>poll(ctx)</code> has two outcomes. <code>Ready(v)</code> means the result is ready and <code>v</code> is returned as is; <code>Pending</code> means there is no result yet, and the future is polled again when the waker in <code>ctx</code> wakes it.</p>
+<p>This model is isomorphic to Rust's <code>Future</code> and <code>rok::core::task::Poll</code>, and compiles to a <strong>stackless coroutine</strong> (a compiler-generated state machine, <a href="../../refs-lang/007-runtime/708-coroutine">refs-lang 7.8</a>).</p>
+<h2 id="2202-context--waker"><a class="anchor" tabindex="-1" href="#2202-context--waker" aria-hidden="true">#</a>2.20.2. <code>Context</code> / <code>Waker</code></h2>
+<p><code>Context</code> and <code>Waker</code> form the communication channel between poll and the scheduler.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Context</span> {
+    waker: <span class="t">Waker</span>;
+}
+
+<span class="k">struct</span> <span class="t">Waker</span> {
+    <span class="c">// internal: a callback that communicates with the scheduler</span>
+}
+
+<span class="k">impl</span> <span class="t">Waker</span> {
+    <span class="k">fn</span> wake(<span class="k">self</span>);              <span class="c">// signal to schedule this task again</span>
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">Waker</span>;
+}
+</code></pre>
+<p>When <code>poll</code> returns <code>Pending</code>, a Waker is registered internally; when an event (I/O or timer) later occurs, the waker is called and the task is scheduled again. Most users never handle <code>Waker</code> directly, because <code>await</code> takes care of this automatically.</p>
+<h2 id="2203-await-expr-desugaring"><a class="anchor" tabindex="-1" href="#2203-await-expr-desugaring" aria-hidden="true">#</a>2.20.3. <code>await expr</code> desugaring</h2>
+<p>The most common form of use:</p>
+<pre><code class="language-rok"><span class="k">let</span> v = <span class="k">await</span> some_future;
+</code></pre>
+<p>This conceptually desugars to:</p>
+<pre><code class="language-rok"><span class="k">let</span> __f = <span class="t">IntoFuture</span>::into_future(some_future);
+<span class="k">let</span> v = <span class="k">loop</span> {
+    <span class="k">match</span> __f.poll(<span class="k">ref</span> <span class="t">CURRENT_CONTEXT</span>) {
+        <span class="t">Ready</span>(v)  =&gt; <span class="k">break</span> v,
+        <span class="t">Pending</span>   =&gt; yield_to_scheduler(),
+    }
+};
+</code></pre>
+<p>The compiler turns this into a state machine, and each <code>await</code> becomes a <strong>suspend point</strong>. Only frame variables are kept, in coroutine state located on the GC heap.</p>
+<h2 id="2204-async-fn--async----async---"><a class="anchor" tabindex="-1" href="#2204-async-fn--async----async---" aria-hidden="true">#</a>2.20.4. <code>async fn</code> / <code>async { }</code> / <code>async || { }</code></h2>
+<p>All three forms return <strong><code>AsyncFuture&lt;T&gt;</code></strong> (<a href="../../refs-lang/004-functions/401-function-declaration#result-types-of-coroutine-functions">refs-lang 4.1.11</a>).</p>
+<pre><code class="language-rok"><span class="c">// (a) named function</span>
+<span class="k">async</span> <span class="k">fn</span> fetch(url: <span class="t">str</span>) -&gt; <span class="t">Response</span> {
+    <span class="k">let</span> raw = <span class="k">await</span> get(url);
+    <span class="k">await</span> parse(raw)
+}
+<span class="k">await</span> fetch(<span class="s">"/"</span>);       <span class="c">// fetch("/"): AsyncFuture&lt;Response&gt;</span>
+
+<span class="c">// (b) inline block (a value)</span>
+<span class="k">let</span> f = <span class="k">async</span> { <span class="k">await</span> compute() };       <span class="c">// AsyncFuture&lt;T&gt;</span>
+<span class="k">await</span> f;
+
+<span class="c">// (c) closure</span>
+<span class="k">let</span> g = <span class="k">async</span> || { <span class="k">await</span> compute() };    <span class="c">// a closure that, when called, returns a value implementing Future&lt;Output = T&gt;</span>
+<span class="k">await</span> g();
+</code></pre>
+<p>The authority for these <strong>three forms</strong> is <a href="../../refs-lang/004-functions/412-async">refs-lang 4.12 async</a>.</p>
+<h2 id="2205-intofuture---awaitable-values"><a class="anchor" tabindex="-1" href="#2205-intofuture---awaitable-values" aria-hidden="true">#</a>2.20.5. <code>IntoFuture</code> - awaitable values</h2>
+<p><code>IntoFuture</code> is the unified entry point of await. Not only <code>Future</code>s but also handles such as <code>Thread</code> that are not themselves <code>Future</code> can be <code>await</code>ed through this trait.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">IntoFuture</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">type</span> <span class="t">IntoFuture</span>: <span class="t">Future</span>&lt;<span class="t">Output</span> = <span class="t">Output</span>&gt;;
+
+    <span class="k">fn</span> into_future(<span class="k">self</span>) -&gt; <span class="t">IntoFuture</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">F</span>: <span class="t">Future</span>&gt; <span class="t">IntoFuture</span> <span class="k">for</span> <span class="t">F</span> {               <span class="c">// Task&lt;T&gt;: Future&lt;Output = T&gt; is included here too</span>
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">F</span>::<span class="t">Output</span>;
+    <span class="k">type</span> <span class="t">IntoFuture</span> = <span class="t">F</span>;
+    <span class="k">fn</span> into_future(<span class="k">self</span>) -&gt; <span class="t">F</span> { <span class="k">self</span> }
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Send</span>&gt; <span class="t">IntoFuture</span> <span class="k">for</span> <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt; { <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>; <span class="k">type</span> <span class="t">IntoFuture</span> = <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt;; ... }
+</code></pre>
+<p>The impl for <code>JoinHandle&lt;T&gt;</code> joins the thread in the blocking pool (<code>task::spawn_blocking</code>, <a href="218-task">2.18</a>), so only the awaiting task waits. It is legal only as long as that type does not implement <code>Future</code>, so that it does not overlap with the blanket impl (<a href="../../refs-lang/002-types/209-impl#coherence">refs-lang 2.9.5</a>).</p>
+<p><code>await expr</code> first calls <code>IntoFuture::into_future(expr)</code> and then repeatedly calls <code>Future::poll</code> on the result (2.20.3). This is the same way <code>for await</code> in <a href="208-stream">2.8 stream</a> handles <code>IntoStream</code>.</p>
+<p>Only <code>future_trait</code> is registered as a lang slot; <code>IntoFuture</code> is an ordinary trait. The compiler calls <code>IntoFuture::into_future</code> directly in the <code>await</code> desugaring, so, as with <code>IntoStream</code>, no separate lang slot is needed.</p>
+<h2 id="2206-the-color-of-functions-of-async--await"><a class="anchor" tabindex="-1" href="#2206-the-color-of-functions-of-async--await" aria-hidden="true">#</a>2.20.6. The &quot;color of functions&quot; of async / await</h2>
+<p>JavaScript and Python have the well-known <strong>function color</strong> problem: async and sync functions cannot mix freely (await is possible only inside async, and async calls are blocked in sync functions).</p>
+<p>rok's policy:</p>
+<ul>
+<li><code>async fn</code> and <code>await</code> make the color explicit
+</li>
+<li><code>for</code> and <code>for await</code> make the color explicit
+</li>
+<li>No attempt is made to unify colors. JS, Python, C# and Swift all follow the same model
+</li>
+</ul>
+<p>The colors are separated to guarantee <strong>scheduler cooperation</strong>. The compiler can build a coroutine state machine only if &quot;this position can suspend&quot; is stated explicitly.</p>
+<pre><code class="language-rok"><span class="c">// await inside a sync fn - compile error</span>
+<span class="k">fn</span> sync_caller() {
+    <span class="k">let</span> v = <span class="k">await</span> some_future;       <span class="c">// ERROR - await is allowed only inside an async function</span>
+}
+
+<span class="k">async</span> <span class="k">fn</span> async_caller() {
+    <span class="k">let</span> v = <span class="k">await</span> some_future;       <span class="c">// OK</span>
+}
+</code></pre>
+<h3 id="getting-a-futures-result-in-a-sync-context"><a class="anchor" tabindex="-1" href="#getting-a-futures-result-in-a-sync-context" aria-hidden="true">#</a>Getting a future's result in a sync context</h3>
+<p>To get a future's result in a sync context, use <code>block_on</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = task::block_on(some_future);    <span class="c">// the current thread attaches to the executor and runs it to completion</span>
+</code></pre>
+<p><code>block_on</code> must be used only at the top level (main or a sync caller). Using <code>block_on</code> inside nested async code risks deadlock.</p>
+<h2 id="2207-for-await---consuming-a-stream"><a class="anchor" tabindex="-1" href="#2207-for-await---consuming-a-stream" aria-hidden="true">#</a>2.20.7. <code>for await</code> - consuming a Stream</h2>
+<p>A Stream is consumed with the <code>for await</code> form.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> event <span class="k">in</span> stream {            <span class="c">// consumes Stream&lt;Item = T&gt; (async)</span>
+    handle(event);
+}
+
+<span class="k">for</span> x <span class="k">in</span> iterator {                    <span class="c">// consumes Iterator&lt;Item = T&gt; (sync)</span>
+    <span class="k">use</span>(x);
+}
+</code></pre>
+<p>The authority for <code>for await</code> is the <code>Stream</code> trait in <a href="208-stream">2.8 stream</a>.</p>
+<h2 id="2208-async-yield---producing-a-stream"><a class="anchor" tabindex="-1" href="#2208-async-yield---producing-a-stream" aria-hidden="true">#</a>2.20.8. <code>async yield</code> - producing a Stream</h2>
+<p>Conversely, a Stream is produced with <code>async yield</code>.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> ticks(interval: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> {
+    <span class="k">loop</span> {
+        <span class="k">await</span> task::sleep(interval);
+        <span class="k">yield</span> <span class="t">Instant</span>::now();
+    }
+}
+
+<span class="k">for</span> <span class="k">await</span> t <span class="k">in</span> ticks(<span class="t">Duration</span>::ms(<span class="n">100</span>)) {
+    log(<span class="s">"tick at {t}"</span>);
+}
+</code></pre>
+<p><code>async yield</code> combines async and yield and produces a Stream. The syntax authority is <a href="../../refs-lang/004-functions/413-stream">refs-lang 4.13 stream</a>.</p>
+<h2 id="2208a-asyncfuturet--tryasyncfuturet-e---values-of-async-functions"><a class="anchor" tabindex="-1" href="#2208a-asyncfuturet--tryasyncfuturet-e---values-of-async-functions" aria-hidden="true">#</a>2.20.8a. <code>AsyncFuture&lt;T&gt;</code> / <code>TryAsyncFuture&lt;T, E&gt;</code> - values of async functions</h2>
+<p>These are the values of <code>async fn</code> calls and <code>async { .. }</code> blocks (<a href="../../refs-lang/004-functions/401-function-declaration#result-types-of-coroutine-functions">refs-lang 4.1.11</a>).</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">AsyncFuture</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* private */</span> }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Future</span> <span class="k">for</span> <span class="t">AsyncFuture</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>;
+    <span class="k">fn</span> poll(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// advances the body to the next wait point</span>
+}
+
+<span class="k">struct</span> <span class="t">TryAsyncFuture</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; { <span class="c">/* private */</span> }    <span class="c">// async fn .. throws (E)</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; <span class="t">TryAsyncFuture</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; {
+    <span class="k">fn</span> poll(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span>&gt;;
+}
+</code></pre>
+<p><code>TryAsyncFuture</code> does not implement <code>Future</code>, because its <code>poll</code> throws; it is awaited with <code>try await</code>. The private fields are not specified. Copies share the same coroutine frame and therefore share the progress position.</p>
+<h2 id="2209-module-mapping"><a class="anchor" tabindex="-1" href="#2209-module-mapping" aria-hidden="true">#</a>2.20.9. Module mapping</h2>
+<p>The module location and lang slot / role of each item:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>Module</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>Future</code></td><td><code>rok::core::future::Future</code></td><td><code>#[lang(&quot;future_trait&quot;)]</code></td></tr>
+<tr><td><code>Poll&lt;T&gt;</code></td><td><code>rok::core::future::poll</code></td><td>enum Ready/Pending</td></tr>
+<tr><td><code>Context</code></td><td><code>rok::core::future::context</code></td><td>waker holder</td></tr>
+<tr><td><code>Waker</code></td><td><code>rok::core::future::waker</code></td><td>scheduler callback</td></tr>
+<tr><td><code>IntoFuture</code></td><td><code>rok::core::future::into_future</code></td><td>ordinary trait (no lang slot)</td></tr>
+<tr><td><code>task::block_on</code></td><td><code>rok::core::task</code></td><td>sync entry point</td></tr>
+</tbody></table></div>
+<h2 id="22010-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#22010-comparison-with-other-languages" aria-hidden="true">#</a>2.20.10. Comparison with other languages</h2>
+<p>The asynchronous models of each language compare as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>C#</th><th>Swift</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Model</td><td>poll-based</td><td>callback (state)</td><td>continuation</td><td>poll-based (isomorphic to Rust)</td></tr>
+<tr><td><code>async fn</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>await</code></td><td>postfix <code>.await</code></td><td>prefix <code>await</code></td><td>prefix <code>await</code></td><td>prefix <code>await</code></td></tr>
+<tr><td>Coroutine implementation</td><td>compiler-generated</td><td>compiler-generated</td><td>compiler-generated</td><td>compiler state machine</td></tr>
+<tr><td>Stackless</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Color unification</td><td>✗ (sync/async split)</td><td>✗</td><td>✗</td><td>✗ (adopts the industry standard)</td></tr>
+<tr><td>await generalization</td><td><code>Future</code> + external libs</td><td>unified <code>Task&lt;T&gt;</code></td><td><code>Task</code> + AsyncSequence</td><td>generalized via <code>IntoFuture</code></td></tr>
+</tbody></table></div>
+<p>rok differs in two main ways.</p>
+<ol>
+<li><strong>Prefix <code>await</code></strong>: the same as C#, Swift and JS; the authority is <a href="../../refs-lang/004-functions/412-async">refs-lang 4.12</a>. To chain on the result, wrap it in parentheses (<code>(await x).method()</code>).
+</li>
+<li>The ordinary trait <code>IntoFuture</code> lets Task and Thread be awaited uniformly. The idea is similar to Swift's <code>Task</code> unification, but differs in preserving the distinct types and generalizing through a trait.
+</li>
+</ol>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/220-future.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="219-par"><small>Previous</small>2.19. par - Parallel processing API</a><a class="next" href="221-crypto"><small>Next</small>2.21. crypto:: - cryptographic algorithms</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>17. Conditional Compilation - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="One source tree often has to build in several shapes: per operating system, debug against release, with or without an optional feature. rok decides this at comp...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/17-conditional-compilation.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="17. Conditional Compilation - rok docs">
+<meta property="og:description" content="One source tree often has to build in several shapes: per operating system, debug against release, with or without an optional feature. rok decides this at comp...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/17-conditional-compilation.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li class="cur"><a aria-current="page" href="17-conditional-compilation">17. Conditional Compilation</a><ul class="toc"><li><a href="#conditions">Conditions</a></li><li><a href="#where-cfg-goes">Where #[cfg] goes</a></li><li><a href="#two-definitions-one-build">Two definitions, one build</a></li><li><a href="#cfg-a-compile-time-bool">cfg!: a compile-time bool</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="17-conditional-compilation"><a class="anchor" tabindex="-1" href="#17-conditional-compilation" aria-hidden="true">#</a>17. Conditional Compilation</h1>
+<p>One source tree often has to build in several shapes: per operating system, debug against release, with or without an optional feature. rok decides this at compile time with <code>#[cfg(..)]</code>. Code whose condition is false is removed right after parsing, as if it had never been written, so it costs nothing at run time and may even refer to names that do not exist in that build.</p>
+<h2 id="conditions"><a class="anchor" tabindex="-1" href="#conditions" aria-hidden="true">#</a>Conditions</h2>
+<p>A condition is a flag, a <code>key = &quot;value&quot;</code> pair, or a combination of them with <code>all(..)</code>, <code>any(..)</code> and <code>not(..)</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Condition</th><th>True when</th></tr></thead>
+<tbody>
+<tr><td><code>target_os = &quot;linux&quot;</code></td><td>Building for Linux (<code>&quot;macos&quot;</code>, <code>&quot;windows&quot;</code>, <code>&quot;wasi&quot;</code>, ..)</td></tr>
+<tr><td><code>target_arch = &quot;aarch64&quot;</code></td><td>Building for that CPU (<code>&quot;x86_64&quot;</code>, ..)</td></tr>
+<tr><td><code>target_family = &quot;unix&quot;</code></td><td>Unix-like targets (<code>&quot;windows&quot;</code>, <code>&quot;wasm&quot;</code>)</td></tr>
+<tr><td><code>target_pointer_width = &quot;64&quot;</code></td><td>64-bit targets</td></tr>
+<tr><td><code>feature = &quot;tls&quot;</code></td><td>The package's feature <code>tls</code> is enabled (<a href="18-features-and-stones">chapter 18</a>)</td></tr>
+<tr><td><code>debug_assertions</code></td><td>Building at <code>-O0</code> (the default for <code>rok run</code>)</td></tr>
+<tr><td><code>test</code></td><td>Building for <code>rok test</code></td></tr>
+</tbody></table></div>
+<p><code>target_*</code> follow <code>--target</code>, so a cross build sees the target's values, not the host's.</p>
+<h2 id="where-cfg-goes"><a class="anchor" tabindex="-1" href="#where-cfg-goes" aria-hidden="true">#</a>Where <code>#[cfg]</code> goes</h2>
+<p><code>#[cfg]</code> attaches to items (functions, types, <code>mod</code>, <code>use</code>, <code>const</code>, <code>static</code>, <code>impl</code> blocks and their members) and also to the smaller pieces inside code: statements, <code>match</code> arms, struct fields, fields of a struct literal, and function parameters.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Op</span> { <span class="t">Add</span>, <span class="t">Trace</span>, <span class="t">Quit</span> }
+
+<span class="k">struct</span> <span class="t">Build</span> {
+    name: <span class="t">str</span>;
+    <span class="a">#[cfg(debug_assertions)]</span>
+    checks: <span class="t">bool</span>;                         <span class="c">// a field only debug builds have</span>
+}
+
+<span class="k">fn</span> describe(op: <span class="t">Op</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> op {
+        <span class="t">Op</span>::<span class="t">Add</span> =&gt; <span class="s">"add"</span>,
+        <span class="a">#[cfg(debug_assertions)]</span>
+        <span class="t">Op</span>::<span class="t">Trace</span> =&gt; <span class="s">"trace (debug build)"</span>, <span class="c">// an arm</span>
+        _ =&gt; <span class="s">"unsupported"</span>,
+    }
+}
+
+<span class="k">let</span> b = <span class="t">Build</span> {
+    name: <span class="s">"demo"</span>,
+    <span class="a">#[cfg(debug_assertions)]</span>
+    checks: <span class="k">true</span>,                         <span class="c">// a struct literal field</span>
+};
+
+<span class="a">#[cfg(debug_assertions)]</span>
+println(<span class="s">f"debug build of {</span>b.name<span class="s">}"</span>);      <span class="c">// a statement</span>
+<span class="a">#[cfg(not(debug_assertions))]</span>
+println(<span class="s">f"release build of {</span>b.name<span class="s">}"</span>);
+
+println(describe(<span class="t">Op</span>::<span class="t">Trace</span>));
+</code></pre>
+<pre class="output"><code class="language-output">debug build of demo
+trace (debug build)
+</code></pre>
+<p>Built with <code>-O2</code>, the same file prints <code>release build of demo</code> and <code>unsupported</code>: the <code>checks</code> field, its initializer and the <code>Trace</code> arm are all gone.</p>
+<p>A parameter with a false condition is removed from the signature, and calls pass only the remaining arguments. This lets an optional feature add a parameter without a second copy of the function.</p>
+<pre><code class="language-rok"><span class="k">fn</span> connect(host: <span class="t">str</span>, <span class="a">#[cfg(feature = "tls")]</span> verify: <span class="t">bool</span>) -&gt; <span class="t">str</span> {
+    <span class="a">#[cfg(feature = "tls")]</span>
+    <span class="k">if</span> verify { <span class="k">return</span> <span class="s">f"{</span>host<span class="s">} (verified)"</span>; }
+    host
+}
+
+<span class="c">// Without the `tls` feature, `connect` takes one argument.</span>
+println(connect(<span class="s">"example.com"</span>));
+</code></pre>
+<pre class="output"><code class="language-output">example.com
+</code></pre>
+<p>Closure parameters take no attributes.</p>
+<h2 id="two-definitions-one-build"><a class="anchor" tabindex="-1" href="#two-definitions-one-build" aria-hidden="true">#</a>Two definitions, one build</h2>
+<p>To give a function a different body per platform, write it twice with conditions that exclude each other. Only one survives in any build; if both survive, it is the ordinary duplicate-definition error.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(target_family = "windows")]</span>
+<span class="k">fn</span> path_sep() -&gt; <span class="t">str</span> { <span class="s">"\\"</span> }
+
+<span class="a">#[cfg(not(target_family = "windows"))]</span>
+<span class="k">fn</span> path_sep() -&gt; <span class="t">str</span> { <span class="s">"/"</span> }
+
+println([<span class="s">"usr"</span>, <span class="s">"local"</span>, <span class="s">"bin"</span>].join(path_sep()));
+</code></pre>
+<p>On Linux and macOS this prints <code>usr/local/bin</code>.</p>
+<p>A whole module can be conditional too. <code>#[cfg(target_os = &quot;linux&quot;)] mod linux;</code> does not even read <code>linux.rok</code> in other builds.</p>
+<h2 id="cfg-a-compile-time-bool"><a class="anchor" tabindex="-1" href="#cfg-a-compile-time-bool" aria-hidden="true">#</a><code>cfg!</code>: a compile-time <code>bool</code></h2>
+<p>When both branches compile everywhere and only the choice differs, <code>cfg!(..)</code> is shorter. It is a constant <code>bool</code>, so the compiler drops the dead branch; unlike <code>#[cfg]</code>, both sides must still type-check.</p>
+<pre><code class="language-rok"><span class="k">const</span> <span class="t">DEBUG</span>: <span class="t">bool</span> = cfg!(debug_assertions);
+
+<span class="k">let</span> level = <span class="k">if</span> cfg!(feature = <span class="s">"verbose"</span>) { <span class="n">2</span> } <span class="k">else</span> { <span class="n">1</span> };
+println(<span class="s">f"debug={</span><span class="t">DEBUG</span><span class="s">} level={</span>level<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">debug=true level=1
+</code></pre>
+<p><code>#[cfg_attr(cond, attr)]</code> attaches another attribute only when the condition holds, for example <code>#[cfg_attr(test, derive(Debug))]</code>.</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>#[cfg(..)]</code> keeps or removes code at compile time. Conditions are <code>key = &quot;value&quot;</code>, flags (<code>test</code>, <code>debug_assertions</code>) and <code>all</code> / <code>any</code> / <code>not</code>.
+</li>
+<li>It attaches to items, fields, variants, statements, match arms, struct literal fields and parameters. A removed parameter disappears from the signature.
+</li>
+<li>Write mutually exclusive definitions for per-platform bodies.
+</li>
+<li><code>cfg!(..)</code> is a constant <code>bool</code> for an ordinary <code>if</code>.
+</li>
+<li><code>feature = &quot;..&quot;</code> conditions are set by the package's features, the subject of the next chapter.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/006-meta-system/603-cfg">6.3 <code>#[cfg]</code></a>, <a href="../spec/refs-lang/006-meta-system/603-cfg#633-attachment-positions">6.3.3 Attachment positions</a>, <a href="../spec/refs-lang/006-meta-system/603-cfg#635-cfg-compile-time-bool-value">6.3.5 <code>cfg!</code></a>, <a href="../spec/refs-lang/000-meta/006-platform-targets">Platform targets</a>
+</li>
+<li>Next chapter: <a href="18-features-and-stones">18. Features and Stones</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/17-conditional-compilation.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="16-tools"><small>Previous</small>16. Tools</a><a class="next" href="18-features-and-stones"><small>Next</small>18. Features and Stones</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

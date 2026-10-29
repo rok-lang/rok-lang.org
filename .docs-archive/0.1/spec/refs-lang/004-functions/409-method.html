@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.9. Methods - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This document defines in detail the parameters and calling conventions of methods defined in impl. It is part of the function specification and focuses on the d...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/409-method.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.9. Methods - rok docs">
+<meta property="og:description" content="This document defines in detail the parameters and calling conventions of methods defined in impl. It is part of the function specification and focuses on the d...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/409-method.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/409-method.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/409-method.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li class="cur"><a aria-current="page" href="409-method">4.9. Methods</a><ul class="toc"><li><a href="#491-where-methods-are-defined">4.9.1. Where methods are defined</a></li><li><a href="#492-kinds-of-methods-by-the-form-of-the-first-parameter">4.9.2. Kinds of methods by the form of the first parameter</a></li><li><a href="#493-two-uses-of-the-self-keyword">4.9.3. Two uses of the self Keyword</a></li><li><a href="#494-the-self-keyword-type-position">4.9.4. The Self keyword: type position</a></li><li><a href="#495-automatic-ref-for-method-call-receivers">4.9.5. Automatic ref for method call receivers</a></li><li><a href="#496-call-forms-of-free-functions-and-methods">4.9.6. Call forms of free functions and methods</a></li><li><a href="#497-calling-other-methods-inside-a-method">4.9.7. Calling other methods inside a method</a></li><li><a href="#498-method-visibility">4.9.8. Method visibility</a></li><li><a href="#499-freedom-in-method-signatures">4.9.9. Freedom in method signatures</a></li><li><a href="#4910-summary-of-self-in-methods">4.9.10. Summary of self in methods</a></li></ul></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="49-methods 49-메서드 491-where-methods-are-defined 491-메서드의-정의-위치 492-kinds-of-methods-by-the-form-of-the-first-parameter 492-첫-매개변수의-형태에-따른-메서드-종류 static-methods-no-self 정적-메서드-self-없음 instance-methods-self 인스턴스-메서드-self instance-methods-ref-self 인스턴스-메서드-ref-self 493-two-uses-of-the-self-keyword 493-self-키워드의-두-사용 494-the-self-keyword-type-position 494-self-키워드-타입-자리 495-automatic-ref-for-method-call-receivers 495-메서드-호출-receiver-의-자동-ref 496-call-forms-of-free-functions-and-methods 496-자유-함수와-메서드의-호출-형태 name-conflicts-between-traits 트레잇-사이의-이름-충돌 497-calling-other-methods-inside-a-method 497-메서드-안의-다른-메서드-호출 498-method-visibility 498-메서드-가시성 499-freedom-in-method-signatures 499-메서드-시그니처의-자유도 4910-summary-of-self-in-methods 4910-메서드-안의-self-관계-요약"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/409-method" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="49-methods"><a class="anchor" tabindex="-1" href="#49-methods" aria-hidden="true">#</a>4.9. Methods</h1>
+<p>This document defines in detail the parameters and calling conventions of methods defined in <a href="../002-types/209-impl"><code>impl</code></a>. It is part of the function specification and focuses on the differences between methods and free functions.</p>
+<h2 id="491-where-methods-are-defined"><a class="anchor" tabindex="-1" href="#491-where-methods-are-defined" aria-hidden="true">#</a>4.9.1. Where methods are defined</h2>
+<p>Methods are defined inside an <a href="../002-types/209-impl"><code>impl</code></a> block.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { <span class="t">Point</span> { x: <span class="n">0.0f64</span>, y: <span class="n">0.0f64</span> } }
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+    <span class="k">fn</span> translate(<span class="k">ref</span> <span class="k">self</span>, dx: <span class="t">f64</span>, dy: <span class="t">f64</span>) {
+        <span class="k">self</span>.x = <span class="k">self</span>.x + dx;
+        <span class="k">self</span>.y = <span class="k">self</span>.y + dy;
+    }
+}
+</code></pre>
+<h2 id="492-kinds-of-methods-by-the-form-of-the-first-parameter"><a class="anchor" tabindex="-1" href="#492-kinds-of-methods-by-the-form-of-the-first-parameter" aria-hidden="true">#</a>4.9.2. Kinds of methods by the form of the first parameter</h2>
+<h3 id="static-methods-no-self"><a class="anchor" tabindex="-1" href="#static-methods-no-self" aria-hidden="true">#</a>Static methods: no <code>self</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { ... }              <span class="c">// static</span>
+    <span class="k">fn</span> from_polar(r: <span class="t">f64</span>, theta: <span class="t">f64</span>) -&gt; <span class="t">Point</span> { ... }
+}
+
+<span class="k">let</span> p = <span class="t">Point</span>::origin();                       <span class="c">// Type::method() call</span>
+<span class="k">let</span> q = <span class="t">Point</span>::from_polar(<span class="n">1.0f64</span>, <span class="n">0.0f64</span>);
+</code></pre>
+<p>A static method is a function whose first parameter is neither <code>self</code> nor <code>ref self</code>. It is called as <code>Type::method(args)</code>, which is static item access through <a href="../002-types/213-type-paths">type paths</a>.</p>
+<h3 id="instance-methods-self"><a class="anchor" tabindex="-1" href="#instance-methods-self" aria-hidden="true">#</a>Instance methods: <code>self</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+    <span class="k">fn</span> norm(<span class="k">self</span>) -&gt; <span class="t">f64</span> { ... }
+}
+
+<span class="k">let</span> d = p.distance(q);                         <span class="c">// instance.method() call</span>
+<span class="k">let</span> n = p.norm();
+</code></pre>
+<p>In this form the first parameter is <code>self</code>. <code>self</code> denotes the instance's value (a copy for a <code>struct</code>, <a href="../002-types/203-struct#238-value-semantics">2.3.8</a>), and the body accesses fields with <code>self.field</code>. It is called as <code>instance.method(args)</code>.</p>
+<h3 id="instance-methods-ref-self"><a class="anchor" tabindex="-1" href="#instance-methods-ref-self" aria-hidden="true">#</a>Instance methods: <code>ref self</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> translate(<span class="k">ref</span> <span class="k">self</span>, dx: <span class="t">f64</span>, dy: <span class="t">f64</span>) {
+        <span class="k">self</span>.x = <span class="k">self</span>.x + dx;
+        <span class="k">self</span>.y = <span class="k">self</span>.y + dy;
+    }
+
+    <span class="k">fn</span> replace_with(<span class="k">ref</span> <span class="k">self</span>, other: <span class="t">Point</span>) {
+        <span class="k">self</span> = other;                          <span class="c">// the caller's variable becomes other</span>
+    }
+}
+
+<span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span> };
+p.translate(<span class="n">5.0f64</span>, <span class="n">0.0f64</span>);                   <span class="c">// called without explicit ref</span>
+p.replace_with(other);                         <span class="c">// likewise</span>
+</code></pre>
+<p>In this form the first parameter is <code>ref self</code>. Inside the body, <code>self</code> and its fields may be assigned, and the result is written back to the caller's variable (see <a href="407-ref-keyword">the <code>ref</code> keyword</a>). The caller does not write <code>ref</code>, because method call receivers are handled automatically.</p>
+<h2 id="493-two-uses-of-the-self-keyword"><a class="anchor" tabindex="-1" href="#493-two-uses-of-the-self-keyword" aria-hidden="true">#</a>4.9.3. Two uses of the <code>self</code> Keyword</h2>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> {
+        <span class="k">let</span> dx = <span class="k">self</span>.x - other.x;             <span class="c">// uses the instance self</span>
+        <span class="k">let</span> dy = <span class="k">self</span>.y - other.y;
+        (dx * dx + dy * dy).sqrt()
+    }
+}
+</code></pre>
+<p><code>self</code> (<a href="../001-lexical/105-keywords">keywords</a>) is used in two positions. In parameter position it is the parameter that receives the instance; inside the body it is the identifier referring to that parameter.</p>
+<p><code>self</code> in parameter position is written without a type. Its type is automatically <code>Self</code>, the target type of the current <code>impl</code>.</p>
+<h2 id="494-the-self-keyword-type-position"><a class="anchor" tabindex="-1" href="#494-the-self-keyword-type-position" aria-hidden="true">#</a>4.9.4. The <code>Self</code> keyword: type position</h2>
+<p><code>Self</code> (<a href="../001-lexical/105-keywords">keywords</a>, capitalized) is a type name referring to the target type of the current <code>impl</code>.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> new(x: <span class="t">f64</span>, y: <span class="t">f64</span>) -&gt; <span class="k">Self</span> {           <span class="c">// Self == Point</span>
+        <span class="k">Self</span> { x, y }                          <span class="c">// Self can also construct instances</span>
+    }
+}
+</code></pre>
+<p>The two must be clearly distinguished: lowercase <code>self</code> is used as a parameter and instance identifier; uppercase <code>Self</code> is used as a type name.</p>
+<h2 id="495-automatic-ref-for-method-call-receivers"><a class="anchor" tabindex="-1" href="#495-automatic-ref-for-method-call-receivers" aria-hidden="true">#</a>4.9.5. Automatic <code>ref</code> for method call receivers</h2>
+<p>For a <code>ref self</code> method, <code>ref</code> is applied automatically even though the caller does not write it at the call.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Counter</span> {
+    <span class="k">fn</span> increment(<span class="k">ref</span> <span class="k">self</span>) { <span class="k">self</span>.count = <span class="k">self</span>.count + <span class="n">1</span>; }
+}
+
+<span class="k">let</span> c = <span class="t">Counter</span> { count: <span class="n">0</span> };
+c.increment();                                 <span class="c">// no explicit 'ref'</span>
+</code></pre>
+<p>This is an exception to the ordinary function call rule of <a href="407-ref-keyword">the <code>ref</code> keyword</a> (explicit <code>ref</code> required). The reasons: method call syntax <code>x.method()</code> is itself the receiver <a href="../000-meta/007-glossary#dispatch">dispatch</a> mechanism, and the call form is the same whether the receiver is <code>self</code> or <code>ref self</code>. An additional explicit <code>ref</code> would be visual noise.</p>
+<p>This is consistent with the method call conventions of Rust, C# and Swift. However, when calling the same method by path, the receiver is an ordinary argument, so <code>ref</code> is written (<code>Counter::increment(ref c)</code>, <a href="407-ref-keyword#473-explicit-at-the-call-c-style">4.7.3</a>).</p>
+<h2 id="496-call-forms-of-free-functions-and-methods"><a class="anchor" tabindex="-1" href="#496-call-forms-of-free-functions-and-methods" aria-hidden="true">#</a>4.9.6. Call forms of free functions and methods</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Call</th></tr></thead>
+<tbody>
+<tr><td>Free function</td><td><code>function_name(args)</code></td></tr>
+<tr><td>Static method</td><td><code>Type::method(args)</code></td></tr>
+<tr><td>Instance method</td><td><code>instance.method(args)</code></td></tr>
+</tbody></table></div>
+<p>The call form clearly distinguishes what a function means.</p>
+<h3 id="name-conflicts-between-traits"><a class="anchor" tabindex="-1" href="#name-conflicts-between-traits" aria-hidden="true">#</a>Name conflicts between traits</h3>
+<p>When <code>x.method()</code> has multiple candidates, one is chosen in this order:</p>
+<ol>
+<li>Methods of an inherent <code>impl</code> take precedence over trait methods.
+</li>
+<li>Among trait methods, a trait defined by the current package or explicitly <code>use</code>d takes precedence over a trait visible only through the implicit <code>use rok::core::**</code>. The current package is the actual package in which the call is written. A dependency package's trait does not take precedence over core's traits unless it is <code>use</code>d.
+</li>
+<li>If there is still more than one candidate, it is an ambiguity error, and the diagnostic suggests writing it as <code>Trait::method(x)</code>.
+</li>
+</ol>
+<pre><code class="language-rok"><span class="k">use</span> <span class="k">pkg</span>::geom::<span class="t">Union</span>;              <span class="c">// user trait - union method</span>
+a.<span class="k">union</span>(b);                        <span class="c">// pkg::geom::Union takes precedence over core's Union</span>
+rok::core::ops::<span class="t">Union</span>::<span class="k">union</span>(a, b) <span class="c">// explicit to use the core one</span>
+</code></pre>
+<h2 id="497-calling-other-methods-inside-a-method"><a class="anchor" tabindex="-1" href="#497-calling-other-methods-inside-a-method" aria-hidden="true">#</a>4.9.7. Calling other methods inside a method</h2>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+
+    <span class="k">fn</span> distance_squared(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> {
+        <span class="k">let</span> d = <span class="k">self</span>.distance(other);          <span class="c">// another method of the same instance</span>
+        d * d
+    }
+}
+</code></pre>
+<p>Other methods of the same instance may be called as <code>self.method()</code>. The same rules as ordinary instance calls apply.</p>
+<h2 id="498-method-visibility"><a class="anchor" tabindex="-1" href="#498-method-visibility" aria-hidden="true">#</a>4.9.8. Method visibility</h2>
+<p>Method visibility follows the module-private default defined in <a href="../002-types/209-impl"><code>impl</code></a>.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Account</span> {
+    <span class="k">pub</span> <span class="k">fn</span> balance(<span class="k">self</span>) -&gt; <span class="t">f64</span> { ... }        <span class="c">// public</span>
+        <span class="k">fn</span> _internal(<span class="k">self</span>) { ... }              <span class="c">// module-private</span>
+}
+</code></pre>
+<p>The exact rules for visibility levels are defined in <a href="../005-modules/506-visibility">visibility</a>.</p>
+<h2 id="499-freedom-in-method-signatures"><a class="anchor" tabindex="-1" href="#499-freedom-in-method-signatures" aria-hidden="true">#</a>4.9.9. Freedom in method signatures</h2>
+<p>Method parameters, returns and bodies follow the ordinary function rules of <a href="402-parameters">Parameters</a> and <a href="403-return">Return</a>. Specifically, default values, named arguments, variadics and spreads may be used freely in methods. Divergent methods, whose body always exits through <code>throw</code> or an infinite loop, are also possible, and generic methods may use both the generic parameters of the <code>impl</code> block and the method's own generics.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> map&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">U</span>) -&gt; <span class="t">List</span>&lt;<span class="t">U</span>&gt; { ... }
+}
+</code></pre>
+<p>A method's own generics follow the function name (<code>fn map&lt;U&gt;(...)</code>). In a trait <code>impl</code>, a method parameter without a type takes the type the trait declares at that position (trait parameters and associated types substituted), not an implicit type parameter.</p>
+<h2 id="4910-summary-of-self-in-methods"><a class="anchor" tabindex="-1" href="#4910-summary-of-self-in-methods" aria-hidden="true">#</a>4.9.10. Summary of <code>self</code> in methods</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>First parameter</th><th>Meaning</th><th>At the call</th><th>Can <code>self</code> be reassigned in the body?</th></tr></thead>
+<tbody>
+<tr><td>(none)</td><td>static method</td><td><code>Type::method()</code></td><td>-</td></tr>
+<tr><td><code>self</code></td><td>instance method (value)</td><td><code>instance.method()</code></td><td>no (local only)</td></tr>
+<tr><td><code>ref self</code></td><td>instance method (<code>ref</code>)</td><td><code>instance.method()</code> (<code>ref</code> automatic)</td><td>yes (reflected in the caller)</td></tr>
+</tbody></table></div>
+<p>These three forms are the only kinds of methods.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/409-method.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="408-trailing-closure"><small>Previous</small>4.8. Trailing closures</a><a class="next" href="410-nested-functions"><small>Next</small>4.10. Nested functions</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

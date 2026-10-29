@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.15. Strings - str / char / c_char - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::str module provides the authoritative definitions of the string and character types. rok follows a UTF-8 first policy: every in-process string is...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/215-string.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.15. Strings - str / char / c_char - rok docs">
+<meta property="og:description" content="The rok::core::str module provides the authoritative definitions of the string and character types. rok follows a UTF-8 first policy: every in-process string is...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/215-string.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/215-string.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/215-string.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li class="cur"><a aria-current="page" href="215-string">2.15. Strings - str / char / c_char</a><ul class="toc"><li><a href="#2151-string-model---immutable-str-and-mutable-strbuf">2.15.1. String model - immutable str and mutable StrBuf</a></li><li><a href="#2152-str---immutable-utf-8-string">2.15.2. str - immutable UTF-8 string</a></li><li><a href="#2153-sab-slicing---utf-8-safe">2.15.3. s[a:b] slicing - UTF-8 safe</a></li><li><a href="#2154-char---unicode-scalar-value">2.15.4. char - Unicode scalar value</a></li><li><a href="#2155-c_char---c-abi-1-byte-language-built-in">2.15.5. c_char - C ABI 1-byte (language built-in)</a></li><li><a href="#2156-utf-8-invariant---every-in-process-string">2.15.6. UTF-8 invariant - every in-process string</a></li><li><a href="#2157-fromstr-trait---parsing">2.15.7. FromStr trait - parsing</a></li><li><a href="#2158-module-mapping">2.15.8. Module mapping</a></li><li><a href="#2159-comparison-with-other-languages">2.15.9. Comparison with other languages</a></li></ul></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="215-strings---str--char--c_char 215-문자열---str--char--c_char 2151-string-model---immutable-str-and-mutable-strbuf 2151-문자열-모델---불변-str-과-가변-strbuf rust--python--rok-model-comparison rust--python--rok-모델-비교 2152-str---immutable-utf-8-string 2152-str---불변-utf-8-문자열 core-methods 핵심-메서드 strbuf---mutable-buffer strbuf---가변-buffer string-literals---hello 문자열-리터럴---hello trait-implementations 트레잇-구현 2153-sab-slicing---utf-8-safe 2153-sab-슬라이싱---utf-8-안전 direct-indexing-rejected 직접-indexing-거부 substrings-are-not-copied 부분-문자열은-복사하지-않음 2154-char---unicode-scalar-value 2154-char---unicode-scalar-value literals--methods 리터럴--메서드 conversion 변환 trait-implementations-1 트레잇-구현-1 2155-c_char---c-abi-1-byte-language-built-in 2155-c_char---c-abi-1-byte-언어-기본값 literals 리터럴 char-vs-c_char char-vs-c_char-차이 2156-utf-8-invariant---every-in-process-string 2156-utf-8-invariant---모든-in-process-문자열 why-validation-bypass-is-restricted 검증-우회의-이유 byte--str-conversion byte--str-변환 2157-fromstr-trait---parsing 2157-fromstr-트레잇---파싱 2158-module-mapping 2158-모듈-매핑 2159-comparison-with-other-languages 2159-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/215-string" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="215-strings---str--char--c_char"><a class="anchor" tabindex="-1" href="#215-strings---str--char--c_char" aria-hidden="true">#</a>2.15. Strings - <code>str</code> / <code>char</code> / <code>c_char</code></h1>
+<p>The <code>rok::core::str</code> module provides the authoritative definitions of the string and character types. rok follows a <strong>UTF-8 first</strong> policy: every in-process string is handled as UTF-8, and <code>c_char</code> is used only at FFI boundaries.</p>
+<p>This chapter defines three of the 48 lang slots. First, <code>str_type</code> is bound to <code>rok::core::str::str</code>, a lowercase struct that is a language built-in. Second, <code>char_type</code> is the built-in <code>char</code>, whose methods this chapter defines. Third, <code>cchar_type</code> is bound to <code>rok::core::str::c_char</code>, likewise a language built-in.</p>
+<h2 id="2151-string-model---immutable-str-and-mutable-strbuf"><a class="anchor" tabindex="-1" href="#2151-string-model---immutable-str-and-mutable-strbuf" aria-hidden="true">#</a>2.15.1. String model - immutable <code>str</code> and mutable <code>StrBuf</code></h2>
+<p><code>str</code> is an immutable UTF-8 string value; the mutable buffer for building strings is the separate type <code>StrBuf</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Meaning</th><th>Memory representation</th><th>Mutability</th></tr></thead>
+<tbody>
+<tr><td><code>str</code></td><td>UTF-8 string value</td><td><code>(ptr, len)</code> value - bytes are an immortal constant or a GC object</td><td><strong>immutable</strong></td></tr>
+<tr><td><code>StrBuf</code></td><td>growable UTF-8 buffer</td><td>GC heap object</td><td>mutable</td></tr>
+<tr><td><code>char</code></td><td>Unicode scalar value (PascalCase struct + keyword)</td><td>4B (u32)</td><td>(value - cannot change)</td></tr>
+<tr><td><code>c_char</code></td><td>C ABI 1-byte char (FFI primitive)</td><td>1B (i8 or u8 - target-dependent)</td><td>(value)</td></tr>
+</tbody></table></div>
+<h3 id="rust--python--rok-model-comparison"><a class="anchor" tabindex="-1" href="#rust--python--rok-model-comparison" aria-hidden="true">#</a>Rust / Python / rok model comparison</h3>
+<p>How the three languages handle strings:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>Python</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Value</td><td><code>&amp;str</code></td><td><code>str</code></td><td><code>str</code> (immutable <code>(ptr, len)</code>)</td></tr>
+<tr><td>Mutable buffer</td><td><code>String</code></td><td><code>io.StringIO</code>, etc.</td><td><code>StrBuf</code></td></tr>
+<tr><td>Memory</td><td>borrow checker</td><td>refcount</td><td>GC</td></tr>
+</tbody></table></div>
+<p>rok's <code>str</code> is close to Python's immutable <code>str</code> in needing no lifetime tracking, and is represented like Rust's <code>&amp;str</code> as a <code>(ptr, len)</code> pair. The bytes of strings created at runtime live in a GC object (type id <code>1</code>, <a href="../../refs-lang/008-abi/802-scan-table#8212-runtime-reserved-type-ids">refs-lang 8.2.12</a>).</p>
+<h2 id="2152-str---immutable-utf-8-string"><a class="anchor" tabindex="-1" href="#2152-str---immutable-utf-8-string" aria-hidden="true">#</a>2.15.2. <code>str</code> - immutable UTF-8 string</h2>
+<pre><code class="language-rok"><span class="a">#[lang("str_type")]</span>
+<span class="k">struct</span> <span class="t">str</span> {
+    ptr: <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;;
+    len: <span class="t">usize</span>;            <span class="c">// byte length (NOT char count)</span>
+}
+</code></pre>
+<p><code>str</code> is a language built-in recognized directly by the compiler, so it needs no <code>#[keyword]</code>. The lowercase struct name is the same as the type notation in user code.</p>
+<p><code>str</code> is a <code>(ptr, len)</code> pair passed by value, and the bytes it points to never change. Every operation that modifies a string returns a new <code>str</code>.</p>
+<h3 id="core-methods"><a class="anchor" tabindex="-1" href="#core-methods" aria-hidden="true">#</a>Core methods</h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">str</span> {
+    <span class="k">fn</span> from_utf8(bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">Utf8Error</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> from_utf8_lossy(bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">str</span>;   <span class="c">// each ill-formed sequence → U+FFFD</span>
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                  <span class="c">// byte length</span>
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> as_bytes(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;         <span class="c">// read-only view without copying</span>
+    <span class="k">fn</span> byte(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">u8</span>;          <span class="c">// O(1), panics when out of range</span>
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;;        <span class="c">// FFI</span>
+
+    <span class="c">// reading methods</span>
+    <span class="k">fn</span> chars(<span class="k">self</span>) -&gt; <span class="t">CharsIter</span>;            <span class="c">// Unicode scalar iterator</span>
+    <span class="k">fn</span> bytes(<span class="k">self</span>) -&gt; <span class="t">BytesIter</span>;            <span class="c">// u8 iterator</span>
+    <span class="k">fn</span> char_indices(<span class="k">self</span>) -&gt; <span class="t">CharIndicesIter</span>;
+    <span class="k">fn</span> lines(<span class="k">self</span>) -&gt; <span class="t">LinesIter</span>;            <span class="c">// strips a trailing \r, does not yield a final empty line</span>
+    <span class="k">fn</span> split(<span class="k">self</span>, sep: <span class="t">str</span>) -&gt; <span class="t">SplitIter</span>;  <span class="c">// keeps empty pieces ("a,,b" → "a", "", "b")</span>
+    <span class="k">fn</span> split_whitespace(<span class="k">self</span>) -&gt; <span class="t">SplitWhitespaceIter</span>;   <span class="c">// splits on Unicode White_Space (same set as trim)</span>
+
+    <span class="k">fn</span> starts_with(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> ends_with(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> contains(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> find(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+    <span class="k">fn</span> rfind(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+
+    <span class="k">fn</span> strip_prefix(<span class="k">self</span>, prefix: <span class="t">str</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;   <span class="c">// the rest after removing the prefix, if present</span>
+    <span class="k">fn</span> strip_suffix(<span class="k">self</span>, suffix: <span class="t">str</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;
+    <span class="k">fn</span> split_once(<span class="k">self</span>, sep: <span class="t">str</span>) -&gt; (<span class="t">str</span>, <span class="t">str</span>) | <span class="k">none</span>; <span class="c">// before / after the first sep</span>
+    <span class="k">fn</span> repeat(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">str</span>;
+
+    <span class="k">fn</span> trim(<span class="k">self</span>) -&gt; <span class="t">str</span>;                   <span class="c">// strips Unicode White_Space</span>
+    <span class="k">fn</span> trim_start(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> trim_end(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+
+    <span class="k">fn</span> to_lowercase(<span class="k">self</span>) -&gt; <span class="t">str</span>;           <span class="c">// new str (full Unicode mapping - 1:N, including context rules)</span>
+    <span class="k">fn</span> to_uppercase(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> replace(<span class="k">self</span>, from: <span class="t">str</span>, to: <span class="t">str</span>) -&gt; <span class="t">str</span>;   <span class="c">// empty from matches at every char boundary: "ab".replace("", "-") == "-a-b-"</span>
+
+    <span class="k">fn</span> parse&lt;<span class="t">T</span>: <span class="t">FromStr</span>&gt;(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">T</span>::<span class="t">Err</span>) -&gt; <span class="t">T</span>;
+
+    <span class="c">// UTF-8-safe slicing - validates byte boundaries</span>
+    <span class="c">// (the s[a:b] desugaring dispatches to this method)</span>
+    <span class="k">fn</span> slice(<span class="k">self</span>, range: <span class="t">Range</span>&lt;<span class="t">usize</span>&gt;) -&gt; <span class="t">str</span>;        <span class="c">// same as s[a:b], shares bytes</span>
+}
+</code></pre>
+<p><code>as_ptr</code> returns a pointer to the string's bytes in place. The GC does not move the string, and the pointer stays valid, while a variable holding the <code>str</code> is in scope in a function where a pointer value can appear: a variable's or an expression's type names a <code>rok::bare::ptr</code> type, also as a type argument (<code>List&lt;ConstPtr&lt;u8&gt;&gt;</code>) or in a function type. In a generator or <code>async</code> body this holds across <code>yield</code> / <code>await</code>. Elsewhere a variable holds the string only up to its last use, and a string reachable only through another object may be moved by the GC: it is not pinned (<a href="../100-bare/106-gc-pin">stdlib 1.6</a>). To keep the bytes in place longer, pin the string (<a href="../100-bare/106-gc-pin#166-extraction-methods">1.6.6</a>).</p>
+<h3 id="strbuf---mutable-buffer"><a class="anchor" tabindex="-1" href="#strbuf---mutable-buffer" aria-hidden="true">#</a><code>StrBuf</code> - mutable buffer</h3>
+<p>Use <code>StrBuf</code> to build a string piece by piece.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">StrBuf</span> { <span class="c">/* GC heap - ptr / len / capacity */</span> }
+
+<span class="k">impl</span> <span class="t">StrBuf</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">StrBuf</span>;
+    <span class="k">fn</span> push(<span class="k">self</span>, c: <span class="t">char</span>);                 <span class="c">// appends one char (UTF-8 encoded)</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> push_byte(<span class="k">self</span>, b: <span class="t">u8</span>);       <span class="c">// caller keeps the contents UTF-8; the safe byte path is str::from_utf8</span>
+    <span class="k">fn</span> push_str(<span class="k">self</span>, s: <span class="t">str</span>);
+    <span class="k">fn</span> capacity(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> to_str(<span class="k">self</span>) -&gt; <span class="t">str</span>;                 <span class="c">// immutable str of the current contents</span>
+}
+</code></pre>
+<p>Like a collection, <code>StrBuf</code> is a reference handle, so its methods take <code>self</code> (<a href="209-collections">2.9</a>).</p>
+<pre><code class="language-rok"><span class="k">let</span> buf = <span class="t">StrBuf</span>::new();
+<span class="k">for</span> x <span class="k">in</span> xs {
+    buf.push_str(<span class="s">f"{</span>x<span class="s">},"</span>);
+}
+<span class="k">let</span> s: <span class="t">str</span> = buf.to_str();
+</code></pre>
+<h3 id="string-literals---hello"><a class="anchor" tabindex="-1" href="#string-literals---hello" aria-hidden="true">#</a>String literals - <code>&quot;hello&quot;</code></h3>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;        <span class="c">// a str pointing to immortal constant bytes</span>
+</code></pre>
+<p>A <code>&quot;hello&quot;</code> literal lowers to a <code>str</code> value pointing to constant bytes in the immortal region. Because <code>str</code> is immutable, there is no copying or copy-on-write.</p>
+<h3 id="trait-implementations"><a class="anchor" tabindex="-1" href="#trait-implementations" aria-hidden="true">#</a>Trait implementations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>impl</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><code>Display</code></td><td>✓</td><td>self as is</td></tr>
+<tr><td><code>Debug</code></td><td>✓</td><td><code>&quot;...&quot;</code> with escapes</td></tr>
+<tr><td><code>Clone</code></td><td>✓</td><td>same value (immutable, so bytes are shared)</td></tr>
+<tr><td><code>Copy</code></td><td>✓</td><td>copies the <code>(ptr, len)</code> value</td></tr>
+<tr><td><code>PartialEq</code></td><td>✓</td><td>content comparison (byte-wise)</td></tr>
+<tr><td><code>Eq</code></td><td>✓</td><td></td></tr>
+<tr><td><code>PartialOrd</code></td><td>✓</td><td>lexicographic by byte</td></tr>
+<tr><td><code>Ord</code></td><td>✓</td><td></td></tr>
+<tr><td><code>Hash</code></td><td>✓</td><td></td></tr>
+<tr><td><code>IntoIterator</code></td><td><strong>none</strong></td><td>explicit <code>.chars()</code> - avoids byte vs char ambiguity</td></tr>
+<tr><td><code>Add&lt;str&gt;</code> (<code>s + t</code>)</td><td>✓ → str (concat - new str)</td><td></td></tr>
+<tr><td><code>AddAssign&lt;str&gt;</code> (<code>s += t</code>)</td><td>✓ → <code>s = s + t</code> (replaced by a new str)</td><td></td></tr>
+<tr><td><code>FromIterator&lt;char&gt;</code></td><td>✓</td><td><code>(chars).collect::&lt;str&gt;()</code></td></tr>
+<tr><td><code>FromIterator&lt;str&gt;</code></td><td>✓</td><td><code>(strs).collect::&lt;str&gt;()</code></td></tr>
+</tbody></table></div>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><code>str</code> is an immutable value, so <code>let t = s;</code> only copies <code>(ptr, len)</code>, and neither side can change the contents.</p>
+</div>
+<h2 id="2153-sab-slicing---utf-8-safe"><a class="anchor" tabindex="-1" href="#2153-sab-slicing---utf-8-safe" aria-hidden="true">#</a>2.15.3. <code>s[a:b]</code> slicing - UTF-8 safe</h2>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello, 세계!"</span>;
+s.len();                       <span class="c">//→ 14  (byte length - "hello, " 7 + Korean 3 bytes × 2 + "!" 1)</span>
+s.chars().count();             <span class="c">//→ 10  (char count)</span>
+
+<span class="k">let</span> s2 = s[<span class="n">7</span>:<span class="n">13</span>];              <span class="c">//→ "세계"  (byte boundary OK)</span>
+<span class="k">let</span> s3 = s[<span class="n">8</span>:<span class="n">9</span>];               <span class="c">// panic - byte in the middle of a UTF-8 sequence</span>
+<span class="k">let</span> s4 = s[<span class="n">7</span>:<span class="n">100</span>];             <span class="c">//→ "세계!" (end clamped to the length)</span>
+<span class="k">let</span> s5 = s[-<span class="n">1</span>:];               <span class="c">//→ "!"</span>
+</code></pre>
+<p>The bounds of <code>str</code> / <code>StrBuf</code> are byte offsets. Bounds are first clamped as in Python (negative counts from the end, <a href="../../refs-lang/003-expressions/306-indexing-and-slicing#362-slicing-arrstartend">refs-lang 3.6.2</a>); if the resulting position is in the middle of a UTF-8 sequence, it panics. The result is a <code>str</code> sharing the original bytes (below). <code>str</code> slices have no step; <code>s[::2]</code> is a type error.</p>
+<h3 id="direct-indexing-rejected"><a class="anchor" tabindex="-1" href="#direct-indexing-rejected" aria-hidden="true">#</a>Direct indexing rejected</h3>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;
+<span class="k">let</span> c = s[<span class="n">0</span>];                  <span class="c">// ERROR - `Index&lt;usize&gt;` is not defined</span>
+                               <span class="c">//         reason: byte vs char ambiguity + UTF-8 safety</span>
+</code></pre>
+<p>The intent must be stated explicitly, as in <code>s.chars().next()</code> or <code>s.byte(0)</code>.</p>
+<h3 id="substrings-are-not-copied"><a class="anchor" tabindex="-1" href="#substrings-are-not-copied" aria-hidden="true">#</a>Substrings are not copied</h3>
+<p>For a <code>str</code> <code>s</code>, the results of <code>s[a:b]</code>, <code>lines</code>, <code>split*</code>, <code>split_whitespace</code>, <code>split_once</code>, <code>trim*</code> and <code>strip_*</code> are <code>str</code> values sharing the original bytes, in O(1) (<a href="../../refs-lang/008-abi/808-lowering-types#881-primitive-integers--floating-point">refs-lang 8.8.1</a>). A small piece therefore keeps a large original alive. There is no API to detach it. <code>as_bytes()</code> is likewise a read-only <code>Slice&lt;u8&gt;</code> view without copying. A slice of a <code>StrBuf</code> is a new <code>str</code> holding a copy of the range, O(b − a): <code>str</code> is immutable, so it cannot share a buffer that may still change.</p>
+<h2 id="2154-char---unicode-scalar-value"><a class="anchor" tabindex="-1" href="#2154-char---unicode-scalar-value" aria-hidden="true">#</a>2.15.4. <code>char</code> - Unicode scalar value</h2>
+<p><code>char</code> is a language built-in type (<a href="201-numbers">2.1</a>): a 4-byte Unicode scalar value, not a struct. This module defines its methods.</p>
+<p>The Unicode scalar value range is the union of 0..=0xD7FF and 0xE000..=0x10FFFF. The surrogate range 0xD800..=0xDFFF is used as an <strong>automatic niche</strong>, so <code>char | none</code> can be encoded in 4B.</p>
+<h3 id="literals--methods"><a class="anchor" tabindex="-1" href="#literals--methods" aria-hidden="true">#</a>Literals / methods</h3>
+<pre><code class="language-rok"><span class="k">let</span> c: <span class="t">char</span> = <span class="s">'A'</span>;                   <span class="c">//→ U+0041</span>
+<span class="k">let</span> k: <span class="t">char</span> = <span class="s">'한'</span>;                  <span class="c">//→ U+D55C</span>
+<span class="k">let</span> e: <span class="t">char</span> = <span class="s">'😀'</span>;                  <span class="c">//→ U+1F600</span>
+
+c.to_lowercase();                    <span class="c">//→ 'a'</span>
+c.is_alphabetic();                   <span class="c">//→ true</span>
+c.is_ascii();                        <span class="c">//→ true</span>
+<span class="k">try</span> <span class="s">'1'</span>.to_digit(<span class="n">10</span>);                <span class="c">//→ 1 (u32, ValueError on failure)</span>
+c.len_utf8();                        <span class="c">//→ 1 (number of bytes when UTF-8 encoded)</span>
+e.len_utf8();                        <span class="c">//→ 4</span>
+</code></pre>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">char</span> {
+    <span class="k">fn</span> from_u32(n: <span class="t">u32</span>) -&gt; <span class="t">char</span> | <span class="k">none</span>;                  <span class="c">// none for a surrogate / out of range</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> from_u32_unchecked(n: <span class="t">u32</span>) -&gt; <span class="t">char</span>;        <span class="c">// no check - the caller guarantees a scalar value</span>
+    <span class="k">fn</span> from_digit(d: <span class="t">u32</span>, radix: <span class="t">u32</span>) -&gt; <span class="t">char</span>;           <span class="c">// panics if d &gt;= radix or radix is outside 2..=36</span>
+    <span class="k">fn</span> to_digit(<span class="k">self</span>, radix: <span class="t">u32</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">u32</span>;
+    <span class="k">fn</span> is_digit(<span class="k">self</span>, radix: <span class="t">u32</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> len_utf8(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> len_utf16(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+
+    <span class="c">// Unicode properties</span>
+    <span class="k">fn</span> is_alphabetic(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_lowercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_uppercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_whitespace(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_numeric(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_alphanumeric(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_control(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> to_lowercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;       <span class="c">// 1:1 mappings only</span>
+    <span class="k">fn</span> to_uppercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;
+
+    <span class="c">// ASCII</span>
+    <span class="k">fn</span> is_ascii(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_uppercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;     <span class="k">fn</span> is_ascii_lowercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_alphabetic(<span class="k">self</span>) -&gt; <span class="t">bool</span>;    <span class="k">fn</span> is_ascii_digit(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_alphanumeric(<span class="k">self</span>) -&gt; <span class="t">bool</span>;  <span class="k">fn</span> is_ascii_hexdigit(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_whitespace(<span class="k">self</span>) -&gt; <span class="t">bool</span>;    <span class="k">fn</span> is_ascii_control(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_graphic(<span class="k">self</span>) -&gt; <span class="t">bool</span>;       <span class="k">fn</span> is_ascii_punctuation(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> to_ascii_uppercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;     <span class="k">fn</span> to_ascii_lowercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;
+    <span class="k">fn</span> eq_ignore_ascii_case(<span class="k">self</span>, other: <span class="t">char</span>) -&gt; <span class="t">bool</span>;
+}
+</code></pre>
+<p><code>char</code>'s <code>to_lowercase</code> / <code>to_uppercase</code> return a single character, so only 1:1 mappings apply. A character that maps to several characters is left unchanged (<code>'ß'.to_uppercase() == 'ß'</code>). <code>str</code>'s <code>to_lowercase</code> / <code>to_uppercase</code> apply the full mapping, including 1:N mappings and context rules (Greek final sigma <code>Σ</code> → <code>ς</code>) (<code>&quot;ß&quot;.to_uppercase() == &quot;SS&quot;</code>).</p>
+<p>The Unicode property and case tables are UCD 18.0.0.</p>
+<h3 id="conversion"><a class="anchor" tabindex="-1" href="#conversion" aria-hidden="true">#</a>Conversion</h3>
+<pre><code class="language-rok"><span class="t">char</span>::from_u32(<span class="n">0x41</span>);                <span class="c">//→ 'A' (char | none - none for a surrogate)</span>
+<span class="t">char</span>::from_digit(<span class="n">5</span>, <span class="n">10</span>);             <span class="c">//→ '5'</span>
+
+<span class="k">let</span> n: <span class="t">u32</span> = c <span class="k">as</span> <span class="t">u32</span>;               <span class="c">//→ 65 (lossless)</span>
+<span class="k">let</span> c2: <span class="t">char</span> = n <span class="k">as</span> <span class="t">char</span>;            <span class="c">//→ ERROR - only u8 can `as char`</span>
+<span class="k">let</span> b: <span class="t">u8</span> = <span class="n">0x41</span>;
+<span class="k">let</span> c4: <span class="t">char</span> = b <span class="k">as</span> <span class="t">char</span>;            <span class="c">//→ 'A' (a u8 is always a scalar value)</span>
+<span class="k">let</span> c3 = <span class="k">try</span> <span class="t">char</span>::try_from(n);      <span class="c">//→ char (TryFrom&lt;u32&gt; - via from_u32, OverflowError if none)</span>
+</code></pre>
+<h3 id="trait-implementations-1"><a class="anchor" tabindex="-1" href="#trait-implementations-1" aria-hidden="true">#</a>Trait implementations</h3>
+<p><code>char</code> implements every cmp / fmt trait as well as <code>Copy</code>, <code>Clone</code> and <code>Hash</code>. The niche applies automatically, so <code>char | none</code> is 4B.</p>
+<h2 id="2155-c_char---c-abi-1-byte-language-built-in"><a class="anchor" tabindex="-1" href="#2155-c_char---c-abi-1-byte-language-built-in" aria-hidden="true">#</a>2.15.5. <code>c_char</code> - C ABI 1-byte (language built-in)</h2>
+<pre><code class="language-rok"><span class="a">#[lang("cchar_type")]</span>
+<span class="k">struct</span> c_char {
+    value: <span class="t">i8</span> or <span class="t">u8</span>;     <span class="c">// target-dependent (signedness differs by OS / arch)</span>
+}
+</code></pre>
+<p><code>c_char</code> is an FFI primitive that is a language built-in, a lowercase struct recognized directly by the compiler.</p>
+<p>It is ABI-compatible with C's <code>char</code>; note that it is a raw byte, not a UTF-8 encoding unit. Its use is FFI only:</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> strlen(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> strcmp(a: <span class="t">ConstPtr</span>&lt;c_char&gt;, b: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">i32</span>;
+}
+</code></pre>
+<h3 id="literals"><a class="anchor" tabindex="-1" href="#literals" aria-hidden="true">#</a>Literals</h3>
+<pre><code class="language-rok"><span class="k">let</span> c: c_char = c<span class="s">'A'</span>;        <span class="c">//→ 65 (i8/u8 - target-dependent)</span>
+<span class="k">let</span> n: c_char = c<span class="s">'\n'</span>;       <span class="c">//→ 10</span>
+</code></pre>
+<p>The prefixed form <code>c'...'</code> separates it from <code>char</code>.</p>
+<h3 id="char-vs-c_char"><a class="anchor" tabindex="-1" href="#char-vs-c_char" aria-hidden="true">#</a>char vs c_char</h3>
+<p>Comparing the two types makes the difference clear.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>char</code></th><th><code>c_char</code></th></tr></thead>
+<tbody>
+<tr><td>Size</td><td>4 bytes</td><td>1 byte</td></tr>
+<tr><td>Meaning</td><td>Unicode scalar (code point)</td><td>C ABI byte</td></tr>
+<tr><td>Range</td><td>0..=0x10FFFF (excluding surrogates)</td><td>0..=255 or -128..=127</td></tr>
+<tr><td>Multibyte</td><td>a single char covers both BMP / SMP</td><td>a multibyte char = byte sequence</td></tr>
+<tr><td>Literal</td><td><code>'A'</code></td><td><code>c'A'</code></td></tr>
+<tr><td>Registration</td><td>standard library addition (<code>#[keyword]</code>)</td><td>language built-in</td></tr>
+<tr><td>Used for</td><td>general string processing</td><td>FFI / byte-level processing</td></tr>
+</tbody></table></div>
+<p>Standard library functions therefore use <strong><code>char</code> first</strong> as a rule, and <code>c_char</code> only at explicit FFI boundaries.</p>
+<h2 id="2156-utf-8-invariant---every-in-process-string"><a class="anchor" tabindex="-1" href="#2156-utf-8-invariant---every-in-process-string" aria-hidden="true">#</a>2.15.6. UTF-8 invariant - every in-process string</h2>
+<p>A <code>str</code> is always guaranteed to be valid UTF-8, for these reasons. Constructors validate: <code>str::from_utf8(bytes)</code> throws <code>Utf8Error</code> on an invalid byte sequence (<code>throws (Utf8Error)</code>). Slicing validates byte boundaries and rejects positions in the middle of a multibyte sequence. In-place modifications such as <code>push</code> or <code>insert</code> also preserve UTF-8 integrity. Only <code>rok::bare::str_from_bytes_unchecked</code> can bypass validation, and it belongs to the unsafe tier.</p>
+<h3 id="why-validation-bypass-is-restricted"><a class="anchor" tabindex="-1" href="#why-validation-bypass-is-restricted" aria-hidden="true">#</a>Why validation bypass is restricted</h3>
+<p>Consider what goes wrong if the UTF-8 invariant <strong>breaks</strong>: <code>chars()</code> may throw <code>IndexError</code> or loop forever, a truncated multibyte sequence may display incorrectly, and security issues such as overlong encodings may arise.</p>
+<p>Because the standard library guarantees validation at construction time, <code>str.chars()</code> and the like always behave safely in user code. The invariant cannot be broken without entering unsafe code.</p>
+<h3 id="byte--str-conversion"><a class="anchor" tabindex="-1" href="#byte--str-conversion" aria-hidden="true">#</a>byte ↔ str conversion</h3>
+<pre><code class="language-rok"><span class="k">let</span> bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0x68</span>, <span class="n">0x65</span>, <span class="n">0x6C</span>, <span class="n">0x6C</span>, <span class="n">0x6F</span>];
+<span class="k">let</span> s: <span class="t">str</span> = <span class="k">try</span> <span class="t">str</span>::from_utf8(bytes);
+                                          <span class="c">//→ "hello"</span>
+
+<span class="k">let</span> invalid: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0xFF</span>, <span class="n">0xFE</span>];
+<span class="k">let</span> s: <span class="t">str</span> = <span class="k">try</span> <span class="t">str</span>::from_utf8(invalid);
+                                          <span class="c">//→ throw Utf8Error { ... }</span>
+</code></pre>
+<p><code>str::from_utf8_lossy(bytes)</code> never throws: each maximal subpart of an ill-formed sequence (Unicode §3.9, U+FFFD Substitution of Maximal Subparts; the WHATWG UTF-8 decoder's behavior) becomes one U+FFFD.</p>
+<h2 id="2157-fromstr-trait---parsing"><a class="anchor" tabindex="-1" href="#2157-fromstr-trait---parsing" aria-hidden="true">#</a>2.15.7. <code>FromStr</code> trait - parsing</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">FromStr</span> {
+    <span class="k">type</span> <span class="t">Err</span>;
+    <span class="k">fn</span> from_str(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">Err</span>) -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<p><code>str.parse::&lt;T&gt;()</code> is <code>throws (T::Err)</code> and dispatches through this trait. For numeric types and <code>bool</code>, <code>Err</code> is core's <code>ParseError { input, pos, reason }</code> (<a href="214-error#2144-built-in-error-types">2.14.4</a>). Numeric parsing is implemented on top of the runtime helpers <code>rok_str_parse_int</code> / <code>rok_str_parse_float</code> (<a href="../../refs-lang/008-abi/805-extern-symbols#string-helpers">refs-lang 8.5</a>). Float <code>FromStr</code> fails with <code>number out of range</code> when finite digits exceed the type's range; <code>inf</code> / <code>NaN</code> text parses.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span> <span class="s">"42"</span>.parse();         <span class="c">// FromStr for i32</span>
+<span class="k">let</span> f: <span class="t">f64</span> = <span class="k">try</span> <span class="s">"3.14"</span>.parse();       <span class="c">// FromStr for f64</span>
+<span class="k">let</span> b: <span class="t">bool</span> = <span class="k">try</span> <span class="s">"true"</span>.parse();      <span class="c">// FromStr for bool</span>
+
+<span class="c">// user-defined</span>
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">Color</span> {
+    <span class="k">type</span> <span class="t">Err</span> = <span class="t">ParseColorError</span>;
+    <span class="k">fn</span> from_str(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseColorError</span>) -&gt; <span class="t">Color</span> { ... }
+}
+<span class="k">let</span> c: <span class="t">Color</span> = <span class="k">try</span> <span class="s">"red"</span>.parse();
+</code></pre>
+<p><code>FromStr</code> is <strong>separate</strong> from <code>TryFrom&lt;str&gt;</code> in <a href="211-conversion">2.11 conversion</a>. It handles only <code>str → T</code> conversion and makes fallibility explicit.</p>
+<h2 id="2158-module-mapping"><a class="anchor" tabindex="-1" href="#2158-module-mapping" aria-hidden="true">#</a>2.15.8. Module mapping</h2>
+<p>How the types are registered and where they are implemented:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>struct name</th><th>Registration</th><th>Implementation</th></tr></thead>
+<tbody>
+<tr><td><code>str</code></td><td><code>str</code> (lowercase)</td><td>language built-in</td><td>standard library</td></tr>
+<tr><td><code>StrBuf</code></td><td><code>StrBuf</code></td><td>ordinary type</td><td>standard library</td></tr>
+<tr><td><code>c_char</code></td><td><code>c_char</code> (lowercase)</td><td>language built-in</td><td>standard library</td></tr>
+<tr><td><code>char</code></td><td><code>char</code> (built-in)</td><td>language built-in</td><td>compiler (methods: standard library)</td></tr>
+</tbody></table></div>
+<p>As for intrinsics, some <code>str</code> method bodies and some <code>char</code> methods carry <code>#[intrinsic(&quot;rok.str.*&quot;)]</code> or <code>#[intrinsic(&quot;rok.char.*&quot;)]</code>.</p>
+<h2 id="2159-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#2159-comparison-with-other-languages" aria-hidden="true">#</a>2.15.9. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>Python 3</th><th>Java</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Type split</td><td><code>&amp;str</code> + <code>String</code></td><td><code>str</code> (single)</td><td><code>String</code></td><td><code>str</code> + <code>StrBuf</code></td></tr>
+<tr><td>Mutability</td><td>only <code>String</code> mutable</td><td><strong>immutable</strong></td><td><strong>immutable</strong></td><td><code>str</code> immutable, <code>StrBuf</code> mutable</td></tr>
+<tr><td>Encoding</td><td>UTF-8</td><td>unspecified (implementation-dependent)</td><td>UTF-16</td><td>UTF-8</td></tr>
+<tr><td>char</td><td><code>char</code> (4B)</td><td><code>str</code> (single-char)</td><td><code>char</code> (2B = code unit)</td><td><code>char</code> (4B Unicode scalar)</td></tr>
+<tr><td>FFI byte</td><td><code>c_char</code> / <code>u8</code></td><td><code>bytes</code></td><td><code>byte</code></td><td><code>c_char</code> (1B, target-dependent)</td></tr>
+<tr><td>Meaning of len</td><td>byte len</td><td>char count</td><td>UTF-16 code unit</td><td>byte len (explicit <code>.chars().count()</code>)</td></tr>
+<tr><td>index <code>s[i]</code></td><td><strong>none</strong></td><td>char (Python str)</td><td>UTF-16 code unit</td><td><strong>none</strong> (explicit chars/bytes)</td></tr>
+</tbody></table></div>
+<p><code>str</code> is an immutable <code>(ptr, len)</code> value, and the mutable buffer is split off as <code>StrBuf</code>; with a GC, no lifetime distinction is needed, unlike Rust. <code>len()</code> means <strong>byte length</strong>, matching Rust; the char count is obtained separately with <code>chars().count()</code>. By <strong>not providing</strong> <code>s[i]</code>, rok matches Rust and avoids byte vs char ambiguity. Defining <code>char</code> as a 4B Unicode scalar avoids the surrogate pitfalls caused by Java's 2B UTF-16 code units. Finally, <code>c_char</code> is a separate type, keeping a clear ABI distinction from <code>char</code>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/215-string.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="214-error"><small>Previous</small>2.14. error - Error traits / types</a><a class="next" href="216-sync"><small>Next</small>2.16. sync - Concurrency primitives</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

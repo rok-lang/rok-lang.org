@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.16. sync - 동시성 primitive - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::sync 모듈은 공유 상태에 안전하게 접근할 수 있도록 도와주는 primitive 트레잇과 타입을 정의합니다. rok 의 GC 와 M:N 스케줄러 환경에서 multi-task 또는 multi-thread 사이의 데이터 공유를 처리할 때 사용합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/216-sync.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.16. sync - 동시성 primitive - rok docs">
+<meta property="og:description" content="rok::core::sync 모듈은 공유 상태에 안전하게 접근할 수 있도록 도와주는 primitive 트레잇과 타입을 정의합니다. rok 의 GC 와 M:N 스케줄러 환경에서 multi-task 또는 multi-thread 사이의 데이터 공유를 처리할 때 사용합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/216-sync.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/216-sync.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/216-sync.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li class="cur"><a aria-current="page" href="216-sync">2.16. sync - 동시성 primitive</a><ul class="toc"><li><a href="#2161-4-primitive-개요">2.16.1. 4 primitive 개요</a></li><li><a href="#2162-atomict---lock-free-원자">2.16.2. Atomic&lt;T&gt; - lock-free 원자</a></li><li><a href="#2163-mutext---배타적-잠금">2.16.3. Mutex&lt;T&gt; - 배타적 잠금</a></li><li><a href="#2164-rwlockt---read-write-분리">2.16.4. RwLock&lt;T&gt; - read-write 분리</a></li><li><a href="#2164a-once--condvar">2.16.4a. Once / Condvar</a></li><li><a href="#2164b-frozent---읽기-전용-공유">2.16.4b. Frozen&lt;T&gt; - 읽기 전용 공유</a></li><li><a href="#2165-cellt---single-threaded-interior">2.16.5. Cell&lt;T&gt; - single-threaded interior</a></li><li><a href="#2166-모듈-매핑">2.16.6. 모듈 매핑</a></li></ul></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="216-sync---동시성-primitive 216-sync---concurrency-primitives 2161-4-primitive-개요 2161-overview-of-the-four-primitives 2162-atomict---lock-free-원자 2162-atomict---lock-free-atomics atomicordering atomicordering 사용-예 example cas-compare-and-swap cas-compare-and-swap 2163-mutext---배타적-잠금 2163-mutext---exclusive-lock 사용-예-1 example-1 deadlock-회피---try_lock avoiding-deadlock---try_lock poisoning---없음 poisoning---none 2164-rwlockt---read-write-분리 2164-rwlockt---read-write-split 2164a-once--condvar 2164a-once--condvar async-잠금과-취소 async-locks-and-cancellation 2164b-frozent---읽기-전용-공유 2164b-frozent---read-only-sharing 2165-cellt---single-threaded-interior 2165-cellt---single-threaded-interior-mutability send--sync-마커 send--sync-markers 2166-모듈-매핑 2166-module-mapping"><a href="../../../../spec/refs-standard-libraries/200-core/216-sync" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="216-sync---동시성-primitive"><a class="anchor" tabindex="-1" href="#216-sync---동시성-primitive" aria-hidden="true">#</a>2.16. sync - 동시성 primitive</h1>
+<p><code>rok::core::sync</code> 모듈은 공유 상태에 안전하게 접근할 수 있도록 도와주는 primitive 트레잇과 타입을 정의합니다. rok 의 GC 와 M:N 스케줄러 환경에서 multi-task 또는 multi-thread 사이의 데이터 공유를 처리할 때 사용합니다.</p>
+<p><code>use rok::core::**;</code> 가 묵시적으로 적용되므로 별도의 import 없이도 <code>Atomic</code>, <code>Mutex</code>, <code>RwLock</code>, <code>Cell</code> 을 곧바로 사용할 수 있습니다. 다만 동시성 코드임을 시각적으로 분명히 드러내고 싶은 자리에서는 다음과 같이 좁은 범위의 import 를 권장합니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::sync::{<span class="t">Atomic</span>, <span class="t">Mutex</span>, <span class="t">RwLock</span>, <span class="t">Once</span>, <span class="t">Condvar</span>, <span class="t">Cell</span>};
+</code></pre>
+<h2 id="2161-4-primitive-개요"><a class="anchor" tabindex="-1" href="#2161-4-primitive-개요" aria-hidden="true">#</a>2.16.1. 4 primitive 개요</h2>
+<p>네 가지 primitive 는 각각 서로 다른 동시성 시나리오를 담당합니다. 다음 표는 각 타입의 의미와 어울리는 사용 자리를 한눈에 정리한 것입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>의미</th><th>사용 자리</th></tr></thead>
+<tbody>
+<tr><td><code>Atomic&lt;T&gt;</code></td><td>lock-free 원자 연산 (T = primitive)</td><td>counter, flag, sequence number</td></tr>
+<tr><td><code>Mutex&lt;T&gt;</code></td><td>배타적 잠금 (single writer)</td><td>shared mutable state</td></tr>
+<tr><td><code>RwLock&lt;T&gt;</code></td><td>다중 reader 또는 단일 writer</td><td>read-heavy state</td></tr>
+<tr><td><code>Cell&lt;T&gt;</code></td><td>thread-local interior mutability (no lock)</td><td>single-threaded mutable</td></tr>
+</tbody></table></div>
+<h2 id="2162-atomict---lock-free-원자"><a class="anchor" tabindex="-1" href="#2162-atomict---lock-free-원자" aria-hidden="true">#</a>2.16.2. <code>Atomic&lt;T&gt;</code> - lock-free 원자</h2>
+<p>가장 가벼운 primitive 인 <code>Atomic&lt;T&gt;</code> 부터 살펴봅니다. 내부적으로는 T 별 LLVM atomic 연산으로 구현되며, 다음과 같은 형태를 갖춥니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Atomic</span>&lt;<span class="t">T</span>: <span class="t">AtomicPrimitive</span>&gt; {
+    <span class="c">// 내부: AtomicU32 / AtomicU64 / AtomicPtr 등 (T 별 LLVM atomic ops)</span>
+}
+
+<span class="k">trait</span> <span class="t">AtomicPrimitive</span> { <span class="c">/* marker - i32/i64/u32/u64/usize/isize/bool/Ptr */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">AtomicPrimitive</span>&gt; <span class="t">Atomic</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">const</span> <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Atomic</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> load(<span class="k">self</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> store(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>);
+    <span class="k">fn</span> swap(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> compare_exchange(
+        <span class="k">self</span>, current: <span class="t">T</span>, new: <span class="t">T</span>,
+        success: <span class="t">AtomicOrdering</span>, failure: <span class="t">AtomicOrdering</span>,
+    ) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">T</span>&gt;;                  <span class="c">// 실패 결과도 값 - 에러가 아님</span>
+    <span class="k">fn</span> compare_exchange_weak(
+        <span class="k">self</span>, current: <span class="t">T</span>, new: <span class="t">T</span>,
+        success: <span class="t">AtomicOrdering</span>, failure: <span class="t">AtomicOrdering</span>,
+    ) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">T</span>&gt;;                  <span class="c">// 실패 결과도 값 - 에러가 아님</span>
+
+    <span class="c">// 정수 전용</span>
+    <span class="k">fn</span> fetch_add(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_sub(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_and(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_or(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_xor(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+}
+
+<span class="k">impl</span> <span class="t">Atomic</span>&lt;<span class="t">i32</span>&gt; {
+    <span class="k">fn</span> wait(<span class="k">self</span>, expected: <span class="t">i32</span>, timeout_ns: <span class="t">i64</span> = -<span class="n">1</span>);   <span class="c">// 값이 expected 인 동안, 최대 timeout_ns (&lt; 0 이면 무한) 대기</span>
+    <span class="k">fn</span> wake(<span class="k">self</span>);                                         <span class="c">// 이 cell 에서 wait 중인 스레드를 모두 깨움</span>
+}
+</code></pre>
+<p><code>wait</code> 는 이유 없이 돌아올 수 있으므로 호출자가 조건을 다시 확인합니다 (futex 의미).</p>
+<h3 id="atomicordering"><a class="anchor" tabindex="-1" href="#atomicordering" aria-hidden="true">#</a><code>AtomicOrdering</code></h3>
+<p>원자 연산은 메모리 순서 보장 수준에 따라 다섯 가지로 나뉘며, 각 변형의 의미는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">AtomicOrdering</span> {
+    <span class="t">Relaxed</span>,        <span class="c">// 동기화 없음 - counter 등</span>
+    <span class="t">Acquire</span>,        <span class="c">// load 후 동기화 보장</span>
+    <span class="t">Release</span>,        <span class="c">// store 전 동기화 보장</span>
+    <span class="t">AcqRel</span>,         <span class="c">// RMW 시 양방향</span>
+    <span class="t">SeqCst</span>,         <span class="c">// 전역 순차 일관성 (default - 안전)</span>
+}
+</code></pre>
+<p>이 모델은 C++ 와 Rust 의 atomic ordering 모델과 동형이며, 기본값은 안전한 <code>SeqCst</code> 입니다. 이름이 <code>AtomicOrdering</code> 인 것은 암묵 core glob 아래에서 비교용 <code>cmp::Ordering</code> 과 겹치지 않게 하기 위함이며, 변형 (<code>Relaxed</code>, <code>Acquire</code>, <code>Release</code>, <code>AcqRel</code>, <code>SeqCst</code>) 은 접두 없이 쓸 수 있습니다. ordering 인자는 컴파일 타임 상수여야 합니다. 따라서 약한 ordering 은 성능이 critical 한 자리에서만 신중하게 사용하는 것이 좋습니다.</p>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<p>가장 흔한 용도인 카운터 증가는 다음과 같이 작성합니다.</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">COUNTER</span>: <span class="t">Atomic</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Atomic</span>::new(<span class="n">0</span>);
+
+task::spawn(<span class="k">async</span> { <span class="t">COUNTER</span>.fetch_add(<span class="n">1</span>, <span class="t">Relaxed</span>); });
+task::spawn(<span class="k">async</span> { <span class="t">COUNTER</span>.fetch_add(<span class="n">1</span>, <span class="t">Relaxed</span>); });
+<span class="c">// 결과: COUNTER == 2 (race 없음)</span>
+
+<span class="k">let</span> v = <span class="t">COUNTER</span>.load(<span class="t">SeqCst</span>);     <span class="c">//→ 2</span>
+</code></pre>
+<h3 id="cas-compare-and-swap"><a class="anchor" tabindex="-1" href="#cas-compare-and-swap" aria-hidden="true">#</a>CAS (compare-and-swap)</h3>
+<p>좀 더 복잡한 lock-free 자료 구조는 compare-and-swap 루프 위에서 구성합니다. 다음은 lock-free 스택의 push 예시입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> lock_free_push(stack: <span class="t">Atomic</span>&lt;<span class="t">List</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>&gt;, x: <span class="t">T</span>) {
+    <span class="k">loop</span> {
+        <span class="k">let</span> cur = stack.load(<span class="t">Acquire</span>);
+        <span class="k">let</span> new = <span class="k">match</span> cur {
+            v: <span class="t">List</span>&lt;<span class="t">T</span>&gt; =&gt; v.with_appended(x),
+            <span class="k">none</span>       =&gt; [x],
+        };
+        <span class="k">match</span> stack.compare_exchange(cur, new, <span class="t">AcqRel</span>, <span class="t">Acquire</span>) {
+            <span class="t">Ok</span>(_)  =&gt; <span class="k">break</span>,
+            <span class="t">Err</span>(_) =&gt; <span class="k">continue</span>,                   <span class="c">// 다른 task 가 먼저 - 재시도</span>
+        }
+    }
+}
+</code></pre>
+<h2 id="2163-mutext---배타적-잠금"><a class="anchor" tabindex="-1" href="#2163-mutext---배타적-잠금" aria-hidden="true">#</a>2.16.3. <code>Mutex&lt;T&gt;</code> - 배타적 잠금</h2>
+<p>원자 연산만으로 표현하기 어려운 공유 상태에는 <code>Mutex&lt;T&gt;</code> 를 사용합니다. 내부는 futex 와 payload 로 구성되며, <code>using</code> 으로 묶은 가드가 잠금을 해제합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// 내부: futex + payload</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unshared(value: <span class="t">T</span>) -&gt; <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// 넘김 복사 없는 new</span>
+
+    <span class="k">fn</span> lock(<span class="k">self</span>) -&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;;            <span class="c">// 스레드를 block</span>
+    <span class="k">fn</span> lock_async(<span class="k">self</span>) -&gt; <span class="t">LockFuture</span>&lt;<span class="t">T</span>&gt;;      <span class="c">// await m.lock_async() - task 만 중단 (Future&lt;Output = MutexGuard&lt;T&gt;&gt;)</span>
+    <span class="k">fn</span> try_lock(<span class="k">self</span>) -&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>; <span class="c">// non-blocking</span>
+}
+
+<span class="k">struct</span> <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* RAII guard */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Drop</span> <span class="k">for</span> <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        <span class="c">// futex_wake + 잠금 해제</span>
+    }
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;                  <span class="c">// 보호된 값</span>
+    <span class="k">fn</span> set(<span class="k">self</span>, value: <span class="t">T</span>);             <span class="c">// 값 교체</span>
+    <span class="k">fn</span> update(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">T</span>);     <span class="c">// 읽고 바꿔 씀</span>
+}
+</code></pre>
+<h3 id="사용-예-1"><a class="anchor" tabindex="-1" href="#사용-예-1" aria-hidden="true">#</a>사용 예</h3>
+<p>가드를 <code>using</code> 으로 묶으면 블록을 빠져나갈 때 <code>drop</code> 되어 잠금이 해제됩니다. <code>using</code> 없이 받은 가드는 자동으로 풀리지 않으므로 반드시 <code>using</code> 으로 묶습니다. 가드는 호출, 메서드 호출, <code>await</code> 에서 받습니다. 받은 가드는 바인딩 (<code>let</code>, 패턴, <code>using</code>) 을 초기화하거나, 변수에 대입하거나, 호출자에게 넘기는 (<code>return</code>, 함수의 값) 데에만 쓸 수 있습니다. 함수에 넘기거나, 그 위에서 메서드를 부르거나, 필드나 컬렉션에 저장하거나, 버리면 컴파일 에러입니다. <code>using</code> 으로 묶은 가드는 함수에 넘길 수 있으며, <code>using</code> 없이 묶은 가드는 넘긴다고 해서 해제되지 않습니다. <code>using</code> 으로 해제되지 않는 일반 <code>let</code> (또는 <code>if let</code>) 으로 가드를 묶거나, <code>lock</code> 이 돌려준 가드를 버리면 컴파일 에러입니다.</p>
+<p><code>Mutex::new(value)</code> 는 <code>value</code> 를 넘겨받습니다: 그 뒤에 호출자의 핸들을 쓰면 컴파일 에러이며, guard 의 <code>using</code> 블록이 끝난 뒤 <code>get</code> 이 돌려준 것이나 <code>set</code> 이 준 것을 쓰거나, guard 가 쥔 동안 그것을 넘기거나, 블록 안에서 그것을 돌려주거나, yield 하거나, 블록의 값으로 삼거나, 블록 뒤에 실행하는 코루틴에 주는 것도 그렇습니다 (<a href="213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a>). <code>using</code> 블록 안에서 다루거나 <code>clone()</code> 을 남깁니다. guard 는 <code>!Sync</code> 이고 자기 <code>using</code> 블록 안에서만 쓸 수 있습니다: 블록이 끝난 뒤 guard 의 복사본 (컬렉션, 클로저, 필드 안의 것) 을 쓰면 컴파일 에러입니다. 다른 스레드에서 도는 클로저에서 값을 쓰려면 먼저 읽고 (<code>let v = g.get();</code>) <code>v</code> 를 잡습니다. 실행 중에는 <code>new</code>, <code>set</code>, <code>update</code> 가 값이 들여오는 컬렉션의 복사본을 저장합니다 (2.13.9). <code>new_unshared</code> 는 복사하지 않으며, 호출자가 <code>value</code> 의 컬렉션에 다른 것이 닿지 않음 (방금 만든 값) 을 보장합니다.</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">STATE</span>: <span class="t">Mutex</span>&lt;<span class="t">List</span>&lt;<span class="t">i32</span>&gt;&gt; = <span class="t">Mutex</span>::new([]);
+
+task::spawn(<span class="k">async</span> {
+    <span class="k">using</span> g = <span class="t">STATE</span>.lock() {
+        g.update(|xs| { xs.push(<span class="n">42</span>); xs });
+    }   <span class="c">// ← g.drop() → 잠금 해제 ([2.13 marker](213-marker.md))</span>
+});
+</code></pre>
+<h3 id="deadlock-회피---try_lock"><a class="anchor" tabindex="-1" href="#deadlock-회피---try_lock" aria-hidden="true">#</a>deadlock 회피 - <code>try_lock</code></h3>
+<p>deadlock 을 피하고 싶을 때는 blocking 대신 <code>try_lock</code> 으로 비차단 시도를 할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> <span class="t">STATE</span>.try_lock() {
+    v: <span class="t">MutexGuard</span>&lt;...&gt; =&gt; <span class="k">using</span> g = v { g.push(<span class="n">1</span>); },
+    <span class="k">none</span> =&gt; { log(<span class="s">"locked, skip"</span>); },
+}
+</code></pre>
+<h3 id="poisoning---없음"><a class="anchor" tabindex="-1" href="#poisoning---없음" aria-hidden="true">#</a>poisoning - <strong>없음</strong></h3>
+<p>rok 의 Mutex 는 Rust 의 PoisonError 모델과 다릅니다. panic 이 발생해도 잠금은 자동으로 해제되며, 다음 task 는 정상적으로 진입할 수 있습니다. 이렇게 설계한 이유는 두 가지입니다.</p>
+<ol>
+<li>panic 은 잡을 수 없고 프로세스를 종료하므로, panic 도중의 잠금 상태를 다른 task 가 관측하는 일이 없습니다. 에러가 <code>throw</code> 로 전파되어 <code>using</code> 블록을 벗어날 때에는 <a href="213-marker#2134-drop---using-해제-시-정리"><code>using</code> 이 Drop 을 호출</a>하므로, <code>MutexGuard</code> 의 drop 이 잠금 해제를 책임집니다.
+</li>
+<li>poison 의 의미는 보수적으로 보이지만 사용자 부담이 크고, 대부분의 경우 false positive 입니다.
+</li>
+</ol>
+<p>에러로 빠져나가기 전에 일관성 복원이 정말로 필요한 자리에서는 다음과 같이 명시적으로 처리하면 됩니다.</p>
+<pre><code class="language-rok"><span class="k">using</span> g = <span class="t">MUTEX</span>.lock() {
+    <span class="k">try</span> unsafe_op(g) <span class="k">catch</span> e {
+        g.reset_to_known_good_state();
+        <span class="k">throw</span> e;
+    };
+}
+</code></pre>
+<h2 id="2164-rwlockt---read-write-분리"><a class="anchor" tabindex="-1" href="#2164-rwlockt---read-write-분리" aria-hidden="true">#</a>2.16.4. <code>RwLock&lt;T&gt;</code> - read-write 분리</h2>
+<p>읽기가 압도적으로 많은 자리에는 <code>RwLock&lt;T&gt;</code> 가 더 적합합니다. 다중 reader 와 단일 writer 를 분리하여 throughput 을 끌어올립니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">RwLock</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">RwLock</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">RwLock</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> read(<span class="k">self</span>) -&gt; <span class="t">RwLockReadGuard</span>&lt;<span class="t">T</span>&gt;;        <span class="c">// 다중 reader OK</span>
+    <span class="k">fn</span> write(<span class="k">self</span>) -&gt; <span class="t">RwLockWriteGuard</span>&lt;<span class="t">T</span>&gt;;      <span class="c">// 단일 writer</span>
+
+    <span class="k">fn</span> try_read(<span class="k">self</span>) -&gt; <span class="t">RwLockReadGuard</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+    <span class="k">fn</span> try_write(<span class="k">self</span>) -&gt; <span class="t">RwLockWriteGuard</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+
+    <span class="k">fn</span> read_async(<span class="k">self</span>) -&gt; <span class="t">ReadFuture</span>&lt;<span class="t">T</span>&gt;;       <span class="c">// await l.read_async() - task 만 중단</span>
+    <span class="k">fn</span> write_async(<span class="k">self</span>) -&gt; <span class="t">WriteFuture</span>&lt;<span class="t">T</span>&gt;;
+}
+</code></pre>
+<p>config 나 cache 처럼 read 가 압도적으로 많은 자리에서 사용하면 좋고, write 가 드문 워크로드에서는 Mutex 보다 throughput 이 우수합니다.</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">CONFIG</span>: <span class="t">RwLock</span>&lt;<span class="t">Config</span>&gt; = <span class="t">RwLock</span>::new(<span class="t">Config</span>::default());
+
+<span class="k">using</span> c = <span class="t">CONFIG</span>.read() {        <span class="c">// 다른 reader 와 동시 OK</span>
+    process(c);
+}   <span class="c">// ← read guard drop, lock 해제</span>
+
+<span class="k">using</span> w = <span class="t">CONFIG</span>.write() {       <span class="c">// 잠시 모든 reader 차단</span>
+    w.reload_from_file();
+}
+</code></pre>
+<p><code>RwLock&lt;T&gt;</code> 는 <code>T</code> 가 <code>Send + Sync</code> 일 때만 <code>Sync</code> 이므로 (<a href="#send--sync-마커">2.16.5</a>), 여기서 <code>Config</code> 는 <code>Sync</code> 여야 합니다.</p>
+<p><code>Mutex</code> 와 마찬가지로 <code>RwLock::new(value)</code> 는 <code>value</code> 를 넘겨받습니다: 그 뒤에 호출자의 핸들을 쓰면 컴파일 에러이며, <code>using</code> 블록이 끝난 뒤 guard 의 <code>get</code> 이 돌려준 것이나 <code>set</code> 이 준 것을 쓰거나, guard 가 쥔 동안 그것을 넘기거나, 블록 안에서 그것을 돌려주는 것도 그렇습니다 (<a href="213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a>). <code>using</code> 블록 안에서 다루거나 <code>clone()</code> 을 남깁니다. <code>Mutex</code> 와 마찬가지로 <code>new</code> 와 쓰기 guard 의 <code>set</code>, <code>update</code> 는 복사본을 저장합니다.</p>
+<p><code>RwLock</code> 가드에도 같은 규칙이 적용됩니다: <code>read</code> / <code>write</code> 의 가드를 <code>using</code> 이 해제하지 않는 일반 <code>let</code> (또는 <code>if let</code>) 으로 묶거나 버리면 컴파일 에러입니다.</p>
+<h2 id="2164a-once--condvar"><a class="anchor" tabindex="-1" href="#2164a-once--condvar" aria-hidden="true">#</a>2.16.4a. <code>Once</code> / <code>Condvar</code></h2>
+<p>Rust 와 같은 모양의 두 primitive 입니다. poisoning 은 없습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Once</span> { <span class="c">/* ... */</span> }
+<span class="k">impl</span> <span class="t">Once</span> {
+    <span class="k">const</span> <span class="k">fn</span> new() -&gt; <span class="t">Once</span>;
+    <span class="k">fn</span> call_once(<span class="k">self</span>, f: <span class="k">fn</span>());          <span class="c">// 처음 한 번만 f 실행, 동시 호출자는 끝날 때까지 대기</span>
+}
+
+<span class="k">struct</span> <span class="t">Condvar</span> { <span class="c">/* ... */</span> }
+<span class="k">impl</span> <span class="t">Condvar</span> {
+    <span class="k">const</span> <span class="k">fn</span> new() -&gt; <span class="t">Condvar</span>;
+    <span class="k">fn</span> wait&lt;<span class="t">T</span>&gt;(<span class="k">self</span>, guard: <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// 잠금을 풀고 대기, 깨면 다시 잠금</span>
+    <span class="k">fn</span> wait_async&lt;<span class="t">T</span>&gt;(<span class="k">self</span>, guard: <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">CondvarWait</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// g = await cv.wait_async(g) - task 만 중단</span>
+    <span class="k">fn</span> notify_one(<span class="k">self</span>);
+    <span class="k">fn</span> notify_all(<span class="k">self</span>);
+}
+</code></pre>
+<p><code>wait</code> 는 spurious wakeup 이 있을 수 있으므로 조건을 루프에서 다시 확인합니다. <code>notify_one</code> 은 적어도 하나의 waiter 를 깨우며, async waiter 는 둘 이상 깨울 수도 있습니다.</p>
+<h3 id="async-잠금과-취소"><a class="anchor" tabindex="-1" href="#async-잠금과-취소" aria-hidden="true">#</a>async 잠금과 취소</h3>
+<p><code>lock_async</code> / <code>read_async</code> / <code>write_async</code> / <code>wait_async</code> 의 future 는 취소된 poll 에서 잠금을 잡지 않습니다 (<a href="218-task#2184-협력적-취소---taskcancel">2.18.4</a>). 취소된 <code>wait_async</code> 는 다음과 같이 끝납니다.</p>
+<ul>
+<li>mutex 가 비어 있으면 다시 잡습니다. 그래서 호출자의 <code>using</code> guard 가 평소처럼 풉니다.
+</li>
+<li>다른 task 가 잡고 있으면 잡지 않고 떠나며, 버려지는 guard 는 그 mutex 를 풀지 않습니다.
+</li>
+</ul>
+<h2 id="2164b-frozent---읽기-전용-공유"><a class="anchor" tabindex="-1" href="#2164b-frozent---읽기-전용-공유" aria-hidden="true">#</a>2.16.4b. <code>Frozen&lt;T&gt;</code> - 읽기 전용 공유</h2>
+<p>한 번 만들고 그 뒤로는 읽기만 하는 값 (설정, 신뢰 앵커, 표) 은 <code>Frozen&lt;T&gt;</code> 로 공유합니다. 어느 스레드든 잠금 없이 읽을 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Frozen</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }   <span class="c">// T: Send 이면 Sync</span>
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Frozen</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">const</span> <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Frozen</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// 다른 것이 닿지 않는 복사본을 둡니다</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;                       <span class="c">// 읽는 쪽만의 복사본</span>
+}
+</code></pre>
+<p><code>new</code> 는 넘김과 같이 <code>value</code> 가 닿는 컬렉션의 복사본을 두므로 (<a href="213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a>), 바깥의 어떤 것도 그것이 쥔 것에 닿지 않습니다. <code>get</code> 은 읽는 쪽마다 자기 복사본을 줍니다: 그것을 바꿔도 다른 읽는 쪽이 보는 것은 바뀌지 않습니다. <code>Sync</code> 인 구성 요소 (<code>Mutex</code>, 스스로 잠그는 캐시, 바뀌지 않는 <code>Sync</code> 타입의 값) 는 복사하지 않고 공유하므로, <code>get</code> 은 값의 나머지 컬렉션을 복사하는 만큼만 듭니다. 큰 읽기 전용 부분은 그 복사에서 빼 둡니다: <code>Sync</code> 타입으로 두거나, 필요한 곳에서 읽는 자기만의 <code>Frozen</code> 필드에 둡니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Settings</span> {
+    name: <span class="t">str</span>;
+    limits: <span class="t">List</span>&lt;<span class="t">i64</span>&gt;;               <span class="c">// get 마다 복사: 작게</span>
+    table: <span class="t">Frozen</span>&lt;<span class="t">List</span>&lt;<span class="t">Entry</span>&gt;&gt;;      <span class="c">// 공유: 필요한 곳에서 table.get()</span>
+}
+
+<span class="k">static</span> <span class="t">SETTINGS</span>: <span class="t">Frozen</span>&lt;<span class="t">Settings</span>&gt; = <span class="t">Frozen</span>::new(load());
+</code></pre>
+<p>표준 라이브러리의 TLS <code>Certificate</code> 가 그런 타입입니다: 파싱한 뒤로 바뀌지 않고 접근자가 복사본을 주므로, <code>Frozen&lt;ClientConfig&gt;</code> 의 <code>get</code> 은 신뢰 앵커를 공유합니다.</p>
+<h2 id="2165-cellt---single-threaded-interior"><a class="anchor" tabindex="-1" href="#2165-cellt---single-threaded-interior" aria-hidden="true">#</a>2.16.5. <code>Cell&lt;T&gt;</code> - single-threaded interior</h2>
+<p>마지막으로 <code>Cell&lt;T&gt;</code> 는 단일 task 안에서만 동작하는 interior mutability 를 제공합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Cell</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>            <span class="k">where</span> <span class="t">T</span>: <span class="t">Copy</span>;
+    <span class="k">fn</span> set(<span class="k">ref</span> <span class="k">self</span>, value: <span class="t">T</span>);
+    <span class="k">fn</span> replace(<span class="k">ref</span> <span class="k">self</span>, value: <span class="t">T</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> take(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">T</span>       <span class="k">where</span> <span class="t">T</span>: <span class="t">Default</span>;
+}
+</code></pre>
+<p><code>Cell&lt;T&gt;</code> 는 thread-local interior mutability 를 의미하므로 multi-thread 에서는 안전하지 않습니다. 단일 task 안에서만 공유할 수 있고, 잠금이 없으므로 매우 빠르다는 특징이 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> c: <span class="t">Cell</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Cell</span>::new(<span class="n">0</span>);
+c.set(<span class="n">42</span>);
+<span class="k">let</span> v = c.get();          <span class="c">//→ 42</span>
+
+<span class="c">// task 간 공유 - 컴파일 에러 (Cell 은 Send / Sync 가 정의되지 않음)</span>
+task::spawn(<span class="k">async</span> { c.set(<span class="n">100</span>) });       <span class="c">// ERROR - Cell 은 cross-task 안전 X</span>
+</code></pre>
+<h3 id="send--sync-마커"><a class="anchor" tabindex="-1" href="#send--sync-마커" aria-hidden="true">#</a><code>Send</code> / <code>Sync</code> 마커</h3>
+<p><code>Send</code> / <code>Sync</code> 는 <a href="213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a> 의 자동 marker 트레잇입니다. 이 장의 타입은 다음 정책을 따릅니다.</p>
+<ul>
+<li><code>Atomic&lt;T&gt;</code>: Send + Sync
+</li>
+<li><code>Mutex&lt;T&gt;</code>: <code>T: Send</code> 이면 Send + Sync
+</li>
+<li><code>RwLock&lt;T&gt;</code>: <code>T: Send</code> 이면 Send, <code>T: Send + Sync</code> 이면 Sync - 여러 reader 가 값을 동시에 공유하므로, 컬렉션 (<code>!Sync</code>) 의 <code>RwLock</code> 은 스레드 사이에서 공유할 수 없습니다. <code>Mutex&lt;T&gt;</code> 를 씁니다.
+</li>
+<li><code>MutexGuard&lt;T&gt;</code>, <code>RwLockReadGuard&lt;T&gt;</code>, <code>RwLockWriteGuard&lt;T&gt;</code>: Send, <code>!Sync</code> - guard 는 자기 <code>using</code> 블록 안에서만 씁니다
+</li>
+<li><code>Frozen&lt;T&gt;</code>: <code>T: Send</code> 이면 Sync (2.16.4b)
+</li>
+<li><code>Cell&lt;T&gt;</code>: 없음 (single-task only) - 위 <code>task::spawn</code> 이 에러인 이유는 <code>async</code> 블록이 <code>Cell</code> 을 캡처해 <code>Send</code> 가 아니기 때문입니다
+</li>
+</ul>
+<h2 id="2166-모듈-매핑"><a class="anchor" tabindex="-1" href="#2166-모듈-매핑" aria-hidden="true">#</a>2.16.6. 모듈 매핑</h2>
+<p>각 primitive 의 구현은 다음과 같이 매핑됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>모듈</th><th>내부 구조</th></tr></thead>
+<tbody>
+<tr><td><code>Atomic&lt;T&gt;</code></td><td><code>rok::core::sync::atomic</code></td><td>LLVM atomic ops (<code>rok.atomic.*</code>)</td></tr>
+<tr><td><code>Mutex&lt;T&gt;</code></td><td><code>rok::core::sync::mutex</code></td><td>futex / wait queue (target 별)</td></tr>
+<tr><td><code>RwLock&lt;T&gt;</code></td><td><code>rok::core::sync::rwlock</code></td><td>futex + reader counter</td></tr>
+<tr><td><code>Cell&lt;T&gt;</code></td><td><code>rok::core::sync::cell</code></td><td>단순 wrapper, no lock</td></tr>
+<tr><td><code>MutexGuard</code></td><td><code>rok::core::sync::mutex</code></td><td>RAII via Drop</td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/216-sync.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="215-string"><small>Previous</small>2.15. 문자열 - str / char / c_char</a><a class="next" href="217-channel"><small>Next</small>2.17. channel - 메시지 패싱</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

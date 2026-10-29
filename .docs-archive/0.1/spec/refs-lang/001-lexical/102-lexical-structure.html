@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.2. Lexical structure - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter gives the overall picture of how a stream of characters becomes a stream of tokens. The detailed format of each token kind is defined in subsequent...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/001-lexical/102-lexical-structure.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.2. Lexical structure - rok docs">
+<meta property="og:description" content="This chapter gives the overall picture of how a stream of characters becomes a stream of tokens. The detailed format of each token kind is defined in subsequent...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/001-lexical/102-lexical-structure.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/001-lexical/102-lexical-structure.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/001-lexical/102-lexical-structure.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">1. Lexical structure</a></p><ul class="pages"><li><a href="101-source-files">1.1. Source files</a></li><li class="cur"><a aria-current="page" href="102-lexical-structure">1.2. Lexical structure</a><ul class="toc"><li><a href="#121-tokens">1.2.1. Tokens</a></li><li><a href="#122-whitespace">1.2.2. Whitespace</a></li><li><a href="#123-comments">1.2.3. Comments</a></li><li><a href="#124-compiler-output">1.2.4. Compiler output</a></li></ul></li><li><a href="103-statement-terminator">1.3. Statement terminator</a></li><li><a href="104-identifiers">1.4. Identifiers</a></li><li><a href="105-keywords">1.5. Keywords</a></li><li><a href="106-numeric-literals">1.6. Numeric literals</a></li><li><a href="107-string-literals">1.7. String literals</a></li><li><a href="108-character-literals">1.8. Character literals</a></li><li><a href="109-other-literals">1.9. Boolean and sentinel literals</a></li><li><a href="110-punctuation-and-operator-tokens">1.10. Punctuation and operator tokens</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="12-lexical-structure 12-어휘-구조 121-tokens 121-토큰 122-whitespace 122-공백 123-comments 123-주석 shebang-line shebang-줄 line-comments 한-줄-주석 block-comments 블록-주석 doc-comments 문서-주석 124-compiler-output 124-컴파일러-출력"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/001-lexical/102-lexical-structure" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="12-lexical-structure"><a class="anchor" tabindex="-1" href="#12-lexical-structure" aria-hidden="true">#</a>1.2. Lexical structure</h1>
+<p>This chapter gives the overall picture of how a stream of characters becomes a stream of tokens. The detailed format of each token kind is defined in subsequent documents; here only the outline is given.</p>
+<pre><code>token           ::= identifier
+                  | keyword
+                  | numeric_lit
+                  | string_lit
+                  | byte_string_lit
+                  | char_lit
+                  | sentinel_lit                  // true | false | none
+                  | punctuation
+whitespace      ::= space_char+
+                  | line_comment
+                  | block_comment
+space_char      ::= U+0009 | U+000A | U+000B | U+000C | U+000D | U+0020
+line_comment    ::= &quot;//&quot; &lt;any char except line_terminator&gt;* line_terminator
+block_comment   ::= &quot;/*&quot; &lt;any char&gt;* &quot;*/&quot;          // recursive
+shebang_line    ::= &quot;#!&quot; &lt;any char except line_terminator&gt;*   // first line only, see 1.2.3
+line_terminator ::= U+000A | U+000D U+000A? | U+000D
+</code></pre>
+<h2 id="121-tokens"><a class="anchor" tabindex="-1" href="#121-tokens" aria-hidden="true">#</a>1.2.1. Tokens</h2>
+<p>The compiler's lexical analyzer (the <strong>lexer</strong>) reads a source file and produces a stream of tokens. The tokens fall into the following kinds.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Kind</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Identifier</td><td><code>count</code>, <code>α</code>, <code>Δt</code></td></tr>
+<tr><td>Keyword</td><td><code>let</code>, <code>if</code>, <code>fn</code></td></tr>
+<tr><td>Numeric literal</td><td><code>42</code>, <code>3.14</code>, <code>0xFF</code>, <code>1_000</code></td></tr>
+<tr><td>String literal</td><td><code>&quot;hello&quot;</code>, <code>r&quot;raw\n&quot;</code>, <code>f&quot;x = {x}&quot;</code>, <code>b&quot;bytes&quot;</code></td></tr>
+<tr><td>Character literal</td><td><code>'A'</code>, <code>c'A'</code></td></tr>
+<tr><td>Boolean / sentinel literal</td><td><code>true</code>, <code>false</code>, <code>none</code></td></tr>
+<tr><td>Operator / punctuation</td><td><code>+</code>, <code>==</code>, <code>..</code>, <code>[</code>, <code>;</code></td></tr>
+</tbody></table></div>
+<p>The exact format rules for each kind are defined in turn in the following documents.</p>
+<h2 id="122-whitespace"><a class="anchor" tabindex="-1" href="#122-whitespace" aria-hidden="true">#</a>1.2.2. Whitespace</h2>
+<p>Whitespace characters are meaningful only as separators between tokens and do not form tokens themselves.</p>
+<p>The following code points are recognized as whitespace.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Code point</th><th>Name</th></tr></thead>
+<tbody>
+<tr><td><code>U+0009</code></td><td>Tab (TAB)</td></tr>
+<tr><td><code>U+000A</code></td><td>Line feed (LF)</td></tr>
+<tr><td><code>U+000B</code></td><td>Vertical tab (VT)</td></tr>
+<tr><td><code>U+000C</code></td><td>Form feed (FF)</td></tr>
+<tr><td><code>U+000D</code></td><td>Carriage return (CR)</td></tr>
+<tr><td><code>U+0020</code></td><td>Space</td></tr>
+</tbody></table></div>
+<p>Unicode space-like characters not in the table above (<code>U+00A0</code> NO-BREAK SPACE, <code>U+200B</code> ZERO WIDTH SPACE, etc.) are not whitespace. They appear only as ordinary code points inside identifiers or strings.</p>
+<p>Indentation is not significant. Python-style significant indentation is not adopted.</p>
+<h2 id="123-comments"><a class="anchor" tabindex="-1" href="#123-comments" aria-hidden="true">#</a>1.2.3. Comments</h2>
+<p>rok supports three kinds of comments: line, block and doc comments. A shebang line on a file's first line is ignored like a comment.</p>
+<h3 id="shebang-line"><a class="anchor" tabindex="-1" href="#shebang-line" aria-hidden="true">#</a>Shebang line</h3>
+<p>If a file's first line (after a BOM) starts with <code>#!</code>, that line is a shebang line and is ignored like a comment, so a script with <code>#!/usr/bin/env rok</code> runs as <code>./script.rok</code> (<a href="../009-tools/910-rok-frontend#9101-subcommands-and-global-options">9.10.1</a>). The exception is when the first token after <code>#!</code>, past whitespace and comments other than doc comments, is <code>[</code>: then <code>#!</code> begins an inner attribute (<code>#![allow(unused)]</code>). <code>#!</code> on any later line is not a shebang line.</p>
+<h3 id="line-comments"><a class="anchor" tabindex="-1" href="#line-comments" aria-hidden="true">#</a>Line comments</h3>
+<pre><code class="language-rok"><span class="c">// comment to the end of this line</span>
+</code></pre>
+<p>From <code>//</code> to the line terminator of that line is a comment. The line break itself is not part of the comment.</p>
+<h3 id="block-comments"><a class="anchor" tabindex="-1" href="#block-comments" aria-hidden="true">#</a>Block comments</h3>
+<pre><code class="language-rok"><span class="c">/* spanning
+   multiple lines */</span>
+</code></pre>
+<p>The text between <code>/*</code> and <code>*/</code> is a comment, and nesting is allowed. The outer comment closes only after inner <code>/*</code>/<code>*/</code> pairs are properly closed (the same rule as Rust), which is useful for temporarily disabling large regions of code.</p>
+<pre><code class="language-rok"><span class="c">/* outer
+   /* inner */</span>
+   still a comment */
+</code></pre>
+<h3 id="doc-comments"><a class="anchor" tabindex="-1" href="#doc-comments" aria-hidden="true">#</a>Doc comments</h3>
+<p>There are four forms of doc comments, as in Rust.</p>
+<pre><code class="language-rok"><span class="c">/// outer doc comment (the following item)</span>
+<span class="c">//! inner doc comment (the enclosing file, module or function)</span>
+<span class="c">/** outer block doc comment */</span>
+<span class="c">/*! inner block doc comment */</span>
+</code></pre>
+<ul>
+<li>A line doc comment extends to the line terminator; <code>/// text</code> is <code>#[doc = &quot;text&quot;]</code> (one space after the marker is dropped) and <code>//! text</code> is <code>#![doc = &quot;text&quot;]</code> (<a href="../006-meta-system/602-built-in-attributes#628-doc---doc-comment-form">6.2.8</a>). A line starting with <code>////</code> is an ordinary comment.
+</li>
+<li>A block doc comment extends to its matching <code>*/</code> and nests like a block comment. <code>/**/</code>, <code>/***/</code> and a comment starting with <code>/***</code> are ordinary comments. Its text is one <code>#[doc]</code> / <code>#![doc]</code> attribute. A blank first line and a blank last line are dropped. When the comment spans lines and every line after the first starts with optional whitespace and <code>*</code>, that prefix is removed. Then the indentation common to the non-blank lines and the whitespace before <code>*/</code> are removed. Line breaks are LF.
+</li>
+<li>An inner doc comment appears only at the start of a file, a module body or a function body. Anywhere else it is an error.
+</li>
+<li>An outer doc comment documents the item that follows. One that documents nothing (before <code>}</code>, <code>)</code>, <code>]</code> or the end of the file) is an error, and so is one on a function parameter. One on a statement, match arm, struct literal field, tuple field or expression is kept by no tool and triggers the <code>unused_doc_comments</code> lint (<a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">6.2.9</a>).
+</li>
+<li>The ROKHIR interface text of a prebuilt package (<a href="../009-tools/904-rokhir-bytecode">9.4</a>) preserves doc comments.
+</li>
+</ul>
+<h2 id="124-compiler-output"><a class="anchor" tabindex="-1" href="#124-compiler-output" aria-hidden="true">#</a>1.2.4. Compiler output</h2>
+<p>The lexer's output consists of the token stream and position information. The position information follows the diagnostic unit rules of <a href="101-source-files">Source files</a>.</p>
+<p>This output is the sole input to the next stage, the parser; the parser does not look at the original source again.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/001-lexical/102-lexical-structure.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="101-source-files"><small>Previous</small>1.1. Source files</a><a class="next" href="103-statement-terminator"><small>Next</small>1.3. Statement terminator</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. Unsafe tier - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Unsafe tier 는 저수준이거나 위험한 영역에 속하는 표준 라이브러리 항목을 정의하는 자리입니다. raw pointer, transmute, raw allocation, GC pinning, FFI primitive, MLIR 다이얼렉트 직접 접근과 같이 안전 추상화 바깥에서 동작...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1. Unsafe tier - rok docs">
+<meta property="og:description" content="Unsafe tier 는 저수준이거나 위험한 영역에 속하는 표준 라이브러리 항목을 정의하는 자리입니다. raw pointer, transmute, raw allocation, GC pinning, FFI primitive, MLIR 다이얼렉트 직접 접근과 같이 안전 추상화 바깥에서 동작...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a class="cur" href="./">1. Unsafe tier</a></p><ul class="toc"><li><a href="#의존성">의존성</a></li><li><a href="#사용자-import-정책">사용자 import 정책</a></li><li><a href="#모듈-목차">모듈 목차</a></li><li><a href="#핵심-디자인-원칙">핵심 디자인 원칙</a></li></ul><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="1-unsafe-tier 1-unsafe-tier 의존성 dependencies 사용자-import-정책 user-import-policy 모듈-목차 module-contents pointer-계열-5-종 pointer-family-5-kinds 메모리--변환 memory--conversion gc-통합 gc-integration ffi ffi mlir-backend mlir-backend 핵심-디자인-원칙 core-design-principles 1-strict-provenance---rust-2024-모델-채택 1-strict-provenance---adopting-the-rust-2024-model 2-arity-가-type-encoded---zig-모델 2-arity-is-type-encoded---the-zig-model 3-gc--raw-pointer---두-type-level-분리 3-gc--raw-pointer---two-separate-type-levels 4-cast-는-명시-named-operation-만 4-casts-only-as-explicitly-named-operations 5-raii-via-using-block---finalizer-에-의존하지-않습니다 5-raii-via-using-block---no-reliance-on-finalizers"><a href="../../../../spec/refs-standard-libraries/100-bare/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="1-unsafe-tier"><a class="anchor" tabindex="-1" href="#1-unsafe-tier" aria-hidden="true">#</a>1. Unsafe tier</h1>
+<p>Unsafe tier 는 저수준이거나 위험한 영역에 속하는 표준 라이브러리 항목을 정의하는 자리입니다. raw pointer, transmute, raw allocation, GC pinning, FFI primitive, MLIR 다이얼렉트 직접 접근과 같이 안전 추상화 바깥에서 동작하는 도구들이 모두 여기에 모입니다.</p>
+<h2 id="의존성"><a class="anchor" tabindex="-1" href="#의존성" aria-hidden="true">#</a>의존성</h2>
+<p>위쪽으로는 runtime 이 노출하는 <code>extern &quot;C&quot;</code> 심볼에만 의존합니다. 한편 아래쪽으로는 <code>rok</code>, <code>std</code>, 그리고 사용자 코드가 의존자가 되지만, 어디까지나 명시 import 가 있을 때에만 그렇습니다.</p>
+<h2 id="사용자-import-정책"><a class="anchor" tabindex="-1" href="#사용자-import-정책" aria-hidden="true">#</a>사용자 import 정책</h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::ptr::<span class="t">Ptr</span>;                              <span class="c">// 명시 import 필수 - 위험 시그널</span>
+<span class="k">use</span> rok::bare::alloc::{alloc, <span class="t">Layout</span>};
+
+<span class="k">let</span> layout = <span class="k">try</span>! <span class="t">Layout</span>::array::&lt;<span class="t">u8</span>&gt;(<span class="n">1024</span>);
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = <span class="k">unsafe</span> { alloc(layout) };
+</code></pre>
+<p>묵시적으로 적용되는 <code>use rok::core::**;</code> 는 unsafe 항목을 포함하지 않습니다. 따라서 <code>rok::bare::*</code> 는 별도의 명시 import 를 강제하며, 이로써 사용자가 위험 영역으로 진입하는 순간이 코드 위에 시각적으로 드러납니다.</p>
+<h2 id="모듈-목차"><a class="anchor" tabindex="-1" href="#모듈-목차" aria-hidden="true">#</a>모듈 목차</h2>
+<h3 id="pointer-계열-5-종"><a class="anchor" tabindex="-1" href="#pointer-계열-5-종" aria-hidden="true">#</a>Pointer 계열 (5 종)</h3>
+<ul>
+<li><a href="101-ptr">1.1. <code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code> / <code>ManyPtr&lt;T&gt;</code> / <code>CPtr&lt;T&gt;</code> - Zig 식 arity-encoded</a>
+</li>
+<li><a href="102-cast">1.2. cast 연산 - <code>ptr_cast</code>, <code>align_cast</code>, <code>const_cast</code>, <code>reinterpret</code></a>
+</li>
+</ul>
+<h3 id="메모리--변환"><a class="anchor" tabindex="-1" href="#메모리--변환" aria-hidden="true">#</a>메모리 / 변환</h3>
+<ul>
+<li><a href="103-mem">1.3. <code>MaybeUninit&lt;T&gt;</code> / <code>transmute_unchecked</code> - bit-level 변환</a>
+</li>
+<li><a href="104-alloc">1.4. raw allocation (<code>alloc</code>, <code>dealloc</code>, <code>realloc</code>)</a>
+</li>
+<li><a href="105-volatile">1.5. volatile 메모리 접근 - <code>volatile::read</code> / <code>volatile::write</code></a>
+</li>
+</ul>
+<h3 id="gc-통합"><a class="anchor" tabindex="-1" href="#gc-통합" aria-hidden="true">#</a>GC 통합</h3>
+<ul>
+<li><a href="106-gc-pin">1.6. <code>Pinned&lt;T&gt;</code> / <code>gc::pin</code> - GC 가 객체를 이동 못 하게</a>
+</li>
+</ul>
+<h3 id="ffi"><a class="anchor" tabindex="-1" href="#ffi" aria-hidden="true">#</a>FFI</h3>
+<ul>
+<li><a href="107-ffi">1.7. extern &quot;C&quot; / <code>CStr</code> / <code>CString</code> / <code>CPtr</code> - C ABI 호환</a>
+</li>
+<li><a href="108-wit">1.8. WASM Component Model 인터페이스 (<code>ffi.wit</code>)</a>
+</li>
+</ul>
+<h3 id="mlir-backend"><a class="anchor" tabindex="-1" href="#mlir-backend" aria-hidden="true">#</a>MLIR backend</h3>
+<ul>
+<li><a href="109-mlir">1.9. <code>rok::bare::mlir</code> - MLIR 다이얼렉트 직접 접근</a>
+</li>
+<li><a href="110-mlir-plugin">1.10. <code>rok::bare::mlir::plugin</code> - 사용자 정의 다이얼렉트 등록</a>
+</li>
+</ul>
+<h2 id="핵심-디자인-원칙"><a class="anchor" tabindex="-1" href="#핵심-디자인-원칙" aria-hidden="true">#</a>핵심 디자인 원칙</h2>
+<h3 id="1-strict-provenance---rust-2024-모델-채택"><a class="anchor" tabindex="-1" href="#1-strict-provenance---rust-2024-모델-채택" aria-hidden="true">#</a>1. Strict provenance - Rust 2024 모델 채택</h3>
+<p><code>Ptr&lt;T&gt;</code> 는 (address, provenance) 의 pair 이며 단순한 정수와 다릅니다. 그래서 <code>usize ↔ Ptr&lt;T&gt;</code> round-trip 은 provenance 를 잃어버리는 동작이 되고, 명시적인 escape hatch 를 거치는 경로에서만 허용됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = ...;
+<span class="k">let</span> addr: <span class="t">usize</span> = p.addr();              <span class="c">// 안전 - 주소만</span>
+<span class="k">let</span> q: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = p.with_addr(addr + <span class="n">4</span>); <span class="c">// 안전 - provenance 보존, address 만 변경</span>
+<span class="k">let</span> r: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::from_exposed_provenance(addr);  <span class="c">// unsafe - provenance 새로</span>
+</code></pre>
+<p><code>as</code> cast 는 pointer 에 절대 사용할 수 없습니다. 이 방향성은 <a href="https://www.ralfj.de/blog/2022/04/11/provenance-exposed.html">Ralf Jung &quot;Pointers Are Complicated&quot;</a> 가 권위로서 자리잡고 있고, Rust 1.84 (Dec 2024) 가 안정화한 모델과 동형입니다.</p>
+<h3 id="2-arity-가-type-encoded---zig-모델"><a class="anchor" tabindex="-1" href="#2-arity-가-type-encoded---zig-모델" aria-hidden="true">#</a>2. Arity 가 type encoded - Zig 모델</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>의미</th><th>C 대응</th></tr></thead>
+<tbody>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>정확히 <strong>하나</strong> 의 T</td><td><code>T*</code> (single)</td></tr>
+<tr><td><code>ConstPtr&lt;T&gt;</code></td><td>정확히 <strong>하나</strong> 의 const T</td><td><code>const T*</code></td></tr>
+<tr><td><code>ManyPtr&lt;T&gt;</code></td><td><strong>연속 N개</strong> T (길이 모름, C 호환)</td><td><code>T*</code> (array)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><strong>연속 N개</strong> T (길이 포함)</td><td>(ptr, len)</td></tr>
+<tr><td><code>CPtr&lt;T&gt;</code></td><td>C 호환 <strong>nullable</strong> pointer</td><td><code>T*</code> (nullable)</td></tr>
+</tbody></table></div>
+<p><code>Slice&lt;T&gt;</code> 는 <a href="../200-core/209-collections">2.9 collections</a> 에 정의된 안전한 view 이므로 unsafe tier 에 속하지 않습니다. 따라서 본 장에서는 <code>Slice</code> 의 underlying ptr 을 raw 로 노출하는 경로만을 다룹니다.</p>
+<h3 id="3-gc--raw-pointer---두-type-level-분리"><a class="anchor" tabindex="-1" href="#3-gc--raw-pointer---두-type-level-분리" aria-hidden="true">#</a>3. GC + raw pointer - 두 type level 분리</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>type</th><th>의미</th><th>GC 이동 시</th></tr></thead>
+<tbody>
+<tr><td><code>GcPtr&lt;T&gt;</code></td><td>GC heap 의 객체 ref (보통 <code>T</code>)</td><td><strong>자동 갱신</strong></td></tr>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td>raw pointer (unmanaged 또는 pinned)</td><td><strong>무효</strong></td></tr>
+</tbody></table></div>
+<p>이 구분은 Go 1.21 의 <code>runtime.Pinner</code> 모델을 따릅니다. raw <code>Ptr&lt;T&gt;</code> 는 GC pin 안에서만 유효하며, 따라서 pinning 이 해제된 뒤에도 사용하면 UB 가 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> obj: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];                <span class="c">// GcPtr (자동)</span>
+<span class="k">using</span> pin = rok::bare::gc::pin(obj) {           <span class="c">// pin 시작</span>
+    <span class="k">let</span> raw: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::list_data(obj);
+    ffi_function(raw, obj.len());
+}                                              <span class="c">// pin 해제 - raw 무효</span>
+</code></pre>
+<h3 id="4-cast-는-명시-named-operation-만"><a class="anchor" tabindex="-1" href="#4-cast-는-명시-named-operation-만" aria-hidden="true">#</a>4. Cast 는 명시 named operation 만</h3>
+<p>C 와 Rust 에서 <code>as</code> cast 가 pointer 위에서 일으키는 함정은 가장 큰 위험 요소입니다. 그래서 rok 은 모든 unsafe cast 를 명시적으로 이름 붙여진 함수로만 노출합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>C/Rust 표기</th><th>rok 표기</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>ptr as *U</code></td><td><code>rok::bare::ptr_cast&lt;U&gt;(p)</code></td><td>type 만 변경 (provenance 보존)</td></tr>
+<tr><td><code>ptr as *Aligned</code></td><td><code>rok::bare::align_cast(p)</code></td><td>alignment up-cast (debug 검증)</td></tr>
+<tr><td><code>*const → *mut</code></td><td><code>rok::bare::const_cast(p)</code></td><td>const 제거</td></tr>
+<tr><td><code>transmute&lt;A,B&gt;</code></td><td><code>rok::bare::reinterpret&lt;A:Pod, B:Pod&gt;(a)</code></td><td>bit reinterpret (Pod 강제)</td></tr>
+</tbody></table></div>
+<h3 id="5-raii-via-using-block---finalizer-에-의존하지-않습니다"><a class="anchor" tabindex="-1" href="#5-raii-via-using-block---finalizer-에-의존하지-않습니다" aria-hidden="true">#</a>5. RAII via <code>using</code> block - finalizer 에 의존하지 않습니다</h3>
+<p>GC 환경에서 finalizer 의 신뢰성이 부족하다는 사실은 모든 GC 언어가 학습한 경험입니다. 따라서 file, socket, mutex 같은 외부 자원은 명시적인 <code>using</code> 블록으로 해제합니다. GC 는 <code>drop</code> 을 부르지 않으며 finalizer 는 없습니다. 해제하지 않은 자원은 <code>unclosed_resource</code> lint 가 알립니다 (<a href="../../refs-lang/006-meta-system/602-built-in-attributes#629-allow--deny--warn-린트-제어">refs-lang 6.2.9</a>).</p>
+<pre><code class="language-rok"><span class="k">using</span> f = rok::bare::ffi::open(path) {
+    f.read(...);
+}     <span class="c">// ← scope 끝에서 _보장된_ close (RAII via Drop)</span>
+
+<span class="c">// 일반 GC 객체는 using 불필요 - GC 가 자동 회수</span>
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];     <span class="c">// GC 자동</span>
+</code></pre>
+<p>권위는 <a href="../200-core/213-marker">2.13 marker</a> 의 <code>Drop</code> 트레잇이 가지며, <code>using</code> 블록의 syntax 권위는 <a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 using 표현식</a> 에 있습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../000-meta/005-notation"><small>Previous</small>0.5. 표기법</a><a class="next" href="101-ptr"><small>Next</small>1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

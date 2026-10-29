@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.1. Execution engines and user surfaces - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok's execution model has two axes. One is the execution engine, which determines how code becomes machine code; the other is the user surface, the environment ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/001-execution-modes.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.1. Execution engines and user surfaces - rok docs">
+<meta property="og:description" content="rok's execution model has two axes. One is the execution engine, which determines how code becomes machine code; the other is the user surface, the environment ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/001-execution-modes.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/001-execution-modes.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/001-execution-modes.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">0. Introduction</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="001-execution-modes">0.1. Execution engines and user surfaces</a><ul class="toc"><li><a href="#011-execution-engines">0.1.1. Execution engines</a></li><li><a href="#012-user-surfaces">0.1.2. User surfaces</a></li><li><a href="#013-mapping-between-engines-and-surfaces">0.1.3. Mapping between engines and surfaces</a></li><li><a href="#014-semantic-baseline">0.1.4. Semantic baseline</a></li></ul></li><li><a href="002-pipeline">0.2. Compilation pipeline</a></li><li><a href="003-source-units">0.3. Source units</a></li><li><a href="004-language-vs-standard-libraries">0.4. Boundary between the language and the standard libraries</a></li><li><a href="005-standard-libraries-tiers">0.5. Standard library tiers</a></li><li><a href="006-platform-targets">0.6. Platform targets</a></li><li><a href="007-glossary">0.7. Glossary</a></li><li><a href="008-notation">0.8. Notation</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="01-execution-engines-and-user-surfaces 01-실행-엔진과-사용자-표면 011-execution-engines 011-실행-엔진 jit-just-in-time jit-just-in-time aot-ahead-of-time aot-ahead-of-time the-semantics-are-the-same 의미론은-같습니다 they-share-the-same-pipeline 같은-파이프라인을-공유합니다 012-user-surfaces 012-사용자-표면 repl repl jupyter jupyter aot-artifacts aot-산출물 013-mapping-between-engines-and-surfaces 013-엔진과-표면의-매핑 014-semantic-baseline 014-의미의-기준"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/000-meta/001-execution-modes" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="01-execution-engines-and-user-surfaces"><a class="anchor" tabindex="-1" href="#01-execution-engines-and-user-surfaces" aria-hidden="true">#</a>0.1. Execution engines and user surfaces</h1>
+<p>rok's execution model has two axes. One is the execution engine, which determines how code becomes machine code; the other is the user surface, the environment in which the user enters code and receives results. There are two engines and three surfaces. Because several surfaces share the same engine, there are fewer engines than surfaces.</p>
+<h2 id="011-execution-engines"><a class="anchor" tabindex="-1" href="#011-execution-engines" aria-hidden="true">#</a>0.1.1. Execution engines</h2>
+<h3 id="jit-just-in-time"><a class="anchor" tabindex="-1" href="#jit-just-in-time" aria-hidden="true">#</a>JIT (Just-in-Time)</h3>
+<p>The JIT engine compiles and runs code fragments as soon as they are entered. One input unit, i.e. one line or one cell, can refer to the state accumulated up to that point: variables, functions, imported modules, and so on. When a new input overrides an existing definition, subsequent inputs see the new definition. Compilation results are cached in memory and on disk, so re-running the same input completes immediately.</p>
+<h3 id="aot-ahead-of-time"><a class="anchor" tabindex="-1" href="#aot-ahead-of-time" aria-hidden="true">#</a>AOT (Ahead-of-Time)</h3>
+<p>The AOT engine compiles the entire source ahead of time into a single artifact: an executable or a static library <code>.a</code>. No compilation cost is incurred at startup, and the result can be linked as a library from other rok code. Adding new code at run time, however, is not possible.</p>
+<h3 id="the-semantics-are-the-same"><a class="anchor" tabindex="-1" href="#the-semantics-are-the-same" aria-hidden="true">#</a>The semantics are the same</h3>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>The two engines share the same semantics. Code that works under JIT produces the same result in an AOT build. The difference lies only in <strong>when compilation happens</strong>. This specification applies to both engines simultaneously; no semantics apply to only one of them.</p>
+</div>
+<p>This principle also applies to the entry point. Input to the REPL and Jupyter has the same meaning as appending top-level statements and items, in order, to the end of <code>main.rok</code> in an executable package. Only session operations - re-declaring the same name with <code>let</code> at cell top level to create a new binding, or re-running a cell - are specific to the interactive surfaces (<a href="../004-functions/416-entry-point#41610-relationship-to-jit--repl">4.16.10</a>).</p>
+<p>The abbreviations JIT and AOT are used as given in the <a href="007-glossary">glossary</a>.</p>
+<h3 id="they-share-the-same-pipeline"><a class="anchor" tabindex="-1" href="#they-share-the-same-pipeline" aria-hidden="true">#</a>They share the same pipeline</h3>
+<p>JIT and AOT both pass through the same compilation pipeline up to rok-mir (<a href="002-pipeline">0.2. Compilation pipeline</a>). They diverge only in code generation. The <strong>JIT engine</strong> compiles each input with rok's native backend straight to machine code and runs it in a host process that lives for the session (<a href="../009-tools/906-jit-engine">9.6</a>). The <strong>AOT engine</strong> generates code with the native backend at <code>-O0</code> and with the MLIR → LLVM pipeline at <code>-O1</code> and above, and links a native binary (<a href="../009-tools/902-aot-pipeline">9.2</a>). Both backends follow the same runtime ABI.</p>
+<p>In this structure a single compiler implementation serves both engines. Any behavioral difference must therefore be attributed not to the compiler but to the run-time environment: memory, threads, OS resources.</p>
+<h2 id="012-user-surfaces"><a class="anchor" tabindex="-1" href="#012-user-surfaces" aria-hidden="true">#</a>0.1.2. User surfaces</h2>
+<h3 id="repl"><a class="anchor" tabindex="-1" href="#repl" aria-hidden="true">#</a>REPL</h3>
+<p>On the REPL surface, a line or expression entered in the terminal is evaluated immediately and its result is printed. It is used mainly for exploration, demonstrating formulas and checking types. Variable and function definitions accumulate across inputs, and the value and type of the last expression are displayed automatically.</p>
+<p>The engine is JIT, and the input unit is one line or one expression.</p>
+<h3 id="jupyter"><a class="anchor" tabindex="-1" href="#jupyter" aria-hidden="true">#</a>Jupyter</h3>
+<p>The Jupyter surface runs as the rok kernel for Jupyter / JupyterLab. Evaluation is per cell, and results remain in the notebook as visualizations, tables and text. This supports the standard data analysis workflow; re-running a cell replaces the previous definitions.</p>
+<p>The engine is JIT, and the input unit is one cell. A Jupyter frontend (JupyterLab, Notebook, VS Code, etc.) runs the rok kernel as a separate process and communicates with it over the ZeroMQ-based Jupyter wire protocol (<a href="../009-tools/908-jupyter-integration">9.8</a>). The kernel uses the OS file system, network and external processes directly.</p>
+<h3 id="aot-artifacts"><a class="anchor" tabindex="-1" href="#aot-artifacts" aria-hidden="true">#</a>AOT artifacts</h3>
+<p>On the AOT artifact surface, an executable built from source is run directly, or a produced static library is linked into another build.</p>
+<p>The engine is AOT.</p>
+<h2 id="013-mapping-between-engines-and-surfaces"><a class="anchor" tabindex="-1" href="#013-mapping-between-engines-and-surfaces" aria-hidden="true">#</a>0.1.3. Mapping between engines and surfaces</h2>
+<pre><code>              ┌── REPL (terminal)
+   JIT  ──────┤
+              └── Jupyter (kernel, ZMQ)
+
+   AOT  ────── direct artifact execution
+</code></pre>
+<p>Three surfaces share two engines.</p>
+<h2 id="014-semantic-baseline"><a class="anchor" tabindex="-1" href="#014-semantic-baseline" aria-hidden="true">#</a>0.1.4. Semantic baseline</h2>
+<p>Where the specification is ambiguous, AOT semantics take precedence. JIT reproduces AOT semantics cell by cell.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/000-meta/001-execution-modes.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>0. Introduction</a><a class="next" href="002-pipeline"><small>Next</small>0.2. Compilation pipeline</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

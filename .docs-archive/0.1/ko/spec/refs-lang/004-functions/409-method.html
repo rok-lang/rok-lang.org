@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.9. 메서드 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 문서에서는 impl 안에서 정의되는 메서드의 매개변수와 호출 규약을 자세히 정의합니다. 본 문서는 함수 사양의 일부이며, 메서드와 자유 함수의 차이를 중심으로 다룹니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/409-method.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.9. 메서드 - rok docs">
+<meta property="og:description" content="이 문서에서는 impl 안에서 정의되는 메서드의 매개변수와 호출 규약을 자세히 정의합니다. 본 문서는 함수 사양의 일부이며, 메서드와 자유 함수의 차이를 중심으로 다룹니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/409-method.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/409-method.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/409-method.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">4. 함수 개요</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li><a href="405-closure">4.5. 클로저</a></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li class="cur"><a aria-current="page" href="409-method">4.9. 메서드</a><ul class="toc"><li><a href="#491-메서드의-정의-위치">4.9.1. 메서드의 정의 위치</a></li><li><a href="#492-첫-매개변수의-형태에-따른-메서드-종류">4.9.2. 첫 매개변수의 형태에 따른 메서드 종류</a></li><li><a href="#493-self-키워드의-두-사용">4.9.3. self 키워드의 두 사용</a></li><li><a href="#494-self-키워드-타입-자리">4.9.4. Self 키워드: 타입 자리</a></li><li><a href="#495-메서드-호출-receiver-의-자동-ref">4.9.5. 메서드 호출 receiver 의 자동 ref</a></li><li><a href="#496-자유-함수와-메서드의-호출-형태">4.9.6. 자유 함수와 메서드의 호출 형태</a></li><li><a href="#497-메서드-안의-다른-메서드-호출">4.9.7. 메서드 안의 다른 메서드 호출</a></li><li><a href="#498-메서드-가시성">4.9.8. 메서드 가시성</a></li><li><a href="#499-메서드-시그니처의-자유도">4.9.9. 메서드 시그니처의 자유도</a></li><li><a href="#4910-메서드-안의-self-관계-요약">4.9.10. 메서드 안의 self 관계 요약</a></li></ul></li><li><a href="410-nested-functions">4.10. 중첩 함수</a></li><li><a href="411-generators">4.11. 제너레이터 (yield)</a></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li><a href="413-stream">4.13. 스트림 (async yield)</a></li><li><a href="414-throws">4.14. throws 시그니처</a></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li><a href="416-entry-point">4.16. 진입점</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="49-메서드 49-methods 491-메서드의-정의-위치 491-where-methods-are-defined 492-첫-매개변수의-형태에-따른-메서드-종류 492-kinds-of-methods-by-the-form-of-the-first-parameter 정적-메서드-self-없음 static-methods-no-self 인스턴스-메서드-self instance-methods-self 인스턴스-메서드-ref-self instance-methods-ref-self 493-self-키워드의-두-사용 493-two-uses-of-the-self-keyword 494-self-키워드-타입-자리 494-the-self-keyword-type-position 495-메서드-호출-receiver-의-자동-ref 495-automatic-ref-for-method-call-receivers 496-자유-함수와-메서드의-호출-형태 496-call-forms-of-free-functions-and-methods 트레잇-사이의-이름-충돌 name-conflicts-between-traits 497-메서드-안의-다른-메서드-호출 497-calling-other-methods-inside-a-method 498-메서드-가시성 498-method-visibility 499-메서드-시그니처의-자유도 499-freedom-in-method-signatures 4910-메서드-안의-self-관계-요약 4910-summary-of-self-in-methods"><a href="../../../../spec/refs-lang/004-functions/409-method" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="49-메서드"><a class="anchor" tabindex="-1" href="#49-메서드" aria-hidden="true">#</a>4.9. 메서드</h1>
+<p>이 문서에서는 <a href="../002-types/209-impl"><code>impl</code></a> 안에서 정의되는 메서드의 매개변수와 호출 규약을 자세히 정의합니다. 본 문서는 함수 사양의 일부이며, 메서드와 자유 함수의 차이를 중심으로 다룹니다.</p>
+<h2 id="491-메서드의-정의-위치"><a class="anchor" tabindex="-1" href="#491-메서드의-정의-위치" aria-hidden="true">#</a>4.9.1. 메서드의 정의 위치</h2>
+<p>메서드는 <a href="../002-types/209-impl"><code>impl</code></a> 의 블록 안에 정의됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { <span class="t">Point</span> { x: <span class="n">0.0f64</span>, y: <span class="n">0.0f64</span> } }
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+    <span class="k">fn</span> translate(<span class="k">ref</span> <span class="k">self</span>, dx: <span class="t">f64</span>, dy: <span class="t">f64</span>) {
+        <span class="k">self</span>.x = <span class="k">self</span>.x + dx;
+        <span class="k">self</span>.y = <span class="k">self</span>.y + dy;
+    }
+}
+</code></pre>
+<h2 id="492-첫-매개변수의-형태에-따른-메서드-종류"><a class="anchor" tabindex="-1" href="#492-첫-매개변수의-형태에-따른-메서드-종류" aria-hidden="true">#</a>4.9.2. 첫 매개변수의 형태에 따른 메서드 종류</h2>
+<h3 id="정적-메서드-self-없음"><a class="anchor" tabindex="-1" href="#정적-메서드-self-없음" aria-hidden="true">#</a>정적 메서드: <code>self</code> 없음</h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { ... }              <span class="c">// 정적</span>
+    <span class="k">fn</span> from_polar(r: <span class="t">f64</span>, theta: <span class="t">f64</span>) -&gt; <span class="t">Point</span> { ... }
+}
+
+<span class="k">let</span> p = <span class="t">Point</span>::origin();                       <span class="c">// Type::method() 호출</span>
+<span class="k">let</span> q = <span class="t">Point</span>::from_polar(<span class="n">1.0f64</span>, <span class="n">0.0f64</span>);
+</code></pre>
+<p>정적 메서드는 첫 매개변수가 <code>self</code> 도 <code>ref self</code> 도 아닌 함수입니다. 호출은 <code>Type::method(args)</code> 의 형태로 이루어지며, 이는 <a href="../002-types/213-type-paths">타입 경로</a> 의 정적 항목 접근에 해당합니다.</p>
+<h3 id="인스턴스-메서드-self"><a class="anchor" tabindex="-1" href="#인스턴스-메서드-self" aria-hidden="true">#</a>인스턴스 메서드: <code>self</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+    <span class="k">fn</span> norm(<span class="k">self</span>) -&gt; <span class="t">f64</span> { ... }
+}
+
+<span class="k">let</span> d = p.distance(q);                         <span class="c">// instance.method() 호출</span>
+<span class="k">let</span> n = p.norm();
+</code></pre>
+<p>이 형태의 메서드는 첫 매개변수가 <code>self</code> 입니다. 여기서 <code>self</code> 는 그 인스턴스의 값 (<code>struct</code> 이면 사본, <a href="../002-types/203-struct#238-값-의미">2.3.8</a>) 이며, 본체에서는 <code>self.field</code> 로 필드에 접근할 수 있습니다. 호출은 <code>instance.method(args)</code> 의 형태로 합니다.</p>
+<h3 id="인스턴스-메서드-ref-self"><a class="anchor" tabindex="-1" href="#인스턴스-메서드-ref-self" aria-hidden="true">#</a>인스턴스 메서드: <code>ref self</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> translate(<span class="k">ref</span> <span class="k">self</span>, dx: <span class="t">f64</span>, dy: <span class="t">f64</span>) {
+        <span class="k">self</span>.x = <span class="k">self</span>.x + dx;
+        <span class="k">self</span>.y = <span class="k">self</span>.y + dy;
+    }
+
+    <span class="k">fn</span> replace_with(<span class="k">ref</span> <span class="k">self</span>, other: <span class="t">Point</span>) {
+        <span class="k">self</span> = other;                          <span class="c">// 호출자의 변수가 other 가 됨</span>
+    }
+}
+
+<span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span> };
+p.translate(<span class="n">5.0f64</span>, <span class="n">0.0f64</span>);                   <span class="c">// ref 명시 없이 호출</span>
+p.replace_with(other);                         <span class="c">// 마찬가지</span>
+</code></pre>
+<p>이 형태의 메서드는 첫 매개변수가 <code>ref self</code> 입니다. 본체 안에서는 <code>self</code> 와 그 필드에 대입할 수 있고, 그 결과는 호출자의 변수에 되써집니다 (<a href="407-ref-keyword"><code>ref</code> 키워드</a> 참조). 호출자는 <code>ref</code> 를 명시하지 않는데, 이는 메서드 호출 receiver 가 자동으로 처리되기 때문입니다.</p>
+<h2 id="493-self-키워드의-두-사용"><a class="anchor" tabindex="-1" href="#493-self-키워드의-두-사용" aria-hidden="true">#</a>4.9.3. <code>self</code> 키워드의 두 사용</h2>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> {
+        <span class="k">let</span> dx = <span class="k">self</span>.x - other.x;             <span class="c">// 인스턴스 self 사용</span>
+        <span class="k">let</span> dy = <span class="k">self</span>.y - other.y;
+        (dx * dx + dy * dy).sqrt()
+    }
+}
+</code></pre>
+<p><code>self</code> (<a href="../001-lexical/105-keywords">키워드</a>) 는 두 가지 자리에서 사용됩니다. 매개변수 위치에서는 인스턴스 자신을 받는 매개변수의 역할을 하고, 본체 안에서는 그 매개변수를 가리키는 식별자로 쓰입니다.</p>
+<p>매개변수 자리의 <code>self</code> 는 타입을 명시하지 않고 적습니다. 타입은 자동으로 <code>Self</code> 즉 현재 <code>impl</code> 의 대상 타입이 됩니다.</p>
+<h2 id="494-self-키워드-타입-자리"><a class="anchor" tabindex="-1" href="#494-self-키워드-타입-자리" aria-hidden="true">#</a>4.9.4. <code>Self</code> 키워드: 타입 자리</h2>
+<p><code>Self</code> (<a href="../001-lexical/105-keywords">키워드</a>, 대문자) 는 현재 <code>impl</code> 의 대상 타입을 가리키는 타입 이름입니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> new(x: <span class="t">f64</span>, y: <span class="t">f64</span>) -&gt; <span class="k">Self</span> {           <span class="c">// Self == Point</span>
+        <span class="k">Self</span> { x, y }                          <span class="c">// Self 로 인스턴스 생성도 가능</span>
+    }
+}
+</code></pre>
+<p>두 사용을 명확히 구분해야 합니다. 소문자 <code>self</code> 는 매개변수와 인스턴스 식별자로 쓰이고, 대문자 <code>Self</code> 는 타입 이름으로 쓰입니다.</p>
+<h2 id="495-메서드-호출-receiver-의-자동-ref"><a class="anchor" tabindex="-1" href="#495-메서드-호출-receiver-의-자동-ref" aria-hidden="true">#</a>4.9.5. 메서드 호출 receiver 의 자동 <code>ref</code></h2>
+<p><code>ref self</code> 메서드는 호출자가 호출 시점에 <code>ref</code> 를 명시하지 않아도 자동으로 <code>ref</code> 처리됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Counter</span> {
+    <span class="k">fn</span> increment(<span class="k">ref</span> <span class="k">self</span>) { <span class="k">self</span>.count = <span class="k">self</span>.count + <span class="n">1</span>; }
+}
+
+<span class="k">let</span> c = <span class="t">Counter</span> { count: <span class="n">0</span> };
+c.increment();                                 <span class="c">// 'ref' 명시 없음</span>
+</code></pre>
+<p>이는 <a href="407-ref-keyword"><code>ref</code> 키워드</a> 의 일반 함수 호출 규칙 (<code>ref</code> 명시 필수) 과 다른 예외에 해당합니다. 그 이유는 다음과 같습니다. 메서드 호출 문법인 <code>x.method()</code> 자체가 receiver <a href="../000-meta/007-glossary#dispatch-디스패치">dispatch</a> 의 메커니즘이며, receiver 가 <code>self</code> 든 <code>ref self</code> 든 호출 형태가 동일하기 때문입니다. 또한 추가로 <code>ref</code> 를 명시하면 시각적인 잡음이 됩니다.</p>
+<p>이러한 처리는 Rust, C#, Swift 의 메서드 호출 관례와 일관됩니다. 다만 같은 메서드를 경로로 부를 때는 receiver 가 일반 인자이므로 <code>ref</code> 를 적습니다 (<code>Counter::increment(ref c)</code>, <a href="407-ref-keyword#473-호출-시-명시-c-식">4.7.3</a>).</p>
+<h2 id="496-자유-함수와-메서드의-호출-형태"><a class="anchor" tabindex="-1" href="#496-자유-함수와-메서드의-호출-형태" aria-hidden="true">#</a>4.9.6. 자유 함수와 메서드의 호출 형태</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>호출</th></tr></thead>
+<tbody>
+<tr><td>자유 함수</td><td><code>function_name(args)</code></td></tr>
+<tr><td>정적 메서드</td><td><code>Type::method(args)</code></td></tr>
+<tr><td>인스턴스 메서드</td><td><code>instance.method(args)</code></td></tr>
+</tbody></table></div>
+<p>같은 함수가 어떤 의미를 갖는지는 호출 형태로 명확히 구분됩니다.</p>
+<h3 id="트레잇-사이의-이름-충돌"><a class="anchor" tabindex="-1" href="#트레잇-사이의-이름-충돌" aria-hidden="true">#</a>트레잇 사이의 이름 충돌</h3>
+<p><code>x.method()</code> 의 후보가 여러 개일 때는 다음 순서로 고릅니다.</p>
+<ol>
+<li>고유 <code>impl</code> 의 메서드가 트레잇 메서드보다 우선합니다.
+</li>
+<li>트레잇 메서드끼리는, 현재 패키지가 정의했거나 명시적으로 <code>use</code> 한 트레잇이 암묵 <code>use rok::core::**</code> 로만 보이는 트레잇보다 우선합니다. 현재 패키지는 호출이 쓰인 실제 패키지입니다. 의존 패키지의 트레잇은 <code>use</code> 하지 않는 한 core 의 트레잇보다 우선하지 않습니다.
+</li>
+<li>그래도 후보가 둘 이상이면 모호성 에러이며, 진단은 <code>Trait::method(x)</code> 형태로 적으라고 안내합니다.
+</li>
+</ol>
+<pre><code class="language-rok"><span class="k">use</span> <span class="k">pkg</span>::geom::<span class="t">Union</span>;              <span class="c">// 사용자 트레잇 - union 메서드</span>
+a.<span class="k">union</span>(b);                        <span class="c">// pkg::geom::Union 이 core 의 Union 보다 우선</span>
+rok::core::ops::<span class="t">Union</span>::<span class="k">union</span>(a, b) <span class="c">// core 쪽을 쓰려면 명시</span>
+</code></pre>
+<h2 id="497-메서드-안의-다른-메서드-호출"><a class="anchor" tabindex="-1" href="#497-메서드-안의-다른-메서드-호출" aria-hidden="true">#</a>4.9.7. 메서드 안의 다른 메서드 호출</h2>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+
+    <span class="k">fn</span> distance_squared(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> {
+        <span class="k">let</span> d = <span class="k">self</span>.distance(other);          <span class="c">// 같은 인스턴스의 다른 메서드</span>
+        d * d
+    }
+}
+</code></pre>
+<p><code>self.method()</code> 형태로 같은 인스턴스의 다른 메서드를 호출할 수 있습니다. 일반 인스턴스 호출과 같은 규칙을 따릅니다.</p>
+<h2 id="498-메서드-가시성"><a class="anchor" tabindex="-1" href="#498-메서드-가시성" aria-hidden="true">#</a>4.9.8. 메서드 가시성</h2>
+<p>메서드 가시성은 <a href="../002-types/209-impl"><code>impl</code></a> 에서 정의된 모듈 비공개 기본을 따릅니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Account</span> {
+    <span class="k">pub</span> <span class="k">fn</span> balance(<span class="k">self</span>) -&gt; <span class="t">f64</span> { ... }        <span class="c">// 외부 공개</span>
+        <span class="k">fn</span> _internal(<span class="k">self</span>) { ... }              <span class="c">// 모듈 비공개</span>
+}
+</code></pre>
+<p>가시성 단계의 정확한 규칙은 <a href="../005-modules/506-visibility">가시성</a> 에서 정의합니다.</p>
+<h2 id="499-메서드-시그니처의-자유도"><a class="anchor" tabindex="-1" href="#499-메서드-시그니처의-자유도" aria-hidden="true">#</a>4.9.9. 메서드 시그니처의 자유도</h2>
+<p>메서드의 매개변수, 반환, 본체는 모두 <a href="402-parameters">매개변수</a> 와 <a href="403-return">반환</a> 의 일반 함수 규칙을 그대로 따릅니다. 구체적으로, 기본값과 named 인자, variadic, spread 는 메서드에서도 자유롭게 쓸 수 있습니다. 본체가 <code>throw</code> 나 무한 루프로 항상 빠져나가는 형태인 divergent 메서드도 가능하며, 제네릭 메서드의 경우에는 <code>impl</code> 블록의 제네릭 매개변수와 메서드 자체의 제네릭이 함께 쓰일 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> map&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">U</span>) -&gt; <span class="t">List</span>&lt;<span class="t">U</span>&gt; { ... }
+}
+</code></pre>
+<p>메서드 자체의 제네릭은 함수 이름 뒤에 둡니다 (<code>fn map&lt;U&gt;(...)</code>). 트레잇 <code>impl</code> 에서 타입이 없는 메서드 매개변수는 암묵 타입 매개변수가 아니라, 트레잇이 그 자리에 선언한 타입 (트레잇 매개변수와 연관 타입을 대입한 것) 을 가집니다.</p>
+<h2 id="4910-메서드-안의-self-관계-요약"><a class="anchor" tabindex="-1" href="#4910-메서드-안의-self-관계-요약" aria-hidden="true">#</a>4.9.10. 메서드 안의 <code>self</code> 관계 요약</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>첫 매개변수</th><th>의미</th><th>호출 시</th><th>본체에서 <code>self</code> 재할당 가능?</th></tr></thead>
+<tbody>
+<tr><td>(없음)</td><td>정적 메서드</td><td><code>Type::method()</code></td><td>-</td></tr>
+<tr><td><code>self</code></td><td>인스턴스 메서드 (값)</td><td><code>instance.method()</code></td><td>안 됨 (로컬만)</td></tr>
+<tr><td><code>ref self</code></td><td>인스턴스 메서드 (<code>ref</code>)</td><td><code>instance.method()</code> (<code>ref</code> 자동)</td><td>됨 (호출자에 반영)</td></tr>
+</tbody></table></div>
+<p>메서드의 종류는 이 세 형태가 전부입니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/409-method.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="408-trailing-closure"><small>Previous</small>4.8. 트레일링 클로저</a><a class="next" href="410-nested-functions"><small>Next</small>4.10. 중첩 함수</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

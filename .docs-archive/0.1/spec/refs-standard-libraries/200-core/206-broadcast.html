@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.6. Broadcast - element-wise operators - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::ops::broadcast module is the trait authority for Julia-style dot operators. Dot operators (.+ / .* / .== / f.(x)) make element-wise meaning visua...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/206-broadcast.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.6. Broadcast - element-wise operators - rok docs">
+<meta property="og:description" content="The rok::core::ops::broadcast module is the trait authority for Julia-style dot operators. Dot operators (.+ / .* / .== / f.(x)) make element-wise meaning visua...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/206-broadcast.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/206-broadcast.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/206-broadcast.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li class="cur"><a aria-current="page" href="206-broadcast">2.6. Broadcast - element-wise operators</a><ul class="toc"><li><a href="#261-motivation---why-separate-dot-operators">2.6.1. Motivation - why separate dot operators</a></li><li><a href="#262-19-traits---operator-mapping">2.6.2. 19 traits - operator mapping</a></li><li><a href="#263-trait-signatures---uniform-form">2.6.3. Trait signatures - uniform form</a></li><li><a href="#264-semantics---element-wise">2.6.4. Semantics - element-wise</a></li><li><a href="#265-function-broadcast---fx">2.6.5. Function broadcast - f.(x)</a></li><li><a href="#266-loop-fusion">2.6.6. Loop fusion</a></li><li><a href="#267-trait-implementation-matrix">2.6.7. Trait implementation matrix</a></li><li><a href="#268-numpy-style-broadcasting-rules">2.6.8. NumPy-style broadcasting rules</a></li><li><a href="#269-comparison-with-other-languages">2.6.9. Comparison with other languages</a></li></ul></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="26-broadcast---element-wise-operators 26-broadcast---element-wise-연산자 261-motivation---why-separate-dot-operators 261-동기---왜-별도-dot-연산자인가요 262-19-traits---operator-mapping 262-19-트레잇---operator-매핑 arithmetic-6 산술-6 comparison-6 비교-6 logical-2 논리-2 bitwise-3 비트-3 shift-2 shift-2 263-trait-signatures---uniform-form 263-트레잇-시그니처---통일-형태 function-broadcast---no-trait 함수-broadcast---트레잇-x 264-semantics---element-wise 264-의미-정의---element-wise arithmetic-dot---two-containers-of-the-same-shape 산술-dot---같은-모양-두-컨테이너 scalar-broadcast scalar-broadcast comparison-dot---returns-containerbool 비교-dot---containerbool-반환 remainder-dot----and- 나머지-dot----와- logical-dot----and- 논리-dot----와- bitwise--shift-dot 비트--shift-dot 265-function-broadcast---fx 265-함수-broadcast---fx 266-loop-fusion 266-loop-fusion 267-trait-implementation-matrix 267-트레잇-구현-매트릭스 268-numpy-style-broadcasting-rules 268-numpy-식-broadcasting-규칙 269-comparison-with-other-languages 269-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/206-broadcast" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="26-broadcast---element-wise-operators"><a class="anchor" tabindex="-1" href="#26-broadcast---element-wise-operators" aria-hidden="true">#</a>2.6. Broadcast - element-wise operators</h1>
+<p>The <code>rok::core::ops::broadcast</code> module is the trait authority for Julia-style dot operators. Dot operators (<code>.+</code> / <code>.*</code> / <code>.==</code> / <code>f.(x)</code>) make element-wise meaning visually distinct in the syntax itself, which rules out confusion with a user-defined <code>*</code> (e.g. matrix multiply).</p>
+<p>This chapter defines the 19 broadcast traits together with the desugaring rules for function broadcast.</p>
+<h2 id="261-motivation---why-separate-dot-operators"><a class="anchor" tabindex="-1" href="#261-motivation---why-separate-dot-operators" aria-hidden="true">#</a>2.6.1. Motivation - why separate dot operators</h2>
+<p>In NumPy and MATLAB, the <strong>silent ambiguity</strong> of <code>*</code> meaning element-wise on arrays but multiplication on matrices has long been a source of bugs (the same concern motivated the introduction of <code>@</code> in PEP 465).</p>
+<p>rok's policy, by contrast, is clear.</p>
+<pre><code class="language-rok">m * n       <span class="c">// user-defined Mul - matrix multiplication, dot product, etc.</span>
+m .* n      <span class="c">// element-wise (Hadamard product) - always broadcast</span>
+</code></pre>
+<p>The dot prefix (<code>.</code>) acts as a visual signal stating element-wise intent, and the compiler enforces it. In any container - List, Vec, Matrix, etc. - <code>.+</code> consistently dispatches to <code>DotAdd::dot_add</code>.</p>
+<h2 id="262-19-traits---operator-mapping"><a class="anchor" tabindex="-1" href="#262-19-traits---operator-mapping" aria-hidden="true">#</a>2.6.2. 19 traits - operator mapping</h2>
+<p>The full set is arithmetic (6) + comparison (6) + logical (2) + bitwise (3) + shift (2) = <strong>19</strong> traits.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>This chapter defines all 19 traits: 6 arithmetic, 6 comparison, 2 logical, 3 bitwise and 2 shift. The dot comparisons (<code>.==</code>/<code>.!=</code>/<code>.&lt;</code>/<code>.&gt;</code>/<code>.&lt;=</code>/<code>.&gt;=</code>) are given only as <strong>brief signatures</strong> in <a href="205-cmp#258-broadcast-comparison-traits">2.5.8 Broadcast comparison</a>;
+this chapter is the <strong>full authority</strong>.</p>
+</div>
+<h3 id="arithmetic-6"><a class="anchor" tabindex="-1" href="#arithmetic-6" aria-hidden="true">#</a>Arithmetic (6)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Operator</th><th>Precedence</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>DotAdd</code></td><td><code>.+</code></td><td>7 (left)</td><td>element-wise addition</td></tr>
+<tr><td><code>DotSub</code></td><td><code>.-</code></td><td>7 (left)</td><td>element-wise subtraction</td></tr>
+<tr><td><code>DotMul</code></td><td><code>.*</code></td><td>8 (left)</td><td>element-wise product (Hadamard)</td></tr>
+<tr><td><code>DotDiv</code></td><td><code>./</code></td><td>8 (left)</td><td>element-wise division</td></tr>
+<tr><td><code>DotRem</code></td><td><code>.%</code></td><td>8 (left)</td><td>element-wise remainder (Rem)</td></tr>
+<tr><td><code>DotModulo</code></td><td><code>.%%</code></td><td>8 (left)</td><td>element-wise floored modulo</td></tr>
+</tbody></table></div>
+<h3 id="comparison-6"><a class="anchor" tabindex="-1" href="#comparison-6" aria-hidden="true">#</a>Comparison (6)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Operator</th><th>Precedence</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>DotEq</code></td><td><code>.==</code></td><td>4 (none)</td><td>element-wise == → <code>Container&lt;bool&gt;</code></td></tr>
+<tr><td><code>DotNe</code></td><td><code>.!=</code></td><td>4 (none)</td><td>element-wise !=</td></tr>
+<tr><td><code>DotLt</code></td><td><code>.&lt;</code></td><td>4 (none)</td><td>element-wise &lt;</td></tr>
+<tr><td><code>DotGt</code></td><td><code>.&gt;</code></td><td>4 (none)</td><td>element-wise &gt;</td></tr>
+<tr><td><code>DotLe</code></td><td><code>.&lt;=</code></td><td>4 (none)</td><td>element-wise &lt;=</td></tr>
+<tr><td><code>DotGe</code></td><td><code>.&gt;=</code></td><td>4 (none)</td><td>element-wise &gt;=</td></tr>
+</tbody></table></div>
+<h3 id="logical-2"><a class="anchor" tabindex="-1" href="#logical-2" aria-hidden="true">#</a>Logical (2)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Operator</th><th>Precedence</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>DotLogicalAnd</code></td><td><code>.&amp;&amp;</code></td><td>3 (left)</td><td>element-wise logical AND (no short-circuit)</td></tr>
+<tr><td><code>DotLogicalOr</code></td><td><code>.||</code></td><td>2 (left)</td><td>element-wise logical OR (no short-circuit)</td></tr>
+</tbody></table></div>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong><code>.&amp;&amp;</code> / <code>.||</code> do not short-circuit</strong>. Unlike ordinary <code>&amp;&amp;</code> / <code>||</code>, broadcast is lowered to a fused loop, so both operands are always evaluated. Semantically it is the element-wise logical combination of bool containers. A function call with side effects placed in either operand always runs.</p>
+</div>
+<h3 id="bitwise-3"><a class="anchor" tabindex="-1" href="#bitwise-3" aria-hidden="true">#</a>Bitwise (3)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Operator</th><th>Precedence</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>DotBitAnd</code></td><td><code>.&amp;</code></td><td>6 (left)</td><td>element-wise &amp;</td></tr>
+<tr><td><code>DotBitOr</code></td><td><code>.|</code></td><td>5 (left)</td><td>element-wise |</td></tr>
+<tr><td><code>DotBitXor</code></td><td><code>.^</code></td><td>6 (left)</td><td>element-wise ^</td></tr>
+</tbody></table></div>
+<h3 id="shift-2"><a class="anchor" tabindex="-1" href="#shift-2" aria-hidden="true">#</a>Shift (2)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Operator</th><th>Precedence</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>DotShl</code></td><td><code>.&lt;&lt;</code></td><td>9 (left)</td><td>element-wise &lt;&lt;</td></tr>
+<tr><td><code>DotShr</code></td><td><code>.&gt;&gt;</code></td><td>9 (left)</td><td>element-wise &gt;&gt;</td></tr>
+</tbody></table></div>
+<p>Precedence and associativity mirror the ordinary traits (<a href="203-ops">2.3 ops</a>, <a href="205-cmp">2.5 cmp</a>).</p>
+<h2 id="263-trait-signatures---uniform-form"><a class="anchor" tabindex="-1" href="#263-trait-signatures---uniform-form" aria-hidden="true">#</a>2.6.3. Trait signatures - uniform form</h2>
+<p>Every dot trait follows the same uniform form.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">DotAdd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".+")]</span>
+    <span class="k">fn</span> dot_add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotMul</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".*")]</span>
+    <span class="k">fn</span> dot_mul(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotModulo</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".%%")]</span>
+    <span class="k">fn</span> dot_modulo(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotEq</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".==")]</span>
+    <span class="k">fn</span> dot_eq(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotLogicalAnd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".&amp;&amp;")]</span>
+    <span class="k">fn</span> dot_logical_and(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>Arithmetic dot traits are fully symmetric with <code>Add</code>/<code>Sub</code>/<code>Mul</code>/<code>Div</code>/<code>Rem</code>/<code>Modulo</code>: an <code>Output</code> associated type plus an infix attribute. The six comparison dot traits (<code>DotEq</code>, <code>DotNe</code>, <code>DotLt</code>, <code>DotGt</code>, <code>DotLe</code>, <code>DotGe</code>) have the same form, each with its own <code>Output</code>, usually <code>Container&lt;bool&gt;</code>. Logical dot traits (<code>DotLogicalAnd</code> / <code>DotLogicalOr</code>) typically take <code>Container&lt;bool&gt;</code> on both sides and return <code>Container&lt;bool&gt;</code>; with no short-circuit, both containers are evaluated to the end.</p>
+<h3 id="function-broadcast---no-trait"><a class="anchor" tabindex="-1" href="#function-broadcast---no-trait" aria-hidden="true">#</a>Function broadcast - no trait</h3>
+<p>Function broadcast is written as follows.</p>
+<pre><code class="language-rok">f.(x)              <span class="c">// function broadcast</span>
+f.(a, b)           <span class="c">// multiple arguments</span>
+</code></pre>
+<p>Function broadcast has no trait of its own; it desugars as follows.</p>
+<pre><code class="language-rok">f.(x)        →  x.into_iter().map(f).collect()
+g.(a, b)     →  a.into_iter().zip(b.into_iter()).map(|(x, y)| g(x, y)).collect()
+</code></pre>
+<p>It dispatches directly to <code>map</code>/<code>zip</code> of <a href="207-iter">2.7 iter</a>; the broadcast module defines no separate trait. The difference is that the function itself is a callable, not a dispatch target.</p>
+<h2 id="264-semantics---element-wise"><a class="anchor" tabindex="-1" href="#264-semantics---element-wise" aria-hidden="true">#</a>2.6.4. Semantics - element-wise</h2>
+<h3 id="arithmetic-dot---two-containers-of-the-same-shape"><a class="anchor" tabindex="-1" href="#arithmetic-dot---two-containers-of-the-same-shape" aria-hidden="true">#</a>Arithmetic dot - two containers of the same shape</h3>
+<p>Arithmetic dot operations on two containers of the same shape behave as follows.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+
+<span class="k">let</span> c = a .+ b;          <span class="c">//→ [11, 22, 33]</span>
+<span class="k">let</span> d = a .* b;          <span class="c">//→ [10, 40, 90]</span>
+<span class="k">let</span> e = b .- a;          <span class="c">//→ [9, 18, 27]</span>
+<span class="k">let</span> f = b ./ a;          <span class="c">//→ [10, 10, 10]</span>
+</code></pre>
+<p>A length mismatch panics at runtime. If the sizes are known at compile time, it is caught as a compile error.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: [<span class="t">i32</span>; <span class="n">3</span>] = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> y: [<span class="t">i32</span>; <span class="n">4</span>] = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>];
+<span class="k">let</span> z = x .+ y;          <span class="c">// ERROR (compile - fixed sizes differ)</span>
+
+<span class="k">let</span> p: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> q: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>];
+<span class="k">let</span> r = p .+ q;          <span class="c">// panic at runtime - length mismatch</span>
+</code></pre>
+<h3 id="scalar-broadcast"><a class="anchor" tabindex="-1" href="#scalar-broadcast" aria-hidden="true">#</a>Scalar broadcast</h3>
+<p>Combining a scalar with a container behaves as follows.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> s = a .+ <span class="n">10</span>;         <span class="c">//→ [11, 12, 13]  (scalar broadcast)</span>
+<span class="k">let</span> m = <span class="n">2</span> .* a;          <span class="c">//→ [2, 4, 6]</span>
+<span class="k">let</span> t = a ./ <span class="n">2</span>;          <span class="c">//→ [0, 1, 1]    (i32 truncate)</span>
+</code></pre>
+<p>Here separate impls (<code>DotAdd&lt;T&gt; for List&lt;T&gt;</code>, and <code>DotAdd&lt;List&lt;T&gt;&gt; for T</code> for the scalar-left form) treat the scalar side. Fixed arrays <code>[T; N]</code> have no scalar-left impls.</p>
+<h3 id="comparison-dot---returns-containerbool"><a class="anchor" tabindex="-1" href="#comparison-dot---returns-containerbool" aria-hidden="true">#</a>Comparison dot - returns <code>Container&lt;bool&gt;</code></h3>
+<p>Comparison dot operators return a <code>Container&lt;bool&gt;</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">5</span>, <span class="n">3</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">2</span>, <span class="n">5</span>, <span class="n">1</span>];
+
+a .== b;                 <span class="c">//→ [false, true, false]</span>
+a .&lt; b;                  <span class="c">//→ [true, false, false]</span>
+a .&gt;= b;                 <span class="c">//→ [false, true, true]</span>
+
+a .&lt; <span class="n">4</span>;                  <span class="c">//→ [true, false, true]   (scalar broadcast)</span>
+</code></pre>
+<h3 id="remainder-dot----and-"><a class="anchor" tabindex="-1" href="#remainder-dot----and-" aria-hidden="true">#</a>Remainder dot - <code>.%</code> and <code>.%%</code></h3>
+<p>Remainder dot operators apply the meaning of ordinary <code>%</code> / <code>%%</code> element-wise.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [-<span class="n">7</span>, <span class="n">5</span>, -<span class="n">3</span>, <span class="n">8</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">3</span>, <span class="n">3</span>, <span class="n">3</span>, <span class="n">3</span>];
+
+a .% b;                  <span class="c">//→ [-1, 2, 0, 2]   (Rem - sign follows the left operand)</span>
+a .%% b;                 <span class="c">//→ [2, 2, 0, 2]    (Modulo - always in [0, 3))</span>
+</code></pre>
+<h3 id="logical-dot----and-"><a class="anchor" tabindex="-1" href="#logical-dot----and-" aria-hidden="true">#</a>Logical dot - <code>.&amp;&amp;</code> and <code>.||</code></h3>
+<p>Logical dot operators produce the element-wise logical combination of two <code>Container&lt;bool&gt;</code>s. Unlike the undotted forms there is no short-circuit, so both containers are always evaluated to the end.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">List</span>&lt;<span class="t">bool</span>&gt; = [<span class="k">true</span>, <span class="k">false</span>, <span class="k">true</span>, <span class="k">false</span>];
+<span class="k">let</span> q: <span class="t">List</span>&lt;<span class="t">bool</span>&gt; = [<span class="k">true</span>, <span class="k">true</span>, <span class="k">false</span>, <span class="k">false</span>];
+
+p .&amp;&amp; q;                 <span class="c">//→ [true, false, false, false]</span>
+p .|| q;                 <span class="c">//→ [true, true, true, false]</span>
+
+<span class="c">// combining comparison results - the most common use</span>
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">5</span>, <span class="n">3</span>, <span class="n">8</span>];
+(xs .&gt;= <span class="n">2</span>) .&amp;&amp; (xs .&lt; <span class="n">6</span>);  <span class="c">//→ [false, true, true, false]</span>
+</code></pre>
+<h3 id="bitwise--shift-dot"><a class="anchor" tabindex="-1" href="#bitwise--shift-dot" aria-hidden="true">#</a>Bitwise / shift dot</h3>
+<p>Bitwise and shift dot operators work the same way.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0b1100</span>, <span class="n">0b1010</span>, <span class="n">0b0011</span>];
+<span class="k">let</span> ys: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0b1010</span>, <span class="n">0b1010</span>, <span class="n">0b1111</span>];
+
+xs .&amp; ys;                <span class="c">//→ [0b1000, 0b1010, 0b0011]</span>
+xs .| ys;                <span class="c">//→ [0b1110, 0b1010, 0b1111]</span>
+xs .^ ys;                <span class="c">//→ [0b0110, 0b0000, 0b1100]</span>
+
+<span class="k">let</span> ns: <span class="t">List</span>&lt;<span class="t">u32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">4</span>];
+ns .&lt;&lt; <span class="n">2</span>;                <span class="c">//→ [4, 8, 16]</span>
+</code></pre>
+<h2 id="265-function-broadcast---fx"><a class="anchor" tabindex="-1" href="#265-function-broadcast---fx" aria-hidden="true">#</a>2.6.5. Function broadcast - <code>f.(x)</code></h2>
+<p>Function broadcast is written by adding a dot at an ordinary function call.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [<span class="n">0.0</span>, <span class="n">0.5</span>, <span class="n">1.0</span>];
+
+<span class="k">let</span> s = sin.(xs);                    <span class="c">//→ [0.0, 0.479..., 0.841...]</span>
+<span class="k">let</span> r = <span class="t">f64</span>::sqrt.(xs);              <span class="c">//→ [0.0, 0.707..., 1.0]</span>
+<span class="k">let</span> g = (|x: <span class="t">f64</span>| x * <span class="n">2.0</span>).(xs);     <span class="c">//→ [0.0, 1.0, 2.0]</span>
+</code></pre>
+<p>Several arguments can be broadcast at once.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>];
+<span class="k">let</span> b: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [<span class="n">10.0</span>, <span class="n">20.0</span>, <span class="n">30.0</span>];
+
+<span class="k">let</span> r = <span class="t">f64</span>::pow.(a, b);             <span class="c">//→ [1.0, 4_194_304.0, ...]</span>
+<span class="k">let</span> m = max.(a, b);                  <span class="c">//→ [10.0, 20.0, 30.0]</span>
+</code></pre>
+<p>Arguments that are a <code>List</code>, <code>Slice</code> or array are iterated together; any other argument is passed unchanged to every call (<code>pow.(xs, 2.0)</code>). The iterated arguments must have the same length, checked at run time. There is <strong>no limit</strong> on the number of arguments, so any N-ary function applies.</p>
+<h2 id="266-loop-fusion"><a class="anchor" tabindex="-1" href="#266-loop-fusion" aria-hidden="true">#</a>2.6.6. Loop fusion</h2>
+<p>The compiler fuses consecutive dot operations into a single loop.</p>
+<pre><code class="language-rok"><span class="k">let</span> result = sin.(a) .+ cos.(b) .* <span class="n">2.0</span>;
+</code></pre>
+<p>A naive lowering would need 3 temporary List allocations and 3 loops. rok guarantees one loop with no intermediate collections; the mechanism (for example a <code>linalg.generic</code> op) is the compiler's choice.</p>
+<pre><code class="language-rok"><span class="c">// conceptually equivalent to this single elementwise call</span>
+<span class="k">let</span> result = elementwise(a, b, |x, y| sin(x) + cos(y) * <span class="n">2.0</span>);
+</code></pre>
+<h2 id="267-trait-implementation-matrix"><a class="anchor" tabindex="-1" href="#267-trait-implementation-matrix" aria-hidden="true">#</a>2.6.7. Trait implementation matrix</h2>
+<p>Dot trait impls map onto container types as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Container</th><th>DotAdd</th><th>DotMul</th><th>DotEq</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td>T:Add</td><td>T:Mul</td><td>T:PartialEq</td><td>element-wise, lengths must match</td></tr>
+<tr><td><code>[T; N]</code> (fixed)</td><td>T:Add</td><td>T:Mul</td><td>T:PartialEq</td><td>fixed N - compile time</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>T:Add</td><td>T:Mul</td><td>T:PartialEq</td><td>view - element-wise</td></tr>
+<tr><td><code>i32</code>/<code>f64</code>/etc.</td><td><strong>none</strong></td><td><strong>none</strong></td><td><strong>none</strong></td><td>scalars use ordinary <code>+</code>/<code>*</code>/<code>==</code></td></tr>
+<tr><td><code>T | none</code></td><td>(operator)</td><td>(operator)</td><td>(operator)</td><td>option propagation (<code>none .+ x = none</code>)</td></tr>
+</tbody></table></div>
+<p>The dot meaning of <code>T | none</code> is option propagation: if either side is <code>none</code>, the result is <code>none</code>. It is handled at the operator level, with no library impl.</p>
+<p>Numeric containers such as <code>Matrix&lt;T&gt;</code> / <code>Tensor&lt;T&gt;</code> are defined in external libraries, which implement the same dot traits directly and follow NumPy-style broadcasting rules.</p>
+<h2 id="268-numpy-style-broadcasting-rules"><a class="anchor" tabindex="-1" href="#268-numpy-style-broadcasting-rules" aria-hidden="true">#</a>2.6.8. NumPy-style broadcasting rules</h2>
+<p>Broadcasting between arrays of different dimensions follows NumPy. When 1-D meets 0-D (a scalar), the scalar applies to every element; the same dimension with the same shape is pointwise; different shapes are matched from the trailing dimension, and a dimension of 1 is stretched.</p>
+<p>This section defines only the general meaning of the dot traits; full authority over multidimensional broadcasting rules is delegated to external tensor libraries. The rok standard library is responsible only for the element-wise meaning of 1-D containers (<code>List&lt;T&gt;</code>, <code>[T; N]</code>, <code>Slice&lt;T&gt;</code>).</p>
+<h2 id="269-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#269-comparison-with-other-languages" aria-hidden="true">#</a>2.6.9. Comparison with other languages</h2>
+<p>Compared with other major languages:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>NumPy</th><th>Julia</th><th>MATLAB</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>element-wise</td><td><code>*</code> (silent)</td><td><code>.*</code> (explicit)</td><td><code>.*</code> (explicit)</td><td><code>.*</code> (explicit)</td></tr>
+<tr><td>matrix mul</td><td><code>@</code> (PEP 465)</td><td><code>*</code></td><td><code>*</code></td><td><code>*</code> (user-defined Mul)</td></tr>
+<tr><td>element-wise add</td><td><code>+</code> (silent)</td><td><code>.+</code></td><td><code>.+</code></td><td><code>.+</code></td></tr>
+<tr><td>function broadcast</td><td><code>np.vectorize(f)(x)</code></td><td><code>f.(x)</code></td><td><code>arrayfun(f, x)</code></td><td><code>f.(x)</code></td></tr>
+<tr><td>loop fusion</td><td><strong>none</strong></td><td><code>@.</code> macro (automatic)</td><td><strong>none</strong></td><td>automatic for dot chains (MLIR)</td></tr>
+<tr><td>comparison</td><td><code>==</code> returns array</td><td><code>.==</code></td><td><code>==</code> (confusing)</td><td><code>.==</code></td></tr>
+<tr><td>separate dot traits</td><td><strong>none</strong></td><td><strong>none</strong> (<code>*</code> overload only)</td><td><strong>none</strong></td><td><strong>DotAdd/DotMul/...</strong> (19)</td></tr>
+</tbody></table></div>
+<p>rok differs most from other languages in two points. First, every dot operator has its own trait. Julia layers dot syntax on top of an overloaded <code>+</code>, whereas in rok <code>Add</code> and <code>DotAdd</code> are different traits, and <code>Matrix * Matrix</code> and <code>Matrix .* Matrix</code> follow entirely different dispatch. Second, the compiler enforces dot usage. Broadcasting through ordinary <code>*</code> is <strong>impossible</strong>, which guarantees a deterministic separation that does not depend on user code.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/206-broadcast.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="205-cmp"><small>Previous</small>2.5. Comparison traits</a><a class="next" href="207-iter"><small>Next</small>2.7. iter - iteration traits</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

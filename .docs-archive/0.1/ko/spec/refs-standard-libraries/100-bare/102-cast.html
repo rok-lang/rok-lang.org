@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.2. cast 연산 - 명시 named cast - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::cast 모듈은 pointer 와 type 사이의 변환을 오직 named function 형태로만 노출합니다. C 와 Rust 의 as cast 가 가장 위험한 까닭은 변환이 조용히(silent) 일어난다는 점이며, rok 은 이 함정을 피하기 위해 모든 cast 를...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/102-cast.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.2. cast 연산 - 명시 named cast - rok docs">
+<meta property="og:description" content="rok::bare::cast 모듈은 pointer 와 type 사이의 변환을 오직 named function 형태로만 노출합니다. C 와 Rust 의 as cast 가 가장 위험한 까닭은 변환이 조용히(silent) 일어난다는 점이며, rok 은 이 함정을 피하기 위해 모든 cast 를...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/102-cast.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/102-cast.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/102-cast.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li class="cur"><a aria-current="page" href="102-cast">1.2. cast 연산 - 명시 named cast</a><ul class="toc"><li><a href="#121-cast-함수-4-종">1.2.1. cast 함수 4 종</a></li><li><a href="#122-ptr_castu---pointer-type-변환">1.2.2. ptr_cast&lt;U&gt; - pointer type 변환</a></li><li><a href="#123-align_castt---alignment-검증">1.2.3. align_cast&lt;T&gt; - alignment 검증</a></li><li><a href="#124-const_castt---const-제거">1.2.4. const_cast&lt;T&gt; - const 제거</a></li><li><a href="#125-reinterpreta-pod-b-pod---bit-cast-안전">1.2.5. reinterpret&lt;A: Pod, B: Pod&gt; - bit cast (안전)</a></li><li><a href="#126-transmute_uncheckeda-b---escape-hatch">1.2.6. transmute_unchecked&lt;A, B&gt; - escape hatch</a></li><li><a href="#127-as-cast-의-적용-자리">1.2.7. as cast 의 적용 자리</a></li><li><a href="#128-정책-요약">1.2.8. 정책 요약</a></li></ul></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="12-cast-연산---명시-named-cast 12-cast-operations---explicitly-named-casts 121-cast-함수-4-종 121-the-4-cast-functions 122-ptr_castu---pointer-type-변환 122-ptr_castu---pointer-type-conversion 안전-cast---type-equivalent safe-cast---type-equivalent 123-align_castt---alignment-검증 123-align_castt---alignment-check unchecked-variant unchecked-variant 124-const_castt---const-제거 124-const_castt---const-removal 125-reinterpreta-pod-b-pod---bit-cast-안전 125-reinterpreta-pod-b-pod---bit-cast-safe pod-자동-derive automatic-pod-derive 126-transmute_uncheckeda-b---escape-hatch 126-transmute_uncheckeda-b---escape-hatch 127-as-cast-의-적용-자리 127-where-as-casts-apply 128-정책-요약 128-policy-summary"><a href="../../../../spec/refs-standard-libraries/100-bare/102-cast" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="12-cast-연산---명시-named-cast"><a class="anchor" tabindex="-1" href="#12-cast-연산---명시-named-cast" aria-hidden="true">#</a>1.2. cast 연산 - 명시 named cast</h1>
+<p><code>rok::bare::cast</code> 모듈은 pointer 와 type 사이의 변환을 오직 <strong>named function</strong> 형태로만 노출합니다. C 와 Rust 의 <code>as</code> cast 가 가장 위험한 까닭은 변환이 조용히(silent) 일어난다는 점이며, rok 은 이 함정을 피하기 위해 모든 cast 를 <strong>명시적인 이름</strong> 으로 강제합니다.</p>
+<h2 id="121-cast-함수-4-종"><a class="anchor" tabindex="-1" href="#121-cast-함수-4-종" aria-hidden="true">#</a>1.2.1. cast 함수 4 종</h2>
+<p>기본 4 함수는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>함수</th><th>의미</th><th>위험도</th></tr></thead>
+<tbody>
+<tr><td><code>ptr_cast&lt;U&gt;(p: Ptr&lt;T&gt;)</code></td><td>type 만 변경 (provenance/address 보존)</td><td>alignment 검증</td></tr>
+<tr><td><code>align_cast&lt;T&gt;(p: Ptr&lt;u8&gt;)</code></td><td>alignment up-cast</td><td>검증 (debug)</td></tr>
+<tr><td><code>const_cast&lt;T&gt;(p: ConstPtr&lt;T&gt;)</code></td><td>const 제거</td><td>매우 높음 (호출자 보장)</td></tr>
+<tr><td><code>reinterpret&lt;A: Pod, B: Pod&gt;(a: A) -&gt; B</code></td><td>bit-level cast (<code>Pod</code> 만)</td><td>낮음 (Pod marker 보장)</td></tr>
+</tbody></table></div>
+<p>여기에 더해, 더 깊은 우회로가 필요할 때 쓰는 escape hatch 도 하나 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>함수</th><th>의미</th><th>위험도</th></tr></thead>
+<tbody>
+<tr><td><code>transmute_unchecked&lt;A,B&gt;(a: A) -&gt; B</code></td><td><strong>Pod 검증 없이</strong> bit cast (호출자 책임)</td><td>최고</td></tr>
+</tbody></table></div>
+<p><code>as</code> 키워드는 pointer 자리에서 컴파일러가 거부하므로, 사용자는 자연히 named cast 를 쓸 수밖에 없습니다.</p>
+<h2 id="122-ptr_castu---pointer-type-변환"><a class="anchor" tabindex="-1" href="#122-ptr_castu---pointer-type-변환" aria-hidden="true">#</a>1.2.2. <code>ptr_cast&lt;U&gt;</code> - pointer type 변환</h2>
+<pre><code class="language-rok"><span class="k">fn</span> ptr_cast&lt;<span class="t">U</span>, <span class="t">T</span>&gt;(p: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Ptr</span>&lt;<span class="t">U</span>&gt;;
+<span class="k">fn</span> ptr_cast&lt;<span class="t">U</span>, <span class="t">T</span>&gt;(p: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">U</span>&gt;;
+<span class="k">fn</span> ptr_cast&lt;<span class="t">U</span>, <span class="t">T</span>&gt;(p: <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">U</span>&gt;;
+</code></pre>
+<p>이 함수는 address 와 provenance 를 그대로 보존하면서 type tag 만 바꾼다. 따라서 <strong>alignment 책임은 호출자</strong> 가 집니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u32</span>&gt; = ...;        <span class="c">// 4-byte aligned</span>
+<span class="k">let</span> q: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = rok::bare::ptr_cast::&lt;<span class="t">u8</span>&gt;(p);    <span class="c">// 안전 (down-align)</span>
+<span class="k">let</span> r: <span class="t">Ptr</span>&lt;<span class="t">u64</span>&gt; = rok::bare::ptr_cast::&lt;<span class="t">u64</span>&gt;(p);  <span class="c">// 위험 - u64 은 8-byte 필요</span>
+                                                 <span class="c">// r.read() 시 SIGBUS 가능 (ARM)</span>
+</code></pre>
+<p>debug 빌드에서는 <strong>alignment 검증</strong> 이 들어가 panic 으로 이어지지만, release 빌드에서는 검증이 사라져 그대로 UB 가 됩니다.</p>
+<h3 id="안전-cast---type-equivalent"><a class="anchor" tabindex="-1" href="#안전-cast---type-equivalent" aria-hidden="true">#</a>안전 cast - type-equivalent</h3>
+<p>layout 이 동일한 두 struct 사이에서는 안전하게 변환할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">A</span> { x: <span class="t">u32</span> }
+<span class="k">struct</span> <span class="t">B</span> { x: <span class="t">u32</span> }       <span class="c">// A 와 layout 동일</span>
+
+<span class="k">let</span> pa: <span class="t">Ptr</span>&lt;<span class="t">A</span>&gt; = ...;
+<span class="k">let</span> pb: <span class="t">Ptr</span>&lt;<span class="t">B</span>&gt; = rok::bare::ptr_cast::&lt;<span class="t">B</span>&gt;(pa);    <span class="c">// layout OK 면 안전</span>
+</code></pre>
+<p>다만 layout 이 정말 같은지는 컴파일러가 검증하지 않으므로, 이 보장은 호출자가 직접 떠안아야 합니다.</p>
+<h2 id="123-align_castt---alignment-검증"><a class="anchor" tabindex="-1" href="#123-align_castt---alignment-검증" aria-hidden="true">#</a>1.2.3. <code>align_cast&lt;T&gt;</code> - alignment 검증</h2>
+<pre><code class="language-rok"><span class="k">fn</span> align_cast&lt;<span class="t">T</span>&gt;(p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+</code></pre>
+<p><code>Ptr&lt;u8&gt;</code> (1-byte align) 을 더 큰 alignment 의 <code>Ptr&lt;T&gt;</code> 로 바꿀 때, 실제 정렬을 <strong>검증한 뒤에야</strong> 변환합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> bytes: <span class="t">ManyPtr</span>&lt;<span class="t">u8</span>&gt; = ...;
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = bytes.add(offset).as_one();
+
+<span class="k">if</span> <span class="k">let</span> aligned: <span class="t">Ptr</span>&lt;<span class="t">u32</span>&gt; = rok::bare::align_cast::&lt;<span class="t">u32</span>&gt;(p) {
+    <span class="k">let</span> v = <span class="k">unsafe</span> { aligned.read() };       <span class="c">// 안전 (검증됨)</span>
+} <span class="k">else</span> {
+    panic(<span class="s">"not 4-byte aligned"</span>);
+}
+</code></pre>
+<p><code>align_cast</code> 의 반환은 <code>Result</code> 가 아니라 <code>T | none</code> 입니다. 두 형태 가운데 후자가 더 가볍기 때문입니다.</p>
+<h3 id="unchecked-variant"><a class="anchor" tabindex="-1" href="#unchecked-variant" aria-hidden="true">#</a>unchecked variant</h3>
+<pre><code class="language-rok"><span class="k">fn</span> align_cast_unchecked&lt;<span class="t">T</span>&gt;(p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;     <span class="c">// 검증 없이</span>
+</code></pre>
+<p>호출 직전에 이미 정렬을 검증해 둔 자리에서만 사용합니다. 이 변종은 debug 빌드에서도 검증을 수행하지 않습니다.</p>
+<h2 id="124-const_castt---const-제거"><a class="anchor" tabindex="-1" href="#124-const_castt---const-제거" aria-hidden="true">#</a>1.2.4. <code>const_cast&lt;T&gt;</code> - const 제거</h2>
+<pre><code class="language-rok"><span class="k">fn</span> const_cast&lt;<span class="t">T</span>&gt;(p: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+</code></pre>
+<p>말 그대로 const 를 벗겨내는 함수입니다. 매우 위험한 이유는 명확합니다. 원본이 read-only 영역(immortal const) 일 경우, 그 자리에 write 하면 곧장 segfault 가 납니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;              <span class="c">// immortal const</span>
+<span class="k">let</span> p: <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt; = s.as_ptr();
+<span class="k">let</span> m: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = rok::bare::const_cast(p);
+<span class="k">unsafe</span> { m.write(c<span class="s">'H'</span>) };          <span class="c">// SEGFAULT - immortal const 쓰기</span>
+</code></pre>
+<p>C 의 <code>const_cast&lt;T*&gt;</code> 와 정확히 동형입니다. 사용처는 read-only API 를 임시로 mutability 가 필요한 자리에 wrapping 하는 정도로 한정되며, 일반 코드에서는 <strong>사용하지 말 것</strong>.</p>
+<h2 id="125-reinterpreta-pod-b-pod---bit-cast-안전"><a class="anchor" tabindex="-1" href="#125-reinterpreta-pod-b-pod---bit-cast-안전" aria-hidden="true">#</a>1.2.5. <code>reinterpret&lt;A: Pod, B: Pod&gt;</code> - bit cast (안전)</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Pod</span> { <span class="c">/* marker - Plain Old Data */</span> }
+
+<span class="k">fn</span> reinterpret&lt;<span class="t">A</span>: <span class="t">Pod</span>, <span class="t">B</span>: <span class="t">Pod</span>&gt;(a: <span class="t">A</span>) -&gt; <span class="t">B</span>;
+</code></pre>
+<p><code>Pod</code> (Plain Old Data) marker 가 있는 타입에 한해서는 <strong>safe transmute</strong> 가 보장됩니다. 그 근거는 다음과 같습니다.</p>
+<ul>
+<li><code>Pod</code> 타입은 모든 bit pattern 이 유효하므로 uninit 이 노출될 일이 없습니다.
+</li>
+<li>변환은 같은 size 끼리만 허용됩니다. <code>where size_of</code> bound 는 컴파일 타임 형태가 없으므로, size 조건은 <code>reinterpret</code> 가 실행될 때 검사합니다 (다르면 panic).
+</li>
+<li>값 변환이라 alignment 가 자연히 보장됩니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> f: <span class="t">f32</span> = <span class="n">3.14</span>;
+<span class="k">let</span> bits: <span class="t">u32</span> = rok::bare::reinterpret(f);     <span class="c">// OK - 둘 다 Pod, 4 byte</span>
+<span class="k">let</span> f2: <span class="t">f32</span> = rok::bare::reinterpret(bits);    <span class="c">// round-trip OK</span>
+</code></pre>
+<h3 id="pod-자동-derive"><a class="anchor" tabindex="-1" href="#pod-자동-derive" aria-hidden="true">#</a><code>Pod</code> 자동 derive</h3>
+<p>표준 라이브러리가 자동으로 <code>Pod</code> 을 붙여 주는 타입은 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Pod</span> <span class="k">for</span> <span class="t">i8</span>, <span class="t">i16</span>, <span class="t">i32</span>, <span class="t">i64</span>, <span class="t">u8</span>, <span class="t">u16</span>, <span class="t">u32</span>, <span class="t">u64</span>, <span class="t">usize</span>, <span class="t">isize</span> { }
+<span class="k">impl</span> <span class="t">Pod</span> <span class="k">for</span> <span class="t">f32</span>, <span class="t">f64</span> { }
+<span class="k">impl</span> <span class="t">Pod</span> <span class="k">for</span> <span class="t">bool</span> { }
+<span class="k">impl</span> <span class="t">Pod</span> <span class="k">for</span> <span class="t">char</span>, c_char { }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Pod</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; <span class="t">Pod</span> <span class="k">for</span> [<span class="t">T</span>; <span class="t">N</span>] { }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Pod</span>, <span class="t">U</span>: <span class="t">Pod</span>&gt; <span class="t">Pod</span> <span class="k">for</span> (<span class="t">T</span>, <span class="t">U</span>) { }
+<span class="c">// Tuple 더 큰 arity 는 macro / 자동</span>
+</code></pre>
+<p>반면 다음은 자동으로 붙지 않습니다 (uninit 노출 가능성 때문입니다).</p>
+<ul>
+<li><code>bool</code> 은 0/1 만 valid 이지만, 실제로는 niche 가 invalid bit 를 잡아 주므로 자동 적용됩니다.
+</li>
+<li><code>Ptr&lt;T&gt;</code> 는 provenance 정보가 따로 있어 bit 만으로는 표현되지 않습니다.
+</li>
+<li>사용자 struct 는 <code>#[derive(Pod)]</code> 로 명시해야 합니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="a">#[derive(Pod)]</span>
+<span class="a">#[repr(C)]</span>
+<span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f32</span>; y: <span class="t">f32</span>; z: <span class="t">f32</span>; }
+
+<span class="k">let</span> v: <span class="t">Vec3</span> = <span class="t">Vec3</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span>, z: <span class="n">3.0</span> };
+<span class="k">let</span> bytes: [<span class="t">u8</span>; <span class="n">12</span>] = rok::bare::reinterpret(v);
+<span class="k">let</span> v2: <span class="t">Vec3</span> = rok::bare::reinterpret(bytes);
+</code></pre>
+<p>이 설계는 <a href="https://rust-lang.github.io/rfcs/2835-project-safe-transmute.html">Project Safe Transmute (Rust RFC 2835)</a> 모델과 <a href="https://docs.rs/bytemuck">bytemuck crate</a> 패턴을 그대로 따릅니다.</p>
+<h2 id="126-transmute_uncheckeda-b---escape-hatch"><a class="anchor" tabindex="-1" href="#126-transmute_uncheckeda-b---escape-hatch" aria-hidden="true">#</a>1.2.6. <code>transmute_unchecked&lt;A, B&gt;</code> - escape hatch</h2>
+<pre><code class="language-rok"><span class="k">fn</span> transmute_unchecked&lt;<span class="t">A</span>, <span class="t">B</span>&gt;(a: <span class="t">A</span>) -&gt; <span class="t">B</span>;       <span class="c">// size check 도 안 함</span>
+</code></pre>
+<p>이 함수는 <code>Pod</code> 검증조차 <strong>없이</strong> bit 를 그대로 옮깁니다. 이름 그대로 가장 위험한 cast 로, uninit 노출, size 불일치, alignment 문제 모두 호출자 책임입니다.</p>
+<p>쓰임새는 표준 라이브러리 내부의 가장 <strong>낮은 layer</strong> 에 한정됩니다. 예컨대 <code>Pod</code> impl 자체를 작성할 때처럼 다른 도구로는 도저히 표현할 수 없는 경우만 해당합니다. 일반 사용자 코드에서는 절대 쓰지 말 것.</p>
+<pre><code class="language-rok"><span class="c">// 표준 라이브러리 내부 예</span>
+<span class="k">impl</span> <span class="t">Pod</span> <span class="k">for</span> <span class="t">SomeNewtype</span> {
+    <span class="c">// empty marker</span>
+}
+
+<span class="k">let</span> s: <span class="t">SomeNewtype</span> = ...;
+<span class="k">let</span> bits: <span class="t">u64</span> = rok::bare::transmute_unchecked(s);   <span class="c">// SomeNewtype 이 size 8 보장한 코드</span>
+</code></pre>
+<h2 id="127-as-cast-의-적용-자리"><a class="anchor" tabindex="-1" href="#127-as-cast-의-적용-자리" aria-hidden="true">#</a>1.2.7. <code>as</code> cast 의 적용 자리</h2>
+<p><code>as</code> 는 오직 수치 변환 자리에서만 허용되며, 그 안에서도 lossless 이거나 saturate / wrap 이 명시된 경우로 한정됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>표현</th><th>결과</th></tr></thead>
+<tbody>
+<tr><td><code>i32 as i64</code></td><td>OK (lossless widening)</td></tr>
+<tr><td><code>i64 as i32</code></td><td><strong>컴파일 에러</strong> - <code>try_into</code> / <code>saturating_into</code></td></tr>
+<tr><td><code>f32 as f64</code></td><td>OK (lossless)</td></tr>
+<tr><td><code>i32 as f32</code></td><td><strong>컴파일 에러</strong> - <code>as f32</code> 정밀도 손실 가능</td></tr>
+<tr><td><code>u32 as i32</code></td><td><strong>컴파일 에러</strong> - bit reinterpret (<code>reinterpret</code> 사용)</td></tr>
+<tr><td><code>Ptr&lt;T&gt; as Ptr&lt;U&gt;</code></td><td><strong>컴파일 에러</strong> - <code>rok::bare::ptr_cast::&lt;U&gt;</code></td></tr>
+<tr><td><code>Ptr&lt;T&gt; as usize</code></td><td><strong>컴파일 에러</strong> - <code>.addr()</code> 또는 <code>expose_provenance</code></td></tr>
+<tr><td><code>usize as Ptr&lt;T&gt;</code></td><td><strong>컴파일 에러</strong> - <code>from_exposed_provenance</code></td></tr>
+</tbody></table></div>
+<p>자세한 변환 매트릭스는 <a href="../200-core/211-conversion">2.11 conversion</a> 을 참고하라.</p>
+<h2 id="128-정책-요약"><a class="anchor" tabindex="-1" href="#128-정책-요약" aria-hidden="true">#</a>1.2.8. 정책 요약</h2>
+<p>본 장의 cast 정책은 다음 네 가지로 정리됩니다.</p>
+<ul>
+<li><code>as</code> cast 는 <strong>수치 lossless</strong> 만 허용하고, pointer 와 bit reinterpret 은 거부합니다.
+</li>
+<li><code>rok::bare::ptr_cast</code> / <code>align_cast</code> / <code>const_cast</code> / <code>reinterpret</code> 네 함수가 명시 cast 의 통로입니다.
+</li>
+<li><code>Pod</code> marker trait 이 bit reinterpret 의 안전 조건을 제공합니다.
+</li>
+<li><code>transmute_unchecked</code> 는 escape hatch 로만 노출됩니다.
+</li>
+</ul>
+<p>이 정책 덕분에 rok 은 C 의 번거로운 형 변환과 Rust 의 <code>as</code> 함정을 동시에 피해 갈 수 있습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/102-cast.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="101-ptr"><small>Previous</small>1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a><a class="next" href="103-mem"><small>Next</small>1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

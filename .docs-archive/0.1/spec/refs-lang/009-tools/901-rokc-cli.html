@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.1. rokc CLI interface - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines the command-line interface of the compiler rokc. The toolchain consists of three binaries.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/901-rokc-cli.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.1. rokc CLI interface - rok docs">
+<meta property="og:description" content="This section defines the command-line interface of the compiler rokc. The toolchain consists of three binaries.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/901-rokc-cli.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/901-rokc-cli.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/901-rokc-cli.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="901-rokc-cli">9.1. rokc CLI interface</a><ul class="toc"><li><a href="#911-general-form">9.1.1. General form</a></li><li><a href="#912-core-subcommands">9.1.2. Core subcommands</a></li><li><a href="#913-debug--diagnostic-subcommands">9.1.3. Debug / diagnostic subcommands</a></li><li><a href="#914-auxiliary-subcommands">9.1.4. Auxiliary subcommands</a></li><li><a href="#915-global-options">9.1.5. Global options</a></li><li><a href="#916-exit-codes">9.1.6. Exit codes</a></li><li><a href="#917-environment-variables">9.1.7. Environment variables</a></li><li><a href="#918-output-format">9.1.8. Output format</a></li><li><a href="#919-standard-input">9.1.9. Standard input</a></li><li><a href="#9110-compatibility-with-external-tools">9.1.10. Compatibility with external tools</a></li><li><a href="#9111-standard-format-rokc-fmt">9.1.11. Standard format (rokc fmt)</a></li></ul></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="91-rokc-cli-interface 91-rokc-cli-인터페이스 911-general-form 911-일반-형태 package-selection-path 패키지-지정-path 912-core-subcommands 912-핵심-서브명령 rokc-build-aot-build rokc-build-aot-빌드 rokc-profdata-merge-profile-merge rokc-profdata-merge-profile-병합 rokc-profdata-show-profile-summary rokc-profdata-show-profile-요약 rokc-emit-intermediate-output rokc-emit-중간-산출물 rokc-run-build-and-run rokc-run-빌드-후-실행 rokc-test-tests rokc-test-테스트 rokc-bench-benchmarks rokc-bench-벤치마크 rokc-repl-terminal-repl rokc-repl-터미널-repl rokc-jupyter-jupyter-kernel rokc-jupyter-jupyter-커널 rokc-fmt-formatter rokc-fmt-포매터 rokc-check-diagnostics rokc-check-진단 rokc-lint-linter rokc-lint-린터 rokc-doc-documentation-generation rokc-doc-문서-생성 rokc-lsp-lsp-server rokc-lsp-lsp-서버 913-debug--diagnostic-subcommands 913-디버그--진단-서브명령 rokc-bindgen-c-header-bindings rokc-bindgen-c-헤더-binding rokc-demangle-symbol-demangle rokc-demangle-심볼-demangle rokc-rokhir-text-rokhir-text-output rokc-rokhir-text-rokhir-텍스트-출력 rokc-inspect-package-inspection rokc-inspect-패키지-검사 914-auxiliary-subcommands 914-보조-서브명령 rokc-clean-remove-build-output rokc-clean-빌드-산출물-제거 rokc-version-version rokc-version-버전 rokc---print-cfg-active-cfg rokc---print-cfg-활성-cfg rokc---print-target-list--target-spec-targets rokc---print-target-list--target-spec-타깃 rokc---print-lldbinit-lldb-formatters rokc---print-lldbinit-lldb-formatter rokc-help-help rokc-help-도움말 915-global-options 915-전역-옵션 916-exit-codes 916-종료-코드 917-environment-variables 917-환경-변수 918-output-format 918-출력-형식 diagnostic-messages 진단-메시지 build-progress 빌드-진행 json-output-for-tool-integration json-출력-도구-통합용 919-standard-input 919-표준-입력 9110-compatibility-with-external-tools 9110-외부-도구와의-호환 9111-standard-format-rokc-fmt 9111-표준-포맷-rokc-fmt"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/901-rokc-cli" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="91-rokc-cli-interface"><a class="anchor" tabindex="-1" href="#91-rokc-cli-interface" aria-hidden="true">#</a>9.1. <code>rokc</code> CLI interface</h1>
+<p>This section defines the command-line interface of the compiler <code>rokc</code>. The toolchain consists of three binaries.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Binary</th><th>Role</th></tr></thead>
+<tbody>
+<tr><td><code>rokc</code></td><td>Compiler (the counterpart of rustc). Contains build, run, test, formatter, linter, REPL and LSP (this section)</td></tr>
+<tr><td><code>rok</code></td><td>Cargo-style front-end. Owns the manifest, dependencies, environments and toolchain pin, and invokes <code>rokc</code> (<a href="910-rok-frontend">9.10</a>)</td></tr>
+<tr><td><code>rokls</code></td><td>LSP server executable for editors. Equivalent to <code>rok lsp</code></td></tr>
+</tbody></table></div>
+<p>The runtime is <code>librokr.a</code> (<code>rokr</code>). There are no separate tools (<code>rok-fmt</code> etc.). <code>rokc</code> does not resolve dependencies; dependency packages are passed by <code>rok</code> via <code>--extern</code> (<a href="902-aot-pipeline#923-dependency-resolution">9.2.3</a>).</p>
+<h2 id="911-general-form"><a class="anchor" tabindex="-1" href="#911-general-form" aria-hidden="true">#</a>9.1.1. General form</h2>
+<p><code>rokc</code> is invoked in the following general form.</p>
+<pre><code>rokc &lt;subcommand&gt; [options] [args]
+</code></pre>
+<p>As grammar rules:</p>
+<pre><code>cli_invocation  ::= &quot;rokc&quot; subcommand option* arg*
+subcommand      ::= &quot;build&quot; | &quot;emit&quot; | &quot;run&quot; | &quot;test&quot; | &quot;bench&quot; | &quot;check&quot;
+                  | &quot;fmt&quot; | &quot;lint&quot; | &quot;doc&quot; | &quot;repl&quot; | &quot;jupyter&quot; | &quot;lsp&quot;
+                  | &quot;clean&quot; | &quot;profdata&quot; | &quot;bindgen&quot; | &quot;demangle&quot; | &quot;rokhir-text&quot; | &quot;inspect&quot; | &quot;version&quot; | &quot;help&quot;
+option          ::= &quot;--&quot; identifier (&quot;=&quot; value)?
+                  | &quot;-&quot; letter
+</code></pre>
+<p><code>--name value</code> is equivalent to <code>--name=value</code>. Global options (9.1.5) may appear before or after the subcommand.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Area</th><th>Subcommands</th></tr></thead>
+<tbody>
+<tr><td>Build / run</td><td><code>build</code>, <code>emit</code>, <code>run</code>, <code>test</code>, <code>bench</code>, <code>check</code></td></tr>
+<tr><td>Package</td><td><code>clean</code></td></tr>
+<tr><td>Tools</td><td><code>fmt</code>, <code>lint</code>, <code>doc</code>, <code>lsp</code>, <code>profdata</code>, <code>bindgen</code></td></tr>
+<tr><td>Interactive</td><td><code>repl</code>, <code>jupyter</code></td></tr>
+<tr><td>Debug / diagnostic</td><td><code>demangle</code>, <code>rokhir-text</code>, <code>inspect</code></td></tr>
+<tr><td>Other</td><td><code>version</code>, <code>help</code></td></tr>
+</tbody></table></div>
+<h3 id="package-selection-path"><a class="anchor" tabindex="-1" href="#package-selection-path" aria-hidden="true">#</a>Package selection (<code>path</code>)</h3>
+<p>The <code>[path]</code> of <code>build</code> / <code>run</code> / <code>test</code> / <code>check</code> / <code>clean</code> is one of the following. If omitted, it is the current directory.</p>
+<div class="table-wrap"><table>
+<thead><tr><th><code>path</code></th><th>Package</th></tr></thead>
+<tbody>
+<tr><td>Package directory</td><td>That directory. If it has no <code>src/main.rok</code> or <code>src/lib.rok</code>, the search moves upward (9.2.2)</td></tr>
+<tr><td>File in a package's <code>src/</code></td><td>That package: the first directory containing <code>src/main.rok</code> / <code>src/lib.rok</code>, walking upward from the file</td></tr>
+<tr><td>Any other file</td><td>An anonymous executable package consisting of that single file (<a href="../004-functions/416-entry-point#4168-single-file-execution">4.16.8</a>), including a <code>.rok</code> file in a package directory outside its <code>src/</code></td></tr>
+</tbody></table></div>
+<p>It is an error if a directory is given and no package is found walking upward. An anonymous package's file submodules (<code>mod foo;</code>) are beside its file (<a href="../004-functions/416-entry-point#4168-single-file-execution">4.16.8</a>).</p>
+<p>The package name (the output name) is the name of the package directory; for an anonymous package it is the file name without <code>.rok</code>.</p>
+<h2 id="912-core-subcommands"><a class="anchor" tabindex="-1" href="#912-core-subcommands" aria-hidden="true">#</a>9.1.2. Core subcommands</h2>
+<h3 id="rokc-build-aot-build"><a class="anchor" tabindex="-1" href="#rokc-build-aot-build" aria-hidden="true">#</a><code>rokc build</code>: <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> build</h3>
+<p><code>rokc build</code> builds a package AOT.</p>
+<pre><code>rokc build [path]
+</code></pre>
+<p><code>[path]</code> follows the package selection rules above. Output is placed in the per-profile <code>target/</code> of <a href="902-aot-pipeline#9215-output">9.2.15</a>. <code>src/main.rok</code> produces <code>target/&lt;profile&gt;/&lt;name&gt;</code>; <code>src/lib.rok</code> produces <code>target/&lt;profile&gt;/lib&lt;name&gt;.a</code> plus the interface <code>target/&lt;profile&gt;/&lt;name&gt;.rokhir</code> (<a href="904-rokhir-bytecode">9.4</a>); a package with both produces both. The profile is <code>release</code> for <code>-O2</code> / <code>-O3</code> / <code>-Os</code> (including <code>--release</code>) and <code>debug</code> otherwise; with <code>--target=&lt;target&gt;</code> the directory is <code>target/&lt;name&gt;/&lt;profile&gt;/</code>. If <code>--target-dir=&lt;dir&gt;</code> or <code>ROKC_TARGET_DIR</code> is set, that directory is used instead of <code>target/</code>.</p>
+<p>Options:</p>
+<ul>
+<li><code>--release</code> performs an optimized build (equivalent to <code>-O2</code>) in the <code>release</code> profile; the default is a debug build (<code>-O0</code>) in the <code>debug</code> profile. The profiles differ as <a href="902-aot-pipeline#9215-output">9.2.15</a> describes.
+</li>
+<li><code>--target-dir=&lt;dir&gt;</code> relocates <code>target/</code> (equivalent to <code>ROKC_TARGET_DIR</code>).
+</li>
+<li><code>--extern &lt;name&gt;=&lt;dir | src/lib.rok | &lt;name&gt;.rokhir | lib&lt;name&gt;.a&gt;</code> mounts one dependency package at the top-level path <code>name</code> (<a href="902-aot-pipeline#923-dependency-resolution">9.2.3</a>). Source (<code>dir</code> / <code>src/lib.rok</code>) is compiled together in the same build; a prebuilt package (<code>.rokhir</code> / <code>.a</code>; given one, its sibling is located) has its ROKHIR read and its archive linked. May be given multiple times and is normally filled in by <code>rok</code>. <code>name</code> is an identifier: the package name with <code>-</code> replaced by <code>_</code> (<a href="910-rok-frontend#9103-rokrokon--roklock">9.10.3</a>). <code>rok</code> is reserved for the standard library: <code>--extern rok=..</code> is a usage error, and a library package named <code>rok</code> is rejected. So are a keyword and a path start (<code>pkg</code>, <code>sup</code>), as <code>name</code> and as the name of a library or of a package with one (<a href="910-rok-frontend#9103-rokrokon--roklock">9.10.3</a>).
+</li>
+<li><code>--extern-feature &lt;name&gt;=&lt;f&gt;</code> builds the source dependency <code>name</code> with <code>cfg(feature = &quot;&lt;f&gt;&quot;)</code>. Repeatable, one per feature. A dependency sees only these: the <code>feature</code> keys of <code>--cfg</code> belong to the package being compiled. Normally filled in by <code>rok</code>.
+</li>
+<li><code>--name &lt;n&gt;</code> sets the package name (naming rules of <a href="910-rok-frontend#9103-rokrokon--roklock">9.10.3</a>). The outputs are <code>lib&lt;n&gt;.a</code> / <code>&lt;n&gt;.rokhir</code> and the mount name is the name with <code>-</code> replaced by <code>_</code>. The default is the directory name. <code>--extern a-b=..</code> is likewise bound as <code>a_b</code>.
+</li>
+<li><code>--bootstrap &lt;file&gt;</code> gives a standard library root to preload (may be repeated); <code>--rokr &lt;lib&gt;</code> gives the runtime to link. The defaults are the sysroot's <code>lib/rok/{core,std,bare}/src/lib.rok</code> and <code>lib/librokr.a</code> (<a href="902-aot-pipeline#9219-installation-layout">9.2.19</a>). A bootstrap root's tier is the name of the directory above its <code>src/</code>; given <code>core/src/lib.rok</code> without a <code>bare</code> root, <code>bare/src/lib.rok</code> beside it is loaded too. If not found, it is an error that lists the paths searched.
+</li>
+<li><code>-O0</code> / <code>-O1</code> / <code>-O2</code> / <code>-O3</code> / <code>-Os</code> select the optimization level explicitly. <code>-O0</code> uses the native backend, the others the MLIR → LLVM backend (<a href="902-aot-pipeline#9210-backend-selection">9.2.10</a>).
+</li>
+<li><code>--target=&lt;target&gt;</code> selects the target platform: a built-in name such as the 15 Tier 1 targets of <a href="../000-meta/006-platform-targets">Platform targets</a>, or a <code>&lt;name&gt;.rokon</code> target specification file (<a href="../000-meta/006-platform-targets#065-target-specifications">0.6.5</a>). Any target can be built from any host (<a href="../000-meta/002-pipeline#024-backends">0.2.4</a>).
+</li>
+<li><code>-L &lt;dir&gt;</code> adds a library search directory for <code>#[link]</code> (<a href="../005-modules/509-extern-block#599-linklibname-naming-the-library">5.9.9</a>), searched before <code>LIBRARY_PATH</code>. May be repeated.
+</li>
+<li><code>-l [static=|dylib=]&lt;name&gt;</code> links the library <code>&lt;name&gt;</code> (searched like <code>#[link]</code>), and <code>--native-runtime &lt;file&gt;</code> names a shared library to ship beside the executable (<a href="902-aot-pipeline#9214-linking-for-executables">9.2.14</a>). Both may be repeated; <code>rok</code> passes them for native packages (<a href="910-rok-frontend#9104b-native-packages">9.10.4b</a>).
+</li>
+<li><code>-o</code> / <code>--out=&lt;path&gt;</code> selects the output location.
+</li>
+<li><code>--cfg &lt;flag&gt;</code> / <code>--cfg &lt;key&gt;=&lt;value&gt;</code> sets a cfg flag for <a href="../006-meta-system/603-cfg">conditional compilation</a>. May be repeated.
+</li>
+<li><code>--emit=&lt;kind&gt;[,&lt;kind&gt;..]</code> writes intermediate output (<code>ast</code>, <code>hir</code>, <code>mir</code>, <code>mlir</code>, <code>llvmir</code>, <code>asm</code>, <code>obj</code>, <code>expanded</code>) to <code>target/&lt;profile&gt;/build/&lt;name&gt;.&lt;ext&gt;</code> (<a href="909-debug-tools#991-intermediate-output---emit">9.9.1</a>). Several kinds may be given at once separated by commas; in that case <code>-o</code> cannot be used. With <code>--emit</code>, no executable or archive is produced.
+</li>
+<li><code>--load-mlir-plugin &lt;path|name&gt;</code> loads an MLIR dialect plugin, <code>--load-mlir-pass-plugin &lt;path|name&gt;</code> loads a pass plugin (both into <code>rokc</code>'s MLIR; built against the same pinned LLVM, on Windows linked against <code>rokc.exe</code>'s import library), and <code>--mlir-pass &lt;pass&gt;</code> runs that pass before conversion to the LLVM dialect (<a href="../../refs-standard-libraries/100-bare/110-mlir-plugin#1103-plugin-loading">rok::bare::mlir::plugin</a>). All may be repeated, and <code>rok</code> passes them through unchanged.
+</li>
+<li><code>-g</code> adds debug information to a <code>release</code> profile build: DWARF, or CodeView in a PDB for Windows targets (<a href="909-debug-tools#996-debugger-integration-gdb--lldb">9.9.6</a>). A <code>debug</code> profile build always has it.
+</li>
+<li><code>-C overflow-checks[=yes|no]</code> turns overflow checks (panic) for fixed-width integer arithmetic on or off. The default is on only at <code>-O0</code>. An omitted value means <code>yes</code>. Operations on constant operands that cannot overflow skip the check.
+</li>
+<li><code>-C backend=native|llvm</code> overrides the backend the optimization level selects (<a href="902-aot-pipeline#9210-backend-selection">9.2.10</a>).
+</li>
+<li><code>-C target-cpu=&lt;cpu&gt;|native</code> targets that CPU instead of the triple's baseline (<a href="../000-meta/006-platform-targets#064-simd">0.6.4</a>); <code>native</code> is the CPU of the build machine. <code>-C target-feature=+f1,-f2,..</code> turns individual features (<code>+avx2</code>, ...) on or off. The resulting binary may not run on CPUs without them. With the native backend (<code>-O0</code>) the options are noted (a warning) and code is built for the baseline. <code>native</code> is accepted only when the target is the host platform.
+</li>
+<li><code>-C subsystem=console|windows</code> selects the Windows subsystem: <code>console</code> (default, <code>mainCRTStartup</code>) or <code>windows</code> (GUI, <code>WinMainCRTStartup</code>; <a href="905-symbol-mangling#959-symbol-of-the-main-function">9.5.9</a>).
+</li>
+<li><code>-C profile-generate[=&lt;dir&gt;]</code> instruments the program and its source dependencies for profile-guided optimization. Running it writes a raw profile <code>&lt;dir&gt;/default_%m.profraw</code> (default <code>&lt;dir&gt;</code>: the working directory at run time; <code>LLVM_PROFILE_FILE</code> overrides the path). An instrumented executable links the profile runtime the toolchain ships for the target (<a href="902-aot-pipeline#9219-installation-layout">9.2.19</a>). Not supported for wasm32-unknown-unknown (no file system).
+</li>
+<li><code>-C cs-profile-generate[=&lt;dir&gt;]</code>, with <code>-C profile-use</code>, instruments again after inlining (context-sensitive); merging its runs with that profile gives the one profile <code>-C profile-use</code> reads.
+</li>
+<li><code>-C profile-use=&lt;file&gt;</code> optimizes with an indexed profile from <code>rokc profdata merge</code>. A missing file is an error. Functions whose control flow changed since the profile was recorded are optimized without it, and one warning gives their count.
+</li>
+<li>Both select the MLIR → LLVM backend at every level, and with them <code>-C backend=native</code> is an error. The standard library is compiled with the program (not taken from the cache), so it is profiled and optimized too. The REPL rejects both.
+</li>
+</ul>
+<p><code>rokc build</code> reports the package's lint diagnostics as <code>rokc check</code> does (<a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">6.2.9</a>): warnings are printed and the build goes on; a <code>deny</code> lint fails it. If nothing has changed since the previous build, <code>rokc build</code> / <code>rokc run</code> print <code>Fresh</code>, print that build's warnings again, and skip the build (<a href="902-aot-pipeline#9216-incremental-build">9.2.16</a>).</p>
+<h3 id="rokc-profdata-merge-profile-merge"><a class="anchor" tabindex="-1" href="#rokc-profdata-merge-profile-merge" aria-hidden="true">#</a><code>rokc profdata merge</code>: profile merge</h3>
+<pre><code>rokc profdata merge [-o &lt;file&gt;] &lt;file | dir&gt;...
+</code></pre>
+<p>Merges raw (<code>.profraw</code>), indexed (<code>.profdata</code>) and text (<code>.proftext</code>, LLVM's text profile format) profiles into one indexed profile (default <code>default.profdata</code>) for <code>-C profile-use</code>. A directory stands for those files in it; empty raw profiles are skipped. It runs in process. Merge warnings (counter overflow, mismatched counters) are reported and the merge still writes its output.</p>
+<h3 id="rokc-profdata-show-profile-summary"><a class="anchor" tabindex="-1" href="#rokc-profdata-show-profile-summary" aria-hidden="true">#</a><code>rokc profdata show</code>: profile summary</h3>
+<pre><code>rokc profdata show [--all-functions] [--topn N] &lt;file&gt;
+</code></pre>
+<p>Prints a summary of a profile in <code>llvm-profdata show</code> form: the instrumentation level and the number of functions shown and in total. <code>--all-functions</code> adds each function's hash and counters; <code>--topn N</code> lists the N functions with the largest internal block counts.</p>
+<h3 id="rokc-emit-intermediate-output"><a class="anchor" tabindex="-1" href="#rokc-emit-intermediate-output" aria-hidden="true">#</a><code>rokc emit</code>: intermediate output</h3>
+<pre><code>rokc emit [path] [--emit=&lt;kind&gt;[,&lt;kind&gt;..]]
+</code></pre>
+<p>Equivalent to <code>rokc build --emit=..</code>. If <code>--emit</code> is omitted, it is <code>mlir</code>.</p>
+<h3 id="rokc-run-build-and-run"><a class="anchor" tabindex="-1" href="#rokc-run-build-and-run" aria-hidden="true">#</a><code>rokc run</code>: build and run</h3>
+<p><code>rokc run</code> runs the output immediately after building.</p>
+<pre><code>rokc run [path] [-- args...]
+</code></pre>
+<p>It builds an executable package and runs it at once; arguments after <code>--</code> are passed to the executable unchanged. Options are the same as <code>rokc build</code>. A library package has nothing to run, so it is an error.</p>
+<p>A package is built to <code>target/&lt;profile&gt;/&lt;name&gt;</code>; an anonymous package (single file) is built in a temporary directory, so no <code>target/</code> is created next to the file. <code>rokc build &lt;file&gt;.rok</code> builds even an anonymous package into <code>target/</code>.</p>
+<pre><code>rokc run hello.rok -- arg1 arg2
+</code></pre>
+<p>The exit code of <code>rokc run</code> is the exit code of the program. If the program terminates by signal <code>n</code>, it is <code>128 + n</code>.</p>
+<h3 id="rokc-test-tests"><a class="anchor" tabindex="-1" href="#rokc-test-tests" aria-hidden="true">#</a><code>rokc test</code>: tests</h3>
+<p><code>rokc test</code> collects test functions and builds the test harness; <code>rok test</code> (<a href="910-rok-frontend">9.10</a>) runs it.</p>
+<pre><code>rokc test [path] [filter]
+</code></pre>
+<p>It collects functions marked <code>#[test]</code> and builds a test executable (the harness). <code>#[test]</code> implies <code>#[cfg(test)]</code> (<a href="../006-meta-system/602-built-in-attributes#625-test-test-function-marker">6.2.5</a>), so test functions are not part of a normal build. Tests are collected both from <code>src/</code> (under <code>#[cfg(test)]</code>) and from the <code>tests/</code> directory (<a href="../000-meta/003-source-units#035-test-and-benchmark-directories">0.3.5</a>). A test build uses an entry point that selects tests instead of the package's entry point.</p>
+<p><code>rokc</code> does not run the harness. <code>--emit-harness &lt;file&gt;</code> writes the built executables and the tests in them - the manifest <code>rok test</code> runs - to <code>&lt;file&gt;</code>; without it the built executables are named on standard error. Running the harness (selecting tests, the process isolation, parallelism and reporting below) is the <code>rok test</code> runner (<a href="910-rok-frontend">9.10</a>).</p>
+<p>If there is a single argument and it is not an existing path, it is taken as <code>filter</code>. <code>filter</code> matches the test name including its module path (<code>math::adds</code>).</p>
+<ul>
+<li>It is a small regular expression using <code>^</code> <code>$</code> <code>.</code> <code>*</code> <code>+</code> <code>?</code> and <code>\</code> escapes. The search is unanchored, so without <code>^</code> / <code>$</code> it may match any part of the name.
+</li>
+<li>Without these characters it is equivalent to a plain substring search.
+</li>
+</ul>
+<p><strong>Each test runs in its own process.</strong> If a test panics (exit code 101) or ends with an uncaught error (exit code 1), only that test fails and the rest keep running. Termination by signal is also a failure.</p>
+<p>Options are the same as <code>rokc build</code>, plus two more:</p>
+<ul>
+<li><code>--threads=N</code> sets the number of test processes run concurrently. The default is <code>ROKC_NUM_JOBS</code>, or the CPU count if that is unset.
+</li>
+<li><code>--show-output</code> also shows the stdout / stderr of passing tests. Output of failing tests is always shown.
+</li>
+</ul>
+<p>Output goes to stdout in the following form.</p>
+<pre><code>running 3 tests
+test math::adds ... ok
+test math::subs ... FAILED
+test util::trims ... ok
+
+failures:
+
+---- math::subs ----
+&lt;stdout / stderr of that test&gt;
+(panicked (exit 101))
+
+failures:
+    math::subs
+
+test result: FAILED. 2 passed; 1 failed; 0 filtered out; finished in 0.12s
+</code></pre>
+<p>If any test fails, the exit code is <code>1</code>.</p>
+<p>In a package with both root files, the library's tests run first, then the executable's (built against the library without its tests); a failing library run ends the command. <code>run</code> and <code>bench</code> work the same way.</p>
+<h3 id="rokc-bench-benchmarks"><a class="anchor" tabindex="-1" href="#rokc-bench-benchmarks" aria-hidden="true">#</a><code>rokc bench</code>: benchmarks</h3>
+<pre><code>rokc bench [path] [filter]
+</code></pre>
+<p>Collects functions marked <code>#[bench]</code> and builds them in an optimized build (<code>-O2</code> unless <code>-O</code> is given); <code>rok bench</code> (<a href="910-rok-frontend">9.10</a>) runs the harness and measures them (<a href="909-debug-tools#9911-benchmarks">9.9.11</a>). Like <code>#[test]</code>, <code>#[bench]</code> implies <code>#[cfg(test)]</code>, and benches are collected both from <code>src/</code> and from the <code>benches/</code> directory (<a href="../000-meta/003-source-units#035-test-and-benchmark-directories">0.3.5</a>). The <code>path</code>, <code>filter</code> and <code>--emit-harness</code> rules are the same as <code>rokc test</code>.</p>
+<p>A benchmark takes a <code>Bench</code> handle and times a closure, so setup stays out of the measurement:</p>
+<pre><code class="language-rok"><span class="a">#[bench]</span>
+<span class="k">fn</span> parse_1kb(b: <span class="t">Bench</span>) {
+    <span class="k">let</span> input = sample(<span class="n">1024</span>);               <span class="c">// setup: run once, not timed</span>
+    b.bytes(<span class="n">1024</span>);                          <span class="c">// optional: report throughput</span>
+    b.iter(|| parse(black_box(input)));     <span class="c">// the timed region</span>
+}
+</code></pre>
+<p><code>b.iter(f)</code> performs the whole measurement (calibrate, warm up, sample); its result is black-boxed. <code>black_box</code> (<a href="../../refs-standard-libraries/"><code>rok::core</code></a>) is an identity the optimizer cannot see through - apply it to the inputs and result of the timed region so the work is neither hoisted out nor folded away. <code>b.bytes(n)</code> / <code>b.items(n)</code> add a throughput column. <code>Bench</code>, <code>black_box</code> and the statistics are library API; the method is defined in <a href="909-debug-tools#9911-benchmarks">9.9.11</a>.</p>
+<ul>
+<li><code>--iters=N</code> fixes the number of calls per sample instead of calibrating.
+</li>
+<li><code>--samples=N</code> is the number of samples measured (default 100).
+</li>
+</ul>
+<p>Benchmarks run one at a time. Terminal output is one aligned line per benchmark, in human units; when stdout is not a terminal a stable machine form is written for regression tools.</p>
+<pre><code>  json::parse_1kb     1.84 us +/- 0.03 us   543 MiB/s   [2 outliers]
+</code></pre>
+<h3 id="rokc-repl-terminal-repl"><a class="anchor" tabindex="-1" href="#rokc-repl-terminal-repl" aria-hidden="true">#</a><code>rokc repl</code>: terminal REPL</h3>
+<p><code>rokc repl</code> launches an interactive shell in the terminal.</p>
+<pre><code>rokc repl [path]
+</code></pre>
+<p>This mode runs as a terminal interactive shell. Cell semantics follow the rules of <a href="907-jit-cells#970-rules-of-the-cell-session">9.7.0</a>: each cell runs exactly once, top-level <code>let</code> bindings and items carry over to later cells, and a failed cell leaves no trace in the bindings. An expression cell prints <code>type: value</code>.</p>
+<ul>
+<li>The default mode compiles each cell with the native backend and hands the code to a JIT host process that lives for the session; the host loads it and runs it once (<a href="906-jit-engine">9.6</a>). Bindings, <code>static</code> state and <code>any</code> values carry over between cells. A binding whose type cannot be named at top level (closures, private types, etc.) is rejected when created.
+</li>
+<li>Diagnostics and panic locations name <code>&lt;repl&gt;:line:col</code> over the cell's own text.
+</li>
+<li>Input has line editing and history; the history persists in <code>$ROK_HOME/repl_history</code>.
+</li>
+<li>Without a path the session starts empty. A program path (a lone <code>.rok</code> file or a package with <code>src/main.rok</code>) is loaded and run, top-level statements as cells and <code>fn main</code> as the entry, and the session continues (<a href="907-jit-cells#9710-loading-a-program-repl-path">9.7.10</a>). A library package path (<code>src/lib.rok</code>) is added as a dependency and <code>use &lt;name&gt;::*;</code> is the first cell, again after <code>:reset</code>.
+</li>
+<li>More than one path is a usage error. <code>-</code> is not accepted; standard input is the cell input.
+</li>
+</ul>
+<p>A package with both root files is a program path; its library is a dependency of the session. <code>rok</code> and <code>rok repl</code> (<a href="910-rok-frontend">9.10</a>) run the same REPL with dependencies attached.</p>
+<p>REPL commands (<code>:type</code>, <code>:reset</code>, <code>:add</code>, <code>:help</code>, <code>:quit</code>) and debugging aids are in <a href="909-debug-tools#999-repl--jupyter-debugging">9.9.9</a>.</p>
+<h3 id="rokc-jupyter-jupyter-kernel"><a class="anchor" tabindex="-1" href="#rokc-jupyter-jupyter-kernel" aria-hidden="true">#</a><code>rokc jupyter</code>: Jupyter kernel</h3>
+<p><code>rokc jupyter</code> provides the kernel mode invoked by Jupyter.</p>
+<pre><code>rokc jupyter [--connection-file &lt;path&gt;]
+</code></pre>
+<p>This command is the kernel mode invoked by Jupyter, so users do not run it directly. <code>--connection-file</code> takes the path of the ZMQ connection file provided by Jupyter, and build options such as <code>--extern</code> are accepted as well. The kernel runs on the same cell session as the REPL (<a href="907-jit-cells#970-rules-of-the-cell-session">9.7.0</a>). To run with dependencies resolved, use <code>rok jupyter --connection-file &lt;path&gt;</code> (<a href="910-rok-frontend">9.10</a>). Integration details are defined in <a href="908-jupyter-integration">Jupyter integration</a>.</p>
+<p>The kernel is registered by <code>rok jupyter install [--env &lt;name&gt;]</code> (<a href="908-jupyter-integration#983-kernelspec-installation">9.8.3</a>).</p>
+<h3 id="rokc-fmt-formatter"><a class="anchor" tabindex="-1" href="#rokc-fmt-formatter" aria-hidden="true">#</a><code>rokc fmt</code>: formatter</h3>
+<p><code>rokc fmt</code> applies the standard format.</p>
+<pre><code>rokc fmt [path]
+</code></pre>
+<p><code>[path]</code> accepts files or directories (several allowed; the current directory if omitted) and rewrites them in place to the <a href="#9111-standard-format-rokc-fmt">standard format</a>. A directory that is a package (9.2.2) is formatted as its <code>src/</code> and <code>tests/</code> directories and its <code>rok.rokon</code>; other files in it are left alone. Directories are searched recursively for <code>.rok</code> files, skipping <code>target/</code> and directories beginning with <code>.</code>. <code>.rokon</code> files (<a href="../../refs-standard-libraries/300-std/309-rokon#394-canonical-form">ROKON</a>) are checked for being ROKON and only re-indented (they are not rewritten in canonical form, so comments are preserved).</p>
+<p>Options:</p>
+<ul>
+<li><code>--check</code> does not modify files; it prints the files that would change and their diff. If any file would change, the exit code is <code>1</code>; suitable for CI.
+</li>
+<li><code>--diff</code> does not modify files and prints only the diff.
+</li>
+</ul>
+<p>A file with lexical errors is left untouched and the error is reported, with exit code <code>1</code>.</p>
+<h3 id="rokc-check-diagnostics"><a class="anchor" tabindex="-1" href="#rokc-check-diagnostics" aria-hidden="true">#</a><code>rokc check</code>: diagnostics</h3>
+<pre><code>rokc check [path] [--check-library]
+</code></pre>
+<p>Runs the front end through type checking and MIR building, plus lints, and reports diagnostics. No code generation (no MLIR) is performed. Options are the same as <code>rokc build</code>. <code>--check-library</code> lowers and checks every body of a library regardless of reachability, and checks every generic body against its bounds (<a href="../002-types/210-generics#2109-body-checking">2.10.9</a>). A package with both root files checks its library, then, if the library has no error, its executable with the library compiled in; each warning is reported once.</p>
+<h3 id="rokc-lint-linter"><a class="anchor" tabindex="-1" href="#rokc-lint-linter" aria-hidden="true">#</a><code>rokc lint</code>: linter</h3>
+<pre><code>rokc lint [path] [--list]
+</code></pre>
+<p><code>rokc check</code> without code generation. Every compiling command reports the same lints (<a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">6.2.9</a>); <code>lint</code> runs only them and the front end. The diagnostic format is 9.1.8; lint diagnostics have code <code>E503</code>. The list of lints and groups is in <a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">6.2.9</a>. <code>--list</code> prints the lints, groups and default levels.</p>
+<p>Lint levels are set by the global options <code>-A</code> / <code>-W</code> / <code>-D</code> (9.1.5) and by attributes in code. If any <code>deny</code>-level lint fires, the exit code is <code>1</code>.</p>
+<h3 id="rokc-doc-documentation-generation"><a class="anchor" tabindex="-1" href="#rokc-doc-documentation-generation" aria-hidden="true">#</a><code>rokc doc</code>: documentation generation</h3>
+<pre><code>rokc doc [path] [--std]
+</code></pre>
+<p>Generates HTML API documentation in <code>target/doc/</code> from the public items and docs (<code>///</code>, <code>//!</code>, <code>#[doc]</code>, <a href="../006-meta-system/602-built-in-attributes#628-doc---doc-comment-form">6.2.8</a>) of the package's library (its executable when it has none) (and <code>--extern</code> dependency packages).</p>
+<pre><code>target/doc/
+├── index.html                 # package list
+├── &lt;pkg&gt;/&lt;mod&gt;/index.html     # one page per module
+└── search-index.js            # search index
+</code></pre>
+<p><code>--std</code> also documents the standard library tiers into <code>rok-core/</code>, <code>rok-std/</code>, <code>rok-bare/</code>; without a path it documents only them, into <code>./target/doc/</code>.</p>
+<p>Doc text is interpreted as a subset of markdown (headings, fenced code blocks, inline code, links, <code>**bold**</code>, lists, paragraphs).</p>
+<h3 id="rokc-lsp-lsp-server"><a class="anchor" tabindex="-1" href="#rokc-lsp-lsp-server" aria-hidden="true">#</a><code>rokc lsp</code>: LSP server</h3>
+<p><code>rokc lsp</code> runs in Language Server Protocol server mode.</p>
+<pre><code>rokc lsp
+</code></pre>
+<p>This mode is designed to be invoked from LSP clients such as VS Code, Vim and Emacs. The standalone editor binary <code>rokls</code> is equivalent to <code>rok lsp</code> (that is, <code>rokc lsp</code>). <code>.rokon</code> buffers are checked for syntax only. In a package with both root files, a file the library's module tree reaches is checked as part of the library, any other as part of the executable, which sees the library's open buffers. The features are listed in <a href="909-debug-tools#9913-lsp-server">9.9.13</a>.</p>
+<h2 id="913-debug--diagnostic-subcommands"><a class="anchor" tabindex="-1" href="#913-debug--diagnostic-subcommands" aria-hidden="true">#</a>9.1.3. Debug / diagnostic subcommands</h2>
+<h3 id="rokc-bindgen-c-header-bindings"><a class="anchor" tabindex="-1" href="#rokc-bindgen-c-header-bindings" aria-hidden="true">#</a><code>rokc bindgen</code>: C header bindings</h3>
+<pre><code>rokc bindgen &lt;header&gt; [--target &lt;t&gt;] [-o &lt;file&gt;] [-- &lt;clang args&gt;]
+</code></pre>
+<p>Writes the declarations of <a href="../../refs-standard-libraries/100-bare/107-ffi#176-automatic-binding-generation">std 1.7.6</a> for <code>&lt;header&gt;</code> to standard output (or to <code>-o &lt;file&gt;</code>). Without the toolchain's libclang (<a href="902-aot-pipeline#9219-installation-layout">9.2.19</a>) it is an error (exit 1) naming where it looked.</p>
+<h3 id="rokc-demangle-symbol-demangle"><a class="anchor" tabindex="-1" href="#rokc-demangle-symbol-demangle" aria-hidden="true">#</a><code>rokc demangle</code>: symbol demangle</h3>
+<p><code>rokc demangle</code> decodes mangled symbols into a human-readable form.</p>
+<pre><code>rokc demangle &lt;symbol&gt;...
+</code></pre>
+<p>For each symbol it prints a block in the <a href="905-symbol-mangling">9.5.4</a> format, separated by blank lines (<a href="909-debug-tools#993-symbol-demangle">9.9.3</a>). If any argument is not a rok symbol, the exit code is <code>1</code>.</p>
+<h3 id="rokc-rokhir-text-rokhir-text-output"><a class="anchor" tabindex="-1" href="#rokc-rokhir-text-rokhir-text-output" aria-hidden="true">#</a><code>rokc rokhir-text</code>: <a href="../000-meta/007-glossary#rokhir-rok-hir-bytecode">ROKHIR</a> text output</h3>
+<p><code>rokc rokhir-text</code> prints the ROKHIR of a prebuilt library as text.</p>
+<pre><code>rokc rokhir-text path/to/foo.rokhir      # or libfoo.a - reads the sibling foo.rokhir
+</code></pre>
+<p>It prints the header fields, producer, meta and interface files; the format is described in <a href="904-rokhir-bytecode">ROKHIR format</a>.</p>
+<h3 id="rokc-inspect-package-inspection"><a class="anchor" tabindex="-1" href="#rokc-inspect-package-inspection" aria-hidden="true">#</a><code>rokc inspect</code>: package inspection</h3>
+<p><code>rokc inspect</code> gives an overview of an archive's contents.</p>
+<pre><code>rokc inspect path/to/libfoo.a        # or foo.rokhir
+</code></pre>
+<p>It shows the package name and hash, rokc version, ROKHIR version, GC type id range, exports, <a href="../000-meta/007-glossary#generic">generic</a> items, and archive members with their sizes (<a href="909-debug-tools#9914-package-inspection">9.9.14</a>).</p>
+<h2 id="914-auxiliary-subcommands"><a class="anchor" tabindex="-1" href="#914-auxiliary-subcommands" aria-hidden="true">#</a>9.1.4. Auxiliary subcommands</h2>
+<h3 id="rokc-clean-remove-build-output"><a class="anchor" tabindex="-1" href="#rokc-clean-remove-build-output" aria-hidden="true">#</a><code>rokc clean</code>: remove build output</h3>
+<p><code>rokc clean</code> removes build output.</p>
+<pre><code>rokc clean [path]
+</code></pre>
+<p>Deletes the package's whole <code>target/</code> directory (including all profiles and cross builds; the <code>--target-dir</code> / <code>ROKC_TARGET_DIR</code> directory if set). Does nothing if it does not exist.</p>
+<h3 id="rokc-version-version"><a class="anchor" tabindex="-1" href="#rokc-version-version" aria-hidden="true">#</a><code>rokc version</code>: version</h3>
+<pre><code>rokc version
+rokc --version            # = -V
+rokc -V -v                # adds host line
+</code></pre>
+<p>Prints one line <code>rokc &lt;version&gt; (&lt;commit&gt; &lt;date&gt;)</code> to stdout. With <code>-v</code>, <code>host: &lt;triple&gt;</code> and <code>llvm: &lt;version&gt;</code> lines are appended.</p>
+<h3 id="rokc---print-cfg-active-cfg"><a class="anchor" tabindex="-1" href="#rokc---print-cfg-active-cfg" aria-hidden="true">#</a><code>rokc --print cfg</code>: active cfg</h3>
+<pre><code>rokc --print cfg [--target=&lt;target&gt;] [-O&lt;n&gt;] [--cfg ..]
+</code></pre>
+<p>Prints the cfg of the build the options describe (<a href="../006-meta-system/603-cfg">6.3</a>), one per line: a flag as <code>flag</code>, a key as <code>key=&quot;value&quot;</code> (as rustc does). The keys include <code>target_env</code>, and <code>debug_assertions</code> is set at <code>-O0</code>.</p>
+<pre><code>debug_assertions
+target_arch=&quot;aarch64&quot;
+target_endian=&quot;little&quot;
+target_family=&quot;unix&quot;
+target_os=&quot;macos&quot;
+target_pointer_width=&quot;64&quot;
+</code></pre>
+<h3 id="rokc---print-target-list--target-spec-targets"><a class="anchor" tabindex="-1" href="#rokc---print-target-list--target-spec-targets" aria-hidden="true">#</a><code>rokc --print target-list</code> / <code>target-spec</code>: targets</h3>
+<pre><code>rokc --print target-list
+rokc --print target-spec [--target=&lt;target&gt;]
+</code></pre>
+<p><code>target-list</code> prints the built-in target names, one per line. <code>target-spec</code> prints the target's specification as ROKON (<a href="../000-meta/006-platform-targets#065-target-specifications">0.6.5</a>); without <code>--target</code>, the host's.</p>
+<h3 id="rokc---print-lldbinit-lldb-formatters"><a class="anchor" tabindex="-1" href="#rokc---print-lldbinit-lldb-formatters" aria-hidden="true">#</a><code>rokc --print lldbinit</code>: lldb formatters</h3>
+<p>Prints one line, <code>command script import '&lt;path&gt;'</code>, that loads the lldb formatters of this toolchain (<a href="909-debug-tools#996-debugger-integration-gdb--lldb">9.9.6</a>): <code>&lt;sysroot&gt;/lib/rok/lldb/rok_lldb.py</code>.</p>
+<h3 id="rokc-help-help"><a class="anchor" tabindex="-1" href="#rokc-help-help" aria-hidden="true">#</a><code>rokc help</code>: help</h3>
+<pre><code>rokc help [subcommand]
+rokc &lt;subcommand&gt; --help
+</code></pre>
+<p>Given a subcommand, shows the help for that command.</p>
+<h2 id="915-global-options"><a class="anchor" tabindex="-1" href="#915-global-options" aria-hidden="true">#</a>9.1.5. Global options</h2>
+<p>The global options are listed below. They may appear before or after the subcommand.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Option</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>--verbose</code> / <code>-v</code></td><td>Show per-phase timing (<a href="909-debug-tools#995-logging--progress-display">9.9.5</a>)</td></tr>
+<tr><td><code>-vv</code></td><td>More detailed logging: <code>Reading &lt;file&gt;</code> and <code>Specialized &lt;path&gt;(sig)</code> lines (<a href="909-debug-tools#995-logging--progress-display">9.9.5</a>)</td></tr>
+<tr><td><code>--quiet</code> / <code>-q</code></td><td>Do not print progress lines (diagnostics are still printed)</td></tr>
+<tr><td><code>--color=auto|always|never</code></td><td>Colored diagnostic output</td></tr>
+<tr><td><code>--no-color</code></td><td>Equivalent to <code>--color=never</code></td></tr>
+<tr><td><code>--cwd=&lt;path&gt;</code></td><td>Change working directory before running</td></tr>
+<tr><td><code>--print cfg|target-list|target-spec|lldbinit</code></td><td>Print the active cfg, the built-in target names, a target's specification, or the lldb command loading rok's formatters (9.1.4)</td></tr>
+<tr><td><code>--message-format=human|json</code></td><td>Diagnostic format. <code>json</code> writes one line per diagnostic to stdout (9.1.8)</td></tr>
+<tr><td><code>-A</code> / <code>-W</code> / <code>-D &lt;lint | group&gt;</code></td><td>Lint level (<code>--allow</code> / <code>--warn</code> / <code>--deny</code>). Applies to every command that compiles the package (<code>build</code>, <code>run</code>, <code>test</code>, <code>bench</code>, <code>emit</code>, <code>check</code>, <code>lint</code>, <code>lsp</code>). May be repeated; the later one wins</td></tr>
+</tbody></table></div>
+<p>The lint level is determined in the order: the lint's default level &lt; <code>-A</code> / <code>-W</code> / <code>-D</code> &lt; <code>#[allow(..)]</code> / <code>#[warn(..)]</code> / <code>#[deny(..)]</code> in code (innermost wins). <code>rok</code> prepends the manifest's <code>lints</code> as these flags (<a href="910-rok-frontend#9101-subcommands-and-global-options">9.10.1</a>).</p>
+<p><code>--color=auto</code> (the default) uses color when stderr is a terminal and the environment variable <code>NO_COLOR</code> is not set.</p>
+<p>Examples:</p>
+<pre><code>rokc --verbose build
+rokc test -q
+rokc --cwd=examples/hello run
+</code></pre>
+<h2 id="916-exit-codes"><a class="anchor" tabindex="-1" href="#916-exit-codes" aria-hidden="true">#</a>9.1.6. Exit codes</h2>
+<p>Exit codes are defined as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>Success</td></tr>
+<tr><td><code>1</code></td><td>User code error (compile error / test failure, etc.)</td></tr>
+<tr><td><code>2</code></td><td>Usage error (invalid option, unknown subcommand, etc.)</td></tr>
+<tr><td><code>101</code></td><td>rokc internal error (panic)</td></tr>
+</tbody></table></div>
+<p><code>rokc</code> does not read <code>ROK_HOME</code> (the sysroot is relative to the executable). If rokc itself panics (internal compiler error), it prints a message and exits with <code>101</code>. <code>rokc lsp</code>, <code>rokc repl</code> and <code>rokc jupyter</code> survive it: the language server reports it as an error diagnostic of the analyzed buffer, the REPL / kernel fails that cell (<a href="907-jit-cells#975-error-modes">9.7.5</a>); both keep serving. <code>rokc run</code> exits with the exit code of the program it ran (9.1.2).</p>
+<p>If standard output or standard error is a pipe whose reader has gone, <code>rokc</code> stops without a message: on Unix it is terminated by <code>SIGPIPE</code> (a shell reports <code>141</code>); on Windows it exits with <code>1</code>. This is not an internal error.</p>
+<h2 id="917-environment-variables"><a class="anchor" tabindex="-1" href="#917-environment-variables" aria-hidden="true">#</a>9.1.7. Environment variables</h2>
+<p>The environment variables that affect <code>rokc</code> are:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Variable</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>ROK_CC</code></td><td>Optional C compiler driver that performs the final link instead of the embedded lld (<a href="902-aot-pipeline#9214-linking-for-executables">9.2.14</a>)</td></tr>
+<tr><td><code>ROK_BACKEND</code></td><td><code>native</code> or <code>llvm</code>; same as <code>-C backend=</code></td></tr>
+<tr><td><code>ROKC_VERBOSE</code></td><td>Equivalent to <code>--verbose</code></td></tr>
+<tr><td><code>ROK_TIME_PASSES</code></td><td>Per-pass wall time on stderr when <code>1</code> (<a href="909-debug-tools#rok_time_passes">9.9.5</a>)</td></tr>
+<tr><td><code>LLVM_PROFILE_FILE</code></td><td>Read by instrumented programs (<code>-C profile-generate</code>): the raw profile path</td></tr>
+<tr><td><code>ROKC_TARGET_DIR</code></td><td>Location of <code>target/</code> (default: inside the package)</td></tr>
+<tr><td><code>ROKC_INCREMENTAL</code></td><td>Where the front end keeps the package's parses and lowered bodies (default <code>target/&lt;profile&gt;/incremental/</code>; <code>0</code>: nowhere); the library's collected items are kept in <code>lib/rok-cache/library/</code> (<a href="902-aot-pipeline#9216-incremental-build">9.2.16</a>)</td></tr>
+<tr><td><code>ROKC_INCR_VERIFY</code></td><td><code>1</code>: lower every body again and fail on a difference (<a href="902-aot-pipeline#9216-incremental-build">9.2.16</a>)</td></tr>
+<tr><td><code>ROKC_NUM_JOBS</code></td><td>Default for <code>rokc test --threads</code> (CPU core count if unset)</td></tr>
+<tr><td><code>NO_COLOR</code></td><td>If set, <code>--color=auto</code> does not use color</td></tr>
+</tbody></table></div>
+<p>An unset or empty variable has its default. A value outside those listed prints one warning line on stderr naming the variable, the value and the accepted values, and the variable has its default.</p>
+<h2 id="918-output-format"><a class="anchor" tabindex="-1" href="#918-output-format" aria-hidden="true">#</a>9.1.8. Output format</h2>
+<h3 id="diagnostic-messages"><a class="anchor" tabindex="-1" href="#diagnostic-messages" aria-hidden="true">#</a>Diagnostic messages</h3>
+<p>Diagnostic messages are printed in the following format.</p>
+<pre><code>error[E100]: cannot find value `count` in this scope
+  --&gt; src/main.rok:5:13
+   |
+ 2 |     let counter = 0;
+   |         ------- similar name defined here
+...
+ 5 |     let x = count + 1;
+   |             ^^^^^ not found in this scope
+   |
+   = help: did you mean `counter`?
+</code></pre>
+<p>Diagnostics use the file + line + column units defined in <a href="../001-lexical/101-source-files">Source files</a>.</p>
+<p>The header is <code>&lt;severity&gt;[&lt;code&gt;]: &lt;message&gt;</code> and <code>--&gt; path:line:col</code> gives the primary location. The primary span is underlined with <code>^</code>, secondary spans with <code>-</code>; a secondary span in another file is introduced by <code>::: path:line:col</code>. Trailing <code>= note:</code> lines add context and <code>= help:</code> lines suggest a fix.</p>
+<h3 id="build-progress"><a class="anchor" tabindex="-1" href="#build-progress" aria-hidden="true">#</a>Build progress</h3>
+<p>Progress is shown on stderr with right-aligned verbs. Nothing is printed with <code>-q</code>.</p>
+<pre><code>   Compiling foo (path/to/foo)
+    Building target/debug/foo
+    Finished in 1.23s
+     Running `target/debug/foo`
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Verb</th><th>When</th></tr></thead>
+<tbody>
+<tr><td><code>Compiling</code></td><td>Front end starts (package name and directory)</td></tr>
+<tr><td><code>Building</code></td><td>Executable / archive produced (<code>build</code>)</td></tr>
+<tr><td><code>Wrote</code></td><td>One <code>--emit</code> output written</td></tr>
+<tr><td><code>Finished</code></td><td>Build done (elapsed time)</td></tr>
+<tr><td><code>Running</code></td><td>Program run (<code>run</code>)</td></tr>
+<tr><td><code>Created</code></td><td>Package created (<code>new</code>)</td></tr>
+<tr><td><code>Removed</code></td><td><code>target/</code> deleted (<code>clean</code>)</td></tr>
+</tbody></table></div>
+<h3 id="json-output-for-tool-integration"><a class="anchor" tabindex="-1" href="#json-output-for-tool-integration" aria-hidden="true">#</a>JSON output (for tool integration)</h3>
+<p>For tool integration, output can also be produced as JSON.</p>
+<pre><code>rokc build --message-format=json
+</code></pre>
+<p>In this mode each diagnostic becomes one line of JSON object on stdout, easy for IDEs and CI tools to parse. The shape of the object is defined in <a href="909-debug-tools#994-diagnostics--error-messages">9.9.4</a>.</p>
+<h2 id="919-standard-input"><a class="anchor" tabindex="-1" href="#919-standard-input" aria-hidden="true">#</a>9.1.9. Standard input</h2>
+<p>Writing <code>-</code> in an argument position, as in <code>rokc check -</code>, means standard input, for use with pipes or scripts. Source from standard input is checked as the <code>main.rok</code> of an anonymous executable package.</p>
+<h2 id="9110-compatibility-with-external-tools"><a class="anchor" tabindex="-1" href="#9110-compatibility-with-external-tools" aria-hidden="true">#</a>9.1.10. Compatibility with external tools</h2>
+<p><code>rokc</code> is a low-level compiler; dependency resolution is the job of the front-end <code>rok</code> (<a href="910-rok-frontend">9.10</a>). <code>rok</code> invokes <code>rokc</code>, passing the roots of resolved dependency packages via <code>--extern</code> (<a href="902-aot-pipeline#923-dependency-resolution">9.2.3</a>). Other build systems may integrate by invoking <code>rokc</code> directly in the same way. Changes that break CLI compatibility are managed under SemVer rules.</p>
+<h2 id="9111-standard-format-rokc-fmt"><a class="anchor" tabindex="-1" href="#9111-standard-format-rokc-fmt" aria-hidden="true">#</a>9.1.11. Standard format (<code>rokc fmt</code>)</h2>
+<p>The standard format of <code>rokc fmt</code> is a <strong>token-preserving layout rule</strong>. It does not change tokens or comments within a line; it only sets line indentation and blank lines. <code>rokc fmt</code> has no configuration by design: there is one standard format for all rok code.</p>
+<ol>
+<li>Indentation is 4 spaces per bracket (<code>(</code> <code>[</code> <code>{</code> <code>#[</code>) depth. A line beginning with a closing bracket takes the depth of the line that opened it. Tabs become spaces.
+</li>
+<li>A continuation line, i.e. one whose preceding token is not <code>;</code> <code>,</code> or a bracket (such as a line splitting a long expression), keeps the amount by which it was indented beyond the block indentation in the original file.
+</li>
+<li>Trailing whitespace is removed.
+</li>
+<li>Consecutive blank lines are collapsed to one, and blank lines at the start of the file are removed.
+</li>
+<li>The file ends with exactly one newline.
+</li>
+</ol>
+<p>The formatter does not move tokens between lines, does not split or join lines, and does not change spacing within a line. Comments therefore stay exactly as written and the token sequence is unchanged. The interior of multi-line strings and block comments is also left as is.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/901-rokc-cli.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>9. Execution / tools overview</a><a class="next" href="902-aot-pipeline"><small>Next</small>9.2. AOT build pipeline</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

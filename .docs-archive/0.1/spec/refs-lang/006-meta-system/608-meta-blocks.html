@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.8. User-defined meta definitions - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A meta definition is a user-defined code generator. All of them are one mechanism: a definition binds parts of an input and transcribes a template of rok code a...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.8. User-defined meta definitions - rok docs">
+<meta property="og:description" content="A meta definition is a user-defined code generator. All of them are one mechanism: a definition binds parts of an input and transcribes a template of rok code a...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">6. Meta-system overview</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. Attribute syntax</a></li><li><a href="602-built-in-attributes">6.2. Built-in attributes</a></li><li><a href="603-cfg">6.3. #[cfg] conditional compilation</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] magic</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] magic</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] magic</a></li><li><a href="607-operator-magic">6.7. Operator magic</a></li><li class="cur"><a aria-current="page" href="608-meta-blocks">6.8. User-defined meta definitions</a><ul class="toc"><li><a href="#681-the-attribute-triggered-forms">6.8.1. The attribute-triggered forms</a></li><li><a href="#682-impl_derivetraitname-user-defined-derive">6.8.2. #[impl_derive(TraitName)] user-defined derive</a></li><li><a href="#683-impl_attributename-user-defined-attribute">6.8.3. #[impl_attribute(name)] user-defined attribute</a></li><li><a href="#684-impl_derive_attributetrait-attr-per-field-derive-attribute">6.8.4. #[impl_derive_attribute(Trait, attr)] per-field derive attribute</a></li><li><a href="#685-body-template-block">6.8.5. Body (template block)</a></li><li><a href="#686-pub--visibility">6.8.6. pub / visibility</a></li><li><a href="#687-body-introducers-derive--attribute">6.8.7. Body introducers (@derive / @attribute)</a></li><li><a href="#688-fixed-point-expansion">6.8.8. Fixed-point expansion</a></li><li><a href="#689-no-token-stream-manipulation">6.8.9. No token stream manipulation</a></li><li><a href="#6810-comparison-with-proc-macros">6.8.10. Comparison with proc macros</a></li><li><a href="#6811-combination-with-registrationvisibility">6.8.11. Combination with registration/visibility</a></li><li><a href="#6812-the-macro-form">6.8.12. The macro form</a></li><li><a href="#6813-summary">6.8.13. Summary</a></li></ul></li><li><a href="609-template-tokens">6.9. Template tokens and expansion</a></li><li><a href="610-reflection">6.10. Reflection</a></li><li><a href="611-include">6.11. Compile-time file embedding</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="68-user-defined-meta-definitions 68-사용자-정의-메타-정의 681-the-attribute-triggered-forms 681-attribute-로-트리거되는-세-형태 682-impl_derivetraitname-user-defined-derive 682-impl_derivetraitname-사용자-정의-derive 683-impl_attributename-user-defined-attribute 683-impl_attributename-사용자-정의-attribute 684-impl_derive_attributetrait-attr-per-field-derive-attribute 684-impl_derive_attributetrait-attr-필드별-derive-attribute 685-body-template-block 685-본체-템플릿-블록 686-pub--visibility 686-pub--가시성 687-body-introducers-derive--attribute 687-본체-시작자-derive--attribute 688-fixed-point-expansion 688-fixed-point-확장 689-no-token-stream-manipulation 689-토큰-스트림-조작-없음 6810-comparison-with-proc-macros 6810-proc-macro-와의-비교 6811-combination-with-registrationvisibility 6811-등록가시성과의-결합 6812-the-macro-form 6812-macro-형태 definition 정의 invocation 호출 matchers-and-fragments 매처와-fragment repetition 반복 name-synthesis 이름-합성 the-librarys-boilerplate 라이브러리의-보일러플레이트 recursion 재귀 built-in--forms-are-reserved 내장--폼은-예약 tooling-and-hygiene 도구-지원과-위생 6813-summary 6813-정리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/006-meta-system/608-meta-blocks" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="68-user-defined-meta-definitions"><a class="anchor" tabindex="-1" href="#68-user-defined-meta-definitions" aria-hidden="true">#</a>6.8. User-defined meta definitions</h1>
+<p>A <strong>meta definition</strong> is a user-defined code generator. All of them are one mechanism: a definition binds parts of an input and transcribes a template of rok code and template tokens (<a href="609-template-tokens">6.9</a>), hygienically (<a href="#689-no-token-stream-manipulation">6.8.9</a>) and to a fixed point (<a href="#688-fixed-point-expansion">6.8.8</a>). They differ only in how they are <em>triggered</em> and what input they bind. There are four forms; the first three are triggered by an attribute on an item, the fourth by a call:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Defined as</th><th>Triggered by</th><th>Binds</th></tr></thead>
+<tbody>
+<tr><td>derive</td><td><code>#[impl_derive(T)] @derive {}</code></td><td><code>#[derive(T)]</code> on a type</td><td>the type's shape (<code>@Self</code>, <code>@for_fields</code>)</td></tr>
+<tr><td>attribute</td><td><code>#[impl_attribute(n)] @attribute {}</code></td><td><code>#[n]</code> on an item</td><td>the item (<code>@item</code>)</td></tr>
+<tr><td>per-field derive attribute</td><td><code>#[impl_derive_attribute(T, a)] @derive {}</code></td><td><code>#[derive(T)]</code> + <code>#[a]</code> on fields</td><td>shape + field attributes</td></tr>
+<tr><td><strong>macro</strong></td><td><code>#[impl_macro(n)] @macro { (m) =&gt; {t} }</code></td><td><code>n!(..)</code> call</td><td>the call's tokens (<code>@x: expr</code>, <code>@rep</code>)</td></tr>
+</tbody></table></div>
+<p>The first three generate code <em>from a type or item the author attaches them to</em>; the macro generates code <em>from what the caller writes</em>, the one need the others cannot serve (<a href="#6812-the-macro-form">6.8.12</a>). They share the template engine, the <code>@</code> tokens, hygiene and the tooling guarantees below; this chapter and <a href="609-template-tokens">6.9</a> note where the bound input differs. These four are rok's entire metaprogramming surface - together they take the place of Rust's derive, attribute and function-like macros, without procedural code or raw token manipulation.</p>
+<pre><code>meta_block      ::= meta_attr visibility? meta_kind block
+meta_attr       ::= &quot;#&quot; &quot;[&quot; meta_kind_attr &quot;(&quot; meta_args &quot;)&quot; &quot;]&quot;
+meta_kind_attr  ::= &quot;impl_derive&quot; | &quot;impl_attribute&quot; | &quot;impl_derive_attribute&quot; | &quot;impl_macro&quot;
+meta_kind       ::= &quot;@derive&quot; | &quot;@attribute&quot; | &quot;@macro&quot;
+meta_args       ::= identifier (&quot;,&quot; identifier)*
+
+# the @macro block holds rules instead of a flat template:
+macro_body      ::= macro_rule+
+macro_rule      ::= &quot;(&quot; matcher &quot;)&quot; &quot;=&gt;&quot; block
+</code></pre>
+<h2 id="681-the-attribute-triggered-forms"><a class="anchor" tabindex="-1" href="#681-the-attribute-triggered-forms" aria-hidden="true">#</a>6.8.1. The attribute-triggered forms</h2>
+<p>The three attribute-triggered forms:</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(TraitName)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">TraitName</span> <span class="k">for</span> @<span class="k">Self</span> { ... }
+}
+
+<span class="a">#[impl_attribute(name)]</span> <span class="k">pub</span> @attribute {
+    @item                                    <span class="c">// reuse the original item</span>
+    <span class="k">fn</span> additional_helper() { ... }            <span class="c">// generate an additional item</span>
+}
+
+<span class="a">#[impl_derive_attribute(Trait, attr)]</span> <span class="k">pub</span> @derive {
+    @for_fields {
+        @apply_if(@has_derive_attr(attr)) {
+            <span class="c">// process only fields carrying that attr</span>
+        }
+    }
+}
+</code></pre>
+<p>What each form is used for:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td><code>#[impl_derive(TraitName)]</code></td><td>User-defined derive</td></tr>
+<tr><td><code>#[impl_attribute(name)]</code></td><td>User-defined attribute (item wrapper)</td></tr>
+<tr><td><code>#[impl_derive_attribute(Trait, attr)]</code></td><td>Per-field derive attribute</td></tr>
+</tbody></table></div>
+<p>The fourth, the call-triggered <code>macro</code>, is defined in <a href="#6812-the-macro-form">6.8.12</a>.</p>
+<h2 id="682-impl_derivetraitname-user-defined-derive"><a class="anchor" tabindex="-1" href="#682-impl_derivetraitname-user-defined-derive" aria-hidden="true">#</a>6.8.2. <code>#[impl_derive(TraitName)]</code> user-defined derive</h2>
+<p>An example of a user-defined derive:</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(MyHash)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyHash</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> my_hash(<span class="k">self</span>) -&gt; <span class="t">u64</span> {
+            <span class="k">let</span> h: <span class="t">u64</span> = <span class="n">0u64</span>;
+            @for_fields {
+                h = combine_hash(h, <span class="k">self</span>.@field.my_hash());
+            }
+            h
+        }
+    }
+}
+
+<span class="c">// use site</span>
+<span class="a">#[derive(MyHash)]</span>
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+<span class="c">// → generated automatically.</span>
+<span class="c">//   impl MyHash for Point {</span>
+<span class="c">//       fn my_hash(self) -&gt; u64 {</span>
+<span class="c">//           let h: u64 = 0u64;</span>
+<span class="c">//           h = combine_hash(h, self.x.my_hash());</span>
+<span class="c">//           h = combine_hash(h, self.y.my_hash());</span>
+<span class="c">//           h</span>
+<span class="c">//       }</span>
+<span class="c">//   }</span>
+</code></pre>
+<p>This form consists of <code>#[impl_derive(name)]</code> and a body (template block). When <code>#[derive(name)]</code> appears at a use site, the template is expanded for that type to generate code.</p>
+<h2 id="683-impl_attributename-user-defined-attribute"><a class="anchor" tabindex="-1" href="#683-impl_attributename-user-defined-attribute" aria-hidden="true">#</a>6.8.3. <code>#[impl_attribute(name)]</code> user-defined attribute</h2>
+<p>An example of a user-defined attribute:</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(timed)]</span> <span class="k">pub</span> @attribute {
+    @accept(<span class="k">fn</span>)                                  <span class="c">// attachable only to fn items</span>
+
+    <span class="k">fn</span> @item.name(@item.params) -&gt; @item.return_type {
+        <span class="k">let</span> start = now();
+        <span class="k">let</span> result = {
+            @item.body
+        };
+        log(<span class="s">f"@item.name took {</span>now() - start<span class="s">}"</span>);
+        result
+    }
+}
+
+<span class="c">// use site</span>
+<span class="a">#[timed]</span>
+<span class="k">fn</span> process(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    expensive(x)
+}
+<span class="c">// → generated automatically.</span>
+<span class="c">//   fn process(x: i32) -&gt; i32 {</span>
+<span class="c">//       let start = now();</span>
+<span class="c">//       let result = { expensive(x) };</span>
+<span class="c">//       log(f"process took {now() - start}");</span>
+<span class="c">//       result</span>
+<span class="c">//   }</span>
+</code></pre>
+<p>This is a wrapper around an item: it reuses the contents and signature of the original item (<code>@item</code>) to generate a transformed form. It can be attached not only to functions but also to <code>struct</code>, <code>enum</code>, and <code>impl</code>; target restrictions are expressed with <code>@accept</code>.</p>
+<h2 id="684-impl_derive_attributetrait-attr-per-field-derive-attribute"><a class="anchor" tabindex="-1" href="#684-impl_derive_attributetrait-attr-per-field-derive-attribute" aria-hidden="true">#</a>6.8.4. <code>#[impl_derive_attribute(Trait, attr)]</code> per-field derive attribute</h2>
+<p>An example of a per-field derive attribute:</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive_attribute(Serialize, rename)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">Serialize</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> serialize(<span class="k">self</span>) -&gt; <span class="t">Json</span> {
+            <span class="k">let</span> obj = <span class="t">JsonObj</span>::new();
+            @for_fields {
+                @apply_if(@has_derive_attr(rename)) {
+                    obj.set(@derive_attr(rename), <span class="k">self</span>.@field.serialize());
+                }
+                @apply_if(!@has_derive_attr(rename)) {
+                    obj.set(@field.name.as_str(), <span class="k">self</span>.@field.serialize());
+                }
+            }
+            obj.into()
+        }
+    }
+}
+
+<span class="c">// use site</span>
+<span class="a">#[derive(Serialize)]</span>
+<span class="k">struct</span> <span class="t">User</span> {
+    <span class="a">#[rename("user_name")]</span>
+    name: <span class="t">str</span>;
+    age: <span class="t">i32</span>;
+}
+<span class="c">// → generated automatically.</span>
+<span class="c">//   impl Serialize for User {</span>
+<span class="c">//       fn serialize(self) -&gt; Json {</span>
+<span class="c">//           let obj = JsonObj::new();</span>
+<span class="c">//           obj.set("user_name", self.name.serialize());</span>
+<span class="c">//           obj.set("age", self.age.serialize());</span>
+<span class="c">//           obj.into()</span>
+<span class="c">//       }</span>
+<span class="c">//   }</span>
+</code></pre>
+<p>This form takes two arguments - the Trait being derived and the attribute that marks per-field information - and branches inside the derive body by reading the fields' attribute information.</p>
+<h2 id="685-body-template-block"><a class="anchor" tabindex="-1" href="#685-body-template-block" aria-hidden="true">#</a>6.8.5. Body (template block)</h2>
+<p>In every form the body is a template block containing both ordinary rok code and template tokens (<code>@Self</code>, <code>@field</code>, <code>@for_fields</code> for the attribute-triggered forms; <code>@x</code>, <code>@rep</code>, <code>@for</code>, <code>@concat</code> for a macro, <a href="#6812-the-macro-form">6.8.12</a>).</p>
+<p>The full list of template tokens is defined in <a href="609-template-tokens">template tokens and expansion</a>.</p>
+<h2 id="686-pub--visibility"><a class="anchor" tabindex="-1" href="#686-pub--visibility" aria-hidden="true">#</a>6.8.6. <code>pub</code> / visibility</h2>
+<p>Visibility is written as:</p>
+<pre><code class="language-rok"><span class="k">pub</span> @derive { ... }
+<span class="k">pub</span>(<span class="k">pkg</span>) @attribute { ... }
+@derive { ... }                  <span class="c">// private</span>
+</code></pre>
+<p>The visibility keyword is attached to the template block itself. Its effect:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Visibility</th><th>Where it can be used</th></tr></thead>
+<tbody>
+<tr><td><code>pub</code> (including <code>pub(pkg)</code>)</td><td>The whole build. Used as <code>#[derive(X)]</code> / <code>#[x]</code> without <code>use</code></td></tr>
+<tr><td>private</td><td>Within the file that defines the meta block</td></tr>
+</tbody></table></div>
+<p>Derive and attribute names are build-global names without a module path (6.8.11). A meta block's or keyword handler's <code>#[cfg]</code> is evaluated with the cfg of the package that defines it (its own features, <a href="../009-tools/910-rok-frontend#9104c-features">9.10.4c</a>).</p>
+<h2 id="687-body-introducers-derive--attribute"><a class="anchor" tabindex="-1" href="#687-body-introducers-derive--attribute" aria-hidden="true">#</a>6.8.7. Body introducers (<code>@derive</code> / <code>@attribute</code>)</h2>
+<p>The body introducer indicates the kind of template.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Introducer</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td><code>@derive</code></td><td>derive definitions (<code>impl_derive</code>, <code>impl_derive_attribute</code>)</td></tr>
+<tr><td><code>@attribute</code></td><td>attribute definitions (<code>impl_attribute</code>)</td></tr>
+<tr><td><code>@macro</code></td><td>macro definitions (<code>impl_macro</code>); its block holds rules (<a href="#6812-the-macro-form">6.8.12</a>)</td></tr>
+</tbody></table></div>
+<p>The introducer determines which template tokens are meaningful in the body. For example, <code>@item</code> is attribute-only, and the matcher tokens (<code>@x: expr</code>, <code>@rep</code>) are <code>@macro</code>-only.</p>
+<h2 id="688-fixed-point-expansion"><a class="anchor" tabindex="-1" href="#688-fixed-point-expansion" aria-hidden="true">#</a>6.8.8. Fixed-point expansion</h2>
+<p>If the result of template expansion produces an item carrying another derive or attribute, that item is expanded recursively.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(adds_helper)]</span> <span class="k">pub</span> @attribute {
+    @item                                       <span class="c">// the original item as is</span>
+
+    <span class="a">#[derive(MyHelper)]</span>                          <span class="c">// new item - derive processed again</span>
+    <span class="k">struct</span> <span class="t">Helper</span> { ... }
+}
+</code></pre>
+<p>When this attribute is applied, the <code>#[derive(MyHelper)]</code> in the body is processed in the next expansion pass.</p>
+<p>Expansion terminates when it reaches a fixed point where no derive or attribute remains to expand.</p>
+<p>Circular expansion (A invokes B and B invokes A again) is detected by the compiler and is an ERROR. The message shows the cycle path (<code>A → B → A</code>).</p>
+<h2 id="689-no-token-stream-manipulation"><a class="anchor" tabindex="-1" href="#689-no-token-stream-manipulation" aria-hidden="true">#</a>6.8.9. No token stream manipulation</h2>
+<p>Every meta definition - the three attribute-triggered forms and the macro - generates code using template tokens only. rok has no arbitrary token transformation facility like Rust's <code>syn</code> or <code>quote</code>, and no procedural form that runs code at compile time.</p>
+<p>This restriction guarantees that the output of a meta definition is rok code the compiler can understand, securing both tool friendliness and debuggability.</p>
+<h2 id="6810-comparison-with-proc-macros"><a class="anchor" tabindex="-1" href="#6810-comparison-with-proc-macros" aria-hidden="true">#</a>6.8.10. Comparison with proc macros</h2>
+<p>Comparing Rust proc macros with rok meta blocks:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust proc macro</th><th>rok meta block</th></tr></thead>
+<tbody>
+<tr><td>Input</td><td>Arbitrary token stream</td><td>Structural information of the item (fields, variants, etc.)</td></tr>
+<tr><td>Output</td><td>Arbitrary token stream</td><td>rok code and template tokens</td></tr>
+<tr><td>Hygiene</td><td>Up to the proc macro</td><td>Automatic (hygienic)</td></tr>
+<tr><td>Debugging</td><td>Inspect output tokens</td><td>Inspect the expanded AST</td></tr>
+<tr><td>Expressiveness</td><td>Very high</td><td>Limited</td></tr>
+</tbody></table></div>
+<p>rok's choice trades expressiveness for predictability and ease of debugging.</p>
+<h2 id="6811-combination-with-registrationvisibility"><a class="anchor" tabindex="-1" href="#6811-combination-with-registrationvisibility" aria-hidden="true">#</a>6.8.11. Combination with registration/visibility</h2>
+<p>A meta block carrying <code>#[impl_derive(TraitName)]</code> registers a derive named <code>TraitName</code>, <code>#[impl_attribute(name)]</code> registers the <code>#[name]</code> attribute, and <code>#[impl_macro(name)]</code> registers the macro <code>name!</code>. The compiler collects meta blocks from every file of libraries and user packages before parsing, so they can be used regardless of definition location or file order. If a <code>#[cfg]</code> on a meta block is false, that block is not registered (<a href="609-template-tokens#relation-to-cfg">6.9.9</a>).</p>
+<p>A <code>pub</code> meta block is visible throughout the build without <code>use</code> (6.8.6). Meta blocks are not items of the name space, so they are not targets of <code>use</code> either.</p>
+<pre><code class="language-rok"><span class="c">// pkg::derives</span>
+<span class="a">#[impl_derive(MyHash)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyHash</span> <span class="k">for</span> @<span class="k">Self</span> { ... }
+}
+
+<span class="c">// another module - used without import</span>
+<span class="a">#[derive(MyHash)]</span>
+<span class="k">struct</span> <span class="t">Foo</span> { ... }
+</code></pre>
+<p>The following are errors:</p>
+<ul>
+<li>Two meta blocks registering the same derive, attribute or macro name (one macro is one <code>@macro</code> block holding all its rules).
+</li>
+<li>A meta block redefining the name of a built-in derive (<a href="602-built-in-attributes">6.2.1</a>: <code>Clone</code>, <code>Copy</code>, <code>Default</code>, <code>Debug</code>, <code>PartialEq</code>, <code>Eq</code>, <code>PartialOrd</code>, <code>Ord</code>, <code>Hash</code>) or a built-in attribute (<code>cfg</code>, <code>derive</code>, <code>test</code>, <code>inline</code>, <code>repr</code>, <code>keyword</code>, and the other attributes of 6.2 to 6.7).
+</li>
+</ul>
+<h2 id="6812-the-macro-form"><a class="anchor" tabindex="-1" href="#6812-the-macro-form" aria-hidden="true">#</a>6.8.12. The macro form</h2>
+<p>A <strong>macro</strong> is the call-triggered meta definition. Where a derive or attribute generates code from a type or item it is attached to, a macro is <em>invoked</em> like <code>name!(..)</code> and expands into code at that position - generating code from what the caller writes. It is the one need the attribute-triggered forms cannot serve: repeating or generating code driven by the call, not by a type's fields.</p>
+<h3 id="definition"><a class="anchor" tabindex="-1" href="#definition" aria-hidden="true">#</a>Definition</h3>
+<p>Like the other forms, a macro is <code>#[impl_macro(name)]</code>, a visibility, the <code>@macro</code> introducer, and a block. The block holds one or more <strong>rules</strong> instead of a flat template: each is a matcher in parentheses, <code>=&gt;</code> (the same arrow as a <a href="../003-expressions/312-match-expression"><code>match</code></a> arm), and a template in braces.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(name)]</span> <span class="k">pub</span> @macro {
+    ( &lt;matcher&gt; ) =&gt; { &lt;template&gt; }
+    ( &lt;matcher&gt; ) =&gt; { &lt;template&gt; }
+    ..
+}
+</code></pre>
+<p><code>#[impl_macro(name)]</code> registers the macro <code>name!</code>, exactly as <code>#[impl_derive(T)]</code> registers the derive <code>T</code>. On a call the rules are tried top to bottom and the first whose matcher matches is expanded; if none matches it is a compile error at the call. A macro's name is build-global and used without <code>use</code>, like a derive or attribute (<a href="#686-pub--visibility">6.8.6</a>); the trailing <code>!</code> at every call marks it as a macro, not a function.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(twice)]</span> <span class="k">pub</span> @macro {
+    ( @e: expr ) =&gt; { { <span class="k">let</span> v = @e; (v, v) } }
+}
+
+<span class="k">let</span> p = twice!(compute());      <span class="c">// (the value, the same value)</span>
+</code></pre>
+<h3 id="invocation"><a class="anchor" tabindex="-1" href="#invocation" aria-hidden="true">#</a>Invocation</h3>
+<p>A macro is called as <code>name!( .. )</code>, <code>name![ .. ]</code> or <code>name!{ .. }</code>; the delimiters are interchangeable and do not change meaning. The arguments are an arbitrary <strong>token tree</strong>: any tokens with balanced <code>()</code> <code>[]</code> <code>{}</code>, so the lexer and formatter tokenize a call even without knowing the macro. A macro may expand at these positions, in whichever its template produces:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Position</th><th>Example</th><th>Template yields</th></tr></thead>
+<tbody>
+<tr><td>expression</td><td><code>let xs = grid![1, 2; 3, 4];</code></td><td>an expression</td></tr>
+<tr><td>statement</td><td><code>debug!(&quot;here&quot;);</code></td><td>zero or more statements</td></tr>
+<tr><td>item</td><td><code>int_impl!(i8, i16, i32);</code> (module level)</td><td>zero or more items</td></tr>
+<tr><td>type</td><td><code>let f: fn_ptr!(i32, i32) = ..;</code></td><td>a type</td></tr>
+<tr><td>pattern</td><td><code>match x { pair!(a, b) =&gt; .. }</code></td><td>a pattern</td></tr>
+</tbody></table></div>
+<h3 id="matchers-and-fragments"><a class="anchor" tabindex="-1" href="#matchers-and-fragments" aria-hidden="true">#</a>Matchers and fragments</h3>
+<p>A matcher is a token pattern. Literal tokens must appear verbatim in the call; a <strong>metavariable</strong> <code>@name: &lt;fragment&gt;</code> captures a part of the call for the template. The fragment fixes how much is parsed and as what: <code>expr</code>, <code>stmt</code>, <code>block</code>, <code>ty</code>, <code>pat</code>, <code>path</code>, <code>ident</code>, <code>literal</code>, <code>item</code>, or <code>tt</code> (one raw token tree). A fragment is parsed as that grammar into a real syntax node, so the argument of <code>@e: expr</code> has a type, is checked, and the language server resolves names inside it (<a href="#tooling-and-hygiene">6.8.12</a>); <code>tt</code> alone is unparsed, for a DSL that is not rok grammar, and even then stays balanced.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(clamp)]</span> <span class="k">pub</span> @macro {
+    ( @x: expr , @lo: expr , @hi: expr ) =&gt; {
+        { <span class="k">let</span> v = @x; <span class="k">if</span> v &lt; @lo { @lo } <span class="k">else</span> <span class="k">if</span> v &gt; @hi { @hi } <span class="k">else</span> { v } }
+    }
+}
+</code></pre>
+<h3 id="repetition"><a class="anchor" tabindex="-1" href="#repetition" aria-hidden="true">#</a>Repetition</h3>
+<p><code>@rep</code> matches a sub-pattern zero or more times; <code>@for</code> - the same iterator as <code>@for_fields</code> (<a href="609-template-tokens#693-field-iteration">6.9.3</a>), here over a captured sequence - transcribes once per element.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(list)]</span> <span class="k">pub</span> @macro {
+    ( @rep[sep = <span class="s">","</span>] { @x: expr } ) =&gt; {
+        { <span class="k">let</span> acc = <span class="t">List</span>::new(); @<span class="k">for</span> @x { acc.push(@x); } acc }
+    }
+}
+
+<span class="k">let</span> xs = list![a, b, c];        <span class="c">// acc.push(a); acc.push(b); acc.push(c);</span>
+</code></pre>
+<p><code>@rep[sep = &quot;,&quot;] { &lt;sub-pattern&gt; }</code> matches the sub-pattern repeated with the <code>sep</code> token between (<code>sep</code> optional; <code>trailing</code> also allows one trailing separator). A metavariable captured inside <code>@rep</code> binds a sequence. <code>@for @x { &lt;body&gt; }</code> emits the body per element; several metavariables from one <code>@rep</code> iterate in lockstep and must have equal length. <code>@rep</code> and <code>@for</code> nest. The shape tokens (<code>@Self</code>, <code>@field</code>, <code>@apply_if</code>, ..) belong to the type-driven forms, not a macro: a macro has no shape to test, so using one is an error.</p>
+<h3 id="name-synthesis"><a class="anchor" tabindex="-1" href="#name-synthesis" aria-hidden="true">#</a>Name synthesis</h3>
+<p><code>@concat(..)</code> joins name tokens and string literals into one identifier, so a macro can generate distinct, named items:</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(accessors)]</span> <span class="k">pub</span> @macro {
+    ( @rep[sep = <span class="s">","</span>] { @f: ident : @t: ty } ) =&gt; {
+        @<span class="k">for</span> @f { <span class="k">fn</span> @concat(get_, @f)(<span class="k">self</span>) -&gt; @t { <span class="k">self</span>.@f } }
+    }
+}
+<span class="c">// accessors!{ x: i32, y: i32 } -&gt; fn get_x(self) -&gt; i32 { self.x }  (and get_y)</span>
+</code></pre>
+<p>A name made by <code>@concat</code> is <strong>recorded</strong>: the compiler indexes each synthesized item under its generated name, so symbol search, go-to-definition and find-references reach it. <code>@concat</code> forms an identifier at a definition or path position only; its pieces are name tokens and string literals, and it cannot assemble arbitrary syntax.</p>
+<h3 id="the-librarys-boilerplate"><a class="anchor" tabindex="-1" href="#the-librarys-boilerplate" aria-hidden="true">#</a>The library's boilerplate</h3>
+<p>The classic reason for a macro is repeating a definition across a fixed list the author writes - which no attribute-triggered form can do. It replaces the hand-copied per-type impls of <a href="../../refs-standard-libraries/200-core/"><code>rok::core::num</code></a>:</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(nonzero_div)]</span> <span class="k">pub</span> @macro {
+    ( @rep[sep = <span class="s">","</span>] { @t: ty } ) =&gt; {
+        @<span class="k">for</span> @t {
+            <span class="k">impl</span> <span class="t">Div</span>&lt;<span class="t">NonZero</span>&lt;@t&gt;&gt; <span class="k">for</span> @t {
+                <span class="k">type</span> <span class="t">Output</span> = @t;
+                <span class="k">const</span> <span class="k">fn</span> div(<span class="k">self</span>, rhs: <span class="t">NonZero</span>&lt;@t&gt;) -&gt; @t { <span class="k">self</span> / rhs.<span class="n">0</span> }
+            }
+        }
+    }
+}
+
+nonzero_div!(<span class="t">i8</span>, <span class="t">i16</span>, <span class="t">i32</span>, <span class="t">i64</span>, <span class="t">u8</span>, <span class="t">u16</span>, <span class="t">u32</span>, <span class="t">u64</span>);
+</code></pre>
+<h3 id="recursion"><a class="anchor" tabindex="-1" href="#recursion" aria-hidden="true">#</a>Recursion</h3>
+<p>A template may call macros, including itself; expansion repeats until no macro call remains. It is bounded: a depth over the limit (256) is a compile error naming the call, so a non-terminating macro fails rather than hangs. Mutual recursion counts against the same depth and, as for the attribute forms, a cycle is reported with its path (<a href="#688-fixed-point-expansion">6.8.8</a>).</p>
+<h3 id="built-in--forms-are-reserved"><a class="anchor" tabindex="-1" href="#built-in--forms-are-reserved" aria-hidden="true">#</a>Built-in <code>!</code>-forms are reserved</h3>
+<p><code>cfg!</code> (<a href="603-cfg">6.3</a>) and <code>include_str!</code> / <code>include_bytes!</code> (<a href="611-include">6.11</a>) end in <code>!</code> but are fixed compiler built-ins, not macros, and cannot be redefined, shadowed or taken as a macro name. They are the only <code>!</code>-forms the compiler provides; every other <code>name!</code> is a macro defined in rok.</p>
+<h3 id="tooling-and-hygiene"><a class="anchor" tabindex="-1" href="#tooling-and-hygiene" aria-hidden="true">#</a>Tooling and hygiene</h3>
+<p>A macro keeps the guarantees of every meta definition (<a href="#689-no-token-stream-manipulation">6.8.9</a>), with the specifics a call site adds:</p>
+<ul>
+<li><strong>Hygiene</strong> is automatic: a name the template introduces is fresh and cannot capture or be captured by the call site, while a name passed in through a metavariable resolves at the call site.
+</li>
+<li><strong>Spans</strong>: every expanded token carries the span of the call, so a diagnostic points at the call with the expansion shown as a note.
+</li>
+<li><strong>Resolution</strong>: because fragments are parsed as real nodes and synthesized names are indexed, hover, go-to-definition and find-references work through a macro - into its arguments and onto the items it generates.
+</li>
+<li><strong>Expansion on request</strong>: the language server can expand a call in place (<a href="../009-tools/909-debug-tools">9.9.13</a>).
+</li>
+<li><strong>Formatting</strong>: the formatter formats a call's arguments when they are rok fragments, and leaves a raw <code>tt</code> DSL as written within its balanced delimiters.
+</li>
+</ul>
+<h2 id="6813-summary"><a class="anchor" tabindex="-1" href="#6813-summary" aria-hidden="true">#</a>6.8.13. Summary</h2>
+<p>These four forms - derive, attribute, per-field derive attribute, and the call-triggered macro - make up rok's entire metaprogramming surface, over one template engine. They lack the expressiveness of procedural macros but cover the core use cases: derives, attributes, per-field attributes, and call-site generation, each hygienic and followable by the tools.</p>
+<p><a href="609-template-tokens">Template tokens and expansion</a> defines the exact list of template tokens - for both the type-driven and the call-driven input - and the expansion mechanism.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/006-meta-system/608-meta-blocks.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="607-operator-magic"><small>Previous</small>6.7. Operator magic</a><a class="next" href="609-template-tokens"><small>Next</small>6.9. Template tokens and expansion</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

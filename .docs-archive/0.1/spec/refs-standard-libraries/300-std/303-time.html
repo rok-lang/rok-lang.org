@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.3. time:: - time - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::std::time module provides three kinds of time types plus Duration. The monotonic clock, the wall clock and time elapsed since boot are kept clearly sep...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/303-time.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.3. time:: - time - rok docs">
+<meta property="og:description" content="The rok::std::time module provides three kinds of time types plus Duration. The monotonic clock, the wall clock and time elapsed since boot are kept clearly sep...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/303-time.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/303-time.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/303-time.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - file system</a></li><li><a href="302-net">3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a></li><li class="cur"><a aria-current="page" href="303-time">3.3. time:: - time</a><ul class="toc"><li><a href="#331-the-four-type-model">3.3.1. The four-type model</a></li><li><a href="#332-instant---monotonic-clock">3.3.2. Instant - monotonic clock</a></li><li><a href="#333-systemtime---wall-clock">3.3.3. SystemTime - wall clock</a></li><li><a href="#334-boottime---time-since-boot-including-suspend">3.3.4. BootTime - time since boot (including suspend)</a></li><li><a href="#335-duration">3.3.5. Duration</a></li><li><a href="#336-policy---no-tai--leap-second-support">3.3.6. Policy - no TAI / leap second support</a></li><li><a href="#337-impl--target">3.3.7. impl / target</a></li><li><a href="#338-policy-summary">3.3.8. Policy summary</a></li></ul></li><li><a href="304-thread">3.4. thread:: - OS threads (1:1 model)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / standard I/O</a></li><li><a href="306-env">3.6. env:: - environment variables / args / directories</a></li><li><a href="307-process">3.7. process:: - child processes</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python-style)</a></li><li><a href="309-rokon">3.9. rokon:: - the ROKON data format</a></li><li><a href="310-crypto">3.10. crypto:: - the OS random source</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="33-time---time 33-time---시간 331-the-four-type-model 331-4-타입-모델 332-instant---monotonic-clock 332-instant---단조-시계 example 사용-예 333-systemtime---wall-clock 333-systemtime---벽시계 example-1 사용-예-1 334-boottime---time-since-boot-including-suspend 334-boottime---부팅-후-시간-suspend-포함 335-duration 335-duration duration-arithmetic-policy duration-산술-정책 336-policy---no-tai--leap-second-support 336-정책---tai--leap-second-미지원 337-impl--target 337-impl--target 338-policy-summary 338-정책-요약"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/300-std/303-time" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="33-time---time"><a class="anchor" tabindex="-1" href="#33-time---time" aria-hidden="true">#</a>3.3. <code>time::</code> - time</h1>
+<p>The <code>rok::std::time</code> module provides three kinds of time types plus <code>Duration</code>. The monotonic clock, the wall clock and time elapsed since boot are kept clearly separate, so the clock that fits the measurement can be chosen.</p>
+<h2 id="331-the-four-type-model"><a class="anchor" tabindex="-1" href="#331-the-four-type-model" aria-hidden="true">#</a>3.3.1. The four-type model</h2>
+<p>The overall picture:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Meaning</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td><code>Instant</code></td><td>Monotonic clock</td><td>Duration measurement / timeouts</td></tr>
+<tr><td><code>SystemTime</code></td><td>Wall clock (UTC, NTP-adjustable)</td><td>File mtime / display to users</td></tr>
+<tr><td><code>BootTime</code></td><td>Time since boot (including suspend)</td><td>Mobile / laptop apps</td></tr>
+<tr><td><code>Duration</code></td><td>Time difference (i64 nanoseconds)</td><td>Difference between two times / sleep argument</td></tr>
+</tbody></table></div>
+<p>The internal representation of <code>Duration</code> is <code>i64</code> ns. The <code>u128</code> that Rust adopted was judged excessive; <code>i64</code> already covers about ±292 years, which is ample for practical use.</p>
+<h2 id="332-instant---monotonic-clock"><a class="anchor" tabindex="-1" href="#332-instant---monotonic-clock" aria-hidden="true">#</a>3.3.2. <code>Instant</code> - monotonic clock</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Instant</span> { <span class="c">/* opaque - CLOCK_MONOTONIC / QueryPerformanceCounter */</span> }
+
+<span class="k">impl</span> <span class="t">Instant</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">Instant</span>;
+
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> duration_since(<span class="k">self</span>, earlier: <span class="t">Instant</span>) -&gt; <span class="t">Duration</span>;       <span class="c">// self - earlier</span>
+    <span class="k">fn</span> checked_duration_since(<span class="k">self</span>, earlier: <span class="t">Instant</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> saturating_duration_since(<span class="k">self</span>, earlier: <span class="t">Instant</span>) -&gt; <span class="t">Duration</span>;
+
+    <span class="c">// arithmetic - returns none on failure (avoids Rust's silent saturating-on-overflow)</span>
+    <span class="k">fn</span> checked_add(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_sub(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> | <span class="k">none</span>;
+}
+
+<span class="c">// ordinary arithmetic - on overflow: panic with overflow checks on, saturate with them off (3.3.5)</span>
+<span class="k">impl</span> <span class="t">Add</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">Instant</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Instant</span>; ... }
+<span class="k">impl</span> <span class="t">Sub</span>&lt;<span class="t">Instant</span>&gt; <span class="k">for</span> <span class="t">Instant</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Duration</span>; ... }
+<span class="k">impl</span> <span class="t">Sub</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">Instant</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Instant</span>; ... }
+</code></pre>
+<p>The key properties of <code>Instant</code>: it never goes backward, so it is unaffected by NTP adjustment. It has no absolute time meaning of its own (its reference is process start), so it <strong>cannot be serialized</strong>. For the same reason, comparisons across processes are meaningless; it is meaningful only within the same process.</p>
+<h3 id="example"><a class="anchor" tabindex="-1" href="#example" aria-hidden="true">#</a>Example</h3>
+<p>The most common pattern is to take a starting point and get the elapsed time with <code>elapsed</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> start = <span class="t">Instant</span>::now();
+heavy_computation();
+<span class="k">let</span> elapsed = start.elapsed();          <span class="c">// Duration</span>
+log(<span class="s">f"computation took {</span>elapsed<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<h2 id="333-systemtime---wall-clock"><a class="anchor" tabindex="-1" href="#333-systemtime---wall-clock" aria-hidden="true">#</a>3.3.3. <code>SystemTime</code> - wall clock</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">SystemTime</span> { <span class="c">/* opaque - CLOCK_REALTIME / GetSystemTimeAsFileTime */</span> }
+
+<span class="k">impl</span> <span class="t">SystemTime</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">SystemTime</span>;
+
+    <span class="k">fn</span> duration_since(<span class="k">self</span>, earlier: <span class="t">SystemTime</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">Duration</span>;
+                                            <span class="c">// Err if earlier &gt; self</span>
+
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">Duration</span>;
+
+    <span class="k">fn</span> checked_add(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">SystemTime</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_sub(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">SystemTime</span> | <span class="k">none</span>;
+}
+
+<span class="k">const</span> <span class="t">UNIX_EPOCH</span>: <span class="t">SystemTime</span>;     <span class="c">// 1970-01-01 00:00:00 UTC</span>
+
+<span class="c">// SystemTime ↔ unix timestamp</span>
+<span class="k">impl</span> <span class="t">SystemTime</span> {
+    <span class="k">fn</span> from_unix(secs: <span class="t">i64</span>, nanos: <span class="t">u32</span>) -&gt; <span class="t">SystemTime</span>;
+    <span class="k">fn</span> unix_seconds(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> unix_nanos(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">i64</span>;   <span class="c">// rok has no i128 - i64 ns covers about ±292 years</span>
+}
+
+<span class="k">impl</span> <span class="t">Add</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">SystemTime</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">SystemTime</span>; ... }
+<span class="k">impl</span> <span class="t">Sub</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">SystemTime</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">SystemTime</span>; ... }
+
+<span class="k">struct</span> <span class="t">SystemTimeError</span> {
+    duration: <span class="t">Duration</span>;        <span class="c">// how far earlier was ahead</span>
+}
+</code></pre>
+<p><code>SystemTime</code> is <code>i64</code> nanoseconds relative to <code>UNIX_EPOCH</code>, so its range is about ±292 years on every target. 32-bit targets read the clock through 64-bit time interfaces (<code>time64</code>), so there is no 2038 limit.</p>
+<p><code>SystemTime</code> behaves quite differently. Time may go backward through NTP adjustment or user changes, and since it is an absolute time relative to UNIX_EPOCH it <strong>can be serialized</strong>. It can therefore be compared meaningfully across processes.</p>
+<h3 id="example-1"><a class="anchor" tabindex="-1" href="#example-1" aria-hidden="true">#</a>Example</h3>
+<p>Converting to a unix timestamp and reading a file's mtime:</p>
+<pre><code class="language-rok"><span class="k">let</span> now = <span class="t">SystemTime</span>::now();
+<span class="k">let</span> unix = <span class="k">try</span> now.unix_seconds();
+log(<span class="s">f"unix timestamp: {</span>unix<span class="s">}"</span>);
+
+<span class="c">// file mtime</span>
+<span class="k">let</span> meta = <span class="k">try</span> fs::metadata(<span class="s">"data.txt"</span>);
+<span class="k">let</span> mtime: <span class="t">SystemTime</span> = <span class="k">try</span> meta.modified();
+<span class="k">let</span> age = <span class="k">try</span> <span class="t">SystemTime</span>::now().duration_since(mtime);
+log(<span class="s">f"file age: {</span>age<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<h2 id="334-boottime---time-since-boot-including-suspend"><a class="anchor" tabindex="-1" href="#334-boottime---time-since-boot-including-suspend" aria-hidden="true">#</a>3.3.4. <code>BootTime</code> - time since boot (including suspend)</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">BootTime</span> { <span class="c">/* CLOCK_BOOTTIME (Linux) / CLOCK_MONOTONIC = mach_continuous_time (macOS) */</span> }
+
+<span class="k">impl</span> <span class="t">BootTime</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">BootTime</span>;
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> duration_since(<span class="k">self</span>, earlier: <span class="t">BootTime</span>) -&gt; <span class="t">Duration</span>;
+}
+</code></pre>
+<p><code>BootTime</code> and <code>Instant</code> differ in their behavior across suspend. <code>Instant</code>, like Linux <code>CLOCK_MONOTONIC</code>, stops during suspend, whereas <code>BootTime</code> follows <code>CLOCK_BOOTTIME</code> and keeps advancing during suspend.</p>
+<p>This difference is decisive when a mobile or laptop app must measure &quot;real elapsed time (including suspend)&quot;. Rust still has no stable API for this as of 2026; rok exposes it on the surface early.</p>
+<h2 id="335-duration"><a class="anchor" tabindex="-1" href="#335-duration" aria-hidden="true">#</a>3.3.5. <code>Duration</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Duration</span> { ns: <span class="t">i64</span>; }       <span class="c">// i64 nanoseconds - about ±292 years</span>
+
+<span class="k">impl</span> <span class="t">Duration</span> {
+    <span class="k">const</span> <span class="t">ZERO</span>: <span class="t">Duration</span> = <span class="t">Duration</span> { ns: <span class="n">0</span> };
+    <span class="k">const</span> <span class="t">MAX</span>: <span class="t">Duration</span> = <span class="t">Duration</span> { ns: <span class="t">I64_MAX</span> };
+
+    <span class="c">// constructors</span>
+    <span class="k">fn</span> ns(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> us(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;        <span class="c">// microseconds</span>
+    <span class="k">fn</span> ms(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;        <span class="c">// milliseconds</span>
+    <span class="k">fn</span> sec(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> min(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> hours(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> days(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+
+    <span class="k">fn</span> from_secs_f64(s: <span class="t">f64</span>) -&gt; <span class="t">Duration</span>;        <span class="c">// floating point seconds</span>
+
+    <span class="c">// extraction</span>
+    <span class="k">fn</span> as_ns(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_us(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_ms(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_secs(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_secs_f64(<span class="k">self</span>) -&gt; <span class="t">f64</span>;
+
+    <span class="k">fn</span> subsec_ns(<span class="k">self</span>) -&gt; <span class="t">u32</span>;          <span class="c">// sub-second nanosecond part</span>
+    <span class="k">fn</span> subsec_us(<span class="k">self</span>) -&gt; <span class="t">u32</span>;
+    <span class="k">fn</span> subsec_ms(<span class="k">self</span>) -&gt; <span class="t">u32</span>;
+}
+
+<span class="c">// arithmetic</span>
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">Duration</span> { ... }
+<span class="k">impl</span> <span class="t">Sub</span> <span class="k">for</span> <span class="t">Duration</span> { ... }
+<span class="k">impl</span> <span class="t">Mul</span>&lt;<span class="t">i64</span>&gt; <span class="k">for</span> <span class="t">Duration</span> { ... }     <span class="c">// Duration × i64</span>
+<span class="k">impl</span> <span class="t">Div</span>&lt;<span class="t">i64</span>&gt; <span class="k">for</span> <span class="t">Duration</span> { ... }
+<span class="k">impl</span> <span class="t">Mul</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">f64</span> { ... }      <span class="c">// f64 × Duration</span>
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Duration</span> { ... }       <span class="c">// "1.234s" / "5ms" / "1.5µs" / "100ns"</span>
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">Duration</span> { ... }         <span class="c">// same as Display</span>
+</code></pre>
+<p><code>Display</code> writes a single unit fitting the magnitude: <code>s</code> if the absolute value is at least 1 second, <code>ms</code> if at least 1 ms, <code>µs</code> if at least 1 µs, and <code>ns</code> otherwise. The integer part divided by that unit is followed by the remainder as a fraction; trailing zeros are removed, and if the remainder is 0 no decimal point is written. Negative values are prefixed with <code>-</code>.</p>
+<pre><code class="language-rok"><span class="t">Duration</span>::ms(<span class="n">1234</span>);      <span class="c">// "1.234s"</span>
+<span class="t">Duration</span>::ms(<span class="n">5</span>);         <span class="c">// "5ms"</span>
+<span class="t">Duration</span>::ns(<span class="n">1500</span>);      <span class="c">// "1.5µs"</span>
+<span class="t">Duration</span>::ns(-<span class="n">20</span>);       <span class="c">// "-20ns"</span>
+</code></pre>
+<p>All time types implement <code>PartialEq</code> / <code>Eq</code> / <code>PartialOrd</code> / <code>Ord</code> / <code>Hash</code>. <code>Instant</code>, <code>SystemTime</code> and <code>BootTime</code> also implement <code>Debug</code>.</p>
+<h3 id="duration-arithmetic-policy"><a class="anchor" tabindex="-1" href="#duration-arithmetic-policy" aria-hidden="true">#</a>Duration arithmetic policy</h3>
+<p>Arithmetic on <code>Duration</code> / <code>SystemTime</code> / <code>Instant</code> / <code>BootTime</code> (including <code>duration_since</code> and <code>from_unix</code>) panics on overflow when overflow checks are on and saturates when they are off (<code>-C overflow-checks</code>, <a href="../../refs-lang/009-tools/901-rokc-cli#rokc-build-aot-build">refs-lang 9.1.2</a>). Division by zero always panics. The <code>checked_*</code> / <code>saturating_*</code> variants choose explicitly.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Duration</span> {
+    <span class="k">fn</span> checked_add(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_sub(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_mul(<span class="k">self</span>, factor: <span class="t">i64</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_div(<span class="k">self</span>, divisor: <span class="t">i64</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+
+    <span class="k">fn</span> saturating_add(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> saturating_sub(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> saturating_mul(<span class="k">self</span>, factor: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+}
+</code></pre>
+<h2 id="336-policy---no-tai--leap-second-support"><a class="anchor" tabindex="-1" href="#336-policy---no-tai--leap-second-support" aria-hidden="true">#</a>3.3.6. Policy - no TAI / leap second support</h2>
+<p><code>SystemTime</code> is strictly <strong>UTC</strong> and does not handle leap seconds (taking into account that the Linux kernel itself is ambiguous here). Cases that need TAI (atomic time) or exact leap second handling belong to separate packages (<code>rok/chrono</code> or <code>rok/tai</code>).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Use</th><th>Recommendation</th></tr></thead>
+<tbody>
+<tr><td>Ordinary apps (timestamps / measurement)</td><td>rok::std::time</td></tr>
+<tr><td>Simulation / precise astronomy</td><td>A separate <code>chrono</code>-like package</td></tr>
+<tr><td>Finance / exact leap seconds</td><td>A separate package</td></tr>
+</tbody></table></div>
+<h2 id="337-impl--target"><a class="anchor" tabindex="-1" href="#337-impl--target" aria-hidden="true">#</a>3.3.7. impl / target</h2>
+<p>Per-platform implementation mapping:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>linux</th><th>macos</th><th>windows</th><th>wasi</th></tr></thead>
+<tbody>
+<tr><td><code>Instant</code></td><td>CLOCK_MONOTONIC</td><td>CLOCK_UPTIME_RAW</td><td>QueryPerformanceCounter</td><td>wasi clock</td></tr>
+<tr><td><code>SystemTime</code></td><td>CLOCK_REALTIME</td><td>CLOCK_REALTIME</td><td>GetSystemTimePreciseAsFileTime</td><td>wasi</td></tr>
+<tr><td><code>BootTime</code></td><td>CLOCK_BOOTTIME</td><td>CLOCK_MONOTONIC (mach_continuous_time, includes sleep)</td><td>QueryPerformanceCounter (~ Instant)</td><td>(no suspend)</td></tr>
+</tbody></table></div>
+<h2 id="338-policy-summary"><a class="anchor" tabindex="-1" href="#338-policy-summary" aria-hidden="true">#</a>3.3.8. Policy summary</h2>
+<p>The chapter's key decisions are three. First, <code>Instant</code> / <code>SystemTime</code> / <code>Duration</code> are separated, distinguishing monotonic time from wall-clock time semantically. Second, <code>BootTime</code>, which Rust's std does not cover, is exposed separately so that elapsed time since boot, including suspend, can be read directly. Third, TAI and leap seconds are split out into separate packages outside this module.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/300-std/303-time.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="302-net"><small>Previous</small>3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a><a class="next" href="304-thread"><small>Next</small>3.4. thread:: - OS threads (1:1 model)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

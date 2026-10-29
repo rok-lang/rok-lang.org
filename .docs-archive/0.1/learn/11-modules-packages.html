@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11. Modules and Packages - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="As a program grows, you need to split the code up and use libraries written by other people. In rok, the unit for dividing code is the module, and the unit for ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/11-modules-packages.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="11. Modules and Packages - rok docs">
+<meta property="og:description" content="As a program grows, you need to split the code up and use libraries written by other people. In rok, the unit for dividing code is the module, and the unit for ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/11-modules-packages.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li class="cur"><a aria-current="page" href="11-modules-packages">11. Modules and Packages</a><ul class="toc"><li><a href="#mod-and-paths">mod and paths</a></li><li><a href="#importing-with-use">Importing with use</a></li><li><a href="#visibility">Visibility</a></li><li><a href="#splitting-into-files">Splitting into files</a></li><li><a href="#packages-and-rokrokon">Packages and rok.rokon</a></li><li><a href="#stones-and-rokstonesio">Stones and rokstones.io</a></li><li><a href="#single-file-scripts-and-environments">Single-file scripts and environments</a></li><li><a href="#installing-programs">Installing programs</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="11-modules-and-packages"><a class="anchor" tabindex="-1" href="#11-modules-and-packages" aria-hidden="true">#</a>11. Modules and Packages</h1>
+<p>As a program grows, you need to split the code up and use libraries written by other people. In rok, the unit for dividing code is the <strong>module</strong>, and the unit for building and distributing is the <strong>package</strong>. A package published to the registry is called a <strong>stone</strong>.</p>
+<h2 id="mod-and-paths"><a class="anchor" tabindex="-1" href="#mod-and-paths" aria-hidden="true">#</a><code>mod</code> and paths</h2>
+<p><code>mod name { .. }</code> defines a module in place. Items inside a module are referred to with a <code>module::item</code> path, and modules can contain further modules.</p>
+<pre><code class="language-rok"><span class="k">mod</span> geom {
+    <span class="k">pub</span> <span class="k">struct</span> <span class="t">Point</span> { <span class="k">pub</span> x: <span class="t">f64</span>; <span class="k">pub</span> y: <span class="t">f64</span>; }
+
+    <span class="k">pub</span> <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { <span class="t">Point</span> { x: <span class="n">0.0</span>, y: <span class="n">0.0</span> } }
+
+    <span class="k">pub</span> <span class="k">mod</span> dist {
+        <span class="k">use</span> sup::<span class="t">Point</span>;
+
+        <span class="k">pub</span> <span class="k">fn</span> manhattan(a: <span class="t">Point</span>, b: <span class="t">Point</span>) -&gt; <span class="t">f64</span> {
+            abs(a.x - b.x) + abs(a.y - b.y)
+        }
+
+        <span class="k">fn</span> abs(v: <span class="t">f64</span>) -&gt; <span class="t">f64</span> { <span class="k">if</span> v &lt; <span class="n">0.0</span> { -v } <span class="k">else</span> { v } }
+    }
+}
+
+<span class="k">let</span> p = geom::<span class="t">Point</span> { x: <span class="n">3.0</span>, y: -<span class="n">4.0</span> };
+println(<span class="s">f"{</span>geom::dist::manhattan(geom::origin(), p)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">7
+</code></pre>
+<p>Only certain words can start a path.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Start</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>pkg::</code></td><td>From the root of the current package</td></tr>
+<tr><td><code>sup::</code></td><td>From the parent module (<code>sup::sup::</code> to go further up)</td></tr>
+<tr><td><code>rok::</code></td><td>The standard library (<code>rok::core</code>, <code>rok::std</code>)</td></tr>
+<tr><td>a name</td><td>An item or child module of the current module, or a name brought in with <code>use</code></td></tr>
+</tbody></table></div>
+<p>Name lookup does not search parent modules automatically. That is why using <code>Point</code> inside <code>dist</code> requires bringing it in explicitly with <code>use sup::Point;</code>. Thanks to this, you can always tell from within a file where a name comes from.</p>
+<h2 id="importing-with-use"><a class="anchor" tabindex="-1" href="#importing-with-use" aria-hidden="true">#</a>Importing with <code>use</code></h2>
+<p>Instead of writing long paths every time, bring names in with <code>use</code>. You can import several with <code>{..}</code>, rename with <code>as</code>, and import all public items of a module with <code>*</code>.</p>
+<pre><code class="language-rok"><span class="k">mod</span> shapes {
+    <span class="k">pub</span> <span class="k">fn</span> square(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x * x }
+    <span class="k">pub</span> <span class="k">fn</span> cube(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x * x * x }
+    <span class="k">pub</span> <span class="k">const</span> <span class="t">UNIT</span>: <span class="t">i32</span> = <span class="n">1</span>;
+}
+
+<span class="k">mod</span> report {
+    <span class="k">use</span> <span class="k">pkg</span>::shapes::{square, cube <span class="k">as</span> pow3};
+
+    <span class="k">pub</span> <span class="k">fn</span> show(x: <span class="t">i32</span>) {
+        println(<span class="s">f"{</span>x<span class="s">}: {</span>square(x)<span class="s">} {</span>pow3(x)<span class="s">}"</span>);
+    }
+}
+
+<span class="k">use</span> report::show;
+<span class="k">use</span> shapes::*;
+
+show(<span class="n">3</span>);
+println(<span class="s">f"{</span>cube(<span class="t">UNIT</span> + <span class="n">1</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">3: 9 27
+8
+</code></pre>
+<p>A name you import by name must not also be defined in the same module; the definition would hide the import without a word. A glob (<code>use shapes::*;</code>) simply gives way to the module's own items.</p>
+<pre><code class="language-rok"><span class="k">use</span> shapes::square;
+<span class="k">fn</span> square(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span> { x * x }
+</code></pre>
+<pre><code class="language-text">error[E102]: `square` is both imported from `shapes::square` and defined in this module
+  --&gt; main.rok:1:13
+   |
+ 1 | use shapes::square;
+   |             ^^^^^^ imported here
+ 2 | fn square(x: f64) -&gt; f64 { x * x }
+   | -- defined here, which would hide the import
+   |
+   = help: import it under another name, `use shapes::square as shapes_square;`, or remove this `use` if the module does not need it
+</code></pre>
+<p>Names like <code>List</code>, <code>Dict</code>, and <code>println</code>, which you have used so far without <code>use</code>, work thanks to the <code>use rok::core::**;</code> (a recursive glob: <code>*</code> plus submodules) implicitly present in every file. Modules in <code>rok::std</code> such as files, networking, and threads are imported explicitly, as in <code>use rok::std::fs;</code>.</p>
+<h2 id="visibility"><a class="anchor" tabindex="-1" href="#visibility" aria-hidden="true">#</a>Visibility</h2>
+<p>By default, an item is visible only within its own module. To make it visible outside, add a visibility keyword.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Keyword</th><th>Visible from</th></tr></thead>
+<tbody>
+<tr><td>(none)</td><td>The same module</td></tr>
+<tr><td><code>pub(sub)</code></td><td>The same module and its submodules</td></tr>
+<tr><td><code>pub(pkg)</code></td><td>Anywhere in the same package</td></tr>
+<tr><td><code>pub</code></td><td>Other packages too</td></tr>
+</tbody></table></div>
+<p>Struct fields must also be made public individually. That is why <code>Point</code> above marks each field with <code>pub</code>, as in <code>pub x: f64</code>. If you use a private item from outside, the compiler tells you where to add <code>pub</code>.</p>
+<pre><code class="language-rok"><span class="k">mod</span> bank {
+    <span class="k">pub</span> <span class="k">struct</span> <span class="t">Account</span> { <span class="k">pub</span> owner: <span class="t">str</span>; balance: <span class="t">i64</span>; }
+
+    <span class="k">pub</span> <span class="k">fn</span> open(owner: <span class="t">str</span>) -&gt; <span class="t">Account</span> { <span class="t">Account</span> { owner: owner, balance: <span class="n">0</span> } }
+
+    <span class="k">pub</span> <span class="k">fn</span> deposit(a: <span class="t">Account</span>, amount: <span class="t">i64</span>) -&gt; <span class="t">Account</span> {
+        <span class="t">Account</span> { owner: a.owner, balance: a.balance + check(amount) }
+    }
+
+    <span class="k">pub</span> <span class="k">fn</span> balance(a: <span class="t">Account</span>) -&gt; <span class="t">i64</span> { a.balance }
+
+    <span class="k">fn</span> check(amount: <span class="t">i64</span>) -&gt; <span class="t">i64</span> { <span class="k">if</span> amount &lt; <span class="n">0</span> { <span class="n">0</span> } <span class="k">else</span> { amount } }
+}
+
+<span class="k">let</span> a = bank::deposit(bank::open(<span class="s">"kim"</span>), <span class="n">500</span>);
+println(<span class="s">f"{</span>a.owner<span class="s">}: {</span>bank::balance(a)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">kim: 500
+</code></pre>
+<p>The <code>balance</code> field and the <code>check</code> function are not visible outside <code>bank</code>, so the balance changes only through <code>bank</code>'s functions.</p>
+<h2 id="splitting-into-files"><a class="anchor" tabindex="-1" href="#splitting-into-files" aria-hidden="true">#</a>Splitting into files</h2>
+<p>In a real package, modules are split into files. Declaring a module without a body, as in <code>mod shapes;</code>, makes <code>shapes.rok</code> in the same directory the body of that module. If it has submodules, put a <code>shapes/</code> directory with the same name next to <code>shapes.rok</code> (there is no special file name like <code>mod.rok</code>).</p>
+<pre><code class="language-text">geom/
+├── rok.rokon
+└── src/
+    ├── lib.rok          // mod shapes;
+    ├── shapes.rok       // shapes module body, declares mod circle;
+    └── shapes/
+        └── circle.rok   // shapes::circle
+</code></pre>
+<p>A package's sources live in <code>src/</code>. The package root module is <code>src/main.rok</code> for an executable and <code>src/lib.rok</code> for a library. Executable top-level statements may appear only in <code>src/main.rok</code>; other modules contain only items.</p>
+<h2 id="packages-and-rokrokon"><a class="anchor" tabindex="-1" href="#packages-and-rokrokon" aria-hidden="true">#</a>Packages and <code>rok.rokon</code></h2>
+<p><code>rok new</code> creates a package: <code>src/main.rok</code> for an executable, or with <code>--lib</code>, <code>src/lib.rok</code> holding an example function and one <code>#[test]</code>. The manifest <code>rok.rokon</code> is in <a href="../spec/refs-standard-libraries/300-std/309-rokon">ROKON</a> format.</p>
+<pre><code class="language-bash">rok new --lib geom
+rok new app
+</code></pre>
+<pre><code class="language-text">     Created library package (geom)
+     Created executable package (app)
+</code></pre>
+<p>Let's create two modules in <code>geom</code>. If you re-export a submodule's items from the package root with <code>pub use</code>, users do not need to know the internal structure.</p>
+<pre><code class="language-rok"><span class="c">// geom/src/lib.rok</span>
+<span class="k">mod</span> shapes;
+
+<span class="k">pub</span> <span class="k">use</span> shapes::<span class="t">Circle</span>;
+
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">const</span> <span class="t">PI</span>: <span class="t">f64</span> = <span class="n">3.14159</span>;
+
+<span class="k">pub</span> <span class="k">fn</span> area_sum(cs: <span class="t">List</span>&lt;<span class="t">Circle</span>&gt;) -&gt; <span class="t">f64</span> {
+    cs.iter().map(|c| c.area()).sum()
+}
+</code></pre>
+<pre><code class="language-rok"><span class="c">// geom/src/shapes.rok</span>
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">Circle</span> { <span class="k">pub</span> r: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Circle</span> {
+    <span class="k">pub</span> <span class="k">fn</span> area(<span class="k">self</span>) -&gt; <span class="t">f64</span> { sup::<span class="t">PI</span> * <span class="k">self</span>.r * <span class="k">self</span>.r }
+}
+</code></pre>
+<p>When you add a dependency in <code>app</code> with <code>rok add</code>, it goes into <code>deps</code> in <code>rok.rokon</code>. The name of the dependency package becomes its top-level path (<code>-</code> turns into <code>_</code>).</p>
+<pre><code class="language-bash">cd app
+rok add geom --path ../geom
+</code></pre>
+<pre><code class="language-rokon"><span class="t">Package</span> { name: <span class="s">"app"</span>, version: <span class="s">"0.1.0"</span>, deps: {
+    <span class="s">"geom"</span>: <span class="t">Dep</span>::path(<span class="s">"../geom"</span>),
+} }
+</code></pre>
+<pre><code class="language-rok"><span class="c">// app/src/main.rok</span>
+<span class="k">use</span> geom::{<span class="t">Circle</span>, area_sum};
+
+println(<span class="s">f"{</span>area_sum([<span class="t">Circle</span> { r: <span class="n">1.0</span> }, <span class="t">Circle</span> { r: <span class="n">2.0</span> }])<span class="s">}"</span>);
+</code></pre>
+<pre><code class="language-text">$ rok run
+   Compiling geom (../geom)
+   Compiling app (.)
+    Finished in 1.97s
+     Running `./target/debug/app`
+15.70795
+</code></pre>
+<p><code>PI</code> is <code>pub(pkg)</code>, so it can be used anywhere inside <code>geom</code> but is not visible from <code>app</code>. A git repository is added with something like <code>rok add parser --git &lt;url&gt; --tag v1.2</code>. For git and stone dependencies, the exact commit is pinned in <code>rok.lock</code>, so commit <code>rok.lock</code> to version control as well. Only <code>rok update</code> moves pinned versions forward.</p>
+<h2 id="stones-and-rokstonesio"><a class="anchor" tabindex="-1" href="#stones-and-rokstonesio" aria-hidden="true">#</a>Stones and rokstones.io</h2>
+<p>A package on the registry is called a stone, and the default registry is <a href="https://rokstones.io">rokstones.io</a>. You search by name and add it together with a version requirement. Version requirements work as in Cargo: <code>^1.2</code> means <code>&gt;=1.2.0, &lt;2.0.0</code>. If you omit the requirement, the newest version is recorded with a <code>^</code>.</p>
+<pre><code class="language-text">$ rok search json
+    Updating index https://github.com/rok-lang/rokstones.io-index
+json 0.1.0 - JSON (RFC 8259): Value tree, strict parser, streaming tokenizer, typed encode/decode, JSON Pointer
+$ rok add json@^0.1
+       Added json to deps of rok.rokon
+</code></pre>
+<pre><code class="language-rokon"><span class="t">Package</span> { name: <span class="s">"app"</span>, version: <span class="s">"0.1.0"</span>, deps: {
+    <span class="s">"json"</span>: <span class="t">Dep</span>::version(<span class="s">"^0.1"</span>),
+} }
+</code></pre>
+<p>A plain string is shorthand for <code>Dep::version</code>, and a requirement with no operator means <code>^</code>, so these three lines ask for the same thing. Stone READMEs often use the short form (<code>&quot;json&quot;: &quot;0.1&quot;</code>, which means <code>&gt;=0.1.0, &lt;0.2.0</code>).</p>
+<pre><code class="language-rokon"><span class="t">Package</span> { name: <span class="s">"app"</span>, version: <span class="s">"0.1.0"</span>, deps: {
+    <span class="s">"textwrap"</span>: <span class="s">"1.2"</span>,
+    <span class="c">// "textwrap": "^1.2",</span>
+    <span class="c">// "textwrap": Dep::version("^1.2"),</span>
+} }
+</code></pre>
+<p>A path is not a version: write <code>Dep::path(&quot;../geom&quot;)</code>, not <code>&quot;../geom&quot;</code>.</p>
+<p>A library can offer <strong>features</strong> that its users turn on and off, and you can publish your own library as a stone with <code>rok login</code> and <code>rok publish</code>. Both are covered in <a href="18-features-and-stones">chapter 18</a>, together with the stones the rok project maintains (<code>json</code>, <code>toml</code>, <code>http</code>, <code>markdown</code>, <code>rok-syntax</code>).</p>
+<h2 id="single-file-scripts-and-environments"><a class="anchor" tabindex="-1" href="#single-file-scripts-and-environments" aria-hidden="true">#</a>Single-file scripts and environments</h2>
+<p>For a small script that does not warrant a package, its dependencies live in a <code>```rokon</code> block inside the <code>//!</code> comment at the very top of the file. <code>rok add</code> with the script as the last argument writes the block for you; a path is written relative to the script, and the lockfile is kept in the cache.</p>
+<pre><code class="language-bash">rok add geom --path ../geom tool.rok
+</code></pre>
+<pre><code class="language-text">       Added geom to tool.rok
+</code></pre>
+<pre><code class="language-rok"><span class="c">//! ```rokon</span>
+<span class="c">//! Package {</span>
+<span class="c">//!     deps: {</span>
+<span class="c">//!         "geom": Dep::path("../geom"),</span>
+<span class="c">//!     },</span>
+<span class="c">//! }</span>
+<span class="c">//! ```</span>
+<span class="k">mod</span> helper;
+<span class="k">use</span> geom::{<span class="t">Circle</span>, area_sum};
+println(<span class="s">f"{</span>area_sum([<span class="t">Circle</span> { r: helper::radius() }])<span class="s">}"</span>);
+</code></pre>
+<pre><code class="language-bash">rok run tool.rok
+</code></pre>
+<p>A script can have file modules too: <code>mod helper;</code> loads <code>helper.rok</code> beside it, just as in a package's <code>src/</code>. A module file may carry its own <code>//!</code> block (<code>rok add &lt;name&gt; helper.rok</code>), and the blocks of all the files are merged. Scripts never see libraries installed with <code>rok install</code>; only their blocks count. When a script outgrows one file, <code>rok init --script tool.rok</code> turns it into a package: the blocks become <code>rok.rokon</code>, and <code>tool.rok</code> and its module files move into <code>src/</code>.</p>
+<p>Named environments are for the REPL and Jupyter. Install libraries into one with <code>rok install</code>, and pick it with <code>--env</code> or change the default with <code>rok env use</code>; there is no activation step.</p>
+<pre><code class="language-text">$ rok env create sci
+     Created environment `sci` (~/.rok/envs/sci)
+$ rok install --env sci geom --path ~/work/geom
+$ rok env use sci
+$ rok env list
+* sci
+</code></pre>
+<p>A package never uses an environment: inside a package, its own <code>rok.rokon</code> is all that counts.</p>
+<h2 id="installing-programs"><a class="anchor" tabindex="-1" href="#installing-programs" aria-hidden="true">#</a>Installing programs</h2>
+<p><code>rok install</code> also installs programs, like <code>cargo install</code>: a package with <code>src/main.rok</code> (from a stone, git or a path) or a script file is built with <code>--release</code> into <code>~/.rok/bin</code>. Installing the same stone version or git commit again does nothing, and says how to rebuild; a new version replaces the old one. A path or a script file is always rebuilt.</p>
+<pre><code class="language-text">$ rok install tool
+   Installed tool 0.1.0 (~/.rok/bin/tool)
+$ rok install tool
+`tool` 0.1.0 is installed already (~/.rok/bin/tool); to rebuild it, run `rok install tool --force`
+$ rok install tool --force
+ Reinstalled tool 0.1.0 (~/.rok/bin/tool)
+$ rok install tool@0.2
+    Upgraded tool from 0.1.0 to 0.2.0 (~/.rok/bin/tool)
+</code></pre>
+<p><code>rok install --list</code> shows what is installed, and <code>rok uninstall tool</code> removes it.</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>Create modules with <code>mod</code>, and refer to names with <code>pkg::</code> / <code>sup::</code> / <code>rok::</code> paths and <code>use</code>.
+</li>
+<li>Items are private by default. Widen their scope with <code>pub(sub)</code>, <code>pub(pkg)</code>, and <code>pub</code>.
+</li>
+<li><code>mod x;</code> maps to <code>x.rok</code> (and <code>x/</code>). The root is <code>main.rok</code> or <code>lib.rok</code>.
+</li>
+<li>Create packages with <code>rok new [--lib]</code> and add dependencies (path, git, stone) with <code>rok add</code>. Commit <code>rok.lock</code>.
+</li>
+<li>Work with stones on rokstones.io using <code>rok search</code> / <code>rok add name@^1.2</code>; features and publishing are in <a href="18-features-and-stones">chapter 18</a>.
+</li>
+<li>Scripts use their <code>//! ```rokon</code> blocks (<code>rok add &lt;name&gt; &lt;file.rok&gt;</code>), and <code>rok init --script</code> turns one into a package; <code>rok env</code> is for the REPL / Jupyter.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/005-modules/504-modules">Modules</a>, <a href="../spec/refs-lang/005-modules/505-use"><code>use</code></a>, <a href="../spec/refs-lang/005-modules/506-visibility">Visibility</a>, <a href="../spec/refs-lang/005-modules/507-paths">Paths</a>, <a href="../spec/refs-lang/005-modules/508-re-export">Re-exports</a>
+</li>
+<li>Tools: <a href="../spec/refs-lang/009-tools/910-rok-frontend"><code>rok</code> front-end</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#9103-rokrokon--roklock"><code>rok.rokon</code> / <code>rok.lock</code></a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#9104a-stones-and-rokstonesio">Stones and rokstones.io</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#9105-environments">Environments</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#9107-inline-manifest-for-single-file-scripts">Inline manifests</a>
+</li>
+<li><a href="01-getting-started">1. Getting Started</a>
+</li>
+<li>Next chapter: <a href="12-concurrency">12. Concurrency</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/11-modules-packages.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="10-errors"><small>Previous</small>10. Error Handling</a><a class="next" href="12-concurrency"><small>Next</small>12. Concurrency</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Game of Life - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Run Conway's Game of Life on a 10×8 torus grid whose edges wrap around, printing a few generations as text.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/game-of-life.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Game of Life - rok docs">
+<meta property="og:description" content="Run Conway's Game of Life on a 10×8 torus grid whose edges wrap around, printing a few generations as text.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/game-of-life.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li class="cur"><a aria-current="page" href="game-of-life">Game of Life</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="game-of-life"><a class="anchor" tabindex="-1" href="#game-of-life" aria-hidden="true">#</a>Game of Life</h1>
+<p>Run Conway's Game of Life on a 10×8 torus grid whose edges wrap around, printing a few generations as text.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="k">const</span> <span class="t">W</span>: <span class="t">usize</span> = <span class="n">10</span>;
+<span class="k">const</span> <span class="t">H</span>: <span class="t">usize</span> = <span class="n">8</span>;
+
+<span class="c">// A grid of cells on a torus: the edges wrap around.</span>
+<span class="k">struct</span> <span class="t">Grid</span> {
+    cells: [[<span class="t">bool</span>; <span class="t">W</span>]; <span class="t">H</span>];
+}
+
+<span class="k">impl</span> <span class="t">Grid</span> {
+    <span class="k">fn</span> parse(rows: <span class="t">List</span>&lt;<span class="t">str</span>&gt;) -&gt; <span class="t">Grid</span> {
+        <span class="k">let</span> cells = [[<span class="k">false</span>; <span class="t">W</span>]; <span class="t">H</span>];
+        <span class="k">for</span> (y, row) <span class="k">in</span> rows.iter().enumerate() {
+            <span class="k">for</span> (x, c) <span class="k">in</span> row.chars().enumerate() {
+                cells[y][x] = c == <span class="s">'#'</span>;
+            }
+        }
+        <span class="t">Grid</span> { cells: cells }
+    }
+
+    <span class="k">fn</span> alive(<span class="k">self</span>, x: <span class="t">usize</span>, y: <span class="t">usize</span>) -&gt; <span class="t">bool</span> { <span class="k">self</span>.cells[y][x] }
+
+    <span class="k">fn</span> neighbors(<span class="k">self</span>, x: <span class="t">usize</span>, y: <span class="t">usize</span>) -&gt; <span class="t">usize</span> {
+        <span class="k">let</span> n = <span class="n">0usize</span>;
+        <span class="k">for</span> dy <span class="k">in</span> [<span class="t">H</span> - <span class="n">1</span>, <span class="n">0</span>, <span class="n">1</span>] {
+            <span class="k">for</span> dx <span class="k">in</span> [<span class="t">W</span> - <span class="n">1</span>, <span class="n">0</span>, <span class="n">1</span>] {
+                <span class="k">if</span> dx == <span class="n">0</span> &amp;&amp; dy == <span class="n">0</span> { <span class="k">continue</span>; }
+                <span class="c">// Adding W - 1 and taking % W steps one cell left with wraparound.</span>
+                <span class="k">if</span> <span class="k">self</span>.alive((x + dx) % <span class="t">W</span>, (y + dy) % <span class="t">H</span>) { n += <span class="n">1</span>; }
+            }
+        }
+        n
+    }
+
+    <span class="k">fn</span> step(<span class="k">self</span>) -&gt; <span class="t">Grid</span> {
+        <span class="k">let</span> next = [[<span class="k">false</span>; <span class="t">W</span>]; <span class="t">H</span>];
+        <span class="k">for</span> y <span class="k">in</span> <span class="n">0</span>..<span class="t">H</span> {
+            <span class="k">for</span> x <span class="k">in</span> <span class="n">0</span>..<span class="t">W</span> {
+                next[y][x] = <span class="k">match</span> (<span class="k">self</span>.alive(x, y), <span class="k">self</span>.neighbors(x, y)) {
+                    (<span class="k">true</span>, <span class="n">2</span>) | (<span class="k">true</span>, <span class="n">3</span>) =&gt; <span class="k">true</span>,
+                    (<span class="k">false</span>, <span class="n">3</span>) =&gt; <span class="k">true</span>,
+                    _ =&gt; <span class="k">false</span>,
+                };
+            }
+        }
+        <span class="t">Grid</span> { cells: next }
+    }
+
+    <span class="k">fn</span> population(<span class="k">self</span>) -&gt; <span class="t">usize</span> {
+        <span class="k">let</span> n = <span class="n">0usize</span>;
+        <span class="k">for</span> row <span class="k">in</span> <span class="k">self</span>.cells {
+            <span class="k">for</span> c <span class="k">in</span> row { <span class="k">if</span> c { n += <span class="n">1</span>; } }
+        }
+        n
+    }
+}
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Grid</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">for</span> row <span class="k">in</span> <span class="k">self</span>.cells {
+            <span class="k">for</span> c <span class="k">in</span> row { <span class="k">try</span> f.write_char(<span class="k">if</span> c { <span class="s">'#'</span> } <span class="k">else</span> { <span class="s">'.'</span> }); }
+            <span class="k">try</span> f.write_char(<span class="s">'\n'</span>);
+        }
+    }
+}
+
+<span class="c">// A glider in the corner and a blinker on the right.</span>
+<span class="k">let</span> grid = <span class="t">Grid</span>::parse([
+    <span class="s">".#........"</span>,
+    <span class="s">"..#......."</span>,
+    <span class="s">"###......."</span>,
+    <span class="s">".........."</span>,
+    <span class="s">"......###."</span>,
+    <span class="s">".........."</span>,
+    <span class="s">".........."</span>,
+    <span class="s">".........."</span>,
+]);
+
+<span class="k">for</span> gen <span class="k">in</span> <span class="n">0</span>..<span class="n">4</span> {
+    println(<span class="s">f"generation {</span>gen<span class="s">} (population {</span>grid.population()<span class="s">})"</span>);
+    println(<span class="s">f"{</span>grid<span class="s">}"</span>);
+    grid = grid.step();
+}
+
+<span class="c">// A lone glider returns to its shape every 4 steps, shifted by (1, 1);</span>
+<span class="c">// on a 10x8 torus it needs lcm(10, 8) = 40 such moves to come home.</span>
+<span class="k">let</span> glider = <span class="t">Grid</span>::parse([<span class="s">".#"</span>, <span class="s">"..#"</span>, <span class="s">"###"</span>]);
+<span class="k">let</span> g = glider.step();
+<span class="k">let</span> period = <span class="n">1</span>;
+<span class="k">while</span> g.cells != glider.cells {
+    g = g.step();
+    period += <span class="n">1</span>;
+}
+println(<span class="s">f"a lone glider comes back after {</span>period<span class="s">} generations"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">generation 0 (population 8)
+.#........
+..#.......
+###.......
+..........
+......###.
+..........
+..........
+..........
+
+generation 1 (population 8)
+..........
+#.#.......
+.##.......
+.#.....#..
+.......#..
+.......#..
+..........
+..........
+
+generation 2 (population 8)
+..........
+..#.......
+#.#.......
+.##.......
+......###.
+..........
+..........
+..........
+
+generation 3 (population 8)
+..........
+.#........
+..##......
+.##....#..
+.......#..
+.......#..
+..........
+..........
+
+a lone glider comes back after 160 generations
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>The grid is a fixed-size 2D array <code>[[bool; W]; H]</code> (10×8). Arrays carry their size in the type and need no separate allocation; they are built with the repeat form <code>[[false; W]; H]</code> and compared whole with <code>==</code> / <code>!=</code> (<a href="../learn/02-values-and-types">Values and types</a>).
+</li>
+<li>Neighbors are counted with <code>(x + W - 1) % W</code> instead of <code>x - 1</code>. This avoids <code>usize</code> subtraction going below zero and makes the edges wrap to the opposite side.
+</li>
+<li>The survival rule is a single <code>match</code> on the <code>(alive, neighbors)</code> tuple. Patterns can be combined with <code>|</code>, as in <code>(true, 2) | (true, 3)</code> (<a href="../spec/refs-lang/003-expressions/312-match-expression">3.12 match</a>, <a href="../learn/04-control-flow">Control flow</a>).
+</li>
+<li><code>impl Display for Grid</code> writes one character at a time with <code>Formatter::write_char</code>, so <code>f&quot;{grid}&quot;</code> draws the grid (<a href="../std/core/fmt#struct.Formatter"><code>Formatter</code></a>, <a href="../learn/06-structs-enums-traits">Structs, enums and traits</a>).
+</li>
+<li>A glider moves one cell diagonally every 4 generations, keeping its shape. On a 10×8 torus it needs lcm(10, 8) = 40 moves to return to its starting place, which takes 160 generations.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/game-of-life.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="ffi-libc"><small>Previous</small>Calling a C library</a><a class="next" href="generators"><small>Next</small>Generators</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

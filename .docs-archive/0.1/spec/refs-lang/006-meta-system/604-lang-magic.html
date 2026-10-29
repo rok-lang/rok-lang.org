@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.4. #[lang(...)] magic - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The #[lang(slot_name)] attribute connects a standard library item to a slot the compiler recognizes directly. It is the channel through which the compiler and r...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/604-lang-magic.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.4. #[lang(...)] magic - rok docs">
+<meta property="og:description" content="The #[lang(slot_name)] attribute connects a standard library item to a slot the compiler recognizes directly. It is the channel through which the compiler and r...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/604-lang-magic.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/604-lang-magic.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/604-lang-magic.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">6. Meta-system overview</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. Attribute syntax</a></li><li><a href="602-built-in-attributes">6.2. Built-in attributes</a></li><li><a href="603-cfg">6.3. #[cfg] conditional compilation</a></li><li class="cur"><a aria-current="page" href="604-lang-magic">6.4. #[lang(...)] magic</a><ul class="toc"><li><a href="#641-motivation">6.4.1. Motivation</a></li><li><a href="#642-form">6.4.2. Form</a></li><li><a href="#643-classification-of-slot-names">6.4.3. Classification of slot names</a></li><li><a href="#644-effect-of-the-mapping">6.4.4. Effect of the mapping</a></li><li><a href="#645-use-in-user-code-rare">6.4.5. Use in user code (rare)</a></li><li><a href="#646-one-item-per-slot">6.4.6. One item per slot</a></li><li><a href="#647-signature-checking-of-slots">6.4.7. Signature checking of slots</a></li><li><a href="#648-unknown-slot-names">6.4.8. Unknown slot names</a></li><li><a href="#649-stability-of-slots">6.4.9. Stability of slots</a></li><li><a href="#6410-difference-between-magic-and-ordinary-attributes">6.4.10. Difference between magic and ordinary attributes</a></li><li><a href="#6411-relation-between-lang-and-other-magic">6.4.11. Relation between #[lang] and other magic</a></li></ul></li><li><a href="605-literal-magic">6.5. #[literal(...)] magic</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] magic</a></li><li><a href="607-operator-magic">6.7. Operator magic</a></li><li><a href="608-meta-blocks">6.8. User-defined meta definitions</a></li><li><a href="609-template-tokens">6.9. Template tokens and expansion</a></li><li><a href="610-reflection">6.10. Reflection</a></li><li><a href="611-include">6.11. Compile-time file embedding</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="64-lang-magic 64-lang-매직 641-motivation 641-동기 642-form 642-형태 643-classification-of-slot-names 643-슬롯-이름의-분류 644-effect-of-the-mapping 644-매핑의-효과 645-use-in-user-code-rare 645-사용자-코드의-사용-거의-없음 646-one-item-per-slot 646-한-슬롯에-한-항목 647-signature-checking-of-slots 647-슬롯의-시그니처-검사 648-unknown-slot-names 648-알려지지-않은-슬롯-이름 649-stability-of-slots 649-슬롯의-안정성 6410-difference-between-magic-and-ordinary-attributes 6410-매직-속성과-일반-속성의-차이 6411-relation-between-lang-and-other-magic 6411-lang-과-다른-매직의-관계"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/006-meta-system/604-lang-magic" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="64-lang-magic"><a class="anchor" tabindex="-1" href="#64-lang-magic" aria-hidden="true">#</a>6.4. <code>#[lang(...)]</code> magic</h1>
+<p>The <code>#[lang(slot_name)]</code> attribute connects a standard library item to a slot the compiler recognizes directly. It is the channel through which the compiler and runtime learn which item carries which meaning.</p>
+<h2 id="641-motivation"><a class="anchor" tabindex="-1" href="#641-motivation" aria-hidden="true">#</a>6.4.1. Motivation</h2>
+<p>As described in the <a href="../000-meta/004-language-vs-standard-libraries">boundary between language and standard library</a>, the language provides only syntax such as <code>+</code> and <code>-</code>, and the standard library decides its meaning. For this model to work, the compiler must know which library trait or type is connected to which language meaning.</p>
+<pre><code>compiler slot           ← language-known anchor
+                          (e.g. &quot;add trait&quot;, &quot;option slot&quot;, &quot;iterator trait&quot;)
+
+library item            ← trait / type / fn defined by standard libraries
+
+  ←── #[lang(slot)] connects the two sides ──→
+</code></pre>
+<h2 id="642-form"><a class="anchor" tabindex="-1" href="#642-form" aria-hidden="true">#</a>6.4.2. Form</h2>
+<pre><code>lang_attr       ::= &quot;#&quot; &quot;[&quot; &quot;lang&quot; &quot;(&quot; string_lit &quot;)&quot; &quot;]&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="a">#[lang("add_trait")]</span>
+<span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("+")]</span>
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="a">#[lang("iterator_trait")]</span>
+<span class="k">trait</span> <span class="t">Iterator</span> { ... }
+
+<span class="a">#[lang("none_type")]</span>
+<span class="k">struct</span> <span class="t">NoneSentinel</span>;               <span class="c">// the type the 'none' literal evaluates to</span>
+</code></pre>
+<p>It is written <code>#[lang(&quot;slot_name&quot;)]</code>, taking the slot name as a string literal argument. It can be attached to items such as traits, types, functions, <code>const</code>, and <code>static</code>.</p>
+<h2 id="643-classification-of-slot-names"><a class="anchor" tabindex="-1" href="#643-classification-of-slot-names" aria-hidden="true">#</a>6.4.3. Classification of slot names</h2>
+<p>Slot names form a fixed set known to the compiler in advance; users cannot create new slots.</p>
+<p>Representative slots:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot</th><th>Kind of item connected</th><th>Compiler use</th></tr></thead>
+<tbody>
+<tr><td><code>&quot;add_trait&quot;</code></td><td>trait</td><td><code>+</code> operator desugar</td></tr>
+<tr><td><code>&quot;sub_trait&quot;</code></td><td>trait</td><td><code>-</code> operator desugar</td></tr>
+<tr><td><code>&quot;mul_trait&quot;</code></td><td>trait</td><td><code>*</code> operator desugar</td></tr>
+<tr><td>...</td><td>...</td><td>...</td></tr>
+<tr><td><code>&quot;none_type&quot;</code></td><td>type</td><td>Type of the <code>none</code> literal</td></tr>
+<tr><td><code>&quot;iterator_trait&quot;</code></td><td>trait</td><td><code>for</code> loop desugar</td></tr>
+<tr><td><code>&quot;into_iterator_trait&quot;</code></td><td>trait</td><td><code>for</code> loop desugar</td></tr>
+<tr><td><code>&quot;future_trait&quot;</code></td><td>trait</td><td><code>await</code> desugar</td></tr>
+<tr><td><code>&quot;index_trait&quot;</code></td><td>trait</td><td><code>[i]</code> indexing desugar</td></tr>
+<tr><td><code>&quot;slice_trait&quot;</code></td><td>trait</td><td><code>[1:3]</code> slicing desugar</td></tr>
+<tr><td><code>&quot;display_trait&quot;</code></td><td>trait</td><td><code>f&quot;{x}&quot;</code> formatting</td></tr>
+<tr><td><code>&quot;debug_trait&quot;</code></td><td>trait</td><td><code>f&quot;{x:?}&quot;</code> debug format</td></tr>
+<tr><td><code>&quot;clone_trait&quot;</code></td><td>trait</td><td><code>#[derive(Clone)]</code></td></tr>
+<tr><td><code>&quot;eq_trait&quot;</code></td><td>trait</td><td><code>==</code> / <code>!=</code> operators (<code>PartialEq</code>)</td></tr>
+<tr><td>...</td><td>...</td><td>...</td></tr>
+</tbody></table></div>
+<p>The full slot list and the item attached to each slot are given authoritatively by the <a href="../../refs-standard-libraries/000-meta/004-lang-slot-table">standard library 0.4 <code>#[lang]</code> slot mapping table</a>; the table above is an excerpt. Changes to the slot set start from the 0.4 table.</p>
+<h2 id="644-effect-of-the-mapping"><a class="anchor" tabindex="-1" href="#644-effect-of-the-mapping" aria-hidden="true">#</a>6.4.4. Effect of the mapping</h2>
+<p>When a trait carries <code>#[lang(&quot;add_trait&quot;)]</code>, the compiler connects that trait to the meaning of addition. A subsequent <code>+</code> operator desugars as:</p>
+<pre><code>a + b    →    &lt;typeof(a) as the_trait&lt;typeof(b)&gt;&gt;::add(a, b)
+</code></pre>
+<p>Here <code>the_trait</code> is the trait carrying <code>#[lang(&quot;add_trait&quot;)]</code>.</p>
+<h2 id="645-use-in-user-code-rare"><a class="anchor" tabindex="-1" href="#645-use-in-user-code-rare" aria-hidden="true">#</a>6.4.5. Use in user code (rare)</h2>
+<p><code>#[lang]</code> is used almost exclusively by the standard library. User code attaches it directly only when building its own library in a <em>no_std</em> environment, or in environments such as embedded systems or operating systems where the language core must be redefined. Ordinary users never need to attach <code>#[lang]</code> directly.</p>
+<h2 id="646-one-item-per-slot"><a class="anchor" tabindex="-1" href="#646-one-item-per-slot" aria-hidden="true">#</a>6.4.6. One item per slot</h2>
+<p>Attaching the same slot name to several items is a compile error.</p>
+<pre><code class="language-rok"><span class="a">#[lang("add_trait")]</span> <span class="k">trait</span> <span class="t">MyAdd</span> { ... }
+<span class="a">#[lang("add_trait")]</span> <span class="k">trait</span> <span class="t">OtherAdd</span> { ... }    <span class="c">// ERROR - duplicate slot</span>
+</code></pre>
+<p>Each slot maps to exactly one item. This uniqueness holds program-wide (across all linked packages). A user package therefore cannot reattach and replace a slot defined by <code>rok::core</code> (<code>panic_fn</code>, <code>oom_fn</code>, <code>unreachable_fn</code>, etc.); doing so is a compile error.</p>
+<h2 id="647-signature-checking-of-slots"><a class="anchor" tabindex="-1" href="#647-signature-checking-of-slots" aria-hidden="true">#</a>6.4.7. Signature checking of slots</h2>
+<p>Each slot predetermines the signature of the item it accepts.</p>
+<pre><code class="language-rok"><span class="a">#[lang("add_trait")]</span>
+<span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {              <span class="c">// the form the slot requires</span>
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>If the signature does not match the form the slot requires, it is a compile error.</p>
+<pre><code class="language-rok"><span class="a">#[lang("add_trait")]</span>
+<span class="k">trait</span> <span class="t">BadAdd</span> { <span class="k">fn</span> run() }            <span class="c">// ERROR - does not match the form of the 'add_trait' slot</span>
+</code></pre>
+<h2 id="648-unknown-slot-names"><a class="anchor" tabindex="-1" href="#648-unknown-slot-names" aria-hidden="true">#</a>6.4.8. Unknown slot names</h2>
+<pre><code class="language-rok"><span class="a">#[lang("nonexistent_slot")]</span>
+<span class="k">trait</span> <span class="t">T</span> { ... }
+</code></pre>
+<p>Using an unknown slot name is likewise a compile error.</p>
+<h2 id="649-stability-of-slots"><a class="anchor" tabindex="-1" href="#649-stability-of-slots" aria-hidden="true">#</a>6.4.9. Stability of slots</h2>
+<p>The set of slot names is itself part of the language specification, so adding, changing, or removing a slot changes the language version (SemVer).</p>
+<h2 id="6410-difference-between-magic-and-ordinary-attributes"><a class="anchor" tabindex="-1" href="#6410-difference-between-magic-and-ordinary-attributes" aria-hidden="true">#</a>6.4.10. Difference between magic and ordinary attributes</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>#[derive]</code>, <code>#[inline]</code>, etc.</th><th><code>#[lang]</code></th></tr></thead>
+<tbody>
+<tr><td>Attached by</td><td>Users</td><td>Standard library (mostly)</td></tr>
+<tr><td>Effect</td><td>Code generation or compiler hint</td><td>Binds to language meaning</td></tr>
+<tr><td>Slot or key</td><td>Free (identified by attribute name)</td><td>Fixed slot set</td></tr>
+</tbody></table></div>
+<p><code>#[lang]</code> is the most privileged attribute in the meta-system. The other magics - <code>#[literal]</code>, <code>#[keyword]</code>, and the operator magics - can all be viewed as refined forms of <code>#[lang]</code>.</p>
+<h2 id="6411-relation-between-lang-and-other-magic"><a class="anchor" tabindex="-1" href="#6411-relation-between-lang-and-other-magic" aria-hidden="true">#</a>6.4.11. Relation between <code>#[lang]</code> and other magic</h2>
+<p>Operator magics (<code>#[infix]</code> etc.) are usually attached to methods of a trait carrying <code>#[lang(...)]</code>.</p>
+<pre><code class="language-rok"><span class="a">#[lang("add_trait")]</span>
+<span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("+")]</span>
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>Here <code>#[lang(&quot;add_trait&quot;)]</code> declares that this trait is where the meaning of addition lives, and <code>#[infix(&quot;+&quot;, ...)]</code> marks the method as the dispatch target of the <code>+</code> token. Working together, the two magics connect the language and the library in both directions.</p>
+<p><code>#[literal]</code> and <code>#[keyword]</code> can likewise be understood as tools connected to the literal position and the keyword registration slot, respectively.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/006-meta-system/604-lang-magic.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="603-cfg"><small>Previous</small>6.3. #[cfg] conditional compilation</a><a class="next" href="605-literal-magic"><small>Next</small>6.5. #[literal(...)] magic</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

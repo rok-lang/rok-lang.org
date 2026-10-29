@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.4. Compound assignment traits - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The *Assign trait family of rok::core::ops dispatches compound assignment operators such as a += b and a *= b as in-place updates. The syntax defined in refs-la...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.4. Compound assignment traits - rok docs">
+<meta property="og:description" content="The *Assign trait family of rok::core::ops dispatches compound assignment operators such as a += b and a *= b as in-place updates. The syntax defined in refs-la...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li class="cur"><a aria-current="page" href="204-ops-assign">2.4. Compound assignment traits</a><ul class="toc"><li><a href="#241-the-key-difference----vs--then-">2.4.1. The key difference - += vs = then +</a></li><li><a href="#242-arithmetic-assign-traits">2.4.2. Arithmetic *Assign traits</a></li><li><a href="#243-bitwise-assign-traits">2.4.3. Bitwise *Assign traits</a></li><li><a href="#244-signature-pattern---ref-self">2.4.4. Signature pattern - ref self</a></li><li><a href="#245-precedence--associativity---prec-1-right">2.4.5. Precedence / associativity - prec=-1, right</a></li><li><a href="#246-trait-implementation-matrix">2.4.6. Trait implementation matrix</a></li><li><a href="#247-assign-on-collections---the-main-use">2.4.7. *Assign on collections - the main use</a></li><li><a href="#248-user-defined-assign">2.4.8. User-defined *Assign</a></li><li><a href="#249-supertrait-relationship-of-assign---none">2.4.9. Supertrait relationship of *Assign - none</a></li><li><a href="#2410-related---broadcast-assign">2.4.10. Related - broadcast *Assign?</a></li></ul></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="24-compound-assignment-traits 24-복합-대입-트레잇 241-the-key-difference----vs--then- 241-핵심-차이----vs--then- 242-arithmetic-assign-traits 242-산술-assign-트레잇 addassign--- addassign--- subassign---- subassign---- mulassign--- mulassign--- divassign--- divassign--- remassign--- remassign--- moduloassign--- moduloassign--- 243-bitwise-assign-traits 243-비트-assign-트레잇 bitandassign--- bitandassign--- bitorassign--- bitorassign--- bitxorassign--- bitxorassign--- shlassign--- shlassign--- shrassign--- shrassign--- 244-signature-pattern---ref-self 244-시그니처-패턴---ref-self 245-precedence--associativity---prec-1-right 245-우선순위--결합성---prec-1-right 246-trait-implementation-matrix 246-트레잇-구현-매트릭스 247-assign-on-collections---the-main-use 247-컬렉션의-assign---핵심-사용처 248-user-defined-assign 248-사용자-정의-assign 249-supertrait-relationship-of-assign---none 249-assign-의-supertrait-관계---없음 2410-related---broadcast-assign 2410-관련---broadcast-assign"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/204-ops-assign" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="24-compound-assignment-traits"><a class="anchor" tabindex="-1" href="#24-compound-assignment-traits" aria-hidden="true">#</a>2.4. Compound assignment traits</h1>
+<p>The <code>*Assign</code> trait family of <code>rok::core::ops</code> dispatches compound assignment operators such as <code>a += b</code> and <code>a *= b</code> as <strong>in-place</strong> updates. The syntax defined in <a href="../../refs-lang/003-expressions/304-assignment">refs-lang 3.4 Assignment and compound assignment</a> desugars to these traits.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>rok does not use a <code>mut</code> keyword in ordinary code (<a href="../../refs-lang/005-modules/501-variable-declaration">refs-lang 5.1 Variable declarations</a>).
+Variables are always declared with <code>let</code>, and assigning to the same name again is a <strong>reassignment</strong>.
+In-place update of a heap object (List, Dict, etc.) is determined not by a <code>let mut</code> declarator but by
+<strong>whether the object exposes mutating methods</strong>. The <code>*Assign</code> traits are where those mutating methods live.</p>
+</div>
+<h2 id="241-the-key-difference----vs--then-"><a class="anchor" tabindex="-1" href="#241-the-key-difference----vs--then-" aria-hidden="true">#</a>2.4.1. The key difference - <code>+=</code> vs <code>=</code> then <code>+</code></h2>
+<pre><code class="language-rok">a += b;
+</code></pre>
+<p>This expression has two possible meanings. With <strong>in-place dispatch</strong>, it resolves to <code>&lt;typeof(a) as AddAssign&lt;typeof(b)&gt;&gt;::add_assign(ref a, b)</code>, which directly modifies the <strong>contents</strong> of the object <code>a</code> refers to and creates no new object. With the <strong>fallback</strong> (<code>Add::add</code> followed by reassignment), it becomes <code>a = a + b</code>, storing the result of the <code>Add</code> call back into <code>a</code> and creating a new object.</p>
+<p>rok chooses between the two modes automatically.</p>
+<pre><code>Compiler behavior (on a += b):
+1. If typeof(a) implements AddAssign&lt;typeof(b)&gt;
+     → dispatch AddAssign::add_assign(ref a, b)
+2. Otherwise, if typeof(a) implements Add&lt;typeof(b)&gt;
+     → desugar to a = Add::add(a, b)
+3. If neither, compile error
+</code></pre>
+<p>This policy enables in-place optimization of collections. For example, when <code>xs: List&lt;i32&gt;</code> performs <code>xs += y</code>, it pushes directly without creating a new List.</p>
+<h2 id="242-arithmetic-assign-traits"><a class="anchor" tabindex="-1" href="#242-arithmetic-assign-traits" aria-hidden="true">#</a>2.4.2. Arithmetic *Assign traits</h2>
+<h3 id="addassign---"><a class="anchor" tabindex="-1" href="#addassign---" aria-hidden="true">#</a><code>AddAssign</code> - <code>+=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">AddAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("+=")]</span>
+    <span class="k">fn</span> add_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> counter: <span class="t">i32</span> = <span class="n">0</span>;
+counter += <span class="n">5</span>;       <span class="c">//→ 5 (counter is updated in place)</span>
+counter += <span class="n">3</span>;       <span class="c">//→ 8</span>
+
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>];
+xs += [<span class="n">3</span>, <span class="n">4</span>];       <span class="c">//→ [1, 2, 3, 4]  (List's add_assign - efficient push)</span>
+</code></pre>
+<h3 id="subassign----"><a class="anchor" tabindex="-1" href="#subassign----" aria-hidden="true">#</a><code>SubAssign</code> - <code>-=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">SubAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("-=")]</span>
+    <span class="k">fn</span> sub_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="mulassign---"><a class="anchor" tabindex="-1" href="#mulassign---" aria-hidden="true">#</a><code>MulAssign</code> - <code>*=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">MulAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("*=")]</span>
+    <span class="k">fn</span> mul_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="divassign---"><a class="anchor" tabindex="-1" href="#divassign---" aria-hidden="true">#</a><code>DivAssign</code> - <code>/=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">DivAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("/=")]</span>
+    <span class="k">fn</span> div_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="remassign---"><a class="anchor" tabindex="-1" href="#remassign---" aria-hidden="true">#</a><code>RemAssign</code> - <code>%=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">RemAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("%=")]</span>
+    <span class="k">fn</span> rem_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="moduloassign---"><a class="anchor" tabindex="-1" href="#moduloassign---" aria-hidden="true">#</a><code>ModuloAssign</code> - <code>%%=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">ModuloAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("%%=")]</span>
+    <span class="k">fn</span> modulo_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<p><code>%%=</code> is the compound assignment form of <a href="203-ops#modulo---floored-modulo-"><code>Modulo</code></a> (floored modulo, sign of result = sign of divisor). It is a separate trait from <code>RemAssign</code>, and updates in place so that, for a positive divisor, the result always lies in <code>[0, rhs)</code>.</p>
+<h2 id="243-bitwise-assign-traits"><a class="anchor" tabindex="-1" href="#243-bitwise-assign-traits" aria-hidden="true">#</a>2.4.3. Bitwise *Assign traits</h2>
+<h3 id="bitandassign---"><a class="anchor" tabindex="-1" href="#bitandassign---" aria-hidden="true">#</a><code>BitAndAssign</code> - <code>&amp;=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">BitAndAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&amp;=")]</span>
+    <span class="k">fn</span> bitand_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> flags: <span class="t">u32</span> = <span class="n">0xFF</span>;
+flags &amp;= <span class="n">0x0F</span>;     <span class="c">//→ 0x0F</span>
+</code></pre>
+<h3 id="bitorassign---"><a class="anchor" tabindex="-1" href="#bitorassign---" aria-hidden="true">#</a><code>BitOrAssign</code> - <code>|=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">BitOrAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("|=")]</span>
+    <span class="k">fn</span> bitor_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="bitxorassign---"><a class="anchor" tabindex="-1" href="#bitxorassign---" aria-hidden="true">#</a><code>BitXorAssign</code> - <code>^=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">BitXorAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("^=")]</span>
+    <span class="k">fn</span> bitxor_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="shlassign---"><a class="anchor" tabindex="-1" href="#shlassign---" aria-hidden="true">#</a><code>ShlAssign</code> - <code>&lt;&lt;=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">ShlAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&lt;&lt;=")]</span>
+    <span class="k">fn</span> shl_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">1</span>;
+n &lt;&lt;= <span class="n">4</span>;       <span class="c">//→ 16</span>
+</code></pre>
+<h3 id="shrassign---"><a class="anchor" tabindex="-1" href="#shrassign---" aria-hidden="true">#</a><code>ShrAssign</code> - <code>&gt;&gt;=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">ShrAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&gt;&gt;=")]</span>
+    <span class="k">fn</span> shr_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h2 id="244-signature-pattern---ref-self"><a class="anchor" tabindex="-1" href="#244-signature-pattern---ref-self" aria-hidden="true">#</a>2.4.4. Signature pattern - <code>ref self</code></h2>
+<p>Every <code>*Assign</code> method takes <code>ref self</code> (<a href="../../refs-lang/004-functions/407-ref-keyword">refs-lang 4.7 ref keyword</a>). It refers to the caller's variable binding itself, so the modification happens in place.</p>
+<pre><code class="language-rok"><span class="k">fn</span> add_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+       ^^^^^
+       directly modifies the object the caller's variable refers to
+</code></pre>
+<p>This signature is the core of in-place behavior. If it took only <code>self</code> (by value), it would modify a copy, and the caller would not see the change.</p>
+<h2 id="245-precedence--associativity---prec-1-right"><a class="anchor" tabindex="-1" href="#245-precedence--associativity---prec-1-right" aria-hidden="true">#</a>2.4.5. Precedence / associativity - prec=-1, right</h2>
+<p>Every <code>*Assign</code> token is fixed at the same level in the <a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2</a> table. Its precedence is <code>prec = -1</code>, lower than ordinary arithmetic (+=7, *=8) and lower than <code>..</code> (=0). It is the lowest level. Chained assignment is not allowed (<a href="../../refs-lang/003-expressions/304-assignment">refs-lang 3.4.4</a>).</p>
+<h2 id="246-trait-implementation-matrix"><a class="anchor" tabindex="-1" href="#246-trait-implementation-matrix" aria-hidden="true">#</a>2.4.6. Trait implementation matrix</h2>
+<p>Every <code>*Assign</code> impl for primitive types carries <code>#[intrinsic(&quot;rok.OP_assign.TYPE&quot;)]</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Traits</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code></td><td>6 arithmetic + 5 bitwise (11 traits)</td><td><code>rok.add_assign.i32</code>, <code>rok.shl_assign.u32</code>, ...</td></tr>
+<tr><td><code>f32</code>, <code>f64</code></td><td>6 arithmetic only</td><td><code>rok.add_assign.f64</code>, ...</td></tr>
+<tr><td><code>bool</code></td><td><code>BitAndAssign</code>/<code>BitOrAssign</code>/<code>BitXorAssign</code></td><td><code>rok.and_assign.bool</code>, ...</td></tr>
+<tr><td><code>int</code></td><td>Arithmetic + bitwise</td><td>auto-promote logic - replaced by a new value (immutable)</td></tr>
+<tr><td><code>float</code></td><td>Arithmetic</td><td>(same as above - auto-promote)</td></tr>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>AddAssign&lt;List&lt;T&gt;&gt;</code>, <code>AddAssign&lt;T&gt;</code></td><td>push</td></tr>
+<tr><td><code>str</code></td><td><code>AddAssign&lt;str&gt;</code>, <code>AddAssign&lt;char&gt;</code></td><td><code>s = s + t</code> - replaced by a new str (str is immutable)</td></tr>
+<tr><td><code>Dict&lt;K,V&gt;</code></td><td><code>AddAssign&lt;Dict&lt;K,V&gt;&gt;</code></td><td>merge - overwrites existing keys</td></tr>
+</tbody></table></div>
+<p><code>a op= b</code> calls <code>XxxAssign::xxx_assign</code> (<code>AddAssign::add_assign</code>, ...) when the left type implements it; otherwise it is <code>a = a op b</code>.</p>
+<h2 id="247-assign-on-collections---the-main-use"><a class="anchor" tabindex="-1" href="#247-assign-on-collections---the-main-use" aria-hidden="true">#</a>2.4.7. *Assign on collections - the main use</h2>
+<p>For mutable containers such as <code>List&lt;T&gt;</code> / <code>Dict&lt;K,V&gt;</code>, <code>*Assign</code> performs a <strong>true in-place</strong> operation.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> alias = xs;             <span class="c">// shares the same object (Python-style, refs-lang 4.7.x)</span>
+
+xs += [<span class="n">4</span>, <span class="n">5</span>];               <span class="c">// push onto xs (no new object)</span>
+alias;                       <span class="c">//→ [1, 2, 3, 4, 5]  (alias sees the change too)</span>
+
+<span class="c">// compare: xs = xs + [4, 5] creates a new List, and alias does not see the change</span>
+</code></pre>
+<p>This meaning matches rok's automatic sharing model for heap objects (<a href="../../refs-lang/004-functions/407-ref-keyword">refs-lang 4.7</a>) exactly.</p>
+<h2 id="248-user-defined-assign"><a class="anchor" tabindex="-1" href="#248-user-defined-assign" aria-hidden="true">#</a>2.4.8. User-defined *Assign</h2>
+<p>If a user type implements only <code>Add</code> and not <code>AddAssign</code>, the compiler uses the fallback.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; z: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">Vec3</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Vec3</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Vec3</span>) -&gt; <span class="t">Vec3</span> { ... }
+}
+<span class="c">// AddAssign not defined</span>
+
+<span class="k">let</span> v = <span class="t">Vec3</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span>, z: <span class="n">3.0</span> };
+v += <span class="t">Vec3</span> { x: <span class="n">0.5</span>, y: <span class="n">0.5</span>, z: <span class="n">0.5</span> };
+<span class="c">// → compiler: no AddAssign, Add exists → desugar 'v = v + (...)'</span>
+<span class="c">// Vec3 is immutable, so a new object is created and reassigned to v</span>
+</code></pre>
+<p>Where performance matters, the user is advised to implement <code>AddAssign</code> explicitly.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">AddAssign</span> <span class="k">for</span> <span class="t">Vec3</span> {
+    <span class="k">fn</span> add_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Vec3</span>) {
+        <span class="k">self</span>.x += rhs.x;
+        <span class="k">self</span>.y += rhs.y;
+        <span class="k">self</span>.z += rhs.z;
+    }
+}
+</code></pre>
+<h2 id="249-supertrait-relationship-of-assign---none"><a class="anchor" tabindex="-1" href="#249-supertrait-relationship-of-assign---none" aria-hidden="true">#</a>2.4.9. Supertrait relationship of *Assign - none</h2>
+<p>rok does <strong>not</strong> make <code>Add</code> a supertrait of <code>AddAssign</code>. The two traits are independent.</p>
+<p>The reason is that some types, such as collections, have no meaningful <code>Add</code> (<code>xs + ys</code> is expensive because it creates a new collection) but do have a meaningful <code>AddAssign</code>. A supertrait relationship would make it impossible for such types to implement only <code>AddAssign</code>.</p>
+<h2 id="2410-related---broadcast-assign"><a class="anchor" tabindex="-1" href="#2410-related---broadcast-assign" aria-hidden="true">#</a>2.4.10. Related - broadcast <code>*Assign</code>?</h2>
+<p>No compound assignment variants are defined for the 19 tokens of <a href="206-broadcast">2.6 broadcast</a> (<code>.+</code>, <code>.*</code>, <code>.%%</code>, <code>.&amp;&amp;</code>, ...). That is, a token such as <code>a .+= b</code> does not exist. The background is that broadcast results usually create a new container, which makes in-place meaning ambiguous.</p>
+<p>Where needed, the user calls a method such as <code>dot_add_assign</code> explicitly.</p>
+<pre><code class="language-rok">xs.dot_add_assign(ys);    <span class="c">// method call (broadcast in place)</span>
+</code></pre>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> dot_add_assign(<span class="k">self</span>, rhs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) <span class="k">where</span> <span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">Output</span> = <span class="t">T</span>&gt;;
+    <span class="c">// likewise dot_OP_assign for OP in add, sub, mul, div, rem, modulo,</span>
+    <span class="c">// bitand, bitor, bitxor, shl, shr - each requiring T: OP&lt;Output = T&gt;</span>
+}
+</code></pre>
+<p>The lengths must match; otherwise it panics. There is no <code>Slice</code> form.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/204-ops-assign.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="203-ops"><small>Previous</small>2.3. Arithmetic / bitwise / indexing traits</a><a class="next" href="205-cmp"><small>Next</small>2.5. Comparison traits</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

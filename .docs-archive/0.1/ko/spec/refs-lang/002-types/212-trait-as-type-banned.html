@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.12. 트레잇-as-타입 금지 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="트레잇 이름을 타입 표현식 자리에 그대로 적는 것을 금지합니다. 런타임에 구현 타입이 정해지는 값이 필요하면 비용이 문법에 드러나는 any Trait 을 적습니다 (2.12.3).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.12. 트레잇-as-타입 금지 - rok docs">
+<meta property="og:description" content="트레잇 이름을 타입 표현식 자리에 그대로 적는 것을 금지합니다. 런타임에 구현 타입이 정해지는 값이 필요하면 비용이 문법에 드러나는 any Trait 을 적습니다 (2.12.3).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. 제네릭</a></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li class="cur"><a aria-current="page" href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a><ul class="toc"><li><a href="#2121-금지-항목">2.12.1. 금지 항목</a></li><li><a href="#2122-금지의-근거">2.12.2. 금지의 근거</a></li><li><a href="#2123-다형성이-필요할-때-세-대안">2.12.3. 다형성이 필요할 때. 세 대안</a></li><li><a href="#2124-결정-기준">2.12.4. 결정 기준</a></li><li><a href="#2125-슈퍼트레잇과-바운드-표현은-허용">2.12.5. 슈퍼트레잇과 바운드 표현은 허용</a></li><li><a href="#2126-컴파일-에러의-형태">2.12.6. 컴파일 에러의 형태</a></li></ul></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="212-트레잇-as-타입-금지 212-trait-as-type-ban 2121-금지-항목 2121-what-is-forbidden 2122-금지의-근거 2122-rationale 2123-다형성이-필요할-때-세-대안 2123-when-polymorphism-is-needed-three-alternatives 1-닫힌-후보가-있으면-합-타입 1-sum-types-for-a-closed-set-of-candidates 2-열린-다형성이면-제네릭 2-generics-for-open-polymorphism 3-런타임에-구현-타입이-정해지면-any-trait 3-any-trait-when-the-implementing-type-is-decided-at-runtime 2124-결정-기준 2124-decision-criteria 2125-슈퍼트레잇과-바운드-표현은-허용 2125-supertraits-and-bound-expressions-are-allowed 2126-컴파일-에러의-형태 2126-form-of-the-compile-error"><a href="../../../../spec/refs-lang/002-types/212-trait-as-type-banned" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="212-트레잇-as-타입-금지"><a class="anchor" tabindex="-1" href="#212-트레잇-as-타입-금지" aria-hidden="true">#</a>2.12. 트레잇-as-타입 금지</h1>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>트레잇 이름을 타입 표현식 자리에 그대로 적는 것을 금지합니다. 런타임에 구현 타입이 정해지는 값이 필요하면 비용이 문법에 드러나는 <code>any Trait</code> 을 적습니다 (2.12.3).</p>
+</div>
+<h2 id="2121-금지-항목"><a class="anchor" tabindex="-1" href="#2121-금지-항목" aria-hidden="true">#</a>2.12.1. 금지 항목</h2>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">Number</span> = <span class="n">32i32</span>;                          <span class="c">// ERROR - Number 는 트레잇</span>
+<span class="k">fn</span> process(x: <span class="t">Display</span>) -&gt; <span class="t">str</span> { ... }            <span class="c">// ERROR</span>
+<span class="k">struct</span> <span class="t">Holder</span> { item: <span class="t">Iterator</span>; }                <span class="c">// ERROR</span>
+</code></pre>
+<p>위 예시처럼 변수 타입, 매개변수 타입, 반환 타입, 구조체 필드 타입 어디든 트레잇 이름이 그대로 등장하면 컴파일 에러로 처리합니다.</p>
+<h2 id="2122-금지의-근거"><a class="anchor" tabindex="-1" href="#2122-금지의-근거" aria-hidden="true">#</a>2.12.2. 금지의 근거</h2>
+<p>금지 대상은 <strong>숨은</strong> 동적 디스패치입니다. 트레잇 이름을 타입 자리에 그대로 적는 형태는 겉보기에 평범한 정적 타입과 구별되지 않지만, 실제로는 런타임 디스패치를 만들어 냅니다. 이 디스패치는 적지 않은 비용을 동반합니다. 우선 실행 시점에 구현을 골라 호출하므로 분기 예측에 실패할 경우 직접 호출 대비 두 배 이상 느려질 수 있습니다. 또한 디스패치 자료에 대한 추가 메모리 접근이 필요하기 때문에 캐시 친화성도 떨어집니다. 무엇보다 컴파일러의 인라이닝과 최적화가 차단되어 버립니다.</p>
+<p>과학·데이터 코드의 핵심 수치 루프가 이 비용을 모르는 사이에 떠안지 않도록, rok 은 맨 트레잇 이름을 타입으로 쓰는 것을 허용하지 않습니다. 런타임 다형성은 <code>any</code> 라고 적힌 자리에만 있습니다. <code>any Trait</code> 은 동적 디스패치 비용이 <code>any</code> 키워드로 문법에 드러나므로 허용합니다.</p>
+<h2 id="2123-다형성이-필요할-때-세-대안"><a class="anchor" tabindex="-1" href="#2123-다형성이-필요할-때-세-대안" aria-hidden="true">#</a>2.12.3. 다형성이 필요할 때. 세 대안</h2>
+<p>그렇다면 다형성이 필요한 경우에는 어떻게 해야 할까요. rok 은 세 가지 대안을 제공합니다.</p>
+<h3 id="1-닫힌-후보가-있으면-합-타입"><a class="anchor" tabindex="-1" href="#1-닫힌-후보가-있으면-합-타입" aria-hidden="true">#</a>1. 닫힌 후보가 있으면 합 타입</h3>
+<p>후보 집합이 미리 정해져 있다면 합 타입을 사용하면 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">i32</span> | <span class="t">f32</span> | <span class="t">f64</span> = <span class="n">32i32</span>;
+<span class="k">fn</span> process(x: <span class="t">i32</span> | <span class="t">f32</span>) -&gt; <span class="t">str</span> { ... }
+</code></pre>
+<p>이 방식은 후보가 컴파일 타임에 정해져 있을 때 적합합니다. 메모리와 디스패치 비용이 명확하게 드러나며 (<a href="206-sum-types">합 타입</a> 참고), 패턴 매칭의 완전성 검사도 가능합니다.</p>
+<h3 id="2-열린-다형성이면-제네릭"><a class="anchor" tabindex="-1" href="#2-열린-다형성이면-제네릭" aria-hidden="true">#</a>2. 열린 다형성이면 제네릭</h3>
+<p>반면 후보가 열려 있다면 제네릭을 활용합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> process&lt;<span class="t">T</span>: <span class="t">Display</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">str</span> { ... }
+<span class="k">struct</span> <span class="t">Holder</span>&lt;<span class="t">T</span>: <span class="t">Iterator</span>&gt; { item: <span class="t">T</span>; }
+</code></pre>
+<p>이 경우는 후보가 컴파일 타임에 결정되지 않거나 호출자마다 다를 때에 어울립니다. 단형화를 통해 직접 호출이 이루어지므로 비용은 0 에 가깝고 (<a href="210-generics">제네릭</a> 참고), 트레잇 바운드를 통해 메서드도 호출할 수 있습니다.</p>
+<h3 id="3-런타임에-구현-타입이-정해지면-any-trait"><a class="anchor" tabindex="-1" href="#3-런타임에-구현-타입이-정해지면-any-trait" aria-hidden="true">#</a>3. 런타임에 구현 타입이 정해지면 <code>any Trait</code></h3>
+<p>한 슬롯이나 컬렉션에 서로 다른 구현 타입의 값이 섞여 담겨야 한다면 제약 붙은 <code>any</code> 를 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> shapes: <span class="t">List</span>&lt;<span class="k">any</span> <span class="t">Shape</span>&gt; = [<span class="t">Circle</span> { r: <span class="n">1.0</span> }, <span class="t">Square</span> { side: <span class="n">2.0</span> }];
+<span class="k">fn</span> report(e: <span class="k">any</span> <span class="t">Error</span>) -&gt; <span class="t">str</span> { <span class="s">f"{</span>e<span class="s">}"</span> }
+<span class="k">struct</span> <span class="t">ConfigError</span> { msg: <span class="t">str</span>; cause: <span class="k">any</span> <span class="t">Error</span> | <span class="k">none</span>; }
+</code></pre>
+<p><code>any Trait</code> 슬롯에는 <code>Trait</code> 을 구현하는 타입의 값만 넣을 수 있으며 (컴파일 타임 검사), 그 값에서는 <code>Trait</code> 과 그 슈퍼트레잇의 메서드를 호출할 수 있습니다. 호출은 런타임 태그로 디스패치되며 비용 모델은 <a href="202-any-slot"><code>any</code> 슬롯</a> 과 같습니다. 정확한 규칙은 <a href="202-any-slot#2210-제약-붙은-any-any-trait">2.2.10</a> 에서 정의합니다.</p>
+<h2 id="2124-결정-기준"><a class="anchor" tabindex="-1" href="#2124-결정-기준" aria-hidden="true">#</a>2.12.4. 결정 기준</h2>
+<p>세 대안 가운데 무엇을 고를지는 다음 기준을 따릅니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>상황</th><th>선택</th></tr></thead>
+<tbody>
+<tr><td>후보가 고정된 작은 집합 (3~5 개)</td><td>합 타입</td></tr>
+<tr><td>후보가 유저 / 라이브러리 확장 가능</td><td>제네릭</td></tr>
+<tr><td>후보가 런타임에만 결정 (예: 플러그인, 이종 컬렉션)</td><td><code>any Trait</code></td></tr>
+<tr><td>어떤 제약도 없이 무엇이든 담아야 함</td><td><code>any</code></td></tr>
+</tbody></table></div>
+<p>세 번째 경우, 즉 런타임에 타입이 정해지는 다형성이 필요할 때에는 <code>any Trait</code> 을 사용하면 됩니다. 동적 디스패치 비용이 생기지만, 그 비용이 <code>any</code> 라고 적힌 자리에 명시적으로 모인다는 특징이 있습니다.</p>
+<h2 id="2125-슈퍼트레잇과-바운드-표현은-허용"><a class="anchor" tabindex="-1" href="#2125-슈퍼트레잇과-바운드-표현은-허용" aria-hidden="true">#</a>2.12.5. 슈퍼트레잇과 바운드 표현은 허용</h2>
+<p>여기서 한 가지 분명히 해두고 싶은 점이 있습니다. 금지되는 것은 어디까지나 타입 위치에 등장하는 트레잇 이름이라는 사실입니다. 다음 사례들은 모두 정상적으로 허용됩니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Ord</span>: <span class="t">Eq</span> { ... }                            <span class="c">// 슈퍼트레잇 선언</span>
+<span class="k">fn</span> f&lt;<span class="t">T</span>: <span class="t">Add</span> + <span class="t">Display</span>&gt;(x: <span class="t">T</span>) { ... }              <span class="c">// 트레잇 바운드</span>
+<span class="k">fn</span> g&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) <span class="k">where</span> <span class="t">T</span>: <span class="t">Ord</span>, <span class="t">T</span>: <span class="t">Clone</span> { ... }      <span class="c">// where 절</span>
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Point</span> { ... }                    <span class="c">// impl 의 트레잇 자리</span>
+</code></pre>
+<p>이러한 위치에서 트레잇 이름은 제약을 표현하는 것이지 타입을 가리키는 것이 아니기 때문입니다.</p>
+<h2 id="2126-컴파일-에러의-형태"><a class="anchor" tabindex="-1" href="#2126-컴파일-에러의-형태" aria-hidden="true">#</a>2.12.6. 컴파일 에러의 형태</h2>
+<p>마지막으로 실제 컴파일 에러가 어떤 모습으로 나타나는지 보여 줍니다. 트레잇 이름이 타입 위치에 등장하면 컴파일러는 다음과 비슷한 진단을 출력합니다.</p>
+<pre><code>ERROR: 'Display' is a trait, not a type.
+       To allow multiple types, use generics, a sum type, or `any Display`:
+         fn f&lt;T: Display&gt;(x: T) { ... }
+         fn f(x: SomeType | OtherType) { ... }
+         fn f(x: any Display) { ... }
+</code></pre>
+<p>이 진단은 사용자가 앞서 소개한 세 대안 중 하나를 선택하도록 자연스럽게 안내합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/212-trait-as-type-banned.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="211-const-generics"><small>Previous</small>2.11. const 제네릭</a><a class="next" href="213-type-paths"><small>Next</small>2.13. 타입 경로</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

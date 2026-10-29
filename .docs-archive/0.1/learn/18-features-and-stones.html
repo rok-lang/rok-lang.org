@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18. Features and Stones - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Chapter 11 built a package and added dependencies. This chapter goes further: features, which let the users of a library turn parts of it on and off; the stones...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/18-features-and-stones.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="18. Features and Stones - rok docs">
+<meta property="og:description" content="Chapter 11 built a package and added dependencies. This chapter goes further: features, which let the users of a library turn parts of it on and off; the stones...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/18-features-and-stones.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li class="cur"><a aria-current="page" href="18-features-and-stones">18. Features and Stones</a><ul class="toc"><li><a href="#defining-features">Defining features</a></li><li><a href="#enabling-features">Enabling features</a></li><li><a href="#the-rok-stones">The rok stones</a></li><li><a href="#publishing-a-stone">Publishing a stone</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="18-features-and-stones"><a class="anchor" tabindex="-1" href="#18-features-and-stones" aria-hidden="true">#</a>18. Features and Stones</h1>
+<p><a href="11-modules-packages">Chapter 11</a> built a package and added dependencies. This chapter goes further: <strong>features</strong>, which let the users of a library turn parts of it on and off; the stones the rok project maintains; and publishing your own library to <a href="https://rokstones.io">rokstones.io</a>.</p>
+<h2 id="defining-features"><a class="anchor" tabindex="-1" href="#defining-features" aria-hidden="true">#</a>Defining features</h2>
+<p>A feature is a name in the <code>features</code> dict of <code>rok.rokon</code>, mapped to the list of what it turns on. In code, an enabled feature is the condition <code>feature = &quot;&lt;name&gt;&quot;</code> (<a href="17-conditional-compilation">chapter 17</a>). Here a <code>geom</code> library has a <code>circle</code> feature, on by default, and a <code>pretty</code> feature that pulls in an optional dependency.</p>
+<pre><code class="language-rokon"><span class="t">Package</span> {
+    name: <span class="s">"geom"</span>,
+    version: <span class="s">"0.1.0"</span>,
+    deps: {
+        <span class="s">"fancy"</span>: <span class="t">Dep</span>::path(<span class="s">"../fancy"</span>, optional: <span class="k">true</span>),
+    },
+    features: {
+        <span class="s">"default"</span>: [<span class="s">"circle"</span>],
+        <span class="s">"circle"</span>: [],
+        <span class="s">"pretty"</span>: [<span class="s">"dep:fancy"</span>],
+    },
+}
+</code></pre>
+<pre><code class="language-rok"><span class="c">// geom/src/lib.rok</span>
+<span class="k">pub</span> <span class="k">fn</span> shapes() -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt; {
+    <span class="k">let</span> out: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [<span class="s">"square"</span>];
+    <span class="a">#[cfg(feature = "circle")]</span>
+    out.push(<span class="s">"circle"</span>);
+    out
+}
+
+<span class="a">#[cfg(feature = "pretty")]</span>
+<span class="k">pub</span> <span class="k">fn</span> show(s: <span class="t">str</span>) -&gt; <span class="t">str</span> { fancy::frame(s) }
+
+<span class="a">#[cfg(not(feature = "pretty"))]</span>
+<span class="k">pub</span> <span class="k">fn</span> show(s: <span class="t">str</span>) -&gt; <span class="t">str</span> { s }
+</code></pre>
+<p>Each entry of a feature's list is one of:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Entry</th><th>Turns on</th></tr></thead>
+<tbody>
+<tr><td><code>&quot;circle&quot;</code></td><td>Another feature of this package</td></tr>
+<tr><td><code>&quot;dep:fancy&quot;</code></td><td>The optional dependency <code>fancy</code></td></tr>
+<tr><td><code>&quot;http/tls&quot;</code></td><td>Feature <code>tls</code> of the dependency <code>http</code> (and <code>http</code> itself, if it is optional)</td></tr>
+<tr><td><code>&quot;http?/tls&quot;</code></td><td>Feature <code>tls</code> of <code>http</code>, only if something else already turned <code>http</code> on</td></tr>
+</tbody></table></div>
+<ul>
+<li><code>default</code> is an ordinary feature that is on unless the user turns it off.
+</li>
+<li>An optional dependency (<code>optional: true</code>) is part of the build only when an enabled feature names it with <code>dep:</code> or <code>&lt;dep&gt;/&lt;f&gt;</code>. It does not get a feature of its own name automatically, and an optional dependency no feature enables is an error. <code>rok add fancy --path ../fancy --optional</code> writes both the dependency and a <code>&quot;fancy&quot;: [&quot;dep:fancy&quot;]</code> feature.
+</li>
+<li>Naming a feature or dependency that does not exist, using <code>dep:</code> on a non-optional dependency, and cycles are errors, reported with the line and column in <code>rok.rokon</code>.
+</li>
+</ul>
+<p>Feature names are lowercase words that say what they enable (<code>http1</code>, <code>tls</code>, <code>pretty</code>), not <code>with-x</code> or <code>no-x</code>: features only ever add.</p>
+<h2 id="enabling-features"><a class="anchor" tabindex="-1" href="#enabling-features" aria-hidden="true">#</a>Enabling features</h2>
+<p>The package being built starts from its <code>default</code> feature. <code>--features</code> adds more, either its own (<code>fancy</code>) or a direct dependency's (<code>geom/pretty</code>); <code>--no-default-features</code> and <code>--all-features</code> do what they say. They work with <code>run</code>, <code>build</code>, <code>test</code>, <code>check</code> and the other build commands.</p>
+<pre><code class="language-text">$ rok run
+square
+circle
+$ rok run --features geom/pretty
+*** square ***
+*** circle ***
+$ rok run --no-default-features
+square
+circle
+</code></pre>
+<p>The last one still prints <code>circle</code>: <code>--no-default-features</code> turns off the defaults of the package being built (<code>app</code>), not those of <code>geom</code>. A dependency's features are chosen where you depend on it.</p>
+<pre><code class="language-rokon"><span class="t">Package</span> {
+    name: <span class="s">"app"</span>,
+    version: <span class="s">"0.1.0"</span>,
+    deps: {
+        <span class="s">"geom"</span>: <span class="t">Dep</span>::path(<span class="s">"../geom"</span>, default_features: <span class="k">false</span>, features: [<span class="s">"pretty"</span>]),
+    },
+    features: {
+        <span class="s">"fancy"</span>: [<span class="s">"geom/pretty"</span>],
+    },
+}
+</code></pre>
+<p>Features are <strong>unified</strong>: each package has one feature set for the whole build, the union of everything every dependent asks of it. So if two libraries both use <code>geom</code>, one with <code>pretty</code> and one without, both get <code>pretty</code>. That is why a feature must only add API and never change what existing code does. <code>rok deps</code> shows the result as <code>--extern-feature</code> lines.</p>
+<p>The lockfile pins every package of the graph, optional ones included, so switching features never changes <code>rok.lock</code>.</p>
+<h2 id="the-rok-stones"><a class="anchor" tabindex="-1" href="#the-rok-stones" aria-hidden="true">#</a>The rok stones</h2>
+<p>The rok project maintains a few libraries as stones of their own, outside the standard library. Each is pure rok with no dependencies beyond <code>rok::std</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Stone</th><th>What it is</th></tr></thead>
+<tbody>
+<tr><td><code>json</code></td><td>JSON (RFC 8259): a <code>Value</code> tree, a strict parser with <code>line:col</code> errors, a streaming tokenizer, typed encode / decode with <code>#[derive(Json)]</code>, JSON Pointer</td></tr>
+<tr><td><code>toml</code></td><td>TOML 1.1.0: a <code>Value</code> tree with typed date-times, a parser with <code>line:col</code> errors, a writer, typed encode / decode with <code>#[derive(Toml)]</code></td></tr>
+<tr><td><code>http</code></td><td>HTTP/1.1 and HTTP/2 client and server: strict parsing, HPACK, streaming bodies, connection pooling, <code>https</code> over std's TLS. Features <code>http1</code>, <code>http2</code>, <code>tls</code>, all on by default</td></tr>
+<tr><td><code>markdown</code></td><td>CommonMark plus GitHub extensions (tables, callouts, footnotes, heading anchors) to HTML. It renders this site</td></tr>
+<tr><td><code>rok-syntax</code></td><td>A tokenizer and HTML highlighter for rok and ROKON source. It highlights the code on this site</td></tr>
+</tbody></table></div>
+<p><code>json</code> and <code>toml</code> follow the shape of std's <a href="15-rokon"><code>rokon</code></a> module: <code>parse</code> / <code>to_string</code> / <code>from_str</code> / <code>encode</code> / <code>decode</code>, and a derive for your own types.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Json)]</span>
+<span class="k">struct</span> <span class="t">Server</span> { host: <span class="t">str</span>; port: <span class="t">u16</span> = <span class="n">80</span>; }
+
+<span class="k">let</span> s: <span class="t">Server</span> = <span class="k">try</span> json::from_str(<span class="s">"{\"host\": \"localhost\"}"</span>);
+println(json::to_string(s));      <span class="c">// {"host":"localhost","port":80}</span>
+</code></pre>
+<p>They are added like any other stone. Without a requirement, <code>rok add</code> writes <code>^</code> and the newest version:</p>
+<pre><code class="language-bash">rok add json
+rok add http --no-default-features --features http1,tls
+</code></pre>
+<pre><code class="language-rokon"><span class="t">Package</span> { name: <span class="s">"app"</span>, version: <span class="s">"0.1.0"</span>, deps: {
+    <span class="s">"json"</span>: <span class="t">Dep</span>::version(<span class="s">"^0.1.0"</span>),
+    <span class="s">"http"</span>: <span class="t">Dep</span>::version(<span class="s">"^0.1.0"</span>, default_features: <span class="k">false</span>, features: [<span class="s">"http1"</span>, <span class="s">"tls"</span>]),
+} }
+</code></pre>
+<p>In a script, name the file last: <code>rok add json app.rok</code> writes the dependency into the script's <code>//!</code> block (<a href="11-modules-packages#single-file-scripts-and-environments">chapter 11</a>).</p>
+<p>With <code>http</code>, an HTTPS request is a few lines. The stone opens the TCP connection, runs the TLS 1.3 handshake from <a href="19-crypto-and-tls"><code>rok::std::net::tls</code></a> against the OS trust store, offers HTTP/2 through ALPN and falls back to HTTP/1.1:</p>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="k">try</span> <span class="k">await</span> http::get(<span class="s">"https://example.com/"</span>);
+println(<span class="s">f"{</span>r.status<span class="s">} {</span>r.version<span class="s">:?</span><span class="s">} {</span>r.headers.get(<span class="s">"content-type"</span>) ?? <span class="s">"-"</span><span class="s">}"</span>);
+println(<span class="k">try</span> <span class="k">await</span> r.body.text());
+</code></pre>
+<h2 id="publishing-a-stone"><a class="anchor" tabindex="-1" href="#publishing-a-stone" aria-hidden="true">#</a>Publishing a stone</h2>
+<p>Publishing adds one line to the registry index, pointing at a commit of your git repository; there is no upload of source archives. The package must be a library (<code>src/lib.rok</code>) at the root of a clean git work tree with a remote <code>origin</code>, and every normal dependency must itself be a stone (path and git dependencies are rejected; path and git <code>dev_deps</code> are dropped). Fill in <code>description</code>, <code>license</code> and <code>repository</code>: they show up in <code>rok search</code> and on the website.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>For now only the rokstones.io maintainers can publish. Anyone can sign in and use stones, but <code>rok login</code> refuses an account that cannot publish yet.</p>
+</div>
+<h3 id="rok-login"><a class="anchor" tabindex="-1" href="#rok-login" aria-hidden="true">#</a><code>rok login</code></h3>
+<p>Sign in at <a href="https://rokstones.io/me">rokstones.io/me</a> with GitHub and create an account token there. Then hand it to <code>rok</code>:</p>
+<pre><code class="language-text">$ rok login
+a token from https://rokstones.io/me (not shown; Ctrl-C to cancel):
+   Logged in as your-name at https://rokstones.io (token in ~/.rok/credentials.rokon)
+</code></pre>
+<p>Without an argument, the token is read from standard input without echoing. <code>rok login</code> asks the registry who the token belongs to and refuses a token it rejects, saving nothing. A good token is kept in <code>~/.rok/credentials.rokon</code> (readable only by you); <code>rok logout</code> deletes it. In CI, set <code>ROK_REGISTRY_TOKEN</code> instead.</p>
+<h3 id="rok-publish"><a class="anchor" tabindex="-1" href="#rok-publish" aria-hidden="true">#</a><code>rok publish</code></h3>
+<p><code>rok publish</code> alone is a dry run: it prints the index entry it would add, and nothing leaves your machine.</p>
+<pre><code class="language-text">$ rok publish
+Stone { name: &quot;textwrap&quot;, vers: &quot;0.1.0&quot;, deps: [], source: Dep::git(&quot;https://github.com/you/textwrap.git&quot;, rev: &quot;8e2afb20..&quot;), cksum: &quot;823a3592..&quot;, yanked: false, description: &quot;Word wrapping for terminals&quot;, license: &quot;MIT OR Apache-2.0&quot;, repository: &quot;https://github.com/you/textwrap&quot; }
+note: dry run; --commit adds it to https://github.com/rok-lang/rokstones.io-index as te/xt/textwrap
+</code></pre>
+<p>The entry records the HEAD commit and its tree hash, so push that commit first. <code>rok publish --commit</code> sends the entry to the registry with your token (<code>Published textwrap 0.1.0 to https://rokstones.io</code>), and the version is live once the index has it. A version cannot be published twice, and a name differing only in case or <code>-</code> / <code>_</code> from an existing stone is taken.</p>
+<h3 id="rok-yank"><a class="anchor" tabindex="-1" href="#rok-yank" aria-hidden="true">#</a><code>rok yank</code></h3>
+<p>A version with a serious bug can be yanked. New resolutions skip it, but projects whose <code>rok.lock</code> already pins it keep building, so yanking never breaks anyone. <code>--undo</code> reverses it.</p>
+<pre><code class="language-bash">rok yank --vers 0.1.0          # in the package directory
+rok yank --vers 0.1.0 --undo
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>features</code> in <code>rok.rokon</code> maps names to entries: other features, <code>dep:&lt;d&gt;</code>, <code>&lt;d&gt;/&lt;f&gt;</code>, <code>&lt;d&gt;?/&lt;f&gt;</code>. <code>default</code> is on unless turned off.
+</li>
+<li>Optional dependencies (<code>optional: true</code>) are built only when a feature enables them.
+</li>
+<li>Choose features with <code>--features</code>, <code>--no-default-features</code>, <code>--all-features</code>, and per dependency with <code>features:</code> / <code>default_features: false</code>. Features are unified across the build, so they must only add.
+</li>
+<li>Code tests them with <code>#[cfg(feature = &quot;..&quot;)]</code> and <code>cfg!(feature = &quot;..&quot;)</code>.
+</li>
+<li><code>json</code>, <code>toml</code>, <code>http</code>, <code>markdown</code> and <code>rok-syntax</code> are the rok project's stones.
+</li>
+<li>Publish with <code>rok login</code> (a rokstones.io token), <code>rok publish</code> (dry run) and <code>rok publish --commit</code>; withdraw with <code>rok yank</code>. Publishing is open to maintainers only for now.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/009-tools/910-rok-frontend#9104c-features">9.10.4c Features</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#9104a-stones-and-rokstonesio">9.10.4a Stones and rokstones.io</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#rok-search--publish--yank--login--logout"><code>rok search</code> / <code>publish</code> / <code>yank</code> / <code>login</code></a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#9103-rokrokon--roklock"><code>rok.rokon</code></a>
+</li>
+<li><a href="https://rokstones.io">rokstones.io</a>
+</li>
+<li>Next chapter: <a href="19-crypto-and-tls">19. Cryptography and TLS</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/18-features-and-stones.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="17-conditional-compilation"><small>Previous</small>17. Conditional Compilation</a><a class="next" href="19-crypto-and-tls"><small>Next</small>19. Cryptography and TLS</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

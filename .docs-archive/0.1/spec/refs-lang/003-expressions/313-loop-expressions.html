@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.13. Loop expressions - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Repeated execution is expressed in three forms: loop, while, and for. All three are expressions; this document defines the syntax and value evaluation rules of ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/313-loop-expressions.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.13. Loop expressions - rok docs">
+<meta property="og:description" content="Repeated execution is expressed in three forms: loop, while, and for. All three are expressions; this document defines the syntax and value evaluation rules of ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/313-loop-expressions.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/313-loop-expressions.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/313-loop-expressions.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li class="cur"><a aria-current="page" href="313-loop-expressions">3.13. Loop expressions</a><ul class="toc"><li><a href="#3131-loop-infinite-repetition">3.13.1. loop: infinite repetition</a></li><li><a href="#3132-while-condition-based-repetition">3.13.2. while: condition-based repetition</a></li><li><a href="#3133-for-iterator-based-repetition">3.13.3. for: iterator-based repetition</a></li><li><a href="#3134-labels-controlling-nested-loops">3.13.4. Labels: controlling nested loops</a></li><li><a href="#3135-default-behavior-of-break-and-continue">3.13.5. Default behavior of break and continue</a></li><li><a href="#3136-evaluation-order">3.13.6. Evaluation order</a></li><li><a href="#3137-divergent-loops">3.13.7. Divergent loops</a></li></ul></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="313-loop-expressions 313-루프-표현식 3131-loop-infinite-repetition 3131-loop-무한-반복 returning-a-value-with-break-value break-value-로-값-반환 result-type 결과-타입 3132-while-condition-based-repetition 3132-while-조건-기반-반복 result-value 결과-값 while-let-combining-with-pattern-matching while-let-패턴-매칭과의-결합 3133-for-iterator-based-repetition 3133-for-반복자-기반-반복 desugaring-of-the-iteration 반복식의-desugar result-value-1 결과-값-1 pattern-position 패턴-자리 3134-labels-controlling-nested-loops 3134-라벨-중첩-루프-제어 label-token 라벨-토큰 break-label-value break-label-value 3135-default-behavior-of-break-and-continue 3135-break-와-continue-기본-동작 3136-evaluation-order 3136-평가-순서 3137-divergent-loops 3137-divergent-루프"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/313-loop-expressions" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="313-loop-expressions"><a class="anchor" tabindex="-1" href="#313-loop-expressions" aria-hidden="true">#</a>3.13. Loop expressions</h1>
+<p>Repeated execution is expressed in three forms: <code>loop</code>, <code>while</code>, and <code>for</code>. All three are expressions; this document defines the syntax and value evaluation rules of each.</p>
+<pre><code>loop_expr   ::= label? &quot;loop&quot; block
+              | label? &quot;while&quot; expr block
+              | label? &quot;for&quot; pattern &quot;in&quot; expr block
+              | label? &quot;for&quot; &quot;await&quot; pattern &quot;in&quot; expr block
+label       ::= &quot;'&quot; identifier &quot;:&quot;
+break_stmt  ::= &quot;break&quot; label_target? expr? &quot;;&quot;
+continue_stmt ::= &quot;continue&quot; label_target? &quot;;&quot;
+label_target ::= &quot;'&quot; identifier
+</code></pre>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><code>in</code> is a contextual keyword, a keyword only in the <code>for pat in</code> position (<a href="../001-lexical/105-keywords#154-contextual-keywords">1.5.4</a>).</p>
+</div>
+<p>The meaning and uses of <code>for await</code> are defined in <a href="../004-functions/413-stream">streams</a>. It receives items one at a time from an asynchronous stream and runs the body for each.</p>
+<p>The meaning of labels (<code>'name:</code>) is defined in <a href="#3134-labels-controlling-nested-loops">3.13.4 labels</a>. Labeled <strong>blocks</strong> (<code>'b: { ... }</code>) are defined in <a href="309-block-expressions">block expressions</a>.</p>
+<h2 id="3131-loop-infinite-repetition"><a class="anchor" tabindex="-1" href="#3131-loop-infinite-repetition" aria-hidden="true">#</a>3.13.1. <code>loop</code>: infinite repetition</h2>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    ...
+}
+</code></pre>
+<p>The <code>loop</code> keyword is followed by a block body, which repeats indefinitely. It can be exited only by <code>break</code>, <code>return</code>, or <code>throw</code>.</p>
+<h3 id="returning-a-value-with-break-value"><a class="anchor" tabindex="-1" href="#returning-a-value-with-break-value" aria-hidden="true">#</a>Returning a value with <code>break value</code></h3>
+<pre><code class="language-rok"><span class="k">let</span> v = <span class="k">loop</span> {
+    <span class="k">let</span> x = compute();
+    <span class="k">if</span> x.converged { <span class="k">break</span> x; }
+};
+</code></pre>
+<p>If an expression follows <code>break</code>, its value is the result of the <code>loop</code> expression. If the loop exits without a value, as in <code>break;</code>, the result of the <code>loop</code> is unit. All <code>break</code> values of one <code>loop</code> (or labeled block) must have one type, and if the receiving side has a type annotation, they must have that type. Mixing <code>break;</code> and <code>break v</code> is a compile error.</p>
+<h3 id="result-type"><a class="anchor" tabindex="-1" href="#result-type" aria-hidden="true">#</a>Result type</h3>
+<p>A <code>loop</code> in which <code>break value</code> appears at least once has the type of that value as its result type. A <code>loop</code> with only <code>break;</code> has result type unit. A <code>loop</code> with no <code>break</code> at all is divergent and never completes.</p>
+<h2 id="3132-while-condition-based-repetition"><a class="anchor" tabindex="-1" href="#3132-while-condition-based-repetition" aria-hidden="true">#</a>3.13.2. <code>while</code>: condition-based repetition</h2>
+<pre><code class="language-rok"><span class="k">while</span> cond {
+    ...
+}
+</code></pre>
+<p>The <code>while</code> keyword is followed by a bool condition and a block body. At the start of each iteration, <code>cond</code> is evaluated: if <code>true</code>, the body runs; if <code>false</code>, the loop ends.</p>
+<h3 id="result-value"><a class="anchor" tabindex="-1" href="#result-value" aria-hidden="true">#</a>Result value</h3>
+<p>The result value of <code>while</code> is always unit.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="k">while</span> cond { ... };     <span class="c">// x: unit</span>
+</code></pre>
+<p>The rationale is that when <code>while</code> ends normally (<code>cond</code> is <code>false</code>), there is no natural choice of value to return. It is not a form for explicit <code>break value</code> like <code>loop { break v; }</code>.</p>
+<p>To return a value, use <code>loop { ... break v; ... }</code>.</p>
+<h3 id="while-let-combining-with-pattern-matching"><a class="anchor" tabindex="-1" href="#while-let-combining-with-pattern-matching" aria-hidden="true">#</a><code>while let</code>: combining with pattern matching</h3>
+<pre><code class="language-rok"><span class="k">while</span> <span class="k">let</span> v: <span class="t">T</span> = compute() {     <span class="c">// compute(): T | none</span>
+    <span class="k">use</span>(v);
+}
+</code></pre>
+<pre><code>while_let ::= &quot;while&quot; &quot;let&quot; pattern (&quot;:&quot; type_expr)? &quot;=&quot; expr block
+</code></pre>
+<p>On each iteration the expression is evaluated and matched by the same rules as <code>if let</code> (<a href="310-if-expression#3105-if-let-combining-with-pattern-matching">3.10.5</a>). On a match the body runs; otherwise the loop ends. The pattern's bindings are visible in the body.</p>
+<p>Every pattern form of <a href="311-patterns">patterns</a> may be used; typically it matches <code>enum</code> or sum type variants.</p>
+<h2 id="3133-for-iterator-based-repetition"><a class="anchor" tabindex="-1" href="#3133-for-iterator-based-repetition" aria-hidden="true">#</a>3.13.3. <code>for</code>: iterator-based repetition</h2>
+<pre><code class="language-rok"><span class="k">for</span> pattern <span class="k">in</span> iter_expr {
+    ...
+}
+</code></pre>
+<p>The <code>for</code> keyword is followed by a pattern, <code>in</code>, an iteration expression, and a block body. The iteration expression must be an iterator or an iterable value. A struct literal cannot appear at the top level of the iteration expression or of a <code>while</code> condition (<a href="310-if-expression#struct-literals-in-condition-position">3.10.3</a>). On each iteration the next element is matched against the pattern and bound in the body.</p>
+<h3 id="desugaring-of-the-iteration"><a class="anchor" tabindex="-1" href="#desugaring-of-the-iteration" aria-hidden="true">#</a>Desugaring of the iteration</h3>
+<pre><code>for pat in xs { body }
+</code></pre>
+<p>is semantically equivalent to:</p>
+<pre><code>let it = &lt;typeof(xs) as IntoIterator&gt;::into_iter(xs);
+loop {
+    match &lt;typeof(it) as Iterator&gt;::next(ref it) {     // returns: T | none
+        pat: T =&gt; body,
+        none   =&gt; break,
+    }
+}
+</code></pre>
+<p>(The exact trait and method names are defined by the standard library.)</p>
+<p>A <code>for</code> over an iterator whose <code>next</code> throws (<code>TryGenIter&lt;T, E&gt;</code>, etc.) is a throwing expression, so it must be covered by <code>try</code>, as in <code>try for pat in it { ... }</code>. The same applies to <code>for await</code> (<a href="../004-functions/414-throws#try-for">4.14.10</a>).</p>
+<h3 id="result-value-1"><a class="anchor" tabindex="-1" href="#result-value-1" aria-hidden="true">#</a>Result value</h3>
+<p>The result value of <code>for</code> is always unit (for the same reason as <code>while</code>).</p>
+<h3 id="pattern-position"><a class="anchor" tabindex="-1" href="#pattern-position" aria-hidden="true">#</a>Pattern position</h3>
+<p>Only irrefutable patterns of <a href="311-patterns">patterns</a> may be used (names, wildcards, tuple destructuring, etc.).</p>
+<pre><code class="language-rok"><span class="k">for</span> x <span class="k">in</span> <span class="n">0</span>..<span class="n">10</span> { ... }                    <span class="c">// simple name</span>
+<span class="k">for</span> (i, v) <span class="k">in</span> xs.enumerate() { ... }      <span class="c">// tuple destructuring</span>
+<span class="k">for</span> <span class="t">Point</span> { x, y } <span class="k">in</span> points { ... }      <span class="c">// struct destructuring</span>
+</code></pre>
+<p>Refutable patterns (e.g. matching an <code>enum</code> variant) are rejected in the pattern position of <code>for</code>, because handling a failed match would be ambiguous. When such a form is needed, use <code>while let</code> or a combination of <code>for</code> and <code>if let</code>.</p>
+<h2 id="3134-labels-controlling-nested-loops"><a class="anchor" tabindex="-1" href="#3134-labels-controlling-nested-loops" aria-hidden="true">#</a>3.13.4. Labels: controlling nested loops</h2>
+<pre><code class="language-rok">'outer: <span class="k">loop</span> {
+    <span class="k">for</span> x <span class="k">in</span> xs {
+        <span class="k">if</span> cond { <span class="k">break</span> 'outer; }
+        <span class="k">if</span> other { <span class="k">continue</span> 'outer; }
+    }
+}
+</code></pre>
+<p>A loop can be prefixed with a label of the form <code>'name:</code>. <code>break 'name</code> and <code>continue 'name</code> control the loop with that label directly.</p>
+<h3 id="label-token"><a class="anchor" tabindex="-1" href="#label-token" aria-hidden="true">#</a>Label token</h3>
+<p>A label consists of a single quote, an identifier, and a colon (<code>'outer:</code>). The single quote is the same token that starts a <a href="../001-lexical/108-character-literals">character literal</a>, but in a position combined with a colon it is recognized as a label. The exact tokenization rule is a supplementary definition of the lexical specification; this document specifies only the language-level form.</p>
+<h3 id="break-label-value"><a class="anchor" tabindex="-1" href="#break-label-value" aria-hidden="true">#</a><code>break label value</code></h3>
+<p>A <code>loop</code> label can be combined with a value.</p>
+<pre><code class="language-rok">'outer: <span class="k">loop</span> {
+    <span class="k">for</span> x <span class="k">in</span> xs {
+        <span class="k">if</span> found(x) { <span class="k">break</span> 'outer x; }
+    }
+}
+</code></pre>
+<p><code>break 'outer x</code> exits the <code>loop</code> labeled outer, carrying the value x.</p>
+<h2 id="3135-default-behavior-of-break-and-continue"><a class="anchor" tabindex="-1" href="#3135-default-behavior-of-break-and-continue" aria-hidden="true">#</a>3.13.5. Default behavior of <code>break</code> and <code>continue</code></h2>
+<p>Without a label, they refer to the innermost loop.</p>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    <span class="k">for</span> x <span class="k">in</span> xs {
+        <span class="k">if</span> cond { <span class="k">break</span>; }       <span class="c">// exits the for</span>
+    }
+    <span class="c">// continues here</span>
+}
+</code></pre>
+<h2 id="3136-evaluation-order"><a class="anchor" tabindex="-1" href="#3136-evaluation-order" aria-hidden="true">#</a>3.13.6. Evaluation order</h2>
+<p>Each loop is evaluated according to the meaning defined above. The expressions and statements of the body are evaluated in the order of <a href="309-block-expressions">block expressions</a>, and side effects follow that order.</p>
+<p>Loop termination is checked as follows. <code>loop</code> performs no check and ends only by an explicit <code>break</code>. <code>while</code> evaluates <code>cond</code> at the start of each iteration. <code>for</code> calls <code>Iterator::next</code> at the start of each iteration.</p>
+<h2 id="3137-divergent-loops"><a class="anchor" tabindex="-1" href="#3137-divergent-loops" aria-hidden="true">#</a>3.13.7. Divergent loops</h2>
+<p>A loop that cannot terminate by <code>break</code>, <code>return</code>, <code>throw</code>, or the like (e.g. a <code>loop { ... }</code> with no <code>break</code> inside and no flow exiting outward) is classified as divergent. The type of such a loop expression is compatible with any type.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/313-loop-expressions.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="312-match-expression"><small>Previous</small>3.12. match expression</a><a class="next" href="314-error-control-flow"><small>Next</small>3.14. Error control flow</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

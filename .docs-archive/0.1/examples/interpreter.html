@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A small Lisp interpreter - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Build a small Lisp with a tokenizer, a recursive-descent parser and an evaluator that carries an environment, supporting define, if, lambda and closures, with r...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/interpreter.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="A small Lisp interpreter - rok docs">
+<meta property="og:description" content="Build a small Lisp with a tokenizer, a recursive-descent parser and an evaluator that carries an environment, supporting define, if, lambda and closures, with r...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/interpreter.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li class="cur"><a aria-current="page" href="interpreter">A small Lisp interpreter</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="a-small-lisp-interpreter"><a class="anchor" tabindex="-1" href="#a-small-lisp-interpreter" aria-hidden="true">#</a>A small Lisp interpreter</h1>
+<p>Build a small Lisp with a tokenizer, a recursive-descent parser and an evaluator that carries an environment, supporting <code>define</code>, <code>if</code>, <code>lambda</code> and closures, with runtime errors reported through <code>throws</code>.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// A tiny Lisp: integers, define, if, lambda with closures.</span>
+<span class="k">enum</span> <span class="t">Value</span> {
+    <span class="t">Num</span>(<span class="t">i64</span>),
+    <span class="t">Bool</span>(<span class="t">bool</span>),
+    <span class="t">Sym</span>(<span class="t">str</span>),
+    <span class="t">List</span>(<span class="t">List</span>&lt;<span class="t">Value</span>&gt;),
+    <span class="t">Lambda</span>(<span class="t">List</span>&lt;<span class="t">str</span>&gt;, <span class="t">List</span>&lt;<span class="t">Value</span>&gt;, <span class="t">Env</span>),   <span class="c">// params, body, captured scope</span>
+}
+
+<span class="c">// Scopes from outermost to innermost. Dicts are shared, so a closure</span>
+<span class="c">// sees definitions made after it was created (needed for recursion).</span>
+<span class="k">struct</span> <span class="t">Env</span> { frames: <span class="t">List</span>&lt;<span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Value</span>&gt;&gt;; }
+
+<span class="k">struct</span> <span class="t">LispError</span> { msg: <span class="t">str</span>; }
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">LispError</span> { <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) { <span class="k">try</span> f.write_str(<span class="k">self</span>.msg) } }
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">LispError</span> { <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) { <span class="k">try</span> f.write_str(<span class="k">self</span>.msg) } }
+<span class="k">impl</span> <span class="t">Error</span> <span class="k">for</span> <span class="t">LispError</span> {}
+<span class="k">fn</span> err(msg: <span class="t">str</span>) -&gt; <span class="t">LispError</span> { <span class="t">LispError</span> { msg: msg } }
+<span class="k">fn</span> tokenize(src: <span class="t">str</span>) -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt; {
+    <span class="k">let</span> tokens: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+    <span class="k">for</span> t <span class="k">in</span> src.replace(<span class="s">"("</span>, <span class="s">" ( "</span>).replace(<span class="s">")"</span>, <span class="s">" ) "</span>).split_whitespace() { tokens.push(t); }
+    tokens
+}
+
+<span class="k">fn</span> parse(tokens: <span class="t">List</span>&lt;<span class="t">str</span>&gt;, <span class="k">ref</span> pos: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">LispError</span>) -&gt; <span class="t">Value</span> {
+    <span class="k">if</span> pos &gt;= tokens.len() { <span class="k">throw</span> err(<span class="s">"unexpected end of input"</span>); }
+    <span class="k">let</span> tok = tokens[pos];
+    pos += <span class="n">1</span>;
+    <span class="k">if</span> tok == <span class="s">")"</span> { <span class="k">throw</span> err(<span class="s">"unexpected `)`"</span>); }
+    <span class="k">if</span> tok != <span class="s">"("</span> {
+        <span class="k">return</span> <span class="k">match</span> <span class="k">try</span>? tok.parse::&lt;<span class="t">i64</span>&gt;() {
+            n: <span class="t">i64</span> =&gt; <span class="t">Value</span>::<span class="t">Num</span>(n),
+            <span class="k">none</span> =&gt; <span class="t">Value</span>::<span class="t">Sym</span>(tok),
+        };
+    }
+    <span class="k">let</span> items: <span class="t">List</span>&lt;<span class="t">Value</span>&gt; = [];
+    <span class="k">while</span> pos &lt; tokens.len() &amp;&amp; tokens[pos] != <span class="s">")"</span> {
+        items.push(<span class="k">try</span> parse(tokens, <span class="k">ref</span> pos));
+    }
+    <span class="k">if</span> pos &gt;= tokens.len() { <span class="k">throw</span> err(<span class="s">"missing `)`"</span>); }
+    pos += <span class="n">1</span>;
+    <span class="t">Value</span>::<span class="t">List</span>(items)
+}
+
+<span class="k">fn</span> eval(x: <span class="t">Value</span>, env: <span class="t">Env</span>) <span class="k">throws</span> (<span class="t">LispError</span>) -&gt; <span class="t">Value</span> {
+    <span class="k">let</span> items = <span class="k">match</span> x {
+        <span class="t">Value</span>::<span class="t">Sym</span>(name) =&gt; {
+            <span class="k">for</span> i <span class="k">in</span> (<span class="n">0</span>..env.frames.len()).rev() {
+                <span class="k">if</span> <span class="k">let</span> v: <span class="t">Value</span> = env.frames[i].get(name) { <span class="k">return</span> v; }
+            }
+            <span class="k">throw</span> err(<span class="s">f"undefined symbol `{</span>name<span class="s">}`"</span>);
+        },
+        <span class="t">Value</span>::<span class="t">List</span>(items) =&gt; items,
+        _ =&gt; <span class="k">return</span> x,    <span class="c">// numbers and booleans evaluate to themselves</span>
+    };
+    <span class="k">if</span> items.is_empty() { <span class="k">return</span> x; }
+    <span class="k">let</span> head = <span class="k">match</span> items[<span class="n">0</span>] { <span class="t">Value</span>::<span class="t">Sym</span>(s) =&gt; s, _ =&gt; <span class="s">""</span> };
+    <span class="k">match</span> head {
+        <span class="s">"define"</span> =&gt; {
+            <span class="k">let</span> <span class="t">Value</span>::<span class="t">Sym</span>(name) = items[<span class="n">1</span>] <span class="k">else</span> { <span class="k">throw</span> err(<span class="s">"define needs a name"</span>); };
+            <span class="k">let</span> v = <span class="k">try</span> eval(items[<span class="n">2</span>], env);
+            env.frames[env.frames.len() - <span class="n">1</span>].insert(name, v);
+            <span class="k">return</span> v;
+        },
+        <span class="s">"if"</span> =&gt; {
+            <span class="k">let</span> truthy = <span class="k">match</span> <span class="k">try</span> eval(items[<span class="n">1</span>], env) { <span class="t">Value</span>::<span class="t">Bool</span>(b) =&gt; b, _ =&gt; <span class="k">true</span> };
+            <span class="k">return</span> <span class="k">try</span> eval(items[<span class="k">if</span> truthy { <span class="n">2</span> } <span class="k">else</span> { <span class="n">3</span> }], env);
+        },
+        <span class="s">"lambda"</span> =&gt; {
+            <span class="k">let</span> params: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+            <span class="k">if</span> <span class="k">let</span> <span class="t">Value</span>::<span class="t">List</span>(ps) = items[<span class="n">1</span>] {
+                <span class="k">for</span> p <span class="k">in</span> ps {
+                    <span class="k">match</span> p { <span class="t">Value</span>::<span class="t">Sym</span>(s) =&gt; params.push(s), _ =&gt; { <span class="k">throw</span> err(<span class="s">"parameters must be symbols"</span>); } }
+                }
+            }
+            <span class="k">return</span> <span class="t">Value</span>::<span class="t">Lambda</span>(params, [items[<span class="n">2</span>]], env);
+        },
+        _ =&gt; {},
+    }
+    <span class="k">let</span> args: <span class="t">List</span>&lt;<span class="t">Value</span>&gt; = [];
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..items.len() { args.push(<span class="k">try</span> eval(items[i], env)); }
+    <span class="k">if</span> head == <span class="s">"+"</span> || head == <span class="s">"-"</span> || head == <span class="s">"*"</span> || head == <span class="s">"/"</span> || head == <span class="s">"&lt;"</span> || head == <span class="s">"="</span> {
+        <span class="k">return</span> <span class="k">try</span> arith(head, args);
+    }
+    <span class="k">try</span> apply(<span class="k">try</span> eval(items[<span class="n">0</span>], env), args)
+}
+
+<span class="k">fn</span> arith(op: <span class="t">str</span>, args: <span class="t">List</span>&lt;<span class="t">Value</span>&gt;) <span class="k">throws</span> (<span class="t">LispError</span>) -&gt; <span class="t">Value</span> {
+    <span class="k">let</span> (a, b) = <span class="k">match</span> (args[<span class="n">0</span>], args[<span class="n">1</span>]) {
+        (<span class="t">Value</span>::<span class="t">Num</span>(a), <span class="t">Value</span>::<span class="t">Num</span>(b)) =&gt; (a, b),
+        _ =&gt; { <span class="k">throw</span> err(<span class="s">f"`{</span>op<span class="s">}` needs two numbers"</span>); },
+    };
+    <span class="k">match</span> op {
+        <span class="s">"+"</span> =&gt; <span class="t">Value</span>::<span class="t">Num</span>(a + b),
+        <span class="s">"-"</span> =&gt; <span class="t">Value</span>::<span class="t">Num</span>(a - b),
+        <span class="s">"*"</span> =&gt; <span class="t">Value</span>::<span class="t">Num</span>(a * b),
+        <span class="s">"/"</span> =&gt; <span class="k">if</span> b == <span class="n">0</span> { <span class="k">throw</span> err(<span class="s">"division by zero"</span>); } <span class="k">else</span> { <span class="t">Value</span>::<span class="t">Num</span>(a / b) },
+        <span class="s">"&lt;"</span> =&gt; <span class="t">Value</span>::<span class="t">Bool</span>(a &lt; b),
+        _ =&gt; <span class="t">Value</span>::<span class="t">Bool</span>(a == b),
+    }
+}
+
+<span class="k">fn</span> apply(f: <span class="t">Value</span>, args: <span class="t">List</span>&lt;<span class="t">Value</span>&gt;) <span class="k">throws</span> (<span class="t">LispError</span>) -&gt; <span class="t">Value</span> {
+    <span class="k">let</span> <span class="t">Value</span>::<span class="t">Lambda</span>(params, body, captured) = f <span class="k">else</span> { <span class="k">throw</span> err(<span class="s">f"{</span>show(f)<span class="s">} is not a function"</span>); };
+    <span class="k">if</span> params.len() != args.len() { <span class="k">throw</span> err(<span class="s">f"expected {</span>params.len()<span class="s">} arguments, got {</span>args.len()<span class="s">}"</span>); }
+    <span class="k">let</span> frame: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Value</span>&gt; = <span class="t">Dict</span>::new();   <span class="c">// on top of the captured scopes</span>
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..params.len() { frame.insert(params[i], args[i]); }
+    <span class="k">let</span> frames: <span class="t">List</span>&lt;<span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Value</span>&gt;&gt; = [];
+    <span class="k">for</span> fr <span class="k">in</span> captured.frames { frames.push(fr); }
+    frames.push(frame);
+    <span class="k">try</span> eval(body[<span class="n">0</span>], <span class="t">Env</span> { frames: frames })
+}
+
+<span class="k">fn</span> show(v: <span class="t">Value</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> v {
+        <span class="t">Value</span>::<span class="t">Num</span>(n) =&gt; <span class="s">f"{</span>n<span class="s">}"</span>,
+        <span class="t">Value</span>::<span class="t">Bool</span>(b) =&gt; <span class="k">if</span> b { <span class="s">"#t"</span> } <span class="k">else</span> { <span class="s">"#f"</span> },
+        <span class="t">Value</span>::<span class="t">Sym</span>(s) =&gt; s,
+        <span class="t">Value</span>::<span class="t">List</span>(items) =&gt; <span class="s">f"&lt;list of {</span>items.len()<span class="s">}&gt;"</span>,
+        <span class="t">Value</span>::<span class="t">Lambda</span>(params, _, _) =&gt; <span class="s">f"&lt;lambda/{</span>params.len()<span class="s">}&gt;"</span>,
+    }
+}
+
+<span class="k">let</span> global = <span class="t">Env</span> { frames: [<span class="t">Dict</span>::new()] };
+<span class="k">let</span> program = [
+    <span class="s">"(define square (lambda (x) (* x x)))"</span>,
+    <span class="s">"(square 12)"</span>,
+    <span class="s">"(define fact (lambda (n) (if (&lt; n 2) 1 (* n (fact (- n 1))))))"</span>,
+    <span class="s">"(fact 20)"</span>,
+    <span class="s">"(define make-adder (lambda (k) (lambda (x) (+ x k))))"</span>,
+    <span class="s">"(define add5 (make-adder 5))"</span>,
+    <span class="s">"(add5 37)"</span>,
+    <span class="s">"(/ 10 0)"</span>,
+    <span class="s">"(undefined-thing 1)"</span>,
+    <span class="s">"(5 3)"</span>,
+    <span class="s">"(+ 1 (* 2 3)"</span>,
+];
+
+<span class="k">for</span> src <span class="k">in</span> program {
+    <span class="k">let</span> pos = <span class="n">0usize</span>;
+    <span class="k">let</span> result = <span class="k">try</span> {
+        show(<span class="k">try</span> eval(<span class="k">try</span> parse(tokenize(src), <span class="k">ref</span> pos), global))
+    } <span class="k">catch</span> e: <span class="t">LispError</span> {
+        <span class="s">f"error: {</span>e<span class="s">}"</span>
+    };
+    println(<span class="s">f"{</span>src<span class="s">}\n  =&gt; {</span>result<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">(define square (lambda (x) (* x x)))
+  =&gt; &lt;lambda/1&gt;
+(square 12)
+  =&gt; 144
+(define fact (lambda (n) (if (&lt; n 2) 1 (* n (fact (- n 1))))))
+  =&gt; &lt;lambda/1&gt;
+(fact 20)
+  =&gt; 2432902008176640000
+(define make-adder (lambda (k) (lambda (x) (+ x k))))
+  =&gt; &lt;lambda/1&gt;
+(define add5 (make-adder 5))
+  =&gt; &lt;lambda/1&gt;
+(add5 37)
+  =&gt; 42
+(/ 10 0)
+  =&gt; error: division by zero
+(undefined-thing 1)
+  =&gt; error: undefined symbol `undefined-thing`
+(5 3)
+  =&gt; error: 5 is not a function
+(+ 1 (* 2 3)
+  =&gt; error: missing `)`
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Programs and values share one enum, <code>Value</code>. Because Lisp code and data have the same shape, the parser produces <code>Value</code>s and the evaluator takes a <code>Value</code> and returns a <code>Value</code> (<a href="../learn/05-sum-types">Sum types</a>, <a href="../learn/06-structs-enums-traits">Structs, enums and traits</a>).
+</li>
+<li>The parser shares its read position with the caller through <code>ref pos: usize</code>. It is a classic recursive-descent parser that calls itself to read inside parentheses (<a href="../spec/refs-lang/004-functions/407-ref-keyword">4.7 the <code>ref</code> keyword</a>).
+</li>
+<li>Any token that isn't an integer is a symbol. <code>try? tok.parse::&lt;i64&gt;()</code> turns the parse error into <code>none</code>, so a two-armed <code>match</code> separates the cases (<a href="../spec/refs-lang/003-expressions/314-error-control-flow#3143-try-and-try">3.14.3 <code>try?</code> and <code>try!</code></a>). Where only one variant is acceptable, a <a href="../spec/refs-lang/003-expressions/316-let-else">let-else</a> such as <code>let Value::Sym(name) = items[1] else { throw ...; };</code> binds it or leaves the function.
+</li>
+<li>Runtime errors <code>throw</code> a <code>LispError</code>, and each function states this in its signature with <code>throws (LispError)</code>. The <code>try { ... } catch e: LispError { ... }</code> at the bottom turns one line's error into a message, so the next line still runs (<a href="../learn/10-errors">Errors</a>).
+</li>
+<li>A <code>lambda</code> captures the <code>Env</code> it was created in. <code>Dict</code> is a shared reference, so the function returned by <code>make-adder</code> remembers <code>k</code>, and <code>fact</code> can find itself even though it is defined afterwards.
+</li>
+</ul>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>An enum that contains itself directly (<code>Lambda(..., Value, ...)</code>) would have infinite size, so the compiler rejects it; lambda bodies are kept in a <code>List&lt;Value&gt;</code> instead.</p>
+</div>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/interpreter.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="generators"><small>Previous</small>Generators</a><a class="next" href="json-parser"><small>Next</small>JSON parser</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.7. process:: - 자식 프로세스 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::std::process 모듈은 자식 프로세스를 spawn 하고 그 신호를 다루는 일을 담당합니다. 기본 골격은 Rust 의 Command builder 패턴을 따르되, 그 위에 모던한 안전 장치-pidfd, kill_on_drop, 그리고 posix_spawn fast path...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/307-process.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.7. process:: - 자식 프로세스 - rok docs">
+<meta property="og:description" content="rok::std::process 모듈은 자식 프로세스를 spawn 하고 그 신호를 다루는 일을 담당합니다. 기본 골격은 Rust 의 Command builder 패턴을 따르되, 그 위에 모던한 안전 장치-pidfd, kill_on_drop, 그리고 posix_spawn fast path...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/307-process.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/307-process.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/307-process.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - 시간</a></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li class="cur"><a aria-current="page" href="307-process">3.7. process:: - 자식 프로세스</a><ul class="toc"><li><a href="#371-command-builder">3.7.1. Command builder</a></li><li><a href="#372-child">3.7.2. Child</a></li><li><a href="#373-사용-예">3.7.3. 사용 예</a></li><li><a href="#374-모던-추가---pidfd--posix_spawn--cloexec">3.7.4. 모던 추가 - pidfd / posix_spawn / CLOEXEC</a></li><li><a href="#375-신호-처리-advanced">3.7.5. 신호 처리 (advanced)</a></li><li><a href="#376-플랫폼-가용성">3.7.6. 플랫폼 가용성</a></li></ul></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="37-process---자식-프로세스 37-process---child-processes 371-command-builder 371-command-builder 372-child 372-child 373-사용-예 373-examples 374-모던-추가---pidfd--posix_spawn--cloexec 374-modern-additions---pidfd--posix_spawn--cloexec 375-신호-처리-advanced 375-signal-handling-advanced 376-플랫폼-가용성 376-platform-availability"><a href="../../../../spec/refs-standard-libraries/300-std/307-process" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="37-process---자식-프로세스"><a class="anchor" tabindex="-1" href="#37-process---자식-프로세스" aria-hidden="true">#</a>3.7. <code>process::</code> - 자식 프로세스</h1>
+<p><code>rok::std::process</code> 모듈은 자식 프로세스를 spawn 하고 그 신호를 다루는 일을 담당합니다. 기본 골격은 Rust 의 <code>Command</code> builder 패턴을 따르되, 그 위에 모던한 안전 장치-<code>pidfd</code>, <code>kill_on_drop</code>, 그리고 <code>posix_spawn</code> fast path-를 얹어 한층 견고하게 만들었다.</p>
+<h2 id="371-command-builder"><a class="anchor" tabindex="-1" href="#371-command-builder" aria-hidden="true">#</a>3.7.1. <code>Command</code> builder</h2>
+<p>가장 먼저 만나게 되는 것은 자식 프로세스의 청사진을 그리는 <code>Command</code> 구조체입니다. 실행할 프로그램, 인자, 환경 변수, 표준 입출력의 연결 방식 같은 모든 설정을 단계적으로 쌓아 올린 뒤에야 비로소 spawn 으로 옮겨 가게 됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Command</span> {
+    program: <span class="t">Path</span>;
+    args: <span class="t">List</span>&lt;<span class="t">str</span>&gt;;
+    envs: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">str</span>&gt;;
+    env_clear: <span class="t">bool</span>;
+    stdin: <span class="t">Stdio</span>;
+    stdout: <span class="t">Stdio</span>;
+    stderr: <span class="t">Stdio</span>;
+    cwd: <span class="t">Path</span> | <span class="k">none</span>;
+    kill_on_drop: <span class="t">bool</span>;       <span class="c">// using 으로 묶은 Child 가 해제될 때 kill</span>
+    process_group: <span class="t">i32</span> | <span class="k">none</span>;
+    <span class="c">// ...</span>
+}
+
+<span class="k">impl</span> <span class="t">Command</span> {
+    <span class="k">fn</span> new(program: <span class="t">Path</span>) -&gt; <span class="t">Command</span>;
+
+    <span class="k">fn</span> arg(<span class="k">self</span>, arg: <span class="t">str</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> args&lt;<span class="t">I</span>: <span class="t">IntoIterator</span>&lt;<span class="t">Item</span> = <span class="t">str</span>&gt;&gt;(<span class="k">self</span>, args: <span class="t">I</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> env(<span class="k">self</span>, key: <span class="t">str</span>, value: <span class="t">str</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> envs&lt;<span class="t">I</span>: <span class="t">IntoIterator</span>&lt;<span class="t">Item</span> = (<span class="t">str</span>, <span class="t">str</span>)&gt;&gt;(<span class="k">self</span>, envs: <span class="t">I</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> env_clear(<span class="k">self</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> current_dir(<span class="k">self</span>, dir: <span class="t">Path</span>) -&gt; <span class="t">Command</span>;
+
+    <span class="k">fn</span> stdin(<span class="k">self</span>, cfg: <span class="t">Stdio</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> stdout(<span class="k">self</span>, cfg: <span class="t">Stdio</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> stderr(<span class="k">self</span>, cfg: <span class="t">Stdio</span>) -&gt; <span class="t">Command</span>;
+
+    <span class="k">fn</span> kill_on_drop(<span class="k">self</span>, on: <span class="t">bool</span>) -&gt; <span class="t">Command</span>;
+    <span class="k">fn</span> process_group(<span class="k">self</span>, pgid: <span class="t">i32</span>) -&gt; <span class="t">Command</span>;       <span class="c">// unix</span>
+
+    <span class="c">// 실행</span>
+    <span class="k">fn</span> spawn(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Child</span>;
+    <span class="k">fn</span> output(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Output</span>;          <span class="c">// 대기 + 수집: Inherit 인 stdout / stderr 는 pipe, Inherit 인 stdin 은 null</span>
+    <span class="k">fn</span> status(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">ExitStatus</span>;      <span class="c">// wait, no output</span>
+}
+
+<span class="k">enum</span> <span class="t">Stdio</span> {
+    <span class="t">Inherit</span>,                   <span class="c">// 부모 fd 그대로 (default)</span>
+    <span class="t">Null</span>,                      <span class="c">// /dev/null</span>
+    <span class="t">Piped</span>,                     <span class="c">// pipe - Child 에서 읽기/쓰기 가능</span>
+    <span class="t">File</span>(<span class="t">File</span>),                <span class="c">// 명시 fd</span>
+}
+
+<span class="k">struct</span> <span class="t">Output</span> {
+    status: <span class="t">ExitStatus</span>;
+    stdout: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    stderr: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+}
+</code></pre>
+<p>여기서 눈여겨볼 점은 <code>Stdio</code> 가 네 가지 갈래로 나뉜다는 것입니다. 부모의 fd 를 그대로 물려주는 <code>Inherit</code>, 출력을 통째로 버리는 <code>Null</code>, 양방향 통신을 위한 <code>Piped</code>, 그리고 임의의 fd 를 명시적으로 꽂아 넣는 <code>File</code> 이 그것입니다.</p>
+<h2 id="372-child"><a class="anchor" tabindex="-1" href="#372-child" aria-hidden="true">#</a>3.7.2. <code>Child</code></h2>
+<p><code>spawn</code> 이 성공하면 이제 살아 움직이는 프로세스의 손잡이로서 <code>Child</code> 가 돌아옵니다. 이 핸들을 통해 표준 입출력 스트림에 접근하거나, 종료를 기다리거나, 신호를 보낼 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Child</span> {
+    stdin: <span class="t">ChildStdin</span> | <span class="k">none</span>;
+    stdout: <span class="t">ChildStdout</span> | <span class="k">none</span>;
+    stderr: <span class="t">ChildStderr</span> | <span class="k">none</span>;
+}
+
+<span class="k">impl</span> <span class="t">Child</span> {
+    <span class="k">fn</span> id(<span class="k">self</span>) -&gt; <span class="t">u32</span>;                                  <span class="c">// pid</span>
+    <span class="k">fn</span> kill(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> wait(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">ExitStatus</span>;
+    <span class="k">fn</span> try_wait(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">ExitStatus</span> | <span class="k">none</span>;
+
+    <span class="c">// pidfd (Linux only) - race-free signal</span>
+    <span class="a">#[cfg(target_os = "linux")]</span>
+    <span class="k">fn</span> pidfd(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">RawFd</span>;
+
+    <span class="k">fn</span> signal(<span class="k">self</span>, sig: <span class="t">i32</span>) <span class="k">throws</span> (<span class="t">IoError</span>);          <span class="c">// unix</span>
+}
+
+<span class="k">impl</span> <span class="t">ChildStdin</span> { ... }                  <span class="c">// 파일 핸들 - impl Writer</span>
+<span class="k">impl</span> <span class="t">ChildStdout</span> { ... }                 <span class="c">// 파일 핸들 - impl Reader</span>
+<span class="k">impl</span> <span class="t">ChildStderr</span> { ... }                 <span class="c">// 파일 핸들 - impl Reader</span>
+
+<span class="k">struct</span> <span class="t">ExitStatus</span> { <span class="c">/* opaque */</span> }
+
+<span class="k">impl</span> <span class="t">ExitStatus</span> {
+    <span class="k">fn</span> success(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> code(<span class="k">self</span>) -&gt; <span class="t">i32</span> | <span class="k">none</span>;        <span class="c">// none = signal terminated (unix)</span>
+    <span class="k">fn</span> signal(<span class="k">self</span>) -&gt; <span class="t">i32</span> | <span class="k">none</span>;       <span class="c">// unix</span>
+}
+</code></pre>
+<p>종료 결과는 <code>ExitStatus</code> 라는 불투명 타입에 담긴다. <code>code()</code> 가 <code>none</code> 이라면 unix 환경에서 신호에 의해 종료되었다는 뜻이고, 그 신호 번호는 <code>signal()</code> 로 따로 꺼내 볼 수 있습니다.</p>
+<h2 id="373-사용-예"><a class="anchor" tabindex="-1" href="#373-사용-예" aria-hidden="true">#</a>3.7.3. 사용 예</h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::process::{<span class="t">Command</span>, <span class="t">Stdio</span>};
+
+<span class="c">// 단순 실행</span>
+<span class="k">let</span> status = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"ls"</span>).arg(<span class="s">"-la"</span>).status();
+<span class="k">if</span> !status.success() { panic(<span class="s">"ls failed"</span>) };
+
+<span class="c">// 출력 수집</span>
+<span class="k">let</span> output = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"git"</span>)
+    .args([<span class="s">"log"</span>, <span class="s">"--oneline"</span>, <span class="s">"-10"</span>])
+    .output();
+<span class="k">let</span> log = <span class="k">try</span> <span class="t">str</span>::from_utf8(output.stdout);
+
+<span class="c">// pipe 통한 입출력</span>
+<span class="k">let</span> child = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"grep"</span>)
+    .arg(<span class="s">"error"</span>)
+    .stdin(<span class="t">Stdio</span>::<span class="t">Piped</span>)
+    .stdout(<span class="t">Stdio</span>::<span class="t">Piped</span>)
+    .spawn();
+
+<span class="k">let</span> stdin = child.stdin ?? panic(<span class="s">"stdin not piped"</span>);     <span class="c">// 필드는 ChildStdin | none</span>
+<span class="k">let</span> stdout = child.stdout ?? panic(<span class="s">"stdout not piped"</span>);
+<span class="k">try</span> stdin.write_all(input_bytes);
+<span class="k">let</span> result = <span class="k">try</span> stdout.read_to_end();
+<span class="k">try</span> child.wait();
+
+<span class="c">// kill_on_drop - process leak 방지</span>
+<span class="k">using</span> child = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"long_running"</span>)
+        .kill_on_drop(<span class="k">true</span>)
+        .spawn() {
+    <span class="c">// 에러 전파 / early return 시에도 child kill 보장</span>
+}    <span class="c">// ← using 해제 시 Drop → kill</span>
+</code></pre>
+<p>마지막 예시가 보여주듯, <code>kill_on_drop</code> 을 켠 <code>Child</code> 를 <code>using</code> 으로 묶으면 에러 전파나 조기 return 같은 흐름에서도 자식이 함께 정리됩니다. <code>using</code> 블록을 빠져나갈 때 <code>Drop</code> 이 kill 을 겁니다. <code>using</code> 밖의 <code>Child</code> 는 자동으로 kill 되지 않습니다 (<a href="../200-core/213-marker#2134-drop---using-해제-시-정리">2.13.4</a>). <code>ChildStdin</code> / <code>ChildStdout</code> / <code>ChildStderr</code> 는 파이프의 파일 핸들이며 <code>File</code> 과 같은 방식으로 읽고 씁니다.</p>
+<h2 id="374-모던-추가---pidfd--posix_spawn--cloexec"><a class="anchor" tabindex="-1" href="#374-모던-추가---pidfd--posix_spawn--cloexec" aria-hidden="true">#</a>3.7.4. 모던 추가 - pidfd / posix_spawn / CLOEXEC</h2>
+<p>이러한 builder 패턴 위에 표준 라이브러리는 몇 가지 현대적 보강을 더합니다. 각각이 어떤 의미를 갖고 어떤 효과로 이어지는지 다음 표에 정리해 두었다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>기능</th><th>의미</th><th>효과</th></tr></thead>
+<tbody>
+<tr><td><code>posix_spawn</code> fast path</td><td>fork+exec 대신 syscall</td><td>huge process spawn 빠름</td></tr>
+<tr><td><code>pidfd</code> (Linux 5.3+)</td><td>pid 대신 fd 로 추적</td><td>race-free signal</td></tr>
+<tr><td><code>CLOEXEC</code> default</td><td>모든 fd 가 자동 close-on-exec</td><td>fd leak 방지</td></tr>
+<tr><td><code>kill_on_drop</code></td><td><code>using</code> 해제 시 kill</td><td>process leak 방지</td></tr>
+</tbody></table></div>
+<p>이러한 결정은 fd 누수와 process 누수, 그리고 신호 race 를 줄이는 방향으로 일관되게 정렬됩니다.</p>
+<p><code>Command::env</code> 를 써도 프로그램은 자식이 아니라 부모의 <code>PATH</code> 에서 찾습니다.</p>
+<h2 id="375-신호-처리-advanced"><a class="anchor" tabindex="-1" href="#375-신호-처리-advanced" aria-hidden="true">#</a>3.7.5. 신호 처리 (advanced)</h2>
+<p>조금 더 깊은 영역으로 내려가면 신호 처리 함수들이 자리 잡고 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> signal(sig: <span class="t">i32</span>, handler: <span class="k">fn</span>() + <span class="t">Send</span>) <span class="k">throws</span> (<span class="t">SignalError</span>);
+<span class="k">fn</span> kill(pid: <span class="t">u32</span>, sig: <span class="t">i32</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> raise(sig: <span class="t">i32</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+<span class="k">struct</span> <span class="t">SignalError</span> {
+    sig: <span class="t">i32</span>;          <span class="c">// 설치하려던 신호</span>
+    code: <span class="t">i32</span>;         <span class="c">// errno</span>
+}
+</code></pre>
+<p><code>signal</code> 의 handler 는 신호 문맥 (signal handler) 안에서 돌지 않습니다. 런타임이 신호를 받아 전용 dispatcher 스레드 <code>rok-signal</code> 로 넘기고, handler 는 그 스레드에서 보통 함수처럼 실행됩니다. 그래서 handler 는 <code>Send</code> 여야 하며 할당이나 lock 을 써도 됩니다. 같은 신호에 다시 <code>signal</code> 을 부르면 handler 가 바뀝니다. <code>Command::process_group(pgid)</code> 는 자식을 그 프로세스 그룹에 넣습니다 (<code>0</code> 이면 자식의 pid 로 새 그룹).</p>
+<p>Windows 에서는 콘솔 이벤트가 신호 번호로 대응됩니다: Ctrl-C → 2, Ctrl-Break → 21, 콘솔 닫기 / 로그오프 / 종료 → 1. 자식에게 보내는 <code>kill</code> 과 <code>signal</code> 은 <code>TerminateProcess</code> 를 부릅니다.</p>
+<p>다만 대부분의 사용자는 이 부분을 직접 만질 일이 없습니다. daemon 이나 서버, interactive CLI 처럼 신호를 정면으로 마주해야 하는 자리에서나 비로소 필요해지는 도구들이라 보면 됩니다.</p>
+<h2 id="376-플랫폼-가용성"><a class="anchor" tabindex="-1" href="#376-플랫폼-가용성" aria-hidden="true">#</a>3.7.6. 플랫폼 가용성</h2>
+<p>플랫폼별 지원 범위는 다음과 같이 갈립니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>linux</th><th>macos</th><th>windows</th><th>wasi</th></tr></thead>
+<tbody>
+<tr><td><code>Command::spawn</code></td><td>✓</td><td>✓</td><td>✓</td><td>✗</td></tr>
+<tr><td><code>posix_spawn</code></td><td>✓</td><td>✓</td><td>(CreateProcess)</td><td>✗</td></tr>
+<tr><td><code>pidfd</code></td><td>linux 5.3+</td><td>✗</td><td>✗</td><td>✗</td></tr>
+<tr><td><code>kill_on_drop</code></td><td>✓</td><td>✓</td><td>✓</td><td>✗</td></tr>
+<tr><td>signal handler</td><td>✓</td><td>✓</td><td>(limited)</td><td>✗</td></tr>
+<tr><td><code>process::id()</code></td><td>✓</td><td>✓</td><td>✓</td><td><code>0</code> (wasm32)</td></tr>
+</tbody></table></div>
+<p>wasm32 타깃에서 ✗ 로 표시한 항목은 런타임에 <code>IoErrorKind::Unsupported</code> 로 실패합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/307-process.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="306-env"><small>Previous</small>3.6. env:: - 환경 변수 / args / 디렉토리</a><a class="next" href="308-path"><small>Next</small>3.8. path:: - UTF-8 Path (Python 식)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

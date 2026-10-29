@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.1. fs:: - file system - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::std::fs module provides operations across the file system: files, directories, links, permissions and so on. The design starts from the capability-base...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/301-fs.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.1. fs:: - file system - rok docs">
+<meta property="og:description" content="The rok::std::fs module provides operations across the file system: files, directories, links, permissions and so on. The design starts from the capability-base...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/301-fs.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/301-fs.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/301-fs.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="301-fs">3.1. fs:: - file system</a><ul class="toc"><li><a href="#310-argument-rules">3.1.0. Argument rules</a></li><li><a href="#311-core-types">3.1.1. Core types</a></li><li><a href="#312-dir-capability">3.1.2. Dir capability</a></li><li><a href="#313-file-methods">3.1.3. File methods</a></li><li><a href="#314-convenience-functions-on-dirroot">3.1.4. Convenience functions (on Dir::root())</a></li><li><a href="#314a-asynchronous-file-io-_async">3.1.4a. Asynchronous file I/O (*_async)</a></li><li><a href="#315-examples">3.1.5. Examples</a></li><li><a href="#316-module-mapping--target-availability">3.1.6. Module mapping / target availability</a></li></ul></li><li><a href="302-net">3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - time</a></li><li><a href="304-thread">3.4. thread:: - OS threads (1:1 model)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / standard I/O</a></li><li><a href="306-env">3.6. env:: - environment variables / args / directories</a></li><li><a href="307-process">3.7. process:: - child processes</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python-style)</a></li><li><a href="309-rokon">3.9. rokon:: - the ROKON data format</a></li><li><a href="310-crypto">3.10. crypto:: - the OS random source</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="31-fs---file-system 31-fs---파일-시스템 310-argument-rules 310-인자-규칙 311-core-types 311-핵심-타입 312-dir-capability 312-dir-capability 313-file-methods 313-file-메서드 mmap mmap 314-convenience-functions-on-dirroot 314-편의-함수-dirroot-위 metadata metadata walk walk write_atomic---the-standard-posix-pattern write_atomic---posix-표준-패턴 314a-asynchronous-file-io-_async 314a-비동기-파일-io-_async 315-examples 315-사용-예 316-module-mapping--target-availability 316-모듈-매핑--target-가용성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/300-std/301-fs" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="31-fs---file-system"><a class="anchor" tabindex="-1" href="#31-fs---file-system" aria-hidden="true">#</a>3.1. <code>fs::</code> - file system</h1>
+<p>The <code>rok::std::fs</code> module provides operations across the file system: files, directories, links, permissions and so on. The design starts from the capability-based model of WASI Preview 2; as a result, every op is performed only through a <code>Dir</code> handle.</p>
+<h2 id="310-argument-rules"><a class="anchor" tabindex="-1" href="#310-argument-rules" aria-hidden="true">#</a>3.1.0. Argument rules</h2>
+<ul>
+<li>The path parameter <code>Path</code> in the signatures below is shorthand for <code>P: AsPath</code>. It accepts both <code>str</code> and <code>Path</code> (<a href="308-path#383a-aspath---path-arguments">3.8.3a</a>).
+</li>
+<li>The data parameter <code>data</code> of write functions accepts <code>io::AsBytes</code> (<a href="305-io">3.5</a>). <code>str</code>, <code>List&lt;u8&gt;</code> and <code>Slice&lt;u8&gt;</code> can be passed.
+</li>
+</ul>
+<p>The writing side accepts <code>AsBytes</code>; the read buffer is a <code>List&lt;u8&gt;</code> (filled by <code>read(buf)</code>).</p>
+<h2 id="311-core-types"><a class="anchor" tabindex="-1" href="#311-core-types" aria-hidden="true">#</a>3.1.1. Core types</h2>
+<p>The core types are <code>Dir</code> and <code>File</code>, which wrap OS handles; <code>ReadDir</code> and <code>DirEntry</code> for iterating directories; and <code>Metadata</code> and <code>Permissions</code> for metadata and permissions. How a file is opened is controlled in detail with the <code>OpenOptions</code> struct.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Dir</span> { <span class="c">/* OS handle (file descriptor / HANDLE) */</span> }
+<span class="k">struct</span> <span class="t">File</span> { <span class="c">/* OS handle */</span> }
+<span class="k">struct</span> <span class="t">ReadDir</span> { <span class="c">/* iterator over Dir entries - Drop: closed when using releases it */</span> }
+<span class="k">struct</span> <span class="t">DirEntry</span> { <span class="c">/* path + metadata cache */</span> }
+<span class="k">struct</span> <span class="t">Metadata</span> { <span class="c">/* size, times, perm, ... */</span> }
+<span class="k">struct</span> <span class="t">Permissions</span> { <span class="c">/* readable/writable/executable + mode bits */</span> }
+
+<span class="k">struct</span> <span class="t">OpenOptions</span> {
+    read: <span class="t">bool</span>;
+    write: <span class="t">bool</span>;
+    append: <span class="t">bool</span>;
+    truncate: <span class="t">bool</span>;
+    create: <span class="t">bool</span>;
+    create_new: <span class="t">bool</span>;
+    mode: <span class="t">u32</span>;          <span class="c">// unix permission (default 0o666)</span>
+}
+</code></pre>
+<h2 id="312-dir-capability"><a class="anchor" tabindex="-1" href="#312-dir-capability" aria-hidden="true">#</a>3.1.2. Dir capability</h2>
+<p><code>Dir</code> is the unit of capability. Besides <code>root()</code>, the process default cap, the working directory, home and the OS temp directory are available as <code>cwd()</code>, <code>home()</code> and <code>temp()</code>. With a handle in hand, nearly every file system operation can be performed beneath it - opening files, creating, removing and renaming directories - and copies automatically use reflink paths such as <code>copy_file_range</code> / <code>FICLONE</code> / <code>clonefile</code>.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Dir</span> {
+    <span class="k">fn</span> root() -&gt; <span class="t">Dir</span>;                            <span class="c">// process default cap</span>
+    <span class="k">fn</span> cwd() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;            <span class="c">// current working dir</span>
+    <span class="k">fn</span> home() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">fn</span> temp() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;           <span class="c">// OS temp dir</span>
+
+    <span class="k">fn</span> open(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;       <span class="c">// open with default OpenOptions::read</span>
+    <span class="k">fn</span> open_with(<span class="k">self</span>, path: <span class="t">Path</span>, opts: <span class="t">OpenOptions</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">fn</span> open_dir(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">fn</span> create(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;     <span class="c">// open + create + truncate</span>
+
+    <span class="k">fn</span> read_dir(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">ReadDir</span>;            <span class="c">// bound with using, closed on release; dropped via let, stays open until process exit</span>
+    <span class="k">fn</span> metadata(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">fn</span> exists(<span class="k">self</span>, path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> create_dir(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> create_dir_all(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> remove_file(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> remove_dir(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> remove_dir_all(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> rename(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> copy(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+                                          <span class="c">// tries reflink first (macOS: clonefileat), falls back to byte copy</span>
+    <span class="k">fn</span> symlink(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> hardlink(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+</code></pre>
+<p>Internally, <code>Dir</code> uses the openat family. A <code>Dir</code> other than <code>Dir::root()</code> rejects absolute paths and paths containing <code>..</code>, so access is confined beneath that directory. This check is on the path text, so following a symlink inside the directory can lead outside it. When full isolation is required, use the OS sandbox as well.</p>
+<h2 id="313-file-methods"><a class="anchor" tabindex="-1" href="#313-file-methods" aria-hidden="true">#</a>3.1.3. File methods</h2>
+<p>Besides ordinary read / write, <code>File</code> has <code>read_to_str</code> with UTF-8 validation, <code>sync_all</code> / <code>sync_data</code> for syncing to disk, <code>set_len</code> for adjusting length, and so on. Methods for querying and changing metadata and permissions are provided, and <code>seek</code> and <code>try_clone</code> allow fd-level manipulation. The file locking API stabilized in Rust 1.77 (2024) and memory mapping (mmap) are also provided.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">File</span> {
+    <span class="k">fn</span> read(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;   <span class="c">// fills buf[0..n], 0 = end</span>
+    <span class="k">fn</span> read_to_end(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> read_to_str(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;            <span class="c">// includes UTF-8 validation</span>
+    <span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> write_all&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> close(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> flush(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> sync_all(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                  <span class="c">// fsync (data + metadata)</span>
+    <span class="k">fn</span> sync_data(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                 <span class="c">// fdatasync</span>
+    <span class="k">fn</span> set_len(<span class="k">self</span>, size: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>);        <span class="c">// truncate</span>
+
+    <span class="k">fn</span> metadata(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">fn</span> permissions(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Permissions</span>;
+    <span class="k">fn</span> set_permissions(<span class="k">self</span>, perm: <span class="t">Permissions</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> seek(<span class="k">self</span>, pos: <span class="t">SeekFrom</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;         <span class="c">// dup fd</span>
+
+    <span class="c">// file locking (Rust 1.77 stabilized, 2024)</span>
+    <span class="k">fn</span> lock_exclusive(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);            <span class="c">// flock LOCK_EX / LockFileEx</span>
+    <span class="k">fn</span> lock_shared(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);               <span class="c">// flock LOCK_SH</span>
+    <span class="k">fn</span> try_lock_exclusive(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> unlock(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="c">// memory mapping (mmap)</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> mmap(<span class="k">self</span>, len: <span class="t">usize</span>, offset: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Mmap</span>;
+}
+
+<span class="k">enum</span> <span class="t">SeekFrom</span> {
+    <span class="t">Start</span>(<span class="t">u64</span>),
+    <span class="t">End</span>(<span class="t">i64</span>),
+    <span class="t">Current</span>(<span class="t">i64</span>),
+}
+</code></pre>
+<p><code>File</code> implements <code>Drop</code> from <a href="../200-core/213-marker">2.13 marker</a>, so when bound with a <code>using</code> block it is closed on leaving the block. A file opened without <code>using</code> is not closed automatically; call <code>close()</code> directly. OS handles (<code>File</code>, <code>Dir</code>, sockets, mmap, a child's pidfd) are released once, however many copies of the value close them.</p>
+<h3 id="mmap"><a class="anchor" tabindex="-1" href="#mmap" aria-hidden="true">#</a><code>Mmap</code></h3>
+<p><code>unsafe fn File::mmap(len, offset)</code> maps <code>len</code> bytes at <code>offset</code> (a multiple of the page size) as a read-only shared mapping. It is <code>unsafe</code> because another writer of the file changes the bytes under the mapping, and truncating the file makes reads fault.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Mmap</span> { <span class="c">/* address, length */</span> }
+
+<span class="k">impl</span> <span class="t">Mmap</span> {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                         <span class="c">// 0 after unmap</span>
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">u8</span> | <span class="k">none</span>;           <span class="c">// none past the end</span>
+    <span class="k">fn</span> slice(<span class="k">self</span>, start: <span class="t">usize</span>, end: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// copy; clamped to the mapping</span>
+    <span class="k">fn</span> to_list(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                  <span class="c">// copy of every byte</span>
+    <span class="k">fn</span> unmap(<span class="k">self</span>);
+}
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">Mmap</span> { ... }                         <span class="c">// unmaps</span>
+</code></pre>
+<p>A mapping is unmapped by <code>unmap</code> or on drop (leaving <code>using</code>); reads after that see an empty mapping.</p>
+<h2 id="314-convenience-functions-on-dirroot"><a class="anchor" tabindex="-1" href="#314-convenience-functions-on-dirroot" aria-hidden="true">#</a>3.1.4. Convenience functions (on Dir::root())</h2>
+<p>So that a <code>Dir</code> handle need not be carried around everywhere, convenience functions operating on <code>Dir::root()</code> are provided. Everyday tasks such as simple reads and writes, metadata queries and existence checks take one line, and frequently needed patterns such as atomic writes and recursive traversal are exposed in the same place.</p>
+<pre><code class="language-rok"><span class="k">fn</span> read(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+<span class="k">fn</span> read_to_str(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+<span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> write_atomic&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+                                          <span class="c">// tempfile + fsync + rename + fsync(parent)</span>
+
+<span class="k">fn</span> metadata(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+<span class="k">fn</span> exists(path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+<span class="k">fn</span> create_dir(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> create_dir_all(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> remove_file(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> remove_dir_all(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> rename(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> copy(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+
+<span class="k">fn</span> walk(root: <span class="t">Path</span>) -&gt; <span class="t">Walk</span>;             <span class="c">// implements Iterator&lt;Item = Result&lt;DirEntry, IoError&gt;&gt;</span>
+</code></pre>
+<h3 id="metadata"><a class="anchor" tabindex="-1" href="#metadata" aria-hidden="true">#</a><code>Metadata</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Metadata</span> {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">u64</span>;
+    <span class="k">fn</span> is_file(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_dir(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_symlink(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> permissions(<span class="k">self</span>) -&gt; <span class="t">Permissions</span>;
+    <span class="k">fn</span> modified(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SystemTime</span>;    <span class="c">// last modification time</span>
+    <span class="k">fn</span> accessed(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SystemTime</span>;    <span class="c">// last access time</span>
+    <span class="k">fn</span> mtime(<span class="k">self</span>) -&gt; <span class="t">i64</span>;                <span class="c">// Unix seconds (raw value)</span>
+    <span class="k">fn</span> atime(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> ctime(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+}
+</code></pre>
+<p>Times are obtained as <code>SystemTime</code> (<a href="303-time#333-systemtime---wall-clock">3.3.3</a>). <code>mtime</code> / <code>atime</code> / <code>ctime</code> return the OS's Unix seconds as is.</p>
+<h3 id="walk"><a class="anchor" tabindex="-1" href="#walk" aria-hidden="true">#</a><code>walk</code></h3>
+<p><code>walk</code> traverses depth-first. It yields <code>root</code> itself first, and the entries in each directory sorted by name. Elements are <code>Result&lt;DirEntry, IoError&gt;</code>; unreadable entries come out as <code>Err</code> and traversal continues.</p>
+<h3 id="write_atomic---the-standard-posix-pattern"><a class="anchor" tabindex="-1" href="#write_atomic---the-standard-posix-pattern" aria-hidden="true">#</a><code>write_atomic</code> - the standard POSIX pattern</h3>
+<p><code>write_atomic</code> encapsulates the standard pattern of creating a temporary file, writing the data, fsync, rename, and fsync of the parent directory, all in one call.</p>
+<pre><code class="language-rok"><span class="k">try</span> fs::write_atomic(<span class="s">"config.toml"</span>, new_config_bytes);
+<span class="c">// internal behavior:</span>
+<span class="c">//   1. tempfile create (.config.toml.tmp.&lt;uuid&gt;)</span>
+<span class="c">//   2. write data</span>
+<span class="c">//   3. fsync(temp)</span>
+<span class="c">//   4. rename(temp, config.toml)   ← atomic</span>
+<span class="c">//   5. fsync(parent dir)</span>
+</code></pre>
+<blockquote>
+<p>Every robust application needs this pattern; in Rust the <code>tempfile</code> crate and in Go <code>renameio</code> have filled the gap in std. rok provides the same functionality directly in std.</p>
+</blockquote>
+<h2 id="314a-asynchronous-file-io-_async"><a class="anchor" tabindex="-1" href="#314a-asynchronous-file-io-_async" aria-hidden="true">#</a>3.1.4a. Asynchronous file I/O (<code>*_async</code>)</h2>
+<p>The functions and methods above block the calling OS thread. To give up the worker while waiting inside a task, <code>await</code> the <code>*_async</code> version of the same operation (same naming rule as <a href="302-net#320-common-rules">3.2.0 net</a>). An ordinary function cannot suspend a stackless coroutine, so a sync call does not become async on its own inside a task.</p>
+<pre><code class="language-rok"><span class="c">// convenience functions - all async, throws (IoError) except exists_async</span>
+<span class="k">async</span> <span class="k">fn</span> open_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+<span class="k">async</span> <span class="k">fn</span> create_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+<span class="k">async</span> <span class="k">fn</span> open_with_async(path: <span class="t">Path</span>, opts: <span class="t">OpenOptions</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+<span class="k">async</span> <span class="k">fn</span> read_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+<span class="k">async</span> <span class="k">fn</span> read_to_str_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+<span class="k">async</span> <span class="k">fn</span> write_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> write_atomic_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> metadata_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+<span class="k">async</span> <span class="k">fn</span> symlink_metadata_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+<span class="k">async</span> <span class="k">fn</span> exists_async(path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+<span class="k">async</span> <span class="k">fn</span> create_dir_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> create_dir_all_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> remove_file_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> remove_dir_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> remove_dir_all_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> rename_async(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> copy_async(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+<span class="k">async</span> <span class="k">fn</span> symlink_async(target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> hardlink_async(target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> read_dir_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">DirEntry</span>&gt;;
+                                          <span class="c">// reads everything at once (eager); throws the first entry error, if any</span>
+
+<span class="k">impl</span> <span class="t">File</span> {
+    <span class="k">async</span> <span class="k">fn</span> open_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> create_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_async(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_to_end_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">async</span> <span class="k">fn</span> read_to_str_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+    <span class="k">async</span> <span class="k">fn</span> write_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> write_all_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> write_str_async(<span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> sync_all_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> sync_data_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> set_len_async(<span class="k">self</span>, size: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> metadata_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">async</span> <span class="k">fn</span> lock_exclusive_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> lock_shared_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+</code></pre>
+<p><code>Dir</code> also has a <code>*_async</code> version of every sync method.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Dir</span> {
+    <span class="k">async</span> <span class="k">fn</span> cwd_async() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> home_async() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> temp_async() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> open_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> create_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> open_with_async(<span class="k">self</span>, path: <span class="t">Path</span>, opts: <span class="t">OpenOptions</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> open_dir_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_dir_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">ReadDirStream</span>;
+    <span class="k">async</span> <span class="k">fn</span> metadata_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">async</span> <span class="k">fn</span> symlink_metadata_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">async</span> <span class="k">fn</span> exists_async(<span class="k">self</span>, path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">async</span> <span class="k">fn</span> create_dir_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> create_dir_all_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> remove_file_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> remove_dir_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> remove_dir_all_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> rename_async(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> copy_async(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+    <span class="k">async</span> <span class="k">fn</span> symlink_async(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> hardlink_async(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> close_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+
+<span class="k">struct</span> <span class="t">ReadDirStream</span> { <span class="c">/* directory handle + batch read so far */</span> }
+<span class="k">impl</span> <span class="t">Stream</span> <span class="k">for</span> <span class="t">ReadDirStream</span> { <span class="k">type</span> <span class="t">Item</span> = <span class="t">Result</span>&lt;<span class="t">DirEntry</span>, <span class="t">IoError</span>&gt;; ... }
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">ReadDirStream</span> { ... }        <span class="c">// closes</span>
+</code></pre>
+<p>The <code>ReadDirStream</code> of <code>read_dir_async</code> is a stream that reads entries 64 at a time on the blocking pool and yields them to <code>for await</code>. It closes the directory when read to the end or when leaving <code>using</code>. Unlike <code>fs::read_dir_async(path)</code> (<code>List&lt;DirEntry&gt;</code>), which reads everything at once, it reads large directories a little at a time.</p>
+<pre><code class="language-rok"><span class="k">let</span> logs = <span class="k">try</span> <span class="k">await</span> <span class="t">Dir</span>::root().open_dir_async(<span class="s">"logs"</span>);
+<span class="k">using</span> entries = <span class="k">try</span> <span class="k">await</span> logs.read_dir_async() {
+    <span class="k">for</span> <span class="k">await</span> e <span class="k">in</span> entries {
+        <span class="k">let</span> entry = <span class="k">try</span> e.get();
+        ...
+    }
+}
+</code></pre>
+<p>There is no dedicated append function. Open with <code>open_with_async(path, OpenOptions::new().append(true))</code>.</p>
+<p><strong>Behavior.</strong> Regular files have no readiness (they are always ready in kqueue / epoll), so each <code>*_async</code> call runs the blocking call of the same name on another OS thread (<a href="../200-core/218-task#2181-core-api"><code>task::spawn_blocking</code></a>) and suspends the task meanwhile. Results and errors are exactly those of the sync call.</p>
+<p><strong>Cancellation.</strong> If the waiting task is cancelled (<a href="../200-core/218-task#2184-cooperative-cancellation---taskcancel">2.18.4</a>), a call that has already started runs to completion in the background and only its result is discarded. Side effects such as writes, deletions and renames therefore still happen.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> load(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Config</span> {
+    <span class="k">let</span> text = <span class="k">try</span> <span class="k">await</span> fs::read_to_str_async(path);
+    <span class="k">return</span> <span class="k">try</span> parse(text);
+}
+</code></pre>
+<h2 id="315-examples"><a class="anchor" tabindex="-1" href="#315-examples" aria-hidden="true">#</a>3.1.5. Examples</h2>
+<p>The following example walks through the typical flow, from simple reads to atomic writes, sandbox setup, recursive traversal and file locking for concurrent processes.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::fs::*;
+<span class="k">use</span> rok::std::path::<span class="t">Path</span>;
+
+<span class="c">// simple reads</span>
+<span class="k">let</span> bytes = <span class="k">try</span> fs::read(<span class="s">"data.txt"</span>);
+<span class="k">let</span> text = <span class="k">try</span> fs::read_to_str(<span class="s">"config.toml"</span>);
+
+<span class="c">// safe write (atomic)</span>
+<span class="k">try</span> fs::write_atomic(<span class="s">"output.json"</span>, json_bytes);
+
+<span class="c">// Dir capability - sandbox</span>
+<span class="k">let</span> data_dir = <span class="k">try</span> <span class="t">Dir</span>::root().open_dir(<span class="s">"data"</span>);
+<span class="k">let</span> f = <span class="k">try</span> data_dir.open(<span class="s">"a.txt"</span>);     <span class="c">// data/a.txt</span>
+<span class="k">let</span> g = <span class="k">try</span> data_dir.open(<span class="s">"../etc/passwd"</span>);   <span class="c">// IoError - .. rejected (symlinks are not blocked)</span>
+
+<span class="c">// recursive traversal</span>
+<span class="k">for</span> entry <span class="k">in</span> fs::walk(<span class="t">Path</span>::from(<span class="s">"src"</span>)) {
+    <span class="k">let</span> entry = <span class="k">try</span> entry.get();         <span class="c">// element is a Result - get() returns to the error flow</span>
+    <span class="k">if</span> entry.path().extension() == <span class="s">"rok"</span> {
+        process(entry.path());
+    }
+}
+
+<span class="c">// File locking (concurrent process)</span>
+<span class="k">using</span> f = <span class="k">try</span> fs::open_with(path, <span class="t">OpenOptions</span>::default().write(<span class="k">true</span>)) {
+    <span class="k">try</span> f.lock_exclusive();
+    <span class="c">// critical section</span>
+}     <span class="c">// ← automatic unlock + close</span>
+</code></pre>
+<h2 id="316-module-mapping--target-availability"><a class="anchor" tabindex="-1" href="#316-module-mapping--target-availability" aria-hidden="true">#</a>3.1.6. Module mapping / target availability</h2>
+<p>How each feature behaves on each target:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>linux/macos/windows</th><th>wasi</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>Dir</code>/<code>File</code> basics</td><td>✓</td><td>✓</td><td>Natural fit for cap-based WASI</td></tr>
+<tr><td><code>write_atomic</code></td><td>✓</td><td>✓</td><td>Always available</td></tr>
+<tr><td><code>lock_exclusive</code></td><td>✓ (flock/LockFileEx)</td><td>✗</td><td><code>Unsupported</code> on wasm32</td></tr>
+<tr><td><code>try_clone</code> (dup)</td><td>✓</td><td>✗</td><td><code>Unsupported</code> on wasm32</td></tr>
+<tr><td><code>mmap</code></td><td>✓</td><td>✗</td><td><code>Unsupported</code> on wasm32</td></tr>
+<tr><td><code>copy</code> reflink</td><td>✓ (btrfs/APFS/XFS)</td><td>✗</td><td>automatic fallback to copy</td></tr>
+<tr><td><code>pidfd</code> / pipe2</td><td>linux only</td><td>✗</td><td>feature-gated</td></tr>
+<tr><td><code>walk</code></td><td>✓</td><td>✓</td><td></td></tr>
+</tbody></table></div>
+<p>In the browser (<code>wasm32-unknown-unknown</code>) every fs call reports <code>Unsupported</code>: the shipped JS host pre-opens <code>/</code> and refuses every call.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/300-std/301-fs.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>3. Std tier</a><a class="next" href="302-net"><small>Next</small>3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

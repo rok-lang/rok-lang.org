@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.4. raw allocation - alloc / dealloc / realloc - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::alloc 모듈은 GC 가 관여하지 않는 외부 영역에서 메모리를 직접 할당하고 해제하기 위한 API 를 제공합니다. rok 의 일반 코드는 GC 가 알아서 관리해 주지만, FFI 경계에서 C 측에 메모리를 넘겨야 하거나 large buffer, mmap 처럼 GC 가...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/104-alloc.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.4. raw allocation - alloc / dealloc / realloc - rok docs">
+<meta property="og:description" content="rok::bare::alloc 모듈은 GC 가 관여하지 않는 외부 영역에서 메모리를 직접 할당하고 해제하기 위한 API 를 제공합니다. rok 의 일반 코드는 GC 가 알아서 관리해 주지만, FFI 경계에서 C 측에 메모리를 넘겨야 하거나 large buffer, mmap 처럼 GC 가...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/104-alloc.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/104-alloc.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/104-alloc.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li class="cur"><a aria-current="page" href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a><ul class="toc"><li><a href="#141-api">1.4.1. API</a></li><li><a href="#142-사용-예">1.4.2. 사용 예</a></li><li><a href="#143-gc-와의-관계">1.4.3. GC 와의 관계</a></li><li><a href="#144-runtime-연계">1.4.4. runtime 연계</a></li></ul></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="14-raw-allocation---alloc--dealloc--realloc 14-raw-allocation---alloc--dealloc--realloc 141-api 141-api 142-사용-예 142-example 143-gc-와의-관계 143-relationship-with-the-gc 144-runtime-연계 144-runtime-linkage"><a href="../../../../spec/refs-standard-libraries/100-bare/104-alloc" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="14-raw-allocation---alloc--dealloc--realloc"><a class="anchor" tabindex="-1" href="#14-raw-allocation---alloc--dealloc--realloc" aria-hidden="true">#</a>1.4. raw allocation - <code>alloc</code> / <code>dealloc</code> / <code>realloc</code></h1>
+<p><code>rok::bare::alloc</code> 모듈은 GC 가 관여하지 않는 외부 영역에서 메모리를 직접 할당하고 해제하기 위한 API 를 제공합니다. rok 의 일반 코드는 GC 가 알아서 관리해 주지만, FFI 경계에서 C 측에 메모리를 넘겨야 하거나 large buffer, mmap 처럼 GC 가 다루기에 적절치 않은 자리에서는 이 모듈을 사용합니다.</p>
+<h2 id="141-api"><a class="anchor" tabindex="-1" href="#141-api" aria-hidden="true">#</a>1.4.1. API</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Layout</span> {
+    size: <span class="t">usize</span>;
+    align: <span class="t">usize</span>;
+}
+
+<span class="k">impl</span> <span class="t">Layout</span> {
+    <span class="k">fn</span> new&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">Layout</span>;                     <span class="c">// size_of&lt;T&gt;(), align_of&lt;T&gt;()</span>
+    <span class="k">fn</span> array&lt;<span class="t">T</span>&gt;(n: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">LayoutError</span>) -&gt; <span class="t">Layout</span>;
+    <span class="k">fn</span> from_size_align(size: <span class="t">usize</span>, align: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">LayoutError</span>) -&gt; <span class="t">Layout</span>;
+}
+
+<span class="k">unsafe</span> <span class="k">fn</span> alloc(layout: <span class="t">Layout</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+<span class="k">unsafe</span> <span class="k">fn</span> alloc_zeroed(layout: <span class="t">Layout</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+<span class="k">unsafe</span> <span class="k">fn</span> dealloc(ptr: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;, layout: <span class="t">Layout</span>);
+<span class="k">unsafe</span> <span class="k">fn</span> realloc(ptr: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;, old_layout: <span class="t">Layout</span>, new_size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+
+<span class="c">// 편의 함수 - typed</span>
+<span class="k">unsafe</span> <span class="k">fn</span> alloc_one&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;
+<span class="k">unsafe</span> <span class="k">fn</span> alloc_array&lt;<span class="t">T</span>&gt;(n: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;;
+<span class="k">unsafe</span> <span class="k">fn</span> dealloc_one&lt;<span class="t">T</span>&gt;(ptr: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;);
+<span class="k">unsafe</span> <span class="k">fn</span> dealloc_array&lt;<span class="t">T</span>&gt;(ptr: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, n: <span class="t">usize</span>);
+</code></pre>
+<p><code>alloc</code> 이 실패하면 <code>CPtr::null()</code> 을 반환하며, abort 하지 않으니 호출자가 직접 결과를 살펴 처리해야 합니다.</p>
+<h2 id="142-사용-예"><a class="anchor" tabindex="-1" href="#142-사용-예" aria-hidden="true">#</a>1.4.2. 사용 예</h2>
+<pre><code class="language-rok"><span class="k">let</span> layout = <span class="k">try</span> <span class="t">Layout</span>::array::&lt;<span class="t">u32</span>&gt;(<span class="n">1000</span>);
+<span class="k">let</span> p: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt; = <span class="k">unsafe</span> { rok::bare::alloc::alloc(layout) };
+
+<span class="k">match</span> p.as_ptr() {
+    raw: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; =&gt; {
+        <span class="k">let</span> typed: <span class="t">Ptr</span>&lt;<span class="t">u32</span>&gt; = rok::bare::ptr_cast::&lt;<span class="t">u32</span>&gt;(raw);
+        <span class="c">// 사용</span>
+        <span class="k">unsafe</span> {
+            <span class="k">for</span> i <span class="k">in</span> <span class="n">0u32</span>..<span class="n">1000u32</span> { typed.add(i <span class="k">as</span> <span class="t">usize</span>).write(i); }
+        }
+        <span class="k">unsafe</span> { rok::bare::alloc::dealloc(raw, layout) };
+    }
+    <span class="k">none</span> =&gt; panic(<span class="s">"alloc failed"</span>),
+}
+</code></pre>
+<p><code>using</code> 블록을 활용하면 RAII 형태로 정리할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">using</span> buf = <span class="k">try</span> rok::bare::alloc::<span class="t">Allocation</span>::&lt;<span class="t">u32</span>&gt;::new(<span class="n">1000</span>) {
+    <span class="c">// buf.as_ptr() 사용 가능</span>
+}     <span class="c">// ← 자동 dealloc</span>
+</code></pre>
+<p>여기서 <code>Allocation&lt;T&gt;</code> 는 본 모듈에 포함된 RAII wrapper 입니다.</p>
+<h2 id="143-gc-와의-관계"><a class="anchor" tabindex="-1" href="#143-gc-와의-관계" aria-hidden="true">#</a>1.4.3. GC 와의 관계</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>영역</th><th>할당 / 해제</th><th>GC 관리?</th></tr></thead>
+<tbody>
+<tr><td>일반 객체 (<code>List&lt;i32&gt;</code>)</td><td>GC TLAB bump</td><td>✓</td></tr>
+<tr><td><code>rok::bare::alloc::alloc</code></td><td>system malloc</td><td>✗ (수동)</td></tr>
+<tr><td>FFI <code>malloc</code></td><td>C <code>malloc</code></td><td>✗</td></tr>
+<tr><td>Large object (≥8KB)</td><td>LOS - non-moving mark-sweep</td><td>✓ (단, non-moving)</td></tr>
+</tbody></table></div>
+<p>GC 가 관리하는 raw buffer 가 필요하면 이 모듈 대신 <code>rok::core::collections::raw::GcBuf&lt;T&gt;</code> (<a href="../200-core/209-collections#2912-gcbuft---raw-gc-buffer">2.9.12</a>) 를 씁니다.</p>
+<p>GC 외부 영역은 GC 의 추적 대상이 아니므로 정리 책임이 사용자에게 있습니다. 다만 객체가 이동하지 않는 영역인 만큼, <code>Ptr&lt;T&gt;</code> 는 별도의 pin guard 없이도 그대로 유효합니다.</p>
+<h2 id="144-runtime-연계"><a class="anchor" tabindex="-1" href="#144-runtime-연계" aria-hidden="true">#</a>1.4.4. runtime 연계</h2>
+<p><code>rok::bare::alloc::alloc</code> 의 본문은 rok 런타임이 system malloc 위에 제공하는 wrapper 로 lower 되며, 최종적으로 <code>libc::malloc</code> / <code>libc::free</code> / <code>libc::realloc</code> 을 호출하는 형태로 동작합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/104-alloc.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="103-mem"><small>Previous</small>1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a><a class="next" href="105-volatile"><small>Next</small>1.5. volatile 메모리 접근</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

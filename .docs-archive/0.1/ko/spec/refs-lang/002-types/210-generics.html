@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.10. 제네릭 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="제네릭은 함수, 타입, 트레잇, impl 블록에 타입 매개변수를 두는 메커니즘입니다. 호출이나 인스턴스화 지점의 구체 타입 튜플마다 별개의 컴파일 결과를 생성하며, 이러한 과정을 단형화라고 부릅니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/210-generics.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.10. 제네릭 - rok docs">
+<meta property="og:description" content="제네릭은 함수, 타입, 트레잇, impl 블록에 타입 매개변수를 두는 메커니즘입니다. 호출이나 인스턴스화 지점의 구체 타입 튜플마다 별개의 컴파일 결과를 생성하며, 이러한 과정을 단형화라고 부릅니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/210-generics.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/210-generics.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/210-generics.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li class="cur"><a aria-current="page" href="210-generics">2.10. 제네릭</a><ul class="toc"><li><a href="#2101-매개변수-선언-위치">2.10.1. 매개변수 선언 위치</a></li><li><a href="#2102-매개변수의-종류">2.10.2. 매개변수의 종류</a></li><li><a href="#2103-트레잇-바운드">2.10.3. 트레잇 바운드</a></li><li><a href="#2104-where-절">2.10.4. where 절</a></li><li><a href="#2105-기본값-default">2.10.5. 기본값 (default)</a></li><li><a href="#2106-단형화-monomorphization">2.10.6. 단형화 (monomorphization)</a></li><li><a href="#2107-점진과의-결합">2.10.7. 점진과의 결합</a></li><li><a href="#2108-제네릭의-종류-일관성">2.10.8. 제네릭의 종류 일관성</a></li><li><a href="#2109-본체-검사">2.10.9. 본체 검사</a></li><li><a href="#21010-제네릭과-트레잇-as-타입의-차이">2.10.10. 제네릭과 트레잇-as-타입의 차이</a></li></ul></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="210-제네릭 210-generics 2101-매개변수-선언-위치 2101-where-parameters-are-declared 2102-매개변수의-종류 2102-kinds-of-parameters 타입-매개변수 type-parameters const-매개변수 const-parameters 타입-인자-추론 type-argument-inference 2103-트레잇-바운드 2103-trait-bounds 2104-where-절 2104-where-clauses 2105-기본값-default 2105-defaults 인자-개수 argument-counts 2106-단형화-monomorphization 2106-monomorphization 단형화의-캐시-모델 monomorphization-cache-model 2107-점진과의-결합 2107-combination-with-gradual-typing 2108-제네릭의-종류-일관성 2108-consistency-of-generic-parameters 2109-본체-검사 2109-body-checking 21010-제네릭과-트레잇-as-타입의-차이 21010-generics-vs-trait-as-type"><a href="../../../../spec/refs-lang/002-types/210-generics" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="210-제네릭"><a class="anchor" tabindex="-1" href="#210-제네릭" aria-hidden="true">#</a>2.10. 제네릭</h1>
+<p>제네릭은 함수, 타입, 트레잇, <code>impl</code> 블록에 타입 매개변수를 두는 메커니즘입니다. 호출이나 인스턴스화 지점의 구체 타입 튜플마다 별개의 컴파일 결과를 생성하며, 이러한 과정을 단형화라고 부릅니다.</p>
+<pre><code>generics        ::= &quot;&lt;&quot; generic_param (&quot;,&quot; generic_param)* &quot;,&quot;? &quot;&gt;&quot;
+generic_param   ::= type_param | const_param
+type_param      ::= identifier (&quot;:&quot; type_bounds)? (&quot;=&quot; type_expr)?
+const_param     ::= &quot;const&quot; identifier &quot;:&quot; type_expr (&quot;=&quot; const_expr)?
+type_bounds     ::= type_expr (&quot;+&quot; type_expr)*
+where_clause    ::= &quot;where&quot; where_pred (&quot;,&quot; where_pred)* &quot;,&quot;?
+where_pred      ::= type_expr &quot;:&quot; type_bounds
+</code></pre>
+<div class="callout note"><p class="callout-title">참고</p>
+<p><code>where</code> 는 함수 시그니처, <code>impl</code> 헤더, <code>struct</code> / <code>enum</code> / <code>union</code> / 타입 별칭 헤더 뒤에서만 키워드인 문맥 키워드입니다 (<a href="../001-lexical/105-keywords#154-문맥-키워드">1.5.4</a>).</p>
+</div>
+<h2 id="2101-매개변수-선언-위치"><a class="anchor" tabindex="-1" href="#2101-매개변수-선언-위치" aria-hidden="true">#</a>2.10.1. 매개변수 선언 위치</h2>
+<p>제네릭 매개변수는 다음과 같은 위치에서 등장합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> id&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x }                       <span class="c">// 함수</span>
+<span class="k">struct</span> <span class="t">Pair</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; { first: <span class="t">A</span>; second: <span class="t">B</span>; }      <span class="c">// 구조체</span>
+<span class="k">enum</span> <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; { <span class="t">Ok</span>(<span class="t">T</span>), <span class="t">Err</span>(<span class="t">E</span>) }              <span class="c">// enum</span>
+<span class="k">union</span> <span class="t">Bits</span>&lt;<span class="t">T</span>&gt; { v: <span class="t">T</span>; raw: <span class="t">u64</span>; }               <span class="c">// union</span>
+<span class="k">trait</span> <span class="t">Convert</span>&lt;<span class="t">Target</span>&gt; { ... }                    <span class="c">// 트레잇</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }                          <span class="c">// impl</span>
+<span class="k">type</span> <span class="t">Maybe</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> | <span class="k">none</span>;                        <span class="c">// 타입 별칭</span>
+</code></pre>
+<p>각 위치에서 매개변수 선언 형태는 모두 동일합니다. 이름 뒤의 <code>&lt;...&gt;</code> 안에 매개변수 이름들을 콤마로 구분해 나열하는 방식입니다.</p>
+<h2 id="2102-매개변수의-종류"><a class="anchor" tabindex="-1" href="#2102-매개변수의-종류" aria-hidden="true">#</a>2.10.2. 매개변수의 종류</h2>
+<h3 id="타입-매개변수"><a class="anchor" tabindex="-1" href="#타입-매개변수" aria-hidden="true">#</a>타입 매개변수</h3>
+<pre><code class="language-rok"><span class="k">fn</span> first&lt;<span class="t">T</span>&gt;(pair: (<span class="t">T</span>, <span class="t">T</span>)) -&gt; <span class="t">T</span> { pair.<span class="n">0</span> }
+</code></pre>
+<p>매개변수 이름은 <a href="../001-lexical/104-identifiers">식별자</a> 형식을 따릅니다. 관례적으로 <code>T</code>, <code>U</code>, <code>K</code>, <code>V</code> 와 같이 한 글자 대문자를 쓰거나, 짧은 PascalCase 를 사용하지만 강제되는 규칙은 아닙니다.</p>
+<h3 id="const-매개변수"><a class="anchor" tabindex="-1" href="#const-매개변수" aria-hidden="true">#</a><code>const</code> 매개변수</h3>
+<p>값을 매개변수로 받는 형태입니다. 정확한 규칙은 <a href="211-const-generics"><code>const</code> 제네릭</a> 에서 따로 정의합니다.</p>
+<h3 id="타입-인자-추론"><a class="anchor" tabindex="-1" href="#타입-인자-추론" aria-hidden="true">#</a>타입 인자 추론</h3>
+<p>호출 지점에서 타입 인자를 적지 않으면 컴파일러가 추론합니다. 인자의 타입뿐 아니라 기대 타입 (<code>let</code> 의 타입 주석, 인자 자리의 매개변수 타입, 반환 자리의 반환 타입) 도 추론에 쓰입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> empty&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; { [] }
+
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = empty();        <span class="c">// T = i32 - let 의 타입 주석에서</span>
+takes_strs(empty());                <span class="c">// T = str - 매개변수 타입 List&lt;str&gt; 에서</span>
+</code></pre>
+<p>기대 타입이 없는 <code>let</code> 은 나중의 쓰임에서 추론합니다. 주석 없는 <code>let x = f();</code> 에서 <code>f</code> 의 제네릭 반환 타입이 호출만으로 정해지지 않으면, 이후의 쓰임이 그 타입을 정합니다. 시그니처는 항상 명시합니다.</p>
+<ul>
+<li><strong>범위</strong>: 그 변수의 스코프, 즉 블록의 나머지입니다. 그 안의 클로저와 async 본문도 포함합니다.
+</li>
+<li><strong>타입을 정하는 쓰임</strong>: 값을 타입이 정해진 자리로 넘기는 쓰임입니다. 함수 / 메서드 인자, 대입, 주석 있는 <code>let</code>, struct 필드, <code>return</code> 이 그렇습니다. 연산자, f-string 구멍, 패턴, 필드 읽기는 타입을 정하지 않습니다.
+</li>
+<li><strong>서로 정하기</strong>: 열린 <code>let</code> 여럿이 서로를 정할 수 있습니다 (<code>let a = List::new(); let b = List::new(); a.push(b); b.push(1);</code> → <code>b: List&lt;i32&gt;</code>, <code>a: List&lt;List&lt;i32&gt;&gt;</code>).
+</li>
+<li><strong>리터럴의 기본 타입</strong>: <code>i32</code> / <code>f64</code> 는 같은 종류 (정수 / 실수) 의 이후 구체 쓰임에 양보합니다. <code>ys.push(1); sum_i64(ys)</code> 의 <code>ys</code> 는 <code>List&lt;i64&gt;</code> 입니다.
+</li>
+<li><strong>충돌</strong>: 서로 다른 두 쓰임은 합 타입이 되지 않고 에러입니다 (<code>xs.push(none); xs.push(1)</code>, <a href="../005-modules/501-variable-declaration#517-타입-명시와-타입-추론">5.1.7</a> 의 분기 규칙과 같음). <code>let v = none;</code> 만으로는 여전히 에러입니다.
+</li>
+<li>클로저 매개변수 (<a href="../004-functions/405-closure">4.5.2</a>) 와 메서드 경로 값 (<a href="../003-expressions/305-member-access-and-method-call#메서드-경로-값">3.5.3</a>) 도 문맥이 없으면 이후 호출이 정합니다 (<code>let f = |x| x * 2; f(4)</code>, <code>let f = Box::get; f(b)</code>).
+</li>
+</ul>
+<p>진단은 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>경우</th><th>위치</th><th>메시지 예</th></tr></thead>
+<tbody>
+<tr><td>끝까지 안 정해짐</td><td>그 <code>let</code></td><td><code>type annotations needed: cannot infer the type of `d` (`Dict&lt;_, _&gt;`)</code></td></tr>
+<tr><td>충돌</td><td>쓰임 자리, 타입을 정한 자리를 보조 레이블로</td><td><code>conflicting uses of `c` (`List&lt;_&gt;`): `str` here, but `i32` fixed at 8:5</code></td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="k">let</span> xs = empty();                   <span class="c">// 아직 List&lt;?&gt;</span>
+takes_ints(xs);                     <span class="c">// 여기서 T = i32 - 매개변수 List&lt;i32&gt;</span>
+<span class="k">let</span> zs = <span class="t">List</span>::new();
+zs.push(<span class="n">1</span>);                         <span class="c">// zs: List&lt;i32&gt; - 이후 메서드 인자에서</span>
+<span class="k">let</span> ys = empty();                   <span class="c">// ERROR - type annotations needed (구체 쓰임 없음)</span>
+</code></pre>
+<p>인자가 없는 정적 트레잇 메서드도 같은 방식으로 <code>Self</code> 를 정합니다. 타입 매개변수 위의 호출 <code>T::zero()</code> 와 트레잇 경로 호출 <code>Tr::m()</code> 은 기대 타입에서 <code>Self</code> 를 가져옵니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> z: <span class="t">i32</span> = <span class="t">Zero</span>::zero();          <span class="c">// Self = i32 - rok::core::num::Zero</span>
+<span class="k">fn</span> sum&lt;<span class="t">T</span>: <span class="t">Zero</span> + <span class="t">Add</span>&lt;<span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(xs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span> {
+    <span class="k">let</span> acc: <span class="t">T</span> = <span class="t">T</span>::zero();          <span class="c">// Self = T</span>
+    ...
+}
+</code></pre>
+<p>제네릭 <code>enum</code> 의 변형 생성자는 먼저 인자에서, 다음으로 타입 매개변수의 기본값에서, 그 다음 그것을 받는 <code>let</code> 추론 변수에서 인스턴스를 정합니다. 그래도 정해지지 않으면 <code>type annotations needed</code> 에러입니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Pair</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; { <span class="t">One</span>(<span class="t">A</span>), <span class="t">Two</span>(<span class="t">A</span>, <span class="t">B</span>) }
+<span class="k">let</span> p = <span class="t">Pair</span>::<span class="t">Two</span>(<span class="n">1</span>, <span class="s">"a"</span>);          <span class="c">// Pair&lt;i32, str&gt; - 인자에서</span>
+</code></pre>
+<h2 id="2103-트레잇-바운드"><a class="anchor" tabindex="-1" href="#2103-트레잇-바운드" aria-hidden="true">#</a>2.10.3. 트레잇 바운드</h2>
+<p>매개변수가 충족해야 할 트레잇을 적는 방식입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> add_all&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>&gt;&gt;(items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span> { ... }
+<span class="k">fn</span> print_all&lt;<span class="t">T</span>: <span class="t">Display</span>&gt;(items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) { ... }
+<span class="k">fn</span> sort_all&lt;<span class="t">T</span>: <span class="t">Ord</span> + <span class="t">Clone</span>&gt;(<span class="k">ref</span> items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) { ... }
+</code></pre>
+<p><code>매개변수: 트레잇</code> 형태로 단일 바운드를 적으며, 여러 바운드가 필요하면 <code>+</code> 로 묶어서 표현합니다. 만약 바운드가 없으면 매개변수에는 모든 타입이 지원하는 것만 적용됩니다: 이동, <code>Reflect</code>, <code>any</code> 로의 저장, <code>none</code> 과의 합, <code>is</code> (2.10.9).</p>
+<p>bound, <code>where</code> 절, <code>impl</code>, supertrait 목록, <code>any Tr</code> 에 적은 트레잇은 다른 이름과 똑같이 해소합니다: 다른 모듈의 트레잇은 <code>use</code> 나 경로가 필요합니다 (<a href="../005-modules/505-use">5.5</a>). 그렇지 않으면 적은 자리를 알리는 cannot-find 에러이며 (<code>cannot find trait `Shape` (named in a bound)</code>, <code>(named in an impl)</code>, <code>(named as a supertrait)</code>), 더할 <code>use</code> 를 함께 알립니다.</p>
+<h2 id="2104-where-절"><a class="anchor" tabindex="-1" href="#2104-where-절" aria-hidden="true">#</a>2.10.4. where 절</h2>
+<p>바운드가 길어지면 <code>where</code> 절로 분리하는 편이 좋습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> complex&lt;<span class="t">T</span>, <span class="t">U</span>, <span class="t">V</span>&gt;(a: <span class="t">T</span>, b: <span class="t">U</span>) -&gt; <span class="t">V</span>
+<span class="k">where</span>
+    <span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">U</span>, <span class="t">Output</span> = <span class="t">V</span>&gt;,
+    <span class="t">V</span>: <span class="t">Display</span> + <span class="t">Clone</span>,
+{
+    ...
+}
+</code></pre>
+<p>매개변수 선언과 본체 사이에 <code>where</code> 키워드를 두고, 그 뒤에 콤마로 구분된 바운드를 나열합니다. 또한 연관 타입에 대한 제약도 이 자리에서 함께 적을 수 있습니다 (예: <code>T::Output: Foo</code>).</p>
+<p>타입 별칭의 <code>where</code> 절 (<a href="206-sum-types#269-type-alias-와-결합">2.6.9</a>) 은 별칭을 쓰는 자리마다 성립해야 하며, 타입 매개변수는 그 자리의 범위에 있는 bound 로 그것을 만족합니다.</p>
+<h2 id="2105-기본값-default"><a class="anchor" tabindex="-1" href="#2105-기본값-default" aria-hidden="true">#</a>2.10.5. 기본값 (default)</h2>
+<p>타입 매개변수에는 기본값을 지정할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>호출이나 인스턴스화 시 매개변수를 생략하면 자동으로 기본값이 사용됩니다. 다만 기본값을 가진 매개변수 뒤에는 기본값이 없는 매개변수가 올 수 없으며, 뒤로 갈수록 기본값을 갖춰야 한다는 점에 유의해야 합니다.</p>
+<h3 id="인자-개수"><a class="anchor" tabindex="-1" href="#인자-개수" aria-hidden="true">#</a>인자 개수</h3>
+<p>제네릭 <code>struct</code>, <code>union</code>, <code>enum</code>, 타입 별칭은 매개변수 개수보다 많은 인자를 받지 않으며, 기본값 없는 매개변수 개수보다 적은 인자도 받지 않습니다. 그 밖은 선언을 알리는 에러입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">P</span>&lt;<span class="t">T</span>, <span class="t">U</span>&gt; { a: <span class="t">T</span>; b: <span class="t">U</span>; }
+<span class="k">struct</span> <span class="t">D</span>&lt;<span class="t">T</span>, <span class="t">U</span> = <span class="t">i32</span>&gt; { a: <span class="t">T</span>; b: <span class="t">U</span>; }
+
+<span class="k">let</span> p: <span class="t">P</span>&lt;<span class="t">i64</span>&gt; = <span class="t">P</span> { a: <span class="n">1</span>, b: <span class="n">2</span> };          <span class="c">// ERROR - `P` takes 2 generic arguments but 1 was given</span>
+                                           <span class="c">//   help: `P` is declared `P&lt;T, U&gt;`; add one for `U`</span>
+<span class="k">let</span> d: <span class="t">D</span>&lt;<span class="t">i32</span>, <span class="t">i32</span>, <span class="t">i32</span>&gt; = <span class="t">D</span> { a: <span class="n">1</span>, b: <span class="n">2</span> }; <span class="c">// ERROR - `D` takes 1 to 2 generic arguments but 3 were given</span>
+<span class="k">let</span> e: <span class="t">D</span>&lt;<span class="t">i32</span>&gt; = <span class="t">D</span> { a: <span class="n">1</span>, b: <span class="n">2</span> };          <span class="c">// OK - `U` 는 `i32`</span>
+</code></pre>
+<p>함수나 메서드에는 매개변수보다 적은 명시 인자를 줄 수 있으며 (<code>f::&lt;i32&gt;(..)</code>), 나머지는 추론합니다. 더 많이 주면 같은 에러이며, 트레잇 bound 에 트레잇이 가진 것보다 많은 인자를 줘도 그렇습니다 (<code>`Tr` takes at most 1 generic argument but 2 were given</code>). enum 의 경로에 적은 인자는 그 인스턴스를 가리킵니다: <code>E::&lt;i64&gt;::A(1)</code> 은 <code>E&lt;i64&gt;</code> 입니다.</p>
+<p>타입이 올 자리에 인자 없이 적은 제네릭 타입 (<code>struct S&lt;T&gt;</code> 에 대한 <code>x: S</code>) 은 기본값 없는 매개변수가 있으면 에러입니다 (매개변수가 모두 기본값을 가진 타입은 인자 없이 적어도 됨): <code>`S` needs generic arguments</code>, help <code>`S` is declared `S&lt;T&gt;`; write it with them, e.g. `S&lt;i32&gt;`</code>.</p>
+<h2 id="2106-단형화-monomorphization"><a class="anchor" tabindex="-1" href="#2106-단형화-monomorphization" aria-hidden="true">#</a>2.10.6. 단형화 (monomorphization)</h2>
+<p>제네릭 호출과 인스턴스화는 구체 타입 튜플마다 별개의 컴파일 결과를 만듭니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> id&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x }
+
+<span class="k">let</span> a = id(<span class="n">42i32</span>);          <span class="c">// id&lt;i32&gt; 가 만들어짐 - i32 → i32 함수</span>
+<span class="k">let</span> b = id(<span class="n">3.14f64</span>);        <span class="c">// id&lt;f64&gt; 가 만들어짐 - f64 → f64 함수</span>
+<span class="k">let</span> c = id(<span class="s">"hello"</span>);         <span class="c">// id&lt;str&gt; 가 만들어짐</span>
+</code></pre>
+<p>같은 타입 튜플의 호출은 같은 결과를 공유하므로 한 번만 컴파일됩니다. 그리고 그 결과는 직접 호출과 동일한 성능을 보이며, 간접 호출 비용이 전혀 들지 않습니다. 다만 컴파일 시간과 바이너리 크기라는 비용이 발생하지만, 이는 MLIR 과 LLVM 의 dead-code-elimination 으로 대부분 상쇄됩니다.</p>
+<h3 id="단형화의-캐시-모델"><a class="anchor" tabindex="-1" href="#단형화의-캐시-모델" aria-hidden="true">#</a>단형화의 캐시 모델</h3>
+<p><a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> 빌드에서는 호출 지점을 수집해 한 번에 <a href="../000-meta/007-glossary#specialize">specialize</a> 합니다. 반면 <a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> 모드에서는 처음 호출되는 타입 튜플에 대해 specialize 한 뒤 그 결과를 캐시해 둡니다. 두 모드 모두 같은 specialize 기계를 공유하며, 이는 <a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 의 공통 파이프라인에 해당합니다.</p>
+<h2 id="2107-점진과의-결합"><a class="anchor" tabindex="-1" href="#2107-점진과의-결합" aria-hidden="true">#</a>2.10.7. 점진과의 결합</h2>
+<p><a href="202-any-slot"><code>any</code> 슬롯</a> 에서 살펴본 함수 매개변수의 점진성은 다음과 같이 처리됩니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> compute(x, y) { ... }
+</code></pre>
+<p>위 코드는 암묵 제네릭 <code>fn compute&lt;T, U&gt;(x: T, y: U)</code> 로 변환됩니다. 바운드는 합성하지 않습니다 (<a href="../004-functions/402-parameters#422-타입-생략">4.2.2</a>): 인스턴스마다 호출 지점에서 단형화하고 거기서 본체를 검사하며, 에러는 호출 지점도 가리킵니다.</p>
+<p>한편 명시적 <code>any</code> 가 매개변수에 적히면 단형화되지 않고 런타임 동적 슬롯이 됩니다. 바로 이 차이가 점진 모드의 핵심을 이룹니다.</p>
+<h2 id="2108-제네릭의-종류-일관성"><a class="anchor" tabindex="-1" href="#2108-제네릭의-종류-일관성" aria-hidden="true">#</a>2.10.8. 제네릭의 종류 일관성</h2>
+<p>제네릭 매개변수는 한 호출 안에서 하나의 타입만을 가리킵니다. 다른 호출에서 다른 타입을 가리키는 것은 허용되지만, 같은 호출 안에서 타입이 바뀌는 것은 허용되지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> pair&lt;<span class="t">T</span>&gt;(a: <span class="t">T</span>, b: <span class="t">T</span>) -&gt; (<span class="t">T</span>, <span class="t">T</span>) { (a, b) }
+
+<span class="k">let</span> p = pair(<span class="n">1i32</span>, <span class="n">2i32</span>);     <span class="c">// OK - 두 인자 모두 T = i32</span>
+<span class="k">let</span> q = pair(<span class="n">1i32</span>, <span class="n">3.14f64</span>);  <span class="c">// ERROR - T 가 i32 인지 f64 인지 모호</span>
+</code></pre>
+<p>다중 매개변수 (<code>pair&lt;A, B&gt;</code>) 는 각각 독립적으로 추론됩니다.</p>
+<h2 id="2109-본체-검사"><a class="anchor" tabindex="-1" href="#2109-본체-검사" aria-hidden="true">#</a>2.10.9. 본체 검사</h2>
+<p>제네릭 함수의 본체는 바운드를 통해 알 수 있는 동작만 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> double&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> {
+    x + x       <span class="c">// ERROR - T 에 Add 바운드가 없다</span>
+}
+
+<span class="k">fn</span> double&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>, <span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> {
+    x + x       <span class="c">// OK</span>
+}
+</code></pre>
+<p>이러한 규칙 덕분에 제네릭 본체의 검사는 호출 지점과 독립적으로 이루어집니다. 그래서 호출에서 어떤 구체 타입을 넘기든 본체는 항상 컴파일이 보장됩니다. 이 규칙은 다음과 같이 확장됩니다.</p>
+<ul>
+<li>트레잇의 기본 메서드 본체도 제네릭 본체입니다: <code>Self</code> 는 불투명하고 그 트레잇을 바운드로 가지며, 트레잇의 매개변수는 불투명합니다.
+</li>
+<li>바운드가 있든 없든 모든 타입은 이동, <code>Reflect</code> (<a href="../006-meta-system/610-reflection#6101-reflect---자동-구현-트레잇">6.10.1</a>), <code>any</code> 로의 저장, <code>none</code> 과의 합, <code>is</code> 를 지원합니다.
+</li>
+<li>묵시 매개변수 (<a href="../004-functions/402-parameters#422-타입-생략">4.2.2</a>) 가 하나라도 있는 함수는 통째로 예외입니다.
+</li>
+<li>const 매개변수는 값을 모르는 채로 검사하며, 두 타입은 그 const 표현식이 값으로 같을 때 같습니다 (<a href="211-const-generics#2115-const-표현식의-산술">2.11.5</a>).
+</li>
+<li>매개변수가 아닌 타입에 대한 <code>where</code> 절은 본체에서 성립한다고 가정합니다.
+</li>
+<li>검사에 실패한 본체의 인스턴스는 자기 에러를 따로 더하지 않습니다.
+</li>
+<li>타입에 타입 매개변수가 들어간 값에 대한 타입 검사 (<code>is</code>, 타입 패턴) 는 반박 가능한 것으로 검사하며, 인스턴스마다 결정됩니다.
+</li>
+</ul>
+<h2 id="21010-제네릭과-트레잇-as-타입의-차이"><a class="anchor" tabindex="-1" href="#21010-제네릭과-트레잇-as-타입의-차이" aria-hidden="true">#</a>2.10.10. 제네릭과 트레잇-as-타입의 차이</h2>
+<p>제네릭은 컴파일 타임 다형성에 해당합니다. 단형화를 통해 직접 호출되는 방식입니다.</p>
+<p>반면 트레잇-as-타입은 런타임 다형성으로, vtable 디스패치를 사용합니다. 그러나 rok 은 이를 <a href="./">타입 시스템 개요</a> 에서 금지합니다.</p>
+<p>따라서 다형성이 필요한 상황에서는 항상 제네릭 (본 문서) 또는 합 타입 (<a href="206-sum-types">합 타입</a>) 을 사용하면 됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/210-generics.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="209-impl"><small>Previous</small>2.9. impl</a><a class="next" href="211-const-generics"><small>Next</small>2.11. const 제네릭</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.16. let-else - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="let-else 는 let 의 좌변에 반증 가능 패턴을 두고, 매칭이 실패할 때의 발산 (divergent) 분기를 동시에 적는 형태입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/316-let-else.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.16. let-else - rok docs">
+<meta property="og:description" content="let-else 는 let 의 좌변에 반증 가능 패턴을 두고, 매칭이 실패할 때의 발산 (divergent) 분기를 동시에 적는 형태입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/316-let-else.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/316-let-else.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/316-let-else.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li class="cur"><a aria-current="page" href="316-let-else">3.16. let-else</a><ul class="toc"><li><a href="#3161-형태">3.16.1. 형태</a></li><li><a href="#3162-동작">3.16.2. 동작</a></li><li><a href="#3163-divergent-강제">3.16.3. divergent 강제</a></li><li><a href="#3164-합-타입과-enum-의-자연스러운-풀기">3.16.4. 합 타입과 enum 의 자연스러운 풀기</a></li><li><a href="#3165-가시-범위">3.16.5. 가시 범위</a></li><li><a href="#3166-가드-없음">3.16.6. 가드 (없음)</a></li><li><a href="#3167-else-의-종료-키워드">3.16.7. else 의 종료 키워드</a></li><li><a href="#3168-match-와의-비교">3.16.8. match 와의 비교</a></li><li><a href="#3169-평가-순서">3.16.9. 평가 순서</a></li></ul></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="316-let-else 316-let-else 3161-형태 3161-form 3162-동작 3162-behavior 3163-divergent-강제 3163-divergence-required 3164-합-타입과-enum-의-자연스러운-풀기 3164-unwrapping-sum-types-and-enums 3165-가시-범위 3165-visibility 3166-가드-없음 3166-guards-none 3167-else-의-종료-키워드 3167-exit-keywords-of-else 3168-match-와의-비교 3168-comparison-with-match 3169-평가-순서 3169-evaluation-order"><a href="../../../../spec/refs-lang/003-expressions/316-let-else" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="316-let-else"><a class="anchor" tabindex="-1" href="#316-let-else" aria-hidden="true">#</a>3.16. <code>let-else</code></h1>
+<p><code>let-else</code> 는 <code>let</code> 의 좌변에 반증 가능 패턴을 두고, 매칭이 실패할 때의 발산 (divergent) 분기를 동시에 적는 형태입니다.</p>
+<h2 id="3161-형태"><a class="anchor" tabindex="-1" href="#3161-형태" aria-hidden="true">#</a>3.16.1. 형태</h2>
+<p>문법은 다음과 같이 정의됩니다.</p>
+<pre><code>let_else_stmt   ::= &quot;let&quot; pattern (&quot;:&quot; type_expr)? &quot;=&quot; expr &quot;else&quot; block &quot;;&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> 패턴 = 식 <span class="k">else</span> { 발산 };
+</code></pre>
+<p><code>let</code> 다음에 패턴, <code>=</code> 과 식, 그리고 <code>else</code> 와 블록이 옵니다. 반증 가능한 패턴이면 무엇이든 됩니다. 이때 <code>else</code> 본체는 <a href="309-block-expressions">블록 표현식</a> 의 divergent 블록이어야 하므로, <code>return</code>, <code>break</code>, <code>continue</code>, <code>throw</code> 등으로 빠져나가는 흐름을 반드시 갖추어야 합니다.</p>
+<h2 id="3162-동작"><a class="anchor" tabindex="-1" href="#3162-동작" aria-hidden="true">#</a>3.16.2. 동작</h2>
+<pre><code class="language-rok"><span class="k">let</span> value: <span class="t">T</span> = compute() <span class="k">else</span> {       <span class="c">// compute(): T | none</span>
+    <span class="k">return</span> default;
+};
+<span class="c">// 여기서 value 는 T 타입의 값 (none 이면 위 else 로 빠짐)</span>
+</code></pre>
+<p>평가 과정은 다음과 같이 진행됩니다. 먼저 식의 결과를 패턴에 매칭하며, 매칭이 성공하면 패턴의 바인딩이 현재 스코프에 도입되고 평가가 다음 줄로 진행됩니다. 반대로 매칭이 실패하면 <code>else</code> 본체가 평가되는데, <code>else</code> 가 divergent 이기 때문에 그 시점에 흐름이 밖으로 나가게 됩니다.</p>
+<h2 id="3163-divergent-강제"><a class="anchor" tabindex="-1" href="#3163-divergent-강제" aria-hidden="true">#</a>3.16.3. divergent 강제</h2>
+<p><code>else</code> 본체는 반드시 divergent 여야 합니다. 정상 종료하는 본체는 컴파일 에러로 처리됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> {
+    print(<span class="s">"no value"</span>);          <span class="c">// ERROR: divergent 가 아님</span>
+};
+</code></pre>
+<p>이러한 강제는 매칭 실패 후에도 바인딩 변수가 없는 상태로 평가가 진행되는 함정을 차단하기 위한 장치입니다. <code>else</code> 본체가 제대로 빠져나가야 다음 줄에서 바인딩의 존재가 보장될 수 있습니다.</p>
+<h2 id="3164-합-타입과-enum-의-자연스러운-풀기"><a class="anchor" tabindex="-1" href="#3164-합-타입과-enum-의-자연스러운-풀기" aria-hidden="true">#</a>3.16.4. 합 타입과 <code>enum</code> 의 자연스러운 풀기</h2>
+<p>가장 흔한 사용처는 <code>T | none</code> 이나 <code>enum</code> 변형 가운데 한 가지만 받아들이고 나머지 경우에는 일찍 빠져나가는 패턴입니다.</p>
+<pre><code class="language-rok"><span class="c">// 합 타입에서 한 항만 풀기</span>
+<span class="k">let</span> n: <span class="t">i32</span> = x <span class="k">else</span> {                    <span class="c">// x: i32 | f32</span>
+    panic(<span class="s">"expected i32"</span>);
+};
+<span class="c">// 여기서 n: i32</span>
+
+<span class="c">// enum 변형 풀기</span>
+<span class="k">let</span> <span class="t">Ok</span>(data) = parse(input) <span class="k">else</span> {
+    <span class="k">return</span> <span class="t">Err</span>(<span class="t">ParseFailed</span>);
+};
+<span class="c">// data 는 Ok 변형의 내용</span>
+</code></pre>
+<p>이 패턴은 <code>match</code> 보다 수직적 흐름이 간결하다는 장점이 있어, 주된 흐름과 예외를 명시적으로 분리하고자 할 때 유용합니다.</p>
+<div class="callout note"><p class="callout-title">참고</p>
+<p><code>let 식별자 : 타입 = expr else { ... };</code> 형태에서의 <code>: 타입</code> 은 <strong>반증 가능한 type-check 패턴</strong> (<a href="311-patterns">패턴</a> 의 <code>type_check_pattern</code>) 으로 해석됩니다. 일반 <code>let</code> 의 슬롯 타입 명시와 달리 매칭 실패가 가능하기 때문에 <code>else</code> 분기가 의미를 갖게 됩니다. 즉 <code>let n: i32 = x else { ... };</code> 는 <code>match x { v: i32 =&gt; v, _ =&gt; { ... } }</code> 와 동등하며, <code>: i32</code> 는 <code>n</code> 의 슬롯 타입이 아니라 <code>x</code> 가 통과해야 하는 검사를 나타냅니다.</p>
+</div>
+<h2 id="3165-가시-범위"><a class="anchor" tabindex="-1" href="#3165-가시-범위" aria-hidden="true">#</a>3.16.5. 가시 범위</h2>
+<p>매칭이 성공하는 경우, 패턴의 바인딩 변수는 <code>let-else</code> 가 등장한 스코프에 도입됩니다. <code>else</code> 본체 안이 아니라는 점에 유의해야 합니다.</p>
+<pre><code class="language-rok">{
+    <span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> { <span class="k">return</span>; };
+    <span class="c">// 여기서 v 가시</span>
+    <span class="k">use</span>(v);
+}
+<span class="c">// 여기서는 v 가시 안 됨 (스코프 종료)</span>
+</code></pre>
+<p><code>else</code> 본체에서는 바인딩 변수가 보이지 않는데, 매칭에 실패한 직후이므로 값이 존재하지 않기 때문입니다.</p>
+<h2 id="3166-가드-없음"><a class="anchor" tabindex="-1" href="#3166-가드-없음" aria-hidden="true">#</a>3.16.6. 가드 (없음)</h2>
+<pre><code>let v: T = expr if v &gt; 0 else { ... };       // 채택 안 함
+</code></pre>
+<p><code>let-else</code> 자리에 가드 (<code>if 조건</code>) 를 두는 형태는 도입하지 않습니다. 가드가 필요한 경우라면 본체 안에서 별도로 검사하면 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> { <span class="k">return</span>; };
+<span class="k">if</span> v &lt;= <span class="n">0</span> { <span class="k">return</span>; }
+</code></pre>
+<h2 id="3167-else-의-종료-키워드"><a class="anchor" tabindex="-1" href="#3167-else-의-종료-키워드" aria-hidden="true">#</a>3.16.7. <code>else</code> 의 종료 키워드</h2>
+<p><code>else</code> 본체에 흔히 등장하는 종료 키워드와 그 의미는 다음 표와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>키워드</th><th>효과</th></tr></thead>
+<tbody>
+<tr><td><code>return val;</code></td><td>함수에서 반환</td></tr>
+<tr><td><code>break;</code> 와 <code>break value;</code></td><td>둘러싸는 루프에서 빠져나감</td></tr>
+<tr><td><code>continue;</code></td><td>루프의 다음 반복으로</td></tr>
+<tr><td><code>throw err;</code></td><td>예외 발생</td></tr>
+<tr><td><code>panic(&quot;msg&quot;)</code></td><td>라이브러리 panic 함수, 복구 불가 종료</td></tr>
+<tr><td><code>loop { ... }</code> (<code>break</code> 없음)</td><td>divergent 루프</td></tr>
+</tbody></table></div>
+<p>이 가운데 무엇이든, 컴파일러가 divergent 로 분류하는 모든 형태가 허용됩니다.</p>
+<h2 id="3168-match-와의-비교"><a class="anchor" tabindex="-1" href="#3168-match-와의-비교" aria-hidden="true">#</a>3.16.8. <code>match</code> 와의 비교</h2>
+<pre><code class="language-rok"><span class="c">// let-else</span>
+<span class="k">let</span> v: <span class="t">T</span> = compute() <span class="k">else</span> { <span class="k">return</span>; };       <span class="c">// compute(): T | none</span>
+<span class="k">use</span>(v);
+
+<span class="c">// match 등가</span>
+<span class="k">let</span> v = <span class="k">match</span> compute() {
+    v: <span class="t">T</span> =&gt; v,
+    <span class="k">none</span> =&gt; <span class="k">return</span>,
+};
+<span class="k">use</span>(v);
+</code></pre>
+<p>두 코드는 같은 의미를 표현합니다. 그중 <code>let-else</code> 는 주된 흐름이 평탄하여 가독성이 더 높을 때 선택하면 좋습니다.</p>
+<h2 id="3169-평가-순서"><a class="anchor" tabindex="-1" href="#3169-평가-순서" aria-hidden="true">#</a>3.16.9. 평가 순서</h2>
+<p><code>let-else</code> 의 평가는 다음 순서로 이루어집니다.</p>
+<ol>
+<li>우변 식을 평가합니다.
+</li>
+<li>결과를 패턴에 매칭합니다.
+</li>
+<li>매칭이 성공하면 바인딩한 뒤 다음 줄로 진행합니다.
+</li>
+<li>매칭이 실패하면 <code>else</code> 본체를 평가하며, divergent 이므로 흐름이 밖으로 나갑니다.
+</li>
+</ol>
+<p>우변 식에 부작용이 있는 경우에는 한 번만 평가됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/316-let-else.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="315-destructuring"><small>Previous</small>3.15. 분해 대입 (destructuring)</a><a class="next" href="317-using-expression"><small>Next</small>3.17. using 표현식 - 자원의 결정론적 해제</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

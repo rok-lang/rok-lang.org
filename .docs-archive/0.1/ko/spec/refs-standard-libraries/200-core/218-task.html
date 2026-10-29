@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.18. task - M:N 스케줄러 task API - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::task 모듈은 M:N 스케줄러 위에서 동작하는 협력적 task API 를 제공합니다. 이 모듈은 Rust Tokio 와 Go goroutine 으로부터 영감을 받았으며, work-stealing 스케줄러 위에서 task 가 stackless coroutine 으로 ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/218-task.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.18. task - M:N 스케줄러 task API - rok docs">
+<meta property="og:description" content="rok::core::task 모듈은 M:N 스케줄러 위에서 동작하는 협력적 task API 를 제공합니다. 이 모듈은 Rust Tokio 와 Go goroutine 으로부터 영감을 받았으며, work-stealing 스케줄러 위에서 task 가 stackless coroutine 으로 ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/218-task.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/218-task.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/218-task.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li class="cur"><a aria-current="page" href="218-task">2.18. task - M:N 스케줄러 task API</a><ul class="toc"><li><a href="#2181-핵심-api">2.18.1. 핵심 API</a></li><li><a href="#2182-taskt-타입">2.18.2. Task&lt;T&gt; 타입</a></li><li><a href="#2183-스케줄러-모델---work-stealing">2.18.3. 스케줄러 모델 - work-stealing</a></li><li><a href="#2184-협력적-취소---taskcancel">2.18.4. 협력적 취소 - Task::cancel</a></li><li><a href="#2185-thread---11-os-thread">2.18.5. thread::* - 1:1 OS thread</a></li><li><a href="#2186-duration--instant">2.18.6. Duration / Instant</a></li><li><a href="#2187-모듈-매핑">2.18.7. 모듈 매핑</a></li></ul></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="218-task---mn-스케줄러-task-api 218-task---mn-scheduler-task-api 2181-핵심-api 2181-core-api 사용-예 example spawn_blocking---blocking-작업 spawn_blocking---blocking-work spawn-의-send-검사 send-check-for-spawn select---먼저-끝나는-future select---the-first-future-to-finish taskid taskid 2182-taskt-타입 2182-taskt-type intofuture-통합 intofuture-integration 2183-스케줄러-모델---work-stealing 2183-scheduler-model---work-stealing 2184-협력적-취소---taskcancel 2184-cooperative-cancellation---taskcancel 2185-thread---11-os-thread 2185-thread---11-os-threads 2186-duration--instant 2186-duration--instant 2187-모듈-매핑 2187-module-mapping"><a href="../../../../spec/refs-standard-libraries/200-core/218-task" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="218-task---mn-스케줄러-task-api"><a class="anchor" tabindex="-1" href="#218-task---mn-스케줄러-task-api" aria-hidden="true">#</a>2.18. task - M:N 스케줄러 task API</h1>
+<p><code>rok::core::task</code> 모듈은 M:N 스케줄러 위에서 동작하는 협력적 task API 를 제공합니다. 이 모듈은 Rust Tokio 와 Go goroutine 으로부터 영감을 받았으며, work-stealing 스케줄러 위에서 task 가 <strong>stackless coroutine</strong> 으로 구현됩니다.</p>
+<p><code>use rok::core::**;</code> 가 묵시적으로 적용되므로 <code>task::spawn</code>, <code>task::race</code>, <code>Task&lt;T&gt;</code> 등은 별도의 import 없이도 사용할 수 있습니다. 다만 모듈 prefix <code>task::</code> 는 그대로 보존됩니다. 한편 명시적으로 비동기 코드임을 드러내고 싶은 자리에서는 <code>use rok::core::task::*;</code> 를 권장하는데, 이는 시각적 분리를 통해 비동기 흐름을 명확히 하기 위함입니다.</p>
+<h2 id="2181-핵심-api"><a class="anchor" tabindex="-1" href="#2181-핵심-api" aria-hidden="true">#</a>2.18.1. 핵심 API</h2>
+<p>핵심 API 의 시그니처는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> block_on&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(f: <span class="t">F</span>) -&gt; <span class="t">F</span>::<span class="t">Output</span>;              <span class="c">// sync 진입점 - executor 에 붙어 f 를 끝까지 실행</span>
+<span class="k">fn</span> spawn&lt;<span class="t">F</span>: <span class="t">Future</span> + <span class="t">Send</span>&gt;(f: <span class="t">F</span>) -&gt; <span class="t">Task</span>&lt;<span class="t">F</span>::<span class="t">Output</span>&gt; <span class="k">where</span> <span class="t">F</span>::<span class="t">Output</span>: <span class="t">Send</span>;
+<span class="k">fn</span> spawn_local&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(f: <span class="t">F</span>) -&gt; <span class="t">Task</span>&lt;<span class="t">F</span>::<span class="t">Output</span>&gt;;     <span class="c">// non-Send future - 현재 worker 에 고정</span>
+<span class="k">fn</span> spawn_blocking&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(f: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Send</span>) -&gt; <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// blocking 작업을 executor 밖 OS 스레드에서</span>
+<span class="k">fn</span> workers() -&gt; <span class="t">usize</span>;                                  <span class="c">// executor 안에서는 pool 크기, 밖에서는 1</span>
+<span class="k">fn</span> cpu_count() -&gt; <span class="t">usize</span>;                                <span class="c">// 온라인 CPU 수 - pool 크기</span>
+<span class="k">async</span> <span class="k">fn</span> race&lt;<span class="t">T</span>&gt;(tasks: <span class="t">List</span>&lt;<span class="t">Task</span>&lt;<span class="t">T</span>&gt;&gt;) -&gt; <span class="t">T</span>;            <span class="c">// 첫 완료 task 결과</span>
+<span class="k">fn</span> select&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(futs: <span class="t">List</span>&lt;<span class="t">F</span>&gt;) -&gt; <span class="t">SelectFuture</span>&lt;<span class="t">F</span>&gt;; <span class="c">// await - (index, 결과), spawn 하지 않음</span>
+<span class="k">fn</span> id() -&gt; <span class="t">TaskId</span>;                                      <span class="c">// 현재 task 의 id - task 밖이면 panic</span>
+<span class="k">fn</span> try_id() -&gt; <span class="t">TaskId</span> | <span class="k">none</span>;
+<span class="k">async</span> <span class="k">fn</span> join&lt;<span class="t">T</span>&gt;(tasks: <span class="t">List</span>&lt;<span class="t">Task</span>&lt;<span class="t">T</span>&gt;&gt;) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;      <span class="c">// 모두 완료 후</span>
+<span class="k">async</span> <span class="k">fn</span> timeout&lt;<span class="t">T</span>&gt;(dur: <span class="t">Duration</span>, task: <span class="t">Task</span>&lt;<span class="t">T</span>&gt;) <span class="k">throws</span> (<span class="t">TimeoutError</span>) -&gt; <span class="t">T</span>;   <span class="c">// try await 에서 던짐</span>
+<span class="k">async</span> <span class="k">fn</span> sleep(dur: <span class="t">Duration</span>);
+<span class="k">async</span> <span class="k">fn</span> sleep_until(when: <span class="t">Instant</span>);
+<span class="k">async</span> <span class="k">fn</span> yield_now();                                   <span class="c">// await - 다른 ready task 에 한 번 양보</span>
+<span class="k">fn</span> registrations() -&gt; <span class="t">usize</span>;                            <span class="c">// 진단용 - 실행 중 pool 의 park 한 waker + 대기 timer 수 (구현이 정함)</span>
+<span class="k">fn</span> readable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;                       <span class="c">// await - fd 가 읽기 가능해질 때까지 (refs-lang 7.7.2)</span>
+<span class="k">fn</span> writable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;
+<span class="k">fn</span> wake_io(fd: <span class="t">i32</span>);                                   <span class="c">// fd 의 readable / writable 대기자를 깨움 (close / shutdown 뒤에 씀; 저수준)</span>
+</code></pre>
+<p><code>sleep</code> 과 <code>timeout</code> 은 첫 poll 부터 시간을 잽니다.</p>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<p>실제 사용 예시는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::task::*;
+
+<span class="k">let</span> t = task::spawn(<span class="k">async</span> { compute_heavy() });
+<span class="k">let</span> result = <span class="k">await</span> t;
+
+<span class="k">let</span> results = <span class="k">await</span> task::join([
+    task::spawn(<span class="k">async</span> { fetch(<span class="s">"a"</span>) }),
+    task::spawn(<span class="k">async</span> { fetch(<span class="s">"b"</span>) }),
+    task::spawn(<span class="k">async</span> { fetch(<span class="s">"c"</span>) }),
+]);
+
+<span class="k">let</span> first = <span class="k">await</span> task::race([
+    task::spawn(<span class="k">async</span> { source_a() }),
+    task::spawn(<span class="k">async</span> { source_b() }),
+]);
+
+<span class="k">await</span> task::sleep(<span class="t">Duration</span>::ms(<span class="n">100</span>));
+<span class="k">await</span> task::yield_now();
+</code></pre>
+<p><code>spawn</code> 은 클로저가 아니라 future 를 받으므로 <code>task::spawn(async { ... })</code> 처럼 <code>async</code> 블록이나 <code>async fn</code> 호출 결과를 넘깁니다. <code>Send</code> 가 아닌 future 는 <code>spawn_local</code> 로 현재 스레드에서 실행합니다. <code>join</code> / <code>race</code> / <code>timeout</code> 은 <code>await</code> 해서 결과를 받습니다.</p>
+<h3 id="spawn_blocking---blocking-작업"><a class="anchor" tabindex="-1" href="#spawn_blocking---blocking-작업" aria-hidden="true">#</a><code>spawn_blocking</code> - blocking 작업</h3>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* 결과 슬롯 */</span> }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Future</span> <span class="k">for</span> <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt; { <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>; ... }
+</code></pre>
+<p><code>spawn_blocking(f)</code> 는 <code>f</code> 를 executor 의 worker 가 아닌 blocking pool 의 OS 스레드에서 실행하고, 그 결과로 끝나는 future 를 돌려줍니다. readiness 로 기다릴 수 없는 blocking syscall (일반 파일 I/O 등, <a href="../300-std/301-fs#314a-비동기-파일-io-_async">stdlib 3.1.4a</a>) 을 task 안에서 기다릴 때 씁니다.</p>
+<ul>
+<li><code>f</code> 는 첫 poll 이 아니라 <strong>호출하는 즉시</strong> 시작합니다 (pool 이 가득 차면 먼저 큐에 들어감).
+</li>
+<li>blocking pool 은 프로세스 전역 하나이며, 필요할 때 스레드를 늘리고 (상한 있음) 한동안 일이 없는 스레드는 끝냅니다. 작업은 들어온 순서 (FIFO) 로 처리합니다. 상한은 스레드 512 개이며, 상한에 닿으면 작업을 큐에 쌓습니다. 10 초 동안 일이 없는 스레드는 끝납니다. 작업 하나는 쉬고 있는 스레드 하나에 넘깁니다.
+</li>
+<li><code>await</code> 하던 task 가 취소되어도 <code>f</code> 는 끝까지 실행되며, 결과만 버려집니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="k">await</span> task::spawn_blocking(|| heavy_checksum(path));
+</code></pre>
+<h3 id="spawn-의-send-검사"><a class="anchor" tabindex="-1" href="#spawn-의-send-검사" aria-hidden="true">#</a><code>spawn</code> 의 <code>Send</code> 검사</h3>
+<p><code>task::spawn</code> 은 결과 타입도 <code>Send</code> 여야 하며 (<code>where F::Output: Send</code>), <strong>frame</strong> 이 <code>Send</code> 가 아닌 future 를 거부합니다 (<a href="213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a>). future 가 어디서 왔든 같습니다: <code>async</code> 블록이나 <code>async fn</code> 호출뿐 아니라 매개변수, struct / 튜플 / 합의 필드, helper 함수의 결과, 리스트의 원소, 클로저가 들고 있는 future, 다른 코루틴 frame 안의 future 도 검사합니다. future 의 frame 은 다음입니다.</p>
+<ul>
+<li>캡처한 값.
+</li>
+<li><code>await</code> 를 넘어 살아 있는 지역 변수와 임시값.
+</li>
+<li>frame 이 들고 있는 다른 future (그 frame 도 재귀로).
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> c = <span class="t">Cell</span>::new(<span class="n">0</span>);                      <span class="c">// Cell: !Send</span>
+task::spawn(<span class="k">async</span> { c.set(<span class="n">1</span>); });          <span class="c">// ERROR - !Send 캡처</span>
+task::spawn_local(<span class="k">async</span> { c.set(<span class="n">1</span>); });    <span class="c">// OK - 현재 worker 에 고정</span>
+
+<span class="k">fn</span> make() -&gt; <span class="t">AsyncFuture</span>&lt;()&gt; { <span class="k">let</span> c = <span class="t">Cell</span>::new(<span class="n">0</span>); <span class="k">async</span> { c.set(<span class="n">1</span>); } }
+task::spawn(make());                       <span class="c">// ERROR - helper 가 만든 future 의 frame 도 검사</span>
+</code></pre>
+<p>같은 검사가 다른 스레드로 클로저를 보내는 자리에도 적용됩니다: <code>thread::spawn</code>, <code>thread::Builder::spawn</code>, <code>par</code> 의 <code>Scope::spawn</code>, <code>task::spawn_blocking</code>. 클로저가 <code>Send</code> 가 아닌 frame 의 future 를 들고 있으면 <code>`X` would move a future to another thread: ...</code> 에러입니다.</p>
+<p>이 검사는 보수적으로 근사해도 됩니다. 구현은 실제로는 <code>Send</code> 인 future 를 거부할 수 있지만, <code>Send</code> 가 아닌 값을 다른 스레드로 넘기는 future 를 받아서는 안 됩니다. 다음 값은 따라 들어가지 않습니다.</p>
+<ul>
+<li>타입이 함수 값을 담을 수 없는 값 (future 의 frame 을 숨길 수 없음).
+</li>
+<li><code>unsafe impl Send</code> 를 명시한 타입의 값 (예: <code>Task&lt;T&gt;</code>). 그 타입이 안전성을 책임집니다.
+</li>
+</ul>
+<p><code>async fn</code> 의 결과 타입 <code>AsyncFuture&lt;T&gt;</code> 는 <code>T: Send</code> 일 때, throwing 판 <code>TryAsyncFuture&lt;T, E&gt;</code> 는 <code>T</code> 와 <code>E</code> 가 모두 <code>Send</code> 일 때 <code>Send</code> 입니다. 캡처와 frame 은 위 검사가 따로 봅니다. 캡처가 <code>Send</code> 이지만 <code>Sync</code> 가 아닌 frame (<code>async fn</code> 이 받는 리스트, <code>async</code> 블록이 캡처하는 리스트나 future) 은 받아들입니다: <code>task::spawn</code> 은 채널 send 처럼 future 를 넘깁니다 (<a href="213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a>). task 는 future 가 캡처한 것의 복사본을 담은 자기 frame 을 받는데, 넘김 한 번으로 만들므로 캡처들이 공유하던 것 (한 리스트 두 번, 리스트와 그 위의 future) 은 그대로 공유합니다. spawn 뒤에 그 future 나 그것이 캡처한 것을 쓰면 send 뒤와 같이 컴파일 에러 (<code>E202</code>) 입니다. 아무것도 poll 하지 않은 future 만 넘길 수 있습니다: 시작한 것 (<code>select</code>, 사용자의 <code>Future</code>, 직접 poll 한 것) 이나 끝난 것, 또는 frame 이나 캡처한 future 의 frame 에 <code>[ref x]</code> 캡처가 있는 것을 넘기면 panic 하며, 아무것도 공유하지 않습니다. 채널로 보내거나 <code>Mutex</code> 나 <code>Frozen</code> 에 넣는 코루틴 future 도 같이 넘겨지고, 그때마다 자기 frame 을 받습니다. <code>Task</code> 가 넘겨진 task (<code>Frozen::get</code>, 채널, 잠금, <code>par</code> 항목) 를 <code>await</code> 할 때마다 결과의 자기 복사본을 받으며, 한 스레드 안의 <code>Task</code> 복사본들은 그것을 공유합니다.</p>
+<h3 id="select---먼저-끝나는-future"><a class="anchor" tabindex="-1" href="#select---먼저-끝나는-future" aria-hidden="true">#</a><code>select</code> - 먼저 끝나는 future</h3>
+<pre><code class="language-rok"><span class="k">fn</span> select&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(futs: <span class="t">List</span>&lt;<span class="t">F</span>&gt;) -&gt; <span class="t">SelectFuture</span>&lt;<span class="t">F</span>&gt;;   <span class="c">// Output = (usize, F::Output)</span>
+
+<span class="k">let</span> (i, v) = <span class="k">await</span> task::select([fetch_a(), fetch_b()]);
+</code></pre>
+<p><code>race</code> 와 달리 future 들을 spawn 하지 않고, 기다리는 task <strong>안에서</strong> 실행합니다.</p>
+<ul>
+<li>목록 순서대로 poll 하며, 같은 poll 에서 둘 이상이 끝나면 낮은 index 가 이깁니다.
+</li>
+<li>하나가 끝나면, 이미 시작한 나머지는 모두 취소됩니다. 취소된 상태로 한 번 더 poll 되어 <code>finally</code> / <code>using</code> 이 실행됩니다 (2.18.4). 한 번도 poll 되지 않은 future 는 실행되지 않습니다.
+</li>
+<li>진 future 들이 만든 깨우기 등록 (timer, parking) 은 모두 풀립니다.
+</li>
+<li>기다리는 task 가 취소되면 자식 future 들도 취소됩니다.
+</li>
+<li>빈 목록이면 panic 입니다.
+</li>
+<li>future 들은 한 타입이어야 합니다. 결과 타입이 다르면 감쌉니다: <code>async { Msg::A(await a) }</code>.
+</li>
+</ul>
+<p><code>select</code> 와 <code>sleep</code> 으로 timeout 을 만들 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Ev</span> { <span class="t">Line</span>(<span class="t">str</span>), <span class="t">Timeout</span> }
+
+<span class="k">let</span> (_, ev) = <span class="k">await</span> task::select([
+    <span class="k">async</span> { <span class="t">Ev</span>::<span class="t">Line</span>(<span class="k">await</span> read_line()) },
+    <span class="k">async</span> { <span class="k">await</span> task::sleep(<span class="t">Duration</span>::sec(<span class="n">5</span>)); <span class="t">Ev</span>::<span class="t">Timeout</span> },
+]);
+</code></pre>
+<h3 id="taskid"><a class="anchor" tabindex="-1" href="#taskid" aria-hidden="true">#</a><code>TaskId</code></h3>
+<p><code>task::id()</code> 는 실행 중인 task 의 id 이며, task 밖에서 부르면 panic 합니다 (<code>try_id()</code> 는 <code>none</code>). <code>Task::id()</code> 는 그 task 의 id 입니다. id 는 프로세스 전역 카운터에서 나오며 다시 쓰이지 않습니다.</p>
+<h2 id="2182-taskt-타입"><a class="anchor" tabindex="-1" href="#2182-taskt-타입" aria-hidden="true">#</a>2.18.2. <code>Task&lt;T&gt;</code> 타입</h2>
+<p><code>Task&lt;T&gt;</code> 타입은 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Task</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// 내부: GC heap 의 coroutine frame + 결과 슬롯</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Task</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> cancel(<span class="k">self</span>);                      <span class="c">// 취소 요청 - 다음 await 에서 끝남 (2.18.4)</span>
+    <span class="k">fn</span> is_cancelled(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_finished(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> join(<span class="k">self</span>) -&gt; <span class="t">Join</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// try await t.join() - 결과 없이 취소됐으면 CancellationError</span>
+    <span class="k">fn</span> id(<span class="k">self</span>) -&gt; <span class="t">TaskId</span>;
+}
+
+<span class="k">struct</span> <span class="t">TaskId</span> { <span class="c">/* u64 */</span> }
+<span class="k">impl</span> <span class="t">TaskId</span> {
+    <span class="k">fn</span> as_u64(<span class="k">self</span>) -&gt; <span class="t">u64</span>;
+}
+<span class="c">// TaskId: PartialEq / Eq / Hash / Display / Debug</span>
+
+<span class="k">struct</span> <span class="t">CancellationError</span> {}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Future</span> <span class="k">for</span> <span class="t">Task</span>&lt;<span class="t">T</span>&gt; {              <span class="c">// `await t` - 완료까지 suspend</span>
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>;
+    ...
+}
+</code></pre>
+<h3 id="intofuture-통합"><a class="anchor" tabindex="-1" href="#intofuture-통합" aria-hidden="true">#</a><code>IntoFuture</code> 통합</h3>
+<p><code>Task&lt;T&gt;</code> 는 <code>Future&lt;Output = T&gt;</code> 를 구현하므로 <code>await t</code> 로 기다릴 수 있고, <a href="220-future">2.20 future</a> 의 <code>IntoFuture</code> blanket impl 에도 포함되어 <code>Thread</code> 와 동일한 방식으로 await 될 수 있습니다. <code>IntoFuture</code> 트레잇과 lang slot <code>future_trait</code> 의 권위 있는 정의는 <a href="220-future">2.20 future</a> 에 있으며, 본 절은 그 정의를 그대로 따릅니다.</p>
+<h2 id="2183-스케줄러-모델---work-stealing"><a class="anchor" tabindex="-1" href="#2183-스케줄러-모델---work-stealing" aria-hidden="true">#</a>2.18.3. 스케줄러 모델 - work-stealing</h2>
+<p>프로세스에는 executor 가 하나 있습니다. 처음 쓸 때 시작하며, CPU 수 (<code>cpu_count()</code>) 만큼의 worker thread, blocking lane, I/O driver 로 이루어집니다. <code>block_on</code> 은 부른 스레드를 guest worker 로 이 executor 에 붙여 <code>f</code> 를 끝까지 실행합니다. <code>block_on</code> 이 돌아올 때 실행 중인 task 는 계속 실행됩니다. 다만 <code>block_on</code> 은 그 스레드에 고정된 <code>spawn_local</code> task 들도 끝난 뒤에야 돌아옵니다. 그 task 들은 다른 스레드로 옮겨 갈 수 없기 때문입니다. <code>par::*</code> 와 <code>spawn_blocking</code> 도 같은 executor 를 씁니다.</p>
+<p><code>spawn</code> 한 task 는 어느 worker 에서든 실행될 수 있으므로 <code>Future + Send</code> 이고 결과도 <code>Send</code> 여야 합니다. <code>spawn_local</code> 의 task 는 그것을 만든 worker 에 고정됩니다. 다만 <code>block_on</code> 스레드가 기다리는 동안 맡아 poll 한, 자기 것이 아닌 task (<code>spawn</code> 한 task) 에서 부른 <code>spawn_local</code> 은 pool worker 에 고정됩니다. 그래서 <code>block_on</code> 은 자기 task 들의 local task 만 기다립니다. 이런 poll 한 번에서 만든 local task 들은 모두 같은 pool worker 로 가고, 그 poll 이 끝난 뒤에야 시작합니다. 원래 그 task 를 실행했을 worker 에서와 같습니다.</p>
+<p>스케줄러 골격은 다음과 같이 구성됩니다.</p>
+<pre><code>Worker 0 ─┐      Worker 1 ─┐    ...    Worker N-1 ─┐
+ Local     │      Local     │            Local      │
+ deque     │      deque     │            deque      │
+ (Chase-Lev)      (Chase-Lev)            (Chase-Lev)│
+           └─ Global Injector Queue ──────┘
+           └─ I/O Driver (포터블)   ──────┘
+           └─ Timer (heap)  ───────────────┘
+           └─ Parked Worker Stack   ──────┘
+</code></pre>
+<p>이 구조의 주요 특성을 정리하면, 우선 로컬 큐는 lock-free Chase-Lev deque 이며, 소유 worker 와 도둑 모두 가장 오래된 task 부터 꺼냅니다 (스스로를 다시 깨우는 task 가 다른 task 를 굶기지 않도록, <a href="../../refs-lang/007-runtime/706-scheduler#762-work-stealing-구조">refs-lang 7.6.2</a>). 바쁜 worker 는 task 32 개마다 기한이 지난 timer 를 처리합니다. I/O Driver 는 프로세스당 reactor thread 하나가 epoll / kqueue 를 edge-triggered 로 기다리며 (io_uring / IOCP 는 향후, <a href="../../refs-lang/007-runtime/707-io-and-timer">refs-lang 7.7</a>), Timer 구조는 구현이 정합니다 (binary heap 또는 timing wheel, <a href="../../refs-lang/007-runtime/707-io-and-timer#774-타이머-구조">refs-lang 7.7.4</a>).</p>
+<p>표준 라이브러리 측의 권위는 API 시그니처에 한정되며, 알고리듬 본문은 spec 외부의 runtime 및 표준 라이브러리 body 영역에 속한다는 점에 유의해야 합니다.</p>
+<h2 id="2184-협력적-취소---taskcancel"><a class="anchor" tabindex="-1" href="#2184-협력적-취소---taskcancel" aria-hidden="true">#</a>2.18.4. 협력적 취소 - <code>Task::cancel</code></h2>
+<p>협력적 취소는 다음과 같이 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> t = task::spawn(<span class="k">async</span> { long_running() });
+<span class="c">// ... 다른 일 ...</span>
+t.cancel();              <span class="c">// 협력적 신호 - task 가 cancellation point 에서 종료</span>
+</code></pre>
+<p><code>cancel()</code> 은 취소를 <strong>요청</strong> 합니다. 규칙은 다음과 같습니다 (<a href="../../refs-lang/007-runtime/707-io-and-timer#779-cancellation">refs-lang 7.7.9</a>).</p>
+<ul>
+<li>모든 <code>await</code> 가 cancellation point 입니다. 취소된 task 는 다음 <code>await</code> 에서 <code>return</code> 처럼 본문을 떠나며, 지나는 <code>finally</code> 와 <code>using</code> 정리가 안쪽부터 실행됩니다.
+</li>
+<li>취소는 task 안에서 <code>catch</code> 할 수 있는 에러가 아닙니다. task 안으로 <code>CancellationError</code> 가 던져지지 않습니다.
+</li>
+<li>blocking syscall 은 cancellation point 가 아닙니다. 그 호출이 끝난 뒤 다음 <code>await</code> 에서 떠납니다.
+</li>
+<li>소켓 I/O (<code>*_async</code>), <code>readable</code> / <code>writable</code>, <code>sleep</code> / <code>timeout</code>, <code>lock_async</code>, <code>recv_async</code> / <code>send_async</code> 에서 기다리던 task 는 취소되면 깨어나고 다음 <code>await</code> 에서 떠납니다.
+</li>
+<li>task 가 끝나면 그 task 의 깨우기 등록 (I/O readiness, timer, park 한 대기) 은 모두 풀립니다.
+</li>
+<li><code>spawn_blocking</code> 과 그 위의 <code>fs::*_async</code> 를 기다리던 중 취소되면, 이미 시작된 작업은 백그라운드에서 끝까지 실행되고 결과만 버려집니다. 쓰기 같은 부수 효과는 일어납니다. 그 사이에 끝난 결과도 버립니다. 취소된 poll 은 <code>Pending</code> 을 돌려줍니다.
+</li>
+<li>기다리던 future 가 값을 넘겨준 (메시지, 잠금 guard) poll 은 그 값을 지킵니다. 취소 검사는 &quot;기다린 코루틴이 취소 때문에 떠났는가&quot; 를 보며, 값은 남고 다음 <code>await</code> 에서 떠납니다 (<a href="../../refs-lang/007-runtime/707-io-and-timer#779-cancellation">refs-lang 7.7.9</a>).
+</li>
+<li>마지막 cancellation point 를 지난 뒤 취소된 task 는 정상적으로 끝나고 결과를 가집니다. <code>await t</code> / <code>join</code> 은 그 결과를 돌려줍니다.
+</li>
+<li><code>CancellationError</code> 는 결과 없이 끝난 task 를 기다리는 쪽이 받습니다. 그런 task 를 <code>try await t.join()</code> 으로 기다리면 <code>CancellationError</code> 가 던져지고, <code>await t</code> 로 기다리면 panic 입니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> t = task::spawn(<span class="k">async</span> {
+    <span class="k">using</span> log = open_log();                      <span class="c">// 취소되면 여기서 drop</span>
+    <span class="k">loop</span> {
+        <span class="k">await</span> task::sleep(<span class="t">Duration</span>::sec(<span class="n">1</span>));     <span class="c">// cancellation point</span>
+        tick(log);
+    }
+});
+t.cancel();
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="k">try</span> <span class="k">await</span> t.join() <span class="k">catch</span> _: <span class="t">CancellationError</span> { fallback() };
+</code></pre>
+<h2 id="2185-thread---11-os-thread"><a class="anchor" tabindex="-1" href="#2185-thread---11-os-thread" aria-hidden="true">#</a>2.18.5. <code>thread::*</code> - 1:1 OS thread</h2>
+<p>별도 모듈인 <code>thread</code> 는 M:N 모델이 아니라 <strong>OS thread</strong> 를 직접 spawn 합니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> t = thread::spawn { os_level_work() };
+<span class="k">let</span> r = t.join();              <span class="c">// OS-level 동기 대기</span>
+</code></pre>
+<p>두 모델 사이의 차이를 비교하면 다음 표와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>task::spawn</code></th><th><code>thread::spawn</code></th></tr></thead>
+<tbody>
+<tr><td>모델</td><td>M:N (사용자 공간 스케줄러)</td><td>1:1 (OS thread)</td></tr>
+<tr><td>비용</td><td>가벼움 (~1KB frame)</td><td>무거움 (~MB stack)</td></tr>
+<tr><td>협력적 취소</td><td>✓</td><td>✗ (OS-level kill 필요)</td></tr>
+<tr><td>async 통합</td><td>✓</td><td>△ (joiner 만 await)</td></tr>
+<tr><td>사용처</td><td>일반 동시성 (default)</td><td>CPU-bound, blocking I/O</td></tr>
+</tbody></table></div>
+<p>기본적으로는 <code>task::spawn</code> 을 사용하면 되고, <code>thread::spawn</code> 은 명시적으로 OS thread 가 요구되는 상황에서만 선택하면 됩니다.</p>
+<h2 id="2186-duration--instant"><a class="anchor" tabindex="-1" href="#2186-duration--instant" aria-hidden="true">#</a>2.18.6. <code>Duration</code> / <code>Instant</code></h2>
+<p>시간 표현을 위한 <code>Duration</code> 과 <code>Instant</code> 는 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Duration</span> { <span class="c">/* ns 단위 i64 */</span> }
+<span class="k">struct</span> <span class="t">Instant</span> { <span class="c">/* monotonic clock */</span> }
+
+<span class="k">impl</span> <span class="t">Duration</span> {
+    <span class="k">fn</span> ns(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> us(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> ms(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> sec(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> min(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> hours(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+}
+
+<span class="k">impl</span> <span class="t">Instant</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">Instant</span>;
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) -&gt; <span class="t">Duration</span>;
+}
+</code></pre>
+<p>이를 활용하여 <code>await task::sleep(Duration::ms(100))</code> 또는 <code>await task::sleep_until(t)</code> 와 같이 호출하면 정확한 monotonic time 을 보장받을 수 있습니다. 두 타입은 <code>rok::core::task::time</code> 에 있으며 (2.18.7), <code>rok::std::time</code> 이 이를 다시 내보냅니다.</p>
+<h2 id="2187-모듈-매핑"><a class="anchor" tabindex="-1" href="#2187-모듈-매핑" aria-hidden="true">#</a>2.18.7. 모듈 매핑</h2>
+<p>각 항목이 자리 잡는 모듈은 다음 표와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>모듈</th><th>동작</th></tr></thead>
+<tbody>
+<tr><td><code>task::spawn</code></td><td><code>rok::core::task</code> + scheduler runtime</td><td>scheduler push</td></tr>
+<tr><td><code>task::race</code></td><td><code>rok::core::task</code></td><td>first-completed selector</td></tr>
+<tr><td><code>task::join</code></td><td><code>rok::core::task</code></td><td>join all</td></tr>
+<tr><td><code>task::timeout</code></td><td><code>rok::core::task</code></td><td>race + timer</td></tr>
+<tr><td><code>Task&lt;T&gt;</code></td><td><code>rok::core::task</code></td><td>coroutine frame ref</td></tr>
+<tr><td><code>Duration</code>/<code>Instant</code></td><td><code>rok::core::task::time</code></td><td>i64 ns + monotonic clock</td></tr>
+<tr><td><code>Future</code> (lang slot)</td><td><code>rok::core::future</code></td><td>poll-based</td></tr>
+<tr><td><code>IntoFuture</code></td><td><code>rok::core::future</code></td><td>await 진입점</td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/218-task.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="217-channel"><small>Previous</small>2.17. channel - 메시지 패싱</a><a class="next" href="219-par"><small>Next</small>2.19. par - 병렬 처리 API</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

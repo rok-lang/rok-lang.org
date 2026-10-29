@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.11. const 제네릭 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="const 제네릭은 제네릭 매개변수 자리에 값을 받는 형태입니다. 컴파일 타임에 결정되는 정수, 진리값, 짧은 표현식을 매개변수로 두는 방식입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/211-const-generics.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.11. const 제네릭 - rok docs">
+<meta property="og:description" content="const 제네릭은 제네릭 매개변수 자리에 값을 받는 형태입니다. 컴파일 타임에 결정되는 정수, 진리값, 짧은 표현식을 매개변수로 두는 방식입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/211-const-generics.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/211-const-generics.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/211-const-generics.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. 제네릭</a></li><li class="cur"><a aria-current="page" href="211-const-generics">2.11. const 제네릭</a><ul class="toc"><li><a href="#2111-동기">2.11.1. 동기</a></li><li><a href="#2112-선언-형태">2.11.2. 선언 형태</a></li><li><a href="#2113-허용-타입">2.11.3. 허용 타입</a></li><li><a href="#2114-인스턴스화-시-인자">2.11.4. 인스턴스화 시 인자</a></li><li><a href="#2115-const-표현식의-산술">2.11.5. const 표현식의 산술</a></li><li><a href="#2116-매개변수-추론">2.11.6. 매개변수 추론</a></li><li><a href="#2117-단형화">2.11.7. 단형화</a></li><li><a href="#2118-동등성">2.11.8. 동등성</a></li><li><a href="#2119-정의-가능-위치">2.11.9. 정의 가능 위치</a></li><li><a href="#21110-인덱스로-사용">2.11.10. 인덱스로 사용</a></li></ul></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="211-const-제네릭 211-const-generics 2111-동기 2111-motivation 2112-선언-형태 2112-declaration-form 2113-허용-타입 2113-allowed-types 2114-인스턴스화-시-인자 2114-arguments-at-instantiation 2115-const-표현식의-산술 2115-arithmetic-in-const-expressions 2116-매개변수-추론 2116-parameter-inference 반복-리터럴-v-n repeat-literal-v-n 2117-단형화 2117-monomorphization 2118-동등성 2118-equality 2119-정의-가능-위치 2119-where-they-may-be-defined 21110-인덱스로-사용 21110-use-as-an-index"><a href="../../../../spec/refs-lang/002-types/211-const-generics" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="211-const-제네릭"><a class="anchor" tabindex="-1" href="#211-const-제네릭" aria-hidden="true">#</a>2.11. <code>const</code> 제네릭</h1>
+<p><code>const</code> 제네릭은 <a href="210-generics">제네릭</a> 매개변수 자리에 값을 받는 형태입니다. 컴파일 타임에 결정되는 정수, 진리값, 짧은 표현식을 매개변수로 두는 방식입니다.</p>
+<h2 id="2111-동기"><a class="anchor" tabindex="-1" href="#2111-동기" aria-hidden="true">#</a>2.11.1. 동기</h2>
+<p>배열 길이, 행렬 차원, 임베디드 메모리 풀 크기처럼 컴파일 타임에 결정되는 값을 타입의 일부로 가져가기 위해서입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Matrix</span>&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">M</span>: <span class="t">usize</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; {
+    data: [<span class="t">T</span>; <span class="t">M</span> * <span class="t">N</span>];
+}
+
+<span class="k">fn</span> dot&lt;<span class="t">T</span>: <span class="t">Num</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(a: [<span class="t">T</span>; <span class="t">N</span>], b: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> { ... }
+</code></pre>
+<p>이렇게 하면 배열 길이가 타입의 일부가 되므로 호출 시 길이 체크 비용이 0 이 됩니다. 또한 컴파일러가 SIMD 나 언롤링처럼 길이에 의존하는 최적화를 적용할 수 있고, 행렬 곱처럼 차원 호환성이 중요한 연산을 컴파일 타임에 검증할 수 있습니다.</p>
+<h2 id="2112-선언-형태"><a class="anchor" tabindex="-1" href="#2112-선언-형태" aria-hidden="true">#</a>2.11.2. 선언 형태</h2>
+<pre><code class="language-rok"><span class="k">const</span> 매개변수이름 : 타입
+</code></pre>
+<p><code>const</code> 키워드 다음에 매개변수 이름과 <code>:</code>, 그리고 타입이 차례로 옵니다. 이때 타입은 아래에서 설명할 허용된 <code>const</code> 타입이어야 합니다.</p>
+<p>여러 매개변수를 섞을 때는 콤마로 구분합니다. 타입 매개변수와 <code>const</code> 매개변수는 자유롭게 섞일 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> replicate&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(value: <span class="t">T</span>) -&gt; [<span class="t">T</span>; <span class="t">N</span>] { ... }
+<span class="k">struct</span> <span class="t">Tagged</span>&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">TAG</span>: <span class="t">u32</span>&gt; { value: <span class="t">T</span>; }
+</code></pre>
+<h2 id="2113-허용-타입"><a class="anchor" tabindex="-1" href="#2113-허용-타입" aria-hidden="true">#</a>2.11.3. 허용 타입</h2>
+<p><code>const</code> 매개변수의 타입은 정수형 (<code>i8</code> ~ <code>i64</code>, <code>u8</code> ~ <code>u64</code>, <code>usize</code>, <code>isize</code>), <code>bool</code>, <code>char</code> 중 하나입니다.</p>
+<p>반면 부동소수, 합 타입, 사용자 정의 구조체는 <code>const</code> 매개변수가 될 수 없습니다. 부동소수는 비트 표현의 비결정성 때문에 제외되고, 사용자 정의 타입은 동등 비교의 일관성 문제 때문에 제외됩니다.</p>
+<h2 id="2114-인스턴스화-시-인자"><a class="anchor" tabindex="-1" href="#2114-인스턴스화-시-인자" aria-hidden="true">#</a>2.11.4. 인스턴스화 시 인자</h2>
+<p>호출이나 인스턴스화 지점에서 <code>const</code> 매개변수에 <code>const</code> 표현식을 넘깁니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> m: <span class="t">Matrix</span>&lt;<span class="t">f64</span>, <span class="n">3</span>, <span class="n">4</span>&gt; = ...;
+<span class="k">let</span> v: [<span class="t">i32</span>; <span class="n">16</span>] = ...;
+<span class="k">let</span> arr = replicate::&lt;<span class="t">f64</span>, <span class="n">8</span>&gt;(<span class="n">0.0f64</span>);
+</code></pre>
+<p>이때 인자는 컴파일 타임에 평가 가능해야 합니다. 구체적으로는 리터럴, <code>const</code> 변수, <code>const</code> 함수 호출, 다른 <code>const</code> 매개변수, 그리고 이들의 단순 산술 조합이 허용됩니다. 반면 런타임 변수는 <code>const</code> 인자 자리에 쓸 수 없으며, 그 경우 컴파일 에러가 됩니다.</p>
+<h2 id="2115-const-표현식의-산술"><a class="anchor" tabindex="-1" href="#2115-const-표현식의-산술" aria-hidden="true">#</a>2.11.5. <code>const</code> 표현식의 산술</h2>
+<p><code>const</code> 매개변수 사이의 단순 산술을 타입 안에서 쓸 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Matrix</span>&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">M</span>: <span class="t">usize</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; {
+    data: [<span class="t">T</span>; <span class="t">M</span> * <span class="t">N</span>];
+}
+
+<span class="k">fn</span> flatten&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">M</span>: <span class="t">usize</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(
+    m: <span class="t">Matrix</span>&lt;<span class="t">T</span>, <span class="t">M</span>, <span class="t">N</span>&gt;
+) -&gt; [<span class="t">T</span>; <span class="t">M</span> * <span class="t">N</span>] { ... }
+</code></pre>
+<p>허용되는 연산자는 <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>, 그리고 단항 <code>-</code> 입니다. 비교나 조건분기는 현 사양에서 허용하지 않으며, 단순 산술만 가능합니다. 다만 타입 시스템은 <code>M * N</code> 과 <code>N * M</code> 이 같은 값임을 인식합니다 (가환성).</p>
+<p>이보다 더 복잡한 <code>const</code> 표현식, 예를 들어 조건분기나 재귀 같은 형태는 <code>const</code> 함수 사양에서 다룹니다.</p>
+<h2 id="2116-매개변수-추론"><a class="anchor" tabindex="-1" href="#2116-매개변수-추론" aria-hidden="true">#</a>2.11.6. 매개변수 추론</h2>
+<p><code>const</code> 인자는 인자의 타입, 구조체 필드의 타입, 기대 타입 (<code>let</code> 주석, 매개변수 타입, 반환 타입) 으로부터 추론할 수 있으면 명시를 생략할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> replicate&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(value: <span class="t">T</span>) -&gt; [<span class="t">T</span>; <span class="t">N</span>] { ... }
+
+<span class="k">let</span> arr: [<span class="t">i32</span>; <span class="n">8</span>] = replicate(<span class="n">0i32</span>);     <span class="c">// N = 8 추론</span>
+<span class="k">let</span> arr2 = replicate::&lt;<span class="t">i32</span>, <span class="n">8</span>&gt;(<span class="n">0i32</span>);    <span class="c">// 명시</span>
+</code></pre>
+<p>추론 우선순위와 모호성 해소는 표현식 사양에서 정의합니다.</p>
+<h3 id="반복-리터럴-v-n"><a class="anchor" tabindex="-1" href="#반복-리터럴-v-n" aria-hidden="true">#</a>반복 리터럴 <code>[v; N]</code></h3>
+<p><code>[v; N]</code> 은 값 <code>v</code> 를 <code>N</code> 번 반복한 <code>[T; N]</code> 배열입니다. <code>N</code> 은 <code>const</code> 표현식이며 <code>const</code> 매개변수일 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> zeros&lt;<span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;() -&gt; [<span class="t">f64</span>; <span class="t">N</span>] { [<span class="n">0.0</span>; <span class="t">N</span>] }
+<span class="k">let</span> z: [<span class="t">f64</span>; <span class="n">4</span>] = zeros();              <span class="c">// N = 4 - 기대 타입에서</span>
+<span class="k">let</span> w = [<span class="n">1u8</span>; <span class="n">16</span>];                       <span class="c">// [u8; 16]</span>
+</code></pre>
+<h2 id="2117-단형화"><a class="anchor" tabindex="-1" href="#2117-단형화" aria-hidden="true">#</a>2.11.7. 단형화</h2>
+<p><code>const</code> 제네릭은 <a href="210-generics">제네릭</a> 의 단형화와 같은 방식으로 동작합니다. 따라서 각 <code>const</code> 인자 조합마다 별개의 컴파일 결과가 만들어집니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a = replicate(<span class="n">0i32</span>);    <span class="c">// N = ? - 추론 시점에 결정</span>
+</code></pre>
+<p>같은 <code>const</code> 인자 조합의 호출은 결과를 공유합니다.</p>
+<h2 id="2118-동등성"><a class="anchor" tabindex="-1" href="#2118-동등성" aria-hidden="true">#</a>2.11.8. 동등성</h2>
+<p><code>const</code> 인자가 같은 값을 갖는 두 타입은 같은 타입입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: [<span class="t">i32</span>; <span class="n">4</span>] = ...;
+<span class="k">let</span> b: [<span class="t">i32</span>; <span class="n">2</span> + <span class="n">2</span>] = ...;
+<span class="c">// a 와 b 는 같은 타입</span>
+</code></pre>
+<p>이러한 동등성은 <code>const</code> 표현식 평가가 결정론적이기 때문에 가능합니다.</p>
+<h2 id="2119-정의-가능-위치"><a class="anchor" tabindex="-1" href="#2119-정의-가능-위치" aria-hidden="true">#</a>2.11.9. 정의 가능 위치</h2>
+<p><code>const</code> 제네릭은 다음 모든 위치에서 같은 문법으로 쓸 수 있습니다. 함수와 메서드에서 사용할 수 있고, 구조체와 <code>enum</code>, <code>union</code> 에서도 쓸 수 있습니다. 그 밖에 트레잇, <code>impl</code> 블록, 타입 별칭에서도 동일하게 사용할 수 있습니다.</p>
+<p>이러한 균일성은 <a href="210-generics">제네릭</a> 의 일반 제네릭과 일치하므로, 사용자가 따로 외워야 할 규칙이 없습니다.</p>
+<h2 id="21110-인덱스로-사용"><a class="anchor" tabindex="-1" href="#21110-인덱스로-사용" aria-hidden="true">#</a>2.11.10. 인덱스로 사용</h2>
+<p><code>const</code> 매개변수는 단순한 <code>const</code> 변수처럼 값 위치에서 그대로 쓸 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(arr: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> {
+    arr[<span class="n">0</span>]
+}
+
+<span class="k">fn</span> middle&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(arr: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> {
+    arr[<span class="t">N</span> / <span class="n">2</span>]
+}
+</code></pre>
+<p>값 위치에서의 정확한 사용 규칙은 표현식 사양에서 정의합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/211-const-generics.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="210-generics"><small>Previous</small>2.10. 제네릭</a><a class="next" href="212-trait-as-type-banned"><small>Next</small>2.12. 트레잇-as-타입 금지</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

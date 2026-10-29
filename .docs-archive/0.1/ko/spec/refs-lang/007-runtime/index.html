@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7. 런타임 개요 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="본 블록은 rok 런타임 시스템 (GC, 작업 스케줄러, 코루틴) 의 구현 사양을 정의합니다. 이 시스템은 실행 엔진과 사용자 표면 의 두 엔진 (JIT / AOT) 양쪽에서 동일하게 작동합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7. 런타임 개요 - rok docs">
+<meta property="og:description" content="본 블록은 rok 런타임 시스템 (GC, 작업 스케줄러, 코루틴) 의 구현 사양을 정의합니다. 이 시스템은 실행 엔진과 사용자 표면 의 두 엔진 (JIT / AOT) 양쪽에서 동일하게 작동합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a class="cur" href="./">7. 런타임 개요</a></p><ul class="toc"><li><a href="#목차">목차</a></li><li><a href="#핵심-결정">핵심 결정</a></li><li><a href="#의존성-0-원칙">의존성 0 원칙</a></li><li><a href="#mn-모델">M:N 모델</a></li><li><a href="#단일-a-산출물">단일 .a 산출물</a></li><li><a href="#런타임-오류-스택-오버플로">런타임 오류: 스택 오버플로</a></li><li><a href="#컴파일러와의-인터페이스">컴파일러와의 인터페이스</a></li></ul><ul class="pages"><li><a href="701-object-layout">7.1. 객체 레이아웃과 메모리 공간</a></li><li><a href="702-allocation">7.2. 할당</a></li><li><a href="703-gc-algorithm">7.3. GC 알고리듬</a></li><li><a href="704-barriers-and-roots">7.4. 배리어와 루트 추적</a></li><li><a href="705-concurrent-collection">7.5. 동시 mark</a></li><li><a href="706-scheduler">7.6. 스케줄러</a></li><li><a href="707-io-and-timer">7.7. I/O 드라이버와 타이머</a></li><li><a href="708-coroutine">7.8. 코루틴</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="7-런타임-개요 7-runtime-overview 목차 contents 핵심-결정 key-decisions 의존성-0-원칙 zero-dependency-principle mn-모델 mn-model 단일-a-산출물 single-a-output 런타임-오류-스택-오버플로 runtime-error-stack-overflow 컴파일러와의-인터페이스 interface-with-the-compiler"><a href="../../../../spec/refs-lang/007-runtime/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="7-런타임-개요"><a class="anchor" tabindex="-1" href="#7-런타임-개요" aria-hidden="true">#</a>7. 런타임 개요</h1>
+<p>본 블록은 rok 런타임 시스템 (<a href="../000-meta/007-glossary#gc-garbage-collector">GC</a>, 작업 스케줄러, 코루틴) 의 구현 사양을 정의합니다. 이 시스템은 <a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 의 두 엔진 (<a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> / <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a>) 양쪽에서 동일하게 작동합니다.</p>
+<h2 id="목차"><a class="anchor" tabindex="-1" href="#목차" aria-hidden="true">#</a>목차</h2>
+<p>본 장의 세부 절은 다음과 같이 구성됩니다.</p>
+<ul>
+<li><a href="701-object-layout">7.1. 객체 레이아웃과 메모리 공간</a>
+</li>
+<li><a href="702-allocation">7.2. 할당</a>
+</li>
+<li><a href="703-gc-algorithm">7.3. GC 알고리듬</a>
+</li>
+<li><a href="704-barriers-and-roots">7.4. 배리어와 루트 추적</a>
+</li>
+<li><a href="705-concurrent-collection">7.5. 동시 mark</a>
+</li>
+<li><a href="706-scheduler">7.6. 스케줄러</a>
+</li>
+<li><a href="707-io-and-timer">7.7. I/O 드라이버와 타이머</a>
+</li>
+<li><a href="708-coroutine">7.8. 코루틴</a>
+</li>
+</ul>
+<h2 id="핵심-결정"><a class="anchor" tabindex="-1" href="#핵심-결정" aria-hidden="true">#</a>핵심 결정</h2>
+<p>런타임의 핵심 구성 요소에 대한 결정은 다음과 같이 요약됩니다.</p>
+<pre><code>GC          자체 Immix + Sticky Mark-Bit 세대
+Scheduler   M:N work-stealing
+Coroutine   컴파일러가 만든 상태 기계 (stackless)
+</code></pre>
+<p>세 부분 모두 자체 구현이며, 외부 라이브러리에 대한 의존은 0 입니다.</p>
+<h2 id="의존성-0-원칙"><a class="anchor" tabindex="-1" href="#의존성-0-원칙" aria-hidden="true">#</a>의존성 0 원칙</h2>
+<p>런타임은 외부 라이브러리에 의존하지 않습니다. 구체적으로 다음과 같은 외부 구성 요소를 사용하지 않습니다.</p>
+<ul>
+<li>외부 GC 라이브러리 (Boehm GC, MMTk 등) 를 사용하지 않습니다.
+</li>
+<li>외부 비동기 런타임을 사용하지 않습니다.
+</li>
+<li>외부 코루틴 라이브러리를 사용하지 않습니다.
+</li>
+</ul>
+<p>다만 플랫폼 시스템 인터페이스 (<code>libc</code>, OS 헤더 등) 는 의존성으로 치지 않습니다. 이는 OS 인터페이스의 필수 부분이기 때문입니다.</p>
+<h2 id="mn-모델"><a class="anchor" tabindex="-1" href="#mn-모델" aria-hidden="true">#</a>M:N 모델</h2>
+<p>스케줄러는 M:N 하이브리드 방식을 따릅니다.</p>
+<pre><code>OS Thread (worker) x N  ──── rok task / coroutine x M
+                                   (typically M &gt;&gt; N)
+</code></pre>
+<p>이 모델의 운용 방식은 다음과 같습니다. 기본 N 은 CPU 코어 수이며, 런타임 설정으로 조정할 수 있습니다. 또한 한 OS thread 가 여러 역할을 동시에 수행하는데, 그 역할은 Scheduler Worker, Mutator, I/O Driver, GC Worker 입니다. 다만 I/O driver 는 현재 별도의 reactor thread 하나가 맡습니다 (<a href="707-io-and-timer">7.7</a>).</p>
+<p>이러한 통합으로 추가 thread 분리 비용 없이 모든 런타임 활동이 한 스레드 풀에서 처리됩니다.</p>
+<h2 id="단일-a-산출물"><a class="anchor" tabindex="-1" href="#단일-a-산출물" aria-hidden="true">#</a>단일 .a 산출물</h2>
+<p>런타임은 단일 staticlib <code>librokr.a</code> 한 개로 배포됩니다. 사용자 패키지를 빌드하면 <code>librokr.a</code> 가 링크되어 추가 외부 의존 없이 실행 가능한 바이너리가 나옵니다.</p>
+<h2 id="런타임-오류-스택-오버플로"><a class="anchor" tabindex="-1" href="#런타임-오류-스택-오버플로" aria-hidden="true">#</a>런타임 오류: 스택 오버플로</h2>
+<p>스레드의 스택이 넘치면 런타임은 stdout 을 (가능하면) flush 하고 stderr 에 다음을 출력한 뒤 abort (SIGABRT) 합니다. panic 과 달리 unwind 나 <code>finally</code> 실행은 없습니다.</p>
+<pre><code>thread '&lt;name&gt;' has overflowed its stack
+</code></pre>
+<p><code>&lt;name&gt;</code> 은 그 스레드의 이름입니다. <code>thread::Builder::name</code> (<a href="../../refs-standard-libraries/300-std/304-thread">stdlib 3.4</a>) 으로 준 이름이며, 그 이름은 OS 스레드 이름으로도 설정됩니다. main 스레드는 <code>main</code>, 이름이 없는 스레드는 <code>&lt;unnamed&gt;</code> 입니다. main 스레드, <code>thread::spawn</code> 스레드, executor worker (깊은 <code>await</code> 사슬 포함) 가 모두 대상입니다. 검출 방식 (guard 범위와 <code>sigaltstack</code>) 과 TLS 슬롯은 <a href="../008-abi/805-extern-symbols#스택-오버플로">8.5.7</a> 에 있습니다. wasm 에서는 모듈이 trap 을 잡을 수 없으며 host 가 보고합니다 (함께 제공되는 JS host 는 위 메시지를 출력).</p>
+<h2 id="컴파일러와의-인터페이스"><a class="anchor" tabindex="-1" href="#컴파일러와의-인터페이스" aria-hidden="true">#</a>컴파일러와의 인터페이스</h2>
+<p>런타임은 컴파일러가 생성한 코드와 정해진 <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 로 통신합니다. 인터페이스는 다음 세 가지 요소로 구성됩니다.</p>
+<ul>
+<li>객체 레이아웃 (16 바이트 헤더 + payload) 입니다.
+</li>
+<li><code>extern &quot;C&quot;</code> 함수로는 <code>rok_gc_alloc_slow</code>, <code>rok_runtime_yield</code>, <code>rok_thread_spawn</code> 등이 있습니다.
+</li>
+<li>코루틴은 컴파일러가 만든 상태 기계이며 <code>llvm.coro.*</code> 를 쓰지 않습니다 (<a href="708-coroutine">7.8</a>). GC 루트는 intrinsic 없이 컴파일러가 shadow stack frame 을 직접 emit 합니다 (<a href="704-barriers-and-roots#741-루트-추적-컴파일러가-직접-emit-하는-shadow-stack">7.4.1</a>).
+</li>
+</ul>
+<p>이 ABI 는 <a href="../008-abi/">8. 런타임 ABI / MLIR lowering</a> 에서 자세히 정의되며, 본 7 장은 내부 동작만을 다룹니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/007-runtime/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../006-meta-system/611-include"><small>Previous</small>6.11. 컴파일 시점 파일 포함</a><a class="next" href="701-object-layout"><small>Next</small>7.1. 객체 레이아웃과 메모리 공간</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

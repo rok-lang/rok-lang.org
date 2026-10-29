@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.9. 디버그 / 진단 도구 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 절에서는 rokc 가 제공하는 디버그 / 진단 도구와 외부 도구 통합을 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/909-debug-tools.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.9. 디버그 / 진단 도구 - rok docs">
+<meta property="og:description" content="이 절에서는 rokc 가 제공하는 디버그 / 진단 도구와 외부 도구 통합을 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/909-debug-tools.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/909-debug-tools.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/909-debug-tools.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">9. 실행 / 툴 개요</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI 인터페이스</a></li><li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a></li><li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a></li><li><a href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a></li><li><a href="906-jit-engine">9.6. JIT 엔진</a></li><li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a></li><li><a href="908-jupyter-integration">9.8. Jupyter 커널 통합</a></li><li class="cur"><a aria-current="page" href="909-debug-tools">9.9. 디버그 / 진단 도구</a><ul class="toc"><li><a href="#991-중간-산출물-출력---emit">9.9.1. 중간 산출물 출력: --emit</a></li><li><a href="#992-rokhir-검사">9.9.2. ROKHIR 검사</a></li><li><a href="#993-심볼-demangle">9.9.3. 심볼 demangle</a></li><li><a href="#994-진단--에러-메시지">9.9.4. 진단 / 에러 메시지</a></li><li><a href="#995-로그--진행-표시">9.9.5. 로그 / 진행 표시</a></li><li><a href="#996-디버거-통합-gdb--lldb">9.9.6. 디버거 통합: gdb / lldb</a></li><li><a href="#997-profiler-통합">9.9.7. profiler 통합</a></li><li><a href="#998-메모리--gc-도구">9.9.8. 메모리 / GC 도구</a></li><li><a href="#999-repl--jupyter-디버그">9.9.9. REPL / Jupyter 디버그</a></li><li><a href="#9910-메타-블록-디버그">9.9.10. 메타 블록 디버그</a></li><li><a href="#9911-벤치마크">9.9.11. 벤치마크</a></li><li><a href="#9912-ci--테스트-통합">9.9.12. CI / 테스트 통합</a></li><li><a href="#9913-lsp-서버">9.9.13. LSP 서버</a></li><li><a href="#9914-패키지-검사">9.9.14. 패키지 검사</a></li><li><a href="#9915-정리">9.9.15. 정리</a></li></ul></li><li><a href="910-rok-frontend">9.10. rok - 패키지 / 빌드 front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="99-디버그--진단-도구 99-debug--diagnostic-tools 991-중간-산출물-출력---emit 991-intermediate-output---emit 992-rokhir-검사 992-rokhir-inspection 993-심볼-demangle 993-symbol-demangle 994-진단--에러-메시지 994-diagnostics--error-messages 표준-형식 standard-format json-형식-도구-통합 json-format-tool-integration 진단-카테고리 diagnostic-categories 995-로그--진행-표시 995-logging--progress-display 표준-출력 standard-output --verbose---v --verbose---v rok_time_passes rok_time_passes -vv-매우-자세히 -vv-very-verbose 996-디버거-통합-gdb--lldb 996-debugger-integration-gdb--lldb dwarf-디버그-정보 dwarf-debug-information gdb--lldb-사용 using-gdb--lldb formatter formatters macos--windows-디버거 macos--windows-debuggers 997-profiler-통합 997-profiler-integration perf-linux perf-linux profile-guided-optimization profile-guided-optimization tracy--chrome-trace-선택 tracy--chrome-trace-optional 998-메모리--gc-도구 998-memory--gc-tools 999-repl--jupyter-디버그 999-repl--jupyter-debugging 9910-메타-블록-디버그 9910-meta-block-debugging 9911-벤치마크 9911-benchmarks 9912-ci--테스트-통합 9912-ci--test-integration ci-모드 ci-mode 종료-코드 exit-codes 9913-lsp-서버 9913-lsp-server 9914-패키지-검사 9914-package-inspection 9915-정리 9915-summary"><a href="../../../../spec/refs-lang/009-tools/909-debug-tools" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="99-디버그--진단-도구"><a class="anchor" tabindex="-1" href="#99-디버그--진단-도구" aria-hidden="true">#</a>9.9. 디버그 / 진단 도구</h1>
+<p>이 절에서는 <code>rokc</code> 가 제공하는 디버그 / 진단 도구와 외부 도구 통합을 정의합니다.</p>
+<h2 id="991-중간-산출물-출력---emit"><a class="anchor" tabindex="-1" href="#991-중간-산출물-출력---emit" aria-hidden="true">#</a>9.9.1. 중간 산출물 출력: <code>--emit</code></h2>
+<p><a href="902-aot-pipeline">AOT 빌드 파이프라인</a> 의 단계별 결과물을 덤프할 수 있습니다.</p>
+<pre><code>rokc build --emit=ast           # 메타 확장과 desugar 뒤의 전체 AST 를 rok 소스로
+rokc build --emit=hir          # rok-hir 텍스트 출력
+rokc build --emit=mir           # rok-mir 텍스트 출력
+rokc build --emit=mlir          # 표준 MLIR 텍스트
+rokc build --emit=llvmir        # LLVM IR
+rokc build --emit=asm           # 어셈블리
+rokc build --emit=obj           # object 파일
+rokc build --emit=expanded      # 메타 확장 결과 (9.9.10)
+</code></pre>
+<p><code>mlir</code> 과 <code>llvmir</code> 은 최적화 수준과 관계없이 MLIR → LLVM backend 에서, <code>asm</code> 과 <code>obj</code> 는 수준이 고른 backend 에서 나옵니다 (<a href="902-aot-pipeline#9210-backend-선택">9.2.10</a>).</p>
+<p>산출물은 다음 위치에 출력됩니다.</p>
+<pre><code>target/debug/build/foo.ast.rok
+target/debug/build/foo.hir
+target/debug/build/foo.mir
+target/debug/build/foo.mlir
+target/debug/build/foo.ll
+target/debug/build/foo.s
+target/debug/build/foo.o
+target/debug/build/foo.expanded.rok
+</code></pre>
+<p>여러 단계를 한 번에 지정하려면 <code>--emit=mlir,llvmir,asm</code> 처럼 쉼표로 구분하면 됩니다. 종류가 하나면 <code>-o &lt;path&gt;</code> 로 위치를 바꿀 수 있습니다. <code>--emit</code> 을 주면 실행 파일이나 archive 는 만들지 않습니다.</p>
+<h2 id="992-rokhir-검사"><a class="anchor" tabindex="-1" href="#992-rokhir-검사" aria-hidden="true">#</a>9.9.2. ROKHIR 검사</h2>
+<pre><code>rokc rokhir-text path/to/foo.rokhir      # 또는 libfoo.a - 옆의 foo.rokhir 를 읽음
+</code></pre>
+<p>위 명령은 미리 빌드한 라이브러리의 <a href="904-rokhir-bytecode">ROKHIR</a> 을 사람이 읽을 수 있는 형식으로 출력합니다. 버전, producer, meta 다음에 interface 파일마다 <code>--- &lt;경로&gt;</code> 와 그 텍스트 (구체 함수 본문이 <code>;</code> 로 잘린 소스) 가 이어집니다.</p>
+<pre><code>rokhir 6
+producer: rokc 0.1.0 (1f2a40-17f3a9c2e1b0c4d8)
+package: geom (hash: 3f8a1c2b)
+source: /home/me/geom
+gc types: 4096..4160
+features: tls
+
+--- lib.rok
+pub struct Point { pub x: f64; pub y: f64; }
+pub fn distance(p1: Point, p2: Point) -&gt; f64;
+pub fn id&lt;T&gt;(x: T) -&gt; T { x }
+</code></pre>
+<p>이 출력은 <a href="../000-meta/007-glossary#rokhir-rok-hir-bytecode">ROKHIR</a> 의 정확성과 호환성을 검증할 때 활용하면 됩니다.</p>
+<h2 id="993-심볼-demangle"><a class="anchor" tabindex="-1" href="#993-심볼-demangle" aria-hidden="true">#</a>9.9.3. 심볼 demangle</h2>
+<pre><code>rokc demangle &lt;symbol&gt;
+rokc demangle _Y3f8a1c2b_geom_distance_a7c91d8e44b2f190
+</code></pre>
+<p>이 명령은 <a href="905-symbol-mangling">심볼 맹글링</a> 의 mangled 심볼을 원본 형식으로 출력합니다. 심볼을 여러 개 주면 블록을 빈 줄로 나눕니다. 맹글링은 루트 <code>rok::</code> 를 남기지 않으므로, 경로의 첫 세그먼트가 <code>core</code> / <code>std</code> / <code>bare</code> 이면 <code>rok::</code> 를 붙여 표준 라이브러리 경로로 보여 줍니다.</p>
+<pre><code>package:  3f8a1c2b
+path:     geom
+name:     distance
+generics: a7c91d8e44b2f190 (type tuple hash)
+</code></pre>
+<h2 id="994-진단--에러-메시지"><a class="anchor" tabindex="-1" href="#994-진단--에러-메시지" aria-hidden="true">#</a>9.9.4. 진단 / 에러 메시지</h2>
+<h3 id="표준-형식"><a class="anchor" tabindex="-1" href="#표준-형식" aria-hidden="true">#</a>표준 형식</h3>
+<p>진단 메시지는 다음과 같은 표준 형식으로 출력됩니다.</p>
+<pre><code>error[E100]: cannot find value `count` in this scope
+  --&gt; src/main.rok:5:13
+   |
+ 2 |     let counter = 0;
+   |         ------- similar name defined here
+...
+ 5 |     let x = count + 1;
+   |             ^^^^^ not found in this scope
+   |
+   = help: did you mean `counter`?
+</code></pre>
+<p>이 형식은 <a href="../001-lexical/101-source-files">소스 파일</a> 의 파일 + 줄 + 컬럼 진단 단위를 사용합니다.</p>
+<p>머리줄은 <code>&lt;severity&gt;[&lt;code&gt;]: &lt;message&gt;</code> 이고 <code>--&gt; path:line:col</code> 이 주 위치입니다. 주 span 은 <code>^</code>, 보조 span 은 <code>-</code> 로 밑줄을 긋고, 다른 파일의 보조 span 은 <code>::: path:line:col</code> 로 시작합니다. 끝의 <code>= note:</code> 줄은 맥락을, <code>= help:</code> 줄은 고치는 방법을 덧붙입니다. 찾지 못한 이름을 다른 곳의 항목이 가지고 있으면, help 는 그것을 들여오는 <code>use</code> 줄 (최대 셋: 패키지 자신의 항목 먼저, 그다음 표준 라이브러리, 그다음 의존 패키지) 이나, 패키지의 유일한 그런 항목이 가려져 있으면 빠진 <code>pub</code> 을 알립니다 (<code>add `use geo::Point;` </code>; <code>`geo::secret` has that name, but it is private to module `geo`: add `pub` to it</code>).</p>
+<h3 id="json-형식-도구-통합"><a class="anchor" tabindex="-1" href="#json-형식-도구-통합" aria-hidden="true">#</a>JSON 형식 (도구 통합)</h3>
+<p>도구 통합을 위해 JSON 형식으로도 출력할 수 있습니다.</p>
+<pre><code>rokc build --message-format=json
+</code></pre>
+<p>진단 하나가 stdout 의 한 줄 JSON 객체입니다 (사람용 형식은 stderr).</p>
+<pre><code class="language-json">{&quot;type&quot;:&quot;error&quot;,&quot;code&quot;:&quot;E200&quot;,&quot;kind&quot;:&quot;type&quot;,&quot;message&quot;:&quot;...&quot;,&quot;spans&quot;:[{&quot;file_name&quot;:&quot;src/main.rok&quot;,&quot;line_start&quot;:5,&quot;col_start&quot;:10,&quot;byte_start&quot;:71,&quot;byte_end&quot;:76,&quot;is_primary&quot;:true,&quot;label&quot;:&quot;...&quot;}],&quot;notes&quot;:[&quot;...&quot;]}
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>뜻</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td><code>error</code> / <code>fatal</code> / <code>warning</code> / <code>note</code></td></tr>
+<tr><td><code>code</code></td><td>에러 종류의 코드 (아래 표)</td></tr>
+<tr><td><code>kind</code></td><td>에러 종류의 이름</td></tr>
+<tr><td><code>message</code></td><td>메시지</td></tr>
+<tr><td><code>spans</code></td><td>위치 목록. 첫 원소가 주 위치 (<code>is_primary: true</code>), 나머지는 보조 위치</td></tr>
+<tr><td><code>notes</code></td><td>note 문자열 목록. help 항목은 <code>help: </code> 로 시작</td></tr>
+</tbody></table></div>
+<p>span 은 <code>file_name</code>, <code>line_start</code>, <code>col_start</code>, <code>byte_start</code>, <code>byte_end</code>, <code>is_primary</code>, <code>label</code> 을 가집니다. 위치 없이 파일만 아는 진단은 <code>{&quot;file_name&quot;: .., &quot;is_primary&quot;: true}</code> 만 둡니다.</p>
+<p>이 형식 덕분에 IDE 와 CI 시스템이 진단을 기계로 판독할 수 있습니다.</p>
+<h3 id="진단-카테고리"><a class="anchor" tabindex="-1" href="#진단-카테고리" aria-hidden="true">#</a>진단 카테고리</h3>
+<p>진단 코드는 영역별로 다음과 같이 분류됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>코드 prefix</th><th>영역</th></tr></thead>
+<tbody>
+<tr><td><code>E001</code> ~ <code>E099</code></td><td>어휘 / 구문</td></tr>
+<tr><td><code>E100</code> ~ <code>E199</code></td><td>이름 해소 / 가시성</td></tr>
+<tr><td><code>E200</code> ~ <code>E299</code></td><td>타입 시스템</td></tr>
+<tr><td><code>E300</code> ~ <code>E399</code></td><td>메타 / 매직</td></tr>
+<tr><td><code>E400</code> ~ <code>E499</code></td><td>빌드 / 링크</td></tr>
+<tr><td><code>E500</code> ~</td><td>추가 카테고리</td></tr>
+</tbody></table></div>
+<p>코드는 에러 종류마다 하나입니다. 같은 종류의 진단은 같은 코드를 가집니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>코드</th><th><code>kind</code></th><th>종류</th></tr></thead>
+<tbody>
+<tr><td><code>E001</code></td><td><code>lexical</code></td><td>어휘</td></tr>
+<tr><td><code>E002</code></td><td><code>parse</code></td><td>구문</td></tr>
+<tr><td><code>E100</code></td><td><code>resolve</code></td><td>이름 해소</td></tr>
+<tr><td><code>E101</code></td><td><code>visibility</code></td><td>가시성</td></tr>
+<tr><td><code>E102</code></td><td><code>module</code></td><td>모듈 / 파일</td></tr>
+<tr><td><code>E200</code></td><td><code>type</code></td><td>타입</td></tr>
+<tr><td><code>E201</code></td><td><code>pattern</code></td><td>패턴 / 완전성</td></tr>
+<tr><td><code>E202</code></td><td><code>handoff</code></td><td>넘긴 뒤의 사용 (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---스레드-경계-marker">stdlib 2.13.9</a>)</td></tr>
+<tr><td><code>E300</code></td><td><code>meta</code></td><td>메타 블록 / 속성 / 키워드 매직</td></tr>
+<tr><td><code>E400</code></td><td><code>lowering</code></td><td>HIR / MIR lowering</td></tr>
+<tr><td><code>E401</code></td><td><code>codegen</code></td><td>코드 생성</td></tr>
+<tr><td><code>E402</code></td><td><code>linkage</code></td><td>외부 도구 / 링크</td></tr>
+<tr><td><code>E500</code></td><td><code>unsupported</code></td><td>컴파일러가 처리하지 않는 구문</td></tr>
+<tr><td><code>E501</code></td><td><code>internal</code></td><td>컴파일러 내부</td></tr>
+<tr><td><code>E502</code></td><td><code>other</code></td><td>그 밖</td></tr>
+<tr><td><code>E503</code></td><td><code>lint</code></td><td>lint (<a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-린트-제어">6.2.9</a>, <code>rokc lint</code>)</td></tr>
+</tbody></table></div>
+<p>본 사양은 영역별 코드 prefix 를 보장합니다. 개별 코드가 생기면 같은 영역 안에서 나뉩니다.</p>
+<h2 id="995-로그--진행-표시"><a class="anchor" tabindex="-1" href="#995-로그--진행-표시" aria-hidden="true">#</a>9.9.5. 로그 / 진행 표시</h2>
+<h3 id="표준-출력"><a class="anchor" tabindex="-1" href="#표준-출력" aria-hidden="true">#</a>표준 출력</h3>
+<p>기본 빌드 출력은 다음과 같은 형태로 표시됩니다.</p>
+<pre><code>   Compiling foo (path/to/foo)
+    Building target/debug/libfoo.a
+    Finished in 1.23s
+</code></pre>
+<p>진행 줄은 stderr 에 나오며, 동사 목록은 <a href="901-rokc-cli#918-출력-형식">9.1.8</a> 에 있습니다.</p>
+<h3 id="--verbose---v"><a class="anchor" tabindex="-1" href="#--verbose---v" aria-hidden="true">#</a><code>--verbose</code> / <code>-v</code></h3>
+<p>상세 모드에서는 단계별 시간을 함께 표시합니다.</p>
+<pre><code>   Compiling foo (path/to/foo)
+   Stage: front end (134ms)
+    Building target/debug/foo
+   Stage: codegen + link (812ms)
+    Finished in 0.95s
+</code></pre>
+<p>각 단계의 시간을 표시하므로, 빌드 병목을 진단할 때 유용합니다. 단계는 <code>front end</code> 와 <code>codegen + link</code> (<code>--emit</code> 이면 <code>emit &lt;ext&gt;</code>) 입니다.</p>
+<h3 id="rok_time_passes"><a class="anchor" tabindex="-1" href="#rok_time_passes" aria-hidden="true">#</a><code>ROK_TIME_PASSES</code></h3>
+<p><code>ROK_TIME_PASSES=1</code> 은 컴파일러 패스마다 걸린 실제 시간을 stderr 에 출력합니다.</p>
+<h3 id="-vv-매우-자세히"><a class="anchor" tabindex="-1" href="#-vv-매우-자세히" aria-hidden="true">#</a><code>-vv</code> (매우 자세히)</h3>
+<p><code>-v</code> 에 더해 처리한 파일마다 <code>Reading &lt;file&gt;</code> 줄을, <a href="../000-meta/007-glossary#specialize">specialize</a> 한 (item, type) 쌍마다 <code>Specialized &lt;path&gt;(sig)</code> 줄을 출력합니다.</p>
+<h2 id="996-디버거-통합-gdb--lldb"><a class="anchor" tabindex="-1" href="#996-디버거-통합-gdb--lldb" aria-hidden="true">#</a>9.9.6. 디버거 통합: gdb / lldb</h2>
+<h3 id="dwarf-디버그-정보"><a class="anchor" tabindex="-1" href="#dwarf-디버그-정보" aria-hidden="true">#</a>DWARF 디버그 정보</h3>
+<p><code>debug</code> profile 빌드와, <code>-g</code> 를 준 <code>release</code> 빌드 (<a href="902-aot-pipeline#9215-산출물">9.2.15</a>) 는 DWARF 디버그 정보를 emit 합니다. Windows 대상에서는 그 대신 같은 정보를 담은 CodeView 와 PDB 를 냅니다. 이때 다음과 같은 특성을 갖습니다.</p>
+<ul>
+<li>함수의 <code>DW_AT_name</code> 은 rok 경로 (<code>geom::distance</code>) 이며, linkage name (맹글링된 심볼) 은 두지 않습니다. 디버거가 <code>_Y</code> 맹글링을 모르기 때문입니다.
+</li>
+<li>줄 번호는 원본 .rok 파일의 줄을 가리킵니다.
+</li>
+<li>지역 변수는 원본 이름과 타입으로 보입니다. 원시 타입 (정수, 부동소수, <code>bool</code>, <code>char</code>) 외에 struct (필드 이름), 튜플, <code>str</code>, <code>any</code>, sum 타입, 배열의 DWARF 타입을 냅니다. sum 타입과 enum 은 DWARF variant part 입니다: artificial discriminant 멤버와, 변형마다 (데이터 없는 변형 포함) <code>DW_AT_discr_value</code> 를 가진 <code>DW_TAG_variant</code> 하나씩이며, 각각은 <code>&lt;Sum&gt;::&lt;Variant&gt;</code> 라는 이름의 struct 를 담습니다. 두 backend 가 같은 형태를 쓰며, 디버거가 variant part 를 읽도록 compile unit 은 <code>DW_LANG_Rust</code> 를 씁니다 (rok 의 DWARF 언어 코드는 없음). <code>GcBuf&lt;T&gt;</code> 참조는 그 객체 (헤더, 그 다음 <code>T</code> 원소들) 를 가리키는 포인터로 기술합니다. <code>any</code> 값은 그 안에 저장된 타입들에 대한 variant part 이며, discriminant 는 저장된 tag 입니다. discriminant 는 artificial <code>i32</code> 입니다 (저장된 tag; <code>throws</code> carrier 의 <code>bool</code> tag 는 바이트). 함수 값 (<code>fn</code> 타입이나 클로저) 은 그 타입 이름 (<code>fn(i32) -&gt; i32</code>) 의 구조체이며, 멤버는 <code>code</code> (<code>DW_TAG_subroutine_type</code> 을 가리키는 포인터: 환경, 그다음 매개변수) 와 <code>env</code> (그 환경; 클로저의 타입을 알면 환경 객체를 가리키는 포인터) 입니다. 그래서 디버거가 대상 함수를 보여 줍니다. 참조로 캡처한 변수는 그 값으로 보입니다. 컴파일러가 만드는 함수 (C <code>main</code>, static 초기화 guard) 도 subprogram 을 가집니다. 컴파일러가 만든 지역 변수 (이름이 <code>#</code> 이나 <code>__</code> 로 시작) 는 빠집니다.
+</li>
+<li>블록마다 lexical block scope 를 내므로 가려진 (shadowed) 이름은 해당 블록 안에서만 보입니다.
+</li>
+<li>스택 슬롯을 가진 지역은 debug / release 모두 <code>llvm.alloca</code> 하나에 놓입니다. 그래서 <code>-g</code> 는 최적화 수준과 무관하게 같은 슬롯에 debug 정보를 붙입니다.
+</li>
+</ul>
+<h3 id="gdb--lldb-사용"><a class="anchor" tabindex="-1" href="#gdb--lldb-사용" aria-hidden="true">#</a>gdb / lldb 사용</h3>
+<p>표준 gdb 와 lldb 명령어가 rok 코드에 그대로 동작합니다.</p>
+<pre><code>gdb ./target/debug/my_binary
+(gdb) break main
+(gdb) run
+(gdb) print x
+$1 = (i32) 42          # 원시 타입 변수만
+(gdb) bt
+#0  main at src/main.rok:5
+...
+</code></pre>
+<h3 id="formatter"><a class="anchor" tabindex="-1" href="#formatter" aria-hidden="true">#</a>Formatter</h3>
+<p>gdb 는 DWARF 만으로 합, enum, <code>any</code> 의 활성 변형만 보여 줍니다. lldb 에는 그 단위의 언어에 대한 plugin 이 없어 모든 변형을 나열합니다. toolchain 은 활성 변형만 보여 주는 lldb formatter <code>lib/rok/lldb/rok_lldb.py</code> 를 함께 배포합니다 (변형 이름을 summary 로, 그 필드를 children 으로; box 된 <code>any</code> payload 는 그 box 를 거쳐). <code>rokc --print lldbinit</code> (<a href="901-rokc-cli#rokc---print-lldbinit-lldb-formatter">9.1.4</a>) 이 그것을 로드하는 lldb 명령을 출력합니다.</p>
+<pre><code>lldb -O &quot;$(rokc --print lldbinit)&quot; ./target/debug/my_binary
+rokc --print lldbinit &gt;&gt; ~/.lldbinit
+</code></pre>
+<h3 id="macos--windows-디버거"><a class="anchor" tabindex="-1" href="#macos--windows-디버거" aria-hidden="true">#</a>macOS / Windows 디버거</h3>
+<p>각 플랫폼의 기본 디버거가 rok 바이너리를 처리합니다.</p>
+<ul>
+<li>macOS 에서는 lldb 또는 Xcode debugger 를 사용하면 됩니다.
+</li>
+<li>Windows 에서는 Visual Studio debugger 또는 WinDbg (PDB 디버그 정보) 를 사용하면 됩니다.
+</li>
+</ul>
+<h2 id="997-profiler-통합"><a class="anchor" tabindex="-1" href="#997-profiler-통합" aria-hidden="true">#</a>9.9.7. profiler 통합</h2>
+<h3 id="perf-linux"><a class="anchor" tabindex="-1" href="#perf-linux" aria-hidden="true">#</a>perf (Linux)</h3>
+<p>CPU 프로파일링은 <code>perf</code> 로 수행할 수 있습니다.</p>
+<pre><code>perf record ./target/release/my_binary
+perf report
+</code></pre>
+<p>이 경우 rok 함수가 demangled 이름으로 표시됩니다.</p>
+<h3 id="profile-guided-optimization"><a class="anchor" tabindex="-1" href="#profile-guided-optimization" aria-hidden="true">#</a>Profile-guided optimization</h3>
+<p>Profile-guided optimization (<a href="901-rokc-cli#rokc-build-aot-빌드">9.1.2</a>) 은 세 단계입니다:</p>
+<pre><code>rokc build --release -C profile-generate=prof    # 1. 계측 빌드
+./target/release/my_binary &lt;대표 입력&gt;            # 2. 실행 - prof/default_*.profraw 를 씀
+rokc profdata merge -o app.profdata prof          # 3. 병합한 뒤
+rokc build --release -C profile-use=app.profdata  #    profile 로 다시 빌드
+</code></pre>
+<p>선택인 context-sensitive 단계는 <code>-C profile-use=app.profdata -C cs-profile-generate=cs</code> 로 빌드해 다시 실행하고, <code>cs</code> 를 <code>app.profdata</code> 와 합쳐 최종 profile 을 만듭니다. <code>wasm32-wasi</code> 는 지원하고 <code>wasm32-unknown-unknown</code> 은 지원하지 않습니다.</p>
+<h3 id="tracy--chrome-trace-선택"><a class="anchor" tabindex="-1" href="#tracy--chrome-trace-선택" aria-hidden="true">#</a>Tracy / Chrome trace (선택)</h3>
+<p>표준 라이브러리의 tracing 표면을 통해 <code>tracy</code> 또는 Chrome <code>chrome://tracing</code> 과 호환되는 trace 를 출력할 수 있습니다. 구체적인 라이브러리 선택은 본 사양의 범위 밖이며, 별도 라이브러리 spec 에서 다룹니다.</p>
+<h2 id="998-메모리--gc-도구"><a class="anchor" tabindex="-1" href="#998-메모리--gc-도구" aria-hidden="true">#</a>9.9.8. 메모리 / GC 도구</h2>
+<p>런타임은 다음 환경 변수를 읽습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>변수</th><th>효과</th></tr></thead>
+<tbody>
+<tr><td><code>ROK_GC_LOG=1</code></td><td>수집마다 종류 (minor / full), pause 시간, mark 수, sweep 결과를 stderr 에 출력. 동시 full 수집은 시작 pause (minor 수집) 와 끝 pause 를 따로 기록하며, sweep 결과는 살아 있는 바이트의 전 -&gt; 후</td></tr>
+<tr><td><code>ROK_GC_STATS=1</code></td><td>종료 시 수집 횟수 (minor / full), pause 시간, 수집기 CPU 시간을 stderr 에 출력. 둘째 줄은 block 수 / 상주 크기 / evacuation 횟수 / 옮긴 바이트</td></tr>
+<tr><td><code>ROK_GC_CONCURRENT=auto|always|off</code></td><td>full 수집의 동시 mark. <code>auto</code> 는 old 객체 32 MiB 이상일 때 (<a href="../007-runtime/705-concurrent-collection">7.5</a>)</td></tr>
+<tr><td><code>ROK_GC_EVAC=always</code></td><td>테스트용. full 수집마다 evacuation (<a href="../007-runtime/703-gc-algorithm#731-immix-mark-region">7.3.1</a>)</td></tr>
+<tr><td><code>ROK_GC_STRESS=N</code></td><td>테스트용. 할당 N 번마다 수집 (그 8 번째마다 full)</td></tr>
+<tr><td><code>ROK_HEAP_DUMP=on_oom</code></td><td>OOM 시 합계, 바이트 기준 상위 32 개 타입, 가장 큰 큰 객체 32 개를 stderr 에 출력. 최선 노력: 할당하지 않고 lock 을 잡지 않음. 형식은 런타임이 정함</td></tr>
+<tr><td><code>ROK_WORKERS=&lt;n&gt;</code></td><td>executor worker 수 N (기본값: 온라인 CPU 수) (<a href="../007-runtime/706-scheduler#768-thread-per-core-옵션">7.6.8</a>)</td></tr>
+<tr><td><code>ROK_THREAD_PER_CORE=1</code></td><td>thread-per-core: task 를 자기 worker 에 고정하고 stealing 하지 않음 (7.6.8)</td></tr>
+<tr><td><code>ROK_DYNAMIC_WORKERS=1</code></td><td>idle worker 는 park 하고, 모든 활성 worker 가 바쁘면 다시 씀 (<a href="../007-runtime/707-io-and-timer#778-worker-수의-동적-조절">7.7.8</a>)</td></tr>
+</tbody></table></div>
+<p>설정하지 않았거나 비어 있는 변수는 기본값을 가집니다. 나열된 것 밖의 값은 변수, 값, 받는 값을 알리는 경고 한 줄을 stderr 에 출력하며, 그 변수는 기본값을 가집니다.</p>
+<h2 id="999-repl--jupyter-디버그"><a class="anchor" tabindex="-1" href="#999-repl--jupyter-디버그" aria-hidden="true">#</a>9.9.9. REPL / Jupyter 디버그</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>수단</th><th>효과</th></tr></thead>
+<tbody>
+<tr><td><code>:type &lt;식&gt;</code></td><td>식의 타입을 출력 (실행하지 않음)</td></tr>
+<tr><td><code>:reset</code></td><td>세션을 처음 상태로 (라이브러리 경로의 <code>use</code> 는 다시 넣음)</td></tr>
+<tr><td><code>:add &lt;dep&gt; ..</code></td><td>의존성을 추가하고 (현재 환경으로 <code>rok install</code>, 패키지의 세션에서는 <code>rok add</code>) 세션에 붙임 (<a href="910-rok-frontend#9105-환경">9.10.5</a>)</td></tr>
+<tr><td><code>:help</code>, <code>:quit</code></td><td>도움말, 종료</td></tr>
+<tr><td><code>ROK_REPL_TIME=1</code></td><td>셀마다 단계별 시간과, 새로 컴파일한 함수 / 앞 셀에서 재사용한 함수 수 (<a href="906-jit-engine#964-라이브러리-코드의-재사용">9.6.4</a>)</td></tr>
+</tbody></table></div>
+<p>셀의 MLIR / LLVM IR 을 보려면 같은 코드를 <code>main.rok</code> 로 두고 <code>rokc build --emit=mlir,llvmir</code> 을 씁니다 (9.9.1).</p>
+<h2 id="9910-메타-블록-디버그"><a class="anchor" tabindex="-1" href="#9910-메타-블록-디버그" aria-hidden="true">#</a>9.9.10. 메타 블록 디버그</h2>
+<p><a href="../006-meta-system/608-meta-blocks">사용자 정의 메타 블록</a> 의 derive / attribute 가 어떤 코드를 생성하는지 확인할 수 있습니다.</p>
+<pre><code>rokc build --emit=expanded      # → target/&lt;profile&gt;/build/&lt;name&gt;.expanded.rok
+</code></pre>
+<p>이 옵션은 사용자 패키지의 <a href="../006-meta-system/609-template-tokens">메타 확장</a> 결과를 소스 텍스트로 출력합니다. 확장마다 다음 주석 뒤에 생성된 소스가 이어지며, 생성물이 다시 확장된 결과는 바깥 확장 뒤에 이어집니다.</p>
+<pre><code>// expanded from this #[derive(MyHash)] (src/geom.rok:12:1)
+impl MyHash for Point { ... }
+</code></pre>
+<p>메타 확장과 desugar 를 모두 거친 전체 AST 를 rok 소스로 보려면 <code>--emit=ast</code> (<code>&lt;name&gt;.ast.rok</code>) 를 씁니다.</p>
+<h2 id="9911-벤치마크"><a class="anchor" tabindex="-1" href="#9911-벤치마크" aria-hidden="true">#</a>9.9.11. 벤치마크</h2>
+<p>마이크로벤치마크는 다음 명령으로 실행할 수 있습니다.</p>
+<pre><code>rok bench
+</code></pre>
+<p><code>rokc bench</code> 가 벤치마크 하네스를 빌드하고 <code>rok bench</code> (<a href="910-rok-frontend">9.10</a>) 가 그것을 실행하며 (<a href="901-rokc-cli#rokc-bench-벤치마크">9.1.2</a>), <code>#[bench]</code> 가 부착된 함수들을 <code>-O2</code> 빌드에서 하나씩 측정합니다. 각 함수는 <code>Bench</code> 핸들을 받아 <code>b.iter</code> 로 클로저를 측정하므로, 클로저 밖의 setup 은 측정되지 않습니다. 측정 방법은 다음과 같습니다:</p>
+<ol>
+<li><strong>클록.</strong> 모노토닉 나노초 클록. 고정 오버헤드는 표본마다 한 번이 아니라 <code>iters</code> 번 호출을 측정해 상각합니다.
+</li>
+<li><strong>보정.</strong> <code>--iters</code> 를 주지 않으면, 표본 하나가 약 100 ms 가 될 때까지 <code>iters</code> 를 키워 클록 양자화와 오버헤드를 무시할 수준으로 만듭니다.
+</li>
+<li><strong>Warm-up.</strong> 약 표본 하나 분량의 시간만큼 호출을 돌려 버리며, 캐시 / 분기 예측기 / 페이징을 안정시킵니다.
+</li>
+<li><strong>표본.</strong> <code>--samples</code> 개 (기본 100) 표본을 취합니다; 각 표본은 <code>iters</code> 번 호출의 총시간을 기록하고, 호출 한 번의 시간은 그것을 <code>iters</code> 로 나눈 값입니다.
+</li>
+<li><strong>통계.</strong> 평균 · 중앙값 · 표준편차 · 중앙값 절대편차 (MAD) · 최소 · 최대를 계산합니다. Tukey 울타리 (1.5 IQR mild, 3 IQR severe) 를 벗어난 표본은 이상치로 보고하되 요약 수치에서는 뺍니다. 보고 수치는 <strong>중앙값 (+/- MAD)</strong> 으로, 가끔 느린 표본에 강건합니다.
+</li>
+<li><strong>GC 인지.</strong> 표본마다 런타임의 수집 카운터를 전후로 읽어, 수집이 일어난 표본은 이상치로 분류해 따로 셉니다. GC 일시정지가 중앙값을 왜곡하지 않습니다.
+</li>
+</ol>
+<p><code>black_box(x)</code> 는 옵티마이저가 꿰뚫어 볼 수 없는 항등 함수입니다; 측정 클로저의 입력과 결과에 적용해 작업이 밖으로 끌려 나가거나 접혀 사라지지 않게 하십시오. <code>b.bytes(n)</code> / <code>b.items(n)</code> 은 호출당 시간을 처리량 (<code>MiB/s</code>, <code>Melem/s</code>) 으로 바꿉니다.</p>
+<p>터미널 출력은 사람이 읽는 단위로 정렬되고, 터미널이 아니면 회귀 도구를 위한 안정적인 벤치당 한 줄 기계 가독 형식입니다. <code>--iters</code> / <code>--samples</code> 로 표본을 조절합니다.</p>
+<h2 id="9912-ci--테스트-통합"><a class="anchor" tabindex="-1" href="#9912-ci--테스트-통합" aria-hidden="true">#</a>9.9.12. CI / 테스트 통합</h2>
+<h3 id="ci-모드"><a class="anchor" tabindex="-1" href="#ci-모드" aria-hidden="true">#</a>CI 모드</h3>
+<p>CI 환경에서는 machine-readable 출력을 사용하면 좋습니다.</p>
+<pre><code>rokc build --message-format=json --no-color &gt; build.log
+</code></pre>
+<p>이 출력은 CI 시스템이 파싱하기에 적합합니다.</p>
+<h3 id="종료-코드"><a class="anchor" tabindex="-1" href="#종료-코드" aria-hidden="true">#</a>종료 코드</h3>
+<p><a href="901-rokc-cli"><code>rokc</code> CLI 인터페이스</a> 의 종료 코드는 다음과 같이 정의됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>코드</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>성공</td></tr>
+<tr><td><code>1</code></td><td>사용자 코드 에러</td></tr>
+<tr><td><code>2</code></td><td>CLI 에러</td></tr>
+<tr><td><code>101</code></td><td>rokc 내부 panic</td></tr>
+</tbody></table></div>
+<p><code>rokc test</code> 는 하네스를 빌드할 뿐 테스트를 실행하지 않습니다. 실행은 <code>rok test</code> 가 하며 실패한 테스트가 있으면 <code>1</code> 입니다. 테스트마다 별도 프로세스이므로 테스트의 panic (<code>101</code>) 이 러너의 <code>101</code> 이 되지는 않습니다.</p>
+<p>CI 가 코드별로 다른 처리 (재시도, 알림 등) 를 적용할 수 있습니다.</p>
+<h2 id="9913-lsp-서버"><a class="anchor" tabindex="-1" href="#9913-lsp-서버" aria-hidden="true">#</a>9.9.13. LSP 서버</h2>
+<p><code>rokc</code> 는 LSP (Language Server Protocol) 모드를 제공합니다. 같은 서버를 독립 바이너리 <code>rokls</code> (= <code>rok lsp</code>) 로도 제공합니다. stdio 로 통신하며, 진단, hover (멤버 포함), go-to-definition (정의하는 이름의 범위를 돌려줌), references, rename, 문서 심볼, 멤버 / 경로 완성, 포맷을 제공합니다. references 와 rename 은 버퍼 안에서만 동작합니다.</p>
+<pre><code>rokc lsp
+rokls
+</code></pre>
+<p>이 모드를 사용하면 VS Code, Vim, Emacs 등 LSP 클라이언트가 자동 완성, hover, go-to-definition, 진단 등을 받아옵니다. 내부적으로는 <code>rokc check</code> 의 점진적 결과를 활용합니다.</p>
+<p>자세한 LSP 명세는 본 사양 외이며 (LSP 표준 + rokc 구현 결정), 별도로 정의됩니다.</p>
+<h2 id="9914-패키지-검사"><a class="anchor" tabindex="-1" href="#9914-패키지-검사" aria-hidden="true">#</a>9.9.14. 패키지 검사</h2>
+<p>미리 빌드한 라이브러리 패키지의 정보를 한 번에 확인할 수 있습니다.</p>
+<pre><code>rokc inspect path/to/libfoo.a        # 또는 foo.rokhir - 짝 파일을 함께 읽음
+</code></pre>
+<p>이 명령은 ROKHIR (<a href="904-rokhir-bytecode">9.4</a>) 과 <a href="../000-meta/007-glossary#archive">archive</a> 의 정보를 다음과 같이 표시합니다.</p>
+<pre><code>Package: foo
+Hash: 3f8a1c2b
+rokc version: 0.1.0
+ROKHIR version: 1
+GC type ids: 4096..4160
+
+Exports:
+  pub fn distance(p1: Point, p2: Point) -&gt; f64
+  pub struct Point
+  ...
+
+Generic items (ROKHIR):
+  pub fn id&lt;T&gt;(x: T) -&gt; T
+  ...
+
+Concrete .o files:
+  foo.o (15 KB)
+</code></pre>
+<p><code>rokc rokhir-text &lt;file&gt;</code> 은 ROKHIR 의 버전, producer, meta 와 interface 파일 전체를 출력합니다 (9.9.2).</p>
+<p>이를 통해 패키지의 외부에 보이는 모습을 한눈에 파악할 수 있습니다.</p>
+<h2 id="9915-정리"><a class="anchor" tabindex="-1" href="#9915-정리" aria-hidden="true">#</a>9.9.15. 정리</h2>
+<p>지금까지 살펴본 도구들이 rok 의 개발과 디버그 경험의 핵심을 이룹니다. 표준 도구 (gdb, perf, jupyter) 와의 통합과 rok 고유 도구 (<code>rokc demangle</code>, <code>rokc rokhir-text</code> 등) 가 결합되어 풍부한 진단 환경을 제공합니다.</p>
+<p>이로써 9 장 (실행과 툴) 을 마무리하며, 본 사양 전체가 큰 그림을 완성합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/009-tools/909-debug-tools.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="908-jupyter-integration"><small>Previous</small>9.8. Jupyter 커널 통합</a><a class="next" href="910-rok-frontend"><small>Next</small>9.10. rok - 패키지 / 빌드 front-end</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.14. throws 시그니처 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="에러 제어 흐름 의 throw, try, catch, finally 와 결합되는 함수 시그니처의 throws / rethrows 형태를 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/414-throws.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.14. throws 시그니처 - rok docs">
+<meta property="og:description" content="에러 제어 흐름 의 throw, try, catch, finally 와 결합되는 함수 시그니처의 throws / rethrows 형태를 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/414-throws.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/414-throws.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/414-throws.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">4. 함수 개요</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li><a href="405-closure">4.5. 클로저</a></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li><a href="409-method">4.9. 메서드</a></li><li><a href="410-nested-functions">4.10. 중첩 함수</a></li><li><a href="411-generators">4.11. 제너레이터 (yield)</a></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li><a href="413-stream">4.13. 스트림 (async yield)</a></li><li class="cur"><a aria-current="page" href="414-throws">4.14. throws 시그니처</a><ul class="toc"><li><a href="#4141-형태">4.14.1. 형태</a></li><li><a href="#4142-non-throwing-함수">4.14.2. non-throwing 함수</a></li><li><a href="#4143-untyped-throws">4.14.3. untyped throws</a></li><li><a href="#4144-typed-throws-의-단일-타입과-합-타입">4.14.4. typed throws 의 단일 타입과 합 타입</a></li><li><a href="#4145-throws-와-본체의-일치">4.14.5. throws 와 본체의 일치</a></li><li><a href="#4146-호출자의-의무">4.14.6. 호출자의 의무</a></li><li><a href="#4147-rethrows">4.14.7. rethrows</a></li><li><a href="#4148-함수-타입의-throws">4.14.8. 함수 타입의 throws</a></li><li><a href="#4149-throws-와-async-yield-의-결합">4.14.9. throws 와 async, yield 의 결합</a></li><li><a href="#41410-throws-가-합-타입-시그니처에-미치는-영향">4.14.10. throws 가 합 타입 시그니처에 미치는 영향</a></li><li><a href="#41411-메서드의-throws">4.14.11. 메서드의 throws</a></li><li><a href="#41412-값-기반-구현-모델">4.14.12. 값 기반 구현 모델</a></li><li><a href="#41413-panic-과-fatal-에러">4.14.13. panic 과 fatal 에러</a></li></ul></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li><a href="416-entry-point">4.16. 진입점</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="414-throws-시그니처 414-throws-signatures 4141-형태 4141-form 4142-non-throwing-함수 4142-non-throwing-functions 4143-untyped-throws 4143-untyped-throws 4144-typed-throws-의-단일-타입과-합-타입 4144-typed-throws-single-types-and-sum-types 4145-throws-와-본체의-일치 4145-agreement-between-throws-and-the-body 4146-호출자의-의무 4146-caller-obligations 4147-rethrows 4147-rethrows 4148-함수-타입의-throws 4148-throws-in-function-types 4149-throws-와-async-yield-의-결합 4149-combining-throws-with-async-and-yield 41410-throws-가-합-타입-시그니처에-미치는-영향 41410-effect-of-throws-on-sum-type-signatures try-for try-for 41411-메서드의-throws 41411-throws-on-methods 41412-값-기반-구현-모델 41412-value-based-implementation-model 41413-panic-과-fatal-에러 41413-panics-and-fatal-errors"><a href="../../../../spec/refs-lang/004-functions/414-throws" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="414-throws-시그니처"><a class="anchor" tabindex="-1" href="#414-throws-시그니처" aria-hidden="true">#</a>4.14. <code>throws</code> 시그니처</h1>
+<p><a href="../003-expressions/314-error-control-flow">에러 제어 흐름</a> 의 <code>throw</code>, <code>try</code>, <code>catch</code>, <code>finally</code> 와 결합되는 함수 시그니처의 <code>throws</code> / <code>rethrows</code> 형태를 정의합니다.</p>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>rok 의 에러 모델은 <code>throws</code> 하나입니다. 에러를 던질 수 있는 함수는 시그니처에 <code>throws</code> 를 적고, 호출하는 쪽은 그 호출을 <code>try</code> 로 표시합니다. 에러를 값으로 담아 두어야 할 때에만 표준 라이브러리의 <a href="../../refs-standard-libraries/200-core/214-error"><code>Result&lt;T, E&gt;</code></a> 를 씁니다. 규칙은 한 줄입니다. <strong>던지면 <code>throws</code>, 담아 두면 <code>Result</code>.</strong></p>
+</div>
+<h2 id="4141-형태"><a class="anchor" tabindex="-1" href="#4141-형태" aria-hidden="true">#</a>4.14.1. 형태</h2>
+<p><a href="401-function-declaration">함수 선언</a> 의 <code>fn_decl</code> 에는 <code>throws_clause?</code> 가 매개변수 괄호 뒤이자 반환 타입 화살표 앞 위치에 결합됩니다.</p>
+<pre><code>throws_clause   ::= &quot;throws&quot; (&quot;(&quot; type_expr &quot;)&quot;)?
+                  | &quot;rethrows&quot;
+</code></pre>
+<p>따라서 <code>fn_decl</code> 의 전체 형태는 다음과 같이 표현됩니다.</p>
+<pre><code>fn_decl ::= visibility? fn_modifiers &quot;fn&quot; identifier &quot;(&quot; param_list? &quot;)&quot; throws_clause? return_type? block
+</code></pre>
+<p>여기서 <code>fn_modifiers</code> 는 <a href="401-function-declaration">4.1 함수 선언</a> 에서 정의한 <code>unsafe? async? yield?</code> 입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> name(args) -&gt; <span class="t">R</span>                              <span class="c">// non-throwing</span>
+<span class="k">fn</span> name(args) <span class="k">throws</span> -&gt; <span class="t">R</span>                       <span class="c">// untyped - throws (any Error) 의 축약</span>
+<span class="k">fn</span> name(args) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">R</span>                   <span class="c">// typed - 단일 에러 타입</span>
+<span class="k">fn</span> name(args) <span class="k">throws</span> (<span class="t">A</span> | <span class="t">B</span> | <span class="t">C</span>) -&gt; <span class="t">R</span>           <span class="c">// typed - 합 타입 에러</span>
+<span class="k">fn</span> name(f: <span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> -&gt; <span class="t">U</span>) <span class="k">rethrows</span> -&gt; <span class="t">R</span>     <span class="c">// 인자로 받은 함수가 던질 때만 던짐</span>
+</code></pre>
+<p><code>throws</code> 와 <code>rethrows</code> 는 매개변수 괄호 <code>)</code> 뒤에서만 키워드인 문맥 키워드이며 (<a href="../001-lexical/105-keywords#154-문맥-키워드">1.5.4</a>), 반환 타입 화살표 앞에 위치합니다. <code>throws</code> 뒤의 선택적인 괄호 안에는 던질 수 있는 에러의 타입을 명시합니다.</p>
+<h2 id="4142-non-throwing-함수"><a class="anchor" tabindex="-1" href="#4142-non-throwing-함수" aria-hidden="true">#</a>4.14.2. non-throwing 함수</h2>
+<pre><code class="language-rok"><span class="k">fn</span> add(x: <span class="t">i32</span>, y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x + y }
+</code></pre>
+<p><code>throws</code> 가 없는 함수에서는 에러가 함수 밖으로 나갈 수 없습니다. 본체의 <code>throw</code> 나 <code>try</code> 로 표시한 호출에서 나온 에러가 함수 안의 <code>catch</code> 로 모두 처리되지 않으면 컴파일 에러가 발생합니다. 호출자는 이 함수를 <code>try</code> 없이 호출합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> bad() -&gt; <span class="t">i32</span> {
+    <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">"nope"</span> };   <span class="c">// ERROR - non-throwing 함수 밖으로 에러가 나감</span>
+}
+</code></pre>
+<p>이러한 강제는 어떤 함수가 에러를 던질 수 있는지를 시그니처에 명시하도록 만들며, 그 결과 조용한 에러 전파를 차단합니다.</p>
+<h2 id="4143-untyped-throws"><a class="anchor" tabindex="-1" href="#4143-untyped-throws" aria-hidden="true">#</a>4.14.3. untyped <code>throws</code></h2>
+<pre><code class="language-rok"><span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> { ... }
+</code></pre>
+<p>untyped <code>throws</code> 는 <code>throws (any Error)</code> 의 축약입니다. 이 함수는 표준 라이브러리의 <a href="../../refs-standard-libraries/200-core/214-error"><code>Error</code></a> 트레잇을 구현하는 어떤 타입의 에러든 던질 수 있으며, 던진 값은 <a href="../002-types/202-any-slot">제약 붙은 <code>any</code></a> 인 <code>any Error</code> 값으로 전달됩니다. 호출자는 <code>catch</code> 의 타입 패턴으로 구체 타입을 좁혀 매칭하거나, <code>catch e: any Error</code> 또는 catch-all 로 모두 받습니다.</p>
+<p>untyped 형태는 공개 API 와 같이 에러 종류가 호출자에게 닫혀 있지 않은 경우에 권장됩니다.</p>
+<h2 id="4144-typed-throws-의-단일-타입과-합-타입"><a class="anchor" tabindex="-1" href="#4144-typed-throws-의-단일-타입과-합-타입" aria-hidden="true">#</a>4.14.4. typed <code>throws</code> 의 단일 타입과 합 타입</h2>
+<pre><code class="language-rok"><span class="k">fn</span> fetch_user(id: <span class="t">i64</span>) <span class="k">throws</span> (<span class="t">NotFound</span>) -&gt; <span class="t">User</span> { ... }
+<span class="k">fn</span> parse_or_load(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseError</span> | <span class="t">IOError</span> | <span class="t">TimeoutError</span>) -&gt; <span class="t">Data</span> { ... }
+</code></pre>
+<p>괄호 안에 던질 수 있는 정확한 타입을 명시할 수 있으며, 합 타입 (<code>A | B | C</code>) 도 그대로 사용할 수 있습니다.</p>
+<p>typed 형태는 내부 또는 라이브러리 API, 임베디드 환경, 그리고 에러 종류가 닫혀 있는 경우에 적합합니다. 이 경우 컴파일러는 호출자의 <code>catch</code> 가지가 에러 타입을 모두 덮는지 검증할 수 있으며, 모두 덮으면 그 식은 더 이상 에러를 던지지 않는 것으로 취급합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> caller() -&gt; <span class="t">Data</span> {             <span class="c">// non-throwing - 세 타입을 모두 처리</span>
+    <span class="k">try</span> parse_or_load(input)
+    <span class="k">catch</span> e: <span class="t">ParseError</span> { ... }
+    <span class="k">catch</span> e: <span class="t">IOError</span> { ... }
+    <span class="k">catch</span> e: <span class="t">TimeoutError</span> { ... }
+}
+</code></pre>
+<h2 id="4145-throws-와-본체의-일치"><a class="anchor" tabindex="-1" href="#4145-throws-와-본체의-일치" aria-hidden="true">#</a>4.14.5. <code>throws</code> 와 본체의 일치</h2>
+<p>함수 밖으로 나갈 수 있는 모든 에러는 시그니처의 <code>throws</code> 와 호환되어야 합니다. 에러의 출처는 본체의 <code>throw</code> 문과 <code>try</code> 로 표시한 throwing 호출이며, 함수 안의 <code>catch</code> 가 처리한 에러는 검사 대상에서 빠집니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> f() <span class="k">throws</span> (<span class="t">A</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">throw</span> <span class="t">A_instance</span>;             <span class="c">// OK</span>
+    <span class="k">throw</span> <span class="t">B_instance</span>;             <span class="c">// ERROR - A 만 가능</span>
+}
+</code></pre>
+<p>호환 규칙은 다음과 같습니다. typed <code>throws (E)</code> 는 출처의 에러 타입이 모두 <code>E</code> 의 항이어야 합니다. untyped <code>throws</code> 는 출처의 에러 타입이 모두 <code>Error</code> 를 구현해야 하며, 그 값은 <code>any Error</code> 로 전달됩니다.</p>
+<p>에러 타입 사이의 자동 변환은 없습니다. 하위 함수의 에러를 다른 타입으로 바꿔 전파하려면 <code>catch</code> 에서 감싸 다시 던집니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> load_config(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ConfigError</span>) -&gt; <span class="t">Config</span> {
+    <span class="k">try</span> parse_toml(read_text(path))
+    <span class="k">catch</span> e: <span class="t">IOError</span> { <span class="k">throw</span> <span class="t">ConfigError</span>::io(e); }
+    <span class="k">catch</span> e: <span class="t">ParseError</span> { <span class="k">throw</span> <span class="t">ConfigError</span>::syntax(e); }
+}
+</code></pre>
+<h2 id="4146-호출자의-의무"><a class="anchor" tabindex="-1" href="#4146-호출자의-의무" aria-hidden="true">#</a>4.14.6. 호출자의 의무</h2>
+<p><code>throws</code> 함수를 호출하는 식은 반드시 <code>try</code> 가 덮는 식 안에 있어야 합니다. <code>try</code> 없이 throwing 함수를 호출하면 컴파일 에러가 발생합니다. <code>try</code> 는 그 오른쪽 식 전체를 덮으므로, <code>try a(b())</code> 는 <code>a</code> 와 <code>b</code> 두 호출을 모두 덮고, <code>try { a(); b(); }</code> 는 블록 안의 호출을 모두 덮습니다 (<a href="../003-expressions/314-error-control-flow#3142-try-호출-지점-표시">3.14.2</a>).</p>
+<p><code>try</code> 로 표시한 호출에서 나온 에러는 가장 가까운 <code>catch</code> 가 처리하며, 처리되지 않은 에러는 둘러싼 함수로 전파됩니다. 이때 둘러싼 함수의 <code>throws</code> 가 그 에러 타입을 받아야 합니다 (4.14.5).</p>
+<pre><code class="language-rok"><span class="k">fn</span> caller() {                     <span class="c">// non-throwing</span>
+    parse(s);                     <span class="c">// ERROR - throwing 호출에 try 표시 없음</span>
+    <span class="k">try</span> parse(s);                 <span class="c">// ERROR - 에러가 전파되는데 caller 는 throws 가 아님</span>
+}
+
+<span class="k">fn</span> caller2() <span class="k">throws</span> {             <span class="c">// 전파</span>
+    <span class="k">try</span> parse(s);                 <span class="c">// OK</span>
+}
+
+<span class="k">fn</span> caller3() {                    <span class="c">// 잡음</span>
+    <span class="k">try</span> parse(s) <span class="k">catch</span> _ {
+        ...
+    };
+}
+
+<span class="k">fn</span> caller4() -&gt; <span class="t">i32</span> {             <span class="c">// 에러를 버리거나 panic 으로 바꿈</span>
+    <span class="k">let</span> a = (<span class="k">try</span>? parse(s)) ?? <span class="n">0</span>; <span class="c">// try? - 에러면 none</span>
+    <span class="k">let</span> b = <span class="k">try</span>! parse(t);        <span class="c">// try! - 에러면 panic</span>
+    a + b
+}
+</code></pre>
+<p>이로써 에러가 흐를 수 있는 지점은 모두 코드에 <code>try</code> 로 드러나며, 에러가 어디까지 전파되는지는 함수 시그니처의 <code>throws</code> 로 드러납니다.</p>
+<h2 id="4147-rethrows"><a class="anchor" tabindex="-1" href="#4147-rethrows" aria-hidden="true">#</a>4.14.7. <code>rethrows</code></h2>
+<pre><code class="language-rok"><span class="k">fn</span> map&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> -&gt; <span class="t">U</span>) <span class="k">rethrows</span> -&gt; <span class="t">List</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">let</span> out: <span class="t">List</span>&lt;<span class="t">U</span>&gt; = [];
+    <span class="k">for</span> x <span class="k">in</span> <span class="k">self</span> {
+        out.push(<span class="k">try</span> f(x));
+    }
+    out
+}
+</code></pre>
+<p><code>rethrows</code> 는 함수형 매개변수를 받는 고차 함수를 위한 형태입니다. <code>rethrows</code> 함수는 인자로 받은 함수나 클로저가 던질 때에만 던집니다.</p>
+<ul>
+<li>호출 지점에서 throwing 함수형 매개변수에 넘긴 인자가 모두 non-throwing 이면, 그 호출은 non-throwing 이며 <code>try</code> 없이 부릅니다.
+</li>
+<li>인자 중 하나라도 throwing 이면 그 호출은 throwing 이며, 던지는 에러 타입은 그 인자들의 에러 타입입니다. 호출자는 <code>try</code> 로 표시합니다.
+</li>
+<li><code>rethrows</code> 함수의 본체에서 함수 밖으로 나갈 수 있는 에러는 함수형 매개변수의 호출에서 나온 에러뿐입니다. 본체가 자기 에러를 직접 던지면 컴파일 에러입니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> lens = names.map(|s| s.len());              <span class="c">// non-throwing 클로저 - try 없음</span>
+<span class="k">let</span> nums = <span class="k">try</span> names.map(|s| <span class="k">try</span> parse(s));     <span class="c">// throwing 클로저 - try 필요</span>
+</code></pre>
+<p><code>rethrows</code> 함수를 값으로 쓰면, 기대 타입 (함수 타입) 이 어느 인스턴스를 쓸지 정합니다. 기대 타입이 없으면 에러 매개변수는 <code>any Error</code> 로 정해집니다.</p>
+<h2 id="4148-함수-타입의-throws"><a class="anchor" tabindex="-1" href="#4148-함수-타입의-throws" aria-hidden="true">#</a>4.14.8. 함수 타입의 <code>throws</code></h2>
+<p><code>throws</code> 는 <a href="404-function-type">함수 타입</a> 에도 붙습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">U</span>                    <span class="c">// non-throwing</span>
+<span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> -&gt; <span class="t">U</span>             <span class="c">// untyped - throws (any Error)</span>
+<span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">U</span>         <span class="c">// typed</span>
+</code></pre>
+<p>non-throwing 함수 값은 같은 매개변수와 반환 타입의 throwing 함수 타입 자리에 넣을 수 있으며, <code>throws (A)</code> 함수 값은 <code>throws (A | B)</code> 자리나 (<code>A</code> 가 <code>Error</code> 를 구현하면) untyped <code>throws</code> 자리에 넣을 수 있습니다. 반대 방향은 허용되지 않습니다. 자세한 내용은 <a href="404-function-type">4.4</a> 에서 다룹니다.</p>
+<h2 id="4149-throws-와-async-yield-의-결합"><a class="anchor" tabindex="-1" href="#4149-throws-와-async-yield-의-결합" aria-hidden="true">#</a>4.14.9. <code>throws</code> 와 <code>async</code>, <code>yield</code> 의 결합</h2>
+<p>세 수식어는 모두 같은 함수에 결합할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch(url: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NetworkError</span>) -&gt; <span class="t">Data</span> { ... }
+
+<span class="k">yield</span> <span class="k">fn</span> lines(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">str</span> { ... }
+
+<span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> read_paginated(url: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NetworkError</span>) -&gt; <span class="t">Page</span> { ... }
+</code></pre>
+<p><code>throws</code> 는 시그니처 위치의 키워드로서, <code>async</code> 또는 <code>yield</code> 와 직교적으로 결합됩니다.</p>
+<h2 id="41410-throws-가-합-타입-시그니처에-미치는-영향"><a class="anchor" tabindex="-1" href="#41410-throws-가-합-타입-시그니처에-미치는-영향" aria-hidden="true">#</a>4.14.10. <code>throws</code> 가 합 타입 시그니처에 미치는 영향</h2>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch_data() <span class="k">throws</span> (<span class="t">NetworkError</span>) -&gt; <span class="t">Data</span> { ... }
+</code></pre>
+<p>위 함수의 호출 결과가 <code>Data | NetworkError</code> 를 담는 Future 인지 궁금할 수 있습니다.</p>
+<p>답은 <strong><code>TryAsyncFuture&lt;Data, NetworkError&gt;</code></strong> 입니다 (<a href="401-function-declaration#코루틴-함수의-결과-타입">4.1.11</a>). 에러는 결과 타입에 섞이지 않고, <code>await</code> 지점에서 에러 채널로 전달됩니다. 따라서 <code>await</code> 하는 쪽이 <code>try</code> 로 표시합니다. <code>TryAsyncFuture</code> 는 일반 <code>Future</code> 트레잇을 구현하지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = fetch_data();              <span class="c">// f: TryAsyncFuture&lt;Data, NetworkError&gt;</span>
+<span class="k">let</span> d = <span class="k">try</span> <span class="k">await</span> f <span class="k">catch</span> e: <span class="t">NetworkError</span> {
+    ...
+};
+</code></pre>
+<p>이 결정 덕분에 결과가 결과와 에러라는 두 변형을 갖는 <code>enum</code> 으로 변하지 않습니다.</p>
+<p><code>yield</code> 와 <code>async yield</code> 도 동일한 패턴을 따릅니다. <code>throws (E)</code> 인 제너레이터는 <code>TryGenIter&lt;T, E&gt;</code>, 스트림은 <code>TryAsyncStream&lt;T, E&gt;</code> 이며, 에러는 <code>next</code> 지점에서 에러 채널로 전달됩니다.</p>
+<h3 id="try-for"><a class="anchor" tabindex="-1" href="#try-for" aria-hidden="true">#</a><code>try for</code></h3>
+<p><code>next</code> 가 던지는 iterator (<code>TryGenIter</code> 등) 를 도는 <code>for</code> 는 throwing 식이므로 <code>try</code> 로 덮어야 합니다. <code>for await</code> 도 마찬가지입니다.</p>
+<pre><code class="language-rok"><span class="k">try</span> <span class="k">for</span> line <span class="k">in</span> lines(<span class="s">"a.txt"</span>) {         <span class="c">// 각 next 의 IoError 가 전파됨</span>
+    process(line);
+}
+<span class="k">try</span> <span class="k">for</span> <span class="k">await</span> ev <span class="k">in</span> events() { handle(ev); }
+<span class="k">for</span> line <span class="k">in</span> lines(<span class="s">"a.txt"</span>) { ... }       <span class="c">// ERROR - try 없음</span>
+</code></pre>
+<h2 id="41411-메서드의-throws"><a class="anchor" tabindex="-1" href="#41411-메서드의-throws" aria-hidden="true">#</a>4.14.11. 메서드의 <code>throws</code></h2>
+<p><a href="409-method">메서드</a> 의 일반 메서드와 마찬가지로 <code>throws</code> 시그니처를 가질 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Database</span> {
+    <span class="k">fn</span> query(<span class="k">self</span>, sql: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">SqlError</span>) -&gt; <span class="t">ResultSet</span> { ... }
+}
+</code></pre>
+<p>호출 시 호출자의 의무와 전파 규칙은 자유 함수와 동일하게 적용됩니다.</p>
+<p>트레잇을 구현하는 impl 메서드의 <code>throws</code> 는 트레잇 메서드의 <code>throws</code> 와 같아야 합니다. impl 이 <code>throws</code> 를 새로 붙이거나 에러 타입을 넓히면 컴파일 에러입니다.</p>
+<p>연산자 트레잇 메서드 (<code>Add::add</code> 등) 는 <code>throws</code> 없이 선언되므로 연산자는 에러를 던지지 않습니다. 실패할 수 있는 연산은 이름 있는 메서드로 두거나 <code>Result</code> 를 반환합니다 (<a href="../../refs-standard-libraries/200-core/203-ops">stdlib 2.3</a>).</p>
+<h2 id="41412-값-기반-구현-모델"><a class="anchor" tabindex="-1" href="#41412-값-기반-구현-모델" aria-hidden="true">#</a>4.14.12. 값 기반 구현 모델</h2>
+<p>throwing 함수는 결과를 값으로 돌려줍니다. 반환값은 성공 여부 플래그와, 성공 값 또는 에러 값을 담는 payload 의 쌍입니다. 에러 채널은 시그니처로 구분되므로 성공 타입과 에러 타입이 같은 타입이어도 문제가 없습니다. 호출 지점의 <code>try</code> 는 플래그를 검사해 분기하며, 에러면 가장 가까운 <code>catch</code> 로 가거나 둘러싼 함수의 에러 결과로 그대로 반환합니다.</p>
+<p>이 모델에서는 에러가 나지 않는 경로의 비용이 분기 하나뿐이고, <code>try</code> 나 <code>catch</code> 에 진입하는 비용은 없습니다. 스택을 거슬러 올라가는 unwinding 이나 런타임의 에러 전달 함수도 쓰지 않습니다. 정확한 반환값 레이아웃은 <a href="../008-abi/806-calling-convention#865-throwing-함수의-반환-값-기반-에러-전달">8.6.5</a> 에서, lowering 은 <a href="../008-abi/809-lowering-control#896-try--catch--finally-값-기반-분기">8.9.6</a> 에서 정의합니다.</p>
+<h2 id="41413-panic-과-fatal-에러"><a class="anchor" tabindex="-1" href="#41413-panic-과-fatal-에러" aria-hidden="true">#</a>4.14.13. panic 과 fatal 에러</h2>
+<p>panic 은 <code>throws</code> 의 에러가 아닙니다. 표준 라이브러리의 <code>panic_fn</code>, <code>try!</code> 의 실패, 0 으로 나누기, 정수 overflow, 경계 검사 실패 같은 panic 과 <a href="../003-expressions/314-error-control-flow">에러 제어 흐름</a> 의 fatal 에러는 어떤 <code>throws</code> 시그니처에도 들어가지 않으며, <code>catch</code> 로 잡을 수 없습니다. 런타임은 다음을 표준 에러 (stderr) 에 출력하고 프로세스를 종료 코드 <code>101</code> 로 종료합니다.</p>
+<pre><code>thread '&lt;name&gt;' panicked at &lt;path&gt;:&lt;line&gt;:&lt;col&gt;:
+&lt;message&gt;
+</code></pre>
+<ul>
+<li><code>&lt;name&gt;</code> 은 스레드 이름이며, 주 스레드는 <code>main</code>, 이름 없는 스레드는 <code>&lt;unnamed&gt;</code> 입니다.
+</li>
+<li>위치는 실패한 식입니다. <a href="../006-meta-system/602-built-in-attributes#6212-track_caller-호출-위치-전달"><code>#[track_caller]</code></a> 함수 사슬 안이면 그 사슬 밖의 첫 호출 위치입니다.
+</li>
+<li>backtrace 는 정의하지 않습니다.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/414-throws.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="413-stream"><small>Previous</small>4.13. 스트림 (async yield)</a><a class="next" href="415-unsafe"><small>Next</small>4.15. unsafe - 함수 modifier 와 블록 표현식</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calling a C library - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Declare libc's strlen, getpid, getenv, snprintf and qsort in an extern &quot;C&quot; block, and manage C memory directly with the pointer and allocation functions of rok:...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/ffi-libc.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Calling a C library - rok docs">
+<meta property="og:description" content="Declare libc's strlen, getpid, getenv, snprintf and qsort in an extern &quot;C&quot; block, and manage C memory directly with the pointer and allocation functions of rok:...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/ffi-libc.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li class="cur"><a aria-current="page" href="ffi-libc">Calling a C library</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="calling-a-c-library"><a class="anchor" tabindex="-1" href="#calling-a-c-library" aria-hidden="true">#</a>Calling a C library</h1>
+<p>Declare libc's <code>strlen</code>, <code>getpid</code>, <code>getenv</code>, <code>snprintf</code> and <code>qsort</code> in an <code>extern &quot;C&quot;</code> block, and manage C memory directly with the pointer and allocation functions of <code>rok::bare</code>.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::alloc::{<span class="t">Layout</span>, <span class="t">LayoutError</span>, alloc, dealloc};
+<span class="k">use</span> rok::bare::ptr::{<span class="t">CPtr</span>, <span class="t">ConstPtr</span>, <span class="t">ManyPtr</span>, <span class="t">Ptr</span>};
+
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> strlen(s: <span class="t">str</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> getpid() -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> setenv(name: <span class="t">str</span>, value: <span class="t">str</span>, overwrite: <span class="t">i32</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> getenv(name: <span class="t">str</span>) -&gt; <span class="t">CPtr</span>&lt;c_char&gt;;   <span class="c">// NULL when unset</span>
+    <span class="k">fn</span> snprintf(buf: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;, size: <span class="t">usize</span>, fmt: <span class="t">str</span>, ...) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> qsort(base: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;, n: <span class="t">usize</span>, size: <span class="t">usize</span>, cmp: <span class="k">extern</span> <span class="s">"C"</span> <span class="k">fn</span>(<span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt;, <span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt;) -&gt; <span class="t">i32</span>);
+}
+
+<span class="c">// A C string (NUL-terminated chars) copied into a rok `str`.</span>
+<span class="k">unsafe</span> <span class="k">fn</span> from_c(p: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">str</span> {
+    <span class="k">let</span> bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [];
+    <span class="k">let</span> i = <span class="n">0usize</span>;
+    <span class="k">loop</span> {
+        <span class="k">let</span> b = p.add(i).read();
+        <span class="k">if</span> b == c<span class="s">'\0'</span> { <span class="k">break</span>; }
+        bytes.push(b <span class="k">as</span> <span class="t">u8</span>);
+        i += <span class="n">1</span>;
+    }
+    <span class="k">try</span> <span class="t">str</span>::from_utf8(bytes) <span class="k">catch</span> _ { <span class="s">"&lt;invalid utf-8&gt;"</span> }
+}
+
+<span class="c">// getenv with the NULL case turned into `none`.</span>
+<span class="k">fn</span> c_getenv(name: <span class="t">str</span>) -&gt; <span class="t">str</span> | <span class="k">none</span> {
+    <span class="k">let</span> p = <span class="k">unsafe</span> { getenv(name) }.as_const()?;
+    <span class="k">unsafe</span> { from_c(p) }
+}
+
+<span class="c">// The comparator qsort calls back: a rok function with the C ABI.</span>
+<span class="k">extern</span> <span class="s">"C"</span> <span class="k">fn</span> descending(a: <span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt;, b: <span class="t">ConstPtr</span>&lt;<span class="t">i32</span>&gt;) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> (x, y) = <span class="k">unsafe</span> { (a.read(), b.read()) };
+    <span class="k">if</span> x &lt; y { <span class="n">1</span> } <span class="k">else</span> <span class="k">if</span> x &gt; y { -<span class="n">1</span> } <span class="k">else</span> { <span class="n">0</span> }
+}
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">LayoutError</span>) {
+    <span class="c">// str arguments arrive in C as NUL-terminated char*.</span>
+    println(<span class="s">f"strlen(\"hello, rok\") = {</span><span class="k">unsafe</span> { strlen(<span class="s">"hello, rok"</span>) }<span class="s">}"</span>);
+    println(<span class="s">f"strlen(\"naïve\") = {</span><span class="k">unsafe</span> { strlen(<span class="s">"naïve"</span>) }<span class="s">} bytes"</span>);
+
+    <span class="k">let</span> pid = <span class="k">unsafe</span> { getpid() };
+    println(<span class="s">f"getpid() &gt; 0: {</span>pid &gt; <span class="n">0</span><span class="s">}, matches process::id(): {</span>pid <span class="k">as</span> <span class="t">u32</span> == rok::std::process::id()<span class="s">}"</span>);
+
+    <span class="k">unsafe</span> { setenv(<span class="s">"ROK_FFI_DEMO"</span>, <span class="s">"set from C"</span>, <span class="n">1</span>) };
+    println(<span class="s">f"ROK_FFI_DEMO = {</span>c_getenv(<span class="s">"ROK_FFI_DEMO"</span>) ?? <span class="s">"(unset)"</span><span class="s">}"</span>);
+    println(<span class="s">f"ROK_FFI_MISSING = {</span>c_getenv(<span class="s">"ROK_FFI_MISSING"</span>) ?? <span class="s">"(unset)"</span><span class="s">}"</span>);
+
+    <span class="c">// A variadic call writing into a buffer we allocate.</span>
+    <span class="k">let</span> text_layout = <span class="k">try</span> <span class="t">Layout</span>::array::&lt;<span class="t">u8</span>&gt;(<span class="n">64</span>);
+    <span class="k">let</span> buf: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = <span class="k">unsafe</span> { alloc(text_layout) }.as_ptr() ?? panic(<span class="s">"out of memory"</span>);
+    <span class="k">let</span> n = <span class="k">unsafe</span> { snprintf(buf, <span class="n">64</span>, <span class="s">"%-6s|%5d|%08.3f"</span>, <span class="s">"pi"</span>, <span class="n">42</span>, <span class="n">3.14159</span>) };
+    println(<span class="s">f"snprintf wrote {</span>n<span class="s">} bytes: {</span><span class="k">unsafe</span> { from_c(buf.cast::&lt;c_char&gt;().as_const()) }<span class="s">}"</span>);
+    <span class="k">unsafe</span> { dealloc(buf, text_layout) };
+
+    <span class="c">// qsort over a C array of i32.</span>
+    <span class="k">let</span> values: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">42</span>, <span class="n">7</span>, <span class="n">19</span>, <span class="n">88</span>, <span class="n">3</span>, <span class="n">56</span>, <span class="n">21</span>];
+    <span class="k">let</span> layout = <span class="k">try</span> <span class="t">Layout</span>::array::&lt;<span class="t">i32</span>&gt;(values.len());
+    <span class="k">let</span> base: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = <span class="k">unsafe</span> { alloc(layout) }.as_ptr() ?? panic(<span class="s">"out of memory"</span>);
+    <span class="k">let</span> arr: <span class="t">ManyPtr</span>&lt;<span class="t">i32</span>&gt; = base.cast::&lt;<span class="t">i32</span>&gt;().as_many();
+    <span class="k">for</span> (i, v) <span class="k">in</span> values.iter().enumerate() { <span class="k">unsafe</span> { arr.write(i, v) }; }
+    <span class="k">unsafe</span> { qsort(base, values.len(), <span class="n">4</span>, descending) };
+    <span class="k">let</span> sorted: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..values.len() { sorted.push(<span class="k">unsafe</span> { arr.read(i) }); }
+    println(<span class="s">f"qsort descending: {</span>sorted<span class="s">:?</span><span class="s">}"</span>);
+    <span class="k">unsafe</span> { dealloc(base, layout) };
+}
+</code></pre>
+<pre class="output"><code class="language-output">strlen(&quot;hello, rok&quot;) = 10
+strlen(&quot;naïve&quot;) = 6 bytes
+getpid() &gt; 0: true, matches process::id(): true
+ROK_FFI_DEMO = set from C
+ROK_FFI_MISSING = (unset)
+snprintf wrote 21 bytes: pi    |   42|0003.142
+qsort descending: [88, 56, 42, 21, 19, 7, 3]
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>An <code>extern &quot;C&quot; { ... }</code> block holds only signatures without bodies. Functions declared there are implicitly <code>unsafe</code>, so every call goes inside <code>unsafe { ... }</code> (<a href="../spec/refs-lang/005-modules/509-extern-block">5.9 <code>extern</code> blocks</a>, <a href="../spec/refs-lang/004-functions/415-unsafe">4.15 unsafe</a>).
+</li>
+<li>A <code>str</code> parameter is passed to C as a NUL-terminated <code>char*</code>. That is why <code>strlen(&quot;naïve&quot;)</code> returns 6, the UTF-8 byte count, not the 5 characters (<a href="../spec/refs-lang/005-modules/509-extern-block#594-ffi-compatible-types">5.9.4 FFI-compatible types</a>).
+</li>
+<li>A C pointer that may be NULL is received as a <a href="../std/bare/ptr#struct.CPtr"><code>CPtr</code></a>. <code>as_const()</code> gives a non-null <a href="../std/bare/ptr#struct.ConstPtr"><code>ConstPtr</code></a> or <code>none</code>, so a single <code>?</code> wraps <code>getenv</code> into a safe function returning <code>str | none</code> (<a href="../learn/05-sum-types">Sum types</a>).
+</li>
+<li>Memory is allocated by hand with <a href="../std/bare/alloc#struct.Layout"><code>Layout</code></a> and <code>alloc</code> / <code>dealloc</code>, and accessed like a C array through <a href="../std/bare/ptr#struct.ManyPtr"><code>ManyPtr</code></a>'s <code>read(i)</code> / <code>write(i, v)</code>. The GC does not manage it, so you free it yourself.
+</li>
+<li><code>extern &quot;C&quot; fn descending</code> is a rok function compiled with the C ABI. Passed to <code>qsort</code> as a function pointer, it lets C call back into rok code while sorting (<a href="../spec/refs-lang/005-modules/509-extern-block#5910-extern-fn-definitions-exposed-externally">5.9.10 defining <code>extern fn</code></a>).
+</li>
+<li>Variadic functions such as <code>snprintf</code> are declared with <code>...</code> at the end of the signature. See the <a href="../learn/14-ffi">FFI chapter</a> for more.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/ffi-libc.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="downloader"><small>Previous</small>Concurrent downloader</a><a class="next" href="game-of-life"><small>Next</small>Game of Life</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.9. 블록 표현식 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="{ ... } 로 둘러싼 문장과 표현식의 묶음은 rok 에서 가장 기본적인 표현식 단위에 해당합니다. 본 문서에서는 블록의 어휘 형태와 값 평가 규칙을 정의하고자 합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/309-block-expressions.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.9. 블록 표현식 - rok docs">
+<meta property="og:description" content="{ ... } 로 둘러싼 문장과 표현식의 묶음은 rok 에서 가장 기본적인 표현식 단위에 해당합니다. 본 문서에서는 블록의 어휘 형태와 값 평가 규칙을 정의하고자 합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/309-block-expressions.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/309-block-expressions.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/309-block-expressions.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li class="cur"><a aria-current="page" href="309-block-expressions">3.9. 블록 표현식</a><ul class="toc"><li><a href="#391-형태">3.9.1. 형태</a></li><li><a href="#392-사용처">3.9.2. 사용처</a></li><li><a href="#393-스코프">3.9.3. 스코프</a></li><li><a href="#394-빈-블록">3.9.4. 빈 블록</a></li><li><a href="#395-블록-안의-마지막-식과-종결자-처리">3.9.5. 블록 안의 마지막 식과 종결자 처리</a></li><li><a href="#396-함수-본체와의-관계">3.9.6. 함수 본체와의 관계</a></li><li><a href="#397-블록의-타입">3.9.7. 블록의 타입</a></li><li><a href="#398-divergent-블록">3.9.8. divergent 블록</a></li><li><a href="#399-블록의-평가-순서">3.9.9. 블록의 평가 순서</a></li><li><a href="#3910-라벨-블록-label---">3.9.10. 라벨 블록: 'label: { ... }</a></li><li><a href="#3911-unsafe----블록">3.9.11. unsafe { ... } 블록</a></li></ul></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="39-블록-표현식 39-block-expressions 391-형태 391-form 392-사용처 392-uses 393-스코프 393-scope 394-빈-블록 394-empty-block 395-블록-안의-마지막-식과-종결자-처리 395-the-last-expression-and-terminators-in-a-block 동등-표현-마지막-식-vs-명시적-return--break equivalent-forms-last-expression-vs-explicit-return--break 396-함수-본체와의-관계 396-relation-to-function-bodies 권장-사용 recommended-use 397-블록의-타입 397-type-of-a-block 398-divergent-블록 398-divergent-blocks 399-블록의-평가-순서 399-evaluation-order-of-a-block 3910-라벨-블록-label--- 3910-labeled-blocks-label--- 3911-unsafe----블록 3911-unsafe----blocks"><a href="../../../../spec/refs-lang/003-expressions/309-block-expressions" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="39-블록-표현식"><a class="anchor" tabindex="-1" href="#39-블록-표현식" aria-hidden="true">#</a>3.9. 블록 표현식</h1>
+<p><code>{ ... }</code> 로 둘러싼 문장과 표현식의 묶음은 rok 에서 가장 기본적인 표현식 단위에 해당합니다. 본 문서에서는 블록의 어휘 형태와 값 평가 규칙을 정의하고자 합니다.</p>
+<h2 id="391-형태"><a class="anchor" tabindex="-1" href="#391-형태" aria-hidden="true">#</a>3.9.1. 형태</h2>
+<p>블록의 문법은 다음과 같이 표현됩니다.</p>
+<pre><code>block       ::= label? &quot;{&quot; stmt* tail_expr? &quot;}&quot;
+label       ::= &quot;'&quot; identifier &quot;:&quot;
+stmt        ::= expr &quot;;&quot;
+              | block_like_expr &quot;;&quot;?
+              | let_stmt
+              | item_decl
+block_like_expr ::= block | if_expr | match_expr | loop_expr
+              | while_expr | for_expr | unsafe_block
+tail_expr   ::= expr            // no trailing &quot;;&quot;
+</code></pre>
+<p>블록은 <code>fn</code> (<a href="../004-functions/410-nested-functions">4.10</a>), <code>const</code> (<a href="../005-modules/502-const#522-가능한-위치">5.2.2</a>), <code>use</code>, <code>struct</code>, <code>enum</code>, <code>union</code>, <code>trait</code>, <code>impl</code>, <code>type</code>, <code>static</code> 항목을 선언할 수 있습니다. <code>mod</code> 와 <code>extern</code> 항목은 모듈 수준에서만 선언하며 (<a href="../005-modules/504-modules#5410-모듈-선언의-위치">5.4.10</a>, <a href="../005-modules/509-extern-block#598-extern-블록-자체의-위치">5.9.8</a>), 블록에서 선언하면 컴파일 에러입니다.</p>
+<p>블록에 선언한 항목은 다음 규칙을 따릅니다.</p>
+<ul>
+<li><strong>범위.</strong> 항목의 이름은 블록 전체에서, 선언 앞뒤와 그 블록에 선언한 항목 안에서 보입니다. 블록 안에서는 밖에 선언한 같은 이름과 이름공간의 항목을 가리며, 안쪽 블록의 <code>use</code> 가 다시 그것을 가립니다. 블록 밖에서는 그 이름을 부를 수 없습니다. 한 블록에 같은 이름과 이름공간의 항목이 둘 있거나, 항목과 그 이름의 <code>use</code> 가 함께 있으면 컴파일 에러입니다.
+</li>
+<li><strong>보는 것.</strong> 블록의 항목은 자기 모듈의 항목과, 자기 블록과 둘러싼 블록들의 항목과 <code>use</code> 선언을 봅니다. 둘러싼 코드의 지역 변수나 매개변수 (<code>let</code>, 함수나 클로저의 매개변수, 패턴 바인딩) 나 제네릭 매개변수는 쓸 수 없으며, 쓰면 컴파일 에러입니다. 값은 필드와 매개변수로, 타입은 자기 제네릭 매개변수로 들어옵니다. 블록의 glob <code>use p::*</code> 는 그 블록에 선언한 항목의 본체뿐 아니라 머리 (필드 타입, 시그니처, <code>const</code> / <code>static</code> 초기값, 별칭, 변형) 에서도 보이며, 함수 본체에서와 같은 우선순위를 따릅니다: 모듈 자신의 항목이 glob 을, 안쪽 블록의 glob 이 바깥 블록의 것을, 제네릭 매개변수가 둘 다를 이깁니다.
+</li>
+<li><strong>항목 하나.</strong> 블록의 항목은 그 블록이 몇 번 돌든 항목 하나입니다: 제네릭 함수 안의 항목은 그 함수의 매개변수에 대해 제네릭이 아니며, 블록의 <code>static</code> 은 한 번 초기화되는 slot 하나이고, 블록의 <code>const</code> 는 값 하나입니다.
+</li>
+<li><strong>Coherence.</strong> 블록의 <code>impl</code> 은 같은 모듈의 모듈 수준 <code>impl</code> 처럼 coherence 와 orphan 규칙 (<a href="../002-types/209-impl#295-orphan-규칙">2.9.5</a>) 에 참여하며, 그 메서드와 트레잇 구현은 어디서나 성립합니다. 바깥 트레잇을 바깥 타입에 구현할 수도 있습니다.
+</li>
+<li><strong>가시성.</strong> 블록의 항목은 자기 가시성을 갖지 않습니다: 그런 항목에 <code>pub</code> 을 붙이면 컴파일 에러입니다. 블록에 선언한 타입의 필드와 메서드는 그 모듈 안에서 보통의 규칙을 따릅니다.
+</li>
+<li><strong>이름.</strong> <code>type_name</code>, <code>Debug</code>, 디버그 정보는 블록의 항목을 적힌 그대로 (<code>S</code>) 부릅니다. 진단도 그렇게 부르며, 다른 항목이 그 이름을 가지면 그것을 선언한 함수들을 덧붙입니다 (<code>f::S</code>).
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">S</span> { a: <span class="t">i32</span>; }
+
+<span class="k">fn</span> f() -&gt; <span class="t">i32</span> {
+    <span class="k">use</span> rok::core::fmt::<span class="t">Debug</span>;
+    <span class="k">const</span> <span class="t">SCALE</span>: <span class="t">i32</span> = <span class="n">2</span>;
+    <span class="a">#[derive(Debug)]</span>
+    <span class="k">struct</span> <span class="t">S</span> { x: <span class="t">i32</span>; }               <span class="c">// 이 블록에서 모듈의 `S` 를 가림</span>
+    <span class="k">impl</span> <span class="t">S</span> { <span class="k">fn</span> scaled(<span class="k">self</span>) -&gt; <span class="t">i32</span> { <span class="k">self</span>.x * <span class="t">SCALE</span> } }   <span class="c">// OK - `SCALE` 은 항목</span>
+    <span class="t">S</span> { x: <span class="n">1</span> }.scaled()
+}
+
+<span class="k">fn</span> g(n: <span class="t">i32</span>) {
+    <span class="k">struct</span> <span class="t">P</span> { v: <span class="t">i32</span> = n; }           <span class="c">// ERROR - `n` 은 `g` 의 지역 변수</span>
+}
+</code></pre>
+<p>실제 사용 모습을 도식화하면 다음과 같습니다.</p>
+<pre><code class="language-rok">{
+    문장1;
+    문장2;
+    ...
+    마지막식      <span class="c">// 종결자 없음, 블록의 값이 됨</span>
+}
+</code></pre>
+<p>본체에는 0 개 이상의 문장과 함께 0 또는 1 개의 마지막 식이 올 수 있습니다. 마지막 식을 종결자 없이 적으면 그 식의 값이 곧 블록의 값이 되며, 반대로 마지막 식을 종결자와 함께 적으면 (<code>expr;</code>) 블록은 unit 값을 가지게 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a = {
+    <span class="k">let</span> x = <span class="n">1</span>;
+    <span class="k">let</span> y = <span class="n">2</span>;
+    x + y               <span class="c">// 블록 값 = 3</span>
+};
+
+<span class="k">let</span> b = {
+    <span class="k">let</span> x = <span class="n">1</span>;
+    x + <span class="n">2</span>;              <span class="c">// 종결자 있음 → 결과 폐기</span>
+                        <span class="c">// 블록 값 = unit</span>
+};
+
+<span class="k">let</span> c = {
+    <span class="k">let</span> x = <span class="n">1</span>;
+    <span class="k">return</span> x;           <span class="c">// return 으로 함수 자체에서 빠져나감 (블록 값 도달 안 함)</span>
+};
+</code></pre>
+<h2 id="392-사용처"><a class="anchor" tabindex="-1" href="#392-사용처" aria-hidden="true">#</a>3.9.2. 사용처</h2>
+<p>블록은 표현식이 올 자리라면 어디든 등장할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = { ... };                  <span class="c">// 변수 초기값</span>
+fn_call({ ... }, other);          <span class="c">// 함수 인자</span>
+<span class="k">if</span> { ... &gt; <span class="n">0</span> } { ... }            <span class="c">// 조건식 (드물지만 가능)</span>
+</code></pre>
+<p>또한 다른 제어 구조 (<code>if</code>, <code>match</code>, <code>loop</code>, 함수 본체) 의 본체 자리 역시 블록으로 이루어집니다.</p>
+<h2 id="393-스코프"><a class="anchor" tabindex="-1" href="#393-스코프" aria-hidden="true">#</a>3.9.3. 스코프</h2>
+<p>블록은 새로운 스코프를 만들어 냅니다. 블록 안에서 <code>let</code> 으로 선언한 변수는 그 블록 안에서만 가시 범위를 가지며, 블록을 벗어나는 순간 해당 변수는 폐기됩니다. 한편 바깥 변수는 블록 안에서도 그대로 보이는데, 같은 이름의 inner <code>let</code> 이 가리지 않는 한 그러합니다.</p>
+<p>같은 이름의 inner <code>let</code> 은 별개 바인딩에 해당하며, 바깥 바인딩에는 영향을 주지 않습니다. 정확한 규칙은 <a href="../005-modules/501-variable-declaration">변수 선언</a> 에서 정의합니다.</p>
+<h2 id="394-빈-블록"><a class="anchor" tabindex="-1" href="#394-빈-블록" aria-hidden="true">#</a>3.9.4. 빈 블록</h2>
+<pre><code class="language-rok">{}
+</code></pre>
+<p>빈 블록은 unit 값을 가집니다.</p>
+<h2 id="395-블록-안의-마지막-식과-종결자-처리"><a class="anchor" tabindex="-1" href="#395-블록-안의-마지막-식과-종결자-처리" aria-hidden="true">#</a>3.9.5. 블록 안의 마지막 식과 종결자 처리</h2>
+<p>다음 두 입력은 서로 다르게 평가됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a = { x };          <span class="c">// a 는 x 의 값</span>
+<span class="k">let</span> b = { x; };         <span class="c">// b 는 unit</span>
+</code></pre>
+<p>종결자 없이 끝난 식은 블록의 값이 되는 반면, 종결자와 함께 끝난 식은 결과가 폐기되어 블록의 값이 unit 이 됩니다. 이러한 구분은 <a href="../001-lexical/103-statement-terminator">문장 종결자</a> 의 규칙과 일관성을 유지합니다.</p>
+<ul>
+<li>블록 중간의 <code>;</code> 없는 블록류 문장은 타입이 <code>()</code> 여야 합니다.
+</li>
+<li><code>;;</code> 는 빈 문장입니다.
+</li>
+<li>블록류 식 뒤의 후위 연산 (<code>.</code>, <code>?</code>, 호출, 인덱스) 은 식을 이어 갑니다 (<code>match v { .. }.len();</code>).
+</li>
+</ul>
+<h3 id="동등-표현-마지막-식-vs-명시적-return--break"><a class="anchor" tabindex="-1" href="#동등-표현-마지막-식-vs-명시적-return--break" aria-hidden="true">#</a>동등 표현: 마지막 식 vs 명시적 <code>return</code> / <code>break</code></h3>
+<p>종결자 없는 마지막 식은 문맥에 따른 명시적 종료문과 동등한 의미를 지닙니다.</p>
+<pre><code class="language-rok"><span class="c">// 함수 본체 - 마지막 식 == return value</span>
+<span class="k">fn</span> f() -&gt; <span class="t">i32</span> { <span class="n">42</span> }
+<span class="k">fn</span> g() -&gt; <span class="t">i32</span> { <span class="k">return</span> <span class="n">42</span>; }      <span class="c">// 같은 의미</span>
+
+<span class="c">// 라벨 블록 - 마지막 식 == break 'label value</span>
+<span class="k">let</span> x = 'b: { <span class="n">42</span> };
+<span class="k">let</span> y = 'b: { <span class="k">break</span> 'b <span class="n">42</span>; };     <span class="c">// 같은 의미</span>
+
+<span class="c">// loop - break 없는 loop 는 divergent. 마지막 식 자리는 없음.</span>
+</code></pre>
+<p>마지막 식 자리는 값이 도달하는 표면입니다. 함수 본체에서는 함수 반환과 같은 의미를 가지며, 라벨 블록에서는 그 라벨로의 break 와 같은 의미를 가집니다. 둘 중 어느 형태로 적든 컴파일러는 같은 결과를 만들어 냅니다.</p>
+<h2 id="396-함수-본체와의-관계"><a class="anchor" tabindex="-1" href="#396-함수-본체와의-관계" aria-hidden="true">#</a>3.9.6. 함수 본체와의 관계</h2>
+<p>함수 본체 또한 블록이며, 마지막 식의 값이 곧 함수의 반환값이 됩니다. 따라서 <code>return</code> 키워드가 반드시 필수인 것은 아닙니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> add(x: <span class="t">i32</span>, y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    x + y               <span class="c">// 종결자 없음, 자동으로 반환값</span>
+}
+
+<span class="k">fn</span> other(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> r = x + <span class="n">1</span>;
+    <span class="k">return</span> r;           <span class="c">// 명시적 return 도 가능, 위와 동일한 의미</span>
+}
+
+<span class="k">fn</span> early(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> x &lt; <span class="n">0</span> { <span class="k">return</span> <span class="n">0</span>; }   <span class="c">// 조기 종료에는 명시적 return</span>
+    x * <span class="n">2</span>                    <span class="c">// 정상 흐름의 마지막 식, 자동 반환</span>
+}
+</code></pre>
+<p>세 함수 모두 정상적으로 동작합니다. 어떤 형태를 선택할지는 스타일의 문제이며, 사양에서는 두 형태 모두를 정식으로 지원합니다.</p>
+<h3 id="권장-사용"><a class="anchor" tabindex="-1" href="#권장-사용" aria-hidden="true">#</a>권장 사용</h3>
+<p>마지막 식을 (<code>return</code> 없이) 사용하는 방식은 정상 흐름의 단일 반환 자리에 적합합니다. 반면 명시적 <code>return</code> 은 조기 종료, 함수 중간의 반환, 가독성을 위한 표시에 적합합니다.</p>
+<p>자세한 함수 본체와 <code>return</code> 키워드, 반환 타입 규칙은 <a href="../004-functions/">4. 함수</a> 에서 정의됩니다.</p>
+<h2 id="397-블록의-타입"><a class="anchor" tabindex="-1" href="#397-블록의-타입" aria-hidden="true">#</a>3.9.7. 블록의 타입</h2>
+<p>블록의 타입은 그 마지막 식의 타입으로 결정됩니다 (마지막 식이 없는 경우에는 unit 입니다).</p>
+<pre><code>{ 1i32 }                // i32
+{ &quot;hi&quot; }                 // str
+{ 1i32; }                // unit (식이 종결자로 끝남 → 결과 폐기)
+{ }                      // unit (빈 블록)
+</code></pre>
+<p>이러한 타입 결정 방식은 <a href="./">표현식 개요</a> 의 분기 결과 타입 규칙과 결합됩니다. 같은 자리에 놓인 여러 블록 표현식이 서로 다른 타입을 만들어 내는 경우에는 받는 쪽에 명시된 타입이 있어야 합니다.</p>
+<h2 id="398-divergent-블록"><a class="anchor" tabindex="-1" href="#398-divergent-블록" aria-hidden="true">#</a>3.9.8. divergent 블록</h2>
+<p><code>return</code>, <code>break</code>, <code>continue</code>, <code>throw</code>, <code>loop { /* break 없음 */ }</code> 등으로 인해 값을 만들지 않는 블록이 존재합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = {
+    <span class="k">return</span> <span class="n">0</span>;       <span class="c">// 함수에서 빠져나감</span>
+};
+</code></pre>
+<p>이러한 블록은 divergent (절대 끝나지 않음) 로 분류됩니다. divergent 블록의 타입은 임의의 타입과 호환되며, 분기 결과 타입 검사를 통과합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">i32</span> = <span class="k">if</span> cond {
+    <span class="n">42i32</span>
+} <span class="k">else</span> {
+    <span class="k">return</span> -<span class="n">1i32</span>;       <span class="c">// divergent, 분기 일치에 영향 없음</span>
+};
+</code></pre>
+<p>divergent 의 정확한 검출 규칙은 함수와 제어 흐름 사양에서 정의합니다.</p>
+<h2 id="399-블록의-평가-순서"><a class="anchor" tabindex="-1" href="#399-블록의-평가-순서" aria-hidden="true">#</a>3.9.9. 블록의 평가 순서</h2>
+<p>블록 안의 문장과 마지막 식은 적힌 순서대로 (위에서 아래로) 평가되며, 부작용 또한 그 순서를 따릅니다.</p>
+<p>평가 도중 <code>return</code>, <code>break</code>, 예외 등이 발생하는 경우, 그 시점에 블록의 평가가 중단됩니다.</p>
+<h2 id="3910-라벨-블록-label---"><a class="anchor" tabindex="-1" href="#3910-라벨-블록-label---" aria-hidden="true">#</a>3.9.10. 라벨 블록: <code>'label: { ... }</code></h2>
+<p>라벨 블록은 블록 표현식이 등장할 수 있는 모든 위치에서 사용 가능합니다 - <code>let</code> 초기값, 함수 본체, <code>if</code> / <code>else</code> 분기, <code>match</code> 가지 본체, 다른 블록의 트레일링 식 등이 그 예입니다. 위치별 추가 제약은 따로 없으며, 라벨이 그 블록의 종료 지점만을 가리키는 역할을 합니다.</p>
+<p>블록 앞에 <code>'이름:</code> 형태의 라벨을 붙이면, 그 블록 안에서 <code>break '이름 값;</code> 을 통해 일찍 빠져나가면서 블록의 값을 정할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> result = 'b: {
+    <span class="k">if</span> early_check_fails() { <span class="k">break</span> 'b -<span class="n">1</span>; }
+    <span class="k">if</span> shortcut_taken()    { <span class="k">break</span> 'b  <span class="n">0</span>; }
+    <span class="k">let</span> x = compute();
+    <span class="k">let</span> y = refine(x);
+    x + y                    <span class="c">// 일반 흐름의 마지막 식 - 'b 의 값</span>
+};
+</code></pre>
+<p>라벨 토큰은 <a href="313-loop-expressions#3134-라벨-중첩-루프-제어">3.13.4 라벨</a> 와 같은 형태 (<code>'identifier:</code>) 를 따릅니다. <code>break 'name value</code> 는 그 라벨 블록을 해당 값과 함께 종료시킵니다. 한편 <code>continue 'name</code> 의 <code>'name</code> 이 <strong>블록</strong> 라벨을 가리키는 경우에는 컴파일 에러가 발생합니다. <code>continue</code> 는 루프 라벨에만 적용되기 때문입니다. 또한 라벨 없는 블록 안에서는 <code>break</code> / <code>continue</code> 를 사용할 수 없으며 (가장 안쪽 <strong>루프</strong> 만 대상이 됩니다), 이는 주의해야 할 부분입니다.</p>
+<p>함수에서 일찍 빠져나가야 할 때 작은 도우미 함수를 만드는 대신, 라벨 블록을 활용하면 이 블록에서 일찍 값을 들고 나가는 동작이 깔끔하게 표현됩니다.</p>
+<h2 id="3911-unsafe----블록"><a class="anchor" tabindex="-1" href="#3911-unsafe----블록" aria-hidden="true">#</a>3.9.11. <code>unsafe { ... }</code> 블록</h2>
+<p>블록 앞에 <code>unsafe</code> 키워드를 두면 unsafe scope 진입 블록이 됩니다. 일반 블록과 동일하게 마지막 식의 값이 블록의 값이 되며, 안전 추상의 보장 밖에 있는 동작 (raw pointer dereference, <code>unsafe fn</code> 호출 등) 을 수행할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">usize</span> = <span class="k">unsafe</span> { strlen(cs.as_ptr()) };
+</code></pre>
+<p>자세한 의미와 책임은 <a href="../004-functions/415-unsafe">4.15 unsafe</a> 에서 정의합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/309-block-expressions.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="308-optional-chaining-and-coalescing"><small>Previous</small>3.8. 옵셔널 체이닝과 null 합체</a><a class="next" href="310-if-expression"><small>Next</small>3.10. if 표현식</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

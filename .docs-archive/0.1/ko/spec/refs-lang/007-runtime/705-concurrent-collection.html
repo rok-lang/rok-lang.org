@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.5. 동시 mark - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="full 수집은 mark 를 mutator 와 동시에 할 수 있습니다. minor 수집, 명시적 rok_gc_collect, evacuation 은 언제나 stop-the-world 입니다 (7.3).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.5. 동시 mark - rok docs">
+<meta property="og:description" content="full 수집은 mark 를 mutator 와 동시에 할 수 있습니다. minor 수집, 명시적 rok_gc_collect, evacuation 은 언제나 stop-the-world 입니다 (7.3).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">7. 런타임 개요</a></p><ul class="pages"><li><a href="701-object-layout">7.1. 객체 레이아웃과 메모리 공간</a></li><li><a href="702-allocation">7.2. 할당</a></li><li><a href="703-gc-algorithm">7.3. GC 알고리듬</a></li><li><a href="704-barriers-and-roots">7.4. 배리어와 루트 추적</a></li><li class="cur"><a aria-current="page" href="705-concurrent-collection">7.5. 동시 mark</a><ul class="toc"><li><a href="#751-언제">7.5.1. 언제</a></li><li><a href="#752-단계">7.5.2. 단계</a></li><li><a href="#753-satb-barrier">7.5.3. SATB barrier</a></li><li><a href="#754-할당과-수집">7.5.4. 할당과 수집</a></li></ul></li><li><a href="706-scheduler">7.6. 스케줄러</a></li><li><a href="707-io-and-timer">7.7. I/O 드라이버와 타이머</a></li><li><a href="708-coroutine">7.8. 코루틴</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="75-동시-mark 75-concurrent-mark 751-언제 751-when 752-단계 752-phases 753-satb-barrier 753-satb-barrier 754-할당과-수집 754-allocation-and-collection"><a href="../../../../spec/refs-lang/007-runtime/705-concurrent-collection" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="75-동시-mark"><a class="anchor" tabindex="-1" href="#75-동시-mark" aria-hidden="true">#</a>7.5. 동시 mark</h1>
+<p>full 수집은 mark 를 mutator 와 동시에 할 수 있습니다. minor 수집, 명시적 <code>rok_gc_collect</code>, evacuation 은 언제나 stop-the-world 입니다 (<a href="703-gc-algorithm">7.3</a>).</p>
+<h2 id="751-언제"><a class="anchor" tabindex="-1" href="#751-언제" aria-hidden="true">#</a>7.5.1. 언제</h2>
+<div class="table-wrap"><table>
+<thead><tr><th><code>ROK_GC_CONCURRENT</code></th><th>full 수집</th></tr></thead>
+<tbody>
+<tr><td><code>auto</code> (기본)</td><td>old 객체가 32 MiB 이상이면 동시 mark</td></tr>
+<tr><td><code>always</code></td><td>언제나 동시 mark</td></tr>
+<tr><td><code>off</code></td><td>언제나 STW</td></tr>
+</tbody></table></div>
+<p>설정하지 않았거나 비어 있는 변수는 기본값을 가집니다. 나열된 것 밖의 값은 변수, 값, 받는 값을 알리는 경고 한 줄을 stderr 에 출력하며, 그 변수는 기본값을 가집니다.</p>
+<h2 id="752-단계"><a class="anchor" tabindex="-1" href="#752-단계" aria-hidden="true">#</a>7.5.2. 단계</h2>
+<ol>
+<li><strong>시작 pause (STW).</strong> minor 수집을 한 번 하고, safepoint 에서 루트의 snapshot 을 뜹니다. 전역 <code>MARKING</code> 플래그를 켭니다.
+</li>
+<li><strong>동시 mark.</strong> marker thread 하나가 snapshot 에서 출발해 mark 합니다. mutator 는 계속 실행됩니다.
+</li>
+<li><strong>마지막 pause (STW).</strong> SATB buffer 를 비우고, 루트를 다시 훑고, sweep 합니다. <code>MARKING</code> 을 끕니다.
+</li>
+</ol>
+<h2 id="753-satb-barrier"><a class="anchor" tabindex="-1" href="#753-satb-barrier" aria-hidden="true">#</a>7.5.3. SATB barrier</h2>
+<p>snapshot-at-the-beginning (Yuasa) 이며 객체 단위입니다. 세대 수집의 write barrier (<a href="704-barriers-and-roots#742-write-barrier-incremental-update">7.4.2</a>) 를 그대로 씁니다.</p>
+<ul>
+<li><code>UNLOGGED</code> 객체에 처음 쓰는 slow path 는, <code>MARKING</code> 이 켜져 있으면 그 객체의 현재 참조를 모두 SATB buffer 에 기록합니다 (TLS <code>rok_tls_satb_cursor</code> / <code>rok_tls_satb_limit</code>, <a href="../008-abi/803-tls-slots">8.3</a>).
+</li>
+<li>기록하는 동안 헤더의 <code>SATB</code> 비트를 켭니다. 같은 객체에 경쟁하는 store 는 그 비트가 꺼질 때까지 기다립니다.
+</li>
+<li>그래서 compiler 가 내는 barrier 코드는 동시 mark 가 있어도 같습니다.
+</li>
+</ul>
+<h2 id="754-할당과-수집"><a class="anchor" tabindex="-1" href="#754-할당과-수집" aria-hidden="true">#</a>7.5.4. 할당과 수집</h2>
+<ul>
+<li>mark 중의 할당은 line 단위로 black 입니다 (그 line 의 객체는 산 것으로 봄). mark 중에 할당된 객체는 mark 가 끝난 뒤 young 입니다.
+</li>
+<li>mark 중에는 minor 수집을 하지 않습니다. 할당이 수집을 요구하면 진행 중인 mark 를 끝냅니다.
+</li>
+<li>evacuation 은 STW full 수집에서만 합니다. 동시 mark 뒤 heap 이 단편화되어 있으면 다음 full 수집을 evacuation 이 있는 STW 로 합니다.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/007-runtime/705-concurrent-collection.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="704-barriers-and-roots"><small>Previous</small>7.4. 배리어와 루트 추적</a><a class="next" href="706-scheduler"><small>Next</small>7.6. 스케줄러</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

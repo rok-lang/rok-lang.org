@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.16. sync - Concurrency primitives - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::sync module defines the primitive traits and types for safe access to shared state. They are used to share data between multiple tasks or threads...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/216-sync.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.16. sync - Concurrency primitives - rok docs">
+<meta property="og:description" content="The rok::core::sync module defines the primitive traits and types for safe access to shared state. They are used to share data between multiple tasks or threads...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/216-sync.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/216-sync.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/216-sync.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li class="cur"><a aria-current="page" href="216-sync">2.16. sync - Concurrency primitives</a><ul class="toc"><li><a href="#2161-overview-of-the-four-primitives">2.16.1. Overview of the four primitives</a></li><li><a href="#2162-atomict---lock-free-atomics">2.16.2. Atomic&lt;T&gt; - lock-free atomics</a></li><li><a href="#2163-mutext---exclusive-lock">2.16.3. Mutex&lt;T&gt; - exclusive lock</a></li><li><a href="#2164-rwlockt---read-write-split">2.16.4. RwLock&lt;T&gt; - read-write split</a></li><li><a href="#2164a-once--condvar">2.16.4a. Once / Condvar</a></li><li><a href="#2164b-frozent---read-only-sharing">2.16.4b. Frozen&lt;T&gt; - read-only sharing</a></li><li><a href="#2165-cellt---single-threaded-interior-mutability">2.16.5. Cell&lt;T&gt; - single-threaded interior mutability</a></li><li><a href="#2166-module-mapping">2.16.6. Module mapping</a></li></ul></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="216-sync---concurrency-primitives 216-sync---동시성-primitive 2161-overview-of-the-four-primitives 2161-4-primitive-개요 2162-atomict---lock-free-atomics 2162-atomict---lock-free-원자 atomicordering atomicordering example 사용-예 cas-compare-and-swap cas-compare-and-swap 2163-mutext---exclusive-lock 2163-mutext---배타적-잠금 example-1 사용-예-1 avoiding-deadlock---try_lock deadlock-회피---try_lock poisoning---none poisoning---없음 2164-rwlockt---read-write-split 2164-rwlockt---read-write-분리 2164a-once--condvar 2164a-once--condvar async-locks-and-cancellation async-잠금과-취소 2164b-frozent---read-only-sharing 2164b-frozent---읽기-전용-공유 2165-cellt---single-threaded-interior-mutability 2165-cellt---single-threaded-interior send--sync-markers send--sync-마커 2166-module-mapping 2166-모듈-매핑"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/216-sync" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="216-sync---concurrency-primitives"><a class="anchor" tabindex="-1" href="#216-sync---concurrency-primitives" aria-hidden="true">#</a>2.16. sync - Concurrency primitives</h1>
+<p>The <code>rok::core::sync</code> module defines the primitive traits and types for safe access to shared state. They are used to share data between multiple tasks or threads under rok's GC and M:N scheduler.</p>
+<p>Because <code>use rok::core::**;</code> applies implicitly, <code>Atomic</code>, <code>Mutex</code>, <code>RwLock</code> and <code>Cell</code> are usable without any import. Where concurrent code should be visibly marked as such, a narrow import like the following is recommended.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::sync::{<span class="t">Atomic</span>, <span class="t">Mutex</span>, <span class="t">RwLock</span>, <span class="t">Once</span>, <span class="t">Condvar</span>, <span class="t">Cell</span>};
+</code></pre>
+<h2 id="2161-overview-of-the-four-primitives"><a class="anchor" tabindex="-1" href="#2161-overview-of-the-four-primitives" aria-hidden="true">#</a>2.16.1. Overview of the four primitives</h2>
+<p>Each of the four primitives covers a different concurrency scenario. The following table summarizes each type's meaning and where it fits.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Meaning</th><th>Where used</th></tr></thead>
+<tbody>
+<tr><td><code>Atomic&lt;T&gt;</code></td><td>lock-free atomic operations (T = primitive)</td><td>counter, flag, sequence number</td></tr>
+<tr><td><code>Mutex&lt;T&gt;</code></td><td>exclusive lock (single writer)</td><td>shared mutable state</td></tr>
+<tr><td><code>RwLock&lt;T&gt;</code></td><td>multiple readers or a single writer</td><td>read-heavy state</td></tr>
+<tr><td><code>Cell&lt;T&gt;</code></td><td>thread-local interior mutability (no lock)</td><td>single-threaded mutable</td></tr>
+</tbody></table></div>
+<h2 id="2162-atomict---lock-free-atomics"><a class="anchor" tabindex="-1" href="#2162-atomict---lock-free-atomics" aria-hidden="true">#</a>2.16.2. <code>Atomic&lt;T&gt;</code> - lock-free atomics</h2>
+<p><code>Atomic&lt;T&gt;</code> is the lightest primitive. Internally it is implemented with per-T LLVM atomic operations and has the following shape.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Atomic</span>&lt;<span class="t">T</span>: <span class="t">AtomicPrimitive</span>&gt; {
+    <span class="c">// internal: AtomicU32 / AtomicU64 / AtomicPtr etc. (per-T LLVM atomic ops)</span>
+}
+
+<span class="k">trait</span> <span class="t">AtomicPrimitive</span> { <span class="c">/* marker - i32/i64/u32/u64/usize/isize/bool/Ptr */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">AtomicPrimitive</span>&gt; <span class="t">Atomic</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">const</span> <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Atomic</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> load(<span class="k">self</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> store(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>);
+    <span class="k">fn</span> swap(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> compare_exchange(
+        <span class="k">self</span>, current: <span class="t">T</span>, new: <span class="t">T</span>,
+        success: <span class="t">AtomicOrdering</span>, failure: <span class="t">AtomicOrdering</span>,
+    ) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">T</span>&gt;;                  <span class="c">// the failure result is a value too - not an error</span>
+    <span class="k">fn</span> compare_exchange_weak(
+        <span class="k">self</span>, current: <span class="t">T</span>, new: <span class="t">T</span>,
+        success: <span class="t">AtomicOrdering</span>, failure: <span class="t">AtomicOrdering</span>,
+    ) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">T</span>&gt;;                  <span class="c">// the failure result is a value too - not an error</span>
+
+    <span class="c">// integers only</span>
+    <span class="k">fn</span> fetch_add(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_sub(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_and(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_or(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> fetch_xor(<span class="k">self</span>, value: <span class="t">T</span>, ordering: <span class="t">AtomicOrdering</span> = <span class="t">SeqCst</span>) -&gt; <span class="t">T</span>;
+}
+
+<span class="k">impl</span> <span class="t">Atomic</span>&lt;<span class="t">i32</span>&gt; {
+    <span class="k">fn</span> wait(<span class="k">self</span>, expected: <span class="t">i32</span>, timeout_ns: <span class="t">i64</span> = -<span class="n">1</span>);   <span class="c">// waits while the value is expected, up to timeout_ns (&lt; 0 means forever)</span>
+    <span class="k">fn</span> wake(<span class="k">self</span>);                                         <span class="c">// wakes every thread waiting on this cell</span>
+}
+</code></pre>
+<p><code>wait</code> may return spuriously, so the caller re-checks the condition (futex semantics).</p>
+<h3 id="atomicordering"><a class="anchor" tabindex="-1" href="#atomicordering" aria-hidden="true">#</a><code>AtomicOrdering</code></h3>
+<p>Atomic operations come in five memory-ordering strengths, with the following meanings.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">AtomicOrdering</span> {
+    <span class="t">Relaxed</span>,        <span class="c">// no synchronization - counters etc.</span>
+    <span class="t">Acquire</span>,        <span class="c">// synchronization guaranteed after the load</span>
+    <span class="t">Release</span>,        <span class="c">// synchronization guaranteed before the store</span>
+    <span class="t">AcqRel</span>,         <span class="c">// both directions for RMW</span>
+    <span class="t">SeqCst</span>,         <span class="c">// global sequential consistency (default - safe)</span>
+}
+</code></pre>
+<p>This model is isomorphic to the atomic ordering model of C++ and Rust, and the default is the safe <code>SeqCst</code>. The name <code>AtomicOrdering</code> avoids a clash with the comparison <code>cmp::Ordering</code> under the implicit core glob; the variants (<code>Relaxed</code>, <code>Acquire</code>, <code>Release</code>, <code>AcqRel</code>, <code>SeqCst</code>) can be written without a prefix. The ordering argument must be a compile-time constant. Weak orderings should be used carefully and only where performance is critical.</p>
+<h3 id="example"><a class="anchor" tabindex="-1" href="#example" aria-hidden="true">#</a>Example</h3>
+<p>The most common use, incrementing a counter, is written as follows.</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">COUNTER</span>: <span class="t">Atomic</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Atomic</span>::new(<span class="n">0</span>);
+
+task::spawn(<span class="k">async</span> { <span class="t">COUNTER</span>.fetch_add(<span class="n">1</span>, <span class="t">Relaxed</span>); });
+task::spawn(<span class="k">async</span> { <span class="t">COUNTER</span>.fetch_add(<span class="n">1</span>, <span class="t">Relaxed</span>); });
+<span class="c">// result: COUNTER == 2 (no race)</span>
+
+<span class="k">let</span> v = <span class="t">COUNTER</span>.load(<span class="t">SeqCst</span>);     <span class="c">//→ 2</span>
+</code></pre>
+<h3 id="cas-compare-and-swap"><a class="anchor" tabindex="-1" href="#cas-compare-and-swap" aria-hidden="true">#</a>CAS (compare-and-swap)</h3>
+<p>More complex lock-free data structures are built on compare-and-swap loops. The following is the push of a lock-free stack.</p>
+<pre><code class="language-rok"><span class="k">fn</span> lock_free_push(stack: <span class="t">Atomic</span>&lt;<span class="t">List</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>&gt;, x: <span class="t">T</span>) {
+    <span class="k">loop</span> {
+        <span class="k">let</span> cur = stack.load(<span class="t">Acquire</span>);
+        <span class="k">let</span> new = <span class="k">match</span> cur {
+            v: <span class="t">List</span>&lt;<span class="t">T</span>&gt; =&gt; v.with_appended(x),
+            <span class="k">none</span>       =&gt; [x],
+        };
+        <span class="k">match</span> stack.compare_exchange(cur, new, <span class="t">AcqRel</span>, <span class="t">Acquire</span>) {
+            <span class="t">Ok</span>(_)  =&gt; <span class="k">break</span>,
+            <span class="t">Err</span>(_) =&gt; <span class="k">continue</span>,                   <span class="c">// another task got there first - retry</span>
+        }
+    }
+}
+</code></pre>
+<h2 id="2163-mutext---exclusive-lock"><a class="anchor" tabindex="-1" href="#2163-mutext---exclusive-lock" aria-hidden="true">#</a>2.16.3. <code>Mutex&lt;T&gt;</code> - exclusive lock</h2>
+<p>Shared state that is hard to express with atomics alone uses <code>Mutex&lt;T&gt;</code>. Internally it consists of a futex and the payload; a guard bound with <code>using</code> releases the lock.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// internal: futex + payload</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unshared(value: <span class="t">T</span>) -&gt; <span class="t">Mutex</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// new without the hand-off copy</span>
+
+    <span class="k">fn</span> lock(<span class="k">self</span>) -&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;;            <span class="c">// blocks the thread</span>
+    <span class="k">fn</span> lock_async(<span class="k">self</span>) -&gt; <span class="t">LockFuture</span>&lt;<span class="t">T</span>&gt;;      <span class="c">// await m.lock_async() - suspends only the task (Future&lt;Output = MutexGuard&lt;T&gt;&gt;)</span>
+    <span class="k">fn</span> try_lock(<span class="k">self</span>) -&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>; <span class="c">// non-blocking</span>
+}
+
+<span class="k">struct</span> <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* RAII guard */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Drop</span> <span class="k">for</span> <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        <span class="c">// futex_wake + release the lock</span>
+    }
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;                  <span class="c">// the protected value</span>
+    <span class="k">fn</span> set(<span class="k">self</span>, value: <span class="t">T</span>);             <span class="c">// replaces the value</span>
+    <span class="k">fn</span> update(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">T</span>);     <span class="c">// reads, transforms and writes back</span>
+}
+</code></pre>
+<h3 id="example-1"><a class="anchor" tabindex="-1" href="#example-1" aria-hidden="true">#</a>Example</h3>
+<p>A guard bound with <code>using</code> is <code>drop</code>ped on leaving the block, releasing the lock. A guard received without <code>using</code> is not released automatically, so it must always be bound with <code>using</code>. A guard is received from a call, a method call or <code>await</code>. A received guard may only initialize a binding (<code>let</code>, a pattern, <code>using</code>), be assigned to a variable, or be handed to the caller (<code>return</code>, the function's value). Passing it to a function, calling a method on it, storing it in a field or a collection, or discarding it is a compile error. A guard bound with <code>using</code> may be passed to functions; a guard bound without <code>using</code> is not released by passing it on. Binding a guard with a plain <code>let</code> (or <code>if let</code>) that is never released by <code>using</code>, or discarding a guard returned by <code>lock</code>, is a compile error.</p>
+<p><code>Mutex::new(value)</code> takes <code>value</code> over: using the caller's handle afterwards is a compile error, and so is using what <code>get</code> returned or <code>set</code> gave after the guard's <code>using</code> block ends, handing over what <code>get</code> returned while the guard holds it (until <code>set</code> gives the lock a new value), or returning it, yielding it, making it the block's value or giving it to a coroutine run after the block (<a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>). Work on it inside the <code>using</code> block, or keep a <code>clone()</code>. A guard is <code>!Sync</code> and good only inside its <code>using</code> block: using a copy of it (in a collection, a closure, a field) after the block ends is a compile error; to use the value in a closure that runs on another thread, read it first (<code>let v = g.get();</code>) and capture <code>v</code>. At run time <code>new</code>, <code>set</code> and <code>update</code> store a copy of the collections the value brings in (2.13.9); <code>new_unshared</code> skips the copy, the caller guaranteeing that nothing else reaches <code>value</code>'s collections (a value just made).</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">STATE</span>: <span class="t">Mutex</span>&lt;<span class="t">List</span>&lt;<span class="t">i32</span>&gt;&gt; = <span class="t">Mutex</span>::new([]);
+
+task::spawn(<span class="k">async</span> {
+    <span class="k">using</span> g = <span class="t">STATE</span>.lock() {
+        g.update(|xs| { xs.push(<span class="n">42</span>); xs });
+    }   <span class="c">// ← g.drop() → lock released ([2.13 marker](213-marker.md))</span>
+});
+</code></pre>
+<h3 id="avoiding-deadlock---try_lock"><a class="anchor" tabindex="-1" href="#avoiding-deadlock---try_lock" aria-hidden="true">#</a>Avoiding deadlock - <code>try_lock</code></h3>
+<p>To avoid deadlock, a non-blocking attempt can be made with <code>try_lock</code> instead of blocking.</p>
+<pre><code class="language-rok"><span class="k">match</span> <span class="t">STATE</span>.try_lock() {
+    v: <span class="t">MutexGuard</span>&lt;...&gt; =&gt; <span class="k">using</span> g = v { g.push(<span class="n">1</span>); },
+    <span class="k">none</span> =&gt; { log(<span class="s">"locked, skip"</span>); },
+}
+</code></pre>
+<h3 id="poisoning---none"><a class="anchor" tabindex="-1" href="#poisoning---none" aria-hidden="true">#</a>Poisoning - <strong>none</strong></h3>
+<p>rok's Mutex differs from Rust's PoisonError model. Even if a panic occurs, the lock is released automatically and the next task can enter normally. There are two reasons for this design.</p>
+<ol>
+<li>A panic cannot be caught and ends the process, so no other task ever observes the lock state mid-panic. When an error propagates via <code>throw</code> out of a <code>using</code> block, <a href="213-marker#2134-drop---cleanup-on-using-release"><code>using</code> calls Drop</a>, so the <code>MutexGuard</code>'s drop is responsible for releasing the lock.
+</li>
+<li>Poisoning looks conservative but burdens users heavily and is a false positive in most cases.
+</li>
+</ol>
+<p>Where consistency really must be restored before leaving with an error, handle it explicitly:</p>
+<pre><code class="language-rok"><span class="k">using</span> g = <span class="t">MUTEX</span>.lock() {
+    <span class="k">try</span> unsafe_op(g) <span class="k">catch</span> e {
+        g.reset_to_known_good_state();
+        <span class="k">throw</span> e;
+    };
+}
+</code></pre>
+<h2 id="2164-rwlockt---read-write-split"><a class="anchor" tabindex="-1" href="#2164-rwlockt---read-write-split" aria-hidden="true">#</a>2.16.4. <code>RwLock&lt;T&gt;</code> - read-write split</h2>
+<p>Where reads vastly outnumber writes, <code>RwLock&lt;T&gt;</code> fits better. Separating multiple readers from a single writer raises throughput.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">RwLock</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">RwLock</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">RwLock</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> read(<span class="k">self</span>) -&gt; <span class="t">RwLockReadGuard</span>&lt;<span class="t">T</span>&gt;;        <span class="c">// multiple readers OK</span>
+    <span class="k">fn</span> write(<span class="k">self</span>) -&gt; <span class="t">RwLockWriteGuard</span>&lt;<span class="t">T</span>&gt;;      <span class="c">// single writer</span>
+
+    <span class="k">fn</span> try_read(<span class="k">self</span>) -&gt; <span class="t">RwLockReadGuard</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+    <span class="k">fn</span> try_write(<span class="k">self</span>) -&gt; <span class="t">RwLockWriteGuard</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+
+    <span class="k">fn</span> read_async(<span class="k">self</span>) -&gt; <span class="t">ReadFuture</span>&lt;<span class="t">T</span>&gt;;       <span class="c">// await l.read_async() - suspends only the task</span>
+    <span class="k">fn</span> write_async(<span class="k">self</span>) -&gt; <span class="t">WriteFuture</span>&lt;<span class="t">T</span>&gt;;
+}
+</code></pre>
+<p>It suits read-dominated state such as config or caches, and for workloads with rare writes its throughput exceeds that of Mutex.</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">CONFIG</span>: <span class="t">RwLock</span>&lt;<span class="t">Config</span>&gt; = <span class="t">RwLock</span>::new(<span class="t">Config</span>::default());
+
+<span class="k">using</span> c = <span class="t">CONFIG</span>.read() {        <span class="c">// concurrent with other readers OK</span>
+    process(c);
+}   <span class="c">// ← read guard drop, lock released</span>
+
+<span class="k">using</span> w = <span class="t">CONFIG</span>.write() {       <span class="c">// briefly blocks all readers</span>
+    w.reload_from_file();
+}
+</code></pre>
+<p><code>RwLock&lt;T&gt;</code> is <code>Sync</code> only when <code>T</code> is <code>Send + Sync</code> (<a href="#send--sync-markers">2.16.5</a>), so <code>Config</code> here must be <code>Sync</code>.</p>
+<p>As for <code>Mutex</code>, <code>RwLock::new(value)</code> takes <code>value</code> over: using the caller's handle afterwards is a compile error, and so is using what a guard's <code>get</code> returned or <code>set</code> gave after its <code>using</code> block ends, handing over what <code>get</code> returned while the guard holds it (until <code>set</code> gives the lock a new value), or returning it from inside the block (<a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>). Work on it inside the <code>using</code> block, or keep a <code>clone()</code>. As for <code>Mutex</code>, <code>new</code> and the write guard's <code>set</code> and <code>update</code> store a copy.</p>
+<p>The same rule holds for <code>RwLock</code> guards: binding the guard of <code>read</code> / <code>write</code> with a plain <code>let</code> (or <code>if let</code>) that <code>using</code> never releases, or discarding it, is a compile error.</p>
+<h2 id="2164a-once--condvar"><a class="anchor" tabindex="-1" href="#2164a-once--condvar" aria-hidden="true">#</a>2.16.4a. <code>Once</code> / <code>Condvar</code></h2>
+<p>Two primitives shaped as in Rust. There is no poisoning.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Once</span> { <span class="c">/* ... */</span> }
+<span class="k">impl</span> <span class="t">Once</span> {
+    <span class="k">const</span> <span class="k">fn</span> new() -&gt; <span class="t">Once</span>;
+    <span class="k">fn</span> call_once(<span class="k">self</span>, f: <span class="k">fn</span>());          <span class="c">// runs f only the first time; concurrent callers wait until it finishes</span>
+}
+
+<span class="k">struct</span> <span class="t">Condvar</span> { <span class="c">/* ... */</span> }
+<span class="k">impl</span> <span class="t">Condvar</span> {
+    <span class="k">const</span> <span class="k">fn</span> new() -&gt; <span class="t">Condvar</span>;
+    <span class="k">fn</span> wait&lt;<span class="t">T</span>&gt;(<span class="k">self</span>, guard: <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// releases the lock and waits, relocks on wakeup</span>
+    <span class="k">fn</span> wait_async&lt;<span class="t">T</span>&gt;(<span class="k">self</span>, guard: <span class="t">MutexGuard</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">CondvarWait</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// g = await cv.wait_async(g) - suspends only the task</span>
+    <span class="k">fn</span> notify_one(<span class="k">self</span>);
+    <span class="k">fn</span> notify_all(<span class="k">self</span>);
+}
+</code></pre>
+<p><code>wait</code> can wake spuriously, so the condition is re-checked in a loop. <code>notify_one</code> wakes at least one waiter, and may wake more than one async waiter.</p>
+<h3 id="async-locks-and-cancellation"><a class="anchor" tabindex="-1" href="#async-locks-and-cancellation" aria-hidden="true">#</a>Async locks and cancellation</h3>
+<p>The futures of <code>lock_async</code> / <code>read_async</code> / <code>write_async</code> / <code>wait_async</code> do not take the lock on a cancelled poll (<a href="218-task#2184-cooperative-cancellation---taskcancel">2.18.4</a>). A cancelled <code>wait_async</code> ends as follows.</p>
+<ul>
+<li>If the mutex is free, it re-acquires it, so the caller's <code>using</code> guard releases it as usual.
+</li>
+<li>If another task holds it, it leaves without acquiring, and the discarded guard does not release that mutex.
+</li>
+</ul>
+<h2 id="2164b-frozent---read-only-sharing"><a class="anchor" tabindex="-1" href="#2164b-frozent---read-only-sharing" aria-hidden="true">#</a>2.16.4b. <code>Frozen&lt;T&gt;</code> - read-only sharing</h2>
+<p>A value made once and only read after (configuration, trust anchors, tables) is shared through <code>Frozen&lt;T&gt;</code>. Any thread may read it without a lock.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Frozen</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }   <span class="c">// Sync when T: Send</span>
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Frozen</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">const</span> <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Frozen</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// keeps a copy no one else reaches</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;                       <span class="c">// the reader's own copy</span>
+}
+</code></pre>
+<p><code>new</code> keeps a copy of the collections <code>value</code> reaches, as a hand-off does (<a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>), so nothing outside reaches what it holds. <code>get</code> gives each reader a copy of its own: changing it changes nothing the other readers see. <code>Sync</code> parts (a <code>Mutex</code>, a cache that locks itself, a value of an immutable <code>Sync</code> type) are not copied and stay shared, so a <code>get</code> costs a copy of the value's other collections only. Keep big read-only parts out of that copy: hold them as a <code>Sync</code> type, or in a <code>Frozen</code> field of their own that is read where needed.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Settings</span> {
+    name: <span class="t">str</span>;
+    limits: <span class="t">List</span>&lt;<span class="t">i64</span>&gt;;               <span class="c">// copied by each get: small</span>
+    table: <span class="t">Frozen</span>&lt;<span class="t">List</span>&lt;<span class="t">Entry</span>&gt;&gt;;      <span class="c">// shared: read with table.get() where needed</span>
+}
+
+<span class="k">static</span> <span class="t">SETTINGS</span>: <span class="t">Frozen</span>&lt;<span class="t">Settings</span>&gt; = <span class="t">Frozen</span>::new(load());
+</code></pre>
+<p>The standard library's TLS <code>Certificate</code> is such a type: never changed once parsed (its accessors give copies), so a <code>Frozen&lt;ClientConfig&gt;</code>'s <code>get</code> shares its trust anchors.</p>
+<h2 id="2165-cellt---single-threaded-interior-mutability"><a class="anchor" tabindex="-1" href="#2165-cellt---single-threaded-interior-mutability" aria-hidden="true">#</a>2.16.5. <code>Cell&lt;T&gt;</code> - single-threaded interior mutability</h2>
+<p>Finally, <code>Cell&lt;T&gt;</code> provides interior mutability that works only within a single task.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Cell</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>            <span class="k">where</span> <span class="t">T</span>: <span class="t">Copy</span>;
+    <span class="k">fn</span> set(<span class="k">ref</span> <span class="k">self</span>, value: <span class="t">T</span>);
+    <span class="k">fn</span> replace(<span class="k">ref</span> <span class="k">self</span>, value: <span class="t">T</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> take(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">T</span>       <span class="k">where</span> <span class="t">T</span>: <span class="t">Default</span>;
+}
+</code></pre>
+<p><code>Cell&lt;T&gt;</code> means thread-local interior mutability, so it is not safe across threads. It can be shared only within a single task, and having no lock makes it very fast.</p>
+<pre><code class="language-rok"><span class="k">let</span> c: <span class="t">Cell</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Cell</span>::new(<span class="n">0</span>);
+c.set(<span class="n">42</span>);
+<span class="k">let</span> v = c.get();          <span class="c">//→ 42</span>
+
+<span class="c">// sharing across tasks - compile error (Cell has no Send / Sync)</span>
+task::spawn(<span class="k">async</span> { c.set(<span class="n">100</span>) });       <span class="c">// ERROR - Cell is not cross-task safe</span>
+</code></pre>
+<h3 id="send--sync-markers"><a class="anchor" tabindex="-1" href="#send--sync-markers" aria-hidden="true">#</a><code>Send</code> / <code>Sync</code> markers</h3>
+<p><code>Send</code> / <code>Sync</code> are the automatic marker traits of <a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>. The types in this chapter follow this policy:</p>
+<ul>
+<li><code>Atomic&lt;T&gt;</code>: Send + Sync
+</li>
+<li><code>Mutex&lt;T&gt;</code>: Send + Sync when <code>T: Send</code>
+</li>
+<li><code>RwLock&lt;T&gt;</code>: Send when <code>T: Send</code>; Sync when <code>T: Send + Sync</code> - its readers share the value at once, so an <code>RwLock</code> of a collection (<code>!Sync</code>) cannot be shared between threads; use <code>Mutex&lt;T&gt;</code>.
+</li>
+<li><code>MutexGuard&lt;T&gt;</code>, <code>RwLockReadGuard&lt;T&gt;</code>, <code>RwLockWriteGuard&lt;T&gt;</code>: Send, <code>!Sync</code> - a guard is good only inside its <code>using</code> block
+</li>
+<li><code>Frozen&lt;T&gt;</code>: Sync when <code>T: Send</code> (2.16.4b)
+</li>
+<li><code>Cell&lt;T&gt;</code>: neither (single-task only) - the <code>task::spawn</code> above is an error because the <code>async</code> block captures the <code>Cell</code> and is therefore not <code>Send</code>
+</li>
+</ul>
+<h2 id="2166-module-mapping"><a class="anchor" tabindex="-1" href="#2166-module-mapping" aria-hidden="true">#</a>2.16.6. Module mapping</h2>
+<p>The implementation of each primitive maps as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Module</th><th>Internal structure</th></tr></thead>
+<tbody>
+<tr><td><code>Atomic&lt;T&gt;</code></td><td><code>rok::core::sync::atomic</code></td><td>LLVM atomic ops (<code>rok.atomic.*</code>)</td></tr>
+<tr><td><code>Mutex&lt;T&gt;</code></td><td><code>rok::core::sync::mutex</code></td><td>futex / wait queue (per target)</td></tr>
+<tr><td><code>RwLock&lt;T&gt;</code></td><td><code>rok::core::sync::rwlock</code></td><td>futex + reader counter</td></tr>
+<tr><td><code>Cell&lt;T&gt;</code></td><td><code>rok::core::sync::cell</code></td><td>plain wrapper, no lock</td></tr>
+<tr><td><code>MutexGuard</code></td><td><code>rok::core::sync::mutex</code></td><td>RAII via Drop</td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/216-sync.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="215-string"><small>Previous</small>2.15. Strings - str / char / c_char</a><a class="next" href="217-channel"><small>Next</small>2.17. channel - Message passing</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8. Runtime ABI / MLIR lowering overview - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This block defines the shared contract between the compiler (rokc) and the runtime (librokr.a). The compiler and the runtime are connected through the text of t...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8. Runtime ABI / MLIR lowering overview - rok docs">
+<meta property="og:description" content="This block defines the shared contract between the compiler (rokc) and the runtime (librokr.a). The compiler and the runtime are connected through the text of t...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/index.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a class="cur" href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="toc"><li><a href="#contents">Contents</a></li><li><a href="#two-kinds-of-contract">Two kinds of contract</a></li><li><a href="#why-this-specification-text-is-authoritative">Why this specification text is authoritative</a></li><li><a href="#stability">Stability</a></li></ul><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="8-runtime-abi--mlir-lowering-overview 8-런타임-abi--mlir-lowering-개요 contents 목차 two-kinds-of-contract 두-종류의-contract 1-runtime-abi 1-런타임-abi 2-mlir-lowering 2-mlir-lowering why-this-specification-text-is-authoritative 본-사양-텍스트가-권위인-이유 stability 안정성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="8-runtime-abi--mlir-lowering-overview"><a class="anchor" tabindex="-1" href="#8-runtime-abi--mlir-lowering-overview" aria-hidden="true">#</a>8. Runtime ABI / MLIR lowering overview</h1>
+<p>This block defines the shared contract between the compiler (<code>rokc</code>) and the runtime (<code>librokr.a</code>). The compiler and the runtime are connected through the text of this specification. The only code they share is a single definition of the GC ABI constants (<code>gc_abi</code>, <a href="801-object-header-abi">8.1</a>).</p>
+<h2 id="contents"><a class="anchor" tabindex="-1" href="#contents" aria-hidden="true">#</a>Contents</h2>
+<ul>
+<li><a href="801-object-header-abi">8.1. Object header ABI</a>
+</li>
+<li><a href="802-scan-table">8.2. ScanTable serialization format</a>
+</li>
+<li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a>
+</li>
+<li><a href="804-safepoint">8.4. Safepoint protocol</a>
+</li>
+<li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a>
+</li>
+<li><a href="806-calling-convention">8.6. Calling convention</a>
+</li>
+<li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a>
+</li>
+<li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a>
+</li>
+<li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a>
+</li>
+<li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a>
+</li>
+</ul>
+<h2 id="two-kinds-of-contract"><a class="anchor" tabindex="-1" href="#two-kinds-of-contract" aria-hidden="true">#</a>Two kinds of contract</h2>
+<h3 id="1-runtime-abi"><a class="anchor" tabindex="-1" href="#1-runtime-abi" aria-hidden="true">#</a>1. Runtime ABI</h3>
+<p>The interface used when compiler-generated code is linked and run together with <code>librokr.a</code>. The memory layout of objects is specified so that the <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> can interpret compiler-created objects exactly. <a href="../000-meta/007-glossary#extern-c-symbol">Extern &quot;C&quot; symbols</a> are runtime functions the compiler may call; the thread-safety class of each symbol (<code>thread-safe</code> / <code>caller-thread-only</code> / <code>process-init</code>, etc.) is defined in <a href="805-extern-symbols#850-thread-safety-classes">8.5 Extern &quot;C&quot; symbols</a>. TLS slots are thread-local locations read and written by inline code the compiler emits. The calling convention specifies register and stack usage in function calls.</p>
+<h3 id="2-mlir-lowering"><a class="anchor" tabindex="-1" href="#2-mlir-lowering" aria-hidden="true">#</a>2. MLIR lowering</h3>
+<p>The rules, applied in the rok-mir → standard MLIR stage of the <a href="../000-meta/002-pipeline">compilation pipeline</a>, that translate rok's high-level semantics into standard MLIR dialects. <code>tagged union</code>, <code>any</code> slots, pattern matching, try/catch and generics are all lowered to standard MLIR dialects. There is no custom rok dialect.</p>
+<h2 id="why-this-specification-text-is-authoritative"><a class="anchor" tabindex="-1" href="#why-this-specification-text-is-authoritative" aria-hidden="true">#</a>Why this specification text is authoritative</h2>
+<p>The compiler and the runtime share no code or header files other than <code>gc_abi</code>. The guarantee that both follow the same <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> comes from this specification text and from end-to-end verification in integration tests.</p>
+<p>This model follows the same approach as Swift ABI Stability: the specification is authoritative and the implementation follows it.</p>
+<h2 id="stability"><a class="anchor" tabindex="-1" href="#stability" aria-hidden="true">#</a>Stability</h2>
+<p>The contract in this block is part of the language version (SemVer). ABI changes come with an explicit version bump. Minor / patch releases may only add and must not break compatibility. Major releases may break compatibility, but do so in a way the package manager can detect.</p>
+<p>The ROKHIR header of a prebuilt package records the <code>rokc</code> that built it (<a href="../009-tools/904-rokhir-bytecode">9.4</a>). Using a package built by a different <code>rokc</code> is an error that asks for a rebuild.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/README.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../007-runtime/708-coroutine"><small>Previous</small>7.8. Coroutines</a><a class="next" href="801-object-header-abi"><small>Next</small>8.1. Object header ABI</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

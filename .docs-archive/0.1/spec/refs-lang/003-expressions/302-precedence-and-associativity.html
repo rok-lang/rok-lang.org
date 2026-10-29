@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.2. Precedence and associativity - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Operators have two properties: precedence and associativity. When several operators appear in one expression, these two properties determine the shape of the re...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/302-precedence-and-associativity.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.2. Precedence and associativity - rok docs">
+<meta property="og:description" content="Operators have two properties: precedence and associativity. When several operators appear in one expression, these two properties determine the shape of the re...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/302-precedence-and-associativity.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/302-precedence-and-associativity.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/302-precedence-and-associativity.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li class="cur"><a aria-current="page" href="302-precedence-and-associativity">3.2. Precedence and associativity</a><ul class="toc"><li><a href="#321-precedence">3.2.1. Precedence</a></li><li><a href="#322-associativity">3.2.2. Associativity</a></li><li><a href="#323-precedence-and-associativity-table">3.2.3. Precedence and associativity table</a></li><li><a href="#324-conflicts">3.2.4. Conflicts</a></li><li><a href="#325-no-comparison-chaining">3.2.5. No comparison chaining</a></li><li><a href="#326-forcing-grouping-with-parentheses">3.2.6. Forcing grouping with parentheses</a></li><li><a href="#326a-implementation-limits">3.2.6a. Implementation limits</a></li><li><a href="#327-two-tokens-with-the-same-precedence-and-different-associativity">3.2.7. Two tokens with the same precedence and different associativity</a></li></ul></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="32-precedence-and-associativity 32-우선순위와-결합성 321-precedence 321-우선순위 322-associativity 322-결합성 323-precedence-and-associativity-table 323-우선순위와-결합성-표 precedence-levels 우선순위-등급 multiple-positions-of-the-same-token 같은-토큰의-다중-위치 324-conflicts 324-충돌 325-no-comparison-chaining 325-비교-체이닝-금지 326-forcing-grouping-with-parentheses 326-괄호로-강제-묶기 326a-implementation-limits 326a-구현-한도 327-two-tokens-with-the-same-precedence-and-different-associativity 327-우선순위가-같고-결합성이-다른-두-토큰"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/302-precedence-and-associativity" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="32-precedence-and-associativity"><a class="anchor" tabindex="-1" href="#32-precedence-and-associativity" aria-hidden="true">#</a>3.2. Precedence and associativity</h1>
+<p>Operators have two properties: precedence and associativity. When several operators appear in one expression, these two properties determine the shape of the resulting tree.</p>
+<h2 id="321-precedence"><a class="anchor" tabindex="-1" href="#321-precedence" aria-hidden="true">#</a>3.2.1. Precedence</h2>
+<pre><code>a + b * c       →   a + (b * c)              // * binds tighter than +
+a * b + c       →   (a * b) + c              // likewise
+a &lt; b + c       →   a &lt; (b + c)              // + binds tighter than &lt;
+</code></pre>
+<p>Precedence values are integers; an operator with a larger value binds first.</p>
+<h2 id="322-associativity"><a class="anchor" tabindex="-1" href="#322-associativity" aria-hidden="true">#</a>3.2.2. Associativity</h2>
+<pre><code>a - b - c       →   (a - b) - c             // left-associative
+a ?? b ?? c     →   a ?? (b ?? c)           // right-associative (example)
+a &lt; b &lt; c       →   ?                        // non-associative (chaining banned)
+</code></pre>
+<p>Associativity is one of three kinds.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Notation</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>left</code></td><td>Groups from the left. <code>a OP b OP c</code> = <code>(a OP b) OP c</code></td></tr>
+<tr><td><code>right</code></td><td>Groups from the right. <code>a OP b OP c</code> = <code>a OP (b OP c)</code></td></tr>
+<tr><td><code>none</code></td><td>Chaining banned. <code>a OP b OP c</code> is a compile error</td></tr>
+</tbody></table></div>
+<h2 id="323-precedence-and-associativity-table"><a class="anchor" tabindex="-1" href="#323-precedence-and-associativity-table" aria-hidden="true">#</a>3.2.3. Precedence and associativity table</h2>
+<p>The language fixes the precedence and associativity of every built-in operator token; the table below is the single authority. The standard library's <a href="../006-meta-system/607-operator-magic"><code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code></a> only connect tokens to trait methods; they do not set or change precedence or associativity.</p>
+<h3 id="precedence-levels"><a class="anchor" tabindex="-1" href="#precedence-levels" aria-hidden="true">#</a>Precedence levels</h3>
+<pre><code>Level Operators                                                 Assoc
+13   postfix: member access (.), ?., method call, indexing, ?   left
+12   prefix unary: - ! ~ √ await                                -
+11   as is (postfix conversion / type test)                     left
+10   &lt;&lt; &gt;&gt;                                                      left
+ 9   ∘ (function composition)                                   left
+ 8   * / % %% × ⋅ ÷ ∩                                           left
+ 7   + - ∪                                                      left
+ 6   &amp; ^                                                        left
+ 5   |                                                          left
+ 4   == != &lt; &gt; &lt;= &gt;= ≡ ≠ ≤ ≥ ∈ ∉ ⊂ ⊆                            none
+ 3   &amp;&amp;                                                         left
+ 2   ||                                                         left
+ 1   ?? (null coalescing)                                       right
+ 0   .. ..= (range)                                             none
+-1   = += -= *= /= %= %%= &amp;= |= ^= &lt;&lt;= &gt;&gt;= (assignment)         right
+</code></pre>
+<p>The Unicode operators in the table (<code>× ⋅ ÷ ∩ ∪ ∘ √ ≡ ≠ ≤ ≥ ∈ ∉ ⊂ ⊆</code>) are fixed tokens of <a href="../001-lexical/110-punctuation-and-operator-tokens#1103-fixed-token-table">1.10.3</a>. Extension tokens not in the 3.2 table (<a href="../001-lexical/110-punctuation-and-operator-tokens#1104-extension-tokens">1.10.4</a>) do not create new levels; they take the level and associativity of the existing token named at registration, as in <code>like = &quot;+&quot;</code> (<a href="../006-meta-system/607-operator-magic#672-arguments">6.7.2</a>).</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong>Relative precedence of <code>??</code> and <code>..</code></strong>: <code>??</code> (prec=1) binds <strong>tighter</strong> than the range operators <code>..</code> / <code>..=</code> (prec=0). So <code>a ?? 0..3</code> groups as <code>(a ?? 0)..3</code>, and the range operators are weaker than every binary operator except assignment (<code>a || b..c</code> is <code>(a || b)..c</code>). Neither operator dispatches through a trait; the language handles both directly - <code>??</code> is a language-level desugaring over sum types (<a href="308-optional-chaining-and-coalescing#384-null-coalescing-">3.8.4</a>), and ranges are syntax whose six forms the language recognizes as distinct expressions (<a href="307-range-expressions">3.7</a>). The range operators are non-associative, so <code>a..b..c</code> is a compile error.</p>
+</div>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong>Binding of <code>try</code> with <code>catch</code> / <code>finally</code></strong>: <code>try</code> / <code>try?</code> / <code>try!</code> and the <code>catch</code> / <code>finally</code> clauses of <a href="314-error-control-flow">error control flow</a> are also language syntax with no trait connection. <code>try</code> is a prefix form, but unlike the prefix unary operators in the table (prec=12) it covers the entire expression to its right. Its operand extends up to a <code>catch</code> / <code>finally</code> clause, the statement terminator <code>;</code>, a closing bracket, or a comma, so <code>try a + b()</code> is <code>try (a + b())</code>. The <code>catch</code> / <code>finally</code> clauses bind tighter than assignment (prec=-1) and weaker than every other operator, attaching to the whole expression on their left. Thus <code>try parse(s) catch _ { 0 }</code> is <code>(try parse(s)) catch _ { 0 }</code>, and <code>x = try f() catch _ { 0 }</code> is <code>x = ((try f()) catch _ { 0 })</code>.</p>
+</div>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong><code>await</code></strong>: <code>await</code> is a prefix unary operator at prec=12, like <code>-</code> and <code>!</code>, so its operand is a unary expression: <code>await f() == x</code> is <code>(await f()) == x</code> (<a href="../004-functions/412-async#4122-the-await-operator">4.12.2</a>).</p>
+</div>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong><code>as</code> and <code>is</code></strong>: these two postfix operators are language syntax with no trait connection and share one level (prec=11). They are weaker than prefix unary and stronger than arithmetic, so <code>-x as i64</code> is <code>(-x) as i64</code> and <code>a + b is i32</code> is <code>a + (b is i32)</code>. The result of <code>e is T</code> is <code>bool</code> (<a href="../002-types/202-any-slot#225-checking-the-slots-current-type">2.2.5</a>).</p>
+</div>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><strong>Precedence of dot-prefixed (broadcast) operators</strong>: dot-prefixed forms such as <code>.+</code>, <code>.*</code>, <code>.&amp;&amp;</code>, <code>.%%</code> have the same precedence and associativity as their undotted forms. They are not listed as separate rows; every dot-prefixed token takes the level of its corresponding plain token. For example, <code>.+</code> is prec=7 left like <code>+</code>, and <code>.&amp;&amp;</code> is prec=3 left like <code>&amp;&amp;</code>.</p>
+</div>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Unlike C, shift operators bind tighter than arithmetic. So <code>1 + 2 &lt;&lt; 3</code> groups as <code>1 + (2 &lt;&lt; 3) = 17</code>. If this is counterintuitive, use explicit parentheses.</p>
+</div>
+<h3 id="multiple-positions-of-the-same-token"><a class="anchor" tabindex="-1" href="#multiple-positions-of-the-same-token" aria-hidden="true">#</a>Multiple positions of the same token</h3>
+<p>When the same token can appear as prefix, binary, and postfix (for example <code>-</code>), each position has its own precedence (prefix is usually stronger than binary).</p>
+<pre><code>-a + b          →   (-a) + b              // prefix - binds tighter than +
+</code></pre>
+<h2 id="324-conflicts"><a class="anchor" tabindex="-1" href="#324-conflicts" aria-hidden="true">#</a>3.2.4. Conflicts</h2>
+<p>Because the table fixes precedence, registrations cannot conflict on precedence. Connecting different traits to the same (token, position) is a compile error per <a href="../006-meta-system/607-operator-magic#675-conflict-checking">6.7.5</a>.</p>
+<h2 id="325-no-comparison-chaining"><a class="anchor" tabindex="-1" href="#325-no-comparison-chaining" aria-hidden="true">#</a>3.2.5. No comparison chaining</h2>
+<div class="callout warning"><p class="callout-title">Warning</p>
+<p>Chaining by mathematical intuition (<code>a &lt; b &lt; c</code> meaning <code>a &lt; b and b &lt; c</code>) is not allowed in rok.</p>
+</div>
+<p>The comparison operators (<code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, <code>==</code>, <code>!=</code>) are all non-associative in the 3.2.3 table.</p>
+<pre><code>a &lt; b &lt; c       // ERROR: chaining banned
+a == b == c     // ERROR
+</code></pre>
+<p>The intended meaning must be written explicitly:</p>
+<pre><code>a &lt; b &amp;&amp; b &lt; c
+</code></pre>
+<p>There are two reasons for this decision.</p>
+<ul>
+<li>The result of a comparison is <code>bool</code>, and comparing that <code>bool</code> again contradicts mathematical intuition.
+</li>
+<li>Accepting chaining would require a separate chaining rule inconsistent with the other operators.
+</li>
+</ul>
+<p>Writing <code>&amp;&amp;</code> explicitly is therefore the simplest and most consistent form.</p>
+<h2 id="326-forcing-grouping-with-parentheses"><a class="anchor" tabindex="-1" href="#326-forcing-grouping-with-parentheses" aria-hidden="true">#</a>3.2.6. Forcing grouping with parentheses</h2>
+<p>When the tree produced by these rules differs from the intended shape, parentheses force the grouping.</p>
+<pre><code>a + b * c       →   a + (b * c)             // default grouping
+(a + b) * c     →   (a + b) * c             // explicit
+</code></pre>
+<p>Parentheses act as grouping tokens in the lexical and syntactic phases and directly control the shape of the tree.</p>
+<h2 id="326a-implementation-limits"><a class="anchor" tabindex="-1" href="#326a-implementation-limits" aria-hidden="true">#</a>3.2.6a. Implementation limits</h2>
+<p>A chain of more than 4096 operators / postfix operations, or nesting deeper than 256, is an error. These are rok's limits (implementation-defined, <a href="../000-meta/004-language-vs-standard-libraries#044-implementation-limits">0.4.4</a>).</p>
+<h2 id="327-two-tokens-with-the-same-precedence-and-different-associativity"><a class="anchor" tabindex="-1" href="#327-two-tokens-with-the-same-precedence-and-different-associativity" aria-hidden="true">#</a>3.2.7. Two tokens with the same precedence and different associativity</h2>
+<p>In the 3.2.3 table all tokens in one level share the same associativity, so this case does not arise. Extension tokens also take the associativity of an existing token through <code>like</code>, so the same holds.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/302-precedence-and-associativity.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="301-operator-dispatch"><small>Previous</small>3.1. Operator dispatch</a><a class="next" href="303-broadcast-operators"><small>Next</small>3.3. Broadcast operators</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

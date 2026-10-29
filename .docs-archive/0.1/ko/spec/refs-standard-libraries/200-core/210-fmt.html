@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.10. fmt - 포맷 트레잇 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::fmt 모듈은 값을 사람이 읽을 수 있는 문자열로 변환하는 트레잇 패밀리를 정의합니다. f-string f&quot;{x}&quot;, f&quot;{x:?}&quot;, f&quot;{n:08b}&quot; 등 모든 형식 지정자(format spec) 는 본 장의 트레잇으로 dispatch 됩니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/210-fmt.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.10. fmt - 포맷 트레잇 - rok docs">
+<meta property="og:description" content="rok::core::fmt 모듈은 값을 사람이 읽을 수 있는 문자열로 변환하는 트레잇 패밀리를 정의합니다. f-string f&quot;{x}&quot;, f&quot;{x:?}&quot;, f&quot;{n:08b}&quot; 등 모든 형식 지정자(format spec) 는 본 장의 트레잇으로 dispatch 됩니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/210-fmt.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/210-fmt.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/210-fmt.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li class="cur"><a aria-current="page" href="210-fmt">2.10. fmt - 포맷 트레잇</a><ul class="toc"><li><a href="#2101-dispatch">2.10.1. dispatch</a></li><li><a href="#2102-formatter">2.10.2. Formatter</a></li><li><a href="#2103-display">2.10.3. Display</a></li><li><a href="#2104-debug">2.10.4. Debug</a></li><li><a href="#2105-정수의-spec">2.10.5. 정수의 spec</a></li><li><a href="#2106-부동소수-출력">2.10.6. 부동소수 출력</a></li><li><a href="#2107-f-string-format-spec-전체-문법">2.10.7. f-string format spec 전체 문법</a></li><li><a href="#2108-align--fill--width--precision">2.10.8. align / fill / width / precision</a></li><li><a href="#2109-모듈-매핑">2.10.9. 모듈 매핑</a></li><li><a href="#21010-derivedebug">2.10.10. #[derive(Debug)]</a></li><li><a href="#21011-repl--print--자동-출력">2.10.11. REPL / print / 자동 출력</a></li><li><a href="#21012-fmterror">2.10.12. FmtError</a></li><li><a href="#21013-다른-언어와의-비교">2.10.13. 다른 언어와의 비교</a></li><li><a href="#21014-derive-정책-요약">2.10.14. derive 정책 요약</a></li></ul></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="210-fmt---포맷-트레잇 210-fmt---formatting-traits 2101-dispatch 2101-dispatch 2102-formatter 2102-formatter 2103-display 2103-display 2104-debug 2104-debug display-vs-debug-차이 display-vs-debug 사용자-정의--derive user-defined--derive 2105-정수의-spec 2105-integer-spec 2106-부동소수-출력 2106-floating-point-output 2107-f-string-format-spec-전체-문법 2107-full-f-string-format-spec-grammar 동적-spec dynamic-spec 2108-align--fill--width--precision 2108-align--fill--width--precision 2109-모듈-매핑 2109-module-mapping 21010-derivedebug 21010-derivedebug 21011-repl--print--자동-출력 21011-repl--print--automatic-output 21012-fmterror 21012-fmterror 21013-다른-언어와의-비교 21013-comparison-with-other-languages 21014-derive-정책-요약 21014-derive-policy-summary"><a href="../../../../spec/refs-standard-libraries/200-core/210-fmt" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="210-fmt---포맷-트레잇"><a class="anchor" tabindex="-1" href="#210-fmt---포맷-트레잇" aria-hidden="true">#</a>2.10. fmt - 포맷 트레잇</h1>
+<p><code>rok::core::fmt</code> 모듈은 값을 사람이 읽을 수 있는 문자열로 변환하는 트레잇 패밀리를 정의합니다. f-string <code>f&quot;{x}&quot;</code>, <code>f&quot;{x:?}&quot;</code>, <code>f&quot;{n:08b}&quot;</code> 등 모든 형식 지정자(format spec) 는 본 장의 트레잇으로 dispatch 됩니다.</p>
+<p><a href="../../refs-lang/001-lexical/107-string-literals">refs-lang 1.7.4 f-string format spec</a> 의 렉시컬 분해와 이 장의 트레잇 dispatch 가 함께 f-string 의 의미를 결정합니다.</p>
+<h2 id="2101-dispatch"><a class="anchor" tabindex="-1" href="#2101-dispatch" aria-hidden="true">#</a>2.10.1. dispatch</h2>
+<p>f-string 의 구멍 <code>{expr[:spec]}</code> 은 spec 의 <code>type</code> 이 <code>?</code> 이면 <code>Debug::fmt</code>, 아니면 <code>Display::fmt</code> 를 부릅니다. spec 의 나머지 (fill / align / sign / <code>#</code> / <code>0</code> / width / precision 과 <code>b o x X e E f</code>) 는 <code>Formatter</code> 에 실립니다.</p>
+<ul>
+<li>수 (모든 정수, 부동소수, <code>int</code>, <code>float</code>) 는 자기 출력에 spec 을 직접 적용합니다 (2.10.5, 2.10.6).
+</li>
+<li>그 밖의 값의 <code>fmt</code> 는 spec 을 보지 않습니다 (<code>f.width()</code> 는 <code>none</code>). 값을 그대로 쓰면, Formatter 가 그 뒤에 fill / align / width 를 적용하고 precision 으로 자릅니다.
+</li>
+</ul>
+<p><code>d</code> / <code>g</code> / <code>s</code> 는 기본 표기의 다른 이름입니다. 각 기호와 flag 의 의미는 <a href="../../refs-lang/001-lexical/107-string-literals#173-형식-문자열">refs-lang 1.7.3</a> 이 정의합니다. f-string 은 구멍마다 중간 문자열을 만들지 않고 Formatter 하나의 buffer 에 차례로 씁니다.</p>
+<h2 id="2102-formatter"><a class="anchor" tabindex="-1" href="#2102-formatter" aria-hidden="true">#</a>2.10.2. <code>Formatter</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Formatter</span> { .. }                       <span class="c">// 출력 buffer + 현재 spec</span>
+<span class="k">enum</span> <span class="t">Alignment</span> { <span class="t">Left</span>, <span class="t">Right</span>, <span class="t">Center</span>, <span class="t">Equal</span> }
+<span class="k">enum</span> <span class="t">Sign</span> { <span class="t">Plus</span>, <span class="t">Minus</span>, <span class="t">Space</span> }
+
+<span class="k">impl</span> <span class="t">Formatter</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">Formatter</span>;
+    <span class="k">fn</span> with_capacity(n: <span class="t">usize</span>) -&gt; <span class="t">Formatter</span>;
+    <span class="k">fn</span> with_spec(spec: <span class="t">FormatSpec</span>) -&gt; <span class="t">Formatter</span>;
+    <span class="k">fn</span> finish(<span class="k">self</span>) -&gt; <span class="t">str</span>;                   <span class="c">// 쓴 텍스트</span>
+
+    <span class="k">fn</span> write_str(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+    <span class="k">fn</span> write_char(<span class="k">ref</span> <span class="k">self</span>, c: <span class="t">char</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+    <span class="k">fn</span> pad(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);             <span class="c">// fill / align / width / precision 적용</span>
+    <span class="k">fn</span> pad_integral(<span class="k">ref</span> <span class="k">self</span>, is_nonnegative: <span class="t">bool</span>, prefix: <span class="t">str</span>, digits: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+                                                            <span class="c">// 부호 + # 접두 + 0 / fill 채움</span>
+
+    <span class="k">fn</span> fill(<span class="k">self</span>) -&gt; <span class="t">char</span>;
+    <span class="k">fn</span> align(<span class="k">self</span>) -&gt; <span class="t">Alignment</span> | <span class="k">none</span>;       <span class="c">// none: 기본 (수는 오른쪽, 그 밖은 왼쪽)</span>
+    <span class="k">fn</span> sign(<span class="k">self</span>) -&gt; <span class="t">Sign</span> | <span class="k">none</span>;
+    <span class="k">fn</span> alternate(<span class="k">self</span>) -&gt; <span class="t">bool</span>;               <span class="c">// #</span>
+    <span class="k">fn</span> pad_zero(<span class="k">self</span>) -&gt; <span class="t">bool</span>;                <span class="c">// 0</span>
+    <span class="k">fn</span> width(<span class="k">self</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+    <span class="k">fn</span> precision(<span class="k">self</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+}
+</code></pre>
+<p><code>FormatSpec</code> 은 파싱한 spec 값입니다. 정적 spec 은 컴파일 때, 동적 spec (<code>{..}</code> / <code>${..}</code> 를 담은 것) 은 런타임에 한 번 파싱합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">FormatSpec</span> {
+    fill: <span class="t">char</span>; align: <span class="t">Alignment</span> | <span class="k">none</span>; sign: <span class="t">Sign</span> | <span class="k">none</span>; alt: <span class="t">bool</span>; zero: <span class="t">bool</span>;
+    width: <span class="t">usize</span> | <span class="k">none</span>; precision: <span class="t">usize</span> | <span class="k">none</span>; ty: <span class="t">char</span>;
+}
+<span class="k">impl</span> <span class="t">FormatSpec</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">FormatSpec</span>;                   <span class="c">// 빈 spec</span>
+    <span class="k">fn</span> parse(text: <span class="t">str</span>) -&gt; <span class="t">FormatSpec</span>;        <span class="c">// 잘못된 spec 이면 panic</span>
+}
+</code></pre>
+<h2 id="2103-display"><a class="anchor" tabindex="-1" href="#2103-display" aria-hidden="true">#</a>2.10.3. <code>Display</code></h2>
+<pre><code class="language-rok"><span class="a">#[lang("display_trait")]</span>
+<span class="k">trait</span> <span class="t">Display</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+}
+</code></pre>
+<p><code>f&quot;{x}&quot;</code> 의 기본 dispatch 입니다. 원시 수의 <code>fmt</code> 는 런타임 호출 하나로 spec 을 적용해 씁니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">str</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) { <span class="k">try</span> f.write_str(<span class="k">self</span>) }
+}
+
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Point</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">try</span> f.write_str(<span class="s">"("</span>);
+        <span class="k">try</span> <span class="t">Display</span>::fmt(<span class="k">self</span>.x, <span class="k">ref</span> f);
+        <span class="k">try</span> f.write_str(<span class="s">", "</span>);
+        <span class="k">try</span> <span class="t">Display</span>::fmt(<span class="k">self</span>.y, <span class="k">ref</span> f);
+        <span class="k">try</span> f.write_str(<span class="s">")"</span>);
+    }
+}
+
+<span class="s">f"{</span><span class="t">Point</span> { x: <span class="n">1.5</span>, y: <span class="n">2.5</span> }<span class="s">}"</span>;       <span class="c">//→ "(1.5, 2.5)"</span>
+<span class="s">f"{</span><span class="t">Point</span> { x: <span class="n">1.5</span>, y: <span class="n">2.5</span> }<span class="s">:&gt;12</span><span class="s">}"</span>;   <span class="c">//→ "  (1.5, 2.5)"   (Point::fmt 안의 f.width() 는 none)</span>
+</code></pre>
+<ul>
+<li>호출 자리에는 <code>ref</code> 가 필요합니다 (<code>Display::fmt(x, ref f)</code>). <code>x.fmt(f)</code> 꼴은 <code>Display</code> 와 <code>Debug</code> 를 함께 구현한 타입에서 모호하므로 경로로 적습니다.
+</li>
+<li><code>Display</code> 는 derive 하지 않습니다. 표현은 타입 설계자가 정합니다.
+</li>
+</ul>
+<h2 id="2104-debug"><a class="anchor" tabindex="-1" href="#2104-debug" aria-hidden="true">#</a>2.10.4. <code>Debug</code></h2>
+<pre><code class="language-rok"><span class="a">#[lang("debug_trait")]</span>
+<span class="k">trait</span> <span class="t">Debug</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+}
+
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">str</span> { .. }    <span class="c">// 유효한 rok 문자열 리터럴</span>
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">char</span> { .. }   <span class="c">// 유효한 rok 문자 리터럴</span>
+</code></pre>
+<p><code>f&quot;{x:?}&quot;</code> 의 dispatch 이며, 다시 읽을 수 있는 표현을 목표로 합니다. <code>str</code> / <code>char</code> 의 Debug 는 rok 리터럴입니다. 따옴표, <code>\\</code>, <code>\n</code> / <code>\r</code> / <code>\t</code> 등은 escape 하고, 그 밖의 제어 문자와 bidi 문자 (U+202A..U+202E, U+2066..U+2069 등) 는 <code>\u{..}</code> 로 씁니다.</p>
+<h3 id="display-vs-debug-차이"><a class="anchor" tabindex="-1" href="#display-vs-debug-차이" aria-hidden="true">#</a>Display vs Debug 차이</h3>
+<p>두 트레잇은 목적이 다르며, 다음 표에 그 차이를 정리해 두었습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>Display</code></th><th><code>Debug</code></th></tr></thead>
+<tbody>
+<tr><td>대상</td><td>end-user</td><td>개발자</td></tr>
+<tr><td>정확성</td><td>가독성 우선</td><td>정보 손실 없음 (round-trip 가능 지향)</td></tr>
+<tr><td>따옴표</td><td>문자열 그대로 (따옴표 없음)</td><td>문자열을 <code>&quot;...&quot;</code> 로 감쌈 (이스케이프 포함)</td></tr>
+<tr><td>컨테이너</td><td>대개 정의되지 않음</td><td>모든 컬렉션 자동</td></tr>
+<tr><td>derive</td><td><strong>불가</strong> (수동 구현)</td><td><strong>가능</strong> (<code>#[derive(Debug)]</code>)</td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="k">let</span> s = <span class="s">"hello\nworld"</span>;
+<span class="k">let</span> d1 = <span class="s">f"{</span>s<span class="s">}"</span>;        <span class="c">//→ hello</span>
+                        <span class="c">//   world          (Display - 그대로)</span>
+<span class="k">let</span> d2 = <span class="s">f"{</span>s<span class="s">:?</span><span class="s">}"</span>;      <span class="c">//→ "hello\nworld"  (Debug - 이스케이프)</span>
+</code></pre>
+<h3 id="사용자-정의--derive"><a class="anchor" tabindex="-1" href="#사용자-정의--derive" aria-hidden="true">#</a>사용자 정의 / derive</h3>
+<pre><code class="language-rok"><span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+
+<span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1.5</span>, y: <span class="n">2.5</span> };
+<span class="k">let</span> s = <span class="s">f"{</span>p<span class="s">:?</span><span class="s">}"</span>;              <span class="c">//→ "Point { x: 1.5, y: 2.5 }"</span>
+</code></pre>
+<p><code>Debug</code> 는 모든 필드의 Debug 출력을 합성하는 방식으로 자동 derive 가 가능합니다.</p>
+<h2 id="2105-정수의-spec"><a class="anchor" tabindex="-1" href="#2105-정수의-spec" aria-hidden="true">#</a>2.10.5. 정수의 spec</h2>
+<div class="table-wrap"><table>
+<thead><tr><th><code>type</code></th><th>정수</th></tr></thead>
+<tbody>
+<tr><td>(없음), <code>d</code>, <code>g</code>, <code>s</code></td><td>10 진</td></tr>
+<tr><td><code>f</code></td><td>고정 소수점 (<code>{5:.2f}</code> → <code>5.00</code>)</td></tr>
+<tr><td><code>b</code> <code>o</code> <code>x</code> <code>X</code></td><td>2 / 8 / 16 진 (<code>#</code> 이면 <code>0b</code> / <code>0o</code> / <code>0x</code>)</td></tr>
+<tr><td><code>e</code> <code>E</code></td><td>지수 표기</td></tr>
+</tbody></table></div>
+<p>부동소수에 <code>b o x X</code> 를 주면 컴파일 에러 (정적 spec) 또는 panic (동적 spec) 입니다. 고정 폭 정수의 음수는 그 타입 폭의 2 의 보수로 나옵니다 (<code>{-1i8:x}</code> 는 <code>&quot;ff&quot;</code>). <code>int</code> 는 부호와 크기로 씁니다 (<code>int</code> 값 -255 는 <code>{n:x}</code> 로 <code>&quot;-ff&quot;</code>).</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">u32</span> = <span class="n">0xCAFE</span>;
+<span class="s">f"{</span>n<span class="s">:b</span><span class="s">}"</span>;        <span class="c">//→ "1100101011111110"</span>
+<span class="s">f"{</span>n<span class="s">:#x</span><span class="s">}"</span>;       <span class="c">//→ "0xcafe"</span>
+<span class="s">f"{</span>n<span class="s">:X</span><span class="s">}"</span>;        <span class="c">//→ "CAFE"</span>
+<span class="s">f"{</span><span class="n">42</span><span class="s">:08b</span><span class="s">}"</span>;     <span class="c">//→ "00101010"</span>
+<span class="s">f"{</span><span class="n">42</span><span class="s">:e</span><span class="s">}"</span>;       <span class="c">//→ "4.2e1"</span>
+</code></pre>
+<h2 id="2106-부동소수-출력"><a class="anchor" tabindex="-1" href="#2106-부동소수-출력" aria-hidden="true">#</a>2.10.6. 부동소수 출력</h2>
+<ul>
+<li><code>{}</code> 는 다시 읽어 같은 값이 되는 가장 짧은 자릿수이며 지수 표기를 쓰지 않습니다. <code>1.0</code> 은 <code>1</code>, <code>0.1</code> 은 <code>0.1</code>, NaN 은 <code>NaN</code>, 무한대는 <code>inf</code> / <code>-inf</code> 입니다.
+</li>
+<li><code>{:e}</code> 는 같은 자릿수를 지수 표기로 씁니다 (<code>0.15</code> 는 <code>1.5e-1</code>). <code>{:E}</code> 는 <code>E</code> 를 씁니다.
+</li>
+<li>precision 이 있으면 그 자릿수로 반올림합니다 (<code>{x:.3e}</code>, <code>{x:.2}</code>).
+</li>
+<li>promote 된 <code>float</code> (지수가 f64 밖) 는 <code>{}</code> 에서도 지수로 씁니다 (<code>1.5e400</code>).
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">f64</span> = <span class="n">12345.678</span>;
+<span class="s">f"{</span>x<span class="s">}"</span>;          <span class="c">//→ "12345.678"</span>
+<span class="s">f"{</span>x<span class="s">:e</span><span class="s">}"</span>;        <span class="c">//→ "1.2345678e4"</span>
+<span class="s">f"{</span>x<span class="s">:.3e</span><span class="s">}"</span>;      <span class="c">//→ "1.235e4"</span>
+<span class="s">f"{</span><span class="n">1.0</span><span class="s">}"</span>;        <span class="c">//→ "1"</span>
+</code></pre>
+<h2 id="2107-f-string-format-spec-전체-문법"><a class="anchor" tabindex="-1" href="#2107-f-string-format-spec-전체-문법" aria-hidden="true">#</a>2.10.7. f-string format spec 전체 문법</h2>
+<p>권위는 <a href="../../refs-lang/001-lexical/107-string-literals#173-형식-문자열">refs-lang 1.7.3</a> 이며, 여기서는 요약합니다.</p>
+<pre><code>spec      = [fill][align][sign][#][0][width][.precision][type]
+align     = &quot;&lt;&quot; | &quot;&gt;&quot; | &quot;^&quot; | &quot;=&quot;
+sign      = &quot;+&quot; | &quot;-&quot; | &quot; &quot;
+type      = &quot;&quot; | &quot;s&quot; | &quot;d&quot; | &quot;g&quot; | &quot;f&quot; | &quot;?&quot; | &quot;b&quot; | &quot;o&quot; | &quot;x&quot; | &quot;X&quot; | &quot;e&quot; | &quot;E&quot;
+width     = unsigned-int | hole
+precision = unsigned-int | hole
+hole      = &quot;{&quot; expr &quot;}&quot; | &quot;${&quot; expr &quot;}&quot;      // 중첩 구멍, 자기 spec 없음
+fill      = any single char (default: space)
+</code></pre>
+<h3 id="동적-spec"><a class="anchor" tabindex="-1" href="#동적-spec" aria-hidden="true">#</a>동적 spec</h3>
+<pre><code class="language-rok"><span class="k">let</span> s1 = <span class="s">f"{</span>x<span class="s">:.{</span>prec<span class="s">}</span><span class="s">}"</span>;               <span class="c">//→ "3.1416"        (precision 동적)</span>
+<span class="k">let</span> s2 = <span class="s">f"{</span>x<span class="s">:&gt;${</span>width<span class="s">}.${</span>prec<span class="s">}</span><span class="s">}"</span>;     <span class="c">//→ "    3.1416"    (width + precision 동적)</span>
+<span class="k">let</span> s3 = <span class="s">f"{</span>x<span class="s">:{</span>full_spec<span class="s">}</span><span class="s">}"</span>;           <span class="c">//→ ...             (전체 spec 동적)</span>
+</code></pre>
+<p>spec 안의 <code>$$</code> 는 <code>$</code> 하나입니다. 본문의 <code>$</code> 는 그대로입니다 (<code>f&quot;cost: $100&quot;</code>). 정적 spec 은 컴파일 타임에 검사하고, 동적 spec 이 펼친 결과가 올바르지 않으면 런타임에 panic 합니다. 렉서의 토큰 분해는 refs-lang 1.7.3 의 &quot;어휘 처리&quot; 를 따릅니다.</p>
+<h2 id="2108-align--fill--width--precision"><a class="anchor" tabindex="-1" href="#2108-align--fill--width--precision" aria-hidden="true">#</a>2.10.8. align / fill / width / precision</h2>
+<p><code>Formatter::pad</code> 는 spec 의 align, fill, width 를 자동으로 처리해 주므로, 사용자 impl 은 <strong>컨텐츠</strong>만 만들면 됩니다.</p>
+<p>align 을 적지 않으면 수 (정수, 부동소수) 는 오른쪽 정렬, 그 밖의 타입은 왼쪽 정렬입니다. <code>&lt;</code> / <code>&gt;</code> / <code>^</code> (와 fill) 를 적으면 어떤 타입이든 그 정렬을 따릅니다. <code>?</code> (Debug) 도 width / align 을 받습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">42</span>;
+
+<span class="s">f"{</span>n<span class="s">}"</span>;              <span class="c">//→ "42"            (기본)</span>
+<span class="s">f"{</span>n<span class="s">:5</span><span class="s">}"</span>;            <span class="c">//→ "   42"         (width 5, 수는 기본 오른쪽 정렬)</span>
+<span class="s">f"{</span>n<span class="s">:&lt;5</span><span class="s">}"</span>;           <span class="c">//→ "42   "         (left)</span>
+<span class="s">f"{</span>n<span class="s">:&gt;5</span><span class="s">}"</span>;           <span class="c">//→ "   42"         (right)</span>
+<span class="s">f"{</span>n<span class="s">:^5</span><span class="s">}"</span>;           <span class="c">//→ " 42  "         (center)</span>
+<span class="s">f"{</span>n<span class="s">:0&gt;5</span><span class="s">}"</span>;          <span class="c">//→ "00042"         (fill 0)</span>
+<span class="s">f"{</span>n<span class="s">:*^7</span><span class="s">}"</span>;          <span class="c">//→ "**42***"       (fill *, center, width 7)</span>
+<span class="s">f"{</span>n<span class="s">:=+5</span><span class="s">}"</span>;          <span class="c">//→ "+  42"         (= : 부호와 숫자 사이를 채움, + : 양수 부호)</span>
+<span class="s">f"{</span>n<span class="s">:+=5</span><span class="s">}"</span>;          <span class="c">//→ "+++42"         (fill '+', align '=')</span>
+<span class="s">f"{</span>-<span class="n">42</span><span class="s">:=6</span><span class="s">}"</span>;         <span class="c">//→ "-   42"</span>
+<span class="s">f"{</span>-<span class="n">42</span><span class="s">:06</span><span class="s">}"</span>;         <span class="c">//→ "-00042"        (0 : 0 으로 채움, = 정렬)</span>
+<span class="s">f"{</span>n<span class="s">:+</span><span class="s">}"</span>;            <span class="c">//→ "+42"           (+ : 양수에도 부호)</span>
+<span class="s">f"{</span><span class="s">"ab"</span><span class="s">:5</span><span class="s">}"</span>;         <span class="c">//→ "ab   "         (문자열은 기본 왼쪽 정렬)</span>
+</code></pre>
+<p>또한 <code>precision</code> 도 같은 방식으로 적용됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">f64</span> = <span class="n">3.141592653589793</span>;
+<span class="s">f"{</span>x<span class="s">:.2</span><span class="s">}"</span>;           <span class="c">//→ "3.14"          (소수점 이하 2)</span>
+<span class="s">f"{</span>x<span class="s">:.0</span><span class="s">}"</span>;           <span class="c">//→ "3"</span>
+<span class="s">f"{</span>x<span class="s">:10.4</span><span class="s">}"</span>;         <span class="c">//→ "    3.1416"    (width 10, precision 4, 수는 기본 오른쪽 정렬)</span>
+<span class="s">f"{</span>x<span class="s">:&lt;10.4</span><span class="s">}"</span>;        <span class="c">//→ "3.1416    "    (왼쪽 정렬은 &lt; 명시)</span>
+</code></pre>
+<p>문자열에 적용되는 precision 은 최대 길이 잘라내기로 해석되며, 정수의 precision 은 무시됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> s = <span class="s">"hello world"</span>;
+<span class="s">f"{</span>s<span class="s">:.5</span><span class="s">}"</span>;           <span class="c">//→ "hello"</span>
+<span class="s">f"{</span>n<span class="s">:.3</span><span class="s">}"</span>;           <span class="c">//→ "42"</span>
+</code></pre>
+<h2 id="2109-모듈-매핑"><a class="anchor" tabindex="-1" href="#2109-모듈-매핑" aria-hidden="true">#</a>2.10.9. 모듈 매핑</h2>
+<p>각 타입별로 어떤 트레잇이 구현되어 있는지는 다음 표에 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>Display</th><th>Debug</th></tr></thead>
+<tbody>
+<tr><td>정수, <code>int</code>, 부동소수, <code>float</code></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>bool</code>, <code>char</code>, <code>str</code></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>List&lt;T&gt;</code>, <code>Set&lt;T&gt;</code></td><td>✗</td><td>✓ (T: Debug)</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td>✗</td><td>✓ (K, V: Debug)</td></tr>
+<tr><td><code>(A, B, ..)</code></td><td>✗</td><td>✓ (모두 Debug)</td></tr>
+<tr><td><code>T | none</code></td><td>✗</td><td>✓ (T: Debug)</td></tr>
+<tr><td><code>Result&lt;T, E&gt;</code></td><td>✗</td><td>✓ (T, E: Debug)</td></tr>
+</tbody></table></div>
+<p><code>Display</code> 는 스칼라, 문자열, 직접 구현한 사용자 타입에만 있고 컨테이너에는 없습니다. <code>Debug</code> 는 거의 모든 타입에 있고 derive 로 만듭니다.</p>
+<h2 id="21010-derivedebug"><a class="anchor" tabindex="-1" href="#21010-derivedebug" aria-hidden="true">#</a>2.10.10. <code>#[derive(Debug)]</code></h2>
+<pre><code class="language-rok"><span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">User</span> { id: <span class="t">u64</span>; name: <span class="t">str</span>; }
+
+<span class="k">let</span> u = <span class="t">User</span> { id: <span class="n">1</span>, name: <span class="s">"Alice"</span> };
+<span class="k">let</span> s = <span class="s">f"{</span>u<span class="s">:?</span><span class="s">}"</span>;          <span class="c">//→ User { id: 1, name: "Alice" }</span>
+</code></pre>
+<p>derive 의 동작 방식은 다음과 같습니다. 우선 struct 는 <code>TypeName { field1: &lt;field1:?&gt;, field2: &lt;field2:?&gt;, ... }</code> 형태로 출력되며, tuple struct 는 <code>TypeName(&lt;f1:?&gt;, &lt;f2:?&gt;, ...)</code> 형태로 출력됩니다. enum 의 경우에는 <code>VariantName</code> 또는 <code>VariantName(...)</code> / <code>VariantName { ... }</code> 형태로 출력됩니다. 다만 derive 를 적용하려면 모든 필드가 (재귀적으로) <code>Debug</code> 를 구현하고 있어야 합니다.</p>
+<p>한편 <code>#[derive(Display)]</code> 는 존재하지 않습니다. 표현을 결정하는 일은 사용자의 책임이기 때문입니다.</p>
+<h2 id="21011-repl--print--자동-출력"><a class="anchor" tabindex="-1" href="#21011-repl--print--자동-출력" aria-hidden="true">#</a>2.10.11. REPL / <code>print</code> / 자동 출력</h2>
+<p><a href="../../refs-lang/009-tools/907-jit-cells">refs-lang 9.7 JIT 셀 실행 흐름</a> 의 REPL 절에서 다음과 같이 정의합니다.</p>
+<pre><code class="language-rok">&gt; <span class="k">let</span> x = <span class="n">42</span>;
+&gt; x
+<span class="t">i32</span>: <span class="n">42</span>
+
+&gt; <span class="n">1</span> + <span class="n">2</span>
+<span class="t">i32</span>: <span class="n">3</span>
+
+&gt; <span class="s">"hello"</span>
+<span class="t">str</span>: <span class="s">"hello"</span>
+</code></pre>
+<p>REPL 은 마지막 식을 자동으로 출력할 때 값을 <code>Debug</code> 로 포맷해 <code>type: value</code> 로 출력하며, <code>Debug</code> 가 없는 타입은 타입만 출력합니다 (<a href="../../refs-lang/009-tools/907-jit-cells#977-시각화--출력">refs-lang 9.7.7</a>, <a href="212-reflect#2124-repl-출력">2.12.4</a>).</p>
+<p>이와 달리 <code>println</code> 이나 <code>print</code> 는 오로지 <code>Display</code> 만 dispatch 합니다.</p>
+<pre><code class="language-rok">println(<span class="s">f"x = {</span>x<span class="s">}"</span>);          <span class="c">// Display</span>
+println(<span class="s">f"x = {</span>x<span class="s">:?</span><span class="s">}"</span>);        <span class="c">// Debug (spec 명시)</span>
+</code></pre>
+<h2 id="21012-fmterror"><a class="anchor" tabindex="-1" href="#21012-fmterror" aria-hidden="true">#</a>2.10.12. <code>FmtError</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">FmtError</span>;
+</code></pre>
+<p>stream 에 쓰다 실패할 때의 에러입니다. 메모리에 쓰는 경우 (f-string, <code>Formatter::new</code> 등) 에는 일어나지 않습니다. fmt 메서드는 모두 <code>throws (FmtError)</code> 이므로 호출을 <code>try</code> 로 표시해 전파합니다.</p>
+<h2 id="21013-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#21013-다른-언어와의-비교" aria-hidden="true">#</a>2.10.13. 다른 언어와의 비교</h2>
+<p>다음 표는 Rust, Python 과 비교하여 rok 의 fmt 설계가 어디에 위치하는지를 보여 줍니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust <code>Display</code>/<code>Debug</code></th><th>Python <code>__str__</code>/<code>__repr__</code></th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>인간 / 디버그 분리</td><td>✓ 트레잇 분리</td><td>✓ 메서드 분리</td><td>✓ 트레잇 분리</td></tr>
+<tr><td>Debug derive</td><td><code>#[derive(Debug)]</code></td><td>자동 default</td><td><code>#[derive(Debug)]</code></td></tr>
+<tr><td>Display derive</td><td><strong>불가</strong></td><td><strong>불가</strong> (직접 구현)</td><td><strong>불가</strong></td></tr>
+<tr><td>진법 / 지수</td><td>트레잇 6 개</td><td>format spec</td><td>spec 을 실은 <code>Formatter</code></td></tr>
+<tr><td>동적 spec</td><td>위치 인자 (<code>{0:.*}</code>)</td><td>f-string <code>{:.{prec}}</code></td><td><code>${...}</code> 식 ($-sigil)</td></tr>
+<tr><td>spec syntax</td><td>Python-like</td><td>PEP 3101</td><td>Python-like + <code>${...}</code></td></tr>
+</tbody></table></div>
+<p>rok 이 가장 두드러지게 차별화되는 지점은, 동적 spec 삽입을 <code>${...}</code> 로 시각적으로 분리하여 Python 의 <code>{:.{prec}}</code> 같은 중첩 괄호 모호성을 회피했다는 데 있습니다. 이 표기는 JS, Kotlin, Scala 의 <code>$</code> sigil 과도 동형을 이룹니다.</p>
+<h2 id="21014-derive-정책-요약"><a class="anchor" tabindex="-1" href="#21014-derive-정책-요약" aria-hidden="true">#</a>2.10.14. derive 정책 요약</h2>
+<p>fmt 트레잇 가운데 derive 할 수 있는 것은 <code>Debug</code> 뿐입니다. <code>Display</code> 는 derive 대상이 아닙니다. 사용자에게 보이는 표면은 도메인마다 결정이 달라지는 영역이라 자동 도출이 어울리지 않으며, <code>Display</code> 의 의미 있는 default 형태도 마땅하지 않기 때문입니다. 따라서 표시가 필요한 타입에는 <code>Display</code> 를 직접 구현하는 편이 권장됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/210-fmt.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="209-collections"><small>Previous</small>2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a><a class="next" href="211-conversion"><small>Next</small>2.11. 변환 트레잇</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

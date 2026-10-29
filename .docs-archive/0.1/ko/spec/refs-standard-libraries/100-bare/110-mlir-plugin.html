@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::mlir::plugin 은 rok 컴파일러가 외부에서 빌드된 MLIR 다이얼렉트를 동적으로 로드하여 __mlir_op 의 호출 대상으로 추가할 수 있도록 하는 인터페이스를 정의합니다. 도메인 특화 컴파일러 (암호화, 신호 처리, 형식 검증, 새 가속기 ISA 등) 를...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록 - rok docs">
+<meta property="og:description" content="rok::bare::mlir::plugin 은 rok 컴파일러가 외부에서 빌드된 MLIR 다이얼렉트를 동적으로 로드하여 __mlir_op 의 호출 대상으로 추가할 수 있도록 하는 인터페이스를 정의합니다. 도메인 특화 컴파일러 (암호화, 신호 처리, 형식 검증, 새 가속기 ISA 등) 를...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li class="cur"><a aria-current="page" href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a><ul class="toc"><li><a href="#1101-영역-분리---무엇이-spec-안--밖인가">1.10.1. 영역 분리 - 무엇이 spec 안 / 밖인가</a></li><li><a href="#1102-plugin-빌드-형태">1.10.2. plugin 빌드 형태</a></li><li><a href="#1103-plugin-로드">1.10.3. plugin 로드</a></li><li><a href="#1104-plugin-op-호출">1.10.4. plugin op 호출</a></li><li><a href="#1105-안전-책임">1.10.5. 안전 책임</a></li><li><a href="#1106-abi-버전-정책">1.10.6. ABI 버전 정책</a></li><li><a href="#1107-빌드-격리">1.10.7. 빌드 격리</a></li><li><a href="#1108-다른-언어와의-비교">1.10.8. 다른 언어와의 비교</a></li><li><a href="#1109-범위-밖">1.10.9. 범위 밖</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="110-rokbaremlirplugin---사용자-정의-다이얼렉트-등록 110-rokbaremlirplugin---registering-user-defined-dialects 1101-영역-분리---무엇이-spec-안--밖인가 1101-separation-of-areas---what-is-inside--outside-the-spec 1102-plugin-빌드-형태 1102-plugin-build-form 1103-plugin-로드 1103-plugin-loading cli-옵션 cli-options 패키지-매니페스트-선언 package-manifest-declaration 1104-plugin-op-호출 1104-calling-plugin-ops 1105-안전-책임 1105-safety-responsibilities 1106-abi-버전-정책 1106-abi-version-policy 1107-빌드-격리 1107-build-isolation 1108-다른-언어와의-비교 1108-comparison-with-other-languages 1109-범위-밖 1109-out-of-scope"><a href="../../../../spec/refs-standard-libraries/100-bare/110-mlir-plugin" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="110-rokbaremlirplugin---사용자-정의-다이얼렉트-등록"><a class="anchor" tabindex="-1" href="#110-rokbaremlirplugin---사용자-정의-다이얼렉트-등록" aria-hidden="true">#</a>1.10. <code>rok::bare::mlir::plugin</code> - 사용자 정의 다이얼렉트 등록</h1>
+<p><code>rok::bare::mlir::plugin</code> 은 rok 컴파일러가 외부에서 빌드된 MLIR 다이얼렉트를 동적으로 로드하여 <a href="109-mlir"><code>__mlir_op</code></a> 의 호출 대상으로 추가할 수 있도록 하는 인터페이스를 정의합니다. 도메인 특화 컴파일러 (암호화, 신호 처리, 형식 검증, 새 가속기 ISA 등) 를 rok 위에 얹고 싶은 라이브러리 작성자를 위한 자리입니다.</p>
+<p>본 절은 plugin 의 <strong>등록 메커니즘과 안전 책임</strong> 을 정의합니다. 다이얼렉트 자체의 정의 (op / type / attribute 의 의미와 스키마) 는 MLIR 의 영역 (TableGen / IRDL) 이며 본 사양 범위 밖입니다.</p>
+<h2 id="1101-영역-분리---무엇이-spec-안--밖인가"><a class="anchor" tabindex="-1" href="#1101-영역-분리---무엇이-spec-안--밖인가" aria-hidden="true">#</a>1.10.1. 영역 분리 - 무엇이 spec 안 / 밖인가</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>책임</th><th>위치</th></tr></thead>
+<tbody>
+<tr><td>다이얼렉트 정의 (op 스키마, type 시스템)</td><td><strong>spec 밖</strong> - MLIR (TableGen <code>.td</code> / IRDL)</td></tr>
+<tr><td>다이얼렉트 빌드 (<code>.so</code> / <code>.dylib</code> / <code>.dll</code>)</td><td><strong>spec 밖</strong> - 사용자 빌드 도구</td></tr>
+<tr><td>rok 컴파일러가 plugin 을 로드 / register 하는 인터페이스</td><td><strong>spec 안</strong> (본 절)</td></tr>
+<tr><td>로드된 plugin op 을 <code>__mlir_op</code> 으로 호출</td><td><strong>spec 안</strong> (<a href="109-mlir">1.9</a>)</td></tr>
+<tr><td>plugin op 의 lowering / 패스</td><td><strong>spec 밖</strong> - plugin 자체가 책임</td></tr>
+</tbody></table></div>
+<p>이 분리는 rok 이 MLIR 자체의 dialect-definition DSL 진화 (TableGen → IRDL → 차세대 형식) 에 종속되지 않도록 합니다.</p>
+<h2 id="1102-plugin-빌드-형태"><a class="anchor" tabindex="-1" href="#1102-plugin-빌드-형태" aria-hidden="true">#</a>1.10.2. plugin 빌드 형태</h2>
+<p><code>rokc</code> 는 MLIR 을 내장하며 (<a href="../../refs-lang/000-meta/002-pipeline#024-backends">0.2.4</a>) plugin 을 자신의 MLIR context 에 로드합니다. plugin 은 MLIR 의 표준 plugin 형태를 따르는 동적 라이브러리입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>종류</th><th>진입점 (C ABI)</th></tr></thead>
+<tbody>
+<tr><td>다이얼렉트</td><td><code>mlirGetDialectPluginInfo()</code></td></tr>
+<tr><td>패스 (선택)</td><td><code>mlirGetPassPluginInfo()</code></td></tr>
+</tbody></table></div>
+<p>다이얼렉트 plugin 의 namespace 가 <code>__mlir_op::&lt;&quot;NS.op_name&quot;, ...&gt;</code> 의 <code>NS</code> 자리에 들어갑니다. plugin 은 <code>rokc</code> 에 내장된 LLVM 버전으로 빌드해야 합니다. plugin 은 자기 MLIR 을 따로 갖지 않고 <code>rokc</code> 의 MLIR 을 씁니다: plugin 의 MLIR / LLVM 심볼은 해소하지 않은 채 두고, 로드할 때 <code>rokc</code> 가 export 하는 심볼에 묶입니다. <code>rokc</code> 는 자기가 링크하는 MLIR (<a href="../../refs-lang/008-abi/807-mlir-dialects#871-일반-코드-사용-다이얼렉트-재확인">refs-lang 8.7.1</a> 과 <a href="../../refs-lang/008-abi/807-mlir-dialects#875-라이브러리--가속-영역-다이얼렉트">8.7.5</a> 의 다이얼렉트와 그것들이 쓰는 기반) 와 LLVM 의 support 라이브러리를 export 합니다. plugin 은 그 위에 지을 수 있으며, 그 밖의 것 (예: 다른 upstream 다이얼렉트) 은 스스로 갖춰야 합니다. 자기 MLIR 사본을 링크한 plugin 은 <code>rokc</code> 가 보지 못하는 registry 에 등록됩니다. Windows 에서 <code>rokc.exe</code> 는 toolchain 의 MLIR plugin 개발 파일과 함께 배포되는 import library 로 이 심볼들을 export 합니다. plugin DLL 은 그것에 링크하고, <code>rokc</code> 와 같은 C 런타임 (동적 release CRT) 을 쓰며, 자기 진입점을 export 합니다. DLL 은 <code>rokc.exe</code> 가 export 하는 데이터에 <code>__declspec(dllimport)</code> 를 통해서만 닿을 수 있습니다. plugin 개발 헤더가 MLIR 의 explicit TypeID 에 대해 이것을 갖춰 두며, 그 밖의 그런 데이터는 plugin 이 쓸 수 없습니다. 정확한 빌드 플래그는 구현이 정합니다.</p>
+<h2 id="1103-plugin-로드"><a class="anchor" tabindex="-1" href="#1103-plugin-로드" aria-hidden="true">#</a>1.10.3. plugin 로드</h2>
+<p>plugin 을 지정하는 방식은 두 가지입니다. 어느 쪽이든 <code>rokc</code> 가 lowering 전에 로드합니다.</p>
+<h3 id="cli-옵션"><a class="anchor" tabindex="-1" href="#cli-옵션" aria-hidden="true">#</a>CLI 옵션</h3>
+<pre><code class="language-bash">rokc build --load-mlir-plugin /path/to/libmydialect.so main.rok
+rokc build --load-mlir-plugin mydialect main.rok         # 이름으로 탐색
+rokc build --load-mlir-pass-plugin mypasses --mlir-pass my-lower main.rok
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>옵션</th><th>효과</th></tr></thead>
+<tbody>
+<tr><td><code>--load-mlir-plugin &lt;path|name&gt;</code></td><td>다이얼렉트 plugin 로드</td></tr>
+<tr><td><code>--load-mlir-pass-plugin &lt;path|name&gt;</code></td><td>패스 plugin 로드</td></tr>
+<tr><td><code>--mlir-pass &lt;pass&gt;</code></td><td>LLVM 다이얼렉트로 변환하기 전에 <code>&lt;pass&gt;</code> 실행</td></tr>
+</tbody></table></div>
+<p>모두 여러 번 쓸 수 있습니다. 경로가 아닌 이름 <code>name</code> 은 <code>ROK_MLIR_PLUGIN_PATH</code> 의 디렉토리에서 host 의 라이브러리 파일 이름 (macOS 는 <code>lib&lt;name&gt;.dylib</code> 또는 <code>lib&lt;name&gt;.so</code>, Linux 는 <code>lib&lt;name&gt;.so</code>, Windows 는 <code>&lt;name&gt;.dll</code>) 으로 찾습니다 (탐색 세부는 구현 정의). plugin 을 로드하지 못하면 빌드 에러입니다. plugin 파일은 증분 빌드의 fingerprint 에 들어가며 (<a href="../../refs-lang/009-tools/902-aot-pipeline#9216-증분-빌드">refs-lang 9.2.16</a>), <code>rok</code> 는 이 옵션들을 <code>rokc</code> 에 그대로 넘깁니다.</p>
+<h3 id="패키지-매니페스트-선언"><a class="anchor" tabindex="-1" href="#패키지-매니페스트-선언" aria-hidden="true">#</a>패키지 매니페스트 선언</h3>
+<p>패키지의 매니페스트 (<code>rok.rokon</code>, <a href="../../refs-lang/009-tools/910-rok-frontend">refs-lang 9.10</a>) 에 plugin 을 선언하면 빌드 시 자동 로드됩니다. 매니페스트 형식은 <a href="../../refs-lang/009-tools/910-rok-frontend#9103-rokrokon--roklock">refs-lang 9.10.3</a> 이 정의합니다. plugin 을 선언하는 필드는 아직 그 형식에 없으며, 정해지면 9.10.3 에 추가됩니다.</p>
+<h2 id="1104-plugin-op-호출"><a class="anchor" tabindex="-1" href="#1104-plugin-op-호출" aria-hidden="true">#</a>1.10.4. plugin op 호출</h2>
+<p>로드된 plugin 의 op 은 upstream MLIR op 과 동일한 syntax 로 호출됩니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::mlir::__mlir_op;
+
+<span class="k">unsafe</span> {
+    <span class="c">// plugin namespace 가 "crypto" 라고 가정</span>
+    <span class="k">let</span> cipher: <span class="t">Vector</span>&lt;<span class="t">u8</span>, <span class="n">16</span>&gt; = __mlir_op::&lt;<span class="s">"crypto.aes_round"</span>, _&gt;(
+        plaintext, key,
+        attributes = { <span class="s">"round_index"</span>: __mlir_attr::&lt;<span class="s">"3 : i32"</span>&gt; },
+    );
+}
+</code></pre>
+<p><a href="109-mlir">1.9 rok::bare::mlir</a> 의 모든 호출 syntax (속성 / region / variadic) 가 그대로 적용됩니다. op 이름과 시그니처의 검증은 plugin 을 로드한 MLIR context 가 합니다.</p>
+<h2 id="1105-안전-책임"><a class="anchor" tabindex="-1" href="#1105-안전-책임" aria-hidden="true">#</a>1.10.5. 안전 책임</h2>
+<p>plugin 사용자 (라이브러리 작성자 + 그 라이브러리를 쓰는 사용자) 가 부담하는 책임은 다음과 같습니다.</p>
+<ul>
+<li><strong>LLVM 버전 일치</strong>: plugin 은 <code>rokc</code> 에 내장된 LLVM 버전으로 빌드되어 <code>rokc</code> 가 export 하는 MLIR / LLVM 심볼에 묶여야 합니다 (1.10.2). 그렇지 않으면 로드가 실패합니다.
+</li>
+<li><strong>op 의미 검증</strong>: op 이름과 시그니처는 MLIR 이 확인합니다. op 의 의미 / 부수효과 / GC 안전성은 plugin 작성자 책임입니다.
+</li>
+<li><strong>GC root 추적</strong>: plugin op 이 GC heap 객체를 다룰 때는 그 포인터를 shadow stack frame 슬롯에 두는 root 추적 (<a href="../../refs-lang/007-runtime/704-barriers-and-roots#741-루트-추적-컴파일러가-직접-emit-하는-shadow-stack">refs-lang 7.4.1</a>) 을 plugin lowering 에서 지켜야 하며, 그렇지 않으면 GC cycle 에서 객체가 회수될 수 있습니다.
+</li>
+<li><strong>target 가용성</strong>: plugin 이 특정 target (GPU / FPGA / 양자 hw) 만 지원하는 경우, 해당 target 이 활성화되지 않은 빌드에서 호출하면 lowering 단계에서 에러가 납니다.
+</li>
+</ul>
+<h2 id="1106-abi-버전-정책"><a class="anchor" tabindex="-1" href="#1106-abi-버전-정책" aria-hidden="true">#</a>1.10.6. ABI 버전 정책</h2>
+<p>plugin ABI 는 rok 가 정하지 않고 MLIR 의 plugin API (<code>MLIR_PLUGIN_API_VERSION</code>) 를 따릅니다. 호환성 판정은 MLIR 이 하며, 내장 LLVM 버전이 바뀌면 plugin 을 다시 빌드해야 합니다. 이는 <code>rok::bare</code> tier 가 stable 하지 않다는 일반 원칙 (<a href="../../refs-lang/000-meta/005-standard-libraries-tiers">0.5 표준 라이브러리 계층</a>) 과 맞습니다.</p>
+<h2 id="1107-빌드-격리"><a class="anchor" tabindex="-1" href="#1107-빌드-격리" aria-hidden="true">#</a>1.10.7. 빌드 격리</h2>
+<p>plugin 으로 등록된 다이얼렉트는 <strong>그 빌드에서만 활성화</strong> 됩니다. 일반 사용자가 작성하는 rok 코드의 표면 의미는 plugin 유무와 무관합니다.</p>
+<pre><code class="language-rok"><span class="c">// crypto plugin 없이 빌드되면 빌드 에러 (MLIR 이 op 을 모름)</span>
+<span class="k">unsafe</span> {
+    __mlir_op::&lt;<span class="s">"crypto.aes_round"</span>, _&gt;(...)
+}
+</code></pre>
+<p><code>rokc</code> 는 plugin 의 namespace 를 알 수 없으므로 op 이름 검사는 MLIR 이 하며, 그 진단이 빌드 에러로 보고됩니다.</p>
+<p>이 격리는 plugin 다이얼렉트가 rok 언어 자체의 의미에 침투하지 못하도록 하는 장치입니다. 일반 사용자 코드의 의미는 항상 본 사양만으로 결정됩니다.</p>
+<h2 id="1108-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#1108-다른-언어와의-비교" aria-hidden="true">#</a>1.10.8. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>언어</th><th>plugin dialect 메커니즘</th><th>위치</th></tr></thead>
+<tbody>
+<tr><td>Mojo</td><td>컴파일러 빌드 시점 통합 (외부 plugin 로드 미공식화)</td><td>빌드</td></tr>
+<tr><td>MLIR C API</td><td><code>mlirContextLoadAllAvailableDialects</code> 등</td><td>라이브러리</td></tr>
+<tr><td>LLVM</td><td><code>-load=plugin.so</code> (legacy pass manager)</td><td>CLI</td></tr>
+<tr><td><strong>rok</strong></td><td><strong><code>--load-mlir-plugin ...</code> → <code>rokc</code> 의 MLIR 에 로드</strong></td><td>CLI</td></tr>
+</tbody></table></div>
+<p>rok 은 자체 plugin ABI 를 두지 않고 MLIR 의 plugin 형태를 그대로 씁니다.</p>
+<h2 id="1109-범위-밖"><a class="anchor" tabindex="-1" href="#1109-범위-밖" aria-hidden="true">#</a>1.10.9. 범위 밖</h2>
+<p>다음은 본 사양 범위 밖입니다.</p>
+<ul>
+<li>rok 소스 코드 안에서 다이얼렉트 / op 정의 (Mojo 도 안 함)
+</li>
+<li>동일 namespace 의 plugin 두 개를 같이 로드 (충돌 - MLIR 이 거부)
+</li>
+<li>런타임 (실행 시점) 에 다이얼렉트 추가
+</li>
+<li>plugin 의 LLVM 버전 간 호환 (MLIR plugin API 를 따름)
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/110-mlir-plugin.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="109-mlir"><small>Previous</small>1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a><a class="next" href="../200-core/"><small>Next</small>2. Rok tier</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

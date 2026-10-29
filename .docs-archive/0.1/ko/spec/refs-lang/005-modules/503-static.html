@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.3. static - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="static 키워드 (항목 시작에서만 키워드인 문맥 키워드이며, 뒤의 mut 도 static mut 자리에서만 키워드, 1.5.4) 는 프로그램이 살아 있는 동안 내내 유지되는 전역 메모리를 선언할 때 쓰입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/503-static.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="5.3. static - rok docs">
+<meta property="og:description" content="static 키워드 (항목 시작에서만 키워드인 문맥 키워드이며, 뒤의 mut 도 static mut 자리에서만 키워드, 1.5.4) 는 프로그램이 살아 있는 동안 내내 유지되는 전역 메모리를 선언할 때 쓰입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/503-static.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/503-static.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/503-static.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">5. 변수 / 모듈 / 가시성 / 패키지 개요</a></p><ul class="pages"><li><a href="501-variable-declaration">5.1. 변수 선언</a></li><li><a href="502-const">5.2. const</a></li><li class="cur"><a aria-current="page" href="503-static">5.3. static</a><ul class="toc"><li><a href="#531-기본-형태">5.3.1. 기본 형태</a></li><li><a href="#532-const-와의-차이">5.3.2. const 와의 차이</a></li><li><a href="#533-가능한-위치">5.3.3. 가능한 위치</a></li><li><a href="#534-일반-사용자-코드의-mutable-전역-wrapper-사용">5.3.4. 일반 사용자 코드의 mutable 전역: wrapper 사용</a></li><li><a href="#535-static-mut-ffi-한정">5.3.5. static mut: FFI 한정</a></li><li><a href="#536-초기화-순서">5.3.6. 초기화 순서</a></li><li><a href="#537-가시성">5.3.7. 가시성</a></li><li><a href="#538-메서드--트레잇과의-결합">5.3.8. 메서드 / 트레잇과의 결합</a></li><li><a href="#539-초기값의-const-한정">5.3.9. 초기값의 const 한정</a></li><li><a href="#5310-extern-static-ffi">5.3.10. extern static: FFI</a></li><li><a href="#5311-평가--메모리-모델-측면">5.3.11. 평가 / 메모리 모델 측면</a></li></ul></li><li><a href="504-modules">5.4. 모듈</a></li><li><a href="505-use">5.5. use (가져오기)</a></li><li><a href="506-visibility">5.6. 가시성</a></li><li><a href="507-paths">5.7. 경로</a></li><li><a href="508-re-export">5.8. 재내보내기 (pub use)</a></li><li><a href="509-extern-block">5.9. extern 블록 (FFI 선언)</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="53-static 53-static 531-기본-형태 531-basic-form 532-const-와의-차이 532-difference-from-const 533-가능한-위치 533-permitted-positions 534-일반-사용자-코드의-mutable-전역-wrapper-사용 534-mutable-globals-in-ordinary-user-code-use-a-wrapper 535-static-mut-ffi-한정 535-static-mut-ffi-only 536-초기화-순서 536-initialization-order 537-가시성 537-visibility 538-메서드--트레잇과의-결합 538-combination-with-methods--traits 539-초기값의-const-한정 539-const-restriction-on-initializers 5310-extern-static-ffi 5310-extern-static-ffi 5311-평가--메모리-모델-측면 5311-evaluation--memory-model"><a href="../../../../spec/refs-lang/005-modules/503-static" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="53-static"><a class="anchor" tabindex="-1" href="#53-static" aria-hidden="true">#</a>5.3. <code>static</code></h1>
+<p><code>static</code> 키워드 (항목 시작에서만 키워드인 문맥 키워드이며, 뒤의 <code>mut</code> 도 <code>static mut</code> 자리에서만 키워드, <a href="../001-lexical/105-keywords#154-문맥-키워드">1.5.4</a>) 는 프로그램이 살아 있는 동안 내내 유지되는 전역 메모리를 선언할 때 쓰입니다.</p>
+<pre><code>static_decl     ::= &quot;static&quot; &quot;mut&quot;? identifier &quot;:&quot; type_expr &quot;=&quot; const_expr &quot;;&quot;
+extern_static   ::= &quot;static&quot; &quot;mut&quot;? identifier &quot;:&quot; type_expr &quot;;&quot;   // in extern block
+</code></pre>
+<h2 id="531-기본-형태"><a class="anchor" tabindex="-1" href="#531-기본-형태" aria-hidden="true">#</a>5.3.1. 기본 형태</h2>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">SHARED_COUNTER</span>: <span class="t">Atomic</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Atomic</span>::new(<span class="n">0i32</span>);
+<span class="k">static</span> <span class="t">DEFAULT_CONFIG</span>: <span class="t">Config</span> = <span class="t">Config</span>::default();
+<span class="k">static</span> <span class="t">APP_NAME</span>: <span class="t">str</span> = <span class="s">"rok"</span>;
+</code></pre>
+<p>기본 형태는 <code>static</code> 뒤에 이름을 적고, <code>:</code> 으로 타입을 붙이고, <code>=</code> 으로 초기값을 이어 붙이는 모양입니다. 타입은 반드시 적어야 하며, 초기값은 <a href="502-const"><code>const</code></a> 의 <code>const</code> 표현식이어야 하므로 컴파일 타임에 평가할 수 있어야 합니다.</p>
+<p><code>static</code> 은 모든 스레드에서 닿을 수 있으므로 그 타입은 <code>Sync</code> 여야 합니다 (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---스레드-경계-marker">stdlib 2.13.9</a>). 지연 초기화되는 static 도 마찬가지입니다. <code>static XS: List&lt;i32&gt; = [];</code> 은 컴파일 에러이며 (컬렉션, <code>StrBuf</code>, <code>Cell&lt;T&gt;</code> 는 <code>!Sync</code>), <code>static XS: Mutex&lt;List&lt;i32&gt;&gt; = Mutex::new([]);</code> 로 적습니다. 스레드마다의 상태는 <code>thread::local</code> (<a href="../../refs-standard-libraries/300-std/304-thread#344-thread-local-storage">stdlib 3.4.4</a>) 을 쓰며, 그 <code>ThreadLocal&lt;T&gt;</code> 는 <code>Sync</code> 입니다. <code>extern</code> 블록의 static (<a href="#5310-extern-static-ffi">5.3.10</a>) 은 예외입니다.</p>
+<h2 id="532-const-와의-차이"><a class="anchor" tabindex="-1" href="#532-const-와의-차이" aria-hidden="true">#</a>5.3.2. <code>const</code> 와의 차이</h2>
+<pre><code>const X: i32 = 42i32;              // 사용처마다 inline (주소 없음)
+static X: i32 = 42i32;             // 안정 메모리 주소 (program 수명)
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>const</code></th><th><code>static</code></th></tr></thead>
+<tbody>
+<tr><td>메모리 주소</td><td>없음</td><td>안정된 주소</td></tr>
+<tr><td>사용처</td><td>인라인</td><td>메모리 참조</td></tr>
+<tr><td>수명</td><td>컴파일 타임</td><td>프로그램 수명</td></tr>
+<tr><td>가변성</td><td>항상 불변</td><td>기본 불변 (mutable 표현은 wrapper)</td></tr>
+</tbody></table></div>
+<h2 id="533-가능한-위치"><a class="anchor" tabindex="-1" href="#533-가능한-위치" aria-hidden="true">#</a>5.3.3. 가능한 위치</h2>
+<p><code>static</code> 은 모듈 수준이나 블록 (<a href="../003-expressions/309-block-expressions#391-형태">3.9.1</a>) 에 선언할 수 있으며, 트레잇이나 <code>impl</code> 에는 둘 수 없습니다 (<a href="#538-메서드--트레잇과의-결합">5.3.8</a>).</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">APP_NAME</span>: <span class="t">str</span> = <span class="s">"rok"</span>;                          <span class="c">// 모듈 수준 - OK</span>
+
+<span class="k">fn</span> f() -&gt; <span class="t">i32</span> {
+    <span class="k">static</span> <span class="t">CALLS</span>: <span class="t">Atomic</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Atomic</span>::new(<span class="n">0i32</span>);     <span class="c">// OK - slot 하나, 이 블록에서 보임</span>
+    <span class="t">CALLS</span>.fetch_add(<span class="n">1i32</span>)
+}
+</code></pre>
+<p>블록의 <code>static</code> 은 그 함수의 어느 인스턴스가 돌든 프로그램 전체에서 한 번 초기화되는 slot 하나입니다.</p>
+<h2 id="534-일반-사용자-코드의-mutable-전역-wrapper-사용"><a class="anchor" tabindex="-1" href="#534-일반-사용자-코드의-mutable-전역-wrapper-사용" aria-hidden="true">#</a>5.3.4. 일반 사용자 코드의 mutable 전역: wrapper 사용</h2>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">COUNTER</span>: <span class="t">Atomic</span>&lt;<span class="t">i32</span>&gt; = <span class="t">Atomic</span>::new(<span class="n">0i32</span>);
+<span class="k">static</span> <span class="t">CACHE</span>: <span class="t">Mutex</span>&lt;<span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Data</span>&gt;&gt; = <span class="t">Mutex</span>::new(<span class="t">Dict</span>::new());
+</code></pre>
+<p>내부적으로 변경 가능한 전역이 필요하다면, 동시성에 안전한 wrapper 로 감싸서 선언하면 됩니다.</p>
+<ul>
+<li><code>Atomic&lt;T&gt;</code>: lock-free 원자 연산 (정수, <code>bool</code>, 포인터) 에 쓰입니다.
+</li>
+<li><code>Mutex&lt;T&gt;</code>: 잠금 기반 보호를 제공합니다.
+</li>
+<li><code>RwLock&lt;T&gt;</code>: 읽기-쓰기 잠금을 제공하며, <code>T</code> 자체가 <code>Sync</code> 일 때 씁니다 (<a href="../../refs-standard-libraries/200-core/216-sync#2164-rwlockt---read-write-분리">stdlib 2.16.4</a>).
+</li>
+</ul>
+<p><code>Cell&lt;T&gt;</code> 는 단일 스레드용이고 <code>!Sync</code> 이므로 <code>static</code> 이 될 수 없습니다. 스레드마다의 mutable 전역은 <code>thread::local(..)</code> 입니다.</p>
+<p>이들은 모두 표준 라이브러리 타입이며, 정확한 시그니처는 라이브러리 사양에서 정의합니다.</p>
+<h2 id="535-static-mut-ffi-한정"><a class="anchor" tabindex="-1" href="#535-static-mut-ffi-한정" aria-hidden="true">#</a>5.3.5. <code>static mut</code>: <a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> 한정</h2>
+<p>C <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 와 직접 인터페이스해야 하는 상황에 한해, <code>extern &quot;C&quot;</code> 블록 안에서만 <code>static mut</code> 를 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">static</span> errno: <span class="t">i32</span>;             <span class="c">// FFI 전역 (read-only)</span>
+    <span class="k">static</span> <span class="k">mut</span> atexit_count: <span class="t">u64</span>;  <span class="c">// FFI mutable 전역</span>
+}
+</code></pre>
+<ul>
+<li><code>static mut</code> 는 오직 <code>extern &quot;C&quot;</code> 블록 안에서만 허용합니다.
+</li>
+<li>일반 rok 코드에서의 <code>static mut</code> 는 ERROR 로 처리합니다.
+</li>
+<li>extern <code>static mut</code> 가 아닌 <code>static</code> 에 대입하면 컴파일 에러입니다 (<code>COUNTER = ...</code>). 내부 변경은 위 wrapper 의 메서드로 합니다.
+</li>
+</ul>
+<p>공유되는 mutable 상태는 데이터 경쟁의 직접적인 원인이 되기 때문에 이러한 제약을 두었습니다. 일반 코드에서는 wrapper 를 통해 안전성을 보장하고, FFI 영역에서만 raw access 를 허용합니다.</p>
+<h2 id="536-초기화-순서"><a class="anchor" tabindex="-1" href="#536-초기화-순서" aria-hidden="true">#</a>5.3.6. 초기화 순서</h2>
+<p>여러 <code>static</code> 선언 사이에서 초기화가 어떤 순서로 일어나는지 정리하면 다음과 같습니다.</p>
+<ul>
+<li>같은 모듈 안에서는 선언된 순서를 따릅니다.
+</li>
+<li>다른 모듈 사이에서는 의존 순서를 따르며, 한 <code>static</code> 의 초기값이 다른 <code>static</code> 을 참조하는 경우 후자가 먼저 초기화됩니다.
+</li>
+<li>순환 의존이 있다면 컴파일 에러로 처리합니다.
+</li>
+</ul>
+<p><code>const</code> 초기값의 순서 검사는 컴파일 타임에 수행됩니다. <code>const</code> 가 아닌 초기값은 첫 접근 시점에 초기화됩니다. 초기화는 스레드 안전하며 초기화식은 정확히 한 번 실행되고, 동시에 접근한 다른 스레드는 끝날 때까지 기다립니다. 초기화식이 자기 자신의 <code>static</code> 을 읽으면 panic 입니다.</p>
+<h2 id="537-가시성"><a class="anchor" tabindex="-1" href="#537-가시성" aria-hidden="true">#</a>5.3.7. 가시성</h2>
+<p><code>static</code> 도 다른 항목과 동일하게 가시성 키워드를 가질 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">static</span> <span class="t">VERSION</span>: <span class="t">str</span> = <span class="s">"1.0.0"</span>;
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">static</span> <span class="t">INTERNAL</span>: <span class="t">i32</span> = <span class="n">42i32</span>;
+<span class="k">static</span> _local: <span class="t">bool</span> = <span class="k">false</span>;
+</code></pre>
+<p>자세한 가시성 규칙은 <a href="506-visibility">가시성</a> 에서 정의합니다.</p>
+<h2 id="538-메서드--트레잇과의-결합"><a class="anchor" tabindex="-1" href="#538-메서드--트레잇과의-결합" aria-hidden="true">#</a>5.3.8. 메서드 / 트레잇과의 결합</h2>
+<p><code>static</code> 은 값을 담는 슬롯이지 항목 정의자가 아닙니다. 그래서 트레잇이나 <code>impl</code> 블록의 정의 위치에는 등장하지 않으며, 그 자리에는 <code>const</code> 나 연관 함수가 들어가게 됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Counter</span> {
+    <span class="k">static</span> <span class="t">GLOBAL</span>: <span class="t">i32</span> = <span class="n">0i32</span>;     <span class="c">// ERROR - impl 안에 static 없음</span>
+    <span class="k">const</span> <span class="t">ZERO</span>: <span class="t">i32</span> = <span class="n">0i32</span>;        <span class="c">// OK - 연관 const</span>
+}
+</code></pre>
+<h2 id="539-초기값의-const-한정"><a class="anchor" tabindex="-1" href="#539-초기값의-const-한정" aria-hidden="true">#</a>5.3.9. 초기값의 <code>const</code> 한정</h2>
+<p>초기값이 상수 식 (<a href="502-const#524-상수-식과-평가기">5.2.4</a>) 이면 컴파일 타임에 초기화합니다. 그 밖의 초기값은 처음 쓸 때 한 번 초기화합니다 (지연 초기화). 지연 초기화는 스레드 안전하며, 동시에 접근한 스레드는 초기화가 끝날 때까지 기다립니다. 초기값의 함수가 <code>const fn</code> 일 필요는 없습니다 (<code>Mutex::new</code> 등).</p>
+<pre><code class="language-rok"><span class="k">static</span> <span class="t">PI</span>: <span class="t">f64</span> = <span class="n">3.14159f64</span>;             <span class="c">// const - 컴파일 타임</span>
+<span class="k">static</span> <span class="t">START</span>: <span class="t">Instant</span> = <span class="t">Instant</span>::now();   <span class="c">// 첫 접근 때 한 번 초기화</span>
+<span class="k">static</span> <span class="t">CACHE</span>: <span class="t">Mutex</span>&lt;<span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Data</span>&gt;&gt; = <span class="t">Mutex</span>::new(<span class="t">Dict</span>::new());
+</code></pre>
+<h2 id="5310-extern-static-ffi"><a class="anchor" tabindex="-1" href="#5310-extern-static-ffi" aria-hidden="true">#</a>5.3.10. <code>extern static</code>: FFI</h2>
+<p>위에서 본 <code>extern &quot;C&quot;</code> 블록의 <code>static</code> 은 외부에서 정의된 전역을 rok 측에서 참조하는 형태이며, 초기값은 적지 않아도 됩니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">static</span> errno: <span class="t">i32</span>;             <span class="c">// 외부 정의 - rok 에서 읽기만</span>
+}
+</code></pre>
+<p>자세한 규칙은 <a href="509-extern-block"><code>extern</code> 블록</a> 에서 정의합니다.</p>
+<h2 id="5311-평가--메모리-모델-측면"><a class="anchor" tabindex="-1" href="#5311-평가--메모리-모델-측면" aria-hidden="true">#</a>5.3.11. 평가 / 메모리 모델 측면</h2>
+<p><code>static</code> 의 메모리는 종료 시점까지 유지됩니다 (<code>const</code> 초기값은 시작 시, 그 밖은 첫 접근 시 초기화). 모든 <code>static</code> 은 프로그램 시작 시 GC root 로 등록되므로 (<code>rok_gc_add_root</code>, <a href="../008-abi/805-extern-symbols">8.5</a>) (<a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> 는 <code>static</code> 이 가리키는 객체를 살아 있는 상태로 유지합니다).</p>
+<p>자세한 GC 와 런타임 동작에 관한 내용은 <a href="../007-runtime/">7. 런타임 모델</a> 과 <a href="../008-abi/">8. 런타임 ABI</a> 에서 다룹니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/005-modules/503-static.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="502-const"><small>Previous</small>5.2. const</a><a class="next" href="504-modules"><small>Next</small>5.4. 모듈</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

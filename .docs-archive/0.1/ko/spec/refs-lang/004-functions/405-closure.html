@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.5. 클로저 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="클로저는 이름 없이 표현식 위치에 등장하는 함수 값입니다. 외부 환경의 변수를 캡처할 수 있어서, 주변 상태에 의존하는 작은 함수를 자연스럽게 작성할 수 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/405-closure.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.5. 클로저 - rok docs">
+<meta property="og:description" content="클로저는 이름 없이 표현식 위치에 등장하는 함수 값입니다. 외부 환경의 변수를 캡처할 수 있어서, 주변 상태에 의존하는 작은 함수를 자연스럽게 작성할 수 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/405-closure.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/405-closure.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/405-closure.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">4. 함수 개요</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li class="cur"><a aria-current="page" href="405-closure">4.5. 클로저</a><ul class="toc"><li><a href="#451-형태">4.5.1. 형태</a></li><li><a href="#452-매개변수의-타입">4.5.2. 매개변수의 타입</a></li><li><a href="#453-반환-타입의-추론--명시">4.5.3. 반환 타입의 추론 / 명시</a></li><li><a href="#454-캡처">4.5.4. 캡처</a></li><li><a href="#455-클로저-vs-함수">4.5.5. 클로저 vs 함수</a></li><li><a href="#456-클로저-값의-사용">4.5.6. 클로저 값의 사용</a></li><li><a href="#457-호출">4.5.7. 호출</a></li><li><a href="#458-즉시-호출-iife">4.5.8. 즉시 호출: IIFE</a></li><li><a href="#459-단일-식-vs-블록의-가독성">4.5.9. 단일 식 vs 블록의 가독성</a></li><li><a href="#4510-트레일링-클로저">4.5.10. 트레일링 클로저</a></li><li><a href="#4511-특수-변형-async-와-yield-수식어">4.5.11. 특수 변형: async 와 yield 수식어</a></li><li><a href="#4512-0-arg-클로저의-단축--body-">4.5.12. 0-arg 클로저의 단축: { body }</a></li></ul></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li><a href="409-method">4.9. 메서드</a></li><li><a href="410-nested-functions">4.10. 중첩 함수</a></li><li><a href="411-generators">4.11. 제너레이터 (yield)</a></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li><a href="413-stream">4.13. 스트림 (async yield)</a></li><li><a href="414-throws">4.14. throws 시그니처</a></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li><a href="416-entry-point">4.16. 진입점</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="45-클로저 45-closures 451-형태 451-form 단일-식-본체 single-expression-body 블록-본체 block-body 0-매개변수-형태 zero-parameter-form 452-매개변수의-타입 452-parameter-types 453-반환-타입의-추론--명시 453-inferred-or-explicit-return-type 454-캡처 454-captures 455-클로저-vs-함수 455-closures-vs-functions 456-클로저-값의-사용 456-using-closure-values 457-호출 457-calls 458-즉시-호출-iife 458-immediate-invocation-iife 459-단일-식-vs-블록의-가독성 459-readability-single-expression-vs-block 4510-트레일링-클로저 4510-trailing-closures 4511-특수-변형-async-와-yield-수식어 4511-special-variants-async-and-yield-modifiers 4512-0-arg-클로저의-단축--body- 4512-zero-argument-closure-shorthand--body-"><a href="../../../../spec/refs-lang/004-functions/405-closure" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="45-클로저"><a class="anchor" tabindex="-1" href="#45-클로저" aria-hidden="true">#</a>4.5. 클로저</h1>
+<p>클로저는 이름 없이 표현식 위치에 등장하는 함수 값입니다. 외부 환경의 변수를 캡처할 수 있어서, 주변 상태에 의존하는 작은 함수를 자연스럽게 작성할 수 있습니다.</p>
+<h2 id="451-형태"><a class="anchor" tabindex="-1" href="#451-형태" aria-hidden="true">#</a>4.5.1. 형태</h2>
+<pre><code>closure_expr   ::= capture_list? closure_params return_type? closure_body
+closure_params ::= &quot;||&quot;
+                 | &quot;|&quot; closure_param_list &quot;|&quot;
+closure_param_list ::= closure_param (&quot;,&quot; closure_param)* &quot;,&quot;?
+closure_param ::= identifier (&quot;:&quot; type_expr)?
+closure_body   ::= expr | block
+capture_list   ::= &quot;[&quot; capture_item (&quot;,&quot; capture_item)* &quot;]&quot;
+</code></pre>
+<p>0-매개변수 형태인 <code>||</code> 는 단일 토큰이며 (<a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a> 을 참고하세요), <code>|</code> 두 개로 분리되지 않습니다.</p>
+<pre><code class="language-rok">|매개변수들| 본체
+</code></pre>
+<p>매개변수는 좌우의 <code>|</code> 토큰 (<a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a>) 으로 둘러쌉니다. 본체는 식이거나 블록입니다.</p>
+<h3 id="단일-식-본체"><a class="anchor" tabindex="-1" href="#단일-식-본체" aria-hidden="true">#</a>단일 식 본체</h3>
+<pre><code class="language-rok">|x| x + <span class="n">1</span>
+|x: <span class="t">i32</span>| x * <span class="n">2</span>
+|a, b| a + b
+</code></pre>
+<p><code>|...|</code> 직후에 단일 식이 오며, 그 식의 값이 클로저의 반환값이 됩니다.</p>
+<h3 id="블록-본체"><a class="anchor" tabindex="-1" href="#블록-본체" aria-hidden="true">#</a>블록 본체</h3>
+<pre><code class="language-rok">|x: <span class="t">i32</span>| -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> y = x * <span class="n">2</span>;
+    y + <span class="n">1</span>
+}
+</code></pre>
+<p>블록 본체일 때는 반환 타입을 <code>-&gt;</code> 로 명시할 수 있습니다 (생략하면 추론에 맡깁니다).</p>
+<h3 id="0-매개변수-형태"><a class="anchor" tabindex="-1" href="#0-매개변수-형태" aria-hidden="true">#</a>0-매개변수 형태</h3>
+<pre><code class="language-rok">|| body
+|| { body }
+</code></pre>
+<p>매개변수가 없을 때는 <code>||</code> (두 파이프를 연속으로) 를 사용합니다. 토큰화 측면에서는 <a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a> 의 고정 토큰표에서 <code>||</code> 가 한 토큰으로 정의됩니다.</p>
+<h2 id="452-매개변수의-타입"><a class="anchor" tabindex="-1" href="#452-매개변수의-타입" aria-hidden="true">#</a>4.5.2. 매개변수의 타입</h2>
+<p>매개변수 타입은 명시할 수도 있고 생략할 수도 있습니다.</p>
+<pre><code class="language-rok">|x: <span class="t">i32</span>| x * <span class="n">2</span>                    <span class="c">// 명시</span>
+|x| x * <span class="n">2</span>                          <span class="c">// 추론</span>
+</code></pre>
+<p>추론은 클로저가 사용되는 문맥에서 결정됩니다. 예를 들어 함수 인자로 넘기는 자리의 함수 타입이나 변수 선언의 타입 등이 그 문맥에 해당합니다. 문맥이 없으면 이후의 호출이 매개변수 타입을 정합니다 (<code>let f = |x| x * 2; f(4);</code> 의 <code>x: i32</code>, <a href="../002-types/210-generics#타입-인자-추론">2.10.2</a>).</p>
+<pre><code class="language-rok"><span class="k">let</span> f: <span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span> = |x| x * <span class="n">2</span>;   <span class="c">// 문맥에서 x: i32 추론</span>
+list.map(|x| x * <span class="n">2</span>);                  <span class="c">// map 의 시그니처에서 추론</span>
+</code></pre>
+<h2 id="453-반환-타입의-추론--명시"><a class="anchor" tabindex="-1" href="#453-반환-타입의-추론--명시" aria-hidden="true">#</a>4.5.3. 반환 타입의 추론 / 명시</h2>
+<pre><code class="language-rok">|x| x * <span class="n">2</span>                          <span class="c">// 추론</span>
+|x: <span class="t">i32</span>| -&gt; <span class="t">i32</span> { x * <span class="n">2</span> }          <span class="c">// 명시 - 블록 본체일 때만</span>
+</code></pre>
+<p>반환 타입 명시 (<code>-&gt; 타입</code>) 는 블록 본체와 함께만 사용합니다. 단일 식 본체는 항상 추론에 의존합니다.</p>
+<h2 id="454-캡처"><a class="anchor" tabindex="-1" href="#454-캡처" aria-hidden="true">#</a>4.5.4. 캡처</h2>
+<p>클로저는 외부 스코프의 변수를 캡처할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="n">10</span>;
+<span class="k">let</span> f = |x| x + n;                <span class="c">// n 을 캡처</span>
+f(<span class="n">5</span>);                              <span class="c">// 15</span>
+</code></pre>
+<p>캡처의 의미론 (값 캡처를 기본으로 하고, <code>[ref x]</code> 같은 캡처 리스트를 사용하는 방식) 은 <a href="406-capture-semantics">캡처 의미론</a> 에서 자세히 정의합니다.</p>
+<h2 id="455-클로저-vs-함수"><a class="anchor" tabindex="-1" href="#455-클로저-vs-함수" aria-hidden="true">#</a>4.5.5. 클로저 vs 함수</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>fn</code> 명명 함수</th><th><code>| ... |</code> 클로저</th></tr></thead>
+<tbody>
+<tr><td>이름</td><td>있음</td><td>없음</td></tr>
+<tr><td>정의 위치</td><td>모듈이나 <code>impl</code></td><td>모든 표현식 위치</td></tr>
+<tr><td>외부 변수 캡처</td><td>불가</td><td>가능</td></tr>
+<tr><td>호출</td><td><code>name(...)</code></td><td><code>value(...)</code></td></tr>
+<tr><td>타입</td><td><code>fn(...) -&gt; ...</code></td><td>같음</td></tr>
+</tbody></table></div>
+<p>두 가지 모두 같은 함수 타입으로 표현되며, 인터페이스 측면에서 서로 호환됩니다. 따라서 한 자리에 둘 다 적합합니다.</p>
+<h2 id="456-클로저-값의-사용"><a class="anchor" tabindex="-1" href="#456-클로저-값의-사용" aria-hidden="true">#</a>4.5.6. 클로저 값의 사용</h2>
+<pre><code class="language-rok"><span class="c">// 변수 대입</span>
+<span class="k">let</span> f = |x| x * <span class="n">2</span>;
+
+<span class="c">// 함수 인자</span>
+list.map(|x| x * <span class="n">2</span>);
+
+<span class="c">// 함수 반환</span>
+<span class="k">fn</span> make_adder(n: <span class="t">i32</span>) -&gt; <span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    |x| x + n
+}
+
+<span class="c">// 컬렉션</span>
+<span class="k">let</span> handlers: <span class="t">List</span>&lt;<span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span>&gt; = [|x| x + <span class="n">1</span>, |x| x - <span class="n">1</span>, |x| x * <span class="n">2</span>];
+</code></pre>
+<h2 id="457-호출"><a class="anchor" tabindex="-1" href="#457-호출" aria-hidden="true">#</a>4.5.7. 호출</h2>
+<pre><code class="language-rok"><span class="k">let</span> f = |x| x * <span class="n">2</span>;
+<span class="k">let</span> r = f(<span class="n">5</span>);                     <span class="c">// 일반 함수 호출과 동일 형태</span>
+</code></pre>
+<p><code>f(args)</code> 형태로 호출합니다. 호출 시에는 캡처된 환경과 인자가 함께 본체 평가에 사용됩니다.</p>
+<h2 id="458-즉시-호출-iife"><a class="anchor" tabindex="-1" href="#458-즉시-호출-iife" aria-hidden="true">#</a>4.5.8. 즉시 호출: IIFE</h2>
+<p>클로저를 정의 직후에 즉시 호출하는 형태도 가능합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> r = (|x: <span class="t">i32</span>| -&gt; <span class="t">i32</span> { x * <span class="n">2</span> })(<span class="n">5</span>);     <span class="c">// 10</span>
+</code></pre>
+<p>자주 쓰지는 않지만, 지역 스코프와 즉시 평가를 표현하는 한 가지 방법으로 사용할 수 있습니다. 대부분의 경우에는 <a href="../003-expressions/309-block-expressions">블록 표현식</a> 의 일반 블록이 더 자연스럽습니다.</p>
+<h2 id="459-단일-식-vs-블록의-가독성"><a class="anchor" tabindex="-1" href="#459-단일-식-vs-블록의-가독성" aria-hidden="true">#</a>4.5.9. 단일 식 vs 블록의 가독성</h2>
+<pre><code class="language-rok">list.map(|x| x * <span class="n">2</span>)               <span class="c">// 단일 식 - 짧고 명확</span>
+list.map(|x| { <span class="k">let</span> y = x * <span class="n">2</span>; y + <span class="n">1</span> })   <span class="c">// 블록 - 다단계 처리</span>
+</code></pre>
+<p>본체 길이에 따라 자연스러운 형태를 골라서 사용합니다. 사양에서는 두 형태 모두 정식으로 지원합니다.</p>
+<h2 id="4510-트레일링-클로저"><a class="anchor" tabindex="-1" href="#4510-트레일링-클로저" aria-hidden="true">#</a>4.5.10. 트레일링 클로저</h2>
+<p>함수 호출의 마지막 인자가 클로저일 때는, 괄호 밖으로 빼서 더 읽기 좋게 적을 수 있습니다. 자세한 내용은 <a href="408-trailing-closure">트레일링 클로저</a> 에서 정의합니다.</p>
+<h2 id="4511-특수-변형-async-와-yield-수식어"><a class="anchor" tabindex="-1" href="#4511-특수-변형-async-와-yield-수식어" aria-hidden="true">#</a>4.5.11. 특수 변형: <code>async</code> 와 <code>yield</code> 수식어</h2>
+<p>클로저에 <code>async</code> 나 <code>yield</code> 수식어를 붙이면 비동기 형태나 제너레이터 형태의 클로저를 만들 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> || { ... }                  <span class="c">// Future 반환 클로저</span>
+<span class="k">yield</span> || { ... }                  <span class="c">// Iterator 반환 클로저</span>
+<span class="k">async</span> <span class="k">yield</span> || { ... }            <span class="c">// Stream 반환 클로저</span>
+</code></pre>
+<p>자세한 규칙은 <a href="411-generators">제너레이터</a>, <a href="412-async">비동기</a>, <a href="413-stream">스트림</a> 에서 정의합니다.</p>
+<h2 id="4512-0-arg-클로저의-단축--body-"><a class="anchor" tabindex="-1" href="#4512-0-arg-클로저의-단축--body-" aria-hidden="true">#</a>4.5.12. 0-arg 클로저의 단축: <code>{ body }</code></h2>
+<p>특정 문맥에서는 <code>{ body }</code> 가 0-매개변수 클로저로 인식되는 단축 형태가 있습니다. 이 단축은 트레일링 클로저와 결합해 자주 사용됩니다.</p>
+<pre><code class="language-rok">thread::spawn { heavy_work() }    <span class="c">// == thread::spawn(|| { heavy_work() })</span>
+</code></pre>
+<p>이 단축의 정확한 규칙은 <a href="408-trailing-closure">트레일링 클로저</a> 에서 정의합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/405-closure.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="404-function-type"><small>Previous</small>4.4. 함수 타입</a><a class="next" href="406-capture-semantics"><small>Next</small>4.6. 캡처 의미론</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROKON configuration - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Read a ROKON configuration into #[derive(Rokon)] structs with defaults filled in, validate it, change it and write it back as ROKON.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/rokon-config.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="ROKON configuration - rok docs">
+<meta property="og:description" content="Read a ROKON configuration into #[derive(Rokon)] structs with defaults filled in, validate it, change it and write it back as ROKON.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/rokon-config.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li class="cur"><a aria-current="page" href="rokon-config">ROKON configuration</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="rokon-configuration"><a class="anchor" tabindex="-1" href="#rokon-configuration" aria-hidden="true">#</a>ROKON configuration</h1>
+<p>Read a ROKON configuration into <code>#[derive(Rokon)]</code> structs with defaults filled in, validate it, change it and write it back as ROKON.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// Load a server configuration from ROKON, validate it, change it and write it back.</span>
+<span class="k">use</span> rok::std::rokon;
+<span class="k">use</span> rok::std::rokon::<span class="t">RokonError</span>;
+
+<span class="a">#[derive(Rokon, Debug, PartialEq)]</span>
+<span class="k">enum</span> <span class="t">Level</span> { <span class="t">Debug</span>, <span class="t">Info</span>, <span class="t">Warn</span>, <span class="t">Error</span> }
+
+<span class="a">#[derive(Rokon, Debug)]</span>
+<span class="k">struct</span> <span class="t">Listen</span> {
+    host: <span class="t">str</span> = <span class="s">"127.0.0.1"</span>;
+    port: <span class="t">u16</span> = <span class="n">8080</span>;
+}
+
+<span class="a">#[derive(Rokon, Debug)]</span>
+<span class="k">struct</span> <span class="t">Route</span> {
+    path: <span class="t">str</span>;
+    target: <span class="t">str</span>;
+    timeout_ms: <span class="t">u32</span> = <span class="n">5000</span>;
+}
+
+<span class="a">#[derive(Rokon, Debug)]</span>
+<span class="k">struct</span> <span class="t">Tls</span> {
+    cert: <span class="t">str</span>;
+    key: <span class="t">str</span>;
+}
+
+<span class="a">#[derive(Rokon, Debug)]</span>
+<span class="k">struct</span> <span class="t">Config</span> {
+    name: <span class="t">str</span>;
+    listen: <span class="t">Listen</span>;
+    workers: <span class="t">i32</span> = <span class="n">4</span>;
+    log: <span class="t">Level</span> = <span class="t">Level</span>::<span class="t">Info</span>;
+    routes: <span class="t">List</span>&lt;<span class="t">Route</span>&gt; = [];
+    limits: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">i64</span>&gt; = <span class="t">OrderedDict</span>::new();
+    tls: <span class="t">Tls</span> | <span class="k">none</span>;
+}
+
+<span class="k">const</span> <span class="t">SOURCE</span>: <span class="t">str</span> = <span class="s">"// gateway.rokon
+Config {
+    name: \"gateway\",
+    listen: { port: 9000 },
+    log: Level::Debug,
+    routes: [
+        Route { path: \"/api\", target: \"http://10.0.0.5:8000\" },
+        Route { path: \"/static\", target: \"file:///srv/www\", timeout_ms: 500 },
+    ],
+    limits: { \"body_kb\": 512, \"conns\": 1000 },
+}"</span>;
+
+<span class="k">fn</span> validate(c: <span class="t">Config</span>) -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt; {
+    <span class="k">let</span> problems: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+    <span class="k">if</span> c.listen.port == <span class="n">0u16</span> { problems.push(<span class="s">"listen.port must not be 0"</span>); }
+    <span class="k">if</span> c.workers &lt; <span class="n">1</span> || c.workers &gt; <span class="n">64</span> { problems.push(<span class="s">f"workers must be 1..=64, got {</span>c.workers<span class="s">}"</span>); }
+    <span class="k">for</span> r <span class="k">in</span> c.routes {
+        <span class="k">if</span> !r.path.starts_with(<span class="s">"/"</span>) { problems.push(<span class="s">f"route '{</span>r.path<span class="s">}' must start with '/'"</span>); }
+    }
+    <span class="k">if</span> c.log == <span class="t">Level</span>::<span class="t">Debug</span> &amp;&amp; !(c.tls <span class="k">is</span> <span class="k">none</span>) { problems.push(<span class="s">"debug logging with TLS leaks secrets"</span>); }
+    problems
+}
+
+<span class="k">fn</span> load(text: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="t">Config</span> {
+    <span class="k">let</span> c: <span class="t">Config</span> = <span class="k">try</span> rokon::from_str(text);
+    c
+}
+
+<span class="k">fn</span> report(label: <span class="t">str</span>, text: <span class="t">str</span>) {
+    <span class="k">let</span> c = <span class="k">try</span> load(text) <span class="k">catch</span> e {
+        println(<span class="s">f"{</span>label<span class="s">}: parse error {</span>e<span class="s">}"</span>);
+        <span class="k">return</span>;
+    };
+    <span class="k">let</span> problems = validate(c);
+    <span class="k">if</span> problems.is_empty() { println(<span class="s">f"{</span>label<span class="s">}: ok"</span>); }
+    <span class="k">for</span> p <span class="k">in</span> problems { println(<span class="s">f"{</span>label<span class="s">}: {</span>p<span class="s">}"</span>); }
+}
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">RokonError</span>) {
+    <span class="k">let</span> c = <span class="k">try</span> load(<span class="t">SOURCE</span>);
+    println(<span class="s">f"{</span>c.name<span class="s">} on {</span>c.listen.host<span class="s">}:{</span>c.listen.port<span class="s">}, {</span>c.workers<span class="s">} workers, log {</span>c.log<span class="s">:?</span><span class="s">}"</span>);
+    <span class="k">for</span> r <span class="k">in</span> c.routes {
+        println(<span class="s">f"  {</span>r.path<span class="s">:&lt;8</span><span class="s">} -&gt; {</span>r.target<span class="s">} ({</span>r.timeout_ms<span class="s">} ms)"</span>);
+    }
+    println(<span class="s">f"  tls off: {</span>c.tls <span class="k">is</span> <span class="k">none</span><span class="s">}  body limit: {</span>c.limits[<span class="s">"body_kb"</span>]<span class="s">} KB"</span>);
+
+    report(<span class="s">"good"</span>, <span class="t">SOURCE</span>);
+    report(<span class="s">"bad"</span>, <span class="s">"Config { name: \"x\", listen: { port: 0 }, workers: 100, routes: [Route { path: \"api\", target: \"t\" }] }"</span>);
+    report(<span class="s">"typo"</span>, <span class="s">"Config { name: \"x\", listen: {}, wokers: 2 }"</span>);
+    report(<span class="s">"type"</span>, <span class="s">"Config {\n    name: \"x\",\n    listen: { port: \"80\" },\n}"</span>);
+
+    <span class="c">// Modify and serialize back; defaults are written out explicitly.</span>
+    c.log = <span class="t">Level</span>::<span class="t">Warn</span>;
+    c.workers = <span class="n">8</span>;
+    c.tls = <span class="t">Tls</span> { cert: <span class="s">"/etc/gw/cert.pem"</span>, key: <span class="s">"/etc/gw/key.pem"</span> };
+    c.routes.push(<span class="t">Route</span> { path: <span class="s">"/health"</span>, target: <span class="s">"internal:health"</span>, timeout_ms: <span class="n">100u32</span> });
+    <span class="k">let</span> out = rokon::to_string(c);
+    println(out);
+
+    <span class="k">let</span> back = <span class="k">try</span> load(out);
+    println(<span class="s">f"round trip: {</span>rokon::to_string(back) == out<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">gateway on 127.0.0.1:9000, 4 workers, log Debug
+  /api     -&gt; http://10.0.0.5:8000 (5000 ms)
+  /static  -&gt; file:///srv/www (500 ms)
+  tls off: true  body limit: 512 KB
+good: ok
+bad: listen.port must not be 0
+bad: workers must be 1..=64, got 100
+bad: route 'api' must start with '/'
+typo: parse error 1:33: unknown field `wokers` in Config
+type: parse error 3:21: expected u16, found string
+Config {
+    name: &quot;gateway&quot;,
+    listen: Listen { host: &quot;127.0.0.1&quot;, port: 9000 },
+    workers: 8,
+    log: Level::Warn,
+    routes: [
+        Route { path: &quot;/api&quot;, target: &quot;http://10.0.0.5:8000&quot;, timeout_ms: 5000 },
+        Route { path: &quot;/static&quot;, target: &quot;file:///srv/www&quot;, timeout_ms: 500 },
+        Route { path: &quot;/health&quot;, target: &quot;internal:health&quot;, timeout_ms: 100 },
+    ],
+    limits: { &quot;body_kb&quot;: 512, &quot;conns&quot;: 1000 },
+    tls: Tls { cert: &quot;/etc/gw/cert.pem&quot;, key: &quot;/etc/gw/key.pem&quot; },
+}
+round trip: true
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>A single <code>#[derive(Rokon)]</code> makes structs and enums convert to and from ROKON. A nested struct (<code>Listen</code>), an enum (<code>Level</code>), <code>List</code>, <code>OrderedDict</code> and <code>Tls | none</code> all map directly (<a href="../learn/15-rokon">ROKON</a>, <a href="../spec/refs-standard-libraries/300-std/309-rokon#392-correspondence-with-rok-types">3.9.2 mapping to rok types</a>).
+</li>
+<li>Fields missing from the document take the struct's default (<code>workers: i32 = 4</code>); a <code>T | none</code> field without a default becomes <code>none</code>. Nested values written without a type name, like <code>listen: { port: 9000 }</code>, are accepted too.
+</li>
+<li><code>rokon::from_str</code> throws a <code>RokonError</code> for an unknown field or a value of the wrong type, with a <code>line:col</code> position in the message. A typo such as <code>wokers</code> is not silently ignored (<a href="../std/std/rokon#fn.from_str"><code>rokon::from_str</code></a>).
+</li>
+<li>Rules beyond the format (port must not be 0, worker count in range) are collected by <code>validate</code> and reported together. Whether a <code>T | none</code> value is empty is checked with <code>c.tls is none</code>.
+</li>
+<li><code>rokon::to_string</code> writes the canonical form. Fields filled from defaults are written out too, so reading the output gives the same value back. <code>OrderedDict</code> is used instead of <code>Dict</code> to keep the key order (<a href="../std/std/rokon#fn.to_string"><code>rokon::to_string</code></a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/rokon-config.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="process"><small>Previous</small>Child processes</a><a class="next" href="sealed-messages"><small>Next</small>Sealed messages</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

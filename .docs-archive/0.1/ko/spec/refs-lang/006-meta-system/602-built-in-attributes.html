@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.2. 내장 속성 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 절에서는 컴파일러가 직접 처리하는 내장 속성을 정의합니다. #[cfg] 는 조건부 컴파일 에서 따로 다루며, 매직 속성과 메타 블록에 관한 내용은 #[lang(...)] 매직 이후의 절에서 이어 설명합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/602-built-in-attributes.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.2. 내장 속성 - rok docs">
+<meta property="og:description" content="이 절에서는 컴파일러가 직접 처리하는 내장 속성을 정의합니다. #[cfg] 는 조건부 컴파일 에서 따로 다루며, 매직 속성과 메타 블록에 관한 내용은 #[lang(...)] 매직 이후의 절에서 이어 설명합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/602-built-in-attributes.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/602-built-in-attributes.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/602-built-in-attributes.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">6. 메타 시스템 개요</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. 속성 문법</a></li><li class="cur"><a aria-current="page" href="602-built-in-attributes">6.2. 내장 속성</a><ul class="toc"><li><a href="#621-derive-자동-트레잇-구현">6.2.1. #[derive(...)] 자동 트레잇 구현</a></li><li><a href="#622-repr-메모리-표현-명시">6.2.2. #[repr(...)] 메모리 표현 명시</a></li><li><a href="#623-link-외부-라이브러리-명시">6.2.3. #[link(...)] 외부 라이브러리 명시</a></li><li><a href="#624-inline-인라이닝-힌트">6.2.4. #[inline] 인라이닝 힌트</a></li><li><a href="#625-test-테스트-함수-마커">6.2.5. #[test] 테스트 함수 마커</a></li><li><a href="#626-cold-드물게-호출되는-함수">6.2.6. #[cold] 드물게 호출되는 함수</a></li><li><a href="#627-deprecated-사용-자제-표시">6.2.7. #[deprecated] 사용 자제 표시</a></li><li><a href="#628-doc---문서-주석-형태">6.2.8. #[doc = &quot;...&quot;] 문서 주석 형태</a></li><li><a href="#629-allow--deny--warn-린트-제어">6.2.9. #[allow(...)] / #[deny(...)] / #[warn(...)] 린트 제어</a></li><li><a href="#6210-non_exhaustive-외부에서의-완전성-검사-회피">6.2.10. #[non_exhaustive] 외부에서의 완전성 검사 회피</a></li><li><a href="#6211-must_use-결과-무시-경고">6.2.11. #[must_use] 결과 무시 경고</a></li><li><a href="#6212-track_caller-호출-위치-전달">6.2.12. #[track_caller] 호출 위치 전달</a></li><li><a href="#6213-정리">6.2.13. 정리</a></li></ul></li><li><a href="603-cfg">6.3. #[cfg] 조건부 컴파일</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] 매직</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] 매직</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] 매직</a></li><li><a href="607-operator-magic">6.7. 연산자 매직</a></li><li><a href="608-meta-blocks">6.8. 사용자 정의 메타 정의</a></li><li><a href="609-template-tokens">6.9. 템플릿 토큰과 확장</a></li><li><a href="610-reflection">6.10. 리플렉션</a></li><li><a href="611-include">6.11. 컴파일 시점 파일 포함</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="62-내장-속성 62-built-in-attributes 621-derive-자동-트레잇-구현 621-derive-automatic-trait-implementation 내장-derive-가능-트레잇 built-in-derivable-traits 사용자-정의-derive-와의-결합 combining-with-user-defined-derives 622-repr-메모리-표현-명시 622-repr-explicit-memory-representation 623-link-외부-라이브러리-명시 623-link-naming-an-external-library link_name--sym link_name--sym 624-inline-인라이닝-힌트 624-inline-inlining-hints 625-test-테스트-함수-마커 625-test-test-function-marker 626-cold-드물게-호출되는-함수 626-cold-rarely-called-functions 627-deprecated-사용-자제-표시 627-deprecated-discouraged-use-marker 628-doc---문서-주석-형태 628-doc---doc-comment-form 629-allow--deny--warn-린트-제어 629-allow--deny--warn-lint-control 6210-non_exhaustive-외부에서의-완전성-검사-회피 6210-non_exhaustive-opting-out-of-external-exhaustiveness 6211-must_use-결과-무시-경고 6211-must_use-warning-on-ignored-results 6212-track_caller-호출-위치-전달 6212-track_caller-passing-the-call-site 6213-정리 6213-summary"><a href="../../../../spec/refs-lang/006-meta-system/602-built-in-attributes" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="62-내장-속성"><a class="anchor" tabindex="-1" href="#62-내장-속성" aria-hidden="true">#</a>6.2. 내장 속성</h1>
+<p>이 절에서는 컴파일러가 직접 처리하는 내장 속성을 정의합니다. <code>#[cfg]</code> 는 <a href="603-cfg">조건부 컴파일</a> 에서 따로 다루며, 매직 속성과 메타 블록에 관한 내용은 <a href="604-lang-magic"><code>#[lang(...)]</code> 매직</a> 이후의 절에서 이어 설명합니다.</p>
+<pre><code>derive_attr     ::= &quot;#&quot; &quot;[&quot; &quot;derive&quot; &quot;(&quot; trait_name (&quot;,&quot; trait_name)* &quot;,&quot;? &quot;)&quot; &quot;]&quot;
+trait_name      ::= identifier
+repr_attr       ::= &quot;#&quot; &quot;[&quot; &quot;repr&quot; &quot;(&quot; repr_arg (&quot;,&quot; repr_arg)* &quot;)&quot; &quot;]&quot;
+repr_arg        ::= &quot;C&quot; | &quot;transparent&quot; | &quot;packed&quot; | &quot;align&quot; &quot;(&quot; int_lit &quot;)&quot;
+                  | identifier                          // primitive int repr
+inline_attr     ::= &quot;#&quot; &quot;[&quot; &quot;inline&quot; (&quot;(&quot; (&quot;always&quot; | &quot;never&quot;) &quot;)&quot;)? &quot;]&quot;
+deprecated_attr ::= &quot;#&quot; &quot;[&quot; &quot;deprecated&quot; (&quot;(&quot; string_lit &quot;)&quot;)? &quot;]&quot;
+</code></pre>
+<h2 id="621-derive-자동-트레잇-구현"><a class="anchor" tabindex="-1" href="#621-derive-자동-트레잇-구현" aria-hidden="true">#</a>6.2.1. <code>#[derive(...)]</code> 자동 트레잇 구현</h2>
+<pre><code class="language-rok"><span class="a">#[derive(Clone, PartialEq, Eq, Hash, Debug)]</span>
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">i64</span>; y: <span class="t">i64</span>; }
+</code></pre>
+<p><code>#[derive(...)]</code> 의 인자에는 트레잇 이름들을 콤마로 구분하여 나열합니다. 그러면 나열된 각 트레잇에 대해 해당 타입에 어울리는 자동 구현이 생성됩니다.</p>
+<h3 id="내장-derive-가능-트레잇"><a class="anchor" tabindex="-1" href="#내장-derive-가능-트레잇" aria-hidden="true">#</a>내장 derive 가능 트레잇</h3>
+<p><code>Clone</code>, <code>Copy</code>, <code>Debug</code>, <code>Default</code>, <code>PartialEq</code>, <code>Eq</code>, <code>PartialOrd</code>, <code>Ord</code>, <code>Hash</code> 만 derive 할 수 있습니다. 각 트레잇의 생성 규칙과 요구 조건은 <a href="../../refs-standard-libraries/200-core/213-marker#21311-derive-가능한-트레잇">stdlib 2.13.11</a> 에서 정의합니다.</p>
+<ul>
+<li><code>Display</code> 는 derive 할 수 없습니다. 표시 형식은 타입 작성자가 정합니다 (<a href="../../refs-standard-libraries/200-core/210-fmt">stdlib 2.10</a>).
+</li>
+<li><code>Eq</code> / <code>Ord</code> 를 상위 트레잇 (<code>PartialEq</code> / <code>PartialOrd</code>, <code>Eq</code>) 없이 derive 하면 컴파일 에러입니다. <code>Copy</code> 는 <code>Clone</code> 이 필요하고 <code>Drop</code> 과 함께 쓸 수 없습니다.
+</li>
+<li><code>union</code> 에 <code>#[derive]</code> 를 붙이면 컴파일 에러입니다.
+</li>
+</ul>
+<h3 id="사용자-정의-derive-와의-결합"><a class="anchor" tabindex="-1" href="#사용자-정의-derive-와의-결합" aria-hidden="true">#</a>사용자 정의 derive 와의 결합</h3>
+<p><code>#[derive(MyTrait)]</code> 처럼 사용자 정의 트레잇도 derive 할 수 있습니다. 다만 이렇게 사용하려면 <code>MyTrait</code> 가 <code>#[impl_derive(MyTrait)]</code> 메타 블록 (<a href="608-meta-blocks">6.8</a>) 으로 정의되어 있어야 합니다. 위의 내장 derive 이름은 메타 블록이 다시 정의할 수 없습니다.</p>
+<p>내장 derive 와 사용자 정의 derive 는 하나의 <code>#[derive(...)]</code> 안에 자유롭게 섞어 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="a">#[derive(PartialEq, Eq, Clone, MyCustomTrait)]</span>
+<span class="k">struct</span> <span class="t">Foo</span> { ... }
+</code></pre>
+<h2 id="622-repr-메모리-표현-명시"><a class="anchor" tabindex="-1" href="#622-repr-메모리-표현-명시" aria-hidden="true">#</a>6.2.2. <code>#[repr(...)]</code> 메모리 표현 명시</h2>
+<pre><code class="language-rok"><span class="a">#[repr(C)]</span>
+<span class="k">struct</span> <span class="t">CCompatible</span> { x: <span class="t">i32</span>; y: <span class="t">i32</span>; }
+
+<span class="a">#[repr(transparent)]</span>
+<span class="k">struct</span> <span class="t">Wrapped</span>(<span class="t">InnerType</span>);
+
+<span class="a">#[repr(packed)]</span>
+<span class="k">struct</span> <span class="t">Tight</span> { a: <span class="t">u8</span>; b: <span class="t">u32</span>; }
+
+<span class="a">#[repr(align(16))]</span>
+<span class="k">struct</span> <span class="t">Aligned</span> { ... }
+
+<span class="a">#[repr(u32)]</span>
+<span class="k">enum</span> <span class="t">Status</span> { ... }
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>인자</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>C</code></td><td>C <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 레이아웃: 선언 순서, 자연 정렬. 기본 <code>struct</code> 레이아웃과 같음</td></tr>
+<tr><td><code>transparent</code></td><td>크기가 0 이 아닌 필드 정확히 하나. 그 필드와 같은 표현이며 C ABI 를 그 필드로 건넘</td></tr>
+<tr><td><code>packed</code></td><td>정렬을 무시하고 빽빽이 묶음 (<a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> 한정). GC 참조를 담을 수 없고 <code>align(N)</code> 과 함께 쓸 수 없음</td></tr>
+<tr><td><code>align(N)</code></td><td>최소 정렬을 N 바이트로 강제</td></tr>
+<tr><td><code>u8</code> ~ <code>u64</code> / <code>i8</code> ~ <code>i64</code></td><td><code>enum</code> 의 tag 타입. 32 비트가 아닌 폭은 필드 없는 enum 만; 데이터 enum 은 <code>i32</code> / <code>u32</code></td></tr>
+</tbody></table></div>
+<p><code>#[repr]</code> 가 없으면 <a href="../002-types/203-struct"><code>struct</code></a> 는 선언 순서와 자연 정렬 (<code>repr(C)</code> 와 같음) 이고, <a href="../002-types/204-enum"><code>enum</code></a> 과 합 타입의 레이아웃은 컴파일러가 정합니다 (<a href="../002-types/207-niche-optimization">2.7</a>).</p>
+<h2 id="623-link-외부-라이브러리-명시"><a class="anchor" tabindex="-1" href="#623-link-외부-라이브러리-명시" aria-hidden="true">#</a>6.2.3. <code>#[link(...)]</code> 외부 라이브러리 명시</h2>
+<pre><code class="language-rok"><span class="a">#[link("m")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> sin(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+    <span class="k">fn</span> cos(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+}
+
+<span class="a">#[link(name = "openssl", kind = "static")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> { ... }
+</code></pre>
+<p><code>#[link(...)]</code> 는 <a href="../005-modules/509-extern-block"><code>extern</code> 블록</a> 이 연결될 외부 라이브러리를 명시하는 속성으로, <code>extern</code> 블록에 부착해 사용합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>인자 형식</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>&quot;libname&quot;</code></td><td>단순 라이브러리 이름</td></tr>
+<tr><td><code>name = &quot;...&quot;</code></td><td>라이브러리 이름 (key-value)</td></tr>
+<tr><td><code>kind = &quot;static&quot; / &quot;dylib&quot;</code></td><td>링크 종류</td></tr>
+<tr><td><code>wasm_import_module = &quot;m&quot;</code></td><td>wasm32: 블록의 함수를 core module <code>m</code> 에서 import. 그 밖에서는 무시</td></tr>
+</tbody></table></div>
+<h3 id="link_name--sym"><a class="anchor" tabindex="-1" href="#link_name--sym" aria-hidden="true">#</a><code>#[link_name = &quot;sym&quot;]</code></h3>
+<p>extern 함수의 <code>#[link_name = &quot;sym&quot;]</code> 은 그 함수가 링크하는 심볼을, <code>wasm_import_module</code> 블록 안에서는 import 이름을 줍니다.</p>
+<pre><code class="language-rok"><span class="a">#[link(wasm_import_module = "env")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="a">#[link_name = "log_line"]</span>
+    <span class="k">fn</span> host_log(ptr: <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;, len: <span class="t">usize</span>);
+}
+</code></pre>
+<h2 id="624-inline-인라이닝-힌트"><a class="anchor" tabindex="-1" href="#624-inline-인라이닝-힌트" aria-hidden="true">#</a>6.2.4. <code>#[inline]</code> 인라이닝 힌트</h2>
+<pre><code class="language-rok"><span class="a">#[inline]</span>
+<span class="k">fn</span> small_helper(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x + <span class="n">1</span> }
+
+<span class="a">#[inline(always)]</span>
+<span class="k">fn</span> very_hot() { ... }
+
+<span class="a">#[inline(never)]</span>
+<span class="k">fn</span> never_inline() { ... }
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>인자</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td>(없음)</td><td>인라이닝 권장 (컴파일러가 결정)</td></tr>
+<tr><td><code>always</code></td><td>인라이닝 강제</td></tr>
+<tr><td><code>never</code></td><td>인라이닝 금지</td></tr>
+</tbody></table></div>
+<p><code>#[inline]</code> 은 어디까지나 최적화에 대한 힌트일 뿐이며, 프로그램의 의미 자체에는 영향을 주지 않습니다.</p>
+<h2 id="625-test-테스트-함수-마커"><a class="anchor" tabindex="-1" href="#625-test-테스트-함수-마커" aria-hidden="true">#</a>6.2.5. <code>#[test]</code> 테스트 함수 마커</h2>
+<pre><code class="language-rok"><span class="a">#[test]</span>
+<span class="k">fn</span> test_addition() {
+    assert_eq(<span class="n">1i32</span> + <span class="n">1i32</span>, <span class="n">2i32</span>);
+}
+</code></pre>
+<p><code>assert_eq</code> 는 <a href="../../refs-standard-libraries/200-core/214-error#assert--assert_eq--assert_ne">stdlib 2.14.5</a> 에 있습니다. <code>#[test]</code> 를 함수에 부착하면 그 함수가 테스트 함수임을 표시합니다. <code>rokc test</code> 가 이러한 함수들을 하네스로 수집하고, 테스트 러너 (<code>rok test</code> 등) 가 자동으로 실행합니다. 일반 빌드에서는 마치 <code>#[cfg(test)]</code> 가 함께 붙어 있는 것처럼 제외되니 참고합니다. 테스트 함수는 자신과 바깥 모듈의 가시성과 관계없이 실행되며, <code>#[test]</code> 가 다른 코드에 대한 가시성을 바꾸지는 않습니다.</p>
+<p><code>#[bench]</code> 는 벤치마크 함수를 표시하며, <code>#[test]</code> 와 같이 <code>#[cfg(test)]</code> 를 함의합니다. <code>rokc bench</code> 가 모아 실행합니다 (<a href="../009-tools/901-rokc-cli#rokc-bench-벤치마크">9.1.2</a>). 벤치마크 함수는 자신과 바깥 모듈의 가시성과 관계없이 실행되며, <code>#[bench]</code> 가 다른 코드에 대한 가시성을 바꾸지는 않습니다.</p>
+<h2 id="626-cold-드물게-호출되는-함수"><a class="anchor" tabindex="-1" href="#626-cold-드물게-호출되는-함수" aria-hidden="true">#</a>6.2.6. <code>#[cold]</code> 드물게 호출되는 함수</h2>
+<pre><code class="language-rok"><span class="a">#[cold]</span>
+<span class="k">fn</span> handle_error() { ... }
+</code></pre>
+<p><code>#[cold]</code> 는 해당 함수가 드물게 호출된다는 사실을 컴파일러에게 알려 주는 속성입니다. 이 정보를 받은 코드 생성기는 해당 함수를 핵심 코드 경로 바깥으로 배치하여 캐시 친화성을 한층 높여 줍니다.</p>
+<h2 id="627-deprecated-사용-자제-표시"><a class="anchor" tabindex="-1" href="#627-deprecated-사용-자제-표시" aria-hidden="true">#</a>6.2.7. <code>#[deprecated]</code> 사용 자제 표시</h2>
+<pre><code class="language-rok"><span class="a">#[deprecated]</span>
+<span class="k">fn</span> old_api() { ... }
+
+<span class="a">#[deprecated = "use new_api instead"]</span>
+<span class="k">fn</span> old_api2() { ... }
+</code></pre>
+<p><code>#[deprecated]</code> 가 부착된 항목이 사용되면 경고가 발생하지만, 에러로 이어지지는 않습니다. <code>= &quot;...&quot;</code> 형태로 메시지를 함께 적어 두면 그 내용이 경고에 포함되어 표시됩니다.</p>
+<h2 id="628-doc---문서-주석-형태"><a class="anchor" tabindex="-1" href="#628-doc---문서-주석-형태" aria-hidden="true">#</a>6.2.8. <code>#[doc = &quot;...&quot;]</code> 문서 주석 형태</h2>
+<pre><code class="language-rok"><span class="a">#[doc = "이 함수는 두 정수의 합을 반환한다."]</span>
+<span class="k">fn</span> add(x: <span class="t">i32</span>, y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x + y }
+</code></pre>
+<p><a href="../001-lexical/102-lexical-structure#문서-주석">어휘 구조</a> 의 <code>///</code> 문서 주석은 이 속성입니다.</p>
+<pre><code class="language-rok"><span class="c">/// 이 함수는 ...</span>
+<span class="k">fn</span> f() { ... }
+
+<span class="c">// 같은 의미</span>
+<span class="a">#[doc = "이 함수는 ..."]</span>
+<span class="k">fn</span> f() { ... }
+</code></pre>
+<p>내부 형태인 <code>#![doc]</code> 또한 <code>//!</code> 와 동일한 효과를 냅니다.</p>
+<h2 id="629-allow--deny--warn-린트-제어"><a class="anchor" tabindex="-1" href="#629-allow--deny--warn-린트-제어" aria-hidden="true">#</a>6.2.9. <code>#[allow(...)]</code> / <code>#[deny(...)]</code> / <code>#[warn(...)]</code> 린트 제어</h2>
+<pre><code class="language-rok"><span class="a">#[allow(unused)]</span>
+<span class="k">fn</span> _placeholder() { }
+
+<span class="a">#[deny(deprecated)]</span>
+<span class="k">fn</span> strict_zone() { ... }
+</code></pre>
+<p>이 속성들은 부착된 항목의 범위 안에서 lint 진단의 수준을 변경합니다. lint 는 패키지를 컴파일하는 모든 명령에서 돕니다: <code>rokc build</code>, <code>run</code>, <code>test</code>, <code>bench</code>, <code>emit</code>, <code>check</code>, <code>lint</code> (<a href="../009-tools/901-rokc-cli#rokc-lint-린터">9.1.2</a>), 그리고 language server (<code>doc</code> 은 아님). 빌드하는 패키지만 검사하며 의존 패키지는 검사하지 않습니다. <code>warn</code> lint 는 출력되며 빌드를 실패시키지 않고, <code>deny</code> lint 는 에러이며 빌드는 종료 코드 1 로 실패합니다. <code>allow</code> 는 진단을 무시하고, <code>warn</code> 은 진단을 경고로 발생시키며, <code>deny</code> 는 진단을 에러로 발생시킵니다. 내부 형태 <code>#![allow(..)]</code> 등은 둘러싼 모듈 (파일 머리에서는 파일 전체) 에 적용됩니다. 인자는 lint 이름이나 그룹 이름입니다. 항목의 <code>#[allow]</code> 는 그 변형, 필드, 메서드에도 적용됩니다.</p>
+<p>수준은 다음 순서로 정해지며, 뒤의 것이 앞의 것을 이깁니다: 각 lint 의 기본 수준 &lt; <code>rok.rokon</code> 의 <code>lints</code> 필드 (그 <code>lints_from</code> 사슬 뒤) (<a href="../009-tools/910-rok-frontend#9103-rokrokon--roklock">9.10.3</a>) &lt; CLI 의 <code>-A</code> / <code>-W</code> / <code>-D</code> &lt; 소스의 속성 (가장 안쪽 것이 이김). <code>lints</code> 는 CLI 플래그 앞에 붙은 것처럼 다뤄지므로, 뒤에 적은 CLI 플래그가 이를 덮습니다. lint 진단의 코드는 <code>E503</code> 입니다.</p>
+<p>모든 lint 의 기본 수준은 <code>warn</code> 입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>lint</th><th>검사</th></tr></thead>
+<tbody>
+<tr><td><code>unused_variables</code></td><td>읽지 않는 지역 변수나 매개변수</td></tr>
+<tr><td><code>unused_imports</code></td><td>모듈이 이름을 쓰지 않는 <code>use</code></td></tr>
+<tr><td><code>dead_code</code></td><td>아무도 부르지 않는 비 <code>pub</code> 함수</td></tr>
+<tr><td><code>unreachable_code</code></td><td><code>return</code> / <code>break</code> / <code>continue</code> / <code>throw</code> / <code>panic</code> 뒤의 문장</td></tr>
+<tr><td><code>unused_must_use</code></td><td><code>#[must_use]</code> 함수의 결과, 또는 <code>#[must_use]</code> 타입의 값을 버림 (<a href="#6211-must_use-결과-무시-경고">6.2.11</a>)</td></tr>
+<tr><td><code>unused_doc_comments</code></td><td>설명하지 않는 것 (문, match arm, 구조체 리터럴이나 tuple 필드, 식) 에 붙은 문서 주석. 일반 주석은 <code>//</code> 를 씀</td></tr>
+<tr><td><code>write_to_copy</code></td><td>아무도 나중에 읽지 않는 사본에 필드를 대입함: 값으로 받은 매개변수나 <code>self</code>, <code>for</code> 바인딩, 원소의 <code>let</code> (<code>xs[i]</code>, <a href="../002-types/203-struct#238-값-의미">2.3.8</a>) 이며, 이후의 읽기, 루프 반복, 반환, 호출 어느 것도 그 변경을 볼 수 없을 때. 같은 변수에 대한 다른 쓰기에만 쓰이는 읽기는 세지 않으며, 클로저나 코루틴 블록이 언급하는 변수는 검사하지 않음</td></tr>
+<tr><td><code>ignored_error</code></td><td><code>try? f();</code> 문장이 에러를 조용히 버림. <code>let _ = try? f();</code> 는 의도한 best-effort 호출의 표시이며 보고하지 않음</td></tr>
+<tr><td><code>shadowed_loop_var</code></td><td><code>for</code> 본체의 <code>let</code> 이 루프 변수를 다시 묶음</td></tr>
+<tr><td><code>nan_comparison</code></td><td>NaN 과의 비교 (늘 거짓, <code>!=</code> 는 늘 참)</td></tr>
+<tr><td><code>none_comparison</code></td><td><code>x is none</code> 대신 <code>x == none</code></td></tr>
+<tr><td><code>bool_comparison</code></td><td><code>bool</code> 을 <code>true</code> / <code>false</code> 와 비교</td></tr>
+<tr><td><code>self_assignment</code></td><td><code>x = x;</code></td></tr>
+<tr><td><code>unclosed_resource</code></td><td><code>using</code> 으로 해제하지 않은 <code>File</code> / <code>Dir</code> / <code>ReadDir</code> / <code>TcpStream</code> / <code>TcpListener</code> / <code>UdpSocket</code> / <code>Child</code> (warn)</td></tr>
+<tr><td><code>while_true</code></td><td><code>loop</code> 대신 <code>while true</code></td></tr>
+<tr><td><code>deprecated</code></td><td><code>#[deprecated]</code> 함수 사용</td></tr>
+<tr><td><code>redundant_cast</code></td><td><code>x</code> 가 이미 <code>T</code> 인 <code>x as T</code></td></tr>
+<tr><td><code>redundant_clone</code></td><td>원시 타입 값의 <code>.clone()</code></td></tr>
+<tr><td><code>non_snake_case</code></td><td>함수, 지역 변수, 매개변수, 모듈 이름이 snake_case 가 아님</td></tr>
+<tr><td><code>non_camel_case_types</code></td><td>타입, 트레잇, 변형 이름이 UpperCamelCase 가 아님: 첫 글자가 소문자가 아니고, <code>__</code> 가 없으며, <code>_</code> 는 대소문자가 없는 문자 사이에만 (<code>V1_0</code>)</td></tr>
+<tr><td><code>non_upper_case_globals</code></td><td><code>const</code> / <code>static</code> 이름이 UPPER_SNAKE_CASE 가 아님</td></tr>
+<tr><td><code>confusable_idents</code></td><td>서로 닮은 식별자 (<a href="../001-lexical/104-identifiers">1.4</a>)</td></tr>
+<tr><td><code>missing_f_prefix</code></td><td>범위 안의 지역 변수 <code>name</code> 에 대한 <code>{name}</code> 을 담은 보통 문자열 리터럴: <code>f</code> 접두어가 빠짐 (warn)</td></tr>
+</tbody></table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>그룹</th><th>포함</th></tr></thead>
+<tbody>
+<tr><td><code>unused</code></td><td><code>unused_variables</code>, <code>unused_imports</code>, <code>dead_code</code>, <code>unreachable_code</code>, <code>unused_must_use</code>, <code>unused_doc_comments</code></td></tr>
+<tr><td><code>nonstandard_style</code></td><td><code>non_snake_case</code>, <code>non_camel_case_types</code>, <code>non_upper_case_globals</code></td></tr>
+<tr><td><code>all</code></td><td>모든 lint</td></tr>
+</tbody></table></div>
+<p><code>write_to_copy</code> 의 help 는 <code>ref self</code> / <code>ref p</code>, 인덱스 루프 (<code>for i in 0..xs.len() { xs[i].f = .. }</code>), 또는 원소를 다시 써 넣기를 제안합니다.</p>
+<p><code>rokc lint --list</code> 는 lint 와 그룹, 기본 수준을 출력합니다.</p>
+<h2 id="6210-non_exhaustive-외부에서의-완전성-검사-회피"><a class="anchor" tabindex="-1" href="#6210-non_exhaustive-외부에서의-완전성-검사-회피" aria-hidden="true">#</a>6.2.10. <code>#[non_exhaustive]</code> 외부에서의 완전성 검사 회피</h2>
+<pre><code class="language-rok"><span class="a">#[non_exhaustive]</span>
+<span class="k">pub</span> <span class="k">enum</span> <span class="t">ApiError</span> {
+    <span class="t">NotFound</span>,
+    <span class="t">Unauthorized</span>,
+}
+</code></pre>
+<p><code>#[non_exhaustive]</code> 는 <code>enum</code> 또는 <code>struct</code> 에 부착할 수 있습니다. 이 속성이 붙어 있으면 외부 패키지에서 해당 타입을 매칭할 때, <code>match</code> 가 모든 변형을 다 처리하더라도 catch-all (<code>_ =&gt; ...</code>) 을 추가로 요구합니다. 이러한 제약 덕분에 라이브러리 작성자는 SemVer 호환을 깨뜨리지 않으면서도 향후 새로운 변형을 자유롭게 추가할 수 있습니다.</p>
+<h2 id="6211-must_use-결과-무시-경고"><a class="anchor" tabindex="-1" href="#6211-must_use-결과-무시-경고" aria-hidden="true">#</a>6.2.11. <code>#[must_use]</code> 결과 무시 경고</h2>
+<pre><code class="language-rok"><span class="a">#[must_use]</span>
+<span class="k">fn</span> calculate() -&gt; <span class="t">i32</span> { ... }
+</code></pre>
+<p><code>#[must_use]</code> 가 붙은 함수의 반환값이 사용되지 않은 채 버려지면 경고가 발생합니다. 결과를 의도적으로 무시하고자 할 때에는 <a href="../004-functions/402-parameters">매개변수</a> 에서 설명한 <code>_ = ...</code> 를 명시하면 됩니다.</p>
+<p><code>#[must_use]</code> 는 <code>struct</code> 나 <code>enum</code> 에도 붙일 수 있습니다. 그러면 그 타입의 값을 가진 식 문장이나, 한 번도 읽지 않는 그 타입의 지역 변수가 속성의 메시지와 함께 <code>unused_must_use</code> 경고를 냅니다. <code>async fn</code> 호출이나 <code>async</code> 블록의 값 (await 하지 않은 future 는 실행되지 않음) 과 <code>thread::JoinHandle</code> (<a href="../../refs-standard-libraries/300-std/304-thread#342-api">stdlib 3.4.2</a>; join 하지 않은 스레드는 프로그램이 끝나기 전에 끝나지 않을 수 있으며, <code>detach</code> 는 그것이 스스로 실행됨을 밝힘) 은 <code>#[must_use]</code> 입니다.</p>
+<h2 id="6212-track_caller-호출-위치-전달"><a class="anchor" tabindex="-1" href="#6212-track_caller-호출-위치-전달" aria-hidden="true">#</a>6.2.12. <code>#[track_caller]</code> 호출 위치 전달</h2>
+<pre><code class="language-rok"><span class="a">#[track_caller]</span>
+<span class="k">fn</span> expect_positive(n: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> n &lt;= <span class="n">0</span> { panic(<span class="s">"not positive"</span>) }      <span class="c">// 위치: expect_positive 를 부른 곳</span>
+    n
+}
+</code></pre>
+<ul>
+<li>함수는 호출 위치를 숨은 마지막 <code>str</code> 인자로 받습니다. 안의 panic 은 그 위치를 보고합니다 (<a href="../004-functions/414-throws#41413-panic-과-fatal-에러">4.14.13</a>).
+</li>
+<li>tracked 함수가 다른 tracked 함수를 부르면 받은 위치를 그대로 넘깁니다.
+</li>
+<li>tracked 함수의 함수 값은 그 값을 만든 위치를 보고합니다.
+</li>
+<li><code>async fn</code> 에 붙이면 호출만 추적하며 코루틴 본체는 추적하지 않습니다.
+</li>
+<li><code>extern</code> (런타임) 선언에 붙이면 그 심볼이 위치 인자를 더 받습니다 (<a href="../008-abi/805-extern-symbols#857-diagnostic-영역">8.5.7</a>).
+</li>
+<li><code>main</code>, <code>extern &quot;C&quot; fn</code>, <code>#[export_name]</code> 함수에는 붙일 수 없습니다.
+</li>
+</ul>
+<p>잘못된 입력에 panic 하는 표준 라이브러리 함수 (<code>panic</code>, <code>unreachable</code>, <code>assert*</code>, 인덱싱, 슬라이싱, <code>unwrap</code>, <code>List::insert</code> / <code>remove</code> 등) 는 <code>#[track_caller]</code> 입니다.</p>
+<h2 id="6213-정리"><a class="anchor" tabindex="-1" href="#6213-정리" aria-hidden="true">#</a>6.2.13. 정리</h2>
+<p>지금까지 살펴본 속성들은 컴파일러와 도구가 직접 인식하는 내장 속성이며, 메타 블록을 통한 사용자 정의는 따로 필요하지 않습니다.</p>
+<p><code>#[lang]</code>, <code>#[literal]</code> 같은 매직 속성은 언어의 의미 자체와 결합되어 있으므로, 별도의 문서에서 정의해 두었습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/006-meta-system/602-built-in-attributes.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="601-attribute-syntax"><small>Previous</small>6.1. 속성 문법</a><a class="next" href="603-cfg"><small>Next</small>6.3. #[cfg] 조건부 컴파일</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

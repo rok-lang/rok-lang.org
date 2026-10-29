@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9. 실행 / 툴 개요 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="본 블록에서는 rok 의 컴파일러 rokc, front-end rok, 그리고 실행 환경 (REPL / Jupyter 커널) 사양을 정의합니다. 실행 엔진과 사용자 표면 에서 정의한 두 엔진 (JIT / AOT) 과 세 사용자 표면 (REPL / Jupyter / AOT 산출물 직접 실...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9. 실행 / 툴 개요 - rok docs">
+<meta property="og:description" content="본 블록에서는 rok 의 컴파일러 rokc, front-end rok, 그리고 실행 환경 (REPL / Jupyter 커널) 사양을 정의합니다. 실행 엔진과 사용자 표면 에서 정의한 두 엔진 (JIT / AOT) 과 세 사용자 표면 (REPL / Jupyter / AOT 산출물 직접 실...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a class="cur" href="./">9. 실행 / 툴 개요</a></p><ul class="toc"><li><a href="#목차">목차</a></li><li><a href="#도구-표면">도구 표면</a></li><li><a href="#두-엔진의-구현">두 엔진의 구현</a></li><li><a href="#세-사용자-표면의-구현">세 사용자 표면의 구현</a></li><li><a href="#패키지-빌드-산출물">패키지 빌드 산출물</a></li><li><a href="#rokhir-제네릭-함수의-휴대용-ir">ROKHIR: 제네릭 함수의 휴대용 IR</a></li><li><a href="#단일-의존성-librokra">단일 의존성: librokr.a</a></li></ul><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI 인터페이스</a></li><li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a></li><li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a></li><li><a href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a></li><li><a href="906-jit-engine">9.6. JIT 엔진</a></li><li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a></li><li><a href="908-jupyter-integration">9.8. Jupyter 커널 통합</a></li><li><a href="909-debug-tools">9.9. 디버그 / 진단 도구</a></li><li><a href="910-rok-frontend">9.10. rok - 패키지 / 빌드 front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="9-실행--툴-개요 9-execution--tools-overview 목차 contents 도구-표면 tool-surface 두-엔진의-구현 implementation-of-the-two-engines 세-사용자-표면의-구현 implementation-of-the-three-user-surfaces 패키지-빌드-산출물 package-build-output rokhir-제네릭-함수의-휴대용-ir rokhir-portable-ir-for-generic-functions 단일-의존성-librokra single-dependency-librokra"><a href="../../../../spec/refs-lang/009-tools/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="9-실행--툴-개요"><a class="anchor" tabindex="-1" href="#9-실행--툴-개요" aria-hidden="true">#</a>9. 실행 / 툴 개요</h1>
+<p>본 블록에서는 rok 의 컴파일러 <code>rokc</code>, front-end <code>rok</code>, 그리고 실행 환경 (REPL / Jupyter 커널) 사양을 정의합니다. <a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 에서 정의한 두 엔진 (<a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> / <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a>) 과 세 사용자 표면 (REPL / Jupyter / AOT 산출물 직접 실행) 을 어떻게 구현하는지 다루고 있습니다.</p>
+<h2 id="목차"><a class="anchor" tabindex="-1" href="#목차" aria-hidden="true">#</a>목차</h2>
+<ul>
+<li><a href="901-rokc-cli">9.1. <code>rokc</code> CLI 인터페이스</a>
+</li>
+<li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a>
+</li>
+<li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a>
+</li>
+<li><a href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a>
+</li>
+<li><a href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a>
+</li>
+<li><a href="906-jit-engine">9.6. JIT 엔진 (RokJitSession)</a>
+</li>
+<li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a>
+</li>
+<li><a href="908-jupyter-integration">9.8. Jupyter 커널 통합</a>
+</li>
+<li><a href="909-debug-tools">9.9. 디버그 / 진단 도구</a>
+</li>
+<li><a href="910-rok-frontend">9.10. <code>rok</code> - 패키지 / 빌드 front-end</a>
+</li>
+</ul>
+<h2 id="도구-표면"><a class="anchor" tabindex="-1" href="#도구-표면" aria-hidden="true">#</a>도구 표면</h2>
+<p>도구 표면은 다음과 같이 구성됩니다.</p>
+<pre><code>rok  (front-end, cargo-like)
+  │   new / init, add / remove / update / deps (rok.rokon, rok.lock), env, toolchain
+  │   build / check / run / test / bench / emit / fmt / lint / doc / clean / repl / lsp / demangle
+  │        └── resolve deps, then call rokc ... --extern &lt;dep roots&gt;
+  ▼
+rokc  (compiler)
+  │
+  ├── build / run
+  │   ├── rokc build      : AOT compile - .rok source to .a / executable
+  │   ├── rokc run        : AOT compile then run immediately
+  │   ├── rokc test       : collect + build the #[test] harness (rok test runs it)
+  │   ├── rokc bench      : collect + build the #[bench] harness (rok bench runs it)
+  │   ├── rokc check      : type / diagnostics only (no native build)
+  │   └── rokc clean      : remove build artifacts
+  │
+  ├── tools
+  │   ├── rokc fmt        : formatter
+  │   ├── rokc lint       : linter
+  │   ├── rokc doc        : API documentation
+  │   └── rokc lsp        : LSP server (IDE integration)
+  │
+  ├── interactive
+  │   ├── rokc repl       : terminal REPL (each cell runs once)
+  │   └── rokc jupyter    : Jupyter kernel (REPL cell session + ZMQ)
+  │
+  ├── debug / diagnostic
+  │   ├── rokc demangle   : symbol demangle
+  │   ├── rokc rokhir-text  : ROKHIR interface text dump
+  │   └── rokc inspect    : package inspect
+  │
+  └── rokc version / help
+
+rokls  (= rok lsp, for editors)
+librokr.a  (runtime, rokr)
+</code></pre>
+<p>toolchain 은 컴파일러 <code>rokc</code> (rustc 에 해당), cargo 식 front-end <code>rok</code>, 편집기용 LSP 실행 파일 <code>rokls</code>, 런타임 <code>librokr.a</code> 로 이루어집니다. <code>rok</code> 는 매니페스트 <code>rok.rokon</code> / <code>rok.lock</code>, 의존성, 환경, toolchain 고정을 맡고, 빌드와 도구 명령은 해소한 의존 패키지를 <code>--extern</code> 으로 붙여 <code>rokc</code> 에 위임합니다 (<a href="910-rok-frontend">9.10</a>). 별도 도구 (<code>rok-fmt</code> 등) 는 두지 않습니다.</p>
+<h2 id="두-엔진의-구현"><a class="anchor" tabindex="-1" href="#두-엔진의-구현" aria-hidden="true">#</a>두 엔진의 구현</h2>
+<p><a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 에서 정한 두 엔진은 다음과 같이 구분됩니다.</p>
+<pre><code>JIT engine  ──  used by rokc repl / jupyter
+AOT engine  ──  used by rokc build / run / test
+</code></pre>
+<p>두 엔진은 같은 컴파일 파이프라인 (rok-hir → rok-mir → 표준 MLIR) 을 거치고 있으며, 마지막 중간 표현 이후에만 갈라지고 있습니다. 자세한 내용은 <a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 과 <a href="../000-meta/002-pipeline">컴파일 파이프라인</a> 에서 다루고 있습니다.</p>
+<h2 id="세-사용자-표면의-구현"><a class="anchor" tabindex="-1" href="#세-사용자-표면의-구현" aria-hidden="true">#</a>세 사용자 표면의 구현</h2>
+<p>세 사용자 표면과 그 구현 명령은 다음과 같이 정리됩니다.</p>
+<pre><code>surface              command
+────────             ──────
+REPL                 rokc repl
+Jupyter              rokc jupyter        (invoked by Jupyter, not directly)
+AOT direct exec      rokc build → run artifact
+</code></pre>
+<p>각 표면의 구현은 후속 문서에서 다루고 있습니다.</p>
+<h2 id="패키지-빌드-산출물"><a class="anchor" tabindex="-1" href="#패키지-빌드-산출물" aria-hidden="true">#</a>패키지 빌드 산출물</h2>
+<p><a href="../000-meta/003-source-units">소스 단위</a> 의 라이브러리 패키지는 <code>libfoo.a</code> 와 인터페이스 <code>foo.rokhir</code> 로 컴파일됩니다.</p>
+<pre><code>foo/
+├── src/
+│   ├── lib.rok              &lt;- input
+│   └── ...
+       v rokc build
+foo/target/debug/
+├── libfoo.a                 &lt;- artifact (static archive)
+├── foo.rokhir                 &lt;- interface (ROKHIR)
+├── build/                   &lt;- intermediates (foo.o, ...)
+└── ...
+</code></pre>
+<p>profile 별 레이아웃은 <a href="902-aot-pipeline#9215-산출물">9.2.15</a>, <a href="../000-meta/007-glossary#archive">archive</a> 의 형식은 <a href="903-package-archive">패키지 아카이브</a> 가 정의합니다.</p>
+<h2 id="rokhir-제네릭-함수의-휴대용-ir"><a class="anchor" tabindex="-1" href="#rokhir-제네릭-함수의-휴대용-ir" aria-hidden="true">#</a>ROKHIR: 제네릭 함수의 휴대용 IR</h2>
+<p>제네릭 함수는 호출 지점에서 <a href="../000-meta/007-glossary#monomorphization-단형화">단형화</a> 해야 하므로 바이너리 코드만으로는 부족합니다. 따라서 라이브러리 옆에 인터페이스 파일 ROKHIR 을 둡니다. ROKHIR 은 구체 함수 본문을 잘라 낸 패키지 소스를 담습니다 (단형화가 AST 를 입력으로 쓰므로).</p>
+<p>자세한 형식은 <a href="904-rokhir-bytecode">ROKHIR 포맷</a> 에서 정의합니다.</p>
+<h2 id="단일-의존성-librokra"><a class="anchor" tabindex="-1" href="#단일-의존성-librokra" aria-hidden="true">#</a>단일 의존성: <code>librokr.a</code></h2>
+<p>빌드 산출물은 사용자 패키지의 <code>libfoo.a</code>, 런타임 <code>librokr.a</code>, 표준 라이브러리 <code>librok_*.a</code> 로 구성됩니다. 외부 OS 라이브러리 외에는 추가 의존성이 없습니다.</p>
+<p>자세한 빌드 흐름은 <a href="902-aot-pipeline">AOT 빌드 파이프라인</a> 에서 정의합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/009-tools/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../008-abi/810-lowering-coroutine-generic"><small>Previous</small>8.10. Lowering: 코루틴과 제네릭</a><a class="next" href="901-rokc-cli"><small>Next</small>9.1. rokc CLI 인터페이스</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

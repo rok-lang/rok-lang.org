@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.12. Async (async and await) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The async and await keywords (keywords) are the mechanism for defining asynchronous computations, functions that promise a future value, and for waiting on thei...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/412-async.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.12. Async (async and await) - rok docs">
+<meta property="og:description" content="The async and await keywords (keywords) are the mechanism for defining asynchronous computations, functions that promise a future value, and for waiting on thei...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/412-async.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/412-async.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/412-async.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li class="cur"><a aria-current="page" href="412-async">4.12. Async (async and await)</a><ul class="toc"><li><a href="#4121-three-definition-forms">4.12.1. Three definition forms</a></li><li><a href="#4122-the-await-operator">4.12.2. The await operator</a></li><li><a href="#4123-named-async-functions">4.12.3. Named async functions</a></li><li><a href="#4124-inline-async-blocks-values">4.12.4. Inline async blocks: values</a></li><li><a href="#4125-async-closures">4.12.5. async closures</a></li><li><a href="#4126-correspondence-of-the-three-forms">4.12.6. Correspondence of the three forms</a></li><li><a href="#4127-the-future-trait">4.12.7. The Future trait</a></li><li><a href="#4128-semantics-of-await">4.12.8. Semantics of await</a></li><li><a href="#4129-concurrent-execution-library-functions">4.12.9. Concurrent execution: library functions</a></li><li><a href="#41210-where-await-is-allowed">4.12.10. Where await is allowed</a></li><li><a href="#41211-immediate-return-of-async-function-calls">4.12.11. Immediate return of async function calls</a></li><li><a href="#41212-relationship-to-tasks">4.12.12. Relationship to tasks</a></li><li><a href="#41213-async-on-methods">4.12.13. async on methods</a></li><li><a href="#41214-error-handling">4.12.14. Error handling</a></li></ul></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="412-async-async-and-await 412-비동기-async-와-await 4121-three-definition-forms 4121-세-가지-정의-형태 4122-the-await-operator 4122-await-연산자 4123-named-async-functions 4123-명명된-async-함수 4124-inline-async-blocks-values 4124-인라인-async-블록-값 4125-async-closures 4125-async-클로저 4126-correspondence-of-the-three-forms 4126-세-형태의-대응 4127-the-future-trait 4127-future-트레잇 4128-semantics-of-await 4128-await-의-의미론 4129-concurrent-execution-library-functions 4129-동시-실행-라이브러리-함수 41210-where-await-is-allowed 41210-await-가-가능한-위치 41211-immediate-return-of-async-function-calls 41211-비동기-함수-호출의-즉시-반환 41212-relationship-to-tasks 41212-task-와의-관계 41213-async-on-methods 41213-메서드로서의-async 41214-error-handling 41214-에러-처리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/412-async" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="412-async-async-and-await"><a class="anchor" tabindex="-1" href="#412-async-async-and-await" aria-hidden="true">#</a>4.12. Async (<code>async</code> and <code>await</code>)</h1>
+<p>The <code>async</code> and <code>await</code> keywords (<a href="../001-lexical/105-keywords">keywords</a>) are the mechanism for defining asynchronous computations, functions that promise a future value, and for waiting on their results.</p>
+<h2 id="4121-three-definition-forms"><a class="anchor" tabindex="-1" href="#4121-three-definition-forms" aria-hidden="true">#</a>4.12.1. Three definition forms</h2>
+<p>Asynchronous definitions have three grammatical forms.</p>
+<pre><code>async_fn        ::= &quot;async&quot; fn_decl
+async_block     ::= &quot;async&quot; block
+async_closure   ::= &quot;async&quot; closure_expr
+await_expr      ::= &quot;await&quot; unary_expr
+</code></pre>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> name(args) -&gt; <span class="t">R</span> { ... <span class="k">await</span> expr; ... }    <span class="c">// named async function</span>
+<span class="k">async</span> { ... <span class="k">await</span> expr; ... }                        <span class="c">// inline block (value)</span>
+<span class="k">async</span> || { ... <span class="k">await</span> expr; ... }                     <span class="c">// closure modifier</span>
+</code></pre>
+<p>In all three forms, the result is a value of the library type <code>AsyncFuture&lt;T&gt;</code> (implementing <code>Future&lt;Output = T&gt;</code>), or <code>TryAsyncFuture&lt;T, E&gt;</code> with <code>throws (E)</code> (<a href="401-function-declaration#result-types-of-coroutine-functions">4.1.11</a>). This structure is consistent with the pattern in which <code>yield</code> of <a href="411-generators">generators</a> is used in the same three forms.</p>
+<h2 id="4122-the-await-operator"><a class="anchor" tabindex="-1" href="#4122-the-await-operator" aria-hidden="true">#</a>4.12.2. The <code>await</code> operator</h2>
+<p><code>await</code> is a prefix unary operator (<a href="../003-expressions/302-precedence-and-associativity#323-precedence-and-associativity-table">3.2.3</a>, prec=12) applied to a value implementing <code>Future&lt;Output = T&gt;</code>; its result is <code>T</code>. <code>await f() == x</code> is <code>(await f()) == x</code>.</p>
+<pre><code class="language-rok"><span class="k">await</span> expr
+</code></pre>
+<p>It suspends until the Future completes and then returns the result value. <code>await</code> itself is an expression, and the result value is the evaluation result of the operator.</p>
+<pre><code class="language-rok"><span class="k">let</span> data = <span class="k">await</span> fetch_data();
+<span class="k">let</span> processed = <span class="k">await</span> transform(data);
+</code></pre>
+<p><code>await</code> is allowed only inside the bodies of <code>async</code> functions, <code>async</code> blocks and <code>async</code> closures. Using <code>await</code> in an ordinary function body is a compile error.</p>
+<h2 id="4123-named-async-functions"><a class="anchor" tabindex="-1" href="#4123-named-async-functions" aria-hidden="true">#</a>4.12.3. Named <code>async</code> functions</h2>
+<p>An asynchronous function is declared with <code>async fn</code>.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch_user(id: <span class="t">i64</span>) -&gt; <span class="t">User</span> {
+    <span class="k">let</span> response = <span class="k">await</span> http_get(<span class="s">f"/users/{</span>id<span class="s">}"</span>);
+    <span class="k">await</span> parse_user(response)
+}
+</code></pre>
+<p>Inside the body, <code>await</code> waits on other asynchronous results; the <code>-&gt; R</code> position gives the type of the value produced on completion. The call result is <code>AsyncFuture&lt;R&gt;</code>. <code>-&gt; R</code> may be omitted; <code>R</code> is then inferred from the body as in <a href="401-function-declaration#413-omitting-the-return-type">4.1.3</a>.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = fetch_user(<span class="n">42i64</span>);        <span class="c">// f: `AsyncFuture&lt;User&gt;`</span>
+<span class="k">let</span> u = <span class="k">await</span> f;                   <span class="c">// waits for the result</span>
+</code></pre>
+<p>The call itself returns immediately; all that is created at that point is a <strong>Future</strong> object. The actual work starts at <code>await</code>, or the scheduler may start it earlier.</p>
+<h2 id="4124-inline-async-blocks-values"><a class="anchor" tabindex="-1" href="#4124-inline-async-blocks-values" aria-hidden="true">#</a>4.12.4. Inline <code>async</code> blocks: values</h2>
+<p>An <code>async</code> block immediately creates an <code>AsyncFuture&lt;T&gt;</code> in expression position.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = <span class="k">async</span> {
+    <span class="k">let</span> a = <span class="k">await</span> op1();
+    <span class="k">let</span> b = <span class="k">await</span> op2();
+    a + b
+};
+
+<span class="k">let</span> r = <span class="k">await</span> f;
+</code></pre>
+<p>The body is a <a href="../003-expressions/309-block-expressions">block expression</a>. This form is for writing short asynchronous work anonymously and inline.</p>
+<p>Like a closure, an <code>async</code> block captures outer values <strong>by copying them when it is created</strong> (<a href="406-capture-semantics">4.6</a>). Changing an outer variable after the block is created does not change the value inside the future, and reassignments inside the future are not visible outside.</p>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="n">1</span>;
+<span class="k">let</span> f = <span class="k">async</span> { n * <span class="n">10</span> };
+n = <span class="n">2</span>;
+<span class="k">await</span> f;                       <span class="c">//→ 10 - n at creation time</span>
+</code></pre>
+<h2 id="4125-async-closures"><a class="anchor" tabindex="-1" href="#4125-async-closures" aria-hidden="true">#</a>4.12.5. <code>async</code> closures</h2>
+<p><code>async ||</code> creates a callable asynchronous closure.</p>
+<pre><code class="language-rok"><span class="k">let</span> task = <span class="k">async</span> || {
+    <span class="k">let</span> data = <span class="k">await</span> fetch();
+    process(data)
+};
+
+<span class="k">let</span> f1 = task();                   <span class="c">// f1: `AsyncFuture&lt;...&gt;`</span>
+<span class="k">let</span> f2 = task();                   <span class="c">// a new Future each time</span>
+</code></pre>
+<p>Each call creates a new <strong>Future</strong>. With a <code>[ref x]</code> capture list, <code>async [ref x] || { .. }</code>, the shared cell of <code>x</code> is used together by the outer scope and every future the closure creates.</p>
+<pre><code class="language-rok"><span class="k">let</span> hits = <span class="n">0</span>;
+<span class="k">let</span> bump = <span class="k">async</span> [<span class="k">ref</span> hits] || { hits += <span class="n">1</span>; };
+<span class="k">await</span> bump();
+<span class="k">await</span> bump();
+hits;                          <span class="c">//→ 2</span>
+</code></pre>
+<h2 id="4126-correspondence-of-the-three-forms"><a class="anchor" tabindex="-1" href="#4126-correspondence-of-the-three-forms" aria-hidden="true">#</a>4.12.6. Correspondence of the three forms</h2>
+<p>The three forms correspond as follows.</p>
+<pre><code>plain        fn f() { ... }       ↔  || { ... }       ↔  { ... }
+yield form   yield fn f() { ... } ↔  yield || { ... } ↔  yield { ... }
+async form   async fn f() { ... } ↔  async || { ... } ↔  async { ... }
+</code></pre>
+<p>The modifiers <code>yield</code> and <code>async</code> attach to the same function, block and closure forms and consistently turn them into generators or <strong>Futures</strong>.</p>
+<h2 id="4127-the-future-trait"><a class="anchor" tabindex="-1" href="#4127-the-future-trait" aria-hidden="true">#</a>4.12.7. The Future trait</h2>
+<p>The result of an async function, block or closure is the standard library's <code>AsyncFuture&lt;T&gt;</code> (implementing <code>Future&lt;Output = T&gt;</code>). The exact trait definition and methods such as <code>then</code>, <code>map</code> and <code>join</code> are defined in the standard library.</p>
+<h2 id="4128-semantics-of-await"><a class="anchor" tabindex="-1" href="#4128-semantics-of-await" aria-hidden="true">#</a>4.12.8. Semantics of <code>await</code></h2>
+<p>The following example shows how the body is evaluated.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> f() -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> a = <span class="k">await</span> op1();
+    <span class="k">let</span> b = <span class="k">await</span> op2();
+    a + b
+}
+</code></pre>
+<p>First, <code>op1()</code> is called and returns a <strong>Future</strong>. Then <code>await</code> waits for that Future to complete; until it does, the current function <code>f</code> is also suspended. When the Future completes, its result is bound to <code>a</code> and evaluation resumes. <code>op2()</code> and the second <code>await</code> follow the same pattern, and after all <code>await</code>s finish, <code>a + b</code> is evaluated and returned as the function's result.</p>
+<p>This suspension and resumption runs on the same coroutine mechanism as <a href="411-generators">generators (<code>yield</code>)</a>.</p>
+<h2 id="4129-concurrent-execution-library-functions"><a class="anchor" tabindex="-1" href="#4129-concurrent-execution-library-functions" aria-hidden="true">#</a>4.12.9. Concurrent execution: library functions</h2>
+<p>To advance multiple Futures concurrently, use standard library functions.</p>
+<pre><code class="language-rok"><span class="k">let</span> rs = <span class="k">await</span> task::join([task::spawn(op1()), task::spawn(op2())]);   <span class="c">// all - List&lt;T&gt;</span>
+<span class="k">let</span> first = <span class="k">await</span> task::race([task::spawn(op1()), task::spawn(op2())]); <span class="c">// whichever finishes first</span>
+<span class="k">let</span> r = <span class="k">try</span> <span class="k">await</span> task::timeout(d, task::spawn(op1()));                <span class="c">// TimeoutError on timeout</span>
+</code></pre>
+<p><code>join</code> / <code>race</code> take a <code>List&lt;Task&lt;T&gt;&gt;</code>, and their result is <code>await</code>ed (<a href="../../refs-standard-libraries/200-core/218-task">stdlib 2.18</a>).</p>
+<p><code>join</code>, <code>race</code>, <code>timeout</code>, <code>select</code> and the like are library functions, not language keywords, following the principle of <a href="../000-meta/004-language-vs-standard-libraries">the boundary between language and standard library</a>. Their exact signatures are defined in the standard library.</p>
+<h2 id="41210-where-await-is-allowed"><a class="anchor" tabindex="-1" href="#41210-where-await-is-allowed" aria-hidden="true">#</a>4.12.10. Where <code>await</code> is allowed</h2>
+<p>The positions where <code>await</code> is allowed are:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Position</th><th><code>await</code> allowed?</th></tr></thead>
+<tbody>
+<tr><td><code>async fn</code> body</td><td>OK</td></tr>
+<tr><td><code>async { ... }</code> body</td><td>OK</td></tr>
+<tr><td><code>async |...| { ... }</code> body</td><td>OK</td></tr>
+<tr><td>ordinary <code>fn</code> body</td><td>ERROR</td></tr>
+<tr><td>ordinary <code>{ ... }</code> block</td><td>ERROR</td></tr>
+<tr><td><code>yield</code> function or block body</td><td>ERROR (but <code>async yield</code> is OK)</td></tr>
+</tbody></table></div>
+<h2 id="41211-immediate-return-of-async-function-calls"><a class="anchor" tabindex="-1" href="#41211-immediate-return-of-async-function-calls" aria-hidden="true">#</a>4.12.11. Immediate return of async function calls</h2>
+<p>Because an async function call returns immediately, the following pattern is possible.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = fetch_data();             <span class="c">// returns immediately - work has started or is scheduled</span>
+do_other_work();                   <span class="c">// do other work in parallel</span>
+<span class="k">let</span> data = <span class="k">await</span> f;                <span class="c">// wait when the result is needed</span>
+</code></pre>
+<p>This is the basic pattern of efficient concurrency: time-consuming work is waited on when its result is needed, not right after the call.</p>
+<h2 id="41212-relationship-to-tasks"><a class="anchor" tabindex="-1" href="#41212-relationship-to-tasks" aria-hidden="true">#</a>4.12.12. Relationship to tasks</h2>
+<p>To launch asynchronous work as a separate unit of execution, use the standard library's <code>task::spawn</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> handle = task::spawn(<span class="k">async</span> { compute() });       <span class="c">// runs as a new task</span>
+<span class="k">let</span> result = <span class="k">await</span> handle;                     <span class="c">// waits for completion</span>
+</code></pre>
+<p><code>task::spawn</code> registers a future (here, an <code>async</code> block) with the scheduler and returns a <code>Task&lt;T&gt;</code> handle that implements <code>Future</code>.</p>
+<p><code>task::spawn</code> is a library function, orthogonal to <code>async</code>. Marking a function <code>async</code> only states that &quot;this function is asynchronous&quot;; to actually launch it as a separate unit of execution, an explicit call such as <code>task::spawn</code> is required.</p>
+<h2 id="41213-async-on-methods"><a class="anchor" tabindex="-1" href="#41213-async-on-methods" aria-hidden="true">#</a>4.12.13. <code>async</code> on methods</h2>
+<p>Like ordinary <a href="409-method">methods</a>, methods may be marked <code>async</code>.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Database</span> {
+    <span class="k">async</span> <span class="k">fn</span> query(<span class="k">self</span>, sql: <span class="t">str</span>) -&gt; <span class="t">ResultSet</span> { ... }
+}
+
+<span class="k">let</span> r = <span class="k">await</span> db.query(<span class="s">"SELECT ..."</span>);
+</code></pre>
+<h2 id="41214-error-handling"><a class="anchor" tabindex="-1" href="#41214-error-handling" aria-hidden="true">#</a>4.12.14. Error handling</h2>
+<p><code>try</code>, <code>catch</code>, <code>throw</code> and <code>finally</code> from <a href="../003-expressions/314-error-control-flow">error control flow</a> work as usual in async functions. Errors of a throwing <code>async</code> function are delivered at the <code>await</code> point, so the <code>await</code> expression is covered with <code>try</code> (<code>try await fetch()</code>). Interaction with <code>throws</code> signatures is covered in <a href="414-throws"><code>throws</code> signatures</a>.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> safe_fetch() <span class="k">throws</span> -&gt; <span class="t">Data</span> {
+    <span class="k">try</span> <span class="k">await</span> fetch_or_throw() <span class="k">catch</span> e: <span class="t">NetworkError</span> {
+        <span class="k">try</span> <span class="k">await</span> fetch_fallback()
+    }
+}
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/412-async.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="411-generators"><small>Previous</small>4.11. Generators (yield)</a><a class="next" href="413-stream"><small>Next</small>4.13. Streams (async yield)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

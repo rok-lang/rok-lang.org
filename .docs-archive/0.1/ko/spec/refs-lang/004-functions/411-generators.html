@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.11. 제너레이터 (yield) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="yield 키워드 (키워드) 는 값을 하나씩 만들어내는 함수, 즉 제너레이터를 정의하는 세 가지 형태에서 사용됩니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/411-generators.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.11. 제너레이터 (yield) - rok docs">
+<meta property="og:description" content="yield 키워드 (키워드) 는 값을 하나씩 만들어내는 함수, 즉 제너레이터를 정의하는 세 가지 형태에서 사용됩니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/411-generators.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/411-generators.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/411-generators.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">4. 함수 개요</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li><a href="405-closure">4.5. 클로저</a></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li><a href="409-method">4.9. 메서드</a></li><li><a href="410-nested-functions">4.10. 중첩 함수</a></li><li class="cur"><a aria-current="page" href="411-generators">4.11. 제너레이터 (yield)</a><ul class="toc"><li><a href="#4111-세-가지-형태">4.11.1. 세 가지 형태</a></li><li><a href="#4112-yield-statement-값을-내보내기">4.11.2. yield statement: 값을 내보내기</a></li><li><a href="#4113-명명된-제너레이터-함수">4.11.3. 명명된 제너레이터 함수</a></li><li><a href="#4114-인라인-yield-블록-값">4.11.4. 인라인 yield 블록: 값</a></li><li><a href="#4115-yield-클로저">4.11.5. yield 클로저</a></li><li><a href="#4116-세-형태의-대응">4.11.6. 세 형태의 대응</a></li><li><a href="#4117-yield-토큰의-네-가지-등장-위치">4.11.7. yield 토큰의 네 가지 등장 위치</a></li><li><a href="#4118-iterator-트레잇과의-결합">4.11.8. Iterator 트레잇과의 결합</a></li><li><a href="#4119-무한-제너레이터">4.11.9. 무한 제너레이터</a></li><li><a href="#41110-제너레이터의-종료">4.11.10. 제너레이터의 종료</a></li><li><a href="#41111-제너레이터의-상태">4.11.11. 제너레이터의 상태</a></li><li><a href="#41112-yield-함수의-매개변수와-반환">4.11.12. yield 함수의 매개변수와 반환</a></li><li><a href="#41113-메서드로서의-제너레이터">4.11.13. 메서드로서의 제너레이터</a></li></ul></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li><a href="413-stream">4.13. 스트림 (async yield)</a></li><li><a href="414-throws">4.14. throws 시그니처</a></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li><a href="416-entry-point">4.16. 진입점</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="411-제너레이터-yield 411-generators-yield 4111-세-가지-형태 4111-three-forms 4112-yield-statement-값을-내보내기 4112-the-yield-statement-emitting-values 4113-명명된-제너레이터-함수 4113-named-generator-functions 4114-인라인-yield-블록-값 4114-inline-yield-blocks-values 4115-yield-클로저 4115-yield-closures 4116-세-형태의-대응 4116-correspondence-of-the-three-forms 4117-yield-토큰의-네-가지-등장-위치 4117-four-positions-of-the-yield-token 4118-iterator-트레잇과의-결합 4118-interaction-with-the-iterator-trait 4119-무한-제너레이터 4119-infinite-generators 41110-제너레이터의-종료 41110-generator-termination 41111-제너레이터의-상태 41111-generator-state 41112-yield-함수의-매개변수와-반환 41112-parameters-and-return-of-yield-functions 41113-메서드로서의-제너레이터 41113-generators-as-methods"><a href="../../../../spec/refs-lang/004-functions/411-generators" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="411-제너레이터-yield"><a class="anchor" tabindex="-1" href="#411-제너레이터-yield" aria-hidden="true">#</a>4.11. 제너레이터 (<code>yield</code>)</h1>
+<p><code>yield</code> 키워드 (<a href="../001-lexical/105-keywords">키워드</a>) 는 값을 하나씩 만들어내는 함수, 즉 제너레이터를 정의하는 세 가지 형태에서 사용됩니다.</p>
+<h2 id="4111-세-가지-형태"><a class="anchor" tabindex="-1" href="#4111-세-가지-형태" aria-hidden="true">#</a>4.11.1. 세 가지 형태</h2>
+<p>제너레이터는 다음과 같은 문법으로 표현됩니다.</p>
+<pre><code>generator_fn    ::= &quot;yield&quot; fn_decl
+generator_block ::= &quot;yield&quot; block
+generator_closure ::= &quot;yield&quot; closure_expr
+yield_stmt      ::= &quot;yield&quot; expr? &quot;;&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> name(args) -&gt; <span class="t">R</span> { ... <span class="k">yield</span> expr; ... }     <span class="c">// 명명된 제너레이터 함수</span>
+<span class="k">yield</span> { ... <span class="k">yield</span> expr; ... }                         <span class="c">// 인라인 블록 (값)</span>
+<span class="k">yield</span> || { ... <span class="k">yield</span> expr; ... }                      <span class="c">// 클로저 수식어</span>
+</code></pre>
+<p>세 형태 모두 결과는 라이브러리 타입 <code>GenIter&lt;T&gt;</code> (<code>Iterator&lt;Item = T&gt;</code> 구현) 의 값이며, <code>throws (E)</code> 면 <code>TryGenIter&lt;T, E&gt;</code> 입니다. 이 규칙은 <a href="401-function-declaration#코루틴-함수의-결과-타입">4.1.11</a> 에서 정의합니다.</p>
+<h2 id="4112-yield-statement-값을-내보내기"><a class="anchor" tabindex="-1" href="#4112-yield-statement-값을-내보내기" aria-hidden="true">#</a>4.11.2. <code>yield</code> statement: 값을 내보내기</h2>
+<p><code>yield</code> 문은 값과 함께 또는 값 없이 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">yield</span> expr;
+<span class="k">yield</span>;
+</code></pre>
+<p><code>yield expr;</code> 형태는 <code>expr</code> 의 값을 현재 반복 단계의 산출값으로 내보내고, 함수나 블록의 평가를 일시 중단합니다. 다음 반복에서는 이어서 평가를 진행합니다. 한편 <code>yield;</code> 형태는 값 없이 (unit) 단계만 진행시킵니다.</p>
+<h2 id="4113-명명된-제너레이터-함수"><a class="anchor" tabindex="-1" href="#4113-명명된-제너레이터-함수" aria-hidden="true">#</a>4.11.3. 명명된 제너레이터 함수</h2>
+<p>명명된 제너레이터 함수는 다음과 같이 작성합니다.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> count_up_to(n: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">while</span> i &lt; n {
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+</code></pre>
+<p><code>yield fn</code> 은 제너레이터임을 표시하는 함수 선언이며, 본체 안에서는 <code>yield expr;</code> 으로 값을 내보냅니다. <code>-&gt; R</code> 자리에는 <code>yield</code> 되는 값의 타입을 적으며, 호출 결과는 <code>GenIter&lt;R&gt;</code> 입니다. <code>-&gt; R</code> 은 반드시 적어야 하며, 원소 타입을 본체에서 추론하지 않습니다. 호출 방식은 일반 함수와 동일하며, 결과는 반복자 객체가 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> it = count_up_to(<span class="n">5i32</span>);       <span class="c">// it: `GenIter&lt;i32&gt;`</span>
+<span class="k">for</span> x <span class="k">in</span> it { print(x); }         <span class="c">// 0 1 2 3 4</span>
+</code></pre>
+<h2 id="4114-인라인-yield-블록-값"><a class="anchor" tabindex="-1" href="#4114-인라인-yield-블록-값" aria-hidden="true">#</a>4.11.4. 인라인 <code>yield</code> 블록: 값</h2>
+<p>식 자리에서 즉시 반복자를 만들고 싶다면 인라인 <code>yield</code> 블록을 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> it = <span class="k">yield</span> {
+    <span class="k">yield</span> <span class="n">1i32</span>;
+    <span class="k">yield</span> <span class="n">2i32</span>;
+    <span class="k">yield</span> <span class="n">3i32</span>;
+};
+</code></pre>
+<p>이 형태는 식 자리에 등장하며, 즉시 <code>GenIter&lt;T&gt;</code> 를 만들어냅니다. 본체는 <a href="../003-expressions/309-block-expressions">블록 표현식</a> 의 블록입니다. 짧은 제너레이터를 익명 인라인으로 적기 위한 형태라고 할 수 있습니다.</p>
+<h2 id="4115-yield-클로저"><a class="anchor" tabindex="-1" href="#4115-yield-클로저" aria-hidden="true">#</a>4.11.5. <code>yield</code> 클로저</h2>
+<p><code>yield</code> 클로저는 호출 가능한 제너레이터를 만들어냅니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> make_iter = <span class="k">yield</span> || {
+    <span class="k">yield</span> <span class="n">1i32</span>;
+    <span class="k">yield</span> <span class="n">2i32</span>;
+    <span class="k">yield</span> <span class="n">3i32</span>;
+};
+
+<span class="k">let</span> it = make_iter();             <span class="c">// 호출 시 새 Iterator 생성</span>
+</code></pre>
+<p><code>yield ||</code> 는 호출 가능한 제너레이터 클로저를 만들며, 호출할 때마다 새 반복자가 생성됩니다. 외부 캡처는 <a href="406-capture-semantics">캡처 의미론</a> 의 규칙을 따릅니다.</p>
+<h2 id="4116-세-형태의-대응"><a class="anchor" tabindex="-1" href="#4116-세-형태의-대응" aria-hidden="true">#</a>4.11.6. 세 형태의 대응</h2>
+<p>제너레이터의 세 형태는 <a href="401-function-declaration">함수 선언</a>, <a href="405-closure">클로저</a>, <a href="../003-expressions/309-block-expressions">블록 표현식</a> 의 세 형태 (명명, 블록, 클로저) 에 일대일로 대응됩니다.</p>
+<pre><code>일반 함수    fn f() { ... }       ↔  || { ... }       ↔  { ... } (블록)
+yield 형     yield fn f() { ... } ↔  yield || { ... } ↔  yield { ... }
+</code></pre>
+<p>즉, <code>yield</code> 가 동일한 함수, 블록, 클로저 형태에 수식어로 붙어 그것을 제너레이터로 변환하는 셈입니다.</p>
+<h2 id="4117-yield-토큰의-네-가지-등장-위치"><a class="anchor" tabindex="-1" href="#4117-yield-토큰의-네-가지-등장-위치" aria-hidden="true">#</a>4.11.7. <code>yield</code> 토큰의 네 가지 등장 위치</h2>
+<p><code>yield</code> 토큰은 네 가지 위치에서 등장할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> name(...) { ... }        <span class="c">// declaration modifier (선언 수식어)</span>
+<span class="k">yield</span> { ... }                      <span class="c">// block marker (블록 마커)</span>
+<span class="k">yield</span> || { ... }                   <span class="c">// closure modifier (클로저 수식어)</span>
+<span class="k">yield</span> expr;                         <span class="c">// statement (문장)</span>
+</code></pre>
+<p>이 네 위치는 문맥으로 명확히 구분되며, 파서는 다음 토큰을 보고 어느 형태인지 결정합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th><code>yield</code> 다음 토큰</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>fn</code></td><td>declaration modifier</td></tr>
+<tr><td><code>{</code></td><td><a href="../000-meta/007-glossary#block-블록">block</a> marker (식 자리)</td></tr>
+<tr><td><code>||</code> 또는 <code>|</code></td><td>closure modifier</td></tr>
+<tr><td>식 시작 토큰</td><td><code>yield</code> statement</td></tr>
+</tbody></table></div>
+<h2 id="4118-iterator-트레잇과의-결합"><a class="anchor" tabindex="-1" href="#4118-iterator-트레잇과의-결합" aria-hidden="true">#</a>4.11.8. Iterator 트레잇과의 결합</h2>
+<p>제너레이터 함수의 결과는 표준 라이브러리의 <code>Iterator&lt;Item = T&gt;</code> 트레잇을 구현하는 값이므로, <a href="../003-expressions/313-loop-expressions">루프</a> 의 <code>for</code> 루프에서 그대로 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> naturals() -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">loop</span> {
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+
+<span class="k">for</span> n <span class="k">in</span> naturals() {
+    <span class="k">if</span> n &gt; <span class="n">100</span> { <span class="k">break</span>; }
+    print(n);
+}
+</code></pre>
+<p><code>Iterator</code> 트레잇의 정확한 정의와 메서드 (<code>map</code>, <code>filter</code>, <code>take</code>, <code>collect</code> 등) 는 표준 라이브러리에서 정의됩니다.</p>
+<h2 id="4119-무한-제너레이터"><a class="anchor" tabindex="-1" href="#4119-무한-제너레이터" aria-hidden="true">#</a>4.11.9. 무한 제너레이터</h2>
+<p>위 예의 <code>naturals()</code> 는 끝없이 값을 내는 무한 제너레이터에 해당합니다. 이러한 제너레이터는 <code>for</code> 루프의 <code>break</code> 또는 라이브러리의 <code>take(n)</code> 메서드 등으로 종료시킬 수 있습니다.</p>
+<h2 id="41110-제너레이터의-종료"><a class="anchor" tabindex="-1" href="#41110-제너레이터의-종료" aria-hidden="true">#</a>4.11.10. 제너레이터의 종료</h2>
+<p>본체가 정상 종료하면 반복자 역시 종료되며, 다음 <code>next()</code> 호출에서는 <code>none</code> 이 반환됩니다.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> finite() -&gt; <span class="t">i32</span> {
+    <span class="k">yield</span> <span class="n">1i32</span>;
+    <span class="k">yield</span> <span class="n">2i32</span>;
+    <span class="k">yield</span> <span class="n">3i32</span>;
+    <span class="c">// 함수 정상 종료 → 반복자 종료</span>
+}
+</code></pre>
+<p>또한 <code>return;</code> 으로 명시적으로 종료시킬 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> early_stop(stop: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">loop</span> {
+        <span class="k">if</span> i &gt;= stop { <span class="k">return</span>; }
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+</code></pre>
+<h2 id="41111-제너레이터의-상태"><a class="anchor" tabindex="-1" href="#41111-제너레이터의-상태" aria-hidden="true">#</a>4.11.11. 제너레이터의 상태</h2>
+<p>제너레이터는 호출 사이에 내부 상태를 유지합니다. 본체의 지역 변수, 반복 위치, 코루틴 프레임이 다음 <code>next()</code> 호출까지 보존됩니다.</p>
+<p>이 상태는 <a href="../007-runtime/">7. 런타임 모델</a> 의 코루틴 인프라 위에서 작동하며, 컴파일러가 만든 상태 기계 (stackless) 로 동작합니다. 자세한 구현 메커니즘은 런타임 사양에서 정의됩니다.</p>
+<h2 id="41112-yield-함수의-매개변수와-반환"><a class="anchor" tabindex="-1" href="#41112-yield-함수의-매개변수와-반환" aria-hidden="true">#</a>4.11.12. <code>yield</code> 함수의 매개변수와 반환</h2>
+<p><code>yield fn</code> 은 제너레이터이므로, <code>-&gt; T</code> 는 본체에서 <code>yield</code> 되는 값의 타입을 가리키며, 호출 결과는 <code>GenIter&lt;T&gt;</code>입니다.</p>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> f() -&gt; <span class="t">i32</span> { <span class="k">yield</span> <span class="n">1i32</span>; }
+<span class="c">// 호출 결과: `GenIter&lt;i32&gt;`</span>
+</code></pre>
+<p>매개변수의 사용 방식은 일반 함수와 동일합니다.</p>
+<h2 id="41113-메서드로서의-제너레이터"><a class="anchor" tabindex="-1" href="#41113-메서드로서의-제너레이터" aria-hidden="true">#</a>4.11.13. 메서드로서의 제너레이터</h2>
+<p><a href="409-method">메서드</a> 의 <code>impl</code> 블록 안에서도 <code>yield fn</code> 을 사용해 제너레이터 메서드를 정의할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">yield</span> <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">T</span> {
+        <span class="k">for</span> x <span class="k">in</span> <span class="k">self</span>.elements { <span class="k">yield</span> x; }
+    }
+}
+</code></pre>
+<p>호출 방식과 동작은 일반 인스턴스 메서드와 동일합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/411-generators.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="410-nested-functions"><small>Previous</small>4.10. 중첩 함수</a><a class="next" href="412-async"><small>Next</small>4.12. 비동기 (async 와 await)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

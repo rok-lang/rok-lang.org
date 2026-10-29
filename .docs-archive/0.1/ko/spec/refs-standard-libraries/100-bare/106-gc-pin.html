@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.6. Pinned&lt;T&gt; - GC pinning - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::gc 모듈은 GC heap 위에 놓인 객체를 일시적으로 이동 불가능한 상태로 고정하는 메커니즘을 정의합니다. raw Ptr&lt;T&gt; 가 GC 객체를 가리키고 있을 때 객체가 이동하면 포인터가 무효가 되는데, 이 장은 바로 그 충돌을 해소하는 방법을 다룹니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.6. Pinned&lt;T&gt; - GC pinning - rok docs">
+<meta property="og:description" content="rok::bare::gc 모듈은 GC heap 위에 놓인 객체를 일시적으로 이동 불가능한 상태로 고정하는 메커니즘을 정의합니다. raw Ptr&lt;T&gt; 가 GC 객체를 가리키고 있을 때 객체가 이동하면 포인터가 무효가 되는데, 이 장은 바로 그 충돌을 해소하는 방법을 다룹니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/106-gc-pin.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li class="cur"><a aria-current="page" href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a><ul class="toc"><li><a href="#161-동기---pinning-이-필요한-이유">1.6.1. 동기 - pinning 이 필요한 이유</a></li><li><a href="#162-pinnedt-guard">1.6.2. Pinned&lt;T&gt; guard</a></li><li><a href="#163-gcptrt-vs-ptrt---type-level-분리">1.6.3. GcPtr&lt;T&gt; vs Ptr&lt;T&gt; - type level 분리</a></li><li><a href="#164-pin--unpin-의-gc-측-메커니즘">1.6.4. pin / unpin 의 GC 측 메커니즘</a></li><li><a href="#165-한계---pin-안-해도-될-자리">1.6.5. 한계 - pin 안 해도 될 자리</a></li><li><a href="#166-추출-메서드">1.6.6. 추출 메서드</a></li><li><a href="#167-gc-runtime-연계">1.6.7. GC runtime 연계</a></li><li><a href="#168-다른-언어와의-비교">1.6.8. 다른 언어와의 비교</a></li><li><a href="#169-weakt---약한-참조">1.6.9. Weak&lt;T&gt; - 약한 참조</a></li></ul></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="16-pinnedt---gc-pinning 16-pinnedt---gc-pinning 161-동기---pinning-이-필요한-이유 161-motivation---why-pinning-is-needed 162-pinnedt-guard 162-pinnedt-guard 사용-예---ffi-호출 example---ffi-call 163-gcptrt-vs-ptrt---type-level-분리 163-gcptrt-vs-ptrt---separation-at-the-type-level 연산 operations 내부-구현---gcptr-의-형태 internal-implementation---the-form-of-gcptr 164-pin--unpin-의-gc-측-메커니즘 164-gc-side-mechanism-of-pin--unpin overhead overhead 165-한계---pin-안-해도-될-자리 165-limits---where-pinning-is-unnecessary 166-추출-메서드 166-extraction-methods 167-gc-runtime-연계 167-gc-runtime-linkage 168-다른-언어와의-비교 168-comparison-with-other-languages 169-weakt---약한-참조 169-weakt---weak-references"><a href="../../../../spec/refs-standard-libraries/100-bare/106-gc-pin" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="16-pinnedt---gc-pinning"><a class="anchor" tabindex="-1" href="#16-pinnedt---gc-pinning" aria-hidden="true">#</a>1.6. <code>Pinned&lt;T&gt;</code> - GC pinning</h1>
+<p><code>rok::bare::gc</code> 모듈은 GC heap 위에 놓인 객체를 일시적으로 이동 불가능한 상태로
+고정하는 메커니즘을 정의합니다. raw <code>Ptr&lt;T&gt;</code> 가 GC 객체를 가리키고 있을 때 객체가
+이동하면 포인터가 무효가 되는데, 이 장은 바로 그 충돌을 해소하는 방법을 다룹니다.</p>
+<p>이 장은 rok unsafe tier 의 가장 중요한 장으로, pointer 와 GC 의 충돌을 어떻게
+조정하는지를 정면에서 설명합니다.</p>
+<h2 id="161-동기---pinning-이-필요한-이유"><a class="anchor" tabindex="-1" href="#161-동기---pinning-이-필요한-이유" aria-hidden="true">#</a>1.6.1. 동기 - pinning 이 필요한 이유</h2>
+<p><a href="../../refs-lang/007-runtime/703-gc-algorithm">refs-lang 7.3 GC 알고리듬</a> 의 Immix mark-region GC 는 <strong>evacuation</strong> (객체
+복사 이동) 을 수행합니다. 이로 인해 객체의 주소는 GC cycle 사이에 얼마든지 바뀔
+수 있습니다.</p>
+<pre><code>  GC cycle 시작:    obj at 0x1000
+  GC evacuation:    obj at 0x2000  (복사 후 forward)
+  GC cycle 끝:      obj at 0x2000
+</code></pre>
+<p>managed code (<code>GcPtr&lt;T&gt;</code>) 의 경우 GC 가 root 를 추적하면서 모든 ptr 을 자동으로
+갱신합니다. 그러나 raw <code>Ptr&lt;T&gt;</code> 는 GC 가 인지하지 못하기 때문에 갱신 대상에서
+빠지고, 결과적으로 <strong>stale ptr</strong> 이 되어버립니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];                 <span class="c">// GcPtr (자동 갱신)</span>
+<span class="k">let</span> raw: <span class="t">Ptr</span>&lt;<span class="t">i32</span>&gt; = rok::bare::ptr::list_data(xs); <span class="c">// raw ptr</span>
+                                                <span class="c">// ↓ GC cycle 발생 가능</span>
+gc::collect();
+<span class="k">unsafe</span> { raw.read() };                          <span class="c">// UB - raw 가 stale</span>
+</code></pre>
+<p>해법은 <strong>pinning</strong> 입니다. GC 에게 &quot;이 객체는 이동시키지 말라&quot;는 신호를 명시적으로
+전달하는 방식입니다.</p>
+<h2 id="162-pinnedt-guard"><a class="anchor" tabindex="-1" href="#162-pinnedt-guard" aria-hidden="true">#</a>1.6.2. <code>Pinned&lt;T&gt;</code> guard</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt; {
+    obj: <span class="t">T</span>;
+    <span class="c">// 내부: GC 의 pin set 등록</span>
+}
+
+<span class="k">trait</span> <span class="t">Pinnable</span> {}                       <span class="c">// List&lt;T&gt;, str, GcPtr&lt;T&gt;</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; {}
+<span class="k">impl</span> <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">str</span> {}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {}
+
+<span class="k">fn</span> pin&lt;<span class="t">T</span>: <span class="t">Pinnable</span>&gt;(obj: <span class="t">T</span>) -&gt; <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt;;
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> obj(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Drop</span> <span class="k">for</span> <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        <span class="c">// GC pin set 에서 제거</span>
+    }
+}
+</code></pre>
+<p><code>using</code> 으로 묶는 guard 입니다. <code>pin()</code> 이 반환한 <code>Pinned&lt;T&gt;</code> 가 <code>using</code> 블록 안에 있는
+동안 GC 는 해당 객체를 이동시키지 않으며, 블록을 빠져나갈 때 <code>Pinned::drop</code> 이 불려 unpin
+됩니다. <code>using</code> 없이 받은 <code>Pinned&lt;T&gt;</code> 는 자동으로 풀리지 않습니다. pin 은 셉니다: 객체는 그만큼 unpin 된 뒤에야 다시 움직입니다.</p>
+<h3 id="사용-예---ffi-호출"><a class="anchor" tabindex="-1" href="#사용-예---ffi-호출" aria-hidden="true">#</a>사용 예 - FFI 호출</h3>
+<pre><code class="language-rok"><span class="k">let</span> buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = read_input();
+
+<span class="k">using</span> pin = rok::bare::gc::pin(buf) {
+    <span class="k">let</span> raw: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = pin.as_data_ptr();
+    <span class="k">unsafe</span> {
+        ffi::process(raw, buf.len());          <span class="c">// FFI 가 buf 데이터 사용</span>
+    }
+}     <span class="c">// ← scope 끝에서 자동 unpin</span>
+</code></pre>
+<p>여기서의 <code>using</code> 블록은 <a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 using 표현식</a> 이 정의하는 RAII 형태를
+그대로 따릅니다.</p>
+<h2 id="163-gcptrt-vs-ptrt---type-level-분리"><a class="anchor" tabindex="-1" href="#163-gcptrt-vs-ptrt---type-level-분리" aria-hidden="true">#</a>1.6.3. <code>GcPtr&lt;T&gt;</code> vs <code>Ptr&lt;T&gt;</code> - type level 분리</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* compiler-managed - root 자동 추적 */</span> }
+<span class="k">struct</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;   { <span class="c">/* raw - root 추적 X */</span> }
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>GcPtr&lt;T&gt;</code></th><th><code>Ptr&lt;T&gt;</code></th></tr></thead>
+<tbody>
+<tr><td>GC root</td><td><strong>자동 추적</strong></td><td><strong>추적하지 않음</strong></td></tr>
+<tr><td>이동 시</td><td><strong>자동 갱신</strong></td><td><strong>stale</strong></td></tr>
+<tr><td>사용처</td><td>일반 코드 (<code>List</code>/<code>Dict</code>/...)</td><td>unsafe + FFI 만</td></tr>
+<tr><td>생성</td><td>GC alloc (<code>List::new()</code> 등)</td><td><code>gc::pin().as_data_ptr()</code> 또는 <code>alloc::alloc(layout)</code></td></tr>
+<tr><td>valid 기간</td><td>객체 reachable 동안</td><td>pin guard scope 안만</td></tr>
+</tbody></table></div>
+<p>타입 시스템 차원에서 두 종류를 분리해 두었기 때문에, 사용자 코드는 일반적으로
+<code>GcPtr</code> 만 다루게 됩니다 (보이지 않게 <code>List&lt;T&gt;</code> 등으로 wrap 되어 있기 때문입니다).
+<code>Ptr&lt;T&gt;</code> 는 unsafe 진입 이후에 비로소 명시적으로 모습을 드러냅니다.</p>
+<h3 id="연산"><a class="anchor" tabindex="-1" href="#연산" aria-hidden="true">#</a>연산</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;;           <span class="c">// value 를 담은 새 GC cell</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> set(<span class="k">self</span>, value: <span class="t">T</span>);                 <span class="c">// GcPtr 의 모든 복사본이 봄</span>
+    <span class="k">fn</span> same(<span class="k">self</span>, other: <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>; <span class="c">// 동일성: 같은 cell</span>
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {}
+</code></pre>
+<h3 id="내부-구현---gcptr-의-형태"><a class="anchor" tabindex="-1" href="#내부-구현---gcptr-의-형태" aria-hidden="true">#</a>내부 구현 - GcPtr 의 형태</h3>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// 내부: 보통 단순 `*T` - GC 가 외부에서 root set 으로 추적</span>
+    <span class="c">// 지역 변수면 컴파일러가 emit 하는 shadow stack frame 슬롯에 둠</span>
+}
+</code></pre>
+<p>rok 의 GC 는 컴파일러가 직접 emit 하는 <strong>thread 별 shadow stack</strong> 으로 root set 을 추적합니다 (<a href="../../refs-lang/007-runtime/704-barriers-and-roots#741-루트-추적-컴파일러가-직접-emit-하는-shadow-stack">refs-lang 7.4.1</a>).</p>
+<h2 id="164-pin--unpin-의-gc-측-메커니즘"><a class="anchor" tabindex="-1" href="#164-pin--unpin-의-gc-측-메커니즘" aria-hidden="true">#</a>1.6.4. pin / unpin 의 GC 측 메커니즘</h2>
+<pre><code>GC pin set 구조.
+  - 해시 테이블: Ptr&lt;Object&gt; → pin count
+  - GC 가 evacuation 시 pin count &gt; 0 인 객체 _건너뜀_
+
+pin(obj):
+  1. obj 의 헤더에서 pin bit 확인 (또는 pin set 에 등록)
+  2. count++
+  3. Pinned&lt;T&gt; 반환
+
+drop(Pinned):
+  1. count--
+  2. count == 0 면 pin bit 해제
+</code></pre>
+<p>이 구조는 Go 1.21 의 <code>runtime.Pinner</code> 와 사실상 동형입니다. 자세한 내용은
+<a href="https://pkg.go.dev/runtime#Pinner">pkg.go.dev/runtime#Pinner</a> 를 참고합니다.</p>
+<h3 id="overhead"><a class="anchor" tabindex="-1" href="#overhead" aria-hidden="true">#</a>overhead</h3>
+<p>비용은 다음과 같이 정리됩니다.</p>
+<ul>
+<li>pin 한 번은 O(1) hash insert 에 그칩니다
+</li>
+<li>unpin 한 번 또한 O(1) hash remove 입니다
+</li>
+<li>GC cycle 안에서 pin set 검사가 추가되긴 하지만, 그 비용은 작습니다
+</li>
+</ul>
+<p>대부분의 경우 hot path 에 들어가지 않습니다. FFI 호출 자체가 그렇게 빈번한
+연산이 아니기 때문입니다.</p>
+<h2 id="165-한계---pin-안-해도-될-자리"><a class="anchor" tabindex="-1" href="#165-한계---pin-안-해도-될-자리" aria-hidden="true">#</a>1.6.5. 한계 - pin 안 해도 될 자리</h2>
+<p>다음과 같은 상황에서는 pin 이 <strong>불필요</strong>합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>자리</th><th>이유</th></tr></thead>
+<tbody>
+<tr><td>일반 method 호출</td><td>GcPtr 자동 갱신 - raw ptr 안 만듬</td></tr>
+<tr><td>GcPtr 끼리 연산</td><td>모두 GC 가 추적</td></tr>
+<tr><td>짧은 FFI (no GC)</td><td>FFI 안에서 GC 안 도는 보장 시</td></tr>
+<tr><td>Immortal const</td><td>이미 이동하지 않음 (string literal 등)</td></tr>
+<tr><td>Non-moving 영역</td><td>LOS (large object space), pinned region</td></tr>
+</tbody></table></div>
+<p>짧은 FFI 자리에는 자동 판단이 적용됩니다. 컴파일러가 &quot;이 FFI 호출 동안 GC 가 돌지 않는다&quot;는 사실을 보장할 수 있는 경우 pin 이 자동으로 생략됩니다. 다만 일반적인 경우에는 <strong>명시 pin</strong> 을 권장합니다.</p>
+<h2 id="166-추출-메서드"><a class="anchor" tabindex="-1" href="#166-추출-메서드" aria-hidden="true">#</a>1.6.6. 추출 메서드</h2>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinned</span>&lt;<span class="t">List</span>&lt;<span class="t">T</span>&gt;&gt; {
+    <span class="k">fn</span> as_data_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;          <span class="c">// List 의 buffer 시작</span>
+    <span class="k">fn</span> as_data_many_ptr(<span class="k">self</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;; <span class="c">// 다수 ptr</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinned</span>&lt;<span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;&gt; {
+    <span class="k">fn</span> as_value_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;         <span class="c">// cell 의 값</span>
+}
+
+<span class="k">impl</span> <span class="t">Pinned</span>&lt;<span class="t">str</span>&gt; {
+    <span class="k">fn</span> as_bytes_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// UTF-8 bytes</span>
+    <span class="k">fn</span> as_c_str(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;c_char&gt;;   <span class="c">// null-terminated 보장 안 함 - 별도 변환</span>
+}
+</code></pre>
+<p>이 container 메서드들이 추출 API 이며, <code>Pinned</code> 를 들고 있는 동안 유효합니다. (<code>str::as_ptr</code> 와 <code>CStr::as_ptr</code> 는 pin 없이 주소를 주며, 더 좁은 <a href="../200-core/215-string#2152-str---불변-utf-8-문자열">2.15.2</a> 의 규칙을 따릅니다.) 제네릭 <code>as_ptr</code> 은 없으며, <code>as_value_ptr</code> 는 <code>List</code> 의 <code>as_data_ptr</code> 와 구별되는 이름입니다. container 별로 전용 추출 메서드가 마련됩니다. buffer 시작이나
+null-terminated 형태처럼, 각 컨테이너의 layout 에 맞춘 형태로 꺼내 쓸 수 있도록
+한 것입니다.</p>
+<h2 id="167-gc-runtime-연계"><a class="anchor" tabindex="-1" href="#167-gc-runtime-연계" aria-hidden="true">#</a>1.6.7. GC runtime 연계</h2>
+<p>각 항목이 GC 런타임의 어떤 호출과 연결되는지는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>runtime 호출</th></tr></thead>
+<tbody>
+<tr><td><code>Pinned&lt;T&gt;</code></td><td><code>rok_gc_pin</code> / <code>rok_gc_unpin</code></td></tr>
+<tr><td><code>pin&lt;T&gt;()</code></td><td>(위와 동일)</td></tr>
+<tr><td><code>GcPtr&lt;T&gt;</code></td><td>shadow stack frame 슬롯 (컴파일러 emit)</td></tr>
+<tr><td><code>as_data_ptr</code> 등</td><td>container 별 layout 의존</td></tr>
+<tr><td><code>Weak&lt;T&gt;</code></td><td><code>rok_gc_weak_new</code> / <code>rok_gc_weak_get</code> (1.6.9)</td></tr>
+</tbody></table></div>
+<h2 id="168-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#168-다른-언어와의-비교" aria-hidden="true">#</a>1.6.8. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Java JNI</th><th>.NET fixed</th><th>Go 1.21 Pinner</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>pin API</td><td><code>Get*Critical</code></td><td><code>fixed (T* p = ...)</code></td><td><code>runtime.Pinner</code></td><td><code>rok::bare::gc::pin(obj)</code></td></tr>
+<tr><td>RAII guard</td><td><code>Release</code> 명시</td><td>block scope</td><td><code>defer pin.Unpin()</code></td><td><code>using</code> block (자동 drop)</td></tr>
+<tr><td>타입 분리</td><td><strong>없음</strong> (<code>jobject</code> 모두 동일)</td><td><strong>없음</strong></td><td><strong>없음</strong> (모든 ptr 같음)</td><td><code>GcPtr&lt;T&gt;</code> vs <code>Ptr&lt;T&gt;</code></td></tr>
+<tr><td>pin 후 만료 검증</td><td><strong>없음</strong></td><td>컴파일러 (block scope)</td><td><strong>없음</strong> (수동)</td><td>type system + scope</td></tr>
+<tr><td>다중 pin</td><td>overlapping OK</td><td><strong>제한</strong></td><td>overlapping OK</td><td>overlapping OK (count)</td></tr>
+</tbody></table></div>
+<p>rok 이 다른 언어와 갈라지는 가장 큰 지점은 두 가지입니다.</p>
+<ol>
+<li>타입 시스템이 강제한다는 점입니다. <code>GcPtr&lt;T&gt;</code> 와 <code>Ptr&lt;T&gt;</code> 는 서로 다른
+타입이며, 자동 변환은 거부됩니다. 오직 pin guard 를 통해서만 건너갈 수 있습니다.
+</li>
+<li><code>using</code> block 기반의 해제입니다. <code>using</code> 블록을 빠져나갈 때 <code>Pinned&lt;T&gt;</code> 가 drop 되기 때문에 unpin
+누락이 일어나지 않습니다. Go 의 수동 <code>defer</code> 방식보다 한층 안전한
+설계입니다.
+</li>
+</ol>
+<blockquote>
+<p>이 정책은 rok pointer 모델의 backbone 입니다. unsafe 와 GC, 두 영역이 안전하게
+만나는 접점입니다.</p>
+</blockquote>
+<h2 id="169-weakt---약한-참조"><a class="anchor" tabindex="-1" href="#169-weakt---약한-참조" aria-hidden="true">#</a>1.6.9. <code>Weak&lt;T&gt;</code> - 약한 참조</h2>
+<pre><code class="language-rok"><span class="c">// rok::bare::gc</span>
+<span class="k">struct</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* opaque */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(target: <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Weak</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;        <span class="c">// 대상이 해제되면 none</span>
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; {}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt; {}    <span class="c">// 넘김이 그것이 가리키는 것을 복사할 수 없음 (2.13.9)</span>
+</code></pre>
+<p>약한 참조는 객체를 살려 두지 않습니다. 수집이 객체를 해제하면 그 객체를 가리키는 모든 <code>Weak</code> 은 <code>none</code> 을 읽으며, 객체를 옮기는 수집은 <code>Weak</code> 을 갱신합니다. 이것이 <code>WEAK_REF</code> scan 종류 (<a href="../../refs-lang/008-abi/802-scan-table#828-weak_ref">refs-lang 8.2.8</a>) 의 라이브러리 인터페이스입니다.</p>
+<p>런타임에서 <code>Weak</code> 은 <code>WEAK_REF</code> word 하나를 담은 type id <code>3</code> (<a href="../../refs-lang/008-abi/802-scan-table#8212-런타임-예약-type-id">refs-lang 8.2.12</a>) 의 GC cell 이며, <code>rok_gc_weak_new</code> 로 만들고 <code>rok_gc_weak_get</code> 으로 읽습니다 (<a href="../../refs-lang/008-abi/805-extern-symbols#8512-보조-심볼-부록-비규범">refs-lang 8.5.12</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/106-gc-pin.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="105-volatile"><small>Previous</small>1.5. volatile 메모리 접근</a><a class="next" href="107-ffi"><small>Next</small>1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

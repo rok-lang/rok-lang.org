@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.5. Symbol mangling scheme - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="As a result of specialize in the AOT build pipeline, one function splits into a separate function per concrete type. This section defines the rules that give th...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/905-symbol-mangling.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.5. Symbol mangling scheme - rok docs">
+<meta property="og:description" content="As a result of specialize in the AOT build pipeline, one function splits into a separate function per concrete type. This section defines the rules that give th...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/905-symbol-mangling.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/905-symbol-mangling.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/905-symbol-mangling.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li class="cur"><a aria-current="page" href="905-symbol-mangling">9.5. Symbol mangling scheme</a><ul class="toc"><li><a href="#951-form">9.5.1. Form</a></li><li><a href="#952-meaning-of-each-part">9.5.2. Meaning of each part</a></li><li><a href="#953-comparison-rust-_zn">9.5.3. Comparison: Rust _ZN</a></li><li><a href="#954-demangle-tool">9.5.4. demangle tool</a></li><li><a href="#955-reserved-prefixes">9.5.5. Reserved prefixes</a></li><li><a href="#956-symbol-length">9.5.6. Symbol length</a></li><li><a href="#957-collision-avoidance-typehash-stability">9.5.7. Collision avoidance: typehash stability</a></li><li><a href="#958-extern-c-functions-no-mangling">9.5.8. extern &quot;C&quot; functions: no mangling</a></li><li><a href="#959-symbol-of-the-main-function">9.5.9. Symbol of the main function</a></li><li><a href="#9510-debug-information">9.5.10. Debug information</a></li><li><a href="#9511-stability">9.5.11. Stability</a></li></ul></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="95-symbol-mangling-scheme 95-심볼-맹글링-스킴 951-form 951-형태 952-meaning-of-each-part 952-부분별-의미 _y-rok-symbol-prefix _y-rok-심볼-prefix pkg_hash_8 pkg_hash_8 path-module-path path-모듈-경로 name-item-name name-항목-이름 method-names 메서드의-이름 nested-functions 중첩-함수 typehash_16-type-tuple-hash typehash_16-타입-튜플-해시 typehash-of-a-concrete-fn concrete-fn-의-typehash 953-comparison-rust-_zn 953-비교-rust-_zn 954-demangle-tool 954-demangle-도구 955-reserved-prefixes 955-예약된-prefix 956-symbol-length 956-심볼-길이 957-collision-avoidance-typehash-stability 957-충돌-회피-typehash-의-안정성 canonical-serialization-rules canonical-직렬화-규칙 958-extern-c-functions-no-mangling 958-extern-c-함수-맹글링-미적용 959-symbol-of-the-main-function 959-main-함수의-심볼 9510-debug-information 9510-디버그-정보 9511-stability 9511-안정성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/905-symbol-mangling" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="95-symbol-mangling-scheme"><a class="anchor" tabindex="-1" href="#95-symbol-mangling-scheme" aria-hidden="true">#</a>9.5. Symbol mangling scheme</h1>
+<p>As a result of <a href="../000-meta/007-glossary#specialize">specialize</a> in the <a href="902-aot-pipeline">AOT build pipeline</a>, one function splits into a separate function per concrete type. This section defines the rules that give these functions unique symbol names.</p>
+<h2 id="951-form"><a class="anchor" tabindex="-1" href="#951-form" aria-hidden="true">#</a>9.5.1. Form</h2>
+<p>The overall grammar of a symbol is:</p>
+<pre><code>mangled_symbol  ::= &quot;_Y&quot; pkg_hash &quot;_&quot; mod_path &quot;_&quot; item_name &quot;_&quot; type_hash
+pkg_hash        ::= [0-9a-f]{8}            // package SHA-256 prefix
+mod_path        ::= identifier (&quot;_&quot; identifier)*
+item_name       ::= identifier
+type_hash       ::= [0-9a-f]{16}           // generic args SHA-256 prefix
+                  | &quot;&quot;                       // concrete (non-generic) item
+</code></pre>
+<p>Written out on one line:</p>
+<pre><code>_Y &lt;pkg_hash_8&gt; _ &lt;path&gt; _ &lt;name&gt; _ &lt;typehash_16&gt;
+</code></pre>
+<p>A real example:</p>
+<pre><code>_Y3f8a1c2b_std_vec_push_a7c91d8e44b2f190
+   |       |       |    |
+   |       |       |    +-- typehash (16 chars, hash of generic args)
+   |       |       +-- name (push)
+   |       +-- path (std_vec)
+   +-- pkg hash (8 chars)
+</code></pre>
+<h2 id="952-meaning-of-each-part"><a class="anchor" tabindex="-1" href="#952-meaning-of-each-part" aria-hidden="true">#</a>9.5.2. Meaning of each part</h2>
+<h3 id="_y-rok-symbol-prefix"><a class="anchor" tabindex="-1" href="#_y-rok-symbol-prefix" aria-hidden="true">#</a><code>_Y</code>: rok symbol prefix</h3>
+<p>Every rok symbol begins with <code>_Y</code>. Names beginning with underscore + uppercase letter are reserved for the implementation in C, so they do not collide with ordinary C symbols; <code>_Y</code> was chosen so as not to overlap with widely used mangling schemes either (C++ Itanium's <code>_Z</code>, Rust v0's <code>_R</code>, D's <code>_D</code>, Swift's <code>$s</code>). It also makes symbols emitted by rok easy to spot in <code>nm</code> or linker error output. The prefix is immediately followed by the lowercase hexadecimal <code>&lt;pkg_hash_8&gt;</code>, so it is distinguished by the first character alone from the reserved prefixes followed by an uppercase letter (<code>_YK</code> etc., <a href="#955-reserved-prefixes">9.5.5</a>).</p>
+<h3 id="pkg_hash_8"><a class="anchor" tabindex="-1" href="#pkg_hash_8" aria-hidden="true">#</a><code>&lt;pkg_hash_8&gt;</code></h3>
+<p>The package hash of <a href="../000-meta/003-source-units">Source units</a>: the first 8 characters of a content-based SHA-256 hash.</p>
+<pre><code>3f8a1c2b
+</code></pre>
+<p>A package with the same content yields the same hash wherever it is built. Consequently, same-named functions in different packages never collide.</p>
+<h3 id="path-module-path"><a class="anchor" tabindex="-1" href="#path-module-path" aria-hidden="true">#</a><code>&lt;path&gt;</code>: module path</h3>
+<p>The module path defined in <a href="../005-modules/507-paths">Paths</a>, with <code>::</code> replaced by <code>_</code>. Standard library paths drop the <code>rok::</code> root segment (<code>rok::std::vec</code> → <code>std_vec</code>), and user paths drop <code>pkg::</code>.</p>
+<pre><code>rok::std::vec      → std_vec
+pkg::geom   → geom               (pkg:: is already identified by the package hash)
+foo::inner::sub → foo_inner_sub
+</code></pre>
+<h3 id="name-item-name"><a class="anchor" tabindex="-1" href="#name-item-name" aria-hidden="true">#</a><code>&lt;name&gt;</code>: item name</h3>
+<p>An identifier as defined in <a href="../001-lexical/104-identifiers">Identifiers</a>. Each segment of <code>&lt;path&gt;</code> is escaped by the same rule.</p>
+<p>Since <code>_</code> is the separator, characters in an identifier other than <code>[A-Za-z0-9]</code> are escaped as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Source</th><th>Encoding</th></tr></thead>
+<tbody>
+<tr><td><code>[A-Za-z0-9]</code></td><td>unchanged</td></tr>
+<tr><td><code>_</code></td><td><code>_0</code></td></tr>
+<tr><td>Any other character (including Unicode)</td><td><code>_1&lt;lowercase hex code point&gt;_</code></td></tr>
+</tbody></table></div>
+<p>Identifiers do not begin with a digit, so <code>0</code> / <code>1</code> never follows a separator <code>_</code>. Escapes and separators are therefore always distinguishable.</p>
+<pre><code>mod a { fn b }   → _Y&lt;pkg&gt;_a_b_
+fn a__b          → _Y&lt;pkg&gt;__a_0_0b_
+fn α             → _Y&lt;pkg&gt;___13b1__
+</code></pre>
+<h3 id="method-names"><a class="anchor" tabindex="-1" href="#method-names" aria-hidden="true">#</a>Method names</h3>
+<p>A method is mangled with <code>&lt;type&gt;.&lt;method&gt;</code> as its name and the module where the type is defined as its path. If several traits give the same type a method of the same name, <code>__by_&lt;trait&gt;</code> is appended. Methods of dependency packages (<a href="902-aot-pipeline#923-dependency-resolution">9.2.3</a>) are also mangled by this stable path <code>&lt;module&gt;::&lt;type&gt;.&lt;method&gt;[__by_&lt;trait&gt;]</code>, so separately built packages and the program produce the same symbol. <code>.</code> and <code>_</code> are escaped per the table above.</p>
+<h3 id="nested-functions"><a class="anchor" tabindex="-1" href="#nested-functions" aria-hidden="true">#</a>Nested functions</h3>
+<p>A nested function (<a href="../004-functions/410-nested-functions">4.10</a>) is mangled in the module of its enclosing item with <code>&lt;outer&gt;/&lt;name&gt;</code> as its name, where <code>&lt;outer&gt;</code> is the enclosing function's name (<code>&lt;type&gt;.&lt;method&gt;</code> for a method, <code>&lt;trait&gt;.&lt;method&gt;</code> for a trait default body, recursively <code>&lt;outer&gt;/&lt;name&gt;</code> for a nested one). Two nested functions with the same <code>&lt;outer&gt;/&lt;name&gt;</code> in one source file get <code>/2</code>, <code>/3</code>, ... in source order. <code>/</code> occurs in no other item name, so the symbol is distinct from a module path and from a method. <code>/</code> is escaped per the table (<code>_12f_</code>).</p>
+<pre><code>mod a { fn outer() { fn helper() } }   → _Y&lt;pkg&gt;_a_outer_12f_helper_
+</code></pre>
+<h3 id="typehash_16-type-tuple-hash"><a class="anchor" tabindex="-1" href="#typehash_16-type-tuple-hash" aria-hidden="true">#</a><code>&lt;typehash_16&gt;</code>: type tuple hash</h3>
+<p>The concrete type tuple of the <a href="../002-types/210-generics">generics</a> is hashed with SHA-256 and the first 16 characters are used.</p>
+<pre><code>fn id&lt;T&gt;(x: T) -&gt; T
+
+call id(42i32)   → typehash = SHA-256(&quot;(i32)&quot;)[0..16]
+call id(3.14f64) → typehash = SHA-256(&quot;(f64)&quot;)[0..16]
+</code></pre>
+<h3 id="typehash-of-a-concrete-fn"><a class="anchor" tabindex="-1" href="#typehash-of-a-concrete-fn" aria-hidden="true">#</a>typehash of a concrete <code>fn</code></h3>
+<p>For a function that takes no generic arguments, the typehash is left empty or omitted entirely.</p>
+<pre><code>_Y3f8a1c2b_geom_compute_main           (no typehash)
+or
+_Y3f8a1c2b_geom_compute_main_           (empty typehash)
+</code></pre>
+<p>The exact notation is chosen by <code>rokc</code>. This specification only requires that the absence of generic arguments be unambiguously identifiable in the typehash.</p>
+<h2 id="953-comparison-rust-_zn"><a class="anchor" tabindex="-1" href="#953-comparison-rust-_zn" aria-hidden="true">#</a>9.5.3. Comparison: Rust <code>_ZN</code></h2>
+<p>Rust's Itanium-style mangling looks like this.</p>
+<pre><code>_ZN3std3vec10push_inner17h2d4c3e9d8f1a2b3cE
+</code></pre>
+<ul>
+<li>Every component carries a length prefix (<code>3std3vec</code>).
+</li>
+<li>An <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> identifier hash is included (17h...).
+</li>
+<li>It ends with <code>E</code>.
+</li>
+</ul>
+<p>It has the advantage of Itanium compatibility, but is hard to read and length prefixes are inefficient to encode.</p>
+<p>By contrast, rok's <code>N...</code> is easy to read and has no length prefixes (components are separated by <code>_</code>). Demangling stays simple too.</p>
+<h2 id="954-demangle-tool"><a class="anchor" tabindex="-1" href="#954-demangle-tool" aria-hidden="true">#</a>9.5.4. demangle tool</h2>
+<p>To decode a symbol into a human-readable form:</p>
+<pre><code>rokc demangle &lt;symbol&gt;
+</code></pre>
+<p>The output looks like this:</p>
+<pre><code>$ rokc demangle _Y3f8a1c2b_std_vec_push_a7c91d8e44b2f190
+package:  3f8a1c2b
+path:     rok::std::vec
+name:     push
+generics: a7c91d8e44b2f190 (type tuple hash)
+</code></pre>
+<h2 id="955-reserved-prefixes"><a class="anchor" tabindex="-1" href="#955-reserved-prefixes" aria-hidden="true">#</a>9.5.5. Reserved prefixes</h2>
+<p>The prefixes in use and reserved are:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Prefix</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>_Y...</code></td><td>Ordinary rok symbol</td></tr>
+<tr><td><code>rok_*</code></td><td><code>extern</code> &quot;C&quot; runtime functions (<a href="../008-abi/805-extern-symbols">Extern &quot;C&quot; symbols</a>)</td></tr>
+<tr><td><code>_YK...</code></td><td>(reserved) keyword handlers</td></tr>
+<tr><td><code>_YL...</code></td><td>(reserved) literal handlers</td></tr>
+<tr><td><code>_YI...</code></td><td>(reserved) infix / prefix / postfix magic</td></tr>
+<tr><td><code>_YM...</code></td><td>(reserved) generated code of meta blocks (impl_derive etc.)</td></tr>
+</tbody></table></div>
+<p><code>_YK</code> / <code>_YL</code> / <code>_YI</code> / <code>_YM</code> only reserve the namespace; all ordinary symbols are emitted with the <code>_Y</code> prefix.</p>
+<h2 id="956-symbol-length"><a class="anchor" tabindex="-1" href="#956-symbol-length" aria-hidden="true">#</a>9.5.6. Symbol length</h2>
+<p>Most rok symbols have the following length distribution.</p>
+<pre><code>_Y + 8 + _ + path (tens) + _ + name (a few to tens) + _ + 16
+≈ 30 ~ 80 characters
+</code></pre>
+<p>A very long path combined with deep <a href="../000-meta/007-glossary#generic">generics</a> may exceed 100 characters. Debuggers and tools handle such lengths without trouble (2KB or less is generally recommended).</p>
+<h2 id="957-collision-avoidance-typehash-stability"><a class="anchor" tabindex="-1" href="#957-collision-avoidance-typehash-stability" aria-hidden="true">#</a>9.5.7. Collision avoidance: typehash stability</h2>
+<p>The type tuple of the generic arguments is serialized deterministically and then hashed with SHA-256.</p>
+<pre><code>type tuple → canonical serialization → SHA-256 → first 16 characters
+</code></pre>
+<p>The same types yield the same hash however many times the build is redone. The same specialization in a different build also gets the same symbol name. Names rokc gives to closures and other generated functions derive from the item they are written in (for an instance, also its type arguments), so they too are the same in every build.</p>
+<p>This stability is what makes separate builds, incremental builds, and symbol matching between dependency packages possible.</p>
+<h3 id="canonical-serialization-rules"><a class="anchor" tabindex="-1" href="#canonical-serialization-rules" aria-hidden="true">#</a>Canonical serialization rules</h3>
+<p>Serialization of a type tuple is deterministic.</p>
+<ul>
+<li>Primitive types are written as short identifiers (<code>i32</code> / <code>f64</code> etc.).
+</li>
+<li>User types take the form <code>{pkg_hash}**{path}**{name}</code> plus their generic arguments.
+</li>
+<li>Sum types have their members order-normalized and then joined (following the set semantics of <a href="../002-types/206-sum-types">Sum types (<code>A | B</code>)</a>).
+</li>
+<li>A <code>struct</code> consists of its field types (field names are irrelevant).
+</li>
+</ul>
+<p>The exact normalization algorithm is chosen by <code>rokc</code>. This specification only requires that it be deterministic.</p>
+<h2 id="958-extern-c-functions-no-mangling"><a class="anchor" tabindex="-1" href="#958-extern-c-functions-no-mangling" aria-hidden="true">#</a>9.5.8. <code>extern</code> &quot;C&quot; functions: no mangling</h2>
+<p>External functions declared in an <a href="../005-modules/509-extern-block"><code>extern</code> block</a> use the standard naming convention of that ABI unchanged. rok mangling is not applied.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;;     <span class="c">// symbol: "malloc" (as is)</span>
+}
+</code></pre>
+<p>In the other direction, <code>#[export_name(&quot;name&quot;)]</code> specifies the name directly when exposing a rok function externally (see [<code>extern</code> block (<a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> declarations)](../005-modules/509-extern-block.md)). Such items are roots for unreachable-function elimination and are always emitted (<a href="902-aot-pipeline#928-specialize-monomorphization">9.2.8</a>).</p>
+<pre><code class="language-rok"><span class="a">#[export_name("rok_compute")]</span>
+<span class="k">pub</span> <span class="k">fn</span> compute(x: <span class="t">i32</span>, y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x + y }
+<span class="c">// symbol: "rok_compute" (not mangled)</span>
+</code></pre>
+<p>These two mechanisms provide integration between rok and C.</p>
+<h2 id="959-symbol-of-the-main-function"><a class="anchor" tabindex="-1" href="#959-symbol-of-the-main-function" aria-hidden="true">#</a>9.5.9. Symbol of the main function</h2>
+<p>The entry-point function of <a href="../000-meta/003-source-units">Source units</a> uses the platform's ordinary main symbol unchanged.</p>
+<pre><code>main                                (Linux / macOS)
+mainCRTStartup                      (Windows console)
+WinMainCRTStartup + WinMain         (Windows GUI, -C subsystem=windows)
+_start                              (no-OS)
+__main_void                         (wasm32-wasi*; called by wasi-libc's _start)
+_initialize, then main              (wasm32-unknown-unknown; reactor exports called by the host)
+</code></pre>
+<p>On <code>wasm32-unknown-unknown</code> the module is a reactor: the host calls <code>_initialize</code>, then the export <code>main</code>, and the runtime stays up afterwards (no shutdown). <code>#[export_name(&quot;x&quot;)]</code> functions are wasm exports named <code>x</code>. On every wasm32 target the runtime starts on the first of <code>__main_void</code>, <code>main</code> or an exported call.</p>
+<p>On Windows, rok's own startup object provides <code>mainCRTStartup</code> (console) or <code>WinMainCRTStartup</code> and <code>WinMain</code> (GUI), which call the rokc-generated <code>main</code> wrapper.</p>
+<p>The platform entry point calls the user-defined main function inside a wrapper generated by rokc. The wrapper calls <code>rok_runtime_init</code> and the type registration function <code>rok.register_types</code> (<a href="../008-abi/802-scan-table#8213-registration-time">8.2.13</a>) in order, then calls the entry function, determines the exit code by the rules of <a href="../004-functions/416-entry-point#4164-exit-codes-and-unhandled-exceptions">4.16.4</a>, and returns via <code>rok_runtime_shutdown</code>.</p>
+<p>When <code>main.rok</code> consists of top-level statements (<a href="../004-functions/416-entry-point#4162-meaning-of-top-level-statements-implicit-main">4.16.2</a>), the implicit <code>main</code> synthesized by the compiler is the entry function. The implicit <code>main</code> is mangled by the same rules as an ordinary function but cannot be referenced by name from user code; only the wrapper calls it.</p>
+<h2 id="9510-debug-information"><a class="anchor" tabindex="-1" href="#9510-debug-information" aria-hidden="true">#</a>9.5.10. Debug information</h2>
+<p>Each mangled symbol carries its original name in the DWARF and PDB debug information.</p>
+<pre><code>debugger output.
+  fn distance&lt;f64&gt; at geom.rok:42
+    (mangled: _Y3f8a1c2b_geom_distance_a7c91d8e44b2f190)
+</code></pre>
+<p>This lets tools such as gdb, lldb and VS Code display rok functions by their original names. A coroutine's resume function is named <code>&lt;creator&gt;::{coroutine#k}</code>, where <code>k</code> counts the closures and coroutines of that creator together.</p>
+<h2 id="9511-stability"><a class="anchor" tabindex="-1" href="#9511-stability" aria-hidden="true">#</a>9.5.11. Stability</h2>
+<p>The symbol mangling scheme is also part of the ABI. Changes must therefore follow the stability policy in the <a href="../008-abi/">Overview</a>.</p>
+<ul>
+<li>Compatibility is maintained within the same major version.
+</li>
+<li>Compatibility breaks across major versions, and the ABI hash changes as well.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/905-symbol-mangling.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="904-rokhir-bytecode"><small>Previous</small>9.4. ROKHIR format</a><a class="next" href="906-jit-engine"><small>Next</small>9.6. JIT engine</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

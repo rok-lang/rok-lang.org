@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.10. Lowering: 코루틴과 제네릭 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 절에서는 제너레이터, 비동기, 스트림 에 해당하는 코루틴 lowering 과 제네릭, const 제네릭 의 단형화 lowering 을 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.10. Lowering: 코루틴과 제네릭 - rok docs">
+<meta property="og:description" content="이 절에서는 제너레이터, 비동기, 스트림 에 해당하는 코루틴 lowering 과 제네릭, const 제네릭 의 단형화 lowering 을 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">8. 런타임 ABI / MLIR lowering 개요</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. 객체 헤더 ABI</a></li><li><a href="802-scan-table">8.2. ScanTable 직렬화 포맷</a></li><li><a href="803-tls-slots">8.3. Mutator TLS 슬롯 레이아웃</a></li><li><a href="804-safepoint">8.4. Safepoint 프로토콜</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; 심볼</a></li><li><a href="806-calling-convention">8.6. Calling Convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR 다이얼렉트 사용</a></li><li><a href="808-lowering-types">8.8. Lowering: 데이터 타입과 표현식</a></li><li><a href="809-lowering-control">8.9. Lowering: 제어 흐름과 GC 통합</a></li><li class="cur"><a aria-current="page" href="810-lowering-coroutine-generic">8.10. Lowering: 코루틴과 제네릭</a><ul class="toc"><li><a href="#8101-상태-기계">8.10.1. 상태 기계</a></li><li><a href="#8102-generator-yield-fn">8.10.2. Generator (yield fn)</a></li><li><a href="#8103-async-async-fn">8.10.3. Async (async fn)</a></li><li><a href="#8104-stream-async-yield-fn">8.10.4. Stream (async yield fn)</a></li><li><a href="#8105-frame-할당">8.10.5. frame 할당</a></li><li><a href="#8106-제네릭-단형화">8.10.6. 제네릭 단형화</a></li><li><a href="#8107-const-제네릭-단형화">8.10.7. const 제네릭 단형화</a></li><li><a href="#8108-제네릭-트레잇-디스패치">8.10.8. 제네릭 트레잇 디스패치</a></li><li><a href="#8109-합-타입의-분기-디스패치">8.10.9. 합 타입의 분기 디스패치</a></li><li><a href="#81010-트레잇-메서드의-trait-bound-dispatch">8.10.10. 트레잇 메서드의 trait-bound dispatch</a></li><li><a href="#81011-정리">8.10.11. 정리</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="810-lowering-코루틴과-제네릭 810-lowering-coroutines-and-generics 8101-상태-기계 8101-state-machines 8102-generator-yield-fn 8102-generator-yield-fn 8103-async-async-fn 8103-async-async-fn 8104-stream-async-yield-fn 8104-stream-async-yield-fn 8105-frame-할당 8105-frame-allocation 8106-제네릭-단형화 8106-generic-monomorphization 단형화의-시점 when-monomorphization-happens 심볼-명명 symbol-naming 8107-const-제네릭-단형화 8107-const-generic-monomorphization 8108-제네릭-트레잇-디스패치 8108-generic-trait-dispatch 8109-합-타입의-분기-디스패치 8109-branch-dispatch-on-sum-types 81010-트레잇-메서드의-trait-bound-dispatch 81010-trait-bound-dispatch-of-trait-methods 81011-정리 81011-summary"><a href="../../../../spec/refs-lang/008-abi/810-lowering-coroutine-generic" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="810-lowering-코루틴과-제네릭"><a class="anchor" tabindex="-1" href="#810-lowering-코루틴과-제네릭" aria-hidden="true">#</a>8.10. Lowering: 코루틴과 제네릭</h1>
+<p>이 절에서는 <a href="../004-functions/411-generators">제너레이터</a>, <a href="../004-functions/412-async">비동기</a>, <a href="../004-functions/413-stream">스트림</a> 에 해당하는 코루틴 lowering 과 <a href="../002-types/210-generics">제네릭</a>, <a href="../002-types/211-const-generics">const 제네릭</a> 의 단형화 lowering 을 정의합니다.</p>
+<h2 id="8101-상태-기계"><a class="anchor" tabindex="-1" href="#8101-상태-기계" aria-hidden="true">#</a>8.10.1. 상태 기계</h2>
+<p><a href="../007-runtime/708-coroutine">코루틴</a> 은 컴파일러가 만든 상태 기계로 lower 합니다. <code>llvm.coro.*</code> 는 쓰지 않습니다.</p>
+<ol>
+<li>HIR: <code>yield</code> / <code>async</code> / <code>async yield</code> 블록을 클로저처럼 body 함수로 들어 올립니다. 블록 자리에는 frame 을 만드는 식이 남습니다.
+</li>
+<li>MIR: body 함수를 resume 함수로 바꿉니다. suspend 지점마다 state 번호를 매기고, 그 지점을 넘어 살아 있는 지역을 frame 필드로 옮깁니다.
+</li>
+<li>frame 타입은 <code>(i32 state, locals..)</code> 이며 ScanTable 을 가집니다. frame 은 일반 할당 경로로 만듭니다 (<a href="809-lowering-control#899-gc-alloc-fast--slow-path">8.9.9</a>).
+</li>
+<li>resume 함수의 입구는 <code>state</code> 로 분기 (<code>switch</code>) 합니다.
+</li>
+</ol>
+<h2 id="8102-generator-yield-fn"><a class="anchor" tabindex="-1" href="#8102-generator-yield-fn" aria-hidden="true">#</a>8.10.2. Generator (<code>yield fn</code>)</h2>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> count_up_to(n: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">while</span> i &lt; n {
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+</code></pre>
+<p>개념적인 resume 함수 (<code>next</code>) 는 다음과 같습니다.</p>
+<pre><code>next(frame) -&gt; i32 | none:
+    switch frame.state:
+      0: frame.i = 0; goto loop
+      1: frame.i = frame.i + 1; goto loop
+      2: return none
+    loop:
+      if frame.i &lt; frame.n:
+          frame.state = 1
+          return frame.i          // yield i
+      frame.state = 2
+      return none
+</code></pre>
+<p><code>count_up_to(n)</code> 은 frame 을 할당하고 <code>state = 0</code> 으로 둔 래퍼 (<code>GenIter&lt;i32&gt;</code>) 를 돌려줍니다.</p>
+<h2 id="8103-async-async-fn"><a class="anchor" tabindex="-1" href="#8103-async-async-fn" aria-hidden="true">#</a>8.10.3. Async (<code>async fn</code>)</h2>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch() -&gt; <span class="t">Data</span> {
+    <span class="k">let</span> r = <span class="k">await</span> op1();
+    process(r)
+}
+</code></pre>
+<pre><code>poll(frame, cx) -&gt; Poll&lt;Data&gt;:
+    switch frame.state:
+      0: frame.fut = op1(); frame.state = 1; goto await1
+      1: goto await1
+    await1:
+      match frame.fut.poll(cx):
+        Pending  =&gt; return Pending
+        Ready(r) =&gt; frame.state = 2; return Ready(process(r))
+</code></pre>
+<p><code>await</code> 는 대상 future 를 frame 에 두고 poll 합니다. Pending 이면 state 를 남긴 채 Pending 을 돌려주고, 다음 poll 이 같은 지점에서 이어 갑니다.</p>
+<h2 id="8104-stream-async-yield-fn"><a class="anchor" tabindex="-1" href="#8104-stream-async-yield-fn" aria-hidden="true">#</a>8.10.4. Stream (<code>async yield fn</code>)</h2>
+<p><a href="../004-functions/413-stream">스트림</a> 은 둘을 합칩니다. 한 frame 의 state 번호가 <code>yield</code> 지점과 <code>await</code> 지점을 함께 셉니다. <code>poll_next</code> 는 <code>yield</code> 에서 <code>Ready(값)</code>, <code>await</code> 의 Pending 에서 <code>Pending</code>, 끝에서 <code>Ready(none)</code> 을 돌려줍니다.</p>
+<h2 id="8105-frame-할당"><a class="anchor" tabindex="-1" href="#8105-frame-할당" aria-hidden="true">#</a>8.10.5. frame 할당</h2>
+<p>frame 은 코루틴을 부를 때마다 할당합니다. 호출자가 끝까지 진행하는 코루틴을 위한 전용 생략은 없으며, 밖으로 나가지 않는 frame 은 다른 할당처럼 없어질 수 있습니다 (<a href="../007-runtime/702-allocation#7212-할당-생략">7.2.12</a>).</p>
+<h2 id="8106-제네릭-단형화"><a class="anchor" tabindex="-1" href="#8106-제네릭-단형화" aria-hidden="true">#</a>8.10.6. 제네릭 단형화</h2>
+<p><a href="../002-types/210-generics">제네릭</a> 의 단형화는 호출 지점의 타입 튜플별로 별개의 인스턴스를 생성하는 방식으로 이루어집니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> id&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x }
+
+<span class="k">let</span> a = id(<span class="n">42i32</span>);     <span class="c">// id&lt;i32&gt;</span>
+<span class="k">let</span> b = id(<span class="n">3.14f64</span>);   <span class="c">// id&lt;f64&gt;</span>
+</code></pre>
+<p>단형화를 거친 뒤의 MLIR 은 다음과 같은 모습이 됩니다.</p>
+<pre><code>func.func @id_i32(%x: i32) -&gt; i32 {
+  func.return %x : i32
+}
+
+func.func @id_f64(%x: f64) -&gt; f64 {
+  func.return %x : f64
+}
+
+func.func @main() {
+  %a = func.call @id_i32(%42) : (i32) -&gt; i32
+  %b = func.call @id_f64(%3.14) : (f64) -&gt; f64
+}
+</code></pre>
+<p>이렇게 각 구체 타입 튜플마다 별개의 함수가 만들어집니다.</p>
+<h3 id="단형화의-시점"><a class="anchor" tabindex="-1" href="#단형화의-시점" aria-hidden="true">#</a>단형화의 시점</h3>
+<p>단형화는 다음과 같은 흐름으로 진행됩니다.</p>
+<pre><code>rok-hir → specialize(hir, type_tuple) → rok-mir → MLIR
+</code></pre>
+<p><a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> 모드에서는 모든 호출 지점을 수집한 뒤 일괄적으로 <a href="../000-meta/007-glossary#specialize">specialize</a> 를 수행합니다. <a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> 모드에서는 첫 호출 시점에 specialize 를 수행하고 결과를 캐시합니다 (<a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 참고). 두 모드는 동일한 specialize 메커니즘을 공유합니다.</p>
+<h3 id="심볼-명명"><a class="anchor" tabindex="-1" href="#심볼-명명" aria-hidden="true">#</a>심볼 명명</h3>
+<p><a href="../000-meta/002-pipeline">컴파일 파이프라인</a> 에서 사용하는 심볼 맹글링 규칙은 다음과 같습니다.</p>
+<pre><code>_Y&lt;pkg_hash_8&gt;_&lt;path&gt;_&lt;name&gt;_&lt;typehash_16&gt;
+</code></pre>
+<p>예를 들어 <code>id&lt;i32&gt;</code> 는 <code>_Y3f8a1c2b_my_pkg_id_a7c91d8e44b2f190</code> (예시) 형태가 되며, 이 심볼이 곧 <code>func.func @...</code> 의 이름이 됩니다.</p>
+<h2 id="8107-const-제네릭-단형화"><a class="anchor" tabindex="-1" href="#8107-const-제네릭-단형화" aria-hidden="true">#</a>8.10.7. <code>const</code> 제네릭 단형화</h2>
+<p><a href="../002-types/211-const-generics">const 제네릭</a> 의 예를 보겠습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> dot&lt;<span class="t">T</span>: <span class="t">Num</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(a: [<span class="t">T</span>; <span class="t">N</span>], b: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> { ... }
+
+<span class="k">let</span> r = dot([<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>], [<span class="n">4.0</span>, <span class="n">5.0</span>, <span class="n">6.0</span>]);  <span class="c">// T=f64, N=3</span>
+</code></pre>
+<p>이는 다음과 같은 MLIR 로 단형화됩니다.</p>
+<pre><code>func.func @dot_f64_3(%a: !llvm.array&lt;3 x f64&gt;, %b: !llvm.array&lt;3 x f64&gt;) -&gt; f64 {
+  ; ... unroll 또는 일반 loop
+}
+</code></pre>
+<p><code>const</code> N=3 이 컴파일 타임 상수이므로, LLVM 의 unroll 이나 inlining 이 자유롭게 적용될 수 있습니다.</p>
+<h2 id="8108-제네릭-트레잇-디스패치"><a class="anchor" tabindex="-1" href="#8108-제네릭-트레잇-디스패치" aria-hidden="true">#</a>8.10.8. 제네릭 트레잇 디스패치</h2>
+<pre><code class="language-rok"><span class="k">fn</span> process&lt;<span class="t">T</span>: <span class="t">Describe</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">str</span> {
+    x.describe()
+}
+</code></pre>
+<p>호출 시점에 구체 타입 T 가 결정되므로, <code>T = Point</code> 인 경우라면 다음과 같이 lowering 됩니다.</p>
+<pre><code>func.func @process_Point(%x: !Point_ptr) -&gt; !str_ptr {
+  ; Point 의 Describe::describe 를 직접 호출
+  %r = func.call @Point_Describe_describe(%x) : (!Point_ptr) -&gt; !str_ptr
+  func.return %r
+}
+</code></pre>
+<p>여기에는 vtable 을 통한 간접 호출이 전혀 없으며, 모두 직접 함수 호출로 처리됩니다. 이 모델은 <a href="../002-types/212-trait-as-type-banned">트레잇-as-타입 금지</a> 결정과 결합되어 vtable 비용을 0으로 보장합니다.</p>
+<h2 id="8109-합-타입의-분기-디스패치"><a class="anchor" tabindex="-1" href="#8109-합-타입의-분기-디스패치" aria-hidden="true">#</a>8.10.9. 합 타입의 분기 디스패치</h2>
+<p><a href="../002-types/206-sum-types">합 타입</a> 에 대한 매칭은 <code>cf.switch</code> 기반의 decision tree 로 lowering 됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> =&gt; use_int(n),
+    s: <span class="t">str</span> =&gt; use_str(s),
+}
+</code></pre>
+<p>이를 MLIR 로 옮기면 다음과 같은 모습이 됩니다.</p>
+<pre><code>%tag = llvm.extractvalue %v[0] : i32
+
+cf.switch %tag, [
+  default: ^trap,
+  TAG_I32: ^use_int,
+  TAG_STR: ^use_str
+]
+
+^use_int:
+  %n = llvm.extractvalue %v[1] : i64
+  %n_i32 = llvm.trunc %n : i64 to i32
+  func.call @use_int(%n_i32) : ...
+  cf.br ^end
+
+^use_str:
+  %s = llvm.extractvalue %v[1] : i64
+  %s_ptr = llvm.inttoptr %s : i64 to !llvm.ptr
+  func.call @use_str(%s_ptr) : ...
+  cf.br ^end
+
+^end:
+  ...
+</code></pre>
+<p>태그 검사와 분기는 모두 정적인 코드로 처리됩니다.</p>
+<h2 id="81010-트레잇-메서드의-trait-bound-dispatch"><a class="anchor" tabindex="-1" href="#81010-트레잇-메서드의-trait-bound-dispatch" aria-hidden="true">#</a>8.10.10. 트레잇 메서드의 trait-bound dispatch</h2>
+<pre><code class="language-rok"><span class="k">fn</span> add_all&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>, <span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span> {
+    <span class="k">let</span> r: <span class="t">T</span> = ...;
+    <span class="k">for</span> x <span class="k">in</span> items {
+        r = r.add(x);
+    }
+    r
+}
+</code></pre>
+<p>단형화 후에는 각 호출 지점의 T 마다 별개의 함수가 만들어집니다. <code>T = i32</code> 인 경우라면 <code>r.add(x)</code> 가 i32 의 <code>Add::add</code> 에 대한 직접 호출로 풀리며, 인라인 또한 가능합니다.</p>
+<h2 id="81011-정리"><a class="anchor" tabindex="-1" href="#81011-정리" aria-hidden="true">#</a>8.10.11. 정리</h2>
+<p>코루틴은 컴파일러가 직접 상태 기계로 lower 하며 (8.10.1), <code>llvm.coro.*</code> 는 쓰지 않습니다. 제네릭 lowering 은 단형화를 통해 각 구체 타입마다 별개의 코드를 생성하며, vtable 은 사용하지 않습니다.</p>
+<p>이 두 메커니즘이 본 <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 블록에서 가장 복잡한 lowering 에 해당하며, 나머지 부분인 <a href="808-lowering-types">Lowering: 데이터 타입과 표현식</a> 이나 <a href="809-lowering-control">Lowering: 제어 흐름과 GC 통합</a> 은 표준 다이얼렉트로의 직접 매핑에 가깝습니다.</p>
+<p>이로써 8장 (런타임 ABI / MLIR lowering / codegen) 을 마무리합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/008-abi/810-lowering-coroutine-generic.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="809-lowering-control"><small>Previous</small>8.9. Lowering: 제어 흐름과 GC 통합</a><a class="next" href="../009-tools/"><small>Next</small>9. 실행 / 툴 개요</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.15. 분해 대입 (destructuring) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="let 의 좌변에 패턴 의 반증 불가능 패턴을 적으면, 한 식의 결과를 여러 변수에 풀어 받을 수 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/315-destructuring.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.15. 분해 대입 (destructuring) - rok docs">
+<meta property="og:description" content="let 의 좌변에 패턴 의 반증 불가능 패턴을 적으면, 한 식의 결과를 여러 변수에 풀어 받을 수 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/315-destructuring.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/315-destructuring.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/315-destructuring.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li class="cur"><a aria-current="page" href="315-destructuring">3.15. 분해 대입 (destructuring)</a><ul class="toc"><li><a href="#3151-형태">3.15.1. 형태</a></li><li><a href="#3152-튜플-분해">3.15.2. 튜플 분해</a></li><li><a href="#3153-rest-패턴">3.15.3. rest 패턴</a></li><li><a href="#3154-중첩-분해">3.15.4. 중첩 분해</a></li><li><a href="#3155-구조체-분해">3.15.5. 구조체 분해</a></li><li><a href="#3156-타입-명시">3.15.6. 타입 명시</a></li><li><a href="#3157-반증-불가능-패턴만">3.15.7. 반증 불가능 패턴만</a></li><li><a href="#3158-기본값-없음">3.15.8. 기본값 (없음)</a></li><li><a href="#3159-분해-후의-변수-가시성">3.15.9. 분해 후의 변수 가시성</a></li><li><a href="#31510-매칭-식의-평가-횟수">3.15.10. 매칭 식의 평가 횟수</a></li><li><a href="#31511-다중-대입의-일반화">3.15.11. 다중 대입의 일반화</a></li><li><a href="#31512-let-없이-재할당의-분해-없음">3.15.12. let 없이: 재할당의 분해 (없음)</a></li></ul></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="315-분해-대입-destructuring 315-destructuring-assignment 3151-형태 3151-form 3152-튜플-분해 3152-tuple-destructuring 3153-rest-패턴 3153-rest-patterns 3154-중첩-분해 3154-nested-destructuring 3155-구조체-분해 3155-struct-destructuring 3156-타입-명시 3156-type-annotations 3157-반증-불가능-패턴만 3157-irrefutable-patterns-only 3158-기본값-없음 3158-default-values-none 3159-분해-후의-변수-가시성 3159-visibility-of-variables-after-destructuring 31510-매칭-식의-평가-횟수 31510-number-of-evaluations-of-the-matched-expression 31511-다중-대입의-일반화 31511-generalization-of-multiple-assignment 31512-let-없이-재할당의-분해-없음 31512-without-let-destructuring-reassignment-none"><a href="../../../../spec/refs-lang/003-expressions/315-destructuring" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="315-분해-대입-destructuring"><a class="anchor" tabindex="-1" href="#315-분해-대입-destructuring" aria-hidden="true">#</a>3.15. 분해 대입 (destructuring)</h1>
+<p><code>let</code> 의 좌변에 <a href="311-patterns">패턴</a> 의 반증 불가능 패턴을 적으면, 한 식의 결과를 여러 변수에 풀어 받을 수 있습니다.</p>
+<h2 id="3151-형태"><a class="anchor" tabindex="-1" href="#3151-형태" aria-hidden="true">#</a>3.15.1. 형태</h2>
+<p>분해 대입의 문법은 다음과 같이 정의됩니다.</p>
+<pre><code>destructure_let ::= &quot;let&quot; irrefutable_pattern (&quot;:&quot; type_expr)? &quot;=&quot; expr &quot;;&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> 패턴 = 식;
+</code></pre>
+<p>이 형태는 식의 결과를 패턴에 매칭하여 패턴 안의 바인딩 변수들을 한꺼번에 선언하는 역할을 합니다.</p>
+<h2 id="3152-튜플-분해"><a class="anchor" tabindex="-1" href="#3152-튜플-분해" aria-hidden="true">#</a>3.15.2. 튜플 분해</h2>
+<p>가장 기본적인 형태인 튜플 분해는 아래 예시처럼 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (<span class="n">1</span>, <span class="n">2</span>);                    <span class="c">// a = 1, b = 2</span>
+<span class="k">let</span> (q, r) = divmod(<span class="n">10</span>, <span class="n">3</span>);             <span class="c">// 두 값을 한 번에 받음</span>
+<span class="k">let</span> (q, _) = divmod(<span class="n">10</span>, <span class="n">3</span>);             <span class="c">// 두 번째는 폐기</span>
+</code></pre>
+<p>이때 매칭 대상의 항 수가 정확히 일치해야 하며, 다르면 컴파일 에러가 발생합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>);                 <span class="c">// ERROR: 길이 불일치</span>
+</code></pre>
+<h2 id="3153-rest-패턴"><a class="anchor" tabindex="-1" href="#3153-rest-패턴" aria-hidden="true">#</a>3.15.3. rest 패턴</h2>
+<p>나머지 항들을 한꺼번에 묶어서 받고 싶다면 <code>..</code> 를 사용한 rest 패턴을 활용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (first, ..rest) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>);     <span class="c">// rest = (2, 3, 4)</span>
+<span class="k">let</span> (..init, last) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>);      <span class="c">// init = (1, 2, 3), last = 4</span>
+<span class="k">let</span> (head, ..mid, tail) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>);  <span class="c">// mid = (2, 3, 4)</span>
+<span class="k">let</span> (..) = (<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>);                    <span class="c">// 전부 폐기</span>
+</code></pre>
+<p><code>..</code> 는 한 패턴 안에서 한 번만 등장하며, 나머지를 묶어 한 변수에 바인딩하거나 그대로 폐기하는 데에 쓰입니다.</p>
+<h2 id="3154-중첩-분해"><a class="anchor" tabindex="-1" href="#3154-중첩-분해" aria-hidden="true">#</a>3.15.4. 중첩 분해</h2>
+<p>분해 패턴은 임의의 깊이로 중첩할 수 있어, 복잡한 구조도 한 번에 풀어낼 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> ((a, b), c) = ((<span class="n">1</span>, <span class="n">2</span>), <span class="n">3</span>);          <span class="c">// a = 1, b = 2, c = 3</span>
+<span class="k">let</span> (<span class="t">Point</span> { x, y }, scale) = (origin, <span class="n">2.0f64</span>);
+</code></pre>
+<p>분해되는 모양이 매칭 대상의 모양과 구조적으로 일치하기만 하면 되므로, 표현의 자유도가 높습니다.</p>
+<h2 id="3155-구조체-분해"><a class="anchor" tabindex="-1" href="#3155-구조체-분해" aria-hidden="true">#</a>3.15.5. 구조체 분해</h2>
+<p>구조체 값에 대해서는 <a href="311-patterns">패턴</a> 의 <code>struct</code> 패턴을 그대로 활용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> <span class="t">Point</span> { x, y } = origin;            <span class="c">// x = origin.x, y = origin.y</span>
+<span class="k">let</span> <span class="t">Point</span> { x, .. } = origin;           <span class="c">// 다른 필드 폐기</span>
+<span class="k">let</span> <span class="t">Point</span> { x: px, y: py } = origin;    <span class="c">// 재명명</span>
+</code></pre>
+<p>이를 통해 필드를 한꺼번에 추출하거나, 일부 필드만 받고 나머지는 폐기하거나, 새로운 이름으로 재명명할 수 있습니다.</p>
+<h2 id="3156-타입-명시"><a class="anchor" tabindex="-1" href="#3156-타입-명시" aria-hidden="true">#</a>3.15.6. 타입 명시</h2>
+<p>분해의 각 부분에 타입을 명시할 수도 있고, 전체 패턴에 한꺼번에 명시할 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a: <span class="t">i32</span>, b: <span class="t">str</span>) = (<span class="n">1i32</span>, <span class="s">"hi"</span>);    <span class="c">// 각 자리에 타입 명시</span>
+<span class="k">let</span> (a, b): (<span class="t">i32</span>, <span class="t">str</span>) = (<span class="n">1i32</span>, <span class="s">"hi"</span>);  <span class="c">// 전체 패턴에 타입 명시</span>
+</code></pre>
+<p>명시한 타입은 슬롯 타입이며 런타임 타입 검사가 아닙니다. 매칭 대상의 타입과 일치해야 하며, 다르면 컴파일 에러가 발생합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a: <span class="t">i32</span>, b: <span class="t">str</span>) = (<span class="n">1</span>, <span class="n">2</span>);          <span class="c">// ERROR: 두 번째 타입 불일치</span>
+</code></pre>
+<h2 id="3157-반증-불가능-패턴만"><a class="anchor" tabindex="-1" href="#3157-반증-불가능-패턴만" aria-hidden="true">#</a>3.15.7. 반증 불가능 패턴만</h2>
+<p><code>let 패턴 = 식;</code> 의 패턴은 반증 불가능이어야 합니다. 이는 항상 매칭되는 형태여야 한다는 뜻입니다.</p>
+<p>허용되는 패턴은 다음과 같습니다.</p>
+<ul>
+<li>식별자, 와일드카드.
+</li>
+<li>튜플, 구조체, tuple-struct 의 완전 매칭 (필드나 위치 누락 없이).
+</li>
+<li>위 형태들의 중첩.
+</li>
+</ul>
+<p>반면, 다음과 같은 패턴은 허용되지 않습니다.</p>
+<ul>
+<li>리터럴 패턴 (<code>1</code>, <code>&quot;hello&quot;</code> 등).
+</li>
+<li><code>enum</code> 의 특정 변형만 매칭하는 패턴 (<code>Circle(r)</code>, <code>Click { x, y }</code> 등).
+</li>
+<li>타입 검사 패턴 (<code>v: i32</code>, 합 타입이나 <code>any</code> 슬롯에서).
+</li>
+<li>범위 패턴.
+</li>
+</ul>
+<p>이러한 형태들은 매칭이 실패할 수 있어서 <code>let</code> 으로 받기에 안전하지 않습니다. 이때는 <a href="316-let-else"><code>let-else</code></a>, <a href="312-match-expression"><code>match</code> 표현식</a>, <code>if let</code> (<a href="310-if-expression"><code>if</code> 표현식</a>) 을 사용합니다.</p>
+<h2 id="3158-기본값-없음"><a class="anchor" tabindex="-1" href="#3158-기본값-없음" aria-hidden="true">#</a>3.15.8. 기본값 (없음)</h2>
+<p>분해 자리의 기본값은 도입하지 않습니다.</p>
+<pre><code>let (a, b = 0i32) = ...;        // 채택 안 함
+</code></pre>
+<p>함수 매개변수의 기본값으로 충분하다고 판단했기 때문입니다. 분해 자리에서 없을 수 있는 값을 처리해야 한다면, <code>match</code> 나 <code>let-else</code> 를 활용하면 됩니다.</p>
+<h2 id="3159-분해-후의-변수-가시성"><a class="anchor" tabindex="-1" href="#3159-분해-후의-변수-가시성" aria-hidden="true">#</a>3.15.9. 분해 후의 변수 가시성</h2>
+<p>분해로 선언된 모든 변수는 <code>let</code> 이 등장한 스코프에 도입됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (<span class="n">1</span>, <span class="n">2</span>);
+<span class="c">// 여기서 a, b 모두 가시</span>
+</code></pre>
+<p>같은 <code>let</code> 으로 선언된 변수들은 동시에 가시가 되며, 어느 한쪽이 먼저 가시 되는 일은 없습니다.</p>
+<h2 id="31510-매칭-식의-평가-횟수"><a class="anchor" tabindex="-1" href="#31510-매칭-식의-평가-횟수" aria-hidden="true">#</a>3.15.10. 매칭 식의 평가 횟수</h2>
+<p>분해의 우변 식은 한 번만 평가되며, 평가 결과가 패턴에 매칭됩니다. 따라서 부작용이 있는 식이 한 번만 호출됨이 보장됩니다.</p>
+<h2 id="31511-다중-대입의-일반화"><a class="anchor" tabindex="-1" href="#31511-다중-대입의-일반화" aria-hidden="true">#</a>3.15.11. 다중 대입의 일반화</h2>
+<p>분해 대입은 다중 대입의 일반화로 볼 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = (b, a);                    <span class="c">// swap, 한 식으로</span>
+<span class="k">let</span> (q, r) = divmod(num, den);          <span class="c">// 두 결과</span>
+<span class="k">let</span> (head, ..tail) = items;             <span class="c">// 분리</span>
+</code></pre>
+<p>이러한 형태 덕분에 C 나 Python 식의 <code>a, b = b, a</code> 패턴도 자연스럽게 표현할 수 있습니다.</p>
+<h2 id="31512-let-없이-재할당의-분해-없음"><a class="anchor" tabindex="-1" href="#31512-let-없이-재할당의-분해-없음" aria-hidden="true">#</a>3.15.12. <code>let</code> 없이: 재할당의 분해 (없음)</h2>
+<p>기존 변수에 대한 분해 재할당은 도입하지 않습니다.</p>
+<pre><code>(a, b) = (1, 2);                // 채택 안 함
+</code></pre>
+<p><code>let</code> 이 항상 필요하며, 이는 새 선언인지 재할당인지의 구분을 명확히 하기 위함입니다 (<a href="304-assignment">대입</a> 의 결정과 일관됩니다).</p>
+<p>기존 변수에 분해 결과를 대입하려면 임시 변수를 거치거나 명시적으로 분리하여 처리하면 됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/315-destructuring.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="314-error-control-flow"><small>Previous</small>3.14. 에러 제어 흐름</a><a class="next" href="316-let-else"><small>Next</small>3.16. let-else</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

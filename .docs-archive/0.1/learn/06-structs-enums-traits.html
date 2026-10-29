@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6. Structs, Enums, and Traits - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Now it's time to define your own types. This chapter covers struct, which groups data; enum, which lists named cases; and trait, which defines behavior shared b...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/06-structs-enums-traits.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6. Structs, Enums, and Traits - rok docs">
+<meta property="og:description" content="Now it's time to define your own types. This chapter covers struct, which groups data; enum, which lists named cases; and trait, which defines behavior shared b...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/06-structs-enums-traits.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li class="cur"><a aria-current="page" href="06-structs-enums-traits">6. Structs, Enums, and Traits</a><ul class="toc"><li><a href="#structs-and-field-defaults">Structs and field defaults</a></li><li><a href="#methods-impl-and-self">Methods: impl and self</a></li><li><a href="#structs-are-values">Structs are values</a></li><li><a href="#enum-named-cases">enum: named cases</a></li><li><a href="#traits-and-default-methods">Traits and default methods</a></li><li><a href="#automatic-implementations-with-derive">Automatic implementations with derive</a></li><li><a href="#traits-are-not-types">Traits are not types</a></li><li><a href="#operator-traits">Operator traits</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="6-structs-enums-and-traits"><a class="anchor" tabindex="-1" href="#6-structs-enums-and-traits" aria-hidden="true">#</a>6. Structs, Enums, and Traits</h1>
+<p>Now it's time to define your own types. This chapter covers <code>struct</code>, which groups data; <code>enum</code>, which lists named cases; and <code>trait</code>, which defines behavior shared by several types.</p>
+<h2 id="structs-and-field-defaults"><a class="anchor" tabindex="-1" href="#structs-and-field-defaults" aria-hidden="true">#</a>Structs and field defaults</h2>
+<p>A <code>struct</code> is a group of named fields. Fields are written <code>name: Type;</code> and can be given a default with <code>= value</code>. Fields with defaults may be omitted at construction.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Config</span> {
+    name: <span class="t">str</span>;
+    retry: <span class="t">i32</span> = <span class="n">3</span>;
+    verbose: <span class="t">bool</span> = <span class="k">false</span>;
+}
+
+<span class="k">let</span> a = <span class="t">Config</span> { name: <span class="s">"api"</span> };
+<span class="k">let</span> b = <span class="t">Config</span> { name: <span class="s">"db"</span>, retry: <span class="n">5</span> };
+println(<span class="s">f"{</span>a.name<span class="s">} retry={</span>a.retry<span class="s">} verbose={</span>a.verbose<span class="s">}"</span>);
+println(<span class="s">f"{</span>b.name<span class="s">} retry={</span>b.retry<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">api retry=3 verbose=false
+db retry=5
+</code></pre>
+<p>Defaults may only be literals or <code>const</code> expressions. Initial values that must be computed at runtime go in a constructor function such as <code>fn new() -&gt; Config</code>. There are also tuple structs, whose fields are identified by position (<code>struct Rgb(u8, u8, u8);</code>), and field-less unit structs (<code>struct Marker;</code>). Their constructors are values, so a function, <code>const</code> or <code>static</code> of the same name in the module is a duplicate definition.</p>
+<h2 id="methods-impl-and-self"><a class="anchor" tabindex="-1" href="#methods-impl-and-self" aria-hidden="true">#</a>Methods: <code>impl</code> and <code>self</code></h2>
+<p>Functions inside an <code>impl Type { ... }</code> block become methods of that type. If the first parameter is <code>self</code>, it is an instance method (<code>p.dist2(q)</code>); otherwise it is a static method (<code>Point::origin()</code>). Methods that modify fields take <code>ref self</code>.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { <span class="t">Point</span> { x: <span class="n">0.0</span>, y: <span class="n">0.0</span> } }
+
+    <span class="k">fn</span> dist2(<span class="k">self</span>, o: <span class="t">Point</span>) -&gt; <span class="t">f64</span> {
+        <span class="k">let</span> dx = <span class="k">self</span>.x - o.x;
+        <span class="k">let</span> dy = <span class="k">self</span>.y - o.y;
+        dx * dx + dy * dy
+    }
+
+    <span class="k">fn</span> shift(<span class="k">ref</span> <span class="k">self</span>, dx: <span class="t">f64</span>) { <span class="k">self</span>.x += dx; }
+}
+
+<span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">3.0</span>, y: <span class="n">4.0</span> };
+println(<span class="s">f"{</span>p.dist2(<span class="t">Point</span>::origin())<span class="s">}"</span>);
+p.shift(<span class="n">1.5</span>);
+println(<span class="s">f"{</span>p.x<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">25
+4.5
+</code></pre>
+<p>Changes made by a <code>ref self</code> method are reflected in the caller's variable. You don't need to write <code>ref</code> at the call site. Why <code>ref</code> is needed at all is the subject of the next section.</p>
+<h2 id="structs-are-values"><a class="anchor" tabindex="-1" href="#structs-are-values" aria-hidden="true">#</a>Structs are values</h2>
+<p>A struct is a <strong>value</strong>, like an <code>i32</code>. Assigning it, passing it to a function, and reading it out of a list (<code>ps[i]</code>) or dict all make a copy, and writing to the copy leaves the original alone.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">i32</span>; y: <span class="t">i32</span>; }
+
+<span class="k">let</span> a = <span class="t">Point</span> { x: <span class="n">1</span>, y: <span class="n">2</span> };
+<span class="k">let</span> b = a;              <span class="c">// a copy</span>
+b.x = <span class="n">100</span>;
+println(<span class="s">f"{</span>a.x<span class="s">} {</span>b.x<span class="s">}"</span>);
+
+<span class="k">let</span> ps = [<span class="t">Point</span> { x: <span class="n">1</span>, y: <span class="n">0</span> }, <span class="t">Point</span> { x: <span class="n">2</span>, y: <span class="n">0</span> }];
+<span class="k">let</span> first = ps[<span class="n">0</span>];      <span class="c">// also a copy</span>
+first.x = <span class="n">99</span>;
+println(<span class="s">f"{</span>ps[<span class="n">0</span>].x<span class="s">}"</span>);
+ps[<span class="n">0</span>].x = <span class="n">99</span>;           <span class="c">// writes into the list</span>
+println(<span class="s">f"{</span>ps[<span class="n">0</span>].x<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">1 100
+1
+99
+</code></pre>
+<p>A <code>List</code>, <code>Dict</code>, or <code>Set</code> is the opposite: the variable is a handle to one shared object, so every copy of the handle sees the change.</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th><code>struct</code>, <code>enum</code>, tuple, number</th><th><code>List</code>, <code>Dict</code>, <code>Set</code>, <code>Mutex</code>, ...</th></tr></thead>
+<tbody>
+<tr><td><code>let b = a;</code></td><td>independent copy</td><td>the same object</td></tr>
+<tr><td>writing a field / element</td><td>changes only the copy</td><td>seen through every handle</td></tr>
+<tr><td>making a separate copy</td><td>the assignment itself</td><td><code>.clone()</code></td></tr>
+</tbody></table></div>
+<p>The copy is shallow. A struct field that holds a <code>List</code> copies the handle, so two copies of the struct share that list. <code>#[derive(Clone)]</code> (see below) gives a <code>clone()</code> that copies the list too.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Clone)]</span>
+<span class="k">struct</span> <span class="t">Team</span> { name: <span class="t">str</span>; members: <span class="t">List</span>&lt;<span class="t">str</span>&gt;; }
+
+<span class="k">let</span> a = <span class="t">Team</span> { name: <span class="s">"core"</span>, members: [<span class="s">"ada"</span>] };
+<span class="k">let</span> b = a;
+b.name = <span class="s">"docs"</span>;            <span class="c">// only b</span>
+b.members.push(<span class="s">"grace"</span>);    <span class="c">// the list both share</span>
+println(<span class="s">f"{</span>a.name<span class="s">} {</span>a.members<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> c = a.clone();
+c.members.push(<span class="s">"linus"</span>);
+println(<span class="s">f"{</span>a.members<span class="s">:?</span><span class="s">} {</span>c.members<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">core [&quot;ada&quot;, &quot;grace&quot;]
+[&quot;ada&quot;, &quot;grace&quot;] [&quot;ada&quot;, &quot;grace&quot;, &quot;linus&quot;]
+</code></pre>
+<h3 id="changing-the-callers-value-ref"><a class="anchor" tabindex="-1" href="#changing-the-callers-value-ref" aria-hidden="true">#</a>Changing the caller's value: <code>ref</code></h3>
+<p>A function gets a copy of its struct arguments. To change the caller's variable, declare the parameter <code>ref</code> and write <code>ref</code> at the call site as well, so the reader can see which arguments may change.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Counter</span> { n: <span class="t">i32</span>; }
+
+<span class="k">fn</span> bump_copy(c: <span class="t">Counter</span>) { c.n += <span class="n">1</span>; }    <span class="c">// changes its own copy</span>
+<span class="k">fn</span> bump(<span class="k">ref</span> c: <span class="t">Counter</span>) { c.n += <span class="n">1</span>; }     <span class="c">// changes the caller's variable</span>
+
+<span class="k">let</span> c = <span class="t">Counter</span> { n: <span class="n">0</span> };
+bump_copy(c);
+println(<span class="s">f"{</span>c.n<span class="s">}"</span>);
+bump(<span class="k">ref</span> c);
+println(<span class="s">f"{</span>c.n<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">0
+1
+</code></pre>
+<p>A method works the same way: <code>self</code> is a copy, and <code>ref self</code> is the caller's value (for methods, the call site needs no <code>ref</code>). Forgetting <code>ref self</code> compiles, but the change is lost when the method returns:</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Counter</span> { n: <span class="t">i32</span>; }
+
+<span class="k">impl</span> <span class="t">Counter</span> {
+    <span class="k">fn</span> inc_wrong(<span class="k">self</span>) { <span class="k">self</span>.n += <span class="n">1</span>; }    <span class="c">// changes a copy</span>
+    <span class="k">fn</span> inc(<span class="k">ref</span> <span class="k">self</span>) { <span class="k">self</span>.n += <span class="n">1</span>; }
+}
+
+<span class="k">let</span> c = <span class="t">Counter</span> { n: <span class="n">0</span> };
+c.inc_wrong();
+println(<span class="s">f"{</span>c.n<span class="s">}"</span>);
+c.inc();
+println(<span class="s">f"{</span>c.n<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">0
+1
+</code></pre>
+<p>The <code>write_to_copy</code> lint catches this. <code>rok check</code> and <code>rok lint</code> (and your editor) warn about a field set on a copy that nothing reads afterwards:</p>
+<pre><code class="language-text">warning[E503]: `self.n` is set on a copy of the receiver, so the change is lost when `inc_wrong` returns
+  --&gt; main.rok:4:26
+   |
+ 4 |     fn inc_wrong(self) { self.n += 1; }    // changes a copy
+   |                          ^^^^^^
+   |
+   = help: take `ref self` to change the caller's value: `fn inc_wrong(ref self)`
+   = note: `#[warn(write_to_copy)]` on by default
+</code></pre>
+<p>The same trap catches loops. <code>for p in ps { p.x *= 10; }</code> changes copies of the elements, and the lint says so:</p>
+<pre><code class="language-rok"><span class="k">for</span> p <span class="k">in</span> ps { p.x *= <span class="n">10</span>; }
+</code></pre>
+<pre><code class="language-text">warning[E503]: `p.x` is set on a copy of the element, so `ps` does not change
+  --&gt; main.rok:4:15
+   |
+ 4 | for p in ps { p.x *= 10; }
+   |               ^^^
+   |
+   = help: loop over the indexes to change the elements: `for i in 0..ps.len() { ps[i].x *= 10; }`
+</code></pre>
+<p>To change the elements in place, index the list, or build a new one.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">i32</span>; y: <span class="t">i32</span>; }
+
+<span class="k">let</span> ps = [<span class="t">Point</span> { x: <span class="n">1</span>, y: <span class="n">0</span> }, <span class="t">Point</span> { x: <span class="n">2</span>, y: <span class="n">0</span> }];
+<span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..ps.len() {
+    ps[i].x *= <span class="n">10</span>;
+}
+println(<span class="s">f"{</span>ps[<span class="n">0</span>].x<span class="s">} {</span>ps[<span class="n">1</span>].x<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">10 20
+</code></pre>
+<h2 id="enum-named-cases"><a class="anchor" tabindex="-1" href="#enum-named-cases" aria-hidden="true">#</a>enum: named cases</h2>
+<p>An <code>enum</code> defines a value that is one of several variants. A variant may carry no data (<code>Empty</code>), positional fields (<code>Circle(f64)</code>), or named fields (<code>Rect { w: f64; h: f64; }</code>). Construct values like <code>Shape::Circle(1.0)</code> and destructure them with patterns of the same shape in <code>match</code>.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Shape</span> {
+    <span class="t">Circle</span>(<span class="t">f64</span>),
+    <span class="t">Rect</span> { w: <span class="t">f64</span>; h: <span class="t">f64</span>; },
+    <span class="t">Empty</span>,
+}
+
+<span class="k">fn</span> area(s: <span class="t">Shape</span>) -&gt; <span class="t">f64</span> {
+    <span class="k">match</span> s {
+        <span class="t">Shape</span>::<span class="t">Circle</span>(r) =&gt; <span class="n">3.0</span> * r * r,
+        <span class="t">Shape</span>::<span class="t">Rect</span> { w, h } =&gt; w * h,
+        <span class="t">Shape</span>::<span class="t">Empty</span> =&gt; <span class="n">0.0</span>,
+    }
+}
+
+<span class="k">let</span> shapes = [<span class="t">Shape</span>::<span class="t">Circle</span>(<span class="n">1.0</span>), <span class="t">Shape</span>::<span class="t">Rect</span> { w: <span class="n">2.0</span>, h: <span class="n">3.0</span> }, <span class="t">Shape</span>::<span class="t">Empty</span>];
+<span class="k">for</span> s <span class="k">in</span> shapes {
+    println(<span class="s">f"{</span>area(s)<span class="s">}"</span>);
+}
+println(<span class="s">f"{</span>shapes[<span class="n">0</span>] <span class="k">is</span> <span class="t">Shape</span>::<span class="t">Circle</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">3
+6
+0
+true
+</code></pre>
+<p><code>s is Shape::Circle</code> tests only the variant, regardless of the payload.</p>
+<p>A pattern names a variant with its enum, as in <code>Shape::Empty</code>. A bare name such as <code>Empty</code> would be a new variable that matches every value, so the compiler rejects it:</p>
+<pre><code class="language-text">error[E200]: `Empty` here is a new variable that matches every value, not the variant `Shape::Empty`
+   --&gt; main.rok:11:9
+    |
+ 11 |         Empty =&gt; 0.0,
+    |         ^^^^^
+    |
+    = help: did you mean `Shape::Empty`?
+</code></pre>
+<p>How is this different from a sum type? A sum type groups existing types without names, while an <code>enum</code> gives each case a meaningful name. If you need to tell a &quot;radius&quot; from a &quot;side length&quot; even though both are <code>f64</code>, an <code>enum</code> is the right choice.</p>
+<h2 id="traits-and-default-methods"><a class="anchor" tabindex="-1" href="#traits-and-default-methods" aria-hidden="true">#</a>Traits and default methods</h2>
+<p>A <code>trait</code> is a list of methods a type must provide. Methods written as a signature without a body must be supplied by the implementor; methods with a body serve as default implementations. Implement a trait with <code>impl Trait for Type</code>.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Animal</span> {
+    <span class="k">fn</span> name(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> sound(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> speak(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">f"{</span><span class="k">self</span>.name()<span class="s">}: {</span><span class="k">self</span>.sound()<span class="s">}!"</span> }
+}
+
+<span class="k">struct</span> <span class="t">Dog</span>;
+<span class="k">struct</span> <span class="t">Cat</span> { lives: <span class="t">i32</span>; }
+
+<span class="k">impl</span> <span class="t">Animal</span> <span class="k">for</span> <span class="t">Dog</span> {
+    <span class="k">fn</span> name(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">"dog"</span> }
+    <span class="k">fn</span> sound(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">"woof"</span> }
+}
+
+<span class="k">impl</span> <span class="t">Animal</span> <span class="k">for</span> <span class="t">Cat</span> {
+    <span class="k">fn</span> name(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">"cat"</span> }
+    <span class="k">fn</span> sound(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">"meow"</span> }
+    <span class="k">fn</span> speak(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">f"cat ({</span><span class="k">self</span>.lives<span class="s">} lives): meow"</span> }
+}
+
+println(<span class="t">Dog</span>.speak());
+println(<span class="t">Cat</span> { lives: <span class="n">9</span> }.speak());
+</code></pre>
+<pre class="output"><code class="language-output">dog: woof!
+cat (9 lives): meow
+</code></pre>
+<h2 id="automatic-implementations-with-derive"><a class="anchor" tabindex="-1" href="#automatic-implementations-with-derive" aria-hidden="true">#</a>Automatic implementations with derive</h2>
+<p>Mechanical implementations such as comparison, hashing, and debug output are generated with <code>#[derive(...)]</code>. The built-in derives are <code>Clone</code>, <code>Copy</code>, <code>Debug</code>, <code>Default</code>, <code>PartialEq</code>, <code>Eq</code>, <code>PartialOrd</code>, <code>Ord</code>, and <code>Hash</code>; the standard library adds <code>Rokon</code> for ROKON serialization (<a href="15-rokon">chapter 15</a>).</p>
+<pre><code class="language-rok"><span class="a">#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]</span>
+<span class="k">struct</span> <span class="t">Version</span> { major: <span class="t">i32</span>; minor: <span class="t">i32</span>; }
+
+<span class="k">let</span> vs = [<span class="t">Version</span> { major: <span class="n">1</span>, minor: <span class="n">2</span> }, <span class="t">Version</span> { major: <span class="n">0</span>, minor: <span class="n">9</span> }];
+vs.sort();
+println(<span class="s">f"{</span>vs<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> seen: <span class="t">Set</span>&lt;<span class="t">Version</span>&gt; = <span class="t">Set</span>::new();
+seen.insert(vs[<span class="n">0</span>].clone());
+println(<span class="s">f"{</span>seen.contains(<span class="t">Version</span> { major: <span class="n">0</span>, minor: <span class="n">9</span> })<span class="s">}"</span>);
+
+<span class="k">let</span> zero: <span class="t">Version</span> = <span class="t">Default</span>::default();
+println(<span class="s">f"{</span>zero == vs[<span class="n">0</span>]<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[Version { major: 0, minor: 9 }, Version { major: 1, minor: 2 }]
+true
+false
+</code></pre>
+<p><code>Ord</code> compares fields in declaration order, so <code>sort</code> orders by version. <code>Display</code> cannot be derived: the type's author decides its human-readable format (see the example in the operators section below).</p>
+<h2 id="traits-are-not-types"><a class="anchor" tabindex="-1" href="#traits-are-not-types" aria-hidden="true">#</a>Traits are not types</h2>
+<p>In rok, a trait name cannot be used directly in type position. <code>fn f(a: Animal)</code> is a compile error. This prevents hidden dynamic dispatch costs.</p>
+<pre><code class="language-text">error[E200]: trait `Animal` cannot be used as a type directly - use a closed sum (`A | B`)
+       or a generic parameter (`&lt;T: Animal&gt;`) instead
+</code></pre>
+<p>Instead, use a generic or a sum type.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Animal</span> { <span class="k">fn</span> sound(<span class="k">self</span>) -&gt; <span class="t">str</span>; }
+<span class="k">struct</span> <span class="t">Dog</span>;
+<span class="k">struct</span> <span class="t">Cat</span>;
+<span class="k">impl</span> <span class="t">Animal</span> <span class="k">for</span> <span class="t">Dog</span> { <span class="k">fn</span> sound(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">"woof"</span> } }
+<span class="k">impl</span> <span class="t">Animal</span> <span class="k">for</span> <span class="t">Cat</span> { <span class="k">fn</span> sound(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">"meow"</span> } }
+
+<span class="c">// 1. Open set of types: a generic with a bound (static dispatch).</span>
+<span class="k">fn</span> twice&lt;<span class="t">T</span>: <span class="t">Animal</span>&gt;(a: <span class="t">T</span>) -&gt; <span class="t">str</span> { <span class="s">f"{</span>a.sound()<span class="s">} {</span>a.sound()<span class="s">}"</span> }
+
+<span class="c">// 2. Closed set of types: a sum type.</span>
+<span class="k">fn</span> loud(a: <span class="t">Dog</span> | <span class="t">Cat</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> a {
+        d: <span class="t">Dog</span> =&gt; d.sound().to_uppercase(),
+        c: <span class="t">Cat</span> =&gt; c.sound().to_uppercase(),
+    }
+}
+
+println(twice(<span class="t">Dog</span>));
+println(loud(<span class="t">Cat</span>));
+</code></pre>
+<pre class="output"><code class="language-output">woof woof
+MEOW
+</code></pre>
+<p>If the candidates are a fixed few, use a sum type; if the set is open, use generics (next chapter).</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Advanced: when one collection must mix several implementations chosen at run time, write <code>any Trait</code>, as in <code>let zoo: List&lt;any Animal&gt; = [Dog, Cat];</code>. Calls through it use dynamic dispatch, and the <code>any</code> in the type makes that cost visible (<a href="../spec/refs-lang/002-types/202-any-slot#2210-constrained-any-any-trait"><code>any Trait</code></a>).</p>
+</div>
+<h2 id="operator-traits"><a class="anchor" tabindex="-1" href="#operator-traits" aria-hidden="true">#</a>Operator traits</h2>
+<p>Operators such as <code>+</code>, <code>==</code>, and <code>&lt;</code> are all trait method calls. <code>+</code> is <code>Add</code>, and string interpolation <code>{x}</code> is <code>Display</code>. So implementing these traits gives your own types operators and printing.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">V2</span> { x: <span class="t">i32</span>; y: <span class="t">i32</span>; }
+
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">V2</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">V2</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, o: <span class="t">V2</span>) -&gt; <span class="t">V2</span> { <span class="t">V2</span> { x: <span class="k">self</span>.x + o.x, y: <span class="k">self</span>.y + o.y } }
+}
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">V2</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">try</span> f.write_str(<span class="s">f"({</span><span class="k">self</span>.x<span class="s">}, {</span><span class="k">self</span>.y<span class="s">})"</span>);
+    }
+}
+
+<span class="k">let</span> v = <span class="t">V2</span> { x: <span class="n">1</span>, y: <span class="n">2</span> } + <span class="t">V2</span> { x: <span class="n">10</span>, y: <span class="n">20</span> };
+println(<span class="s">f"v = {</span>v<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">v = (11, 22)
+</code></pre>
+<p><code>type Output = V2;</code> sets the trait's <strong>associated type</strong>. You will see these again in the next chapter.</p>
+<p>The <code>Display</code> impl has a fixed shape you can copy: <code>ref f</code> lets <code>fmt</code> write into the caller's <code>Formatter</code>, and writing can fail, so <code>fmt</code> is <code>throws (FmtError)</code> and the call is marked with <code>try</code>. Errors are the subject of <a href="10-errors">chapter 10</a>.</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>struct</code> fields can have defaults via <code>= value</code>, and methods live in <code>impl</code> blocks.
+</li>
+<li>A struct is a value: assignment, arguments, and <code>list[i]</code> copy it (shallowly; a <code>List</code> field stays shared). To change the caller's value, take a <code>ref</code> parameter (<code>f(ref x)</code>) or <code>ref self</code>.
+</li>
+<li><code>enum</code> variants come in three shapes, unit, tuple, and named, and are destructured with <code>match</code>.
+</li>
+<li>A <code>trait</code> has required and default methods and is implemented with <code>impl Trait for Type</code>.
+</li>
+<li><code>#[derive(...)]</code> automatically implements <code>Debug</code>, <code>Clone</code>, <code>PartialEq</code>, <code>Eq</code>, <code>PartialOrd</code>, <code>Ord</code>, <code>Hash</code>, and <code>Default</code> (and <code>Rokon</code>, from the standard library).
+</li>
+<li>Traits are not types. Use a generic or a sum type (or, advanced, <code>any Trait</code>).
+</li>
+<li>Operators and <code>{x}</code> printing also come from implementing traits (<code>Add</code>, <code>Display</code>, and so on).
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li><a href="../spec/refs-lang/002-types/203-struct">2.3. <code>struct</code></a>, <a href="../spec/refs-lang/002-types/203-struct#238-value-semantics">2.3.8. Value semantics</a>, <a href="../spec/refs-lang/004-functions/407-ref-keyword">4.7. <code>ref</code></a>, <a href="../spec/refs-lang/002-types/204-enum">2.4. <code>enum</code></a>, <a href="../spec/refs-lang/002-types/205-union">2.5. <code>union</code></a>
+</li>
+<li><a href="../spec/refs-lang/002-types/208-trait">2.8. <code>trait</code></a>, <a href="../spec/refs-lang/002-types/209-impl">2.9. <code>impl</code></a>, <a href="../spec/refs-lang/004-functions/409-method">4.9. Methods</a>
+</li>
+<li><a href="../spec/refs-lang/006-meta-system/602-built-in-attributes#621-derive-automatic-trait-implementation">6.2.1. <code>#[derive(...)]</code></a>
+</li>
+<li><a href="../spec/refs-lang/002-types/212-trait-as-type-banned">2.12. Trait-as-type ban</a>, <a href="../spec/refs-lang/002-types/202-any-slot#2210-constrained-any-any-trait">2.2.10. <code>any Trait</code></a>
+</li>
+<li><a href="../spec/refs-lang/003-expressions/301-operator-dispatch">3.1. Operator dispatch</a>, API: <a href="../std/core/ops#trait.Add"><code>Add</code></a>, <a href="../std/core/fmt#trait.Display"><code>Display</code></a>, <a href="../std/std/rokon">ROKON</a>
+</li>
+<li>Next chapter: <a href="07-generics">7. Generics</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/06-structs-enums-traits.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="05-sum-types"><small>Previous</small>5. Sum Types and none</a><a class="next" href="07-generics"><small>Next</small>7. Generics</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

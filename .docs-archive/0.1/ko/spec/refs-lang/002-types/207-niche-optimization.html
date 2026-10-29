@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.7. niche 최적화 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="niche 란 어떤 타입의 유효 비트 패턴 중 절대 등장하지 않는 비트 패턴을 말합니다. 합 타입의 태그를 이러한 비트 패턴에 겹쳐 저장하면 태그 자리를 따로 둘 필요가 없어지며, 그 결과 메모리 오버헤드가 0 인 합 타입이 만들어집니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/207-niche-optimization.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.7. niche 최적화 - rok docs">
+<meta property="og:description" content="niche 란 어떤 타입의 유효 비트 패턴 중 절대 등장하지 않는 비트 패턴을 말합니다. 합 타입의 태그를 이러한 비트 패턴에 겹쳐 저장하면 태그 자리를 따로 둘 필요가 없어지며, 그 결과 메모리 오버헤드가 0 인 합 타입이 만들어집니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/207-niche-optimization.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/207-niche-optimization.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/207-niche-optimization.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li class="cur"><a aria-current="page" href="207-niche-optimization">2.7. niche 최적화</a><ul class="toc"><li><a href="#271-동기">2.7.1. 동기</a></li><li><a href="#272-자동-niche">2.7.2. 자동 niche</a></li><li><a href="#273-자동-없음">2.7.3. 자동 없음</a></li><li><a href="#274-opt-in-niche-niche">2.7.4. opt-in niche: #[niche(..)]</a></li><li><a href="#275-부착-가능한-위치">2.7.5. 부착 가능한 위치</a></li><li><a href="#276-표준-라이브러리-wrapper">2.7.6. 표준 라이브러리 wrapper</a></li></ul></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. 제네릭</a></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="27-niche-최적화 27-niche-optimization 271-동기 271-motivation 272-자동-niche 272-automatic-niches 273-자동-없음 273-no-automatic-niche 274-opt-in-niche-niche 274-opt-in-niches-niche 275-부착-가능한-위치 275-where-it-may-be-attached 276-표준-라이브러리-wrapper 276-standard-library-wrappers"><a href="../../../../spec/refs-lang/002-types/207-niche-optimization" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="27-niche-최적화"><a class="anchor" tabindex="-1" href="#27-niche-최적화" aria-hidden="true">#</a>2.7. niche 최적화</h1>
+<p>niche 란 어떤 타입의 유효 비트 패턴 중 절대 등장하지 않는 비트 패턴을 말합니다. 합 타입의 태그를 이러한 비트 패턴에 겹쳐 저장하면 태그 자리를 따로 둘 필요가 없어지며, 그 결과 메모리 오버헤드가 0 인 합 타입이 만들어집니다.</p>
+<p>이 최적화는 <a href="206-sum-types">합 타입</a> 의 메모리 표현이 컴파일러의 자유라는 사실 위에서 작동합니다.</p>
+<h2 id="271-동기"><a class="anchor" tabindex="-1" href="#271-동기" aria-hidden="true">#</a>2.7.1. 동기</h2>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>      <span class="c">// 64-bit 포인터 + none</span>
+</code></pre>
+<p>위 타입은 16 바이트 (포인터 8 + 태그 1 + 패딩 7) 가 아니라 8 바이트로 표현될 수 있어야 합니다. 그 이유는 포인터의 <code>null</code> 비트 패턴 (0x0000_0000_0000_0000) 이 유효한 포인터에서는 등장하지 않으므로, 그 자리를 <code>none</code> 의 자리로 활용할 수 있기 때문입니다.</p>
+<p>이러한 절약은 과학·데이터 코드의 핵심 메모리 효율로 이어집니다 (Julia 의 isbits <code>union</code> 에서 영감을 얻었습니다).</p>
+<h2 id="272-자동-niche"><a class="anchor" tabindex="-1" href="#272-자동-niche" aria-hidden="true">#</a>2.7.2. 자동 niche</h2>
+<p><code>none</code> 의 비트는 구현이 정합니다. 항 하나와 <code>none</code> 만으로 된 합 <code>T | none</code> 은 <code>T</code> 에 niche 가 있으면 <code>T</code> 의 크기이며, <code>none</code> 은 그 niche 값으로 표현됩니다. 0 으로 채운 저장소는 <code>none</code> 으로 읽힙니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>niche 값</th></tr></thead>
+<tbody>
+<tr><td><code>bool</code></td><td><code>2</code></td></tr>
+<tr><td><code>char</code> (컴파일러 primitive)</td><td>surrogate <code>0xD800</code></td></tr>
+<tr><td>필드 없는 <code>enum</code>, payload 에 GC 참조가 없는 <code>enum</code></td><td>쓰지 않는 첫 tag</td></tr>
+<tr><td><code>extern &quot;C&quot; fn(..) -&gt; R</code></td><td>null</td></tr>
+<tr><td><code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code> / <code>ManyPtr&lt;T&gt;</code></td><td>null (<code>#[niche(0)]</code>)</td></tr>
+<tr><td>여러 필드의 <code>struct</code> / 튜플</td><td>niche 가 있는 첫 필드의 niche</td></tr>
+</tbody></table></div>
+<ul>
+<li>payload 에 GC 참조를 담는 <code>enum</code> 은 niche 가 없습니다.
+</li>
+<li>niche 값이 0 이면 (null 포인터, <code>extern &quot;C&quot; fn</code>, <code>NonZero</code>) 항의 비트는 그대로이므로, 그런 <code>T | none</code> 은 C ABI 를 그대로 nullable 값으로 건넙니다 (<a href="../005-modules/509-extern-block#nullable-c-함수-포인터-extern-c-fn---r--none">5.9.4</a>).
+</li>
+<li><code>none</code> 말고 항이 둘 이상인 합은 태그를 둡니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>           <span class="c">// 8 바이트, null 이 none</span>
+<span class="t">bool</span> | <span class="k">none</span>              <span class="c">// 1 바이트</span>
+</code></pre>
+<h2 id="273-자동-없음"><a class="anchor" tabindex="-1" href="#273-자동-없음" aria-hidden="true">#</a>2.7.3. 자동 없음</h2>
+<p>정수 (<code>i8</code> .. <code>i64</code>, <code>u8</code> .. <code>u64</code>, <code>usize</code>, <code>isize</code>) 와 부동소수 (<code>f32</code>, <code>f64</code>) 는 모든 비트 패턴이 유효하므로 niche 가 없습니다. niche 가 필요하면 wrapper (2.7.6) 나 <code>#[niche]</code> (2.7.4) 를 씁니다.</p>
+<h2 id="274-opt-in-niche-niche"><a class="anchor" tabindex="-1" href="#274-opt-in-niche-niche" aria-hidden="true">#</a>2.7.4. opt-in niche: <code>#[niche(..)]</code></h2>
+<pre><code>niche_attr ::= &quot;#&quot; &quot;[&quot; &quot;niche&quot; &quot;(&quot; niche_arg (&quot;,&quot; niche_arg)* &quot;,&quot;? &quot;)&quot; &quot;]&quot;
+niche_arg  ::= int_lit | &quot;-&quot; int_lit | const_path | range
+range      ::= niche_val &quot;..=&quot; niche_val | &quot;..&quot; niche_val | niche_val &quot;..&quot;
+const_path ::= &quot;MIN&quot; | &quot;MAX&quot; | &quot;NAN&quot; | &quot;INFINITY&quot; | &quot;NEG_INFINITY&quot; | type &quot;::&quot; const_name
+</code></pre>
+<pre><code class="language-rok"><span class="a">#[niche(0)]</span>
+<span class="k">struct</span> <span class="t">UserId</span>(<span class="t">u64</span>);
+
+<span class="a">#[niche(i32::MIN..=-1)]</span>
+<span class="k">struct</span> <span class="t">NonNegative</span>(<span class="t">i32</span>);
+
+<span class="a">#[niche(NAN, INFINITY, NEG_INFINITY)]</span>
+<span class="k">struct</span> <span class="t">Real</span> { value: <span class="t">f64</span>; }
+</code></pre>
+<ul>
+<li>인자는 정수, <code>MIN</code> / <code>MAX</code> (<code>T::MIN</code>), <code>NAN</code> / <code>INFINITY</code> / <code>NEG_INFINITY</code> (<code>F::NAN</code>), 범위 <code>a..=b</code> / <code>..b</code> / <code>a..</code>, 그리고 그 여럿입니다. 인스턴스화된 필드 타입에 대해 읽습니다.
+</li>
+<li>적힌 값은 그 타입의 유효한 값이 아니라는 약속입니다. 컴파일러는 이를 검사하지 않으며, 그 값이 나타나면 합 타입의 판별이 틀어집니다.
+</li>
+</ul>
+<h2 id="275-부착-가능한-위치"><a class="anchor" tabindex="-1" href="#275-부착-가능한-위치" aria-hidden="true">#</a>2.7.5. 부착 가능한 위치</h2>
+<p><code>#[niche(..)]</code> 는 필드가 하나인 <code>struct</code> (tuple newtype 또는 이름 있는 필드 하나) 에 붙입니다. <code>enum</code>, <code>union</code>, 필드가 여럿인 <code>struct</code> 에 붙이면 에러입니다.</p>
+<h2 id="276-표준-라이브러리-wrapper"><a class="anchor" tabindex="-1" href="#276-표준-라이브러리-wrapper" aria-hidden="true">#</a>2.7.6. 표준 라이브러리 wrapper</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>이름</th><th>제외하는 값</th><th>정의</th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt;</code></td><td>0 (정수 T 만)</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#222-nonzerot---0-금지">stdlib 2.2.2</a></td></tr>
+<tr><td><code>NonNan&lt;F&gt;</code></td><td>NaN</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#223-nonnanf---nan-금지">stdlib 2.2.3</a></td></tr>
+<tr><td><code>Finite&lt;F&gt;</code></td><td>NaN, ±∞</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#224-finitef---nan--금지">stdlib 2.2.4</a></td></tr>
+<tr><td><code>Positive&lt;T&gt;</code></td><td>음수 (0 은 포함). unsigned <code>T</code> 는 niche 없음 (<code>Positive&lt;u32&gt; | none</code> 은 8 바이트)</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#225-positivet---음수-금지">stdlib 2.2.5</a></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/207-niche-optimization.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="206-sum-types"><small>Previous</small>2.6. 합 타입 (A | B)</a><a class="next" href="208-trait"><small>Next</small>2.8. trait</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

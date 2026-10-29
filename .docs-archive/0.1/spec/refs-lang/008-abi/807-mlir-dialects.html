@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.7. MLIR dialect usage - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Applies the standard MLIR dialects set out in the compilation pipeline to the lowering specification of this ABI block. This is the lowering of the MLIR → LLVM ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/807-mlir-dialects.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.7. MLIR dialect usage - rok docs">
+<meta property="og:description" content="Applies the standard MLIR dialects set out in the compilation pipeline to the lowering specification of this ABI block. This is the lowering of the MLIR → LLVM ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/807-mlir-dialects.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/807-mlir-dialects.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/807-mlir-dialects.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li class="cur"><a aria-current="page" href="807-mlir-dialects">8.7. MLIR dialect usage</a><ul class="toc"><li><a href="#871-dialects-used-by-ordinary-code-recap">8.7.1. Dialects used by ordinary code (recap)</a></li><li><a href="#872-translation-flow">8.7.2. Translation flow</a></li><li><a href="#873-core-ops-per-dialect">8.7.3. Core ops per dialect</a></li><li><a href="#874-dialect-priority">8.7.4. Dialect priority</a></li><li><a href="#875-library--acceleration-domain-dialects">8.7.5. Library / acceleration-domain dialects</a></li><li><a href="#876-extern-functions-runtime-functions">8.7.6. extern functions (runtime functions)</a></li><li><a href="#877-tls-access">8.7.7. TLS access</a></li><li><a href="#878-responsibility-of-each-stage">8.7.8. Responsibility of each stage</a></li><li><a href="#879-verifying-the-translation">8.7.9. Verifying the translation</a></li></ul></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="87-mlir-dialect-usage 87-mlir-다이얼렉트-사용 871-dialects-used-by-ordinary-code-recap 871-일반-코드-사용-다이얼렉트-재확인 872-translation-flow 872-변환-흐름-정리 873-core-ops-per-dialect 873-다이얼렉트-별-핵심-op func func arith arith scf scf cf cf index index math math llvm llvm 874-dialect-priority 874-다이얼렉트-사용-우선순위 875-library--acceleration-domain-dialects 875-라이브러리--가속-영역-다이얼렉트 876-extern-functions-runtime-functions 876-extern-function-런타임-함수 877-tls-access 877-tls-접근 878-responsibility-of-each-stage 878-각-단계의-책임 879-verifying-the-translation 879-변환-검증"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/807-mlir-dialects" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="87-mlir-dialect-usage"><a class="anchor" tabindex="-1" href="#87-mlir-dialect-usage" aria-hidden="true">#</a>8.7. MLIR dialect usage</h1>
+<p>Applies the standard MLIR dialects set out in the <a href="../000-meta/002-pipeline">compilation pipeline</a> to the lowering specification of this <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> block. This is the lowering of the MLIR → LLVM backend (<code>-O1</code> and above); the native backend (<code>-O0</code>, REPL) generates machine code from rok-mir directly and follows the same ABI (<a href="../000-meta/002-pipeline#024-backends">0.2.4</a>). Ordinary code is lowered to seven core dialects; libraries in acceleration domains may use additional dialects such as <code>linalg</code> / <code>tensor</code> / <code>vector</code> / <code>gpu</code> / <code>affine</code> / <code>async</code> directly through <a href="../../refs-standard-libraries/100-bare/109-mlir"><code>rok::bare::mlir</code></a>.</p>
+<h2 id="871-dialects-used-by-ordinary-code-recap"><a class="anchor" tabindex="-1" href="#871-dialects-used-by-ordinary-code-recap" aria-hidden="true">#</a>8.7.1. Dialects used by ordinary code (recap)</h2>
+<p>The table from the <a href="../000-meta/002-pipeline">compilation pipeline</a>, repeated:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Dialect</th><th>Purpose</th><th>Use in this block</th></tr></thead>
+<tbody>
+<tr><td><code>func</code></td><td>Function definition / call</td><td>Function lowering</td></tr>
+<tr><td><code>arith</code></td><td>Integer / floating-point arithmetic / comparison</td><td>Operator lowering</td></tr>
+<tr><td><code>scf</code></td><td>Structured control flow (<code>if</code> / <code>for</code> / <code>while</code>)</td><td><code>if</code> / loop lowering</td></tr>
+<tr><td><code>cf</code></td><td>Unstructured branches (switch, cond_br)</td><td><code>match</code> decision tree</td></tr>
+<tr><td><code>index</code></td><td>Index type operations</td><td>Indexing lowering</td></tr>
+<tr><td><code>math</code></td><td>Math functions</td><td>sqrt / sin / cos, etc.</td></tr>
+<tr><td><code>llvm</code></td><td>Low-level ops (intrinsic, <code>struct</code>, <code>alloca</code>, load / store)</td><td>Stack slots, objects / arrays, <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a></td></tr>
+</tbody></table></div>
+<p>There is no custom rok dialect. The semantics of ordinary rok code are expressed with the seven standard dialects above; additional dialects used by acceleration libraries are covered in 8.7.5.</p>
+<h2 id="872-translation-flow"><a class="anchor" tabindex="-1" href="#872-translation-flow" aria-hidden="true">#</a>8.7.2. Translation flow</h2>
+<p>The full translation flow is:</p>
+<pre><code>rok source
+   ↓ (parse, name resolution, type check)
+rok-hir
+   ↓ (specialize / monomorphize, desugar)
+rok-mir
+   ↓ (lowering - 808 ~ 810 of this block)
+standard MLIR  (7 dialects for ordinary code; libraries may add more)
+   ↓ (standard passes, conversion to the LLVM dialect)
+LLVM IR
+   ↓ (LLVM optimization and code generation)
+object
+   ↓ (lld)
+native binary
+</code></pre>
+<p>All steps run inside <code>rokc</code>. This ABI block defines the lowering rules for the step from rok-mir to standard MLIR.</p>
+<h2 id="873-core-ops-per-dialect"><a class="anchor" tabindex="-1" href="#873-core-ops-per-dialect" aria-hidden="true">#</a>8.7.3. Core ops per dialect</h2>
+<p>Which dialects <code>rokc</code> emits is implementation-defined. <code>rokc</code> emits <code>func</code>, <code>arith</code>, <code>cf</code> and <code>llvm</code> (and <code>math</code> where it lowers math intrinsics); <code>scf</code> and <code>index</code> may be used. The ops below are the core of each dialect.</p>
+<h3 id="func"><a class="anchor" tabindex="-1" href="#func" aria-hidden="true">#</a><code>func</code></h3>
+<pre><code>func.func @name(%arg: i32) -&gt; (i32) { ... }
+func.call @name(%arg) : (i32) -&gt; (i32)
+func.return %val : i32
+</code></pre>
+<p>Standard ops for function definition, call and return.</p>
+<h3 id="arith"><a class="anchor" tabindex="-1" href="#arith" aria-hidden="true">#</a><code>arith</code></h3>
+<pre><code>arith.addi %a, %b : i32
+arith.subi %a, %b : i32
+arith.muli %a, %b : i32
+arith.cmpi &quot;eq&quot;, %a, %b : i32
+arith.addf %a, %b : f64
+arith.cmpf &quot;olt&quot;, %a, %b : f64
+</code></pre>
+<p>Arithmetic and comparison operations from <a href="../003-expressions/301-operator-dispatch">operator dispatch</a> are lowered to the <code>arith</code> dialect.</p>
+<p>User-defined trait implementations, however, are lowered as function calls after generic monomorphization.</p>
+<h3 id="scf"><a class="anchor" tabindex="-1" href="#scf" aria-hidden="true">#</a><code>scf</code></h3>
+<pre><code>scf.if %cond -&gt; (i32) {
+  scf.yield %a : i32
+} else {
+  scf.yield %b : i32
+}
+
+scf.while ... do { ... }
+scf.for %i = %lb to %ub step %step { ... }
+</code></pre>
+<p>Normal control flow of <a href="../003-expressions/310-if-expression"><code>if</code> expressions</a> and <a href="../003-expressions/313-loop-expressions">loops</a> is lowered to <code>scf</code>.</p>
+<h3 id="cf"><a class="anchor" tabindex="-1" href="#cf" aria-hidden="true">#</a><code>cf</code></h3>
+<pre><code>cf.cond_br %cond, ^true_block(args), ^false_block(args)
+cf.switch %v : i32, [
+  default: ^default,
+  0: ^case0,
+  1: ^case1
+]
+</code></pre>
+<p>The decision tree of a complex <a href="../003-expressions/312-match-expression"><code>match</code></a> is lowered using cond_br and switch from the <code>cf</code> dialect.</p>
+<h3 id="index"><a class="anchor" tabindex="-1" href="#index" aria-hidden="true">#</a><code>index</code></h3>
+<pre><code>%idx = index.constant 5
+%new_idx = index.add %idx, %step
+</code></pre>
+<p>Places that need the <code>index</code> type (bounds of <code>scf.for</code>, etc.) are lowered to the <code>index</code> dialect.</p>
+<h3 id="math"><a class="anchor" tabindex="-1" href="#math" aria-hidden="true">#</a><code>math</code></h3>
+<pre><code>math.sqrt %x : f64
+math.sin %x : f64
+math.cos %x : f64
+</code></pre>
+<p>Standard library math functions are expressed with the <code>math</code> dialect where possible. Functions <code>math</code> does not support directly are handled as ordinary function calls.</p>
+<h3 id="llvm"><a class="anchor" tabindex="-1" href="#llvm" aria-hidden="true">#</a><code>llvm</code></h3>
+<p>The LLVM dialect is a last resort, used only for semantics no other dialect can express.</p>
+<pre><code>llvm.alloca / llvm.load / llvm.store
+llvm.struct&lt;(...)&gt;
+llvm.intr.expect / llvm.intr.assume
+</code></pre>
+<p>Stack slots, object access and low-level intrinsics belong to the <code>llvm</code> dialect. Coroutines are compiler-built state machines and do not use <code>llvm.coro.*</code> (<a href="../007-runtime/708-coroutine">7.8</a>). GC roots are handled with ordinary load / store on the shadow stack frame, without intrinsics (<a href="809-lowering-control#8912-shadow-stack-frame">8.9.12</a>). Error propagation is expressed with return values and ordinary branches (<a href="809-lowering-control#896-try--catch--finally-value-based-branching">8.9.6</a>), so it uses no special features of the <code>llvm</code> dialect.</p>
+<h2 id="874-dialect-priority"><a class="anchor" tabindex="-1" href="#874-dialect-priority" aria-hidden="true">#</a>8.7.4. Dialect priority</h2>
+<p>Lowering may use <code>scf</code>, <code>index</code> and <code>math</code> where they express the semantics, and <code>llvm</code> where nothing else does; the choice is implementation-defined (8.7.3).</p>
+<h2 id="875-library--acceleration-domain-dialects"><a class="anchor" tabindex="-1" href="#875-library--acceleration-domain-dialects" aria-hidden="true">#</a>8.7.5. Library / acceleration-domain dialects</h2>
+<p>The following dialects are not used in lowering rok's <em>ordinary code</em>, but library authors can use them directly through <a href="../../refs-standard-libraries/100-bare/109-mlir"><code>rok::bare::mlir</code></a>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Dialect</th><th>Domain</th></tr></thead>
+<tbody>
+<tr><td><code>affine</code></td><td>Loops amenable to affine analysis (numeric libraries)</td></tr>
+<tr><td><code>linalg</code></td><td>element-wise / matmul / reduction (tensor lib)</td></tr>
+<tr><td><code>tensor</code></td><td>shape / extract / insert / reshape (tensor lib)</td></tr>
+<tr><td><code>vector</code></td><td>SIMD width / alignment / shuffle (SIMD lib)</td></tr>
+<tr><td><code>gpu</code></td><td>GPU launch / kernel / shared memory (GPU lib)</td></tr>
+<tr><td><code>async</code></td><td>async fork / await (dedicated runtime library)</td></tr>
+</tbody></table></div>
+<p>Lowering ordinary rok code needs only the seven dialects of 8.7.1, but libraries in acceleration domains such as tensors / automatic differentiation / SIMD / GPU call the dialects above directly to build a performance surface comparable to PyTorch / JAX / Mojo.</p>
+<p>The mechanism by which library authors call dialects, and their safety responsibilities, are defined in <a href="../../refs-standard-libraries/100-bare/109-mlir"><code>rok::bare::mlir</code></a>.</p>
+<h2 id="876-extern-functions-runtime-functions"><a class="anchor" tabindex="-1" href="#876-extern-functions-runtime-functions" aria-hidden="true">#</a>8.7.6. <code>extern</code> functions (runtime functions)</h2>
+<p>The <code>rok_*</code> functions listed in <a href="805-extern-symbols">Extern &quot;C&quot; symbols</a> are declared as external <code>llvm.func</code> declarations (the declaration form is implementation-defined).</p>
+<pre><code>llvm.func @rok_gc_alloc_slow(i64, i64, i32) -&gt; !llvm.ptr
+llvm.func @rok_runtime_yield()
+</code></pre>
+<p>Calls use <code>llvm.call</code>.</p>
+<h2 id="877-tls-access"><a class="anchor" tabindex="-1" href="#877-tls-access" aria-hidden="true">#</a>8.7.7. TLS access</h2>
+<p>Access to the TLS slots from <a href="803-tls-slots">Mutator TLS slots</a> uses the <code>llvm</code> dialect's thread_local global <code>rok_tls</code>, at each slot's offset.</p>
+<pre><code>llvm.mlir.global external thread_local @rok_tls() : !llvm.array&lt;N x i8&gt;
+
+%t = llvm.mlir.addressof @rok_tls : !llvm.ptr
+%flag_ptr = llvm.getelementptr %t[88] : (!llvm.ptr) -&gt; !llvm.ptr, i8   ; yield_flag at 10p+8, p = 8
+%flag = llvm.load %flag_ptr : !llvm.ptr -&gt; i8
+</code></pre>
+<p>The LLVM backend lowers this to target-specific TLS instructions automatically.</p>
+<h2 id="878-responsibility-of-each-stage"><a class="anchor" tabindex="-1" href="#878-responsibility-of-each-stage" aria-hidden="true">#</a>8.7.8. Responsibility of each stage</h2>
+<pre><code>rok-mir → standard MLIR     rokc lowering (this block)
+MLIR → LLVM IR              MLIR passes and translation, in-process
+LLVM IR → object            LLVM, in-process, at the requested -O level
+objects → binary            lld, in-process (ROK_CC overrides, 9.2.14)
+</code></pre>
+<h2 id="879-verifying-the-translation"><a class="anchor" tabindex="-1" href="#879-verifying-the-translation" aria-hidden="true">#</a>8.7.9. Verifying the translation</h2>
+<p>End-to-end tests under <code>tests/integration/</code> verify by building and running user-written .rok files.</p>
+<p>This verification ensures that the lowering rules defined in this block are correct.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/807-mlir-dialects.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="806-calling-convention"><small>Previous</small>8.6. Calling convention</a><a class="next" href="808-lowering-types"><small>Next</small>8.8. Lowering: data types and expressions</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

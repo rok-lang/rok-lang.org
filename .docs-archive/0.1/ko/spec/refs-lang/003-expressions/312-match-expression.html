@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.12. match 표현식 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="match 는 값을 여러 패턴에 비교한 다음, 처음으로 매칭되는 가지를 평가하는 표현식입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/312-match-expression.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.12. match 표현식 - rok docs">
+<meta property="og:description" content="match 는 값을 여러 패턴에 비교한 다음, 처음으로 매칭되는 가지를 평가하는 표현식입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/312-match-expression.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/312-match-expression.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/312-match-expression.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li class="cur"><a aria-current="page" href="312-match-expression">3.12. match 표현식</a><ul class="toc"><li><a href="#3121-형태">3.12.1. 형태</a></li><li><a href="#3122-가지의-본체">3.12.2. 가지의 본체</a></li><li><a href="#3123-매칭-순서">3.12.3. 매칭 순서</a></li><li><a href="#3124-분기-결과-타입">3.12.4. 분기 결과 타입</a></li><li><a href="#3125-완전성-검사-exhaustiveness">3.12.5. 완전성 검사 (exhaustiveness)</a></li><li><a href="#3126-도달-불가능-가지">3.12.6. 도달 불가능 가지</a></li><li><a href="#3127-or-패턴">3.12.7. or 패턴</a></li><li><a href="#3128-가드">3.12.8. 가드</a></li><li><a href="#3129-매칭-결과의-좁히기">3.12.9. 매칭 결과의 좁히기</a></li><li><a href="#31210-평가-순서">3.12.10. 평가 순서</a></li><li><a href="#31211-매칭-식-자체의-결과">3.12.11. 매칭 식 자체의 결과</a></li><li><a href="#31212-divergent-가지">3.12.12. divergent 가지</a></li></ul></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="312-match-표현식 312-match-expression 3121-형태 3121-form 3122-가지의-본체 3122-arm-bodies 3123-매칭-순서 3123-matching-order 3124-분기-결과-타입 3124-branch-result-type 3125-완전성-검사-exhaustiveness 3125-exhaustiveness-checking 3126-도달-불가능-가지 3126-unreachable-arms 3127-or-패턴 3127-or-patterns 3128-가드 3128-guards 3129-매칭-결과의-좁히기 3129-narrowing-from-match-results 31210-평가-순서 31210-evaluation-order 31211-매칭-식-자체의-결과 31211-result-of-the-match-expression-itself 31212-divergent-가지 31212-divergent-arms"><a href="../../../../spec/refs-lang/003-expressions/312-match-expression" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="312-match-표현식"><a class="anchor" tabindex="-1" href="#312-match-표현식" aria-hidden="true">#</a>3.12. <code>match</code> 표현식</h1>
+<p><code>match</code> 는 값을 여러 패턴에 비교한 다음, 처음으로 매칭되는 가지를 평가하는 표현식입니다.</p>
+<h2 id="3121-형태"><a class="anchor" tabindex="-1" href="#3121-형태" aria-hidden="true">#</a>3.12.1. 형태</h2>
+<pre><code>match_expr  ::= &quot;match&quot; expr &quot;{&quot; match_arm (&quot;,&quot; match_arm)* &quot;,&quot;? &quot;}&quot;
+match_arm   ::= pattern (&quot;if&quot; expr)? &quot;=&gt;&quot; expr
+</code></pre>
+<pre><code class="language-rok"><span class="k">match</span> expr {
+    패턴1 =&gt; 식1,
+    패턴2 =&gt; 식2,
+    ...
+    패턴N =&gt; 식N,
+}
+</code></pre>
+<p><code>match</code> 표현식은 <code>match</code> 키워드와 피검사 식, 그리고 <code>{ ... }</code> 본체로 구성됩니다. 피검사 식의 최상위에는 struct 리터럴을 둘 수 없습니다 (<a href="310-if-expression#조건-자리의-struct-리터럴">3.10.3</a>). 본체에는 0 개 이상의 가지 (arm) 가 콤마로 구분되어 등장하며, 각 가지는 패턴과 <code>=&gt;</code> 토큰 (<a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a>), 그리고 식으로 이루어집니다. 마지막에 후행 콤마를 두는 것도 허용됩니다.</p>
+<h2 id="3122-가지의-본체"><a class="anchor" tabindex="-1" href="#3122-가지의-본체" aria-hidden="true">#</a>3.12.2. 가지의 본체</h2>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="s">"one"</span>,
+    <span class="n">2</span> =&gt; <span class="s">"two"</span>,
+    _ =&gt; <span class="s">"other"</span>,
+}
+</code></pre>
+<p><code>=&gt;</code> 뒤에는 단일 식이 오는 형태입니다. 식이 <a href="309-block-expressions">블록 표현식</a> 이라면 여러 문장을 자연스럽게 둘 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> v {                        <span class="c">// v: i32 | none</span>
+    n: <span class="t">i32</span> =&gt; {
+        <span class="k">let</span> x = n * <span class="n">2</span>;
+        x + <span class="n">1</span>
+    },
+    <span class="k">none</span> =&gt; <span class="n">0</span>,
+}
+</code></pre>
+<p>블록 가지의 마지막 식 값이 곧 그 가지의 결과가 됩니다.</p>
+<h2 id="3123-매칭-순서"><a class="anchor" tabindex="-1" href="#3123-매칭-순서" aria-hidden="true">#</a>3.12.3. 매칭 순서</h2>
+<p>가지는 위에서 아래로 검사되며, 처음으로 매칭되는 가지가 평가됩니다. 그 가지의 식 값이 <code>match</code> 표현식 전체의 결과가 됩니다.</p>
+<h2 id="3124-분기-결과-타입"><a class="anchor" tabindex="-1" href="#3124-분기-결과-타입" aria-hidden="true">#</a>3.12.4. 분기 결과 타입</h2>
+<p><a href="./">표현식 개요</a> 의 분기 결과 규칙에 따라, 모든 가지 결과 식이 같은 타입이면 <code>match</code> 식의 결과 타입은 그 타입이 됩니다. 가지 타입이 서로 다르면 받는 쪽에 명시된 타입이 있어야 하며, 합 타입을 자동으로 추론하지는 않습니다. 받는 슬롯의 타입은 <a href="../005-modules/501-variable-declaration">변수 선언</a> 의 규칙을 따릅니다.</p>
+<pre><code class="language-rok"><span class="c">// 슬롯에 타입 명시 없음 → 식 결과 타입으로 추론</span>
+<span class="k">let</span> x = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="s">"one"</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// 식 결과 str, 슬롯 x: str</span>
+
+<span class="k">let</span> y = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="n">1i32</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// ERROR: 가지 타입 불일치 - 타입 명시 필요</span>
+
+<span class="c">// 슬롯에 합 타입 명시 → 항 일치 검사</span>
+<span class="k">let</span> w: <span class="t">i32</span> | <span class="t">str</span> = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="n">1i32</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// OK</span>
+
+<span class="c">// 슬롯에 단일 타입 명시 → 식 결과가 그 타입이어야</span>
+<span class="k">let</span> z: <span class="t">i32</span> = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="n">1i32</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// ERROR: str 가지가 i32 에 안 맞음</span>
+</code></pre>
+<h2 id="3125-완전성-검사-exhaustiveness"><a class="anchor" tabindex="-1" href="#3125-완전성-검사-exhaustiveness" aria-hidden="true">#</a>3.12.5. 완전성 검사 (exhaustiveness)</h2>
+<p>가지의 패턴 집합은 피검사 식이 가질 수 있는 모든 값을 덮어야 합니다. 그렇지 않으면 컴파일 에러가 발생합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">bool</span> = ...;
+<span class="k">match</span> x {
+    <span class="k">true</span> =&gt; <span class="n">1</span>,
+    <span class="c">// ERROR: false 가 빠짐</span>
+}
+</code></pre>
+<p>검사 규칙은 다음과 같습니다. 닫힌 합 타입 (<code>A | B</code>) 의 모든 항을 덮으면 완전한 것으로 간주됩니다. <code>enum</code> 의 경우에는 모든 변형을 덮으면 완전해집니다. <code>bool</code> 은 <code>true</code> 와 <code>false</code> 를 모두 덮으면 완전합니다. 정수, <code>char</code>, 문자열, 부동소수의 리터럴과 범위 패턴은 열린 집합으로 취급합니다. 범위들이 타입의 모든 값을 덮더라도 (<code>0..=255</code> 로 <code>u8</code> 전체) 완전한 것으로 보지 않으므로, 와일드카드 (<code>_</code>) 또는 식별자 패턴 (<code>x</code>) 같은 catch-all 가지가 반드시 필요합니다. 완전하지 않다는 에러는 빠진 값 하나를 예로 듭니다 (예: <code>false</code>).</p>
+<p><a href="../002-types/202-any-slot"><code>any</code> 슬롯</a> 의 동적 슬롯에 대한 매칭은 어떤 타입이 들어올지 컴파일러가 알 수 없으므로, 항상 catch-all 가지가 필요합니다.</p>
+<h2 id="3126-도달-불가능-가지"><a class="anchor" tabindex="-1" href="#3126-도달-불가능-가지" aria-hidden="true">#</a>3.12.6. 도달 불가능 가지</h2>
+<p>매칭 순서상 절대 도달할 수 없는 가지는 컴파일 에러입니다 (경고가 아님). 정수와 <code>char</code> 의 리터럴 / 범위 패턴은 구간으로 비교하므로, 앞 가지들의 구간이 이미 덮은 범위도 도달 불가능입니다 (<code>0..=9</code> 뒤의 <code>3..=5</code>). 범위가 완전성을 만들지는 않습니다 (3.12.5).</p>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    _ =&gt; <span class="n">0</span>,
+    <span class="n">1</span> =&gt; <span class="n">1</span>,         <span class="c">// ERROR: 위의 _ 가 항상 매칭</span>
+}
+</code></pre>
+<h2 id="3127-or-패턴"><a class="anchor" tabindex="-1" href="#3127-or-패턴" aria-hidden="true">#</a>3.12.7. or 패턴</h2>
+<p><a href="311-patterns">패턴</a> 의 or 패턴 (<code>|</code>) 을 사용하면 같은 본체를 갖는 여러 패턴을 하나로 묶을 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    <span class="n">1</span> | <span class="n">2</span> | <span class="n">3</span> =&gt; <span class="s">"small"</span>,
+    <span class="n">4</span> | <span class="n">5</span> | <span class="n">6</span> =&gt; <span class="s">"medium"</span>,
+    _         =&gt; <span class="s">"large"</span>,
+}
+</code></pre>
+<h2 id="3128-가드"><a class="anchor" tabindex="-1" href="#3128-가드" aria-hidden="true">#</a>3.12.8. 가드</h2>
+<p><a href="311-patterns">패턴</a> 의 가드 (<code>if 조건</code>) 를 가지에 부착할 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> (x, y) {
+    (a, b) <span class="k">if</span> a == b =&gt; <span class="s">"equal"</span>,
+    (a, b) <span class="k">if</span> a &gt; b  =&gt; <span class="s">"first bigger"</span>,
+    _                =&gt; <span class="s">"second bigger"</span>,
+}
+</code></pre>
+<p>가드가 있는 가지는 완전성 검사에서 catch-all 로 인정되지 않습니다. 가드가 <code>false</code> 가 될 가능성이 있기 때문입니다. 따라서 가드가 붙은 가지만으로는 완전성이 보장되지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">bool</span> = ...;
+<span class="k">match</span> x {
+    a <span class="k">if</span> a == <span class="k">true</span>  =&gt; <span class="n">1</span>,
+    a <span class="k">if</span> a == <span class="k">false</span> =&gt; <span class="n">2</span>,
+    <span class="c">// ERROR: 가드 가지만으로는 완전성이 보장되지 않음, _ 필요</span>
+}
+</code></pre>
+<h2 id="3129-매칭-결과의-좁히기"><a class="anchor" tabindex="-1" href="#3129-매칭-결과의-좁히기" aria-hidden="true">#</a>3.12.9. 매칭 결과의 좁히기</h2>
+<p>타입 패턴이나 <code>enum</code> 패턴이 매칭한 가지 안에서는, 컴파일러가 피검사 식의 타입을 좁혀줍니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> =&gt; use_int(n),       <span class="c">// 이 가지에서 n: i32, 정적 디스패치 가능</span>
+    s: <span class="t">str</span> =&gt; use_str(s),
+}
+</code></pre>
+<p>이 좁히기는 <a href="../002-types/202-any-slot"><code>any</code> 슬롯</a> 과 <a href="../002-types/206-sum-types">합 타입</a> 의 좁히기와 동일한 메커니즘으로 동작합니다.</p>
+<h2 id="31210-평가-순서"><a class="anchor" tabindex="-1" href="#31210-평가-순서" aria-hidden="true">#</a>3.12.10. 평가 순서</h2>
+<p><code>match</code> 의 평가는 다음 순서로 진행됩니다.</p>
+<ol>
+<li>피검사 식 평가 (한 번만).
+</li>
+<li>가지를 위에서 아래로 검사.
+</li>
+<li>처음 매칭되는 가지의 식 평가.
+</li>
+</ol>
+<p>피검사 식에 부작용이 있다면 그 부작용은 단 한 번만 발생합니다. 또한 가드가 있는 가지의 가드는 그 가지에 도달했을 때에만 평가됩니다.</p>
+<h2 id="31211-매칭-식-자체의-결과"><a class="anchor" tabindex="-1" href="#31211-매칭-식-자체의-결과" aria-hidden="true">#</a>3.12.11. 매칭 식 자체의 결과</h2>
+<p><code>match</code> 표현식 자체의 결과는 위 분기 결과 규칙을 따릅니다 (가지가 모두 같은 타입이면 그 타입이고, 다르면 받는 쪽에 명시된 타입이 있어야 합니다).</p>
+<p>피검사 식이 divergent 인 경우 (예: <code>match return 0 { ... }</code>) 에는 <code>match</code> 도 divergent 가 됩니다.</p>
+<h2 id="31212-divergent-가지"><a class="anchor" tabindex="-1" href="#31212-divergent-가지" aria-hidden="true">#</a>3.12.12. divergent 가지</h2>
+<p>가지의 식이 <a href="309-block-expressions">블록 표현식</a> 의 divergent 형태 (<code>return</code>, <code>break</code>, <code>throw</code> 등) 라면, 그 가지는 분기 결과 타입 검사에서 임의의 타입과 호환되는 것으로 처리됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">i32</span> = <span class="k">match</span> v {           <span class="c">// v: i32 | none</span>
+    n: <span class="t">i32</span>  =&gt; n,
+    <span class="k">none</span>    =&gt; <span class="k">return</span> <span class="n">0</span>,         <span class="c">// divergent, i32 자리에서 OK</span>
+};
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/312-match-expression.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="311-patterns"><small>Previous</small>3.11. 패턴</a><a class="next" href="313-loop-expressions"><small>Next</small>3.13. 루프 표현식</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

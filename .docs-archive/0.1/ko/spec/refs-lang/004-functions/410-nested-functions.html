@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.10. 중첩 함수 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="함수의 본체 안에서 또 다른 함수를 정의할 수 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/410-nested-functions.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.10. 중첩 함수 - rok docs">
+<meta property="og:description" content="함수의 본체 안에서 또 다른 함수를 정의할 수 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/410-nested-functions.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/410-nested-functions.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/410-nested-functions.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">4. 함수 개요</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li><a href="405-closure">4.5. 클로저</a></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li><a href="409-method">4.9. 메서드</a></li><li class="cur"><a aria-current="page" href="410-nested-functions">4.10. 중첩 함수</a><ul class="toc"><li><a href="#4101-형태">4.10.1. 형태</a></li><li><a href="#4102-가시-범위">4.10.2. 가시 범위</a></li><li><a href="#4103-외부-변수-캡처-없음">4.10.3. 외부 변수 캡처 (없음)</a></li><li><a href="#4104-호출-시-동작">4.10.4. 호출 시 동작</a></li><li><a href="#4105-정의-순서">4.10.5. 정의 순서</a></li><li><a href="#4106-중첩-함수와-클로저-사이의-선택">4.10.6. 중첩 함수와 클로저 사이의 선택</a></li><li><a href="#4107-중첩-함수의-가시성">4.10.7. 중첩 함수의 가시성</a></li><li><a href="#4108-같은-이름의-중첩-함수와-외부-변수">4.10.8. 같은 이름의 중첩 함수와 외부 변수</a></li><li><a href="#4109-다단-중첩">4.10.9. 다단 중첩</a></li><li><a href="#41010-중첩-함수의-유용한-곳">4.10.10. 중첩 함수의 유용한 곳</a></li></ul></li><li><a href="411-generators">4.11. 제너레이터 (yield)</a></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li><a href="413-stream">4.13. 스트림 (async yield)</a></li><li><a href="414-throws">4.14. throws 시그니처</a></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li><a href="416-entry-point">4.16. 진입점</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="410-중첩-함수 410-nested-functions 4101-형태 4101-form 4102-가시-범위 4102-scope 4103-외부-변수-캡처-없음 4103-capturing-outer-variables-none 4104-호출-시-동작 4104-behavior-on-call 4105-정의-순서 4105-definition-order 4106-중첩-함수와-클로저-사이의-선택 4106-choosing-between-nested-functions-and-closures 4107-중첩-함수의-가시성 4107-visibility-of-nested-functions 4108-같은-이름의-중첩-함수와-외부-변수 4108-nested-function-and-outer-variable-with-the-same-name 4109-다단-중첩 4109-multi-level-nesting 41010-중첩-함수의-유용한-곳 41010-where-nested-functions-are-useful"><a href="../../../../spec/refs-lang/004-functions/410-nested-functions" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="410-중첩-함수"><a class="anchor" tabindex="-1" href="#410-중첩-함수" aria-hidden="true">#</a>4.10. 중첩 함수</h1>
+<p>함수의 본체 안에서 또 다른 함수를 정의할 수 있습니다.</p>
+<h2 id="4101-형태"><a class="anchor" tabindex="-1" href="#4101-형태" aria-hidden="true">#</a>4.10.1. 형태</h2>
+<pre><code class="language-rok"><span class="k">fn</span> outer(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">fn</span> inner(y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+        y + <span class="n">1</span>
+    }
+
+    inner(x) + inner(x * <span class="n">2</span>)
+}
+</code></pre>
+<p><code>fn</code> 키워드를 외부 함수의 본체 안에 두기만 하면 되며, 정의와 사용에 관한 규칙은 <a href="401-function-declaration">함수 선언</a> 에서 다루는 모듈 수준 함수와 동일합니다.</p>
+<h2 id="4102-가시-범위"><a class="anchor" tabindex="-1" href="#4102-가시-범위" aria-hidden="true">#</a>4.10.2. 가시 범위</h2>
+<p>중첩 함수는 자신이 정의된 블록 스코프 안에서만 보입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> outer() {
+    <span class="k">fn</span> helper() { ... }
+    helper();                     <span class="c">// OK</span>
+}
+
+helper();                          <span class="c">// ERROR - outer 밖에서는 보이지 않음</span>
+</code></pre>
+<p>해당 블록을 벗어나는 순간 중첩 함수의 이름은 더 이상 보이지 않게 됩니다.</p>
+<h2 id="4103-외부-변수-캡처-없음"><a class="anchor" tabindex="-1" href="#4103-외부-변수-캡처-없음" aria-hidden="true">#</a>4.10.3. 외부 변수 캡처 (없음)</h2>
+<p>중첩 함수는 외부 함수의 변수를 캡처하지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> outer(n: <span class="t">i32</span>) {
+    <span class="k">fn</span> inner() {
+        <span class="k">let</span> x = n;                <span class="c">// ERROR - n 이 보이지 않음</span>
+    }
+    inner();
+}
+</code></pre>
+<p>이러한 결정은 중첩 함수가 깨끗한 함수 단위라는 점을 분명히 드러내기 위한 것입니다. 외부 변수에 의존하는 상태 있는 함수가 필요할 때에는 <a href="405-closure">클로저</a> 를 사용하면 됩니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> outer(n: <span class="t">i32</span>) {
+    <span class="k">let</span> inner = |x| x + n;        <span class="c">// OK - 클로저는 캡처 가능</span>
+    inner(<span class="n">5</span>);
+}
+</code></pre>
+<p>이로써 다음과 같은 분리가 이루어집니다.</p>
+<ul>
+<li>중첩 함수는 외부 변수를 보지 못하며, 가시 범위가 제한된다는 점을 제외하면 모듈 수준 함수와 같습니다.
+</li>
+<li>클로저는 캡처가 가능합니다 (<a href="406-capture-semantics">캡처 의미론</a> 을 참조합니다).
+</li>
+</ul>
+<p>중첩 함수는 자기 블록과 둘러싼 블록들의 항목과 <code>use</code> 선언을 <code>const</code> 를 포함해 봅니다 (<a href="../003-expressions/309-block-expressions#391-형태">3.9.1</a>). 닿지 못하는 것은 그 블록들의 지역 변수, 매개변수, 제네릭 매개변수뿐입니다.</p>
+<h2 id="4104-호출-시-동작"><a class="anchor" tabindex="-1" href="#4104-호출-시-동작" aria-hidden="true">#</a>4.10.4. 호출 시 동작</h2>
+<p>중첩 함수의 호출은 모듈 수준 함수의 호출과 동일한 규칙을 따릅니다. 함수 주소를 통해 직접 호출하므로 캡처도 오버헤드도 발생하지 않습니다.</p>
+<h2 id="4105-정의-순서"><a class="anchor" tabindex="-1" href="#4105-정의-순서" aria-hidden="true">#</a>4.10.5. 정의 순서</h2>
+<p>같은 블록 안에서는 중첩 함수의 정의 전후 어디에서든 호출할 수 있습니다. 다음 두 형태 모두 허용됩니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> outer() {
+    helper();                     <span class="c">// 정의 전 호출</span>
+    <span class="k">fn</span> helper() { ... }
+}
+
+<span class="k">fn</span> outer() {
+    <span class="k">fn</span> helper() { ... }
+    helper();                     <span class="c">// 정의 후 호출</span>
+}
+</code></pre>
+<p>호이스팅 (Hoisting) 덕분에 블록 전체에서 보이게 되므로, 어느 위치에서든 호출할 수 있습니다.</p>
+<h2 id="4106-중첩-함수와-클로저-사이의-선택"><a class="anchor" tabindex="-1" href="#4106-중첩-함수와-클로저-사이의-선택" aria-hidden="true">#</a>4.10.6. 중첩 함수와 클로저 사이의 선택</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>특성</th><th>중첩 함수</th><th>클로저</th></tr></thead>
+<tbody>
+<tr><td>정의 형태</td><td><code>fn name(...) { ... }</code></td><td><code>| ... | body</code></td></tr>
+<tr><td>외부 변수 캡처</td><td>불가</td><td>가능</td></tr>
+<tr><td>이름</td><td>있음</td><td>없음</td></tr>
+<tr><td>다른 함수에 인자로 전달</td><td>가능 (이름으로)</td><td>가능</td></tr>
+<tr><td>상태 없는 도우미</td><td>적합</td><td>가능하지만 과도</td></tr>
+<tr><td>상태 있는 콜백</td><td>부적합</td><td>적합</td></tr>
+</tbody></table></div>
+<p>선택 기준은 다음과 같습니다. 외부 변수가 필요 없고 이름이 있어야 가독성에 도움이 된다면 중첩 함수를 선택하고, 외부 변수가 필요하거나 익명으로 충분한 경우라면 클로저를 사용하면 됩니다.</p>
+<h2 id="4107-중첩-함수의-가시성"><a class="anchor" tabindex="-1" href="#4107-중첩-함수의-가시성" aria-hidden="true">#</a>4.10.7. 중첩 함수의 가시성</h2>
+<p>중첩 함수는 외부 함수의 본체 안에서만 보이므로, <code>pub</code> 같은 가시성 키워드는 의미를 갖지 못합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> outer() {
+    <span class="k">pub</span> <span class="k">fn</span> helper() { ... }       <span class="c">// ERROR - 중첩 함수에 pub 무의미</span>
+}
+</code></pre>
+<p>가시성은 모듈 수준의 항목에만 적용됩니다. 블록에 선언한 모든 항목도 마찬가지입니다 (<a href="../003-expressions/309-block-expressions#391-형태">3.9.1</a>).</p>
+<h2 id="4108-같은-이름의-중첩-함수와-외부-변수"><a class="anchor" tabindex="-1" href="#4108-같은-이름의-중첩-함수와-외부-변수" aria-hidden="true">#</a>4.10.8. 같은 이름의 중첩 함수와 외부 변수</h2>
+<pre><code class="language-rok"><span class="k">fn</span> outer() {
+    <span class="k">let</span> helper = <span class="n">42</span>;
+    <span class="k">fn</span> helper() { ... }            <span class="c">// ERROR - 같은 이름의 변수와 함수</span>
+}
+</code></pre>
+<p>같은 블록 안에서 같은 이름을 가진 변수와 함수는 서로 충돌하므로 컴파일 에러가 발생합니다.</p>
+<h2 id="4109-다단-중첩"><a class="anchor" tabindex="-1" href="#4109-다단-중첩" aria-hidden="true">#</a>4.10.9. 다단 중첩</h2>
+<p>함수는 임의의 깊이로 중첩할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> outer() {
+    <span class="k">fn</span> middle() {
+        <span class="k">fn</span> inner() { ... }
+        inner();
+    }
+    middle();
+}
+</code></pre>
+<p>중첩 함수는 자기 블록 전체에서 보입니다 (hoist). 자기 블록과 바깥 모든 블록의 중첩 함수, 그 밖의 항목, <code>use</code> 선언은 보지만, 그 어느 블록의 지역 변수도 보지 않습니다. 블록의 <code>use</code> 는 같은 이름의 바깥 중첩 함수를 가립니다.</p>
+<h2 id="41010-중첩-함수의-유용한-곳"><a class="anchor" tabindex="-1" href="#41010-중첩-함수의-유용한-곳" aria-hidden="true">#</a>4.10.10. 중첩 함수의 유용한 곳</h2>
+<pre><code class="language-rok"><span class="k">fn</span> parse(input: <span class="t">str</span>) -&gt; <span class="t">AST</span> {
+    <span class="k">fn</span> parse_expr(s: <span class="t">str</span>) -&gt; <span class="t">Expr</span> { ... }
+    <span class="k">fn</span> parse_stmt(s: <span class="t">str</span>) -&gt; <span class="t">Stmt</span> { ... }
+
+    <span class="k">let</span> result = <span class="t">AST</span>::new();
+    <span class="k">while</span> !input.is_empty() {
+        result.add(parse_stmt(input));
+    }
+    result
+}
+</code></pre>
+<p>큰 함수의 내부 도우미로 활용할 때 자연스럽습니다. 다른 모듈에 노출할 필요가 없고 외부 함수의 컨텍스트와 묶여 있는 보조 로직이라면 중첩 함수가 잘 어울립니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/410-nested-functions.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="409-method"><small>Previous</small>4.9. 메서드</a><a class="next" href="411-generators"><small>Next</small>4.11. 제너레이터 (yield)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

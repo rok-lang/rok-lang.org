@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.21. crypto:: - 암호 알고리즘 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::crypto 는 TLS 스택에 필요한 알고리즘을 순수 계산으로 제공합니다. 모든 target 에서 동일하게 동작하므로 rok::core (0.1) 에 둡니다. 난수는 OS 가 필요하므로 rok::std::crypto::random (3.10) 에 있으며, 무작위 입력...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/221-crypto.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.21. crypto:: - 암호 알고리즘 - rok docs">
+<meta property="og:description" content="rok::core::crypto 는 TLS 스택에 필요한 알고리즘을 순수 계산으로 제공합니다. 모든 target 에서 동일하게 동작하므로 rok::core (0.1) 에 둡니다. 난수는 OS 가 필요하므로 rok::std::crypto::random (3.10) 에 있으며, 무작위 입력...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/221-crypto.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/221-crypto.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/221-crypto.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li class="cur"><a aria-current="page" href="221-crypto">2.21. crypto:: - 암호 알고리즘</a><ul class="toc"><li><a href="#2211-해시-hmac-hkdf">2.21.1. 해시, HMAC, HKDF</a></li><li><a href="#2212-aead">2.21.2. AEAD</a></li><li><a href="#2213-키-교환">2.21.3. 키 교환</a></li><li><a href="#2214-서명">2.21.4. 서명</a></li><li><a href="#2215-보안-고려-사항">2.21.5. 보안 고려 사항</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="221-crypto---암호-알고리즘 221-crypto---cryptographic-algorithms 2211-해시-hmac-hkdf 2211-hashes-hmac-hkdf 2212-aead 2212-aead 2213-키-교환 2213-key-exchange 2214-서명 2214-signatures 2215-보안-고려-사항 2215-security-considerations"><a href="../../../../spec/refs-standard-libraries/200-core/221-crypto" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="221-crypto---암호-알고리즘"><a class="anchor" tabindex="-1" href="#221-crypto---암호-알고리즘" aria-hidden="true">#</a>2.21. <code>crypto::</code> - 암호 알고리즘</h1>
+<p><code>rok::core::crypto</code> 는 TLS 스택에 필요한 알고리즘을 순수 계산으로 제공합니다. 모든 target 에서 동일하게 동작하므로 <code>rok::core</code> (0.1) 에 둡니다. 난수는 OS 가 필요하므로 <code>rok::std::crypto::random</code> (3.10) 에 있으며, 무작위 입력이 필요한 함수 (키, nonce, encapsulation) 는 그 입력을 인자로 받습니다. 비밀 데이터에 대한 연산은 2.21.5 가 정의하는 대로 constant time 으로 수행됩니다.</p>
+<p>아래의 모든 항목은 <code>rok::core::crypto::</code> 에서 쓸 수 있으며, 주석은 그것을 함께 export 하는 하위 모듈을 가리킵니다.</p>
+<p>바이트 인자는 <code>Bytes</code> 를 받습니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">type</span> <span class="t">Bytes</span> = <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt; | <span class="t">str</span> | <span class="t">Secret</span>;   <span class="c">// str 은 UTF-8 바이트를, Secret 은 제자리의 바이트를 줌</span>
+<span class="k">struct</span> <span class="t">Secret</span> {                                     <span class="c">// crypto::secret</span>
+    <span class="k">fn</span> zeroed(len: <span class="t">usize</span>) -&gt; <span class="t">Secret</span>;
+    <span class="k">fn</span> new(bytes: <span class="t">Bytes</span>) -&gt; <span class="t">Secret</span>;                 <span class="c">// 사본</span>
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> as_bytes(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;                 <span class="c">// 사본이 아니라 제자리의 바이트</span>
+    <span class="k">fn</span> wipe(<span class="k">self</span>);                                  <span class="c">// 지금 0 으로 덮어씀</span>
+}
+<span class="k">impl</span> <span class="t">Index</span>&lt;<span class="t">usize</span>&gt; <span class="k">for</span> <span class="t">Secret</span>; <span class="k">impl</span> <span class="t">IndexSet</span>&lt;<span class="t">usize</span>&gt; <span class="k">for</span> <span class="t">Secret</span>;   <span class="c">// s[i], s[i] = b (범위 검사)</span>
+<span class="k">impl</span> <span class="t">Sliceable</span>&lt;<span class="t">Range</span>&lt;<span class="t">usize</span>&gt;&gt; <span class="k">for</span> <span class="t">Secret</span>;           <span class="c">// s[a:b]: 제자리의 view</span>
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">Secret</span>;                               <span class="c">// using 해제가 지움</span>
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">Secret</span>;                              <span class="c">// "Secret(n bytes)", 바이트는 결코 보이지 않음</span>
+<span class="k">fn</span> constant_time_eq(a: <span class="t">Bytes</span>, b: <span class="t">Bytes</span>) -&gt; <span class="t">bool</span>;   <span class="c">// 시간은 길이에만 의존</span>
+</code></pre>
+<p><code>Secret</code> 은 비밀 저장소 (<a href="#2215-보안-고려-사항">2.21.5</a>) 에 있는 고정 길이 바이트열입니다. 복사본은 <code>List</code> 처럼 바이트를 공유하며, <code>Sync</code> 가 아닙니다. <code>as_bytes</code> 나 slicing 으로 얻은 view 는 저장소 자체를 읽습니다: 이후의 쓰기를 보며, secret 이 지워지면 0 을 읽습니다. <code>Secret</code> 에는 <code>==</code> 가 없으므로 <code>constant_time_eq</code> 로 비교합니다.</p>
+<h2 id="2211-해시-hmac-hkdf"><a class="anchor" tabindex="-1" href="#2211-해시-hmac-hkdf" aria-hidden="true">#</a>2.21.1. 해시, HMAC, HKDF</h2>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">HashAlgorithm</span> { <span class="t">Sha256</span>, <span class="t">Sha384</span>, <span class="t">Sha512</span> }       <span class="c">// crypto::sha2 (FIPS 180-4)</span>
+<span class="k">impl</span> <span class="t">HashAlgorithm</span> {
+    <span class="k">fn</span> output_len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> block_len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> digest(<span class="k">self</span>, data: <span class="t">Bytes</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+}
+<span class="k">struct</span> <span class="t">Digest</span> {                                     <span class="c">// 진행 중인 해시; 복사하면 분기</span>
+    <span class="k">fn</span> new(alg: <span class="t">HashAlgorithm</span>) -&gt; <span class="t">Digest</span>;
+    <span class="k">fn</span> algorithm(<span class="k">self</span>) -&gt; <span class="t">HashAlgorithm</span>;
+    <span class="k">fn</span> update(<span class="k">ref</span> <span class="k">self</span>, data: <span class="t">Bytes</span>);
+    <span class="k">fn</span> finish(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+}
+<span class="k">struct</span> <span class="t">Sha3_256</span> / <span class="t">Sha3_512</span> {                        <span class="c">// crypto::sha3 (FIPS 202)</span>
+    <span class="k">const</span> <span class="t">OUTPUT_LEN</span>: <span class="t">usize</span>;                        <span class="c">// 32 / 64</span>
+    <span class="k">fn</span> new() -&gt; <span class="k">Self</span>; <span class="k">fn</span> update(<span class="k">ref</span> <span class="k">self</span>, data: <span class="t">Bytes</span>); <span class="k">fn</span> finish(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> digest(data: <span class="t">Bytes</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+}
+<span class="k">struct</span> <span class="t">Shake128</span> / <span class="t">Shake256</span> {
+    <span class="k">fn</span> new() -&gt; <span class="k">Self</span>; <span class="k">fn</span> update(<span class="k">ref</span> <span class="k">self</span>, data: <span class="t">Bytes</span>);
+    <span class="k">fn</span> squeeze(<span class="k">ref</span> <span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;     <span class="c">// 다음 n 바이트의 출력</span>
+}
+<span class="k">struct</span> <span class="t">Hmac</span> {                                       <span class="c">// crypto::hmac (RFC 2104)</span>
+    <span class="k">fn</span> new(alg: <span class="t">HashAlgorithm</span>, key: <span class="t">Bytes</span>) -&gt; <span class="t">Hmac</span>;
+    <span class="k">fn</span> update(<span class="k">ref</span> <span class="k">self</span>, data: <span class="t">Bytes</span>);
+    <span class="k">fn</span> finish(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> mac(alg: <span class="t">HashAlgorithm</span>, key: <span class="t">Bytes</span>, data: <span class="t">Bytes</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> verify(alg: <span class="t">HashAlgorithm</span>, key: <span class="t">Bytes</span>, data: <span class="t">Bytes</span>, tag: <span class="t">Bytes</span>) -&gt; <span class="t">bool</span>;   <span class="c">// constant time</span>
+}
+<span class="k">struct</span> <span class="t">Hkdf</span> {                                       <span class="c">// RFC 5869</span>
+    <span class="k">fn</span> extract(alg: <span class="t">HashAlgorithm</span>, salt: <span class="t">Bytes</span>, ikm: <span class="t">Bytes</span>) -&gt; <span class="t">Secret</span>;
+    <span class="k">fn</span> expand(alg: <span class="t">HashAlgorithm</span>, prk: <span class="t">Bytes</span>, info: <span class="t">Bytes</span>, len: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">Secret</span>;
+}
+</code></pre>
+<p><code>Digest</code>, <code>Hmac</code>, SHA-3 / SHAKE 상태는 값입니다: 복사본은 독립적으로 이어 갑니다 (중간에 읽는 transcript 해시). 연속된 <code>squeeze</code> 호출은 하나의 출력 스트림을 이어 가며, 첫 <code>squeeze</code> 뒤의 <code>update</code> 는 panic 합니다. <code>Hmac::verify</code> 는 전체 길이의 tag 를 constant time 으로 비교합니다. <code>Hkdf::extract</code> 는 salt 가 비면 <code>output_len</code> 개의 0 바이트를 쓰며, <code>expand</code> 는 <code>len &gt; 255 * output_len</code> 이면 <code>ValueError</code> 를 던집니다.</p>
+<h2 id="2212-aead"><a class="anchor" tabindex="-1" href="#2212-aead" aria-hidden="true">#</a>2.21.2. AEAD</h2>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">AeadAlgorithm</span> { <span class="t">Aes128Gcm</span>, <span class="t">Aes256Gcm</span>, <span class="t">ChaCha20Poly1305</span> }   <span class="c">// crypto::aead</span>
+<span class="k">impl</span> <span class="t">AeadAlgorithm</span> { <span class="k">fn</span> key_len(<span class="k">self</span>) -&gt; <span class="t">usize</span>; <span class="k">fn</span> nonce_len(<span class="k">self</span>) -&gt; <span class="t">usize</span>; <span class="k">fn</span> tag_len(<span class="k">self</span>) -&gt; <span class="t">usize</span>; }
+<span class="k">struct</span> <span class="t">Aead</span> {
+    <span class="k">fn</span> new(alg: <span class="t">AeadAlgorithm</span>, key: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">Aead</span>;
+    <span class="k">fn</span> algorithm(<span class="k">self</span>) -&gt; <span class="t">AeadAlgorithm</span>;
+    <span class="k">fn</span> seal(<span class="k">self</span>, nonce: <span class="t">Bytes</span>, aad: <span class="t">Bytes</span>, plaintext: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// ciphertext ‖ 16-byte tag</span>
+    <span class="k">fn</span> open(<span class="k">self</span>, nonce: <span class="t">Bytes</span>, aad: <span class="t">Bytes</span>, sealed: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>;  <span class="c">// none: 인증 실패</span>
+    <span class="k">fn</span> wipe(<span class="k">self</span>);                                  <span class="c">// 키 자료를 0 으로 덮어씀</span>
+}
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">Aead</span>;
+</code></pre>
+<p><code>Aead</code> 는 확장한 키 (AES round key 와 GHASH 키, 또는 ChaCha20 키) 를 비밀 저장소에 둡니다. 복사본은 그것을 공유하므로 <code>wipe</code> 는 모든 복사본을 끝냅니다.</p>
+<p>AES-GCM 은 96-bit nonce 의 NIST SP 800-38D 를, ChaCha20-Poly1305 는 RFC 8439 를 따릅니다. nonce 는 12 바이트, tag 는 16 바이트입니다. 키나 nonce 의 길이가 틀리면 <code>ValueError</code> 이며, nonce 하나가 허용하는 것보다 긴 메시지도 그렇습니다 (32-bit block counter 가 넘쳐서는 안 됨: AES-GCM 은 2^36 − 32 바이트, ChaCha20-Poly1305 는 2^38 − 64). <code>open</code> 은 tag 보다 짧은 입력에 <code>none</code> 을 돌려주며, 평문을 내놓기 전에 tag 를 constant time 으로 검사합니다. 한 키 아래에서 nonce 는 결코 반복되어서는 안 되며, <code>Aead</code> 는 nonce 를 추적하지 않습니다.</p>
+<h2 id="2213-키-교환"><a class="anchor" tabindex="-1" href="#2213-키-교환" aria-hidden="true">#</a>2.21.3. 키 교환</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">X25519</span> {                                     <span class="c">// crypto::x25519 (RFC 7748)</span>
+    <span class="k">fn</span> public_key(secret: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> shared_secret(secret: <span class="t">Bytes</span>, peer_public: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">Secret</span> | <span class="k">none</span>;  <span class="c">// none: 결과가 전부 0</span>
+}
+<span class="k">struct</span> <span class="t">MlKem768</span> {                                   <span class="c">// crypto::mlkem (FIPS 203)</span>
+    <span class="k">const</span> <span class="t">ENCAPSULATION_KEY_LEN</span>: <span class="t">usize</span> = <span class="n">1184</span>;
+    <span class="k">const</span> <span class="t">DECAPSULATION_KEY_LEN</span>: <span class="t">usize</span> = <span class="n">2400</span>;
+    <span class="k">const</span> <span class="t">CIPHERTEXT_LEN</span>: <span class="t">usize</span> = <span class="n">1088</span>;
+    <span class="k">const</span> <span class="t">SHARED_KEY_LEN</span>: <span class="t">usize</span> = <span class="n">32</span>;
+    <span class="k">fn</span> keygen(d: <span class="t">Bytes</span>, z: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; (<span class="t">List</span>&lt;<span class="t">u8</span>&gt;, <span class="t">Secret</span>);       <span class="c">// 32-byte seed 로부터 (ek, dk)</span>
+    <span class="k">fn</span> encapsulate(ek: <span class="t">Bytes</span>, m: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; (<span class="t">Secret</span>, <span class="t">List</span>&lt;<span class="t">u8</span>&gt;);  <span class="c">// 32-byte m 으로부터 (key, ciphertext)</span>
+    <span class="k">fn</span> decapsulate(dk: <span class="t">Bytes</span>, c: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">Secret</span>;              <span class="c">// implicit rejection</span>
+}
+</code></pre>
+<p>X25519 키는 32 바이트입니다 (아니면 <code>ValueError</code>). secret 은 clamp 하고 상대의 u 좌표는 RFC 7748 5 가 말하는 대로 받으므로 (bit 255 무시, p 이상의 값은 reduce), small-order 나 twist 점은 에러가 아닙니다: <code>shared_secret</code> 은 결과가 전부 0 일 때 정확히 <code>none</code> 을 돌려줍니다 (RFC 7748 6.1). ML-KEM 함수들은 FIPS 203 의 결정적 내부 형태입니다 (호출자가 32 바이트 seed <code>d</code>, <code>z</code>, <code>m</code> 을 난수 원천에서 줌). <code>encapsulate</code> 와 <code>decapsulate</code> 는 FIPS 203 7.2 / 7.3 의 입력 검사를 수행하며 (<code>ValueError</code>), 자기 자신으로 다시 암호화되지 않는 ciphertext 는 에러가 아니라 implicit-rejection 키를 냅니다.</p>
+<h2 id="2214-서명"><a class="anchor" tabindex="-1" href="#2214-서명" aria-hidden="true">#</a>2.21.4. 서명</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Ed25519</span> {                                    <span class="c">// crypto::ed25519 (RFC 8032)</span>
+    <span class="k">fn</span> public_key(seed: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> sign(seed: <span class="t">Bytes</span>, msg: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> verify(public_key: <span class="t">Bytes</span>, msg: <span class="t">Bytes</span>, sig: <span class="t">Bytes</span>) -&gt; <span class="t">bool</span>;
+}
+<span class="k">enum</span> <span class="t">EcCurve</span> { <span class="t">P256</span>, <span class="t">P384</span> }                         <span class="c">// crypto::ecdsa (FIPS 186-5)</span>
+<span class="k">struct</span> <span class="t">Ecdsa</span> {
+    <span class="k">fn</span> public_key(curve: <span class="t">EcCurve</span>, private_key: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;  <span class="c">// SEC1 비압축</span>
+    <span class="k">fn</span> sign(curve: <span class="t">EcCurve</span>, hash: <span class="t">HashAlgorithm</span>, private_key: <span class="t">Bytes</span>, msg: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;  <span class="c">// DER, RFC 6979 nonce</span>
+    <span class="k">fn</span> verify(curve: <span class="t">EcCurve</span>, hash: <span class="t">HashAlgorithm</span>, public_key: <span class="t">Bytes</span>, msg: <span class="t">Bytes</span>, signature: <span class="t">Bytes</span>) -&gt; <span class="t">bool</span>;  <span class="c">// SEC1 비압축 키, DER 서명</span>
+}
+<span class="k">struct</span> <span class="t">RsaPublicKey</span> {                               <span class="c">// crypto::rsa (RFC 8017), 2048..4096 bits</span>
+    <span class="k">fn</span> new(n: <span class="t">Bytes</span>, e: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">RsaPublicKey</span>;
+    <span class="k">fn</span> from_pkcs1_der(der: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">RsaPublicKey</span>;
+    <span class="k">fn</span> bits(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> modulus(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                   <span class="c">// big-endian, 앞의 0 바이트 없음</span>
+    <span class="k">fn</span> exponent(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> verify_pkcs1v15(<span class="k">self</span>, hash: <span class="t">HashAlgorithm</span>, msg: <span class="t">Bytes</span>, signature: <span class="t">Bytes</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> verify_pss(<span class="k">self</span>, hash: <span class="t">HashAlgorithm</span>, msg: <span class="t">Bytes</span>, signature: <span class="t">Bytes</span>, salt_len: <span class="t">usize</span> | <span class="k">none</span> = <span class="k">none</span>) -&gt; <span class="t">bool</span>;  <span class="c">// MGF1(hash); none: salt 길이 = 해시 길이</span>
+}
+<span class="k">struct</span> <span class="t">RsaPrivateKey</span> {
+    <span class="k">fn</span> from_pkcs1_der(der: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">RsaPrivateKey</span>;   <span class="c">// RSAPrivateKey, 소수 두 개</span>
+    <span class="k">fn</span> public_key(<span class="k">self</span>) -&gt; <span class="t">RsaPublicKey</span>;
+    <span class="k">fn</span> bits(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> sign_pkcs1v15(<span class="k">self</span>, hash: <span class="t">HashAlgorithm</span>, msg: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;  <span class="c">// 결정적</span>
+    <span class="k">fn</span> sign_pss(<span class="k">self</span>, hash: <span class="t">HashAlgorithm</span>, msg: <span class="t">Bytes</span>, salt: <span class="t">Bytes</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;  <span class="c">// salt: 새 난수, 해시 길이</span>
+}
+</code></pre>
+<p>Ed25519 검증은 cofactorless 이며, <code>A</code> 와 <code>R</code> 의 정규형이 아닌 인코딩과 <code>S ≥ L</code> 을 거부합니다. ECDSA 검증은 곡선 위의 비압축 점이 아니거나 좌표가 p 이상인 공개 키, 최소 DER 이 아니거나 <code>r</code> 또는 <code>s</code> 가 <code>[1, n)</code> 밖인 서명을 거부합니다. RSA 검증은 modulus 보다 작고 정확히 modulus 길이인 서명을 요구하며, PKCS #1 v1.5 는 다시 만든 인코딩 전체를 비교합니다. <code>RsaPublicKey::new</code> 는 2048 에서 4096 bit 의 홀수 modulus 와 <code>3 ≤ e &lt; 2^33</code> 인 홀수 지수를 받으며 (앞의 0 바이트는 무시), 그 밖은 <code>ValueError</code> 입니다 (검증은 지수 bit 마다 modular 제곱 한 번이 들므로 상대가 긴 지수를 고르게 해서는 안 됨).</p>
+<p>ECDSA 개인 키는 곡선의 크기 이하인 big-endian 스칼라 <code>1 &lt;= d &lt; n</code> 입니다. nonce 는 결정적으로 유도되므로 (RFC 6979, <code>hash</code> 를 쓰는 HMAC-DRBG) 서명에 무작위 입력이 필요 없습니다. RSA 서명은 base blinding 을 곁들인 CRT 를 쓰며 (blinding 인수는 키, 메시지, 그리고 PSS 이면 <code>salt</code> 에서 유도하므로 PKCS #1 v1.5 서명에는 무작위 입력이 필요 없음), 결과를 돌려주기 전에 공개 키로 검사합니다. 일관되지 않은 키는 <code>ValueError</code> 입니다. PSS 검증은 modulus 에 들어가는 어떤 salt 길이든 받으며 (<code>salt_len</code>), 서명은 해시 길이만큼의 salt 를 씁니다.</p>
+<h2 id="2215-보안-고려-사항"><a class="anchor" tabindex="-1" href="#2215-보안-고려-사항" aria-hidden="true">#</a>2.21.5. 보안 고려 사항</h2>
+<p><strong>Constant time.</strong> 비밀에 대한 연산 - AES (암호화와 key schedule), GHASH, ChaCha20, Poly1305, tag 비교, X25519, Ed25519 서명, ECDSA 서명과 키 유도, RSA 개인 키 연산, ML-KEM 키 생성과 decapsulation, HMAC, HKDF - 에서는 어떤 분기도, 어떤 메모리 인덱스도 비밀 데이터에 의존하지 않습니다. AES 는 bitslice 로 구현하고 (table 조회 없음), GHASH 는 성긴 피연산자의 정수 곱으로 곱하며 (table 없음), 스칼라 곱은 미리 계산한 table 을 모든 항목을 훑어 읽고, 역원은 공개 지수의 거듭제곱 (ECDSA, Ed25519) 이나 고정 길이 binary GCD (RSA blinding) 로 구하며, RSA 거듭제곱은 소수의 전체 폭에 걸쳐 지수 bit 마다 제곱과 곱셈을 하고, ML-KEM 은 나눗셈 대신 곱하고 shift 해서 reduce 하며, 조건부 선택은 컴파일러가 0 이나 모두 1 임을 증명할 수 없는 mask 이므로 다시 분기로 바꿀 수 없습니다. 실행 시간은 공개 값에만 의존합니다: 길이, 알고리즘, 곡선과 키 크기, 그리고 어차피 공개되는 결과 (검증되지 않는 tag 나 서명, 범위 밖의 RFC 6979 후보 nonce). ML-KEM decapsulation 은 ciphertext 가 다시 암호화되든 아니든 같은 경로를 밟으며, implicit-rejection 키는 mask 로 고릅니다.</p>
+<p>이 보장에는 구현이 밝히고 숨기지 않는 한계가 있습니다.</p>
+<ul>
+<li>target 의 32 × 32 → 64-bit 정수 곱셈과 shift, rotate 가 constant time 으로 돈다고 가정합니다 (현재의 x86-64, AArch64, ARMv7-A, i686 코어에서는 참이며, 일부 마이크로컨트롤러와 옛 임베디드 코어에서는 아님). wasm target 에서는 엔진의 코드 생성만큼만 유효합니다.
+</li>
+<li>제어 흐름과 메모리 주소로 보이는 시간만 다루며, 전력, 전자기, fault injection 공격이나 투기 실행 side channel 은 다루지 않습니다.
+</li>
+<li>파싱 (DER, PEM, 키 파일) 과 공개 데이터의 검증은 가변 시간입니다.
+</li>
+<li>이것은 배포된 toolchain 으로 컴파일한 구현의 성질이지 언어가 주는 보장이 아닙니다: 같은 방식으로 쓴 사용자 코드는 포함되지 않습니다.
+</li>
+</ul>
+<p><strong>메모리 안의 키 자료.</strong> 비밀 바이트는 <em>비밀 저장소</em> 에 있습니다: 수집기가 large-object space (<a href="../../refs-lang/007-runtime/701-object-layout#712-메모리-공간">refs-lang 7.1.2</a>) 에 할당하고, 결코 옮기거나 복사하지 않으며, 메모리를 놓기 전에 0 으로 덮어쓰는 buffer 입니다. <code>Secret</code> (2.21) 은 그 공개 형태입니다.</p>
+<ul>
+<li><code>Secret</code> 의 바이트는 heap 에서 정확히 한 곳에만 있습니다. <code>wipe</code> 가, <code>using</code> 바인딩이 <code>Secret</code> 을 해제할 때 (직접 또는 drop glue 를 거쳐), 늦어도 그 buffer 를 해제하는 수집이 그것을 0 으로 덮어씁니다. 0 으로 지우는 쓰기는 최적화기가 없앨 수 없는 store 입니다.
+</li>
+<li>알고리즘은 키에 의존하는 상태를 비밀 저장소나 지역 변수에만 두며, 보통의 heap 객체에는 두지 않습니다. 그 상태는 AES round key, GHASH 키, ChaCha20 키 (<code>Aead</code>), HMAC 과 HKDF (padding 한 키, chaining 값, 출력 block), X25519 와 ML-KEM 의 공유 키, ML-KEM decapsulation 키와 그 비밀 다항식, seed, 메시지, 그리고 Ed25519 의 확장 키와 nonce 해시입니다. 결과가 키 자료인 함수는 <code>Secret</code> 을 돌려줍니다. 비밀 저장소의 임시 값은 함수가 반환하기 전에 지웁니다. 함수가 throw 하면 수집이 지웁니다.
+</li>
+<li><code>net::tls</code> (<a href="../300-std/302-net#325-tls-13---nettls">3.2.5</a>) 는 traffic, handshake, resumption secret, record 키, 키 교환 secret, ticket PSK, Ed25519 / EC 개인 키를 비밀 저장소에 두며, KeyUpdate 때, 핸드셰이크가 끝날 때, close 때 지웁니다.
+</li>
+</ul>
+<p>이 보장에는 구현이 밝히고 숨기지 않는 한계가 있습니다.</p>
+<ul>
+<li><strong>레지스터와 스택.</strong> 지역 변수는 레지스터와 스레드의 스택에 있으며 지우지 않습니다. 고정 크기 배열과 <code>Digest</code>, <code>Hmac</code>, SHA-3 와 cipher 상태 같은 struct 값, 그리고 X25519, Ed25519, ECDSA 의 field element 와 스칼라도 포함됩니다. 컴파일러가 만드는 spill 도 지우지 않으며, slot 은 스택을 다시 쓸 때만 덮어써집니다. 그것을 지우는 코드 생성은 없으며, Rust 의 <code>zeroize</code>, Go 의 <code>crypto/subtle</code> helper, libsodium 의 <code>sodium_memzero</code> 도 마찬가지로 받은 메모리에만 닿고 컴파일러가 만든 사본에는 닿지 않습니다.
+</li>
+<li><strong>보통의 객체.</strong> heap 객체에 저장한 값은 그 객체 안에 있습니다: 수집기는 evacuation 중에 그것을 복사할 수 있고 지우지 않은 채 해제합니다. <code>List</code> 원소, GC 가 가진 struct 의 필드, 클로저 환경, 중단 지점을 넘는 <code>async</code> / generator 프레임 (<a href="../../refs-lang/007-runtime/708-coroutine#782-코루틴-프레임">refs-lang 7.8.2</a>) 이 해당합니다. <code>Secret</code> 의 바이트를 꺼내 복사하면 (<code>as_bytes().to_list()</code>, <code>str</code>, 포맷) 보통의 사본이 생깁니다.
+</li>
+<li><strong>보통의 입력과 출력.</strong> 다루지 않는 것: <code>List&lt;u8&gt;</code> 나 <code>str</code> 로 넘긴 키, 평문과 암호문, <code>Hmac</code> tag, <code>Digest</code> 출력, 디코드한 키 파일 (PEM / DER 디코드는 <code>PrivateKey</code> 가 키를 복사하기 전에 보통의 리스트를 만듦).
+</li>
+<li><strong>서명.</strong> ECDSA 와 RSA 서명은 다루지 않습니다: RFC 6979 상태와 <code>bignum</code> limb 는 보통의 리스트이며, <code>RsaPrivateKey</code> 는 값을 보통의 리스트에 둡니다.
+</li>
+<li><strong>RAM 에 고정하지 않음.</strong> 비밀 저장소는 고정 (<code>mlock</code> / <code>VirtualLock</code>) 하지 않습니다. swap 이나 hibernation 파일에 쓰일 수 있고, core dump 와 프로세스 snapshot 에 나타납니다. 고정은 page 단위이고 프로세스마다 제한되며 (RLIMIT_MEMLOCK) page 단위로 풀리므로, page 단위의 자체 할당기가 필요할 것입니다.
+</li>
+<li><strong>프로세스 종료와 wasm.</strong> 프로세스 종료로 놓이는 메모리는 지우지 않습니다. wasm target 에서는 host 가 언제든 linear memory 를 읽을 수 있습니다.
+</li>
+</ul>
+<p><strong>난수.</strong> 알고리즘은 모든 무작위 입력을 인자로 받습니다. 호출자는 그것을 OS 의 CSPRNG 인 <code>rok::std::crypto::random</code> (3.10) 에서 꺼냅니다. ML-KEM seed, X25519 와 Ed25519 secret, ECDSA 개인 키, PSS salt 는 그런 원천의 새 출력이어야 합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/221-crypto.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="220-future"><small>Previous</small>2.20. future - Future / await 통합</a><a class="next" href="../300-std/"><small>Next</small>3. Std tier</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

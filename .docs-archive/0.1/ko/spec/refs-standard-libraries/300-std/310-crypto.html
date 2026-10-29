@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.10. crypto:: - OS 난수 원천 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="바이트는 OS 의 암호학적으로 안전한 생성기에서 호출마다 읽습니다 (사용자 공간 pool 이 없으므로, fork 한 프로세스나 복원한 snapshot 이 random 이 buffer 한 출력을 반복하지 않음):">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/310-crypto.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.10. crypto:: - OS 난수 원천 - rok docs">
+<meta property="og:description" content="바이트는 OS 의 암호학적으로 안전한 생성기에서 호출마다 읽습니다 (사용자 공간 pool 이 없으므로, fork 한 프로세스나 복원한 snapshot 이 random 이 buffer 한 출력을 반복하지 않음):">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/310-crypto.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/310-crypto.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/310-crypto.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - 시간</a></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li class="cur"><a aria-current="page" href="310-crypto">3.10. crypto:: - OS 난수 원천</a><ul class="toc"><li><a href="#3101-random">3.10.1. random</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="310-crypto---os-난수-원천 310-crypto---the-os-random-source 3101-random 3101-random"><a href="../../../../spec/refs-standard-libraries/300-std/310-crypto" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="310-crypto---os-난수-원천"><a class="anchor" tabindex="-1" href="#310-crypto---os-난수-원천" aria-hidden="true">#</a>3.10. <code>crypto::</code> - OS 난수 원천</h1>
+<h2 id="3101-random"><a class="anchor" tabindex="-1" href="#3101-random" aria-hidden="true">#</a>3.10.1. <code>random</code></h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::crypto::random;
+
+<span class="k">mod</span> random {
+    <span class="k">fn</span> fill(buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;);          <span class="c">// 모든 바이트를 난수로 덮어씀</span>
+    <span class="k">fn</span> bytes(n: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> secret(n: <span class="t">usize</span>) -&gt; <span class="t">Secret</span>;   <span class="c">// 비밀 저장소의 n 개 난수 바이트 (키, seed): 다른 사본 없음</span>
+}
+</code></pre>
+<p>바이트는 OS 의 암호학적으로 안전한 생성기에서 호출마다 읽습니다 (사용자 공간 pool 이 없으므로, fork 한 프로세스나 복원한 snapshot 이 <code>random</code> 이 buffer 한 출력을 반복하지 않음):</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Target</th><th>원천</th></tr></thead>
+<tbody>
+<tr><td>Linux (gnu, musl; x86-64, AArch64, i686, ARMv7)</td><td>flag 없는 <code>getrandom(2)</code>: 커널 pool 이 초기화될 때까지 block 하고, 그 뒤로는 block 하지 않음</td></tr>
+<tr><td>macOS</td><td><code>getentropy(2)</code>, 호출마다 최대 256 바이트</td></tr>
+<tr><td>Windows</td><td><code>BCRYPT_USE_SYSTEM_PREFERRED_RNG</code> 를 준 <code>BCryptGenRandom</code></td></tr>
+<tr><td>wasm32-wasi, wasm32-wasi-threads</td><td>WASI <code>random_get</code> (host 의 CSPRNG)</td></tr>
+<tr><td>wasm32-unknown-unknown</td><td>JavaScript host 의 <code>crypto.getRandomValues</code> (host 가 주는 <code>random_get</code> import 를 통해)</td></tr>
+</tbody></table></div>
+<p>중단된 호출은 다시 시도합니다. 원천의 실패는 복구할 수 없습니다: <code>fill</code> 과 <code>bytes</code> 는 예측 가능한 바이트를 돌려주는 대신 panic 합니다. 알고리즘은 <code>rok::core::crypto</code> (2.21) 이며 무작위 입력 (키, seed, nonce, salt) 을 인자로 받습니다. <code>net::tls</code> (3.2.5) 는 그 모두를 여기서 꺼냅니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/310-crypto.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="309-rokon"><small>Previous</small>3.9. rokon:: - ROKON 데이터 형식</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

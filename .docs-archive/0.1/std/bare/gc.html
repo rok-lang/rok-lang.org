@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rok::bare::gc - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::gc - keeping GC objects in place for raw pointers (stdlib spec 1.6). A Pinned&lt;T&gt; from pin keeps the object holding T's data where it is (rok_gc_pin, ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/std/bare/gc.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="rok::bare::gc - rok docs">
+<meta property="og:description" content="rok::bare::gc - keeping GC objects in place for raw pointers (stdlib spec 1.6). A Pinned&lt;T&gt; from pin keeps the object holding T's data where it is (rok_gc_pin, ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/std/bare/gc.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../style.css">
+<link rel="icon" href="../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../"><img src="../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../learn/">Learn</a><a href="../../examples/">Examples</a><a href="../../spec/refs-lang/">Reference</a><a href="../../spec/refs-standard-libraries/">Library</a><a href="../../std/" aria-current="page">API</a><a href="../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← Standard library API</a><ul class="pages"><li><a href="./">rok::bare</a></li><li><a href="alloc">alloc</a></li><li><a href="ffi">ffi</a></li><li style="padding-left:12px"><a href="ffi/wit">wit</a></li><li class="cur"><a aria-current="page" href="gc">gc</a><ul class="toc"><li><a href="#struct">Structs</a></li><li><a href="#trait">Traits</a></li><li><a href="#fn">Functions</a></li></ul></li><li><a href="mem">mem</a></li><li><a href="mlir">mlir</a></li><li><a href="ptr">ptr</a></li><li><a href="volatile">volatile</a></li></ul></details></aside><main id="content">
+<article>
+<h1><code>rok::<a href="./">bare</a>::gc</code></h1><p>rok::bare::gc - keeping GC objects in place for raw pointers (stdlib
+spec 1.6). A <code>Pinned&lt;T&gt;</code> from <code>pin</code> keeps the object holding <code>T</code>'s
+data where it is (<code>rok_gc_pin</code>, counted) until it is dropped, at the
+end of its <code>using</code> block. <code>GcPtr&lt;T&gt;</code> is a managed reference to one <code>T</code>
+on the GC heap (1.6.3); <code>Weak&lt;T&gt;</code> refers to a <code>GcPtr&lt;T&gt;</code>'s object
+without keeping it alive (a <code>WEAK_REF</code> word, refs-lang 8.2.8).</p>
+<h2 id="struct">Structs</h2><section class="api-item" id="struct.GcPtr"><h3><a href="#struct.GcPtr">GcPtr</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">struct</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;</code></pre><p>A reference to a GC object holding one <code>T</code> (1.6.3). Copies share the
+object. The collector traces it from every frame and object that
+holds it and updates it when the object moves; a raw <code>Ptr&lt;T&gt;</code> to the
+value exists only under a pin (<code>Pinned&lt;GcPtr&lt;T&gt;&gt;::as_value_ptr</code>).</p>
+<ul class="members"><li id="GcPtr.new"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;</code></pre><p>A new object holding <code>value</code>.</p>
+</li><li id="GcPtr.get"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span></code></pre><p>The value.</p>
+</li><li id="GcPtr.set"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> set(<span class="k">self</span>, value: <span class="t">T</span>)</code></pre><p>Replace the value; every copy sees it.</p>
+</li><li id="GcPtr.same"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> same(<span class="k">self</span>, other: <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span></code></pre><p>Whether <code>self</code> and <code>other</code> are one object (identity, not value).</p>
+</li></ul><details class="impls"><summary>Trait implementations 2</summary><ul><li><code><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Pinnable</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;</code></li><li><code><span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;</code></li></ul></details></section><section class="api-item" id="struct.Weak"><h3><a href="#struct.Weak">Weak</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">struct</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt;</code></pre><p>A reference to a <code>GcPtr&lt;T&gt;</code>'s object that does not keep it alive
+(refs-lang 8.2.8): once a collection finds the object unreachable
+except through weak references, it frees it and every <code>Weak</code> to it
+reads <code>none</code> from then on. For caches and observers.</p>
+<ul class="members"><li id="Weak.new"><pre><code><span class="k">pub</span> <span class="k">fn</span> new(target: <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Weak</span>&lt;<span class="t">T</span>&gt;</code></pre><p>A weak reference to <code>target</code>'s object.</p>
+</li><li id="Weak.get"><pre><code><span class="k">pub</span> <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">GcPtr</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span></code></pre><p>The object, <code>none</code> once it was collected.</p>
+</li></ul><details class="impls"><summary>Trait implementations 2</summary><ul><li><code><span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt;</code></li><li><code><span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">Weak</span>&lt;<span class="t">T</span>&gt;</code></li></ul></details></section><section class="api-item" id="struct.Pinned"><h3><a href="#struct.Pinned">Pinned</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">struct</span> <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt;</code></pre><p><code>obj</code>'s data held in place (1.6.2).</p>
+<ul class="members"><li id="Pinned.obj"><pre><code><span class="k">pub</span> <span class="k">fn</span> obj(<span class="k">self</span>) -&gt; <span class="t">T</span></code></pre></li><li id="Pinned.as_data_ptr"><pre><code><span class="k">pub</span> <span class="k">fn</span> as_data_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;</code></pre><p>The list's first element; dangling for an empty list.</p>
+</li><li id="Pinned.as_data_many_ptr"><pre><code><span class="k">pub</span> <span class="k">fn</span> as_data_many_ptr(<span class="k">self</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;</code></pre></li><li id="Pinned.as_value_ptr"><pre><code><span class="k">pub</span> <span class="k">fn</span> as_value_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;</code></pre><p>The value in the pinned object.</p>
+</li><li id="Pinned.as_bytes_ptr"><pre><code><span class="k">pub</span> <span class="k">fn</span> as_bytes_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;</code></pre><p>The UTF-8 bytes (no NUL promised).</p>
+</li><li id="Pinned.as_c_str"><pre><code><span class="k">pub</span> <span class="k">fn</span> as_c_str(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;c_char&gt;</code></pre><p>The bytes as <code>c_char</code>s; NUL termination is not promised (use
+<code>ffi::CString</code>).</p>
+</li></ul><details class="impls"><summary>Trait implementations 1</summary><ul><li><code><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Drop</span> <span class="k">for</span> <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt;</code></li></ul></details></section><h2 id="trait">Traits</h2><section class="api-item" id="trait.Pinnable"><h3><a href="#trait.Pinnable">Pinnable</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">trait</span> <span class="t">Pinnable</span></code></pre><p>What <code>pin</code> keeps in place for a value: the GC object holding its
+data, <code>none</code> when nothing can move (an empty list; a <code>str</code>, which
+stays in place while the <code>Pinned</code> holding it is in scope, 2.15.2).</p>
+<ul class="members"><li id="Pinnable.gc_object"><pre><code><span class="k">fn</span> gc_object(<span class="k">self</span>) -&gt; <span class="t">GcBuf</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span></code></pre></li></ul></section><h2 id="fn">Functions</h2><section class="api-item" id="fn.collect"><h3><a href="#fn.collect">collect</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">fn</span> collect()</code></pre><p>A full collection now (it may move every unpinned object).</p>
+</section><section class="api-item" id="fn.pin"><h3><a href="#fn.pin">pin</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">fn</span> pin&lt;<span class="t">T</span>: <span class="t">Pinnable</span>&gt;(obj: <span class="t">T</span>) -&gt; <span class="t">Pinned</span>&lt;<span class="t">T</span>&gt;</code></pre><p>Pin <code>obj</code>'s data until the returned guard is dropped; bind it with
+<code>using</code> (a <code>Pinned</code> dropped by nothing stays pinned).</p>
+</section></article>
+
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../search.js" defer></script>
+</body>
+</html>

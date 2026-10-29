@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generators - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Write the Fibonacci sequence, a prime stream, a hand-made take_while adapter and a recursive tree walk as lazy iterators with yield fn.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/generators.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Generators - rok docs">
+<meta property="og:description" content="Write the Fibonacci sequence, a prime stream, a hand-made take_while adapter and a recursive tree walk as lazy iterators with yield fn.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/generators.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li class="cur"><a aria-current="page" href="generators">Generators</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="generators"><a class="anchor" tabindex="-1" href="#generators" aria-hidden="true">#</a>Generators</h1>
+<p>Write the Fibonacci sequence, a prime stream, a hand-made <code>take_while</code> adapter and a recursive tree walk as lazy iterators with <code>yield fn</code>.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// An endless Fibonacci stream.</span>
+<span class="k">yield</span> <span class="k">fn</span> fibonacci() -&gt; <span class="t">i64</span> {
+    <span class="k">let</span> a = <span class="n">0i64</span>;
+    <span class="k">let</span> b = <span class="n">1i64</span>;
+    <span class="k">loop</span> {
+        <span class="k">yield</span> a;
+        <span class="k">let</span> next = a + b;
+        a = b;
+        b = next;
+    }
+}
+
+<span class="c">// Primes by trial division against the primes found so far.</span>
+<span class="k">yield</span> <span class="k">fn</span> primes() -&gt; <span class="t">i64</span> {
+    <span class="k">let</span> found: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = [];
+    <span class="k">let</span> n = <span class="n">2i64</span>;
+    <span class="k">loop</span> {
+        <span class="k">let</span> is_prime = <span class="k">true</span>;
+        <span class="k">for</span> p <span class="k">in</span> found {
+            <span class="k">if</span> p * p &gt; n { <span class="k">break</span>; }
+            <span class="k">if</span> n % p == <span class="n">0</span> { is_prime = <span class="k">false</span>; <span class="k">break</span>; }
+        }
+        <span class="k">if</span> is_prime {
+            found.push(n);
+            <span class="k">yield</span> n;
+        }
+        n += <span class="n">1</span>;
+    }
+}
+
+<span class="c">// A generic adapter: pass items through until `pred` fails.</span>
+<span class="k">yield</span> <span class="k">fn</span> take_while&lt;<span class="t">I</span>: <span class="t">Iterator</span>&gt;(it: <span class="t">I</span>, pred: <span class="k">fn</span>(<span class="t">I</span>::<span class="t">Item</span>) -&gt; <span class="t">bool</span>) -&gt; <span class="t">I</span>::<span class="t">Item</span> {
+    <span class="k">for</span> x <span class="k">in</span> it {
+        <span class="k">if</span> !pred(x) { <span class="k">return</span>; }
+        <span class="k">yield</span> x;
+    }
+}
+
+<span class="c">// A nested list, walked depth-first by a recursive generator.</span>
+<span class="k">enum</span> <span class="t">Tree</span> {
+    <span class="t">Leaf</span>(<span class="t">str</span>),
+    <span class="t">Branch</span>(<span class="t">List</span>&lt;<span class="t">Tree</span>&gt;),
+}
+
+<span class="k">yield</span> <span class="k">fn</span> leaves(t: <span class="t">Tree</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> t {
+        <span class="t">Tree</span>::<span class="t">Leaf</span>(name) =&gt; <span class="k">yield</span> name,
+        <span class="t">Tree</span>::<span class="t">Branch</span>(kids) =&gt; <span class="k">for</span> k <span class="k">in</span> kids {
+            <span class="k">for</span> name <span class="k">in</span> leaves(k) { <span class="k">yield</span> name; }
+        },
+    }
+}
+
+<span class="k">let</span> first: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = fibonacci().take(<span class="n">12</span>).collect();
+println(<span class="s">f"fib: {</span>first<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> small: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = take_while(primes(), |p| p &lt; <span class="n">50</span>).collect();
+println(<span class="s">f"primes &lt; 50: {</span>small<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> even_fib_sum = take_while(fibonacci(), |x| x &lt; <span class="n">4_000_000</span>)
+    .filter(|x| x % <span class="n">2</span> == <span class="n">0</span>)
+    .sum();
+println(<span class="s">f"sum of even fib &lt; 4M: {</span>even_fib_sum<span class="s">}"</span>);
+
+<span class="c">// The 1000th prime: nothing past it is ever computed.</span>
+println(<span class="s">f"1000th prime: {</span>primes().nth(<span class="n">999</span>) ?? -<span class="n">1</span><span class="s">}"</span>);
+
+<span class="c">// An inline generator block.</span>
+<span class="k">let</span> squares = <span class="k">yield</span> {
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">1i64</span>..=<span class="n">5</span> { <span class="k">yield</span> i * i; }
+};
+println(<span class="s">f"squares: {</span>squares.collect::&lt;<span class="t">List</span>&lt;<span class="t">i64</span>&gt;&gt;()<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> tree = <span class="t">Tree</span>::<span class="t">Branch</span>([
+    <span class="t">Tree</span>::<span class="t">Leaf</span>(<span class="s">"a"</span>),
+    <span class="t">Tree</span>::<span class="t">Branch</span>([<span class="t">Tree</span>::<span class="t">Leaf</span>(<span class="s">"b"</span>), <span class="t">Tree</span>::<span class="t">Branch</span>([<span class="t">Tree</span>::<span class="t">Leaf</span>(<span class="s">"c"</span>)]), <span class="t">Tree</span>::<span class="t">Leaf</span>(<span class="s">"d"</span>)]),
+    <span class="t">Tree</span>::<span class="t">Leaf</span>(<span class="s">"e"</span>),
+]);
+<span class="k">let</span> names: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = leaves(tree).collect();
+println(<span class="s">f"leaves: {</span>names<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">fib: [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89]
+primes &lt; 50: [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47]
+sum of even fib &lt; 4M: 4613732
+1000th prime: 7919
+squares: [1, 4, 9, 16, 25]
+leaves: [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;, &quot;d&quot;, &quot;e&quot;]
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Calling a <code>yield fn</code> doesn't run its body right away; it returns an iterator, <code>GenIter&lt;T&gt;</code>. The <code>-&gt; i64</code> is not a return value but the type of the yielded items (<a href="../spec/refs-lang/004-functions/411-generators#4113-named-generator-functions">4.11.3 named generator functions</a>).
+</li>
+<li><code>fibonacci()</code> and <code>primes()</code> are infinite generators. Their locals (<code>a</code>, <code>b</code>, <code>found</code>) are preserved between <code>yield</code>s, and the consumer pulls only as many items as it needs with <code>take</code>, <code>nth</code> and the like (<a href="../spec/refs-lang/004-functions/411-generators#4119-infinite-generators">4.11.9 infinite generators</a>).
+</li>
+<li>Generators implement <a href="../std/core/iter#trait.Iterator"><code>Iterator</code></a>, so they combine with adapters such as <code>filter</code>, <code>sum</code> and <code>collect</code>. A <code>take_while</code>, which the standard iterator lacks, is a single generic <code>yield fn</code> that ends iteration with <code>return;</code> (<a href="../learn/08-collections-iterators">Collections and iterators</a>, <a href="../learn/07-generics">Generics</a>).
+</li>
+<li><code>yield { ... }</code> is an inline generator block that builds an iterator right where an expression is expected (<a href="../spec/refs-lang/004-functions/411-generators#4114-inline-yield-blocks-values">4.11.4</a>).
+</li>
+<li><code>leaves</code> calls itself and re-yields the values of each subtree. Recursive generators are a common way to flatten nested structures (<a href="../learn/05-sum-types">Sum types</a>).
+</li>
+</ul>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>An enum that contains itself directly, like <code>Node(Tree, i64, Tree)</code>, has infinite size, so the compiler rejects it (<code>a struct / enum can't contain itself by value</code>). This example keeps the children in a <code>List&lt;Tree&gt;</code>, a reference type, to express the same structure.</p>
+</div>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/generators.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="game-of-life"><small>Previous</small>Game of Life</a><a class="next" href="interpreter"><small>Next</small>A small Lisp interpreter</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

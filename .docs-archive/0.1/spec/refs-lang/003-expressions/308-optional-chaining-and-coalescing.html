@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.8. Optional chaining and null coalescing - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="To express chaining and default handling concisely for T | none values of sum types, two notations are defined.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.8. Optional chaining and null coalescing - rok docs">
+<meta property="og:description" content="To express chaining and default handling concisely for T | none values of sum types, two notations are defined.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li class="cur"><a aria-current="page" href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a><ul class="toc"><li><a href="#381-optional-chaining-">3.8.1. Optional chaining: ?.</a></li><li><a href="#382-chaining">3.8.2. Chaining</a></li><li><a href="#383-result-type">3.8.3. Result type</a></li><li><a href="#384-null-coalescing-">3.8.4. Null coalescing: ??</a></li><li><a href="#385-precedence">3.8.5. Precedence</a></li><li><a href="#386-combining-chaining-and-coalescing">3.8.6. Combining chaining and coalescing</a></li><li><a href="#387-distinguishing--and-">3.8.7. Distinguishing ?. and ?</a></li><li><a href="#388-short-circuit-evaluation-of-optional-chaining">3.8.8. Short-Circuit evaluation of optional chaining</a></li><li><a href="#389-alternatives-to-deep-dot-access">3.8.9. Alternatives to deep dot access</a></li></ul></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="38-optional-chaining-and-null-coalescing 38-옵셔널-체이닝과-null-합체 381-optional-chaining- 381-옵셔널-체이닝- desugaring desugar non-optional-receivers 옵셔널이-아닌-수신자 382-chaining 382-체이닝 383-result-type 383-결과-타입 384-null-coalescing- 384-null-합체- desugaring-1 desugar-1 result-type 결과-타입 385-precedence 385-우선순위 386-combining-chaining-and-coalescing 386-체이닝과-합체의-결합 387-distinguishing--and- 387--와--의-구분 388-short-circuit-evaluation-of-optional-chaining 388-옵셔널-체이닝의-단축-평가 389-alternatives-to-deep-dot-access 389-깊은-점-접근의-대안"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="38-optional-chaining-and-null-coalescing"><a class="anchor" tabindex="-1" href="#38-optional-chaining-and-null-coalescing" aria-hidden="true">#</a>3.8. Optional chaining and null coalescing</h1>
+<p>To express chaining and default handling concisely for <code>T | none</code> values of <a href="../002-types/206-sum-types">sum types</a>, two notations are defined.</p>
+<pre><code>optional_chain  ::= primary &quot;?.&quot; identifier                       // optional field
+                  | primary &quot;?.&quot; identifier &quot;(&quot; arg_list? &quot;)&quot;     // optional method
+coalesce_expr   ::= expr &quot;??&quot; expr
+</code></pre>
+<h2 id="381-optional-chaining-"><a class="anchor" tabindex="-1" href="#381-optional-chaining-" aria-hidden="true">#</a>3.8.1. Optional chaining: <code>?.</code></h2>
+<pre><code class="language-rok">x?.field
+x?.method()
+</code></pre>
+<p>The <code>?.</code> token is defined in <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a>. When the left-hand side <code>x</code> has type <code>T | none</code> and a value is present, the dot access or method call is performed; when there is no value (<code>none</code>), the whole result is <code>none</code>.</p>
+<h3 id="desugaring"><a class="anchor" tabindex="-1" href="#desugaring" aria-hidden="true">#</a>Desugaring</h3>
+<pre><code>x?.field            →   match x { v: T =&gt; v.field, none =&gt; none }
+x?.method(args)     →   match x { v: T =&gt; v.method(args), none =&gt; none }
+</code></pre>
+<p>Here <code>T</code> denotes the variants of the left-hand sum type other than <code>none</code>. A type-test pattern (<code>v: T</code>) takes and narrows the non-none branch of the sum type, then the dot access or method call proceeds.</p>
+<h3 id="non-optional-receivers"><a class="anchor" tabindex="-1" href="#non-optional-receivers" aria-hidden="true">#</a>Non-Optional receivers</h3>
+<p>If the left-hand type does not include <code>none</code>, <code>?.</code> is a compile error. Use <code>.</code> instead.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Point</span> = ...;
+p?.x;          <span class="c">// ERROR - p is not optional; use .</span>
+</code></pre>
+<h2 id="382-chaining"><a class="anchor" tabindex="-1" href="#382-chaining" aria-hidden="true">#</a>3.8.2. Chaining</h2>
+<p><code>?.</code> can be chained.</p>
+<pre><code class="language-rok"><span class="k">let</span> name = user?.profile?.name;
+</code></pre>
+<p>If any step yields <code>none</code>, the whole expression finishes as <code>none</code> at that point. If <code>user</code> is <code>none</code> the whole result is <code>none</code>; if <code>user.profile</code> is <code>none</code> the whole result is also <code>none</code>; only when every value is present is the value of <code>name</code> produced.</p>
+<h2 id="383-result-type"><a class="anchor" tabindex="-1" href="#383-result-type" aria-hidden="true">#</a>3.8.3. Result type</h2>
+<p>The result type of <code>?.</code> propagates to the end of the chain. Even if the final expression is <code>T</code>, the result type of the chain is always <code>T | none</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> user: <span class="t">User</span> | <span class="k">none</span> = ...;
+<span class="k">let</span> name = user?.profile?.name;
+<span class="c">// name: str | none</span>
+</code></pre>
+<p>Note that the flat type of the last step (<code>str</code>) is not automatically promoted to a sum type (<code>str | none</code>); the chain itself produces the result type <code>T | none</code>.</p>
+<h2 id="384-null-coalescing-"><a class="anchor" tabindex="-1" href="#384-null-coalescing-" aria-hidden="true">#</a>3.8.4. Null coalescing: <code>??</code></h2>
+<pre><code class="language-rok">x ?? y
+</code></pre>
+<p>When the left-hand side <code>x</code> is <code>T | none</code>, <code>??</code> returns its value if present and <code>y</code> otherwise.</p>
+<h3 id="desugaring-1"><a class="anchor" tabindex="-1" href="#desugaring-1" aria-hidden="true">#</a>Desugaring</h3>
+<pre><code>x ?? y          →   match x { v: T =&gt; v, none =&gt; y }
+</code></pre>
+<h3 id="result-type"><a class="anchor" tabindex="-1" href="#result-type" aria-hidden="true">#</a>Result type</h3>
+<p>The result type of <code>??</code> follows the branch result rules of the <a href="./#branch-result-types">expressions overview</a>. If the two branches (<code>T</code> and <code>typeof(y)</code>) have the same type, that is the result type. If they differ, the receiving side must have a type; there is no automatic widening to a sum.</p>
+<pre><code class="language-rok"><span class="k">let</span> a = foo() ?? <span class="n">0</span>;                           <span class="c">// i32 (foo(): i32 | none)</span>
+<span class="k">let</span> r = foo() ?? <span class="s">"default"</span>;                   <span class="c">// ERROR - i32 and str, no receiving type</span>
+<span class="k">let</span> r2: <span class="t">i32</span> | <span class="t">str</span> = foo() ?? <span class="s">"default"</span>;       <span class="c">// OK</span>
+</code></pre>
+<p>If <code>y</code> is also <code>T | none</code>, the result is <code>T | none</code> (the union of <code>T | (T | none)</code>). So when <code>??</code> is chained, <code>none</code> drops out only once the last alternative is not <code>none</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">i32</span> | <span class="k">none</span> = ...;
+<span class="k">let</span> b: <span class="t">i32</span> | <span class="k">none</span> = ...;
+<span class="k">let</span> r = a ?? b;              <span class="c">// r: i32 | none</span>
+<span class="k">let</span> s = a ?? b ?? <span class="n">0i32</span>;      <span class="c">// s: i32</span>
+</code></pre>
+<h2 id="385-precedence"><a class="anchor" tabindex="-1" href="#385-precedence" aria-hidden="true">#</a>3.8.5. Precedence</h2>
+<p>In the levels of <a href="302-precedence-and-associativity">precedence and associativity</a>, <code>?.</code> has the same precedence as member access (<code>.</code>) and binds very tightly. <code>??</code> (prec=1) sits below logical OR (<code>||</code>) and above the range operators (<code>..</code>, prec=0), and is right-associative.</p>
+<pre><code>a ?? b ?? c     →   a ?? (b ?? c)              // right-associative
+foo() ?? bar    →   (foo()) ?? (bar)           // a call binds tighter than ??
+a + b ?? c      →   (a + b) ?? c               // + binds tighter than ??
+a ?? 0..3       →   (a ?? 0)..3                // ?? binds tighter than ..
+</code></pre>
+<h2 id="386-combining-chaining-and-coalescing"><a class="anchor" tabindex="-1" href="#386-combining-chaining-and-coalescing" aria-hidden="true">#</a>3.8.6. Combining chaining and coalescing</h2>
+<pre><code class="language-rok"><span class="k">let</span> name = user?.profile?.name ?? <span class="s">"anonymous"</span>;
+</code></pre>
+<p>Here <code>user?.profile?.name</code> yields <code>str | none</code>, and the following <code>?? &quot;anonymous&quot;</code> fills the <code>none</code> case, so the final result is <code>str</code>. This is the standard form for safely extracting a possibly absent value while applying a default.</p>
+<h2 id="387-distinguishing--and-"><a class="anchor" tabindex="-1" href="#387-distinguishing--and-" aria-hidden="true">#</a>3.8.7. Distinguishing <code>?.</code> and <code>?</code></h2>
+<p><code>?.</code> is optional chaining; postfix <code>?</code> on a <code>T | none</code> value is defined in <a href="314-error-control-flow">3.14.10</a>.</p>
+<p>That <code>?.</code> and <code>?</code> <code>.</code> are distinct tokens is guaranteed by the longest-match rule of <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a>.</p>
+<h2 id="388-short-circuit-evaluation-of-optional-chaining"><a class="anchor" tabindex="-1" href="#388-short-circuit-evaluation-of-optional-chaining" aria-hidden="true">#</a>3.8.8. Short-Circuit evaluation of optional chaining</h2>
+<pre><code>x?.foo().bar()
+</code></pre>
+<p>In this expression, if <code>x</code> is <code>none</code>, neither <code>foo()</code> nor <code>bar()</code> is called. Short-circuit evaluation is guaranteed.</p>
+<p>This is because the desugared <code>match</code> returns <code>none</code> immediately in the <code>none</code> branch.</p>
+<p>Consequently, when a method with side effects is placed in a chain, it is not called when the receiver is <code>none</code>.</p>
+<p>The chain is the run of postfix operations after <code>?.</code>: field access, method calls and indexing, including <code>?.[i]</code>. Parentheses end it: in <code>(x?.a).b</code>, <code>.b</code> applies to the result of <code>x?.a</code>, which may be <code>none</code>.</p>
+<h2 id="389-alternatives-to-deep-dot-access"><a class="anchor" tabindex="-1" href="#389-alternatives-to-deep-dot-access" aria-hidden="true">#</a>3.8.9. Alternatives to deep dot access</h2>
+<p>When chaining becomes deep and complex, combining it with <code>??</code> or using explicit matching (<a href="312-match-expression"><code>match</code> expression</a>) may be clearer.</p>
+<pre><code class="language-rok"><span class="c">// chaining</span>
+<span class="k">let</span> x = a?.b?.c?.d ?? default;
+
+<span class="c">// explicit (for a: A | none, b: B | none, c: C | none)</span>
+<span class="k">let</span> x = <span class="k">match</span> a {
+    av: <span class="t">A</span> =&gt; <span class="k">match</span> av.b {
+        bv: <span class="t">B</span> =&gt; <span class="k">match</span> bv.c {
+            cv: <span class="t">C</span> =&gt; cv.d,
+            <span class="k">none</span> =&gt; default,
+        },
+        <span class="k">none</span> =&gt; default,
+    },
+    <span class="k">none</span> =&gt; default,
+};
+</code></pre>
+<p>The two forms are semantically identical; choose by readability.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/308-optional-chaining-and-coalescing.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="307-range-expressions"><small>Previous</small>3.7. Range expressions</a><a class="next" href="309-block-expressions"><small>Next</small>3.9. Block expressions</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

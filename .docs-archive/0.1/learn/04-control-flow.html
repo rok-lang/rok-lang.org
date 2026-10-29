@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4. Control Flow - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter covers branching (if, match), looping (while, for, loop), and destructuring. The key point is that if, match, and loop in rok are all expressions t...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/04-control-flow.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4. Control Flow - rok docs">
+<meta property="og:description" content="This chapter covers branching (if, match), looping (while, for, loop), and destructuring. The key point is that if, match, and loop in rok are all expressions t...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/04-control-flow.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li class="cur"><a aria-current="page" href="04-control-flow">4. Control Flow</a><ul class="toc"><li><a href="#if-is-an-expression">if is an expression</a></li><li><a href="#match-and-patterns">match and patterns</a></li><li><a href="#while-and-for">while and for</a></li><li><a href="#loop-and-break-with-a-value">loop and break with a value</a></li><li><a href="#labels">Labels</a></li><li><a href="#destructuring">Destructuring</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="4-control-flow"><a class="anchor" tabindex="-1" href="#4-control-flow" aria-hidden="true">#</a>4. Control Flow</h1>
+<p>This chapter covers branching (<code>if</code>, <code>match</code>), looping (<code>while</code>, <code>for</code>, <code>loop</code>), and destructuring. The key point is that <code>if</code>, <code>match</code>, and <code>loop</code> in rok are all expressions that produce values.</p>
+<h2 id="if-is-an-expression"><a class="anchor" tabindex="-1" href="#if-is-an-expression" aria-hidden="true">#</a><code>if</code> is an expression</h2>
+<p>The condition of an <code>if</code> needs no parentheses, and the body is always written in braces. The last expression of each branch becomes the value of the whole <code>if</code>, so there is no separate ternary operator.</p>
+<pre><code class="language-rok"><span class="k">let</span> temp = <span class="n">23</span>;
+<span class="k">let</span> feel = <span class="k">if</span> temp &gt;= <span class="n">28</span> {
+    <span class="s">"hot"</span>
+} <span class="k">else</span> <span class="k">if</span> temp &gt;= <span class="n">15</span> {
+    <span class="s">"mild"</span>
+} <span class="k">else</span> {
+    <span class="s">"cold"</span>
+};
+println(<span class="s">f"{</span>temp<span class="s">} degrees: {</span>feel<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">23 degrees: mild
+</code></pre>
+<p>When used as a value, all branches must have the same type. To mix different types, annotate the receiving variable with a sum type such as <code>i32 | str</code>.</p>
+<h2 id="match-and-patterns"><a class="anchor" tabindex="-1" href="#match-and-patterns" aria-hidden="true">#</a><code>match</code> and patterns</h2>
+<p><code>match</code> compares a value against patterns from top to bottom and runs the first arm that matches. You can use literals, several patterns joined with <code>|</code>, ranges (<code>4..=9</code>), bindings (<code>k @ pattern</code>), guards (<code>if condition</code>), and the wildcard <code>_</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> describe(n: <span class="t">i32</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> n {
+        <span class="n">0</span> =&gt; <span class="s">"zero"</span>,
+        <span class="n">1</span> | <span class="n">2</span> | <span class="n">3</span> =&gt; <span class="s">"small"</span>,
+        k @ <span class="n">4</span>..=<span class="n">9</span> =&gt; <span class="s">f"digit {</span>k<span class="s">}"</span>,
+        k <span class="k">if</span> k &lt; <span class="n">0</span> =&gt; <span class="s">"negative"</span>,
+        _ =&gt; <span class="s">"large"</span>,
+    }
+}
+
+<span class="k">for</span> n <span class="k">in</span> [<span class="n">0</span>, <span class="n">2</span>, <span class="n">7</span>, -<span class="n">5</span>, <span class="n">42</span>] {
+    println(<span class="s">f"{</span>n<span class="s">}: {</span>describe(n)<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">0: zero
+2: small
+7: digit 7
+-5: negative
+42: large
+</code></pre>
+<p>The compiler checks that every case is handled. <code>i32</code> has too many values to list, so a final <code>_</code> is required. Tuples can also be destructured and matched with patterns.</p>
+<pre><code class="language-rok"><span class="k">fn</span> locate(p: (<span class="t">i32</span>, <span class="t">i32</span>)) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> p {
+        (<span class="n">0</span>, <span class="n">0</span>) =&gt; <span class="s">"origin"</span>,
+        (x, <span class="n">0</span>) =&gt; <span class="s">f"on the x-axis at {</span>x<span class="s">}"</span>,
+        (<span class="n">0</span>, y) =&gt; <span class="s">f"on the y-axis at {</span>y<span class="s">}"</span>,
+        (a, b) <span class="k">if</span> a == b =&gt; <span class="s">"on the diagonal"</span>,
+        _ =&gt; <span class="s">"somewhere else"</span>,
+    }
+}
+
+println(locate((<span class="n">0</span>, <span class="n">0</span>)));
+println(locate((<span class="n">5</span>, <span class="n">0</span>)));
+println(locate((<span class="n">2</span>, <span class="n">2</span>)));
+println(locate((<span class="n">1</span>, <span class="n">9</span>)));
+</code></pre>
+<pre class="output"><code class="language-output">origin
+on the x-axis at 5
+on the diagonal
+somewhere else
+</code></pre>
+<p>When the value can be one of several types (<code>i32 | str | none</code>), <code>match</code> splits on its type with patterns such as <code>n: i32</code>. Those patterns, along with <code>is</code>, <code>if let</code>, and <code>let else</code>, come with sum types in the <a href="05-sum-types">next chapter</a>.</p>
+<h2 id="while-and-for"><a class="anchor" tabindex="-1" href="#while-and-for" aria-hidden="true">#</a><code>while</code> and <code>for</code></h2>
+<p><code>while</code> repeats as long as the condition is true. <code>for</code> takes elements one at a time from a range, list, or iterator. <code>a..b</code> excludes <code>b</code>; <code>a..=b</code> includes it. <code>continue</code> moves to the next iteration, and <code>break</code> leaves the loop.</p>
+<pre><code class="language-rok"><span class="k">let</span> i = <span class="n">0</span>;
+<span class="k">while</span> i &lt; <span class="n">3</span> {
+    print(<span class="s">f"{</span>i<span class="s">} "</span>);
+    i += <span class="n">1</span>;
+}
+println(<span class="s">""</span>);
+
+<span class="k">for</span> k <span class="k">in</span> <span class="n">0</span>..<span class="n">10</span> {
+    <span class="k">if</span> k % <span class="n">2</span> == <span class="n">1</span> { <span class="k">continue</span>; }
+    <span class="k">if</span> k &gt; <span class="n">6</span> { <span class="k">break</span>; }
+    print(<span class="s">f"{</span>k<span class="s">} "</span>);
+}
+println(<span class="s">""</span>);
+
+<span class="k">for</span> (idx, name) <span class="k">in</span> [<span class="s">"ada"</span>, <span class="s">"grace"</span>].iter().enumerate() {
+    println(<span class="s">f"{</span>idx<span class="s">}: {</span>name<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">0 1 2 
+0 2 4 6 
+0: ada
+1: grace
+</code></pre>
+<p><code>while let</code> repeats as long as the pattern matches. <code>pop()</code> returns <code>T | none</code>, which makes draining a list until it is empty simple.</p>
+<pre><code class="language-rok"><span class="k">let</span> stack = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">while</span> <span class="k">let</span> top: <span class="t">i32</span> = stack.pop() {
+    print(<span class="s">f"{</span>top<span class="s">} "</span>);
+}
+println(<span class="s">""</span>);
+</code></pre>
+<pre class="output"><code class="language-output">3 2 1 
+</code></pre>
+<h2 id="loop-and-break-with-a-value"><a class="anchor" tabindex="-1" href="#loop-and-break-with-a-value" aria-hidden="true">#</a><code>loop</code> and <code>break</code> with a value</h2>
+<p><code>loop</code> repeats forever until a <code>break</code>. If you exit with <code>break value</code>, that value is the result of the <code>loop</code> expression. This suits computations whose result is determined at the moment they finish.</p>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="n">27</span>;
+<span class="k">let</span> steps = <span class="n">0</span>;
+<span class="k">let</span> total = <span class="k">loop</span> {
+    <span class="k">if</span> n == <span class="n">1</span> { <span class="k">break</span> steps; }
+    n = <span class="k">if</span> n % <span class="n">2</span> == <span class="n">0</span> { n / <span class="n">2</span> } <span class="k">else</span> { <span class="n">3</span> * n + <span class="n">1</span> };
+    steps += <span class="n">1</span>;
+};
+println(<span class="s">f"Collatz(27) reaches 1 in {</span>total<span class="s">} steps"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">Collatz(27) reaches 1 in 111 steps
+</code></pre>
+<h2 id="labels"><a class="anchor" tabindex="-1" href="#labels" aria-hidden="true">#</a>Labels</h2>
+<p>To end an outer loop directly from a nested one, attach a <code>'name:</code> label and use <code>break 'name</code> or <code>continue 'name</code>. Labels on <code>loop</code>s and blocks can also carry a value out.</p>
+<pre><code class="language-rok"><span class="k">let</span> pair = 'search: <span class="k">loop</span> {
+    <span class="k">for</span> a <span class="k">in</span> <span class="n">1</span>..<span class="n">10</span> {
+        <span class="k">for</span> b <span class="k">in</span> a..<span class="n">10</span> {
+            <span class="k">if</span> a * b == <span class="n">42</span> { <span class="k">break</span> 'search (a, b); }
+        }
+    }
+    <span class="k">break</span> (<span class="n">0</span>, <span class="n">0</span>);
+};
+println(<span class="s">f"{</span>pair<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> limit = <span class="n">50</span>;
+<span class="k">let</span> checked = 'check: {
+    <span class="k">if</span> limit &gt; <span class="n">100</span> { <span class="k">break</span> 'check -<span class="n">1</span>; }
+    limit * <span class="n">2</span>
+};
+println(<span class="s">f"{</span>checked<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">(6, 7)
+100
+</code></pre>
+<h2 id="destructuring"><a class="anchor" tabindex="-1" href="#destructuring" aria-hidden="true">#</a>Destructuring</h2>
+<p>The left side of <code>let</code> and <code>for</code> can be any pattern that always matches (an irrefutable pattern). Unpack nested tuples, collect the rest with <code>..</code>, or discard with <code>_</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> ((a, b), c) = ((<span class="n">1</span>, <span class="n">2</span>), <span class="n">3</span>);
+<span class="k">let</span> (first, ..rest) = (<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>, <span class="n">40</span>);
+<span class="k">let</span> (_, second) = (<span class="s">"skip"</span>, <span class="s">"keep"</span>);
+println(<span class="s">f"{</span>a<span class="s">} {</span>b<span class="s">} {</span>c<span class="s">} {</span>first<span class="s">} {</span>rest<span class="s">:?</span><span class="s">} {</span>second<span class="s">}"</span>);
+
+<span class="k">let</span> points = [(<span class="n">1</span>, <span class="n">2</span>), (<span class="n">3</span>, <span class="n">4</span>)];
+<span class="k">for</span> (x, y) <span class="k">in</span> points {
+    println(<span class="s">f"({</span>x<span class="s">}, {</span>y<span class="s">}) -&gt; {</span>x + y<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">1 2 3 10 (20, 30, 40) keep
+(1, 2) -&gt; 3
+(3, 4) -&gt; 7
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>if</code>, <code>match</code>, <code>loop</code>, and blocks are expressions that produce values. Branches must have the same type.
+</li>
+<li><code>match</code> supports literals, <code>|</code>, ranges, <code>@</code> bindings, and guards, and checks exhaustiveness.
+</li>
+<li><code>while let</code> repeats while the pattern matches.
+</li>
+<li><code>for x in a..b</code> / <code>a..=b</code> iterates over ranges; <code>.iter().enumerate()</code> iterates with indices.
+</li>
+<li><code>break value</code> and <code>'label:</code> let you exit nested loops and return a result.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li><a href="../spec/refs-lang/003-expressions/310-if-expression"><code>if</code> expressions</a>, <a href="../spec/refs-lang/003-expressions/312-match-expression"><code>match</code> expressions</a>, <a href="../spec/refs-lang/003-expressions/311-patterns">patterns</a>
+</li>
+<li><a href="../spec/refs-lang/003-expressions/313-loop-expressions">Loop expressions</a>, <a href="../spec/refs-lang/003-expressions/307-range-expressions">range expressions</a>, <a href="../spec/refs-lang/003-expressions/309-block-expressions">labeled blocks</a>
+</li>
+<li><a href="../spec/refs-lang/003-expressions/315-destructuring">Destructuring assignment</a>, <a href="../spec/refs-lang/003-expressions/316-let-else"><code>let-else</code></a>
+</li>
+<li><a href="../spec/refs-lang/002-types/202-any-slot"><code>is</code> and type tests on slots</a>, <a href="../spec/refs-lang/002-types/206-sum-types">sum types</a>
+</li>
+<li>Next chapter: <a href="05-sum-types">5. Sum Types and none</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/04-control-flow.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="03-functions"><small>Previous</small>3. Functions</a><a class="next" href="05-sum-types"><small>Next</small>5. Sum Types and none</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

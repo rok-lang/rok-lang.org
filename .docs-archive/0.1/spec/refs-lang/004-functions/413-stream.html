@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.13. Streams (async yield) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Using the two modifiers async and yield together defines an asynchronous generator, a function that emits multiple values over time. Its result is a value of th...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/413-stream.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.13. Streams (async yield) - rok docs">
+<meta property="og:description" content="Using the two modifiers async and yield together defines an asynchronous generator, a function that emits multiple values over time. Its result is a value of th...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/413-stream.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/413-stream.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/413-stream.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li class="cur"><a aria-current="page" href="413-stream">4.13. Streams (async yield)</a><ul class="toc"><li><a href="#4131-three-definition-forms">4.13.1. Three definition forms</a></li><li><a href="#4132-relationship-of-sync-async-generators-and-streams">4.13.2. Relationship of sync, async, generators and streams</a></li><li><a href="#4133-two-keywords-in-the-body">4.13.3. Two keywords in the body</a></li><li><a href="#4134-calling-and-consuming">4.13.4. Calling and consuming</a></li><li><a href="#4135-the-for-await-form">4.13.5. The for await form</a></li><li><a href="#4136-evaluation-flow-of-yield-and-await">4.13.6. Evaluation flow of yield and await</a></li><li><a href="#4137-the-stream-trait">4.13.7. The Stream trait</a></li><li><a href="#4138-combining-with-library-functions">4.13.8. Combining with library functions</a></li><li><a href="#4139-infinite-streams">4.13.9. Infinite streams</a></li><li><a href="#41310-comparison-with-channels-and-pipes">4.13.10. Comparison with channels and pipes</a></li><li><a href="#41311-async-yield-on-methods">4.13.11. async yield on methods</a></li></ul></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="413-streams-async-yield 413-스트림-async-yield 4131-three-definition-forms 4131-세-가지-정의-형태 4132-relationship-of-sync-async-generators-and-streams 4132-동기-비동기-제너레이터-스트림의-관계 4133-two-keywords-in-the-body 4133-본체에서-사용하는-두-키워드 4134-calling-and-consuming 4134-호출과-소비 4135-the-for-await-form 4135-for-await-형태 4136-evaluation-flow-of-yield-and-await 4136-yield-와-await-의-평가-흐름 4137-the-stream-trait 4137-stream-트레잇 4138-combining-with-library-functions 4138-라이브러리-함수와의-결합 4139-infinite-streams 4139-무한-스트림 41310-comparison-with-channels-and-pipes 41310-채널이나-파이프와의-비교 41311-async-yield-on-methods 41311-메서드로서의-async-yield"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/413-stream" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="413-streams-async-yield"><a class="anchor" tabindex="-1" href="#413-streams-async-yield" aria-hidden="true">#</a>4.13. Streams (<code>async yield</code>)</h1>
+<p>Using the two modifiers <code>async</code> and <code>yield</code> together defines an asynchronous generator, a function that emits multiple values over time. Its result is a value of the library type <code>AsyncStream&lt;T&gt;</code> (implementing <code>Stream&lt;Item = T&gt;</code>), or <code>TryAsyncStream&lt;T, E&gt;</code> with <code>throws (E)</code> (<a href="401-function-declaration#result-types-of-coroutine-functions">4.1.11</a>).</p>
+<h2 id="4131-three-definition-forms"><a class="anchor" tabindex="-1" href="#4131-three-definition-forms" aria-hidden="true">#</a>4.13.1. Three definition forms</h2>
+<p>The grammar for defining streams has three forms.</p>
+<pre><code>stream_fn       ::= &quot;async&quot; &quot;yield&quot; fn_decl
+stream_block    ::= &quot;async&quot; &quot;yield&quot; block
+stream_closure  ::= &quot;async&quot; &quot;yield&quot; closure_expr
+</code></pre>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> name(args) -&gt; <span class="t">R</span> { ... <span class="k">await</span> ...; ... <span class="k">yield</span> ...; }   <span class="c">// named</span>
+<span class="k">async</span> <span class="k">yield</span> { ... <span class="k">await</span> ...; <span class="k">yield</span> ...; }                           <span class="c">// inline block</span>
+<span class="k">async</span> <span class="k">yield</span> || { ... <span class="k">await</span> ...; <span class="k">yield</span> ...; }                        <span class="c">// closure modifier</span>
+</code></pre>
+<p>These are the three forms of <a href="411-generators">generators</a> and <a href="412-async">async</a> working together.</p>
+<h2 id="4132-relationship-of-sync-async-generators-and-streams"><a class="anchor" tabindex="-1" href="#4132-relationship-of-sync-async-generators-and-streams" aria-hidden="true">#</a>4.13.2. Relationship of sync, async, generators and streams</h2>
+<p>The four forms relate as in the following table.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Call result</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>fn</code></td><td><code>R</code></td><td>one value immediately</td></tr>
+<tr><td><code>async fn</code></td><td><code>AsyncFuture&lt;R&gt;</code></td><td>one value in the future</td></tr>
+<tr><td><code>yield fn</code></td><td><code>GenIter&lt;R&gt;</code></td><td>multiple values synchronously</td></tr>
+<tr><td><code>async yield fn</code></td><td><code>AsyncStream&lt;R&gt;</code></td><td>multiple values over time</td></tr>
+</tbody></table></div>
+<p>These are all combinations of two orthogonal dimensions: deferral (sync/async) and number of values (single/multiple).</p>
+<h2 id="4133-two-keywords-in-the-body"><a class="anchor" tabindex="-1" href="#4133-two-keywords-in-the-body" aria-hidden="true">#</a>4.13.3. Two keywords in the body</h2>
+<p>Both <code>await</code> and <code>yield</code> may be used in the body of an <code>async yield</code> function.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> read_lines(file: <span class="t">str</span>) -&gt; <span class="t">str</span> {
+    <span class="k">let</span> f = <span class="k">await</span> open(file);
+    <span class="k">loop</span> {
+        <span class="k">let</span> line = <span class="k">await</span> f.read_line();
+        <span class="k">match</span> line {
+            l: <span class="t">str</span> =&gt; <span class="k">yield</span> l,
+            <span class="k">none</span>   =&gt; <span class="k">break</span>,
+        }
+    }
+}
+</code></pre>
+<p><code>await expr;</code> suspends the function until the Future completes; <code>yield expr;</code> produces a value and suspends until the Stream advances to the next step. The two suspension mechanisms coexist in one function, and the coroutine frame tracks which kind of suspension happened at which point.</p>
+<h2 id="4134-calling-and-consuming"><a class="anchor" tabindex="-1" href="#4134-calling-and-consuming" aria-hidden="true">#</a>4.13.4. Calling and consuming</h2>
+<p>Calling and consuming a stream looks like this.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> run() {
+    <span class="k">let</span> s = read_lines(<span class="s">"data.txt"</span>);   <span class="c">// s: `AsyncStream&lt;str&gt;`</span>
+
+    <span class="k">for</span> <span class="k">await</span> line <span class="k">in</span> s {              <span class="c">// asynchronous for</span>
+        process(line);
+    }
+}
+</code></pre>
+<p>The call itself immediately returns a <strong>Stream</strong> object; actual consumption happens in an asynchronous <code>for</code> loop, the <code>for await</code> form.</p>
+<p><code>for await</code> is the asynchronous variant of the <code>for</code> of <a href="../003-expressions/313-loop-expressions">loops</a>. Each iteration includes an <code>await</code> and waits asynchronously for the next value from the stream.</p>
+<h2 id="4135-the-for-await-form"><a class="anchor" tabindex="-1" href="#4135-the-for-await-form" aria-hidden="true">#</a>4.13.5. The <code>for await</code> form</h2>
+<p>The basic form of <code>for await</code> is:</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> pat <span class="k">in</span> stream { body }
+</code></pre>
+<p><code>for await</code> is a keyword combination for asynchronous iteration. Each iteration has the effect of <code>await stream.next()</code>, and the body is written like an ordinary <code>for</code> body.</p>
+<p>This form may be used only inside the bodies of <code>async fn</code>, <code>async {}</code> and <code>async ||</code>.</p>
+<h2 id="4136-evaluation-flow-of-yield-and-await"><a class="anchor" tabindex="-1" href="#4136-evaluation-flow-of-yield-and-await" aria-hidden="true">#</a>4.13.6. Evaluation flow of <code>yield</code> and <code>await</code></h2>
+<p>The following example shows the two keywords working together.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> paginate() -&gt; <span class="t">Page</span> {
+    <span class="k">let</span> next = <span class="s">"/start"</span>;
+    <span class="k">loop</span> {
+        <span class="k">let</span> page = <span class="k">await</span> fetch(next);
+        <span class="k">yield</span> page;
+        <span class="k">match</span> page.next_url {
+            url: <span class="t">str</span> =&gt; next = url,
+            <span class="k">none</span>     =&gt; <span class="k">break</span>,
+        }
+    }
+}
+</code></pre>
+<p>First, <code>await fetch(...)</code> waits until the page is received; then <code>yield page</code> produces that page and suspends until the consumer requests the next value. When the consumer requests the next value, the function resumes and fetches the next page.</p>
+<h2 id="4137-the-stream-trait"><a class="anchor" tabindex="-1" href="#4137-the-stream-trait" aria-hidden="true">#</a>4.13.7. The Stream trait</h2>
+<p>The result object is the standard library's <code>AsyncStream&lt;T&gt;</code> (implementing <code>Stream&lt;Item = T&gt;</code>). Semantically it combines Iterator and Future: a mechanism that waits for the next value.</p>
+<p>The detailed signatures and methods (<code>map</code>, <code>filter</code>, <code>take</code>, <code>merge</code>, <code>zip</code>, etc.) are defined in the standard library.</p>
+<h2 id="4138-combining-with-library-functions"><a class="anchor" tabindex="-1" href="#4138-combining-with-library-functions" aria-hidden="true">#</a>4.13.8. Combining with library functions</h2>
+<p>Stream transformation and combination are provided by standard library functions.</p>
+<pre><code class="language-rok">stream::merge(s1, s2)             <span class="c">// merges two streams</span>
+stream::zip(s1, s2)               <span class="c">// pairs up and advances together</span>
+stream::throttle(s, delay)        <span class="c">// rate limiting</span>
+</code></pre>
+<p>The detailed functions and methods are defined in the standard library specification.</p>
+<h2 id="4139-infinite-streams"><a class="anchor" tabindex="-1" href="#4139-infinite-streams" aria-hidden="true">#</a>4.13.9. Infinite streams</h2>
+<p>A stream may also continue indefinitely.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> ticks() -&gt; <span class="t">Time</span> {
+    <span class="k">loop</span> {
+        <span class="k">yield</span> now();
+        <span class="k">await</span> sleep(<span class="n">1</span>.second());
+    }
+}
+
+<span class="k">async</span> <span class="k">fn</span> run() {
+    <span class="k">for</span> <span class="k">await</span> t <span class="k">in</span> ticks() {
+        <span class="k">if</span> should_stop() { <span class="k">break</span>; }
+        print(t);
+    }
+}
+</code></pre>
+<p>Such an infinite stream is terminated when the consumer exits with <code>break</code> or through a library transformation such as <code>take(n)</code>.</p>
+<h2 id="41310-comparison-with-channels-and-pipes"><a class="anchor" tabindex="-1" href="#41310-comparison-with-channels-and-pipes" aria-hidden="true">#</a>4.13.10. Comparison with channels and pipes</h2>
+<p>The standard library's <code>Channel&lt;T&gt;</code> is also a mechanism that moves multiple values over time, but it differs from streams as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>Stream&lt;Item = T&gt;</code></th><th><code>Channel&lt;T&gt;</code></th></tr></thead>
+<tbody>
+<tr><td>Definition</td><td>result of an <code>async yield</code> function</td><td>library type</td></tr>
+<tr><td>Producer and consumer</td><td>integrated in one function</td><td>two separate endpoints</td></tr>
+<tr><td>Many-to-many</td><td>separate combination (merge, etc.)</td><td>natural (multiple senders)</td></tr>
+</tbody></table></div>
+<p>In short, <code>Stream</code> models one asynchronous computation producing values over time, while <code>Channel</code> models multiple concurrent tasks exchanging values. The two abstractions complement each other.</p>
+<h2 id="41311-async-yield-on-methods"><a class="anchor" tabindex="-1" href="#41311-async-yield-on-methods" aria-hidden="true">#</a>4.13.11. <code>async</code> <code>yield</code> on methods</h2>
+<p><code>async yield</code> may also be defined freely as a method.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Database</span> {
+    <span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> iter_rows(<span class="k">self</span>, sql: <span class="t">str</span>) -&gt; <span class="t">Row</span> {
+        <span class="k">let</span> cursor = <span class="k">await</span> <span class="k">self</span>.query(sql);
+        <span class="k">loop</span> {
+            <span class="k">let</span> row = <span class="k">await</span> cursor.next();
+            <span class="k">match</span> row {
+                r: <span class="t">Row</span> =&gt; <span class="k">yield</span> r,
+                <span class="k">none</span>   =&gt; <span class="k">break</span>,
+            }
+        }
+    }
+}
+
+<span class="k">async</span> <span class="k">fn</span> run(db: <span class="t">Db</span>) {
+    <span class="k">for</span> <span class="k">await</span> row <span class="k">in</span> db.iter_rows(<span class="s">"SELECT ..."</span>) {
+        process(row);
+    }
+}
+</code></pre>
+<p>Like ordinary methods, <code>async yield</code> methods may be defined and used freely.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/413-stream.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="412-async"><small>Previous</small>4.12. Async (async and await)</a><a class="next" href="414-throws"><small>Next</small>4.14. throws signatures</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

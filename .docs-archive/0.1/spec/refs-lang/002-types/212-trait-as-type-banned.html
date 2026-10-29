@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.12. Trait-as-type ban - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Writing a trait name directly in type expression position is forbidden. When a value whose implementing type is decided at runtime is needed, write any Trait, w...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.12. Trait-as-type ban - rok docs">
+<meta property="og:description" content="Writing a trait name directly in type expression position is forbidden. When a value whose implementing type is decided at runtime is needed, write any Trait, w...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/212-trait-as-type-banned.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">2. Type system overview</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. Sum types (A | B)</a></li><li><a href="207-niche-optimization">2.7. Niche optimization</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. Generics</a></li><li><a href="211-const-generics">2.11. const generics</a></li><li class="cur"><a aria-current="page" href="212-trait-as-type-banned">2.12. Trait-as-type ban</a><ul class="toc"><li><a href="#2121-what-is-forbidden">2.12.1. What is forbidden</a></li><li><a href="#2122-rationale">2.12.2. Rationale</a></li><li><a href="#2123-when-polymorphism-is-needed-three-alternatives">2.12.3. When polymorphism is needed: three alternatives</a></li><li><a href="#2124-decision-criteria">2.12.4. Decision criteria</a></li><li><a href="#2125-supertraits-and-bound-expressions-are-allowed">2.12.5. Supertraits and bound expressions are allowed</a></li><li><a href="#2126-form-of-the-compile-error">2.12.6. Form of the compile error</a></li></ul></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="212-trait-as-type-ban 212-트레잇-as-타입-금지 2121-what-is-forbidden 2121-금지-항목 2122-rationale 2122-금지의-근거 2123-when-polymorphism-is-needed-three-alternatives 2123-다형성이-필요할-때-세-대안 1-sum-types-for-a-closed-set-of-candidates 1-닫힌-후보가-있으면-합-타입 2-generics-for-open-polymorphism 2-열린-다형성이면-제네릭 3-any-trait-when-the-implementing-type-is-decided-at-runtime 3-런타임에-구현-타입이-정해지면-any-trait 2124-decision-criteria 2124-결정-기준 2125-supertraits-and-bound-expressions-are-allowed 2125-슈퍼트레잇과-바운드-표현은-허용 2126-form-of-the-compile-error 2126-컴파일-에러의-형태"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/212-trait-as-type-banned" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="212-trait-as-type-ban"><a class="anchor" tabindex="-1" href="#212-trait-as-type-ban" aria-hidden="true">#</a>2.12. Trait-as-type ban</h1>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>Writing a trait name directly in type expression position is forbidden. When a value whose implementing type is decided at runtime is needed, write <code>any Trait</code>, whose cost is visible in the syntax (2.12.3).</p>
+</div>
+<h2 id="2121-what-is-forbidden"><a class="anchor" tabindex="-1" href="#2121-what-is-forbidden" aria-hidden="true">#</a>2.12.1. What is forbidden</h2>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">Number</span> = <span class="n">32i32</span>;                          <span class="c">// ERROR - Number is a trait</span>
+<span class="k">fn</span> process(x: <span class="t">Display</span>) -&gt; <span class="t">str</span> { ... }            <span class="c">// ERROR</span>
+<span class="k">struct</span> <span class="t">Holder</span> { item: <span class="t">Iterator</span>; }                <span class="c">// ERROR</span>
+</code></pre>
+<p>As in these examples, a trait name appearing directly as a variable type, parameter type, return type or struct field type is a compile error.</p>
+<h2 id="2122-rationale"><a class="anchor" tabindex="-1" href="#2122-rationale" aria-hidden="true">#</a>2.12.2. Rationale</h2>
+<p>The target of the ban is <strong>hidden</strong> dynamic dispatch. Writing a trait name directly in type position is indistinguishable at a glance from an ordinary static type, but actually creates runtime dispatch. That dispatch has real cost. The implementation is chosen and called at runtime, so on a branch misprediction it can be more than twice as slow as a direct call. It needs extra memory accesses to the dispatch data, hurting cache friendliness. Above all, it blocks the compiler's inlining and optimization.</p>
+<p>So that core numeric loops in scientific and data code do not take on this cost unknowingly, rok does not allow a bare trait name as a type. Runtime polymorphism exists only where <code>any</code> is written. <code>any Trait</code> is allowed because its dynamic dispatch cost is visible in the syntax through the <code>any</code> keyword.</p>
+<h2 id="2123-when-polymorphism-is-needed-three-alternatives"><a class="anchor" tabindex="-1" href="#2123-when-polymorphism-is-needed-three-alternatives" aria-hidden="true">#</a>2.12.3. When polymorphism is needed: three alternatives</h2>
+<p>rok provides three alternatives when polymorphism is needed.</p>
+<h3 id="1-sum-types-for-a-closed-set-of-candidates"><a class="anchor" tabindex="-1" href="#1-sum-types-for-a-closed-set-of-candidates" aria-hidden="true">#</a>1. Sum types for a closed set of candidates</h3>
+<p>If the set of candidates is fixed in advance, use a sum type.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">i32</span> | <span class="t">f32</span> | <span class="t">f64</span> = <span class="n">32i32</span>;
+<span class="k">fn</span> process(x: <span class="t">i32</span> | <span class="t">f32</span>) -&gt; <span class="t">str</span> { ... }
+</code></pre>
+<p>This fits when the candidates are fixed at compile time. Memory and dispatch costs are explicit (see <a href="206-sum-types">Sum types</a>), and pattern matches can be checked for exhaustiveness.</p>
+<h3 id="2-generics-for-open-polymorphism"><a class="anchor" tabindex="-1" href="#2-generics-for-open-polymorphism" aria-hidden="true">#</a>2. Generics for open polymorphism</h3>
+<p>If the candidates are open, use generics.</p>
+<pre><code class="language-rok"><span class="k">fn</span> process&lt;<span class="t">T</span>: <span class="t">Display</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">str</span> { ... }
+<span class="k">struct</span> <span class="t">Holder</span>&lt;<span class="t">T</span>: <span class="t">Iterator</span>&gt; { item: <span class="t">T</span>; }
+</code></pre>
+<p>This fits when candidates are not fixed at compile time or differ per caller. Monomorphization produces direct calls, so the cost is near zero (see <a href="210-generics">Generics</a>), and methods can be called through trait bounds.</p>
+<h3 id="3-any-trait-when-the-implementing-type-is-decided-at-runtime"><a class="anchor" tabindex="-1" href="#3-any-trait-when-the-implementing-type-is-decided-at-runtime" aria-hidden="true">#</a>3. <code>any Trait</code> when the implementing type is decided at runtime</h3>
+<p>If values of different implementing types must be mixed in one slot or collection, use a constrained <code>any</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> shapes: <span class="t">List</span>&lt;<span class="k">any</span> <span class="t">Shape</span>&gt; = [<span class="t">Circle</span> { r: <span class="n">1.0</span> }, <span class="t">Square</span> { side: <span class="n">2.0</span> }];
+<span class="k">fn</span> report(e: <span class="k">any</span> <span class="t">Error</span>) -&gt; <span class="t">str</span> { <span class="s">f"{</span>e<span class="s">}"</span> }
+<span class="k">struct</span> <span class="t">ConfigError</span> { msg: <span class="t">str</span>; cause: <span class="k">any</span> <span class="t">Error</span> | <span class="k">none</span>; }
+</code></pre>
+<p>An <code>any Trait</code> slot accepts only values of types implementing <code>Trait</code> (checked at compile time), and methods of <code>Trait</code> and its supertraits can be called on its value. Calls are dispatched by runtime tag, with the same cost model as <a href="202-any-slot">The <code>any</code> slot</a>. The exact rules are defined in <a href="202-any-slot#2210-constrained-any-any-trait">2.2.10</a>.</p>
+<h2 id="2124-decision-criteria"><a class="anchor" tabindex="-1" href="#2124-decision-criteria" aria-hidden="true">#</a>2.12.4. Decision criteria</h2>
+<p>Use the following criteria to choose among the alternatives.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Situation</th><th>Choice</th></tr></thead>
+<tbody>
+<tr><td>Candidates are a small fixed set (3-5)</td><td>Sum type</td></tr>
+<tr><td>Candidates are extensible by users / libraries</td><td>Generics</td></tr>
+<tr><td>Candidates are decided only at runtime (e.g. plugins, heterogeneous collections)</td><td><code>any Trait</code></td></tr>
+<tr><td>Anything must be held, with no constraint</td><td><code>any</code></td></tr>
+</tbody></table></div>
+<p>In the third case, where polymorphism with types decided at runtime is needed, use <code>any Trait</code>. It incurs dynamic dispatch cost, but that cost is explicitly concentrated where <code>any</code> is written.</p>
+<h2 id="2125-supertraits-and-bound-expressions-are-allowed"><a class="anchor" tabindex="-1" href="#2125-supertraits-and-bound-expressions-are-allowed" aria-hidden="true">#</a>2.12.5. Supertraits and bound expressions are allowed</h2>
+<p>To be clear: what is forbidden is only a trait name appearing in type position. The following are all allowed.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Ord</span>: <span class="t">Eq</span> { ... }                            <span class="c">// supertrait declaration</span>
+<span class="k">fn</span> f&lt;<span class="t">T</span>: <span class="t">Add</span> + <span class="t">Display</span>&gt;(x: <span class="t">T</span>) { ... }              <span class="c">// trait bound</span>
+<span class="k">fn</span> g&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) <span class="k">where</span> <span class="t">T</span>: <span class="t">Ord</span>, <span class="t">T</span>: <span class="t">Clone</span> { ... }      <span class="c">// where clause</span>
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Point</span> { ... }                    <span class="c">// trait position of an impl</span>
+</code></pre>
+<p>In these positions a trait name expresses a constraint, not a type.</p>
+<h2 id="2126-form-of-the-compile-error"><a class="anchor" tabindex="-1" href="#2126-form-of-the-compile-error" aria-hidden="true">#</a>2.12.6. Form of the compile error</h2>
+<p>When a trait name appears in type position, the compiler emits a diagnostic similar to:</p>
+<pre><code>ERROR: 'Display' is a trait, not a type.
+       To allow multiple types, use generics, a sum type, or `any Display`:
+         fn f&lt;T: Display&gt;(x: T) { ... }
+         fn f(x: SomeType | OtherType) { ... }
+         fn f(x: any Display) { ... }
+</code></pre>
+<p>This diagnostic guides the user to one of the three alternatives above.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/212-trait-as-type-banned.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="211-const-generics"><small>Previous</small>2.11. const generics</a><a class="next" href="213-type-paths"><small>Next</small>2.13. Type paths</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

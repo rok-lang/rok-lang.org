@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::std::net 모듈은 저수준 네트워크 primitive 와 함께 TLS 1.3 까지 한 묶음으로 제공합니다. 다만 HTTP, HTTP/2, HTTP/3 같은 고수준 프로토콜은 의도적으로 범위 밖에 두었으며, rok/http 등 별도 패키지로 위임합니다. 이는 표준 라이브러리가...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/302-net.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3) - rok docs">
+<meta property="og:description" content="rok::std::net 모듈은 저수준 네트워크 primitive 와 함께 TLS 1.3 까지 한 묶음으로 제공합니다. 다만 HTTP, HTTP/2, HTTP/3 같은 고수준 프로토콜은 의도적으로 범위 밖에 두었으며, rok/http 등 별도 패키지로 위임합니다. 이는 표준 라이브러리가...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/302-net.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/302-net.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/302-net.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li class="cur"><a aria-current="page" href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a><ul class="toc"><li><a href="#320-공통-규칙">3.2.0. 공통 규칙</a></li><li><a href="#321-tcp">3.2.1. TCP</a></li><li><a href="#322-udp">3.2.2. UDP</a></li><li><a href="#323-unix-domain-socket">3.2.3. Unix domain socket</a></li><li><a href="#324-socketaddr--ipaddr">3.2.4. SocketAddr / IpAddr</a></li><li><a href="#325-tls-13---nettls">3.2.5. TLS 1.3 - net::tls</a></li><li><a href="#326-편의-함수">3.2.6. 편의 함수</a></li><li><a href="#327-zerocopy-hooks-advanced">3.2.7. zerocopy hooks (advanced)</a></li><li><a href="#328-모듈-매핑">3.2.8. 모듈 매핑</a></li></ul></li><li><a href="303-time">3.3. time:: - 시간</a></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="32-net---네트워크-tcp--udp--unix--tls-13 32-net---networking-tcp--udp--unix--tls-13 320-공통-규칙 320-common-rules blocking-과-_async blocking-and-_async 321-tcp 321-tcp 사용-예 examples 322-udp 322-udp 323-unix-domain-socket 323-unix-domain-socket 324-socketaddr--ipaddr 324-socketaddr--ipaddr 325-tls-13---nettls 325-tls-13---nettls 사용-예-1 example 326-편의-함수 326-convenience-functions 327-zerocopy-hooks-advanced 327-zerocopy-hooks-advanced 328-모듈-매핑 328-module-mapping"><a href="../../../../spec/refs-standard-libraries/300-std/302-net" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="32-net---네트워크-tcp--udp--unix--tls-13"><a class="anchor" tabindex="-1" href="#32-net---네트워크-tcp--udp--unix--tls-13" aria-hidden="true">#</a>3.2. <code>net::</code> - 네트워크 (TCP / UDP / Unix + TLS 1.3)</h1>
+<p><code>rok::std::net</code> 모듈은 저수준 네트워크 primitive 와 함께 <strong>TLS 1.3</strong> 까지 한 묶음으로 제공합니다. 다만 HTTP, HTTP/2, HTTP/3 같은 고수준 프로토콜은 의도적으로 범위 밖에 두었으며, <code>rok/http</code> 등 별도 패키지로 위임합니다. 이는 표준 라이브러리가 1.0 으로 동결된 뒤 진화가 멈춰버리는 Go 의 전철을 피하기 위한 선택이기도 합니다.</p>
+<h2 id="320-공통-규칙"><a class="anchor" tabindex="-1" href="#320-공통-규칙" aria-hidden="true">#</a>3.2.0. 공통 규칙</h2>
+<ul>
+<li>쓰는 데이터 (<code>write</code> / <code>write_all</code> / <code>send</code> / <code>send_to</code> 와 그 <code>_async</code>) 는 <code>AsBytes</code> (<a href="305-io#351-asbytes">3.5.1</a>) 로 <code>str</code>, <code>List&lt;u8&gt;</code>, <code>Slice&lt;u8&gt;</code> 를 받습니다. 읽는 buffer 는 <code>List&lt;u8&gt;</code> 입니다. <code>read(buf)</code> 는 미리 길이를 잡아 둔 <code>buf</code> 의 앞 <code>n</code> 바이트를 채우고 <code>n</code> 을 돌려줍니다. <code>0</code> 은 stream 의 끝입니다.
+</li>
+<li>소켓 타입은 OS 핸들입니다. 값을 복사하면 같은 소켓을 공유하며, <code>try_clone</code> 만 fd 를 복제합니다.
+</li>
+<li>소켓은 <code>Drop</code> 을 구현하므로 <code>using</code> 블록을 벗어날 때 닫힙니다 (<a href="../200-core/213-marker#2134-drop---using-해제-시-정리">2.13.4</a>). 그 밖에는 <code>close()</code> 로 닫습니다. 닫힌 소켓을 쓰면 <code>IoError</code> (<code>InvalidInput</code>) 입니다. 다른 task 가 소켓을 닫을 때 그 소켓에서 대기 중인 <code>*_async</code> 연산은 그 에러로 끝나며, <code>shutdown(Read | Both)</code> 뒤에는 대기 중인 read 가 0 으로 끝납니다.
+</li>
+<li><code>TcpStream</code> 은 <code>Reader</code> + <code>Writer</code> (<a href="305-io#351a-reader--writer-트레잇">3.5.1</a>) 를 구현합니다.
+</li>
+</ul>
+<h3 id="blocking-과-_async"><a class="anchor" tabindex="-1" href="#blocking-과-_async" aria-hidden="true">#</a>blocking 과 <code>*_async</code></h3>
+<p>메서드는 두 벌입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>기다리는 방식</th></tr></thead>
+<tbody>
+<tr><td><code>accept</code>, <code>read</code>, <code>write</code> ..</td><td>호출한 OS 스레드를 막습니다 (task 안이면 그 worker 도)</td></tr>
+<tr><td><code>accept_async</code>, <code>read_async</code> ..</td><td>task 만 중단하고 worker 는 다른 task 를 실행합니다</td></tr>
+</tbody></table></div>
+<p><code>*_async</code> 메서드는 <code>async fn</code> 이며 <code>try await s.read_async(buf)</code> 처럼 씁니다. 준비를 기다리는 일은 <a href="../../refs-lang/007-runtime/707-io-and-timer">I/O 드라이버</a> 가 맡습니다. 보통 함수는 stackless 코루틴을 중단시킬 수 없으므로, 같은 이름의 sync 호출이 task 안에서 저절로 중단되지는 않습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>blocking</th><th>async</th></tr></thead>
+<tbody>
+<tr><td><code>TcpListener::accept</code></td><td><code>TcpListener::accept_async</code></td></tr>
+<tr><td><code>TcpStream::connect</code></td><td><code>TcpStream::connect_async</code></td></tr>
+<tr><td><code>TcpStream::read</code></td><td><code>TcpStream::read_async</code></td></tr>
+<tr><td><code>TcpStream::read_to_end</code></td><td><code>TcpStream::read_to_end_async</code></td></tr>
+<tr><td><code>TcpStream::write</code></td><td><code>TcpStream::write_async</code></td></tr>
+<tr><td><code>TcpStream::write_all</code></td><td><code>TcpStream::write_all_async</code></td></tr>
+<tr><td><code>TcpStream::write_str</code></td><td><code>TcpStream::write_str_async</code></td></tr>
+<tr><td><code>UdpSocket::send_to</code></td><td><code>UdpSocket::send_to_async</code></td></tr>
+<tr><td><code>UdpSocket::recv_from</code></td><td><code>UdpSocket::recv_from_async</code></td></tr>
+<tr><td><code>UdpSocket::send</code></td><td><code>UdpSocket::send_async</code></td></tr>
+<tr><td><code>UdpSocket::recv</code></td><td><code>UdpSocket::recv_async</code></td></tr>
+<tr><td><code>tcp_connect</code></td><td><code>tcp_connect_async</code></td></tr>
+<tr><td><code>tls::Client::new</code> / <code>with_config</code></td><td><code>tls::Client::new_async</code> / <code>with_config_async</code></td></tr>
+<tr><td><code>tls::Server::new</code></td><td><code>tls::Server::new_async</code></td></tr>
+<tr><td><code>tls::Client::read</code> ... <code>key_update</code> (<code>Server</code> 도)</td><td><code>read_async</code> ... <code>key_update_async</code></td></tr>
+</tbody></table></div>
+<p>timeout 은 blocking 쪽에만 적용됩니다 (<code>set_read_timeout</code> / <code>set_write_timeout</code>, 넘으면 <code>TimedOut</code>). async 쪽은 <code>task::timeout</code> (task 를 기다림) 이나 <code>task::select</code> (<a href="../200-core/218-task#select---먼저-끝나는-future">2.18.1</a>) 로 감쌉니다. <code>select</code> 는 진 쪽을 취소하므로 읽기를 포기할 때 쓰기 좋습니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Got</span> { <span class="t">Data</span>(<span class="t">usize</span>), <span class="t">Timeout</span> }
+
+<span class="k">let</span> (_, got) = <span class="k">await</span> task::select([
+    <span class="k">async</span> { <span class="t">Got</span>::<span class="t">Data</span>(<span class="k">try</span> <span class="k">await</span> s.read_async(buf) <span class="k">catch</span> _ { <span class="n">0</span> }) },
+    <span class="k">async</span> { <span class="k">await</span> task::sleep(<span class="t">Duration</span>::sec(<span class="n">5</span>)); <span class="t">Got</span>::<span class="t">Timeout</span> },
+]);
+</code></pre>
+<p><code>set_nonblocking(true)</code> 이면 blocking 메서드는 기다리지 않고 <code>WouldBlock</code> 을 던집니다.</p>
+<p><code>wasm32-wasi</code> 에서 <code>std::net</code> (TCP / UDP connect, bind, listen, accept, DNS) 은 <code>wasi:sockets</code> 로 동작하며, host 가 네트워크 접근을 허락해야 합니다 (예: wasmtime <code>-S inherit-network -S allow-ip-name-lookup</code>). <code>wasm32-wasi-threads</code> 에서는 <code>TcpListener::inherited()</code> 의 listener 만 동작하고, connect / bind / DNS 는 <code>Unsupported</code> 를 throw 합니다.</p>
+<h2 id="321-tcp"><a class="anchor" tabindex="-1" href="#321-tcp" aria-hidden="true">#</a>3.2.1. TCP</h2>
+<p>TCP 쪽은 <code>TcpListener</code> 와 <code>TcpStream</code> 두 타입을 축으로 구성합니다. 리스너는 바인드와 accept 흐름을 담당하고, 스트림은 읽기·쓰기와 옵션 제어를 모두 노출합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">TcpListener</span> { <span class="c">/* OS handle */</span> }
+<span class="k">struct</span> <span class="t">TcpStream</span> { <span class="c">/* OS handle */</span> }
+
+<span class="k">impl</span> <span class="t">TcpListener</span> {
+    <span class="k">fn</span> bind(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpListener</span>;      <span class="c">// SO_REUSEADDR, backlog 128</span>
+    <span class="k">fn</span> inherited() -&gt; <span class="t">List</span>&lt;<span class="t">TcpListener</span>&gt;;                            <span class="c">// host 가 프로세스에 넘긴 listener</span>
+    <span class="k">fn</span> accept(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">TcpStream</span>, <span class="t">SocketAddr</span>);
+    <span class="k">async</span> <span class="k">fn</span> accept_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">TcpStream</span>, <span class="t">SocketAddr</span>);
+    <span class="k">fn</span> local_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;              <span class="c">// port 0 으로 bind 한 뒤 실제 port</span>
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpListener</span>;
+    <span class="k">fn</span> set_nonblocking(<span class="k">self</span>, nb: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> incoming(<span class="k">self</span>) -&gt; <span class="t">Incoming</span>;       <span class="c">// Iterator&lt;Item = Result&lt;TcpStream, IoError&gt;&gt; 구현</span>
+    <span class="k">fn</span> fd(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> close(<span class="k">self</span>);
+}
+
+<span class="k">impl</span> <span class="t">TcpStream</span> {
+    <span class="k">fn</span> connect(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+    <span class="k">fn</span> connect_timeout(addr: <span class="t">SocketAddr</span>, dur: <span class="t">Duration</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+    <span class="k">async</span> <span class="k">fn</span> connect_async(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+
+    <span class="k">fn</span> read(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> read_to_end(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                  <span class="c">// 끝까지</span>
+    <span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> write_all&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> write_str(<span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> flush(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                                 <span class="c">// no-op (버퍼 없음)</span>
+    <span class="c">// + read_async / read_to_end_async / write_async / write_all_async / write_str_async</span>
+
+    <span class="k">fn</span> peer_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> local_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> shutdown(<span class="k">self</span>, how: <span class="t">Shutdown</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+    <span class="k">fn</span> fd(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> close(<span class="k">self</span>);
+
+    <span class="c">// TCP 옵션</span>
+    <span class="k">fn</span> set_nodelay(<span class="k">self</span>, nodelay: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);           <span class="c">// TCP_NODELAY</span>
+    <span class="k">fn</span> set_keepalive(<span class="k">self</span>, alive: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>); <span class="c">// SO_KEEPALIVE + idle (초), none = 끔</span>
+    <span class="k">fn</span> set_read_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_write_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> read_timeout(<span class="k">self</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> write_timeout(<span class="k">self</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> set_nonblocking(<span class="k">self</span>, nb: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+
+<span class="k">impl</span> <span class="t">Reader</span> <span class="k">for</span> <span class="t">TcpStream</span> { ... }
+<span class="k">impl</span> <span class="t">Writer</span> <span class="k">for</span> <span class="t">TcpStream</span> { ... }
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">TcpStream</span> { ... }          <span class="c">// close</span>
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">TcpListener</span> { ... }
+
+<span class="k">enum</span> <span class="t">Shutdown</span> { <span class="t">Read</span>, <span class="t">Write</span>, <span class="t">Both</span> }
+</code></pre>
+<p><code>TcpListener::inherited()</code> 는 host 가 프로세스에 넘긴 listener 를 돌려줍니다: WASI pre-opened 소켓, Unix 의 systemd <code>LISTEN_FDS</code> socket activation, Windows 에서는 없음.</p>
+<p><code>Incoming</code> 은 끝나지 않습니다. 원소마다 <code>accept</code> 를 한 번 부르며, 그 에러는 <code>Err</code> 원소로 나옵니다. 쓰기에서 peer 가 닫혀도 <code>SIGPIPE</code> 로 프로세스가 끝나지 않고 <code>IoError</code> (<code>BrokenPipe</code>) 가 됩니다.</p>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net::{tcp_listen, <span class="t">TcpListener</span>, <span class="t">TcpStream</span>};
+
+<span class="c">// blocking - 이 스레드가 accept 와 handle 에서 기다림</span>
+<span class="k">using</span> l = <span class="k">try</span> tcp_listen(<span class="s">"127.0.0.1:8080"</span>) {
+    <span class="k">for</span> c <span class="k">in</span> l.incoming() {
+        handle(<span class="k">try</span> c.get());
+    }
+}
+
+<span class="c">// async - 연결마다 task, 기다리는 동안 worker 는 다른 task 실행</span>
+<span class="k">async</span> <span class="k">fn</span> serve_all(l: <span class="t">TcpListener</span>) <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">loop</span> {
+        <span class="k">let</span> (s, peer) = <span class="k">try</span> <span class="k">await</span> l.accept_async();
+        task::spawn(serve(s));          <span class="c">// async fn serve(s: TcpStream)</span>
+    }
+}
+</code></pre>
+<h2 id="322-udp"><a class="anchor" tabindex="-1" href="#322-udp" aria-hidden="true">#</a>3.2.2. UDP</h2>
+<p>UDP 는 단일 <code>UdpSocket</code> 타입이 모든 역할을 맡습니다. 데이터그램 송수신을 기본으로 하되, <code>connect</code> 로 peer 를 고정해두면 <code>send</code> / <code>recv</code> 만으로도 다룰 수 있도록 했습니다. 멀티캐스트 가입과 TTL 같은 옵션도 함께 노출하며, QUIC 같은 워크로드를 염두에 두고 GSO/GRO 활용을 위한 segment size 제어까지 포함합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">UdpSocket</span> { <span class="c">/* OS handle */</span> }
+
+<span class="k">impl</span> <span class="t">UdpSocket</span> {
+    <span class="k">fn</span> bind(addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UdpSocket</span>;
+
+    <span class="k">fn</span> send_to&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>, addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> recv_from(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">usize</span>, <span class="t">SocketAddr</span>);
+    <span class="k">fn</span> connect(<span class="k">self</span>, addr: <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>);             <span class="c">// peer 고정</span>
+    <span class="k">fn</span> send&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> recv(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="c">// + send_to_async / recv_from_async / send_async / recv_async</span>
+
+    <span class="k">fn</span> local_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> peer_addr(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> set_broadcast(<span class="k">self</span>, on: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);              <span class="c">// SO_BROADCAST</span>
+    <span class="k">fn</span> set_read_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_write_timeout(<span class="k">self</span>, dur: <span class="t">Duration</span> | <span class="k">none</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_nonblocking(<span class="k">self</span>, nb: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UdpSocket</span>;
+    <span class="k">fn</span> fd(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> close(<span class="k">self</span>);
+
+    <span class="c">// 멀티캐스트 (IPv4)</span>
+    <span class="k">fn</span> join_multicast_v4(<span class="k">self</span>, addr: <span class="t">Ipv4Addr</span>, iface: <span class="t">Ipv4Addr</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> leave_multicast_v4(<span class="k">self</span>, addr: <span class="t">Ipv4Addr</span>, iface: <span class="t">Ipv4Addr</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_multicast_loop_v4(<span class="k">self</span>, on: <span class="t">bool</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> set_multicast_ttl_v4(<span class="k">self</span>, ttl: <span class="t">u32</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="c">// QUIC 용 (GSO / GRO)</span>
+    <span class="k">fn</span> set_segment_size(<span class="k">self</span>, size: <span class="t">u16</span>) <span class="k">throws</span> (<span class="t">IoError</span>);           <span class="c">// UDP_SEGMENT, Linux 외에는 Unsupported</span>
+}
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">UdpSocket</span> { ... }          <span class="c">// close</span>
+</code></pre>
+<p><code>recv_from</code> / <code>recv</code> 는 데이터그램 하나를 <code>buf</code> 에 받습니다. <code>buf</code> 보다 긴 데이터그램의 나머지는 버려집니다.</p>
+<h2 id="323-unix-domain-socket"><a class="anchor" tabindex="-1" href="#323-unix-domain-socket" aria-hidden="true">#</a>3.2.3. Unix domain socket</h2>
+<p>Unix domain socket 은 <code>UnixListener</code>, <code>UnixStream</code>, <code>UnixDatagram</code> 세 타입으로 정리합니다. 전체적인 모양은 TCP 와 닮아 있지만, 같은 호스트 안에서만 통신하므로 파일 경로를 식별자로 쓰며 <code>pair()</code> 처럼 <code>socketpair(2)</code> 에 대응되는 편의 메서드도 제공합니다. 또한 <code>SCM_RIGHTS</code> 를 통한 fd 전달은 Unix 소켓에서만 의미가 있으므로 <code>send_with_fd</code> / <code>recv_with_fd</code> 로 분리해 두었습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">UnixListener</span> { <span class="c">/* unix only */</span> }
+<span class="k">struct</span> <span class="t">UnixStream</span> { <span class="c">/* unix only */</span> }
+<span class="k">struct</span> <span class="t">UnixDatagram</span> { <span class="c">/* unix only */</span> }
+
+<span class="a">#[cfg(target_family = "unix")]</span>
+<span class="k">impl</span> <span class="t">UnixListener</span> {
+    <span class="k">fn</span> bind(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UnixListener</span>;
+    <span class="k">fn</span> accept(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">UnixStream</span>, <span class="t">Path</span> | <span class="k">none</span>);   <span class="c">// peer 가 bind 한 경로</span>
+    <span class="c">// ... TcpListener 와 비슷</span>
+}
+
+<span class="a">#[cfg(target_family = "unix")]</span>
+<span class="k">impl</span> <span class="t">UnixStream</span> {
+    <span class="k">fn</span> connect(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UnixStream</span>;
+    <span class="k">fn</span> pair() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">UnixStream</span>, <span class="t">UnixStream</span>);          <span class="c">// socketpair</span>
+
+    <span class="c">// SCM_RIGHTS - fd passing</span>
+    <span class="k">fn</span> send_with_fd(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;, fd: <span class="t">RawFd</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> recv_with_fd(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; (<span class="t">usize</span>, <span class="t">RawFd</span> | <span class="k">none</span>);
+}
+</code></pre>
+<h2 id="324-socketaddr--ipaddr"><a class="anchor" tabindex="-1" href="#324-socketaddr--ipaddr" aria-hidden="true">#</a>3.2.4. SocketAddr / IpAddr</h2>
+<p>주소 표현은 IPv4 와 IPv6 를 합집합으로 묶은 <code>SocketAddr</code> enum 을 중심으로 합니다. 각 변종은 IP 와 포트, 그리고 IPv6 의 경우 flow info 와 scope id 까지 그대로 노출하므로, 필요할 때 직접 들여다볼 수 있습니다. 문자열 파싱은 <code>FromStr</code> 구현을 통해 자연스럽게 이뤄지며, 호스트네임을 다루는 DNS 조회는 별도 함수로 제공합니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">SocketAddr</span> {
+    <span class="t">V4</span>(<span class="t">SocketAddrV4</span>),
+    <span class="t">V6</span>(<span class="t">SocketAddrV6</span>),
+}
+
+<span class="k">struct</span> <span class="t">SocketAddrV4</span> { ip: <span class="t">Ipv4Addr</span>; port: <span class="t">u16</span>; }
+<span class="k">struct</span> <span class="t">SocketAddrV6</span> { ip: <span class="t">Ipv6Addr</span>; port: <span class="t">u16</span>; flow_info: <span class="t">u32</span>; scope_id: <span class="t">u32</span>; }
+
+<span class="k">impl</span> <span class="t">SocketAddr</span> {
+    <span class="k">fn</span> v4(ip: <span class="t">Ipv4Addr</span>, port: <span class="t">u16</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> v6(ip: <span class="t">Ipv6Addr</span>, port: <span class="t">u16</span>) -&gt; <span class="t">SocketAddr</span>;    <span class="c">// flow_info = scope_id = 0</span>
+    <span class="k">fn</span> port(<span class="k">self</span>) -&gt; <span class="t">u16</span>;
+    <span class="k">fn</span> with_port(<span class="k">self</span>, port: <span class="t">u16</span>) -&gt; <span class="t">SocketAddr</span>;
+    <span class="k">fn</span> is_ipv4(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ipv6(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">struct</span> <span class="t">Ipv4Addr</span> { octets: [<span class="t">u8</span>; <span class="n">4</span>]; }
+<span class="k">struct</span> <span class="t">Ipv6Addr</span> { segments: [<span class="t">u16</span>; <span class="n">8</span>]; }
+
+<span class="k">impl</span> <span class="t">Ipv4Addr</span> {
+    <span class="k">const</span> <span class="t">LOCALHOST</span>: <span class="t">Ipv4Addr</span> = <span class="t">Ipv4Addr</span> { octets: [<span class="n">127</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">1</span>] };
+    <span class="k">const</span> <span class="t">UNSPECIFIED</span>: <span class="t">Ipv4Addr</span> = <span class="t">Ipv4Addr</span> { octets: [<span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>, <span class="n">0</span>] };
+    <span class="k">fn</span> new(a: <span class="t">u8</span>, b: <span class="t">u8</span>, c: <span class="t">u8</span>, d: <span class="t">u8</span>) -&gt; <span class="t">Ipv4Addr</span>;
+    <span class="k">fn</span> to_bits(<span class="k">self</span>) -&gt; <span class="t">u32</span>;
+    <span class="k">fn</span> is_loopback(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_unspecified(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_multicast(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">impl</span> <span class="t">Ipv6Addr</span> {
+    <span class="k">const</span> <span class="t">LOCALHOST</span>: <span class="t">Ipv6Addr</span>;           <span class="c">// ::1</span>
+    <span class="k">const</span> <span class="t">UNSPECIFIED</span>: <span class="t">Ipv6Addr</span>;         <span class="c">// ::</span>
+    <span class="k">fn</span> new(a: <span class="t">u16</span>, b: <span class="t">u16</span>, c: <span class="t">u16</span>, d: <span class="t">u16</span>, e: <span class="t">u16</span>, f: <span class="t">u16</span>, g: <span class="t">u16</span>, h: <span class="t">u16</span>) -&gt; <span class="t">Ipv6Addr</span>;
+    <span class="k">fn</span> is_loopback(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="c">// 파싱 / 출력 - 세 타입 모두 FromStr (Err = ParseError), Display, Debug, PartialEq</span>
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">SocketAddr</span> { ... }       <span class="c">// "127.0.0.1:8080" / "[::1]:8080"</span>
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">Ipv4Addr</span> { ... }
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">Ipv6Addr</span> { ... }         <span class="c">// "::" 축약 허용</span>
+
+<span class="c">// DNS (getaddrinfo)</span>
+<span class="k">fn</span> resolve(host: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">SocketAddr</span>&gt;;
+<span class="k">fn</span> resolve_one(host: <span class="t">str</span>, port: <span class="t">u16</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SocketAddr</span>;
+</code></pre>
+<p><code>resolve</code> 는 OS 의 <code>getaddrinfo</code> 로 주소 목록을 얻으며, 호출한 스레드를 막습니다. <code>host</code> 는 다음을 받습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th><code>host</code></th><th>결과</th></tr></thead>
+<tbody>
+<tr><td>소켓 주소 (<code>&quot;10.0.0.1:80&quot;</code>, <code>&quot;[::1]:80&quot;</code>)</td><td>그 주소 하나 (조회 없음)</td></tr>
+<tr><td><code>&quot;name:port&quot;</code></td><td><code>name</code> 의 주소들, port 는 <code>port</code></td></tr>
+<tr><td><code>&quot;[v6]:port&quot;</code></td><td>그 IPv6 주소, port 는 <code>port</code></td></tr>
+<tr><td>이름 또는 IP 만</td><td>그 주소들, port 0</td></tr>
+</tbody></table></div>
+<p><code>resolve_one</code> 은 이름과 port 를 따로 받아 첫 주소를 돌려줍니다. 이름을 찾지 못하면 <code>IoError</code> (<code>NotFound</code>) 이며, 메시지에 resolver 의 설명이 들어갑니다.</p>
+<h2 id="325-tls-13---nettls"><a class="anchor" tabindex="-1" href="#325-tls-13---nettls" aria-hidden="true">#</a>3.2.5. TLS 1.3 - <code>net::tls</code></h2>
+<p>TLS 는 <code>net::tls</code> 하위 모듈에 모아 두었고, 처음부터 1.3 만을 기본 가정으로 잡았습니다. <code>ClientConfig</code> 와 <code>ServerConfig</code> 가 인증서, 암호 모음, ALPN 프로토콜 목록을 표현하며, post-quantum 옵션을 통해 ML-KEM 하이브리드 키 교환을 활성화할 수 있습니다. 핸드셰이크 이후에는 <code>Client</code> / <code>Server</code> 가 평문 스트림처럼 동작하므로 기존 I/O 코드를 거의 그대로 얹을 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net::tls;
+
+<span class="k">struct</span> <span class="t">ClientConfig</span> {
+    root_certs: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;          <span class="c">// 신뢰 앵커</span>
+    cipher_suites: <span class="t">List</span>&lt;<span class="t">CipherSuite</span>&gt;;       <span class="c">// TLS 1.3 suite, 선호 순서</span>
+    alpn_protocols: <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">u8</span>&gt;&gt;;         <span class="c">// ["h2", "http/1.1"] 등</span>
+    enable_pq: <span class="t">bool</span>;                        <span class="c">// post-quantum (X25519MLKEM768 hybrid)</span>
+    client_cert_chain: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;   <span class="c">// 서버가 요청하면 보냄: leaf 먼저; 비면 없음</span>
+    client_key: <span class="t">PrivateKey</span> | <span class="k">none</span>;          <span class="c">// 클라이언트 leaf 의 키</span>
+    session_cache: <span class="t">SessionCache</span> | <span class="k">none</span>;     <span class="c">// resume 할 ticket; none: resume 안 함</span>
+    early_data: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                   <span class="c">// 0-RTT 데이터, 아니면 핸드셰이크 뒤의 첫 데이터</span>
+}
+
+<span class="k">impl</span> <span class="t">ClientConfig</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">ClientConfig</span>;               <span class="c">// system_roots(), 모든 suite, ALPN 없음, enable_pq = true,</span>
+                                            <span class="c">// 클라이언트 인증서 없음, SessionCache::new(), early data 없음</span>
+}
+
+<span class="k">struct</span> <span class="t">ServerConfig</span> {
+    cert_chain: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;          <span class="c">// leaf 먼저, 그다음 중간 인증서</span>
+    private_key: <span class="t">PrivateKey</span>;                <span class="c">// leaf 의 키</span>
+    cipher_suites: <span class="t">List</span>&lt;<span class="t">CipherSuite</span>&gt;;
+    alpn_protocols: <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">u8</span>&gt;&gt;;
+    client_roots: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;        <span class="c">// 비어 있지 않으면 클라이언트 인증서를 요청하고 이것으로 검증</span>
+    require_client_cert: <span class="t">bool</span>;              <span class="c">// client_roots 와 함께: 인증서 없는 클라이언트 거부</span>
+    ocsp_response: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                <span class="c">// 요청받으면 staple 하는 DER OCSPResponse; 비면 없음</span>
+    ticket_store: <span class="t">TicketStore</span> | <span class="k">none</span>;       <span class="c">// resumption; none: ticket 없음</span>
+    max_early_data: <span class="t">u32</span>;                    <span class="c">// 연결마다 받는 0-RTT 바이트; 0: 없음</span>
+}
+
+<span class="k">impl</span> <span class="t">ServerConfig</span> {
+    <span class="k">fn</span> new(cert_chain: <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;, private_key: <span class="t">PrivateKey</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">ServerConfig</span>;
+        <span class="c">// 키는 cert_chain[0] 의 것이어야 함; 모든 suite, ALPN 없음, 클라이언트 인증서 없음,</span>
+        <span class="c">// OCSP 응답 없음, TicketStore::new(), require_client_cert = true, max_early_data = 0</span>
+}
+
+<span class="k">struct</span> <span class="t">SessionCache</span> {                       <span class="c">// 서버 이름별 클라이언트의 ticket; 복사본은 공유</span>
+    <span class="k">fn</span> new() -&gt; <span class="t">SessionCache</span>;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+}
+
+<span class="k">struct</span> <span class="t">TicketStore</span> {                        <span class="c">// 서버의 resume 가능한 세션; 복사본은 공유</span>
+    <span class="k">fn</span> new() -&gt; <span class="t">TicketStore</span>;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+}
+
+<span class="k">enum</span> <span class="t">CipherSuite</span> { <span class="t">Aes128GcmSha256</span>, <span class="t">Aes256GcmSha384</span>, <span class="t">ChaCha20Poly1305Sha256</span> }
+
+<span class="k">struct</span> <span class="t">Certificate</span> {
+    <span class="k">fn</span> from_der(der: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Certificate</span>;
+    <span class="k">fn</span> from_pem(text: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;
+    <span class="k">fn</span> der(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> dns_names(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt;;
+    <span class="k">fn</span> not_before(<span class="k">self</span>) -&gt; <span class="t">i64</span>;             <span class="c">// Unix 초</span>
+    <span class="k">fn</span> not_after(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+}
+
+<span class="k">struct</span> <span class="t">PrivateKey</span> {                         <span class="c">// Ed25519, ECDSA P-256 / P-384, RSA (2048..4096 bits), RSASSA-PSS</span>
+    <span class="k">fn</span> from_der(der: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">PrivateKey</span>;   <span class="c">// PKCS #8</span>
+    <span class="k">fn</span> from_pem(text: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">PrivateKey</span>;  <span class="c">// PRIVATE KEY, EC PRIVATE KEY 또는 RSA PRIVATE KEY</span>
+}
+
+<span class="k">fn</span> system_roots() <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;   <span class="c">// OS trust store (호출마다 읽음)</span>
+
+<span class="k">enum</span> <span class="t">TlsErrorKind</span> { <span class="t">Io</span>, <span class="t">Certificate</span>, <span class="t">Protocol</span>, <span class="t">PeerAlert</span> }
+<span class="k">struct</span> <span class="t">TlsError</span> { kind: <span class="t">TlsErrorKind</span>; msg: <span class="t">str</span>; alert: <span class="t">u8</span>; }
+
+<span class="k">struct</span> <span class="t">Client</span> {
+    <span class="k">fn</span> new(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+    <span class="k">fn</span> with_config(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>, cfg: <span class="t">ClientConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+    <span class="k">async</span> <span class="k">fn</span> new_async(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+    <span class="k">async</span> <span class="k">fn</span> with_config_async(stream: <span class="t">TcpStream</span>, server_name: <span class="t">str</span>, cfg: <span class="t">ClientConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Client</span>;
+
+    <span class="k">fn</span> read(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> read_to_end(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> write_all&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> flush(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> close_notify(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> key_update(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> close(<span class="k">self</span>);
+
+    <span class="k">async</span> <span class="k">fn</span> read_async(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_to_end_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">async</span> <span class="k">fn</span> write_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> write_all_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, buf: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> flush_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> close_notify_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> key_update_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> negotiated_alpn(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>;
+    <span class="k">fn</span> peer_certificates(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">Certificate</span>&gt;;
+    <span class="k">fn</span> resumed(<span class="k">self</span>) -&gt; <span class="t">bool</span>;               <span class="c">// 핸드셰이크가 세션을 resume 함</span>
+    <span class="k">fn</span> early_data_accepted(<span class="k">self</span>) -&gt; <span class="t">bool</span>;   <span class="c">// early_data 가 0-RTT 데이터로 나감</span>
+}
+
+<span class="k">struct</span> <span class="t">Server</span> {
+    <span class="k">fn</span> new(stream: <span class="t">TcpStream</span>, cfg: <span class="t">ServerConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Server</span>;
+    <span class="k">async</span> <span class="k">fn</span> new_async(stream: <span class="t">TcpStream</span>, cfg: <span class="t">ServerConfig</span>) <span class="k">throws</span> (<span class="t">TlsError</span>) -&gt; <span class="t">Server</span>;
+    <span class="c">// read, read_to_end, write, write_all, flush, close_notify, key_update,</span>
+    <span class="c">// close, 그 *_async 형태, negotiated_alpn, peer_certificates 는</span>
+    <span class="c">// Client 와 같고, 추가로:</span>
+    <span class="k">fn</span> server_name(<span class="k">self</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;     <span class="c">// 클라이언트의 SNI</span>
+    <span class="k">fn</span> resumed(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> early_data(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;        <span class="c">// 받아들인 0-RTT 데이터; read 는 그 뒤의 것을 돌려줌</span>
+}
+</code></pre>
+<p><code>Client</code> 와 <code>Server</code> 는 <code>Reader</code> / <code>Writer</code> (3.5.1) 와 <code>Drop</code> (close_notify 후 socket 을 닫음) 을 구현합니다. 복사본은 하나의 연결을 공유하며, 한 연결은 한 번에 한 thread 만, 한 번에 한 연산만 씁니다 (<code>!Sync</code>).</p>
+<p><code>*_async</code> 메서드는 3.2.0 을 따릅니다: socket 이 준비되지 않은 동안 task 만 중단하며, 핸드셰이크 (<code>new_async</code>, <code>with_config_async</code>) 도 상대의 메시지 사이에서 마찬가지입니다. 한 연결에서 blocking 형태와 async 형태를 섞어 써도 됩니다.</p>
+<p>스택은 구현이 제공하며 <code>rok::core::crypto</code> (2.21) 위에 rok 로 작성됩니다. OS 나 서드파티 TLS 라이브러리는 쓰지 않으며, 사용자가 그런 라이브러리를 호출할 일도 없습니다. TLS 1.3 (RFC 8446) 만 사용하고, TLS 1.2 이하는 거부합니다. 핸드셰이크는 X25519 와 X25519MLKEM768 하이브리드 (ML-KEM-768 + X25519, <code>enable_pq</code>), HelloRetryRequest (group 또는 cookie), ALPN, SNI, KeyUpdate, close_notify, 클라이언트 인증서, OCSP stapling, 그리고 0-RTT 데이터를 포함한 resumption 을 지원합니다.</p>
+<p>Resumption: <code>ticket_store</code> 가 있는 서버는 핸드셰이크마다 NewSessionTicket 하나를 보냅니다. store 는 세션을 보관하며 (최대 4096 개, 가장 오래된 것부터 버림; 수명 2 시간) ticket 하나를 많아야 한 번 사용합니다. <code>session_cache</code> 가 있는 클라이언트는 받은 ticket 을 접속한 서버 이름 아래에 보관하며 (최대 64 개), 자기도 제시하는 cipher suite 의 해시를 쓰는 살아 있는 ticket 중 가장 새 것을 한 번 제시합니다 (psk_dhe_ke 만: resume 한 핸드셰이크도 새 키 교환을 합니다). resume 한 연결은 인증서 인증을 건너뛰며, <code>peer_certificates()</code> 는 원래 연결의 chain 을 돌려줍니다. ticket 은 클라이언트가 read 하는 동안 받습니다.</p>
+<p>0-RTT: <code>early_data</code> 가 비어 있지 않고 ticket 이 그만큼의 바이트를 허용하면, 클라이언트는 그것을 ClientHello 와 함께 early data 로 보냅니다. 그렇지 않거나 서버가 거절하면 핸드셰이크 뒤의 첫 application data 로 보냅니다 (어느 쪽인지는 <code>early_data_accepted()</code> 가 알려 줌). 서버는 <code>max_early_data &gt; 0</code> 이고, 첫 번째로 제시된 ticket 이며, HelloRetryRequest 가 없고, ticket 의 cipher suite 와 ALPN 프로토콜이 같으며, 클라이언트의 ticket age 가 서버의 것과 10 초 안일 때만 early data 를 받습니다. 받은 데이터는 <code>early_data()</code> 로 내주고, 거절한 early data 는 건너뜁니다. 모든 ticket 은 그 <code>TicketStore</code> 에서 한 번만 사용되므로, 재전송된 ClientHello 는 아무것도 resume 하지 못하고 그 early data 는 건너뜁니다 (RFC 8446 8.1). 서로의 재전송을 거부해야 하는 서버들은 store 하나를 공유해야 합니다. early data 는 여전히 ticket 에 대해 forward-secret 이 아니므로 멱등이어야 합니다.</p>
+<p>클라이언트 인증서: <code>client_roots</code> 가 비어 있지 않은 서버는 CertificateRequest 를 보냅니다. 클라이언트의 chain 은 서버의 것처럼 (아래) <code>client_roots</code> 에 대해 검증하되 extendedKeyUsage clientAuth 를 요구하고 이름은 검사하지 않으며, 그 CertificateVerify 도 검사합니다. 인증서가 없는 클라이언트는 <code>require_client_cert</code> 이면 certificate_required 로 핸드셰이크가 실패하고, 아니면 <code>peer_certificates()</code> 없이 계속합니다. 클라이언트는 서버가 <code>client_key</code> 에 맞는 scheme 을 받으면 CertificateRequest 에 <code>client_cert_chain</code> 과 <code>client_key</code> 로 만든 CertificateVerify 로 답하고, 아니면 빈 Certificate 로 답합니다. 첫 인증서의 것이 아닌 <code>client_key</code> 는 아무것도 보내기 전에 <code>Client::with_config</code> 를 실패시킵니다.</p>
+<p>서버 인증: 인증서 경로는 상대의 chain 에서 <code>root_certs</code> 중 하나까지 구성하고 RFC 5280 에 따라 검증합니다 (서명, 현재 시각 기준 유효 기간, basicConstraints, keyUsage, extendedKeyUsage serverAuth, DNS 및 IP name constraints; 모르는 critical extension 은 실패). 서버 이름은 subjectAltName 하고만 대조합니다 (RFC 6125: 대소문자 무시, wildcard 는 가장 왼쪽 label 전체). IP 리터럴은 iPAddress 항목과 대조하며 SNI 를 보내지 않습니다. 허용하는 서명: Ed25519, SHA-256/384/512 를 쓰는 ECDSA P-256 / P-384, RSA PKCS #1 v1.5 (인증서에만) 와 SHA-256/384/512 를 쓰는 RSA-PSS (2048-4096-bit 키, rsaEncryption 또는 id-RSASSA-PSS; 인증서에서는 salt 길이 무관, id-RSASSA-PSS 키의 해시와 최소 salt 를 따름). Revocation: 클라이언트는 OCSP 응답을 요청합니다 (status_request). staple 된 응답은 성공한 basic OCSP 응답 (RFC 6960) 이어야 하며, leaf 의 발급자나 발급자가 extendedKeyUsage OCSPSigning 으로 발급한 인증서가 서명하고, leaf 를 가리키는 SHA-1 또는 SHA-2 CertID 를 가지며, thisUpdate 가 5 분 넘게 앞서지 않고 nextUpdate 가 있으며 지나지 않아야 합니다. 상태가 revoked 이면 certificate_revoked 로, 그 밖의 문제 (unknown 상태 포함) 는 bad_certificate_status_response 로 실패합니다. status_request 에 대한 TLS feature extension (RFC 7633) 이 있는 leaf 는 staple 된 응답을 요구합니다. staple 도 그 extension 도 없으면 인증서를 받아들입니다. CRL 과 네트워크 OCSP 조회는 쓰지 않습니다.</p>
+<p>만료되었거나 아직 유효하지 않은 인증서는 certificate_expired 로, extendedKeyUsage 가 그 역할을 허용하지 않는 인증서는 unsupported_certificate 로, <code>root_certs</code> 까지의 경로가 없는 인증서는 unknown_ca 로, 그 밖의 실패는 bad_certificate 로 실패합니다. ServerHello, HelloRetryRequest, EncryptedExtensions 또는 Certificate 항목에 클라이언트가 요청하지 않은 extension 이 있으면 unsupported_extension 으로 실패합니다. 실패한 핸드셰이크는 그 alert 를 보낸 뒤 stream 을 닫습니다.</p>
+<p>양쪽 모두 CertificateVerify 를 키의 scheme 으로 서명합니다: <code>ed25519</code>, <code>ecdsa_secp256r1_sha256</code>, <code>ecdsa_secp384r1_sha384</code>, rsaEncryption 인증서는 상대가 제시한 <code>rsa_pss_rsae_sha256</code> / <code>_sha384</code> / <code>_sha512</code> 중 첫 번째, id-RSASSA-PSS 인증서는 상대가 제시한 <code>rsa_pss_pss_sha256</code> / <code>_sha384</code> / <code>_sha512</code> 중 키의 매개변수가 허용하는 첫 번째. <code>PrivateKey</code> 는 PKCS #8 (Ed25519, P-256 / P-384 의 id-ecPublicKey, rsaEncryption, id-RSASSA-PSS), RFC 5915 <code>EC PRIVATE KEY</code>, PKCS #1 <code>RSA PRIVATE KEY</code> 를 읽습니다. <code>ServerConfig::new</code> 는 키의 공개 부분이 leaf 의 것이 아니면 실패합니다 (<code>TlsErrorKind::Certificate</code>).</p>
+<p>스택은 traffic, handshake, resumption secret, record 키, 키 교환 secret, ticket PSK, Ed25519 / EC 개인 키를 비밀 저장소 (<a href="../200-core/221-crypto#2215-보안-고려-사항">2.21.5</a>) 에 두며, KeyUpdate 때, 핸드셰이크가 끝날 때, close 때 지웁니다.</p>
+<p><code>system_roots()</code> 는 OS trust store 를 읽습니다: macOS keychain 의 anchor (와 무조건 신뢰된 admin / user 인증서), Windows <code>ROOT</code> store, Linux 에서 처음 발견되는 CA bundle (<code>/etc/ssl/certs/ca-certificates.crt</code>, <code>/etc/pki/tls/certs/ca-bundle.crt</code>, ...). <code>SSL_CERT_FILE</code> 이 이를 덮어씁니다. wasm target 에는 store 가 없으므로 <code>root_certs</code> 를 넘겨야 합니다.</p>
+<p><code>read</code> 는 상대의 close_notify 이후 0 을 돌려줍니다. close_notify 없이 끝난 연결은 <code>IoError</code> (<code>UnexpectedEof</code>) 이며, 프로토콜 실패는 fatal alert 를 보낸 뒤 <code>IoError</code> (<code>InvalidData</code>) 입니다. TLS record 는 통째로 쓰이므로 <code>write</code> 는 <code>buf</code> 전체를 씁니다.</p>
+<h3 id="사용-예-1"><a class="anchor" tabindex="-1" href="#사용-예-1" aria-hidden="true">#</a>사용 예</h3>
+<p>실제 사용 흐름은 평문 TCP 연결 위에 TLS 클라이언트를 얹고, 그 위에서 평문 I/O 를 호출하는 모양으로 단순합니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net::{tcp_connect, tls};
+
+<span class="k">let</span> conn = <span class="k">try</span> tcp_connect(<span class="s">"example.com:443"</span>);
+<span class="k">let</span> tls_conn = <span class="k">try</span> tls::<span class="t">Client</span>::new(conn, <span class="s">"example.com"</span>);
+<span class="k">try</span> tls_conn.write_all(<span class="s">b"GET / HTTP/1.1\r\nHost: example.com\r\n\r\n"</span>);
+<span class="k">let</span> resp = <span class="k">try</span> tls_conn.read_to_end();
+<span class="k">try</span> tls_conn.close_notify();
+</code></pre>
+<h2 id="326-편의-함수"><a class="anchor" tabindex="-1" href="#326-편의-함수" aria-hidden="true">#</a>3.2.6. 편의 함수</h2>
+<p>자주 쓰는 패턴은 짧은 helper 로 감싸 두었습니다. 문자열을 받는 형태에서는 <code>resolve</code> (3.2.4) 로 DNS 해석까지 수행하므로, <code>tcp_connect(&quot;example.com:80&quot;)</code> 처럼 호스트네임을 그대로 넘길 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> tcp_connect(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+<span class="k">async</span> <span class="k">fn</span> tcp_connect_async(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpStream</span>;
+<span class="k">fn</span> tcp_listen(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">TcpListener</span>;
+<span class="k">fn</span> udp_bind(addr: <span class="t">str</span> | <span class="t">SocketAddr</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">UdpSocket</span>;
+</code></pre>
+<p><code>tcp_connect</code> 는 해석된 주소를 차례로 시도해 처음 연결되는 것을 돌려주고, 모두 실패하면 마지막 에러를 던집니다. <code>tcp_listen</code> / <code>udp_bind</code> 는 첫 주소에 bind 합니다.</p>
+<h2 id="327-zerocopy-hooks-advanced"><a class="anchor" tabindex="-1" href="#327-zerocopy-hooks-advanced" aria-hidden="true">#</a>3.2.7. zerocopy hooks (advanced)</h2>
+<p>처리량이 곧 비용이 되는 자리, 예컨대 프록시나 파일 서버 같은 경우를 위해 zerocopy 계열 hook 도 별도로 노출합니다. 대부분의 사용자에게는 필요하지 않으며, 정말 필요할 때 손에 닿는 곳에 두는 정도가 목적입니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">TcpStream</span> {
+    <span class="k">fn</span> sendfile(<span class="k">self</span>, <span class="k">ref</span> file: <span class="t">File</span>, offset: <span class="t">u64</span>, count: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+                                            <span class="c">// sendfile(2) / TransmitFile</span>
+    <span class="k">fn</span> splice(<span class="k">self</span>, <span class="k">ref</span> src: <span class="t">File</span>, count: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+                                            <span class="c">// Linux splice(2)</span>
+
+    <span class="k">fn</span> write_zerocopy(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+                                            <span class="c">// MSG_ZEROCOPY (Linux 4.14+)</span>
+}
+</code></pre>
+<h2 id="328-모듈-매핑"><a class="anchor" tabindex="-1" href="#328-모듈-매핑" aria-hidden="true">#</a>3.2.8. 모듈 매핑</h2>
+<p>플랫폼별 지원 범위는 다음 표에 정리됩니다. 핵심 기능은 데스크톱 OS 와 wasi 양쪽에서 모두 동작하지만, Unix socket 이나 zerocopy hook 처럼 Linux 고유 자원에 의존하는 항목은 제한적으로만 활성화됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>linux/macos/windows</th><th>wasi</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>TCP</td><td>✓</td><td>✓</td><td>wasi:sockets</td></tr>
+<tr><td>UDP</td><td>✓</td><td>✓</td><td>wasi:sockets</td></tr>
+<tr><td>Unix socket</td><td>linux/macos</td><td>✗</td><td>Windows 부분 (named pipe 별도)</td></tr>
+<tr><td>TLS 1.3</td><td>✓</td><td>✓ (trust store 없음: <code>root_certs</code> 전달)</td><td>rok 자체 구현, <code>rok::core::crypto</code> 위</td></tr>
+<tr><td>sendfile</td><td>linux</td><td>✗</td><td></td></tr>
+<tr><td>splice</td><td>linux</td><td>✗</td><td></td></tr>
+<tr><td>MSG_ZEROCOPY</td><td>linux 4.14+</td><td>✗</td><td></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/302-net.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="301-fs"><small>Previous</small>3.1. fs:: - 파일 시스템</a><a class="next" href="303-time"><small>Next</small>3.3. time:: - 시간</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

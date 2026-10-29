@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8. 런타임 ABI / MLIR lowering 개요 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="본 블록은 컴파일러(rokc) 와 런타임(librokr.a) 사이의 공유 contract 를 정의합니다. 컴파일러와 런타임은 본 사양 텍스트로 연결됩니다. 둘이 공유하는 코드는 GC ABI 상수의 정의 하나 (gc_abi, 8.1) 뿐입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8. 런타임 ABI / MLIR lowering 개요 - rok docs">
+<meta property="og:description" content="본 블록은 컴파일러(rokc) 와 런타임(librokr.a) 사이의 공유 contract 를 정의합니다. 컴파일러와 런타임은 본 사양 텍스트로 연결됩니다. 둘이 공유하는 코드는 GC ABI 상수의 정의 하나 (gc_abi, 8.1) 뿐입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a class="cur" href="./">8. 런타임 ABI / MLIR lowering 개요</a></p><ul class="toc"><li><a href="#목차">목차</a></li><li><a href="#두-종류의-contract">두 종류의 contract</a></li><li><a href="#본-사양-텍스트가-권위인-이유">본 사양 텍스트가 권위인 이유</a></li><li><a href="#안정성">안정성</a></li></ul><ul class="pages"><li><a href="801-object-header-abi">8.1. 객체 헤더 ABI</a></li><li><a href="802-scan-table">8.2. ScanTable 직렬화 포맷</a></li><li><a href="803-tls-slots">8.3. Mutator TLS 슬롯 레이아웃</a></li><li><a href="804-safepoint">8.4. Safepoint 프로토콜</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; 심볼</a></li><li><a href="806-calling-convention">8.6. Calling Convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR 다이얼렉트 사용</a></li><li><a href="808-lowering-types">8.8. Lowering: 데이터 타입과 표현식</a></li><li><a href="809-lowering-control">8.9. Lowering: 제어 흐름과 GC 통합</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: 코루틴과 제네릭</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="8-런타임-abi--mlir-lowering-개요 8-runtime-abi--mlir-lowering-overview 목차 contents 두-종류의-contract two-kinds-of-contract 1-런타임-abi 1-runtime-abi 2-mlir-lowering 2-mlir-lowering 본-사양-텍스트가-권위인-이유 why-this-specification-text-is-authoritative 안정성 stability"><a href="../../../../spec/refs-lang/008-abi/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="8-런타임-abi--mlir-lowering-개요"><a class="anchor" tabindex="-1" href="#8-런타임-abi--mlir-lowering-개요" aria-hidden="true">#</a>8. 런타임 ABI / MLIR lowering 개요</h1>
+<p>본 블록은 컴파일러(<code>rokc</code>) 와 런타임(<code>librokr.a</code>) 사이의 공유 contract 를 정의합니다. 컴파일러와 런타임은 본 사양 텍스트로 연결됩니다. 둘이 공유하는 코드는 GC ABI 상수의 정의 하나 (<code>gc_abi</code>, <a href="801-object-header-abi">8.1</a>) 뿐입니다.</p>
+<h2 id="목차"><a class="anchor" tabindex="-1" href="#목차" aria-hidden="true">#</a>목차</h2>
+<ul>
+<li><a href="801-object-header-abi">8.1. 객체 헤더 ABI</a>
+</li>
+<li><a href="802-scan-table">8.2. ScanTable 직렬화 포맷</a>
+</li>
+<li><a href="803-tls-slots">8.3. Mutator TLS 슬롯 레이아웃</a>
+</li>
+<li><a href="804-safepoint">8.4. Safepoint 프로토콜</a>
+</li>
+<li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; 심볼</a>
+</li>
+<li><a href="806-calling-convention">8.6. Calling Convention</a>
+</li>
+<li><a href="807-mlir-dialects">8.7. MLIR 다이얼렉트 사용</a>
+</li>
+<li><a href="808-lowering-types">8.8. Lowering: 데이터 타입과 표현식</a>
+</li>
+<li><a href="809-lowering-control">8.9. Lowering: 제어 흐름과 GC 통합</a>
+</li>
+<li><a href="810-lowering-coroutine-generic">8.10. Lowering: 코루틴과 제네릭</a>
+</li>
+</ul>
+<h2 id="두-종류의-contract"><a class="anchor" tabindex="-1" href="#두-종류의-contract" aria-hidden="true">#</a>두 종류의 contract</h2>
+<h3 id="1-런타임-abi"><a class="anchor" tabindex="-1" href="#1-런타임-abi" aria-hidden="true">#</a>1. 런타임 ABI</h3>
+<p>컴파일러가 생성한 코드와 <code>librokr.a</code> 를 링크해 함께 실행할 때의 인터페이스에 해당합니다. 객체의 메모리 레이아웃은 컴파일러가 만든 객체를 <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> 가 정확히 해석할 수 있도록 규정됩니다. <a href="../000-meta/007-glossary#extern-c-심볼">extern &quot;C&quot; 심볼</a> 은 컴파일러가 호출할 수 있는 런타임 함수이며, 각 심볼의 thread-safety 분류 (<code>thread-safe</code> / <code>caller-thread-only</code> / <code>process-init</code> 등) 는 <a href="805-extern-symbols#850-thread-safety-분류">8.5 Extern &quot;C&quot; 심볼</a> 에서 정의합니다. TLS 슬롯은 컴파일러가 emit 한 인라인 코드가 읽고 쓰는 thread-local 자리를 의미합니다. Calling convention 은 함수 호출 시의 레지스터·스택 사용을 규정합니다.</p>
+<h3 id="2-mlir-lowering"><a class="anchor" tabindex="-1" href="#2-mlir-lowering" aria-hidden="true">#</a>2. MLIR lowering</h3>
+<p><a href="../000-meta/002-pipeline">컴파일 파이프라인</a> 의 rok-mir → 표준 MLIR 단계에서, rok 의 고차원 의미를 표준 MLIR 다이얼렉트로 변환하는 규칙을 의미합니다. <code>tagged union</code>, <code>any</code> 슬롯, 패턴 매칭, try/catch, generics 는 모두 표준 MLIR 다이얼렉트로 lower 됩니다. 커스텀 rok 다이얼렉트는 존재하지 않습니다.</p>
+<h2 id="본-사양-텍스트가-권위인-이유"><a class="anchor" tabindex="-1" href="#본-사양-텍스트가-권위인-이유" aria-hidden="true">#</a>본 사양 텍스트가 권위인 이유</h2>
+<p>컴파일러와 런타임은 <code>gc_abi</code> 외의 공유 코드나 헤더 파일을 갖지 않습니다. 두 쪽이 같은 <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 를 따른다는 보장은 본 사양 텍스트와 통합 테스트의 end-to-end 검증에서 비롯됩니다.</p>
+<p>이 모델은 Swift ABI Stability 의 접근과 같습니다. 즉, 사양이 권위이며 구현은 그것을 따릅니다.</p>
+<h2 id="안정성"><a class="anchor" tabindex="-1" href="#안정성" aria-hidden="true">#</a>안정성</h2>
+<p>본 블록의 contract 는 언어 버전(SemVer) 의 일부에 해당합니다. ABI 변경은 명시적 버전 업을 동반합니다. minor / patch 의 경우 추가만 가능하며 호환을 깨면 안 됩니다. major 의 경우 호환을 깨는 변경이 가능하지만, 패키지 매니저가 알 수 있도록 합니다.</p>
+<p>미리 빌드한 패키지의 ROKHIR header 는 그것을 만든 <code>rokc</code> 를 기록합니다 (<a href="../009-tools/904-rokhir-bytecode">9.4</a>). 다른 <code>rokc</code> 가 만든 패키지를 쓰려 하면 다시 빌드하라는 에러입니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/008-abi/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../007-runtime/708-coroutine"><small>Previous</small>7.8. 코루틴</a><a class="next" href="801-object-header-abi"><small>Next</small>8.1. 객체 헤더 ABI</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

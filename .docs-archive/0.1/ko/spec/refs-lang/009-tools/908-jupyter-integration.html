@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.8. Jupyter 커널 통합 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Jupyter 표면 의 rok 커널을 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/908-jupyter-integration.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.8. Jupyter 커널 통합 - rok docs">
+<meta property="og:description" content="Jupyter 표면 의 rok 커널을 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/908-jupyter-integration.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/908-jupyter-integration.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/908-jupyter-integration.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">9. 실행 / 툴 개요</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI 인터페이스</a></li><li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a></li><li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a></li><li><a href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a></li><li><a href="906-jit-engine">9.6. JIT 엔진</a></li><li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a></li><li class="cur"><a aria-current="page" href="908-jupyter-integration">9.8. Jupyter 커널 통합</a><ul class="toc"><li><a href="#981-커널">9.8.1. 커널</a></li><li><a href="#982-로컬-네이티브-커널-동작">9.8.2. 로컬 네이티브 커널: 동작</a></li><li><a href="#983-kernelspec-설치">9.8.3. kernelspec 설치</a></li><li><a href="#984-인터럽트--종료">9.8.4. 인터럽트 / 종료</a></li><li><a href="#985-코드-자동-완성">9.8.5. 코드 자동 완성</a></li><li><a href="#986-inspect_request-도움말">9.8.6. inspect_request: 도움말</a></li><li><a href="#987-repl-과-jupyter-의-코드-공유">9.8.7. REPL 과 Jupyter 의 코드 공유</a></li><li><a href="#988-보안--격리">9.8.8. 보안 / 격리</a></li><li><a href="#989-다음">9.8.9. 다음</a></li></ul></li><li><a href="909-debug-tools">9.9. 디버그 / 진단 도구</a></li><li><a href="910-rok-frontend">9.10. rok - 패키지 / 빌드 front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="98-jupyter-커널-통합 98-jupyter-kernel-integration 981-커널 981-kernel 노트북-셀과-repl-셀 notebook-cells-and-repl-cells 982-로컬-네이티브-커널-동작 982-local-native-kernel-operation 소켓-채널 socket-channels 메시지-형식 message-format 지원하는-메시지 supported-messages 실행 execution 983-kernelspec-설치 983-kernelspec-installation 984-인터럽트--종료 984-interrupt--shutdown 인터럽트 interrupt 종료-kernel-restart shutdown-kernel-restart 985-코드-자동-완성 985-code-completion 986-inspect_request-도움말 986-inspect_request-help 987-repl-과-jupyter-의-코드-공유 987-code-sharing-between-repl-and-jupyter 차이 differences 988-보안--격리 988-security--isolation 989-다음 989-next"><a href="../../../../spec/refs-lang/009-tools/908-jupyter-integration" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="98-jupyter-커널-통합"><a class="anchor" tabindex="-1" href="#98-jupyter-커널-통합" aria-hidden="true">#</a>9.8. Jupyter 커널 통합</h1>
+<p><a href="../000-meta/001-execution-modes">Jupyter 표면</a> 의 rok 커널을 정의합니다.</p>
+<h2 id="981-커널"><a class="anchor" tabindex="-1" href="#981-커널" aria-hidden="true">#</a>9.8.1. 커널</h2>
+<p>Jupyter 가 rok 커널을 별도 프로세스로 실행하며, ZeroMQ 기반 Jupyter wire protocol 로 통신합니다. 커널은 <code>protocol_version</code> 을 <code>&quot;5.3&quot;</code> 으로 알립니다 (<code>jupyter_client</code> 가 기대하는 값, 5.3 이상의 클라이언트와 동작). 이 형태에서는 OS 자원, 즉 파일과 네트워크와 외부 프로세스를 모두 사용할 수 있습니다.</p>
+<p>커널은 터미널 REPL 과 <strong>같은 셀 세션</strong> 위에서 동작하며 <a href="907-jit-cells#970-셀-세션의-규칙">9.7.0</a> 의 규칙을 따릅니다. 각 셀은 한 번만 실행되고, 바인딩과 항목은 이후 셀로 이어지며, 실패한 셀은 바인딩에 흔적을 남기지 않습니다. 커널의 엔진은 REPL 과 같은 <a href="906-jit-engine">JIT 세션</a> 입니다.</p>
+<h3 id="노트북-셀과-repl-셀"><a class="anchor" tabindex="-1" href="#노트북-셀과-repl-셀" aria-hidden="true">#</a>노트북 셀과 REPL 셀</h3>
+<p>노트북 셀 하나는 터미널 REPL 이 입력을 나누는 것과 같은 규칙으로 REPL 셀 여러 개로 나뉘어 차례로 실행됩니다. 결과로는 IPython 처럼 <strong>마지막 값만</strong> 표시합니다. 노트북 셀의 뒷부분이 실패하면, 앞부분 (앞선 REPL 셀) 의 효과는 그대로 남습니다.</p>
+<h2 id="982-로컬-네이티브-커널-동작"><a class="anchor" tabindex="-1" href="#982-로컬-네이티브-커널-동작" aria-hidden="true">#</a>9.8.2. 로컬 네이티브 커널: 동작</h2>
+<p>사용자가 노트북의 kernel 로 &quot;rok&quot; 를 고르면 Jupyter 가 kernelspec (9.8.3) 의 명령을 별도 프로세스로 실행합니다.</p>
+<pre><code>rokc jupyter --connection-file &lt;path&gt;       # --extern 등 rokc 옵션도 받음
+rok jupyter --connection-file &lt;path&gt;        # 의존성을 해소한 뒤 rokc jupyter 를 실행
+</code></pre>
+<p>커널은 connection file 의 ZMQ port 와 key 를 읽고 다섯 소켓에 bind 해 listen 합니다. 다섯 소켓이 모두 연결을 받을 수 있게 되면, 출력 캡처를 시작하기 전에 stderr 에 <code>rokc jupyter: ready</code> 한 줄을 씁니다. 전송은 <code>tcp</code> 만 지원하며 (<code>ipc</code> 없음), CURVE 암호화는 쓰지 않습니다. 메시지는 connection file 의 key 로 HMAC 서명합니다.</p>
+<h3 id="소켓-채널"><a class="anchor" tabindex="-1" href="#소켓-채널" aria-hidden="true">#</a>소켓 채널</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>채널</th><th>용도</th></tr></thead>
+<tbody>
+<tr><td><code>shell</code></td><td>요청 (execute, kernel_info, complete, is_complete 등)</td></tr>
+<tr><td><code>iopub</code></td><td>출력과 상태 broadcast (status, stream, execute_result 등)</td></tr>
+<tr><td><code>stdin</code></td><td>쓰지 않음 - 입력 요청을 보내지 않음 (stdin 은 <code>/dev/null</code>)</td></tr>
+<tr><td><code>control</code></td><td>interrupt, shutdown</td></tr>
+<tr><td><code>heartbeat</code></td><td>받은 것을 그대로 돌려보냄 (echo)</td></tr>
+</tbody></table></div>
+<h3 id="메시지-형식"><a class="anchor" tabindex="-1" href="#메시지-형식" aria-hidden="true">#</a>메시지 형식</h3>
+<p>각 메시지는 6 개 이상의 ZMQ frame 으로 직렬화됩니다.</p>
+<pre><code>[b&quot;u-u-i-d&quot;,         # zmq identity(ies)
+ b&quot;&lt;IDS|MSG&gt;&quot;,       # delimiter
+ b&quot;baddad42&quot;,         # HMAC 서명 (key 로)
+ b&quot;{header}&quot;,          # 헤더 JSON
+ b&quot;{parent_header}&quot;,   # 부모 헤더 JSON
+ b&quot;{metadata}&quot;,        # 메타데이터 JSON
+ b&quot;{content}&quot;,         # 콘텐츠 JSON
+]
+</code></pre>
+<p>자세한 형식은 Jupyter wire protocol 표준 문서를 따릅니다. 모든 요청은 iopub 의 <code>status: busy</code> 와 <code>status: idle</code> 로 감쌉니다.</p>
+<h3 id="지원하는-메시지"><a class="anchor" tabindex="-1" href="#지원하는-메시지" aria-hidden="true">#</a>지원하는 메시지</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>요청</th><th>응답</th></tr></thead>
+<tbody>
+<tr><td><code>kernel_info_request</code></td><td><code>language_info</code> 의 name <code>rok</code>, mimetype <code>text/x-rok</code>, file_extension <code>.rok</code>, <code>protocol_version</code> <code>&quot;5.3&quot;</code></td></tr>
+<tr><td><code>execute_request</code></td><td>아래 &quot;실행&quot; 참조</td></tr>
+<tr><td><code>is_complete_request</code></td><td>REPL 의 이어 쓰기 규칙으로 <code>complete</code> / <code>incomplete</code> 판정</td></tr>
+<tr><td><code>complete_request</code></td><td>세션의 이름, 멤버, 키워드를 후보로 (9.8.5)</td></tr>
+<tr><td><code>inspect_request</code></td><td>커서의 이름에 대한 <code>text/plain</code> 도움말과 <code>found: true</code> (9.8.6), 아니면 <code>false</code></td></tr>
+<tr><td><code>history_request</code></td><td>이 커널이 실행한 셀들</td></tr>
+<tr><td><code>comm_info_request</code></td><td>빈 목록</td></tr>
+<tr><td><code>shutdown_request</code></td><td>shell 이나 control 에서. 응답 후 종료</td></tr>
+<tr><td><code>interrupt_request</code></td><td>control 에서 (9.8.4)</td></tr>
+</tbody></table></div>
+<h3 id="실행"><a class="anchor" tabindex="-1" href="#실행" aria-hidden="true">#</a>실행</h3>
+<p><code>execute_request</code> 를 받으면 다음을 보냅니다.</p>
+<ol>
+<li>iopub <code>execute_input</code> (코드와 실행 번호).
+</li>
+<li>셀이 <strong>끝난 뒤</strong> 그 출력: stdout / stderr 는 iopub <code>stream</code> 으로. 실행 중에 조금씩 보내지 않습니다.
+</li>
+<li>값이 있으면 iopub <code>execute_result</code>: <code>text/plain</code> 에 REPL 과 같은 <code>타입: 값</code> (9.7.7).
+</li>
+<li>실패하면 iopub <code>error</code>: <code>evalue</code> 는 stderr 의 첫 줄, <code>traceback</code> 은 stderr 의 줄들.
+</li>
+<li>shell <code>execute_reply</code> (<code>execution_count</code> 포함, 성공 / 실패 status).
+</li>
+</ol>
+<p>출력 MIME 은 <code>text/plain</code> 하나입니다.</p>
+<h2 id="983-kernelspec-설치"><a class="anchor" tabindex="-1" href="#983-kernelspec-설치" aria-hidden="true">#</a>9.8.3. kernelspec 설치</h2>
+<p>Jupyter 는 kernelspec 디렉토리에 설치된 kernel 만 인식합니다.</p>
+<pre><code>rok jupyter install [--env &lt;name&gt;]
+</code></pre>
+<p>kernelspec 은 다음 디렉토리 아래의 <code>kernels/rok/kernel.json</code> 입니다. <code>--env &lt;name&gt;</code> 으로 설치하면 <code>kernels/rok-&lt;name&gt;/</code> 이며, 표시 이름은 <code>rok (&lt;name&gt;)</code>, 실행 명령은 <code>rok --env &lt;name&gt; jupyter ...</code> 입니다.</p>
+<ol>
+<li><code>$JUPYTER_DATA_DIR</code> 이 있으면 그 디렉토리
+</li>
+<li>macOS 이면 <code>~/Library/Jupyter</code>
+</li>
+<li>그 밖에는 <code>$XDG_DATA_HOME/jupyter</code>, 없으면 <code>~/.local/share/jupyter</code>
+</li>
+</ol>
+<p><code>kernel.json</code> 은 <code>rok</code> proxy (<a href="910-rok-frontend#9106-toolchain">9.10.6</a>) 를 실행하며, 설치 때의 <code>ROK_HOME</code> 과 <code>PATH</code> 를 <code>env</code> 에 기록합니다.</p>
+<pre><code class="language-json">{
+  &quot;argv&quot;: [&quot;/home/u/.rok/bin/rok&quot;, &quot;jupyter&quot;, &quot;--connection-file&quot;, &quot;{connection_file}&quot;],
+  &quot;display_name&quot;: &quot;rok&quot;,
+  &quot;language&quot;: &quot;rok&quot;,
+  &quot;interrupt_mode&quot;: &quot;message&quot;,
+  &quot;env&quot;: { &quot;ROK_HOME&quot;: &quot;/home/u/.rok&quot;, &quot;PATH&quot;: &quot;&lt;설치 때의 PATH&gt;&quot; }
+}
+</code></pre>
+<p>이렇게 설치하고 나면 Jupyter, VS Code, nteract 등 어디서든 rok 커널을 사용할 수 있습니다.</p>
+<h2 id="984-인터럽트--종료"><a class="anchor" tabindex="-1" href="#984-인터럽트--종료" aria-hidden="true">#</a>9.8.4. 인터럽트 / 종료</h2>
+<h3 id="인터럽트"><a class="anchor" tabindex="-1" href="#인터럽트" aria-hidden="true">#</a>인터럽트</h3>
+<p><code>interrupt_mode</code> 가 <code>&quot;message&quot;</code> 이므로 인터럽트는 control 소켓의 <code>interrupt_request</code> 로 옵니다. 실행 중인 셀을 끝내고, 세션은 그 셀 이전의 상태로 계속됩니다 (실패한 셀과 같음, <a href="907-jit-cells#970-셀-세션의-규칙">9.7.0</a>). 아직 컴파일 중인 셀은 인터럽트할 수 없습니다.</p>
+<h3 id="종료-kernel-restart"><a class="anchor" tabindex="-1" href="#종료-kernel-restart" aria-hidden="true">#</a>종료 (kernel restart)</h3>
+<p>shell 이나 control 소켓의 <code>shutdown_request</code> 에 응답한 뒤 세션을 정리하고 프로세스를 종료합니다. restart 의 경우에는 Jupyter 가 자동으로 다시 띄워 줍니다.</p>
+<h2 id="985-코드-자동-완성"><a class="anchor" tabindex="-1" href="#985-코드-자동-완성" aria-hidden="true">#</a>9.8.5. 코드 자동 완성</h2>
+<p><code>complete_request</code> 는 커서 앞의 조각을 세션의 바인딩, 항목, 모듈 경로, 멤버, 키워드에 맞춰 <code>{ matches, cursor_start, cursor_end }</code> 로 응답합니다.</p>
+<h2 id="986-inspect_request-도움말"><a class="anchor" tabindex="-1" href="#986-inspect_request-도움말" aria-hidden="true">#</a>9.8.6. inspect_request: 도움말</h2>
+<p><code>inspect_request</code> (Shift+Tab) 는 <code>found: true</code> 와 함께, 커서의 이름을 <code>name: type</code> 으로, 그리고 그 시그니처와 문서 주석 (<a href="../001-lexical/102-lexical-structure">어휘 구조</a> 의 <code>///</code> / <code>//!</code>) 을 <code>text/plain</code> 으로 응답합니다. 모르는 이름이면 <code>found: false</code> 입니다.</p>
+<h2 id="987-repl-과-jupyter-의-코드-공유"><a class="anchor" tabindex="-1" href="#987-repl-과-jupyter-의-코드-공유" aria-hidden="true">#</a>9.8.7. REPL 과 Jupyter 의 코드 공유</h2>
+<p>REPL 에서 작성한 코드는 그대로 Jupyter 셀로 옮길 수 있고, 반대 방향도 마찬가지로 가능합니다. 같은 셀 세션과 같은 의미론 (<a href="907-jit-cells#970-셀-세션의-규칙">9.7.0</a>) 을 따르고 있기 때문입니다.</p>
+<h3 id="차이"><a class="anchor" tabindex="-1" href="#차이" aria-hidden="true">#</a>차이</h3>
+<p>다만 양쪽 표면 사이에는 몇 가지 차이가 존재하며, 다음 표에 정리합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>REPL</th><th>Jupyter</th></tr></thead>
+<tbody>
+<tr><td>입력</td><td>한 줄 / 한 식</td><td>한 셀 (여러 줄)</td></tr>
+<tr><td>출력</td><td>text only</td><td>text (<code>text/plain</code>)</td></tr>
+<tr><td>상태 보존</td><td>종료 시 폐기</td><td>노트북 파일에 셀 보존</td></tr>
+</tbody></table></div>
+<h2 id="988-보안--격리"><a class="anchor" tabindex="-1" href="#988-보안--격리" aria-hidden="true">#</a>9.8.8. 보안 / 격리</h2>
+<p>커널은 사용자 권한으로 임의 코드를 실행합니다. 격리는 하지 않습니다.</p>
+<h2 id="989-다음"><a class="anchor" tabindex="-1" href="#989-다음" aria-hidden="true">#</a>9.8.9. 다음</h2>
+<p>이어지는 <a href="909-debug-tools">디버그 / 진단 도구</a> 에서는 gdb 친화 기능과 profile, <code>--emit</code> 등을 정의합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/009-tools/908-jupyter-integration.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="907-jit-cells"><small>Previous</small>9.7. JIT 셀 실행 흐름과 상태 관리</a><a class="next" href="909-debug-tools"><small>Next</small>9.9. 디버그 / 진단 도구</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

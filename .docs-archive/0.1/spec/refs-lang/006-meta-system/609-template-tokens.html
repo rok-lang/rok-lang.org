@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.9. Template tokens and expansion - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines the full list of template tokens usable in the body of a meta block, and when and by what mechanism meta blocks are expanded.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/609-template-tokens.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.9. Template tokens and expansion - rok docs">
+<meta property="og:description" content="This section defines the full list of template tokens usable in the body of a meta block, and when and by what mechanism meta blocks are expanded.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/609-template-tokens.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/609-template-tokens.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/609-template-tokens.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">6. Meta-system overview</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. Attribute syntax</a></li><li><a href="602-built-in-attributes">6.2. Built-in attributes</a></li><li><a href="603-cfg">6.3. #[cfg] conditional compilation</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] magic</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] magic</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] magic</a></li><li><a href="607-operator-magic">6.7. Operator magic</a></li><li><a href="608-meta-blocks">6.8. User-defined meta definitions</a></li><li class="cur"><a aria-current="page" href="609-template-tokens">6.9. Template tokens and expansion</a><ul class="toc"><li><a href="#691-form-of-template-tokens">6.9.1. Form of template tokens</a></li><li><a href="#692-type-context">6.9.2. Type context</a></li><li><a href="#693-field-iteration">6.9.3. Field iteration</a></li><li><a href="#694-variant-iteration">6.9.4. Variant iteration</a></li><li><a href="#695-conditionals-and-bounds">6.9.5. Conditionals and bounds</a></li><li><a href="#696-derive_attribute-tokens">6.9.6. derive_attribute tokens</a></li><li><a href="#697-attribute-only-tokens">6.9.7. Attribute-only tokens</a></li><li><a href="#698-call-site-macro-tokens">6.9.8. Call-site (macro) tokens</a></li><li><a href="#699-expansion-mechanism">6.9.9. Expansion mechanism</a></li><li><a href="#6910-debugging">6.9.10. Debugging</a></li><li><a href="#6911-summary">6.9.11. Summary</a></li></ul></li><li><a href="610-reflection">6.10. Reflection</a></li><li><a href="611-include">6.11. Compile-time file embedding</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="69-template-tokens-and-expansion 69-템플릿-토큰과-확장 691-form-of-template-tokens 691-템플릿-토큰의-형태 token-list 토큰-목록 692-type-context 692-타입-컨텍스트 self-target-type-name self-대상-타입-이름 if_struct-----if_enum-----if_union--- if_struct-----if_enum-----if_union--- selfname--selfis_unit--is_tuple--is_named selfname--selfis_unit--is_tuple--is_named 693-field-iteration 693-필드-반복 for_fields--- for_fields--- field field fieldname-identifier-token fieldname-식별자-토큰 fieldtype fieldtype fieldis_pub fieldis_pub fieldhas_attrx fieldhas_attrx fieldhas_default--fielddefault fieldhas_default--fielddefault 694-variant-iteration 694-변형-variant-반복 for_variants--- for_variants--- variantname-variant-name variantname-variant-이름 variantpattern-matching-pattern variantpattern-매칭-패턴 variantis_unit--variantis_tuple--variantis_named variantis_unit--variantis_tuple--variantis_named for_variant_fields--- for_variant_fields--- 695-conditionals-and-bounds 695-조건부와-경계 apply_ifcond--- apply_ifcond--- accept accept where_alltrait where_alltrait 696-derive_attribute-tokens 696-derive_attribute-토큰 has_derive_attrname has_derive_attrname derive_attrname-the-attrs-argument derive_attrname-그-attr-의-인자 697-attribute-only-tokens 697-attribute-전용-토큰 item-reusing-the-original-item item-원본-항목-재사용 itembody itembody itemname-itemparams-itemreturn_type itemname-itemparams-itemreturn_type attribute--arguments attribute--인자 698-call-site-macro-tokens 698-호출부-macro-토큰 name-fragment-fragment-capture name-fragment-fragment-캡처 rep--for-repetition rep--for-반복 concat-name-synthesis concat-이름-합성 699-expansion-mechanism 699-확장-메커니즘 collection-and-expansion 모으기와-확장 relation-to-cfg cfg-와의-관계 hygiene 위생-hygiene resolution-of-free-identifiers 자유-식별자의-해소 diagnostic-locations 진단-위치 6910-debugging 6910-디버깅 6911-summary 6911-정리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/006-meta-system/609-template-tokens" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="69-template-tokens-and-expansion"><a class="anchor" tabindex="-1" href="#69-template-tokens-and-expansion" aria-hidden="true">#</a>6.9. Template tokens and expansion</h1>
+<p>This section defines the full list of template tokens usable in the body of a <a href="608-meta-blocks">meta block</a>, and when and by what mechanism meta blocks are expanded.</p>
+<h2 id="691-form-of-template-tokens"><a class="anchor" tabindex="-1" href="#691-form-of-template-tokens" aria-hidden="true">#</a>6.9.1. Form of template tokens</h2>
+<p>Template tokens have the following syntactic forms.</p>
+<pre><code>template_token  ::= &quot;@&quot; identifier
+                  | &quot;@&quot; identifier &quot;.&quot; identifier
+                  | &quot;@&quot; identifier &quot;{&quot; &lt;template body&gt; &quot;}&quot;
+                  | &quot;@&quot; identifier &quot;(&quot; &lt;args&gt; &quot;)&quot; &quot;{&quot; &lt;body&gt; &quot;}&quot;
+</code></pre>
+<p>Every template token starts with the <code>@</code> token (<a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a>). Representative examples:</p>
+<pre><code>@Self                   target type name
+@field                  placeholder for the current field
+@field.name             name of the current field
+@for_fields { ... }     field iteration block
+</code></pre>
+<h3 id="token-list"><a class="anchor" tabindex="-1" href="#token-list" aria-hidden="true">#</a>Token list</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Token</th><th>Value</th><th>Section</th></tr></thead>
+<tbody>
+<tr><td><code>@Self</code></td><td>Target type (<code>Name&lt;T, ..&gt;</code>)</td><td>6.9.2</td></tr>
+<tr><td><code>@Self.name</code></td><td>Target type name without type arguments</td><td>6.9.2</td></tr>
+<tr><td><code>@Self.is_unit</code> / <code>.is_tuple</code> / <code>.is_named</code></td><td>Struct shape (boolean)</td><td>6.9.2</td></tr>
+<tr><td><code>@if_struct</code> / <code>@if_enum</code> / <code>@if_union { .. }</code></td><td>Body only when the target kind matches</td><td>6.9.2</td></tr>
+<tr><td><code>@for_fields { .. }</code></td><td>Body per field</td><td>6.9.3</td></tr>
+<tr><td><code>@field</code>, <code>@field.name</code>, <code>@field.type</code></td><td>Current field (access / name / type)</td><td>6.9.3</td></tr>
+<tr><td><code>@field.is_pub</code>, <code>@field.has_attr(x)</code></td><td>Boolean</td><td>6.9.3</td></tr>
+<tr><td><code>@field.has_default</code>, <code>@field.default</code></td><td>Whether the field has <code>= expr</code> (boolean) / that expression</td><td>6.9.3</td></tr>
+<tr><td><code>@for_variants { .. }</code></td><td>Body per <code>enum</code> variant</td><td>6.9.4</td></tr>
+<tr><td><code>@variant.name</code>, <code>@variant.pattern</code></td><td>Current variant (name / matching pattern)</td><td>6.9.4</td></tr>
+<tr><td><code>@variant.is_unit</code> / <code>.is_tuple</code> / <code>.is_named</code></td><td>Boolean</td><td>6.9.4</td></tr>
+<tr><td><code>@for_variant_fields { .. }</code></td><td>Body per field of the current variant</td><td>6.9.4</td></tr>
+<tr><td><code>@apply_if(cond) { .. }</code></td><td>Body only when <code>cond</code> is true</td><td>6.9.5</td></tr>
+<tr><td><code>@accept(kind, ..)</code></td><td>Restricts the target kind (attribute only)</td><td>6.9.5</td></tr>
+<tr><td><code>@where_all(Trait)</code></td><td><code>T: Trait</code> for each type parameter</td><td>6.9.5</td></tr>
+<tr><td><code>@has_derive_attr(a)</code>, <code>@derive_attr(a)</code></td><td>The field's derive attribute (boolean / argument)</td><td>6.9.6</td></tr>
+<tr><td><code>@item</code>, <code>@item.name</code> / <code>.params</code> / <code>.return_type</code> / <code>.body</code></td><td>The item attached to and its parts (attribute only)</td><td>6.9.7</td></tr>
+<tr><td><code>@attribute</code></td><td>The attribute arguments at the use site (attribute only)</td><td>6.9.7</td></tr>
+<tr><td><code>&lt;name token&gt;.as_str()</code></td><td>String literal of the name</td><td>6.9.3</td></tr>
+</tbody></table></div>
+<p>An <code>@name</code> not in the list is an error. <code>@where_for_fields</code> is a reserved name; using it is also an error.</p>
+<h2 id="692-type-context"><a class="anchor" tabindex="-1" href="#692-type-context" aria-hidden="true">#</a>6.9.2. Type context</h2>
+<h3 id="self-target-type-name"><a class="anchor" tabindex="-1" href="#self-target-type-name" aria-hidden="true">#</a><code>@Self</code> target type name</h3>
+<p><code>@Self</code> denotes the name of the target type the meta block is applied to.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(MyTrait)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyTrait</span> <span class="k">for</span> @<span class="k">Self</span> {                 <span class="c">// @Self → Point / the user's type name</span>
+        ...
+    }
+}
+</code></pre>
+<h3 id="if_struct-----if_enum-----if_union---"><a class="anchor" tabindex="-1" href="#if_struct-----if_enum-----if_union---" aria-hidden="true">#</a><code>@if_struct { ... }</code> / <code>@if_enum { ... }</code> / <code>@if_union { ... }</code></h3>
+<p>These tokens generate the enclosed code only when the target type is a <code>struct</code>, <code>enum</code>, or <code>union</code>, respectively.</p>
+<pre><code class="language-rok">@if_struct {
+    <span class="k">fn</span> struct_only_method() { ... }
+}
+
+@if_enum {
+    <span class="k">fn</span> enum_only_method() { ... }
+}
+</code></pre>
+<p>If the target type is of another kind, the block is ignored and no code is generated.</p>
+<h3 id="selfname--selfis_unit--is_tuple--is_named"><a class="anchor" tabindex="-1" href="#selfname--selfis_unit--is_tuple--is_named" aria-hidden="true">#</a><code>@Self.name</code> / <code>@Self.is_unit</code> / <code>.is_tuple</code> / <code>.is_named</code></h3>
+<p><code>@Self.name</code> is the target type name without type arguments (<code>Pair</code> for <code>Pair&lt;T&gt;</code>). <code>@Self.is_unit</code> / <code>@Self.is_tuple</code> / <code>@Self.is_named</code> are booleans indicating whether the target struct is a unit struct, a tuple struct, or a struct with named fields; they are used in <code>@apply_if</code>.</p>
+<h2 id="693-field-iteration"><a class="anchor" tabindex="-1" href="#693-field-iteration" aria-hidden="true">#</a>6.9.3. Field iteration</h2>
+<h3 id="for_fields---"><a class="anchor" tabindex="-1" href="#for_fields---" aria-hidden="true">#</a><code>@for_fields { ... }</code></h3>
+<p><code>@for_fields</code> repeats the block for each field of a <code>struct</code> or <code>union</code>. Inside <code>@for_variants</code> it iterates over the fields of the current variant, the same as <code>@for_variant_fields</code>. Using it on an <code>enum</code> without <code>@for_variants</code> is an error.</p>
+<pre><code class="language-rok">@for_fields {
+    println(<span class="k">self</span>.@field);
+}
+</code></pre>
+<p>This code is generated once per field.</p>
+<h3 id="field"><a class="anchor" tabindex="-1" href="#field" aria-hidden="true">#</a><code>@field</code></h3>
+<p><code>@field</code> is a placeholder for the current field, used in field access positions.</p>
+<pre><code class="language-rok"><span class="k">self</span>.@field                          <span class="c">// self.x, self.y, ...</span>
+@<span class="k">Self</span> { @field: <span class="n">0i32</span> }                <span class="c">// field initializer position</span>
+</code></pre>
+<h3 id="fieldname-identifier-token"><a class="anchor" tabindex="-1" href="#fieldname-identifier-token" aria-hidden="true">#</a><code>@field.name</code> identifier token</h3>
+<p>Where an identifier is required, the field name is inserted as an identifier token.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = @field.name;                  <span class="c">// the name goes into the identifier position</span>
+<span class="k">fn</span> @field.name() -&gt; <span class="t">i32</span> { ... }       <span class="c">// can also be used as a function name</span>
+</code></pre>
+<p>If a string is needed, append <code>.as_str()</code>. <code>@field.name.as_str()</code>, <code>@variant.name.as_str()</code>, <code>@item.name.as_str()</code>, and <code>@Self.as_str()</code> become the string literal of that name (<code>&quot;x&quot;</code>) at expansion time. <code>@Self.as_str()</code> is the name without type arguments. Name tokens such as <code>@item.name</code> written inside a string or f-string are substituted literally.</p>
+<h3 id="fieldtype"><a class="anchor" tabindex="-1" href="#fieldtype" aria-hidden="true">#</a><code>@field.type</code></h3>
+<p><code>@field.type</code> denotes the field's type.</p>
+<pre><code class="language-rok"><span class="k">fn</span> typed&lt;<span class="t">T</span>&gt;() <span class="k">where</span> <span class="t">T</span> == @field.<span class="k">type</span> { ... }
+</code></pre>
+<h3 id="fieldis_pub"><a class="anchor" tabindex="-1" href="#fieldis_pub" aria-hidden="true">#</a><code>@field.is_pub</code></h3>
+<p>This token is true if the field is <code>pub</code>, false otherwise.</p>
+<pre><code class="language-rok">@apply_if(@field.is_pub) {
+    <span class="c">// process only pub fields</span>
+}
+</code></pre>
+<h3 id="fieldhas_attrx"><a class="anchor" tabindex="-1" href="#fieldhas_attrx" aria-hidden="true">#</a><code>@field.has_attr(X)</code></h3>
+<p>True if <code>#[X]</code> is attached to the field.</p>
+<pre><code class="language-rok">@apply_if(@field.has_attr(skip)) {
+    <span class="c">// process only fields with #[skip]</span>
+}
+</code></pre>
+<h3 id="fieldhas_default--fielddefault"><a class="anchor" tabindex="-1" href="#fieldhas_default--fielddefault" aria-hidden="true">#</a><code>@field.has_default</code> / <code>@field.default</code></h3>
+<p><code>@field.has_default</code> is true if the field has a default value (<code>x: i32 = 0</code>, <a href="../002-types/203-struct#233-field-default-values">2.3.3</a>), and <code>@field.default</code> is the expression of that <code>= expr</code>. Using <code>@field.default</code> on a field without a default is an error.</p>
+<pre><code class="language-rok">@apply_if(@field.has_default) {
+    <span class="k">let</span> @field.name = @field.default;
+}
+</code></pre>
+<h2 id="694-variant-iteration"><a class="anchor" tabindex="-1" href="#694-variant-iteration" aria-hidden="true">#</a>6.9.4. Variant iteration</h2>
+<h3 id="for_variants---"><a class="anchor" tabindex="-1" href="#for_variants---" aria-hidden="true">#</a><code>@for_variants { ... }</code></h3>
+<p><code>@for_variants</code> repeats the block for each variant of an <code>enum</code>.</p>
+<pre><code class="language-rok">@for_variants {
+    @variant.name =&gt; <span class="c">/* ... */</span>
+}
+</code></pre>
+<h3 id="variantname-variant-name"><a class="anchor" tabindex="-1" href="#variantname-variant-name" aria-hidden="true">#</a><code>@variant.name</code> variant name</h3>
+<p><code>@variant.name</code> is the variant's name.</p>
+<h3 id="variantpattern-matching-pattern"><a class="anchor" tabindex="-1" href="#variantpattern-matching-pattern" aria-hidden="true">#</a><code>@variant.pattern</code> matching pattern</h3>
+<p><code>@variant.pattern</code> is the variant in matching-pattern form, such as <code>Shape::Circle(r)</code>, <code>Shape::Pending</code>, or <code>Shape::Click { x: x1, y: y1 }</code>. The bindings in the <code>r</code>, <code>x1</code>, <code>y1</code> positions are compiler-generated names (hygiene, 6.9.8), and their values are retrieved with <code>@field</code> inside <code>@for_variant_fields</code>. Templates cannot use the binding names directly.</p>
+<pre><code class="language-rok"><span class="k">match</span> <span class="k">self</span> {
+    @for_variants {
+        @variant.pattern =&gt; <span class="c">/* ... */</span>
+    }
+}
+</code></pre>
+<h3 id="variantis_unit--variantis_tuple--variantis_named"><a class="anchor" tabindex="-1" href="#variantis_unit--variantis_tuple--variantis_named" aria-hidden="true">#</a><code>@variant.is_unit</code> / <code>@variant.is_tuple</code> / <code>@variant.is_named</code></h3>
+<p>These tokens test the kind of variant.</p>
+<pre><code class="language-rok">@apply_if(@variant.is_tuple) {
+    <span class="c">// process only tuple variants</span>
+}
+</code></pre>
+<h3 id="for_variant_fields---"><a class="anchor" tabindex="-1" href="#for_variant_fields---" aria-hidden="true">#</a><code>@for_variant_fields { ... }</code></h3>
+<p>To iterate over the fields within a variant, use <code>@for_variant_fields</code>. <code>@field.name</code> etc. can be used inside it.</p>
+<pre><code class="language-rok">@for_variants {
+    @variant.pattern =&gt; {
+        @for_variant_fields {
+            process(@field);
+        }
+    }
+}
+</code></pre>
+<h2 id="695-conditionals-and-bounds"><a class="anchor" tabindex="-1" href="#695-conditionals-and-bounds" aria-hidden="true">#</a>6.9.5. Conditionals and bounds</h2>
+<h3 id="apply_ifcond---"><a class="anchor" tabindex="-1" href="#apply_ifcond---" aria-hidden="true">#</a><code>@apply_if(cond) { ... }</code></h3>
+<p><code>@apply_if</code> generates the enclosed code only when <code>cond</code> is true.</p>
+<pre><code class="language-rok">@apply_if(@field.is_pub) {
+    <span class="c">// code</span>
+}
+
+@apply_if(!@field.has_attr(skip)) {
+    <span class="c">// only fields *without* skip</span>
+}
+
+@apply_if(@field.is_pub &amp;&amp; @field.has_attr(serialize)) {
+    <span class="c">// both conditions true</span>
+}
+</code></pre>
+<p><code>cond</code> is an expression combining boolean values of template tokens (e.g. <code>@field.is_pub</code>, <code>@field.has_attr(...)</code>) with ordinary boolean operators (<code>!</code>, <code>&amp;&amp;</code>, <code>||</code>), evaluated at compile time.</p>
+<p>An <code>else</code> branch is expressed without a separate keyword, by an <code>@apply_if</code> with the opposite condition.</p>
+<h3 id="accept"><a class="anchor" tabindex="-1" href="#accept" aria-hidden="true">#</a><code>@accept(...)</code></h3>
+<p><code>@accept</code> restricts the kinds of target for a derive or attribute. It takes a list of item kinds separated by commas or <code>|</code>.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(my_wrap)]</span> <span class="k">pub</span> @attribute {
+    @accept(<span class="k">struct</span>, <span class="k">enum</span>)                    <span class="c">// accepts only struct, enum - rejects union</span>
+    @item
+}
+
+<span class="a">#[impl_attribute(timed)]</span> <span class="k">pub</span> @attribute {
+    @accept(<span class="k">fn</span>)                              <span class="c">// accepts only fn</span>
+    <span class="k">fn</span> @item.name(...) { ... }
+}
+</code></pre>
+<p>The possible kinds:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Kind</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>struct</code></td><td><code>struct</code> item</td></tr>
+<tr><td><code>enum</code></td><td><code>enum</code> item</td></tr>
+<tr><td><code>union</code></td><td><code>union</code> item</td></tr>
+<tr><td><code>fn</code></td><td>Function or method</td></tr>
+<tr><td><code>impl</code></td><td><code>impl</code> block</td></tr>
+<tr><td><code>trait</code></td><td><code>trait</code> item</td></tr>
+</tbody></table></div>
+<p>With several kinds separated by commas or <code>|</code>, matching any one is allowed. If the target is not an allowed kind, it is a compile error at the use site.</p>
+<h3 id="where_alltrait"><a class="anchor" tabindex="-1" href="#where_alltrait" aria-hidden="true">#</a><code>@where_all(Trait)</code></h3>
+<p><code>@where_all</code> adds, as an automatic where clause, the condition that every field type must satisfy <code>Trait</code>.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(Eq)]</span> <span class="k">pub</span> @derive {
+    @where_all(<span class="t">Eq</span>)                           <span class="c">// OK if every field's type is Eq</span>
+    <span class="k">impl</span> <span class="t">Eq</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> eq(<span class="k">self</span>, other: <span class="k">Self</span>) -&gt; <span class="t">bool</span> {
+            @for_fields {
+                <span class="k">if</span> !<span class="k">self</span>.@field.eq(other.@field) { <span class="k">return</span> <span class="k">false</span>; }
+            }
+            <span class="k">true</span>
+        }
+    }
+}
+</code></pre>
+<p>The generated <code>impl</code> then gets <code>T: Eq</code> for each type parameter of the target type. No clauses are added for concrete field types; whether those fields implement <code>Eq</code> is checked by type checking of the generated body. The target type's generic parameters are placed after the template's <code>impl</code>, and the only bounds are those added by <code>@where_all</code>.</p>
+<h2 id="696-derive_attribute-tokens"><a class="anchor" tabindex="-1" href="#696-derive_attribute-tokens" aria-hidden="true">#</a>6.9.6. derive_attribute tokens</h2>
+<p>The following tokens are additionally usable inside <code>#[impl_derive_attribute(Trait, attr)]</code>.</p>
+<h3 id="has_derive_attrname"><a class="anchor" tabindex="-1" href="#has_derive_attrname" aria-hidden="true">#</a><code>@has_derive_attr(name)</code></h3>
+<p>Indicates whether the <code>derive_attribute</code>'s target attr is attached to the field.</p>
+<h3 id="derive_attrname-the-attrs-argument"><a class="anchor" tabindex="-1" href="#derive_attrname-the-attrs-argument" aria-hidden="true">#</a><code>@derive_attr(name)</code> the attr's argument</h3>
+<p><code>@derive_attr(name)</code> denotes the argument of the attached attr.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive_attribute(Serialize, rename)]</span> <span class="k">pub</span> @derive {
+    @for_fields {
+        @apply_if(@has_derive_attr(rename)) {
+            <span class="k">let</span> key = @derive_attr(rename);  <span class="c">// the argument of #[rename("...")]</span>
+            obj.set(key, ...);
+        }
+    }
+}
+</code></pre>
+<h2 id="697-attribute-only-tokens"><a class="anchor" tabindex="-1" href="#697-attribute-only-tokens" aria-hidden="true">#</a>6.9.7. Attribute-only tokens</h2>
+<p>The following tokens are used inside <code>#[impl_attribute(name)]</code>.</p>
+<h3 id="item-reusing-the-original-item"><a class="anchor" tabindex="-1" href="#item-reusing-the-original-item" aria-hidden="true">#</a><code>@item</code> reusing the original item</h3>
+<p><code>@item</code> reuses the entire item the attribute is attached to, as is.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(deprecated_warning)]</span> <span class="k">pub</span> @attribute {
+    @item                                    <span class="c">// the original as is</span>
+}
+<span class="c">// the attribute above is effectively a no-op - the original passes through unchanged</span>
+</code></pre>
+<h3 id="itembody"><a class="anchor" tabindex="-1" href="#itembody" aria-hidden="true">#</a><code>@item.body</code></h3>
+<p><code>@item.body</code> is the function body; it is meaningful only for function items.</p>
+<h3 id="itemname-itemparams-itemreturn_type"><a class="anchor" tabindex="-1" href="#itemname-itemparams-itemreturn_type" aria-hidden="true">#</a><code>@item.name</code>, <code>@item.params</code>, <code>@item.return_type</code></h3>
+<p>These tokens denote the parts of a function signature.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(timed)]</span> <span class="k">pub</span> @attribute {
+    <span class="k">fn</span> @item.name(@item.params) -&gt; @item.return_type {
+        <span class="k">let</span> start = now();
+        <span class="k">let</span> r = { @item.body };
+        log(<span class="s">f"@item.name took {</span>now() - start<span class="s">}"</span>);
+        r
+    }
+}
+</code></pre>
+<h3 id="attribute--arguments"><a class="anchor" tabindex="-1" href="#attribute--arguments" aria-hidden="true">#</a><code>@attribute</code> <code>#[...]</code> arguments</h3>
+<p><code>@attribute</code> means the arguments written at the attachment. If the use site applies an attribute defined by <code>#[impl_attribute(name)]</code> as <code>#[name(args)]</code>, <code>@attribute</code> is those args.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(prefix)]</span> <span class="k">pub</span> @attribute {
+    <span class="k">fn</span> @item.name() {
+        <span class="k">let</span> p = @attribute;                  <span class="c">// the use site's argument</span>
+        log(<span class="s">f"{</span>p<span class="s">}: {</span>@item.name<span class="s">}"</span>);
+        @item.body
+    }
+}
+
+<span class="c">// use site</span>
+<span class="a">#[prefix("INFO")]</span>
+<span class="k">fn</span> run() { ... }
+<span class="c">// → generated.</span>
+<span class="c">//   fn run() {</span>
+<span class="c">//       let p = "INFO";</span>
+<span class="c">//       log(f"{p}: run");</span>
+<span class="c">//       ...</span>
+<span class="c">//   }</span>
+</code></pre>
+<h2 id="698-call-site-macro-tokens"><a class="anchor" tabindex="-1" href="#698-call-site-macro-tokens" aria-hidden="true">#</a>6.9.8. Call-site (macro) tokens</h2>
+<p>The tokens above bind a type or item the definition is attached to. A macro (<a href="608-meta-blocks#6812-the-macro-form">6.8.12</a>) binds the caller's tokens instead, through a matcher, and uses these tokens; <code>@for</code> and <code>@concat</code> are shared with the forms above. The shape conditionals (<code>@apply_if</code> and the <code>@Self</code> / <code>@field</code> / <code>@variant</code> tokens they test) are not: a macro has no type shape to test.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Token</th><th>In a matcher / template</th><th>Section</th></tr></thead>
+<tbody>
+<tr><td><code>@name: &lt;fragment&gt;</code></td><td>Matcher: capture one fragment (<code>expr</code>, <code>stmt</code>, <code>block</code>, <code>ty</code>, <code>pat</code>, <code>path</code>, <code>ident</code>, <code>literal</code>, <code>item</code>, <code>tt</code>)</td><td>6.9.8</td></tr>
+<tr><td><code>@name</code></td><td>Template: the captured fragment, or the current element in a <code>@for</code></td><td>6.9.8</td></tr>
+<tr><td><code>@rep[sep = &quot;,&quot;, trailing] { .. }</code></td><td>Matcher: a sub-pattern repeated, with an optional separator and optional trailing one</td><td>6.9.8</td></tr>
+<tr><td><code>@for @name { .. }</code></td><td>Template: the body once per element of a captured sequence (lockstep over several)</td><td>6.9.3</td></tr>
+<tr><td><code>@concat(a, @name, ..)</code></td><td>Template: join name tokens / string literals into one indexed identifier</td><td>6.9.8</td></tr>
+</tbody></table></div>
+<h3 id="name-fragment-fragment-capture"><a class="anchor" tabindex="-1" href="#name-fragment-fragment-capture" aria-hidden="true">#</a><code>@name: &lt;fragment&gt;</code> fragment capture</h3>
+<p>In a matcher, <code>@name: &lt;fragment&gt;</code> matches and binds that grammar. A fragment other than <code>tt</code> is parsed into a real syntax node, so the captured code is typed and checked and the tools resolve names inside it; <code>tt</code> captures one raw token tree (a token or a balanced group) for a non-rok DSL. Literal tokens elsewhere in the matcher must appear verbatim. In the template, <code>@name</code> substitutes the capture, preserving the call site's hygiene (<a href="#699-expansion-mechanism">6.9.9</a>).</p>
+<h3 id="rep--for-repetition"><a class="anchor" tabindex="-1" href="#rep--for-repetition" aria-hidden="true">#</a><code>@rep</code> / <code>@for</code> repetition</h3>
+<p><code>@rep[sep = &quot;,&quot;, trailing] { &lt;sub-pattern&gt; }</code> matches the sub-pattern zero or more times; a metavariable captured inside binds a sequence. <code>@for @name { &lt;body&gt; }</code> is the same iterator as <code>@for_fields</code> (<a href="#693-field-iteration">6.9.3</a>), here over that sequence; metavariables from one <code>@rep</code> iterate in lockstep and must have equal length. <code>@rep</code> and <code>@for</code> nest.</p>
+<h3 id="concat-name-synthesis"><a class="anchor" tabindex="-1" href="#concat-name-synthesis" aria-hidden="true">#</a><code>@concat(..)</code> name synthesis</h3>
+<p><code>@concat(..)</code> joins name tokens (<code>@name</code>, <code>@Self.name</code>, a bare identifier) and string literals into a single identifier, at a definition or path position only. The identifier it forms is recorded, so symbol search and go-to-definition reach the generated item (<a href="608-meta-blocks#tooling-and-hygiene">6.8.12</a>); a non-name piece, or use outside a name position, is an error.</p>
+<h2 id="699-expansion-mechanism"><a class="anchor" tabindex="-1" href="#699-expansion-mechanism" aria-hidden="true">#</a>6.9.9. Expansion mechanism</h2>
+<h3 id="collection-and-expansion"><a class="anchor" tabindex="-1" href="#collection-and-expansion" aria-hidden="true">#</a>Collection and expansion</h3>
+<p>Meta expansion proceeds as follows.</p>
+<ol>
+<li>A pre-pass before parsing collects meta blocks from every file of libraries and user packages (<a href="608-meta-blocks#6811-combination-with-registrationvisibility">6.8.11</a>).
+</li>
+<li>When the parser meets an item carrying <code>#[derive(X)]</code> or <code>#[x]</code>, it substitutes the template tokens in that meta block's body with the item's values and parses the result again.
+</li>
+<li>Generated items are meta-processed again, repeating until a fixed point is reached.
+</li>
+<li>A cycle (<code>A → B → A</code>) is an error (<a href="608-meta-blocks#688-fixed-point-expansion">6.8.8</a>).
+</li>
+</ol>
+<h3 id="relation-to-cfg"><a class="anchor" tabindex="-1" href="#relation-to-cfg" aria-hidden="true">#</a>Relation to <code>cfg</code></h3>
+<p>A <code>#[cfg(..)]</code> on a meta block itself determines the block's <strong>registration</strong>. cfg evaluation precedes meta block collection, so the derive / attribute of a block whose cfg is false is not registered. Two blocks can therefore define the same name under mutually exclusive cfgs. The <code>#[cfg]</code> of modules enclosing the block (inline <code>mod</code>s and file modules) also applies to registration. A <code>#![cfg]</code> inside the file does not yet apply.</p>
+<p>A <a href="603-cfg"><code>#[cfg]</code></a> on an item is copied as is onto every item generated from it. An item whose cfg is false therefore disappears together with its generated output; the overall order is:</p>
+<pre><code>parse → cfg eval → meta expansion (fixed-point) → name resolution → type checking → ...
+</code></pre>
+<h3 id="hygiene"><a class="anchor" tabindex="-1" href="#hygiene" aria-hidden="true">#</a>Hygiene</h3>
+<p>Local names bound by a template - <code>let</code> / <code>for</code> bindings and closure parameters (including inside <code>{..}</code> of f-strings) - are renamed to non-colliding names at expansion. Template locals therefore neither hide nor capture names that come from the item (<code>@item.body</code>, <code>@item.params</code>, <code>let @field.name = ..</code>).</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(Foo)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">Foo</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> foo(<span class="k">self</span>) -&gt; <span class="t">i32</span> {
+            <span class="k">let</span> temp = compute();             <span class="c">// renamed at expansion</span>
+            temp * <span class="n">2</span>
+        }
+    }
+}
+
+<span class="c">// use site</span>
+<span class="a">#[derive(Foo)]</span>
+<span class="k">struct</span> <span class="t">S</span> { temp: <span class="t">str</span>; }                       <span class="c">// the use site's 'temp' field</span>
+
+<span class="k">let</span> s = <span class="t">S</span> { temp: <span class="s">"hi"</span> };
+<span class="k">let</span> r = s.foo();                              <span class="c">// no collision with the meta-generated 'temp'</span>
+</code></pre>
+<p>Names bound by <code>match</code> arm patterns and the <code>S { x }</code> shorthand are not renamed. Templates do not use names in those positions that could collide with the item. Bindings of <code>@variant.pattern</code> are compiler-generated names and do not collide.</p>
+<h3 id="resolution-of-free-identifiers"><a class="anchor" tabindex="-1" href="#resolution-of-free-identifiers" aria-hidden="true">#</a>Resolution of free identifiers</h3>
+<p>Generated items are placed in the <strong>use site's module</strong>. Identifiers not bound within the template (e.g. <code>compute()</code>, <code>now()</code>, <code>log()</code>) are therefore resolved at the use site, not in the meta block's module.</p>
+<p>Template authors use absolute paths (<code>rok::core::..</code>, the library's <code>pkg::..</code>) or only names visible at the use site (items of the implicit <code>use rok::core::**;</code>, etc.). <code>pkg::</code> in a template names the package that defines the meta block, wherever it expands.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(MyHash)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyHash</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> my_hash(<span class="k">self</span>) -&gt; <span class="t">u64</span> {
+            <span class="k">let</span> h: <span class="t">u64</span> = <span class="n">0u64</span>;
+            @for_fields { h = mylib::hash::combine(h, <span class="k">self</span>.@field.my_hash()); }   <span class="c">// absolute path</span>
+            h
+        }
+    }
+}
+</code></pre>
+<h3 id="diagnostic-locations"><a class="anchor" tabindex="-1" href="#diagnostic-locations" aria-hidden="true">#</a>Diagnostic locations</h3>
+<p>Errors during expansion and parse errors of the expansion result point to the template's location and append the use site (<code>#[derive(X)]</code> / <code>#[x]</code>) as a note. Tokens that come from the item through template tokens point to the item's location.</p>
+<h2 id="6910-debugging"><a class="anchor" tabindex="-1" href="#6910-debugging" aria-hidden="true">#</a>6.9.10. Debugging</h2>
+<p><code>rokc build --emit=expanded</code> (<a href="../009-tools/909-debug-tools#9910-meta-block-debugging">9.9.10</a>) prints the expansion results of the user package as source text. Each expansion is a <code>// expanded from this #[derive(X)] (file:line:col)</code> comment followed by the generated source; if the output is expanded again, it follows the outer expansion.</p>
+<h2 id="6911-summary"><a class="anchor" tabindex="-1" href="#6911-summary" aria-hidden="true">#</a>6.9.11. Summary</h2>
+<p>Template tokens are the code generation vocabulary of rok's meta-system. Simple as they are, they cover all the core cases of practical derives and attributes.</p>
+<p>rok's choice is to limit the flexibility of token transformation in exchange for debuggability, tool friendliness, and guaranteed hygiene.</p>
+<p>This concludes chapter 6 (Meta-system).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/006-meta-system/609-template-tokens.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="608-meta-blocks"><small>Previous</small>6.8. User-defined meta definitions</a><a class="next" href="610-reflection"><small>Next</small>6.10. Reflection</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

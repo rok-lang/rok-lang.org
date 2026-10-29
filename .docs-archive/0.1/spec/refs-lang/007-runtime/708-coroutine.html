@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.8. Coroutines - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Generators, async and streams use the same coroutine lowering.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/708-coroutine.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.8. Coroutines - rok docs">
+<meta property="og:description" content="Generators, async and streams use the same coroutine lowering.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/708-coroutine.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/708-coroutine.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/708-coroutine.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">7. Runtime overview</a></p><ul class="pages"><li><a href="701-object-layout">7.1. Object layout and memory spaces</a></li><li><a href="702-allocation">7.2. Allocation</a></li><li><a href="703-gc-algorithm">7.3. GC algorithm</a></li><li><a href="704-barriers-and-roots">7.4. Barriers and root tracking</a></li><li><a href="705-concurrent-collection">7.5. Concurrent mark</a></li><li><a href="706-scheduler">7.6. Scheduler</a></li><li><a href="707-io-and-timer">7.7. I/O driver and timers</a></li><li class="cur"><a aria-current="page" href="708-coroutine">7.8. Coroutines</a><ul class="toc"><li><a href="#781-state-machine-lowering">7.8.1. State machine lowering</a></li><li><a href="#782-coroutine-frame">7.8.2. Coroutine frame</a></li><li><a href="#783-generator">7.8.3. Generator</a></li><li><a href="#784-async">7.8.4. Async</a></li><li><a href="#785-stream">7.8.5. Stream</a></li><li><a href="#786-allocation-elision">7.8.6. Allocation elision</a></li><li><a href="#787-lowering-of-yield--await">7.8.7. Lowering of yield / await</a></li><li><a href="#788-runtime-symbols">7.8.8. Runtime symbols</a></li><li><a href="#789-stack-depth">7.8.9. Stack depth</a></li><li><a href="#7810-lifetime-of-a-coroutine-frame">7.8.10. Lifetime of a coroutine frame</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="78-coroutines 78-코루틴 781-state-machine-lowering 781-상태-기계-lowering 782-coroutine-frame 782-코루틴-프레임 783-generator 783-generator 784-async 784-async 785-stream 785-stream 786-allocation-elision 786-할당-생략 787-lowering-of-yield--await 787-yield--await-의-lowering 788-runtime-symbols 788-런타임-심볼 789-stack-depth 789-스택-깊이 7810-lifetime-of-a-coroutine-frame 7810-코루틴-프레임의-수명"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/007-runtime/708-coroutine" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="78-coroutines"><a class="anchor" tabindex="-1" href="#78-coroutines" aria-hidden="true">#</a>7.8. Coroutines</h1>
+<p><a href="../004-functions/411-generators">Generators</a>, <a href="../004-functions/412-async">async</a> and <a href="../004-functions/413-stream">streams</a> use the same coroutine lowering.</p>
+<h2 id="781-state-machine-lowering"><a class="anchor" tabindex="-1" href="#781-state-machine-lowering" aria-hidden="true">#</a>7.8.1. State machine lowering</h2>
+<p>rok's coroutines are stackless and are lowered to state machines built by the compiler itself. LLVM coroutine intrinsics (<code>llvm.coro.*</code>) are not used, because the compiler must know the frame layout to build the frame's ScanTable. There is no per-arch context-switch code; it is the same on all Tier 1 targets.</p>
+<pre><code>yield / async / async yield block
+  → lifted into a body function (HIR, like a closure)
+  → state machine (MIR): resume function + frame type
+  → ordinary MLIR / LLVM
+</code></pre>
+<p><code>yield fn</code> / <code>async fn</code> is an <code>fn</code> that wraps its body in such a block and returns a wrapper type.</p>
+<h2 id="782-coroutine-frame"><a class="anchor" tabindex="-1" href="#782-coroutine-frame" aria-hidden="true">#</a>7.8.2. Coroutine frame</h2>
+<pre><code>Frame {
+    state  : i32        // suspend point to continue from next
+    locals : ...        // only locals live across suspend points
+}
+</code></pre>
+<ul>
+<li>A frame is an ordinary GC object, created by the allocation fast / slow path (<a href="702-allocation">7.2</a>). Each type has a frame <a href="../008-abi/802-scan-table">ScanTable</a>.
+</li>
+<li>While suspended, the frame's GC references are tracked by the ScanTable; while the resume function runs, its locals are tracked by the shadow stack (<a href="704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">7.4.1</a>).
+</li>
+<li>Frames of long-lived tasks become old through the sticky mark-bit (<a href="703-gc-algorithm#732-sticky-mark-bit-generational-collection">7.3.2</a>).
+</li>
+<li>The call result (<code>GenIter&lt;T&gt;</code>, <code>AsyncFuture&lt;T&gt;</code>, <code>AsyncStream&lt;T&gt;</code> and their <code>Try*</code> variants) is a value wrapping the frame (<a href="../004-functions/401-function-declaration#result-types-of-coroutine-functions">4.1.11</a>).
+</li>
+</ul>
+<h2 id="783-generator"><a class="anchor" tabindex="-1" href="#783-generator" aria-hidden="true">#</a>7.8.3. Generator</h2>
+<pre><code>1. Call count() → allocate frame, return wrapper.
+2. next() → resume function continues from state. At yield, saves the value and state and returns.
+3. Next next() → continues from the saved state. When finished, none.
+</code></pre>
+<p>The caller drives progress (<code>for x in g { .. }</code>).</p>
+<h2 id="784-async"><a class="anchor" tabindex="-1" href="#784-async" aria-hidden="true">#</a>7.8.4. Async</h2>
+<pre><code>1. Call fetch() → allocate frame, return Future.
+2. poll → resume function proceeds. If an awaited future is Pending, saves state and returns Pending.
+3. Wake (parking registry, I/O driver, timer) → the task re-enters the queue and a worker polls it.
+</code></pre>
+<p>The scheduler and runtime drive progress (<a href="706-scheduler">7.6</a>).</p>
+<h2 id="785-stream"><a class="anchor" tabindex="-1" href="#785-stream" aria-hidden="true">#</a>7.8.5. Stream</h2>
+<p><code>async yield</code> combines the two. Within the same frame, <code>yield</code> produces a value and <code>await</code> suspends with Pending.</p>
+<h2 id="786-allocation-elision"><a class="anchor" tabindex="-1" href="#786-allocation-elision" aria-hidden="true">#</a>7.8.6. Allocation elision</h2>
+<p>A frame is allocated on every coroutine call. There is no dedicated elision for a coroutine run to completion by its caller; a frame that never escapes may be removed like any allocation (<a href="702-allocation#7212-allocation-elision">7.2.12</a>).</p>
+<h2 id="787-lowering-of-yield--await"><a class="anchor" tabindex="-1" href="#787-lowering-of-yield--await" aria-hidden="true">#</a>7.8.7. Lowering of <code>yield</code> / <code>await</code></h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Keyword</th><th>Lowering</th></tr></thead>
+<tbody>
+<tr><td><code>yield expr;</code></td><td>Save state + return value (Iterator) / return <code>Ready(value)</code> (Stream)</td></tr>
+<tr><td><code>await expr;</code></td><td>Poll the target future. If Pending, save state + return <code>Pending</code></td></tr>
+<tr><td><code>return expr;</code></td><td>End the state machine + return the result</td></tr>
+</tbody></table></div>
+<h2 id="788-runtime-symbols"><a class="anchor" tabindex="-1" href="#788-runtime-symbols" aria-hidden="true">#</a>7.8.8. Runtime symbols</h2>
+<p>Waiting and waking for <code>await</code> are handled by the parking registry of <code>rok::core::task</code> (hooks installed by <code>rok::core::task</code> via <code>rok_task_hooks_install</code>, <a href="../008-abi/805-extern-symbols#854-scheduler-area">8.5.4</a>). The runtime's <code>rok_coro_frame_alloc</code> / <code>rok_coro_park</code> / <code>rok_coro_unpark</code> are for C and low-level code; the compiler does not use them (<a href="../008-abi/805-extern-symbols">8.5</a>).</p>
+<h2 id="789-stack-depth"><a class="anchor" tabindex="-1" href="#789-stack-depth" aria-hidden="true">#</a>7.8.9. Stack depth</h2>
+<p>Nested <code>await</code>s proceed through native calls in which the outer resume function calls the inner future's poll. So the depth of <code>await</code> recursion is bound by the native stack, and very deep recursion causes a stack overflow (<a href="./#runtime-error-stack-overflow">Runtime error</a>). If deep recursion is needed, split it into tasks.</p>
+<h2 id="7810-lifetime-of-a-coroutine-frame"><a class="anchor" tabindex="-1" href="#7810-lifetime-of-a-coroutine-frame" aria-hidden="true">#</a>7.8.10. Lifetime of a coroutine frame</h2>
+<p>A frame lives as long as it is reachable, like any other GC object. A running task is referenced by the task queue, a waiting task by the parking registry, and a waiter on the result by its own frame. When nothing references it, the GC reclaims it. There is no explicit deallocation.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/007-runtime/708-coroutine.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="707-io-and-timer"><small>Previous</small>7.7. I/O driver and timers</a><a class="next" href="../008-abi/"><small>Next</small>8. Runtime ABI / MLIR lowering overview</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

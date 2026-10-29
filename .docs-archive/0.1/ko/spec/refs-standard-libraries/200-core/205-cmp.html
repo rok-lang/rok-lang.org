@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.5. 비교 트레잇 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::cmp 모듈은 값 사이의 비교를 정의하는 트레잇 패밀리입니다. ==, !=, &lt;, &gt;, &lt;=, &gt;= 연산자뿐 아니라 해시, 정렬, 패턴 매칭이 모두 이 장의 트레잇을 통해 dispatch 됩니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/205-cmp.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.5. 비교 트레잇 - rok docs">
+<meta property="og:description" content="rok::core::cmp 모듈은 값 사이의 비교를 정의하는 트레잇 패밀리입니다. ==, !=, &lt;, &gt;, &lt;=, &gt;= 연산자뿐 아니라 해시, 정렬, 패턴 매칭이 모두 이 장의 트레잇을 통해 dispatch 됩니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/205-cmp.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/205-cmp.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/205-cmp.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li class="cur"><a aria-current="page" href="205-cmp">2.5. 비교 트레잇</a><ul class="toc"><li><a href="#251-4-트레잇-위계---partial-이-필요한-이유">2.5.1. 4 트레잇 위계 - partial 이 필요한 이유</a></li><li><a href="#252-partialeq---부분-동등성--">2.5.2. PartialEq - 부분 동등성 (==, !=)</a></li><li><a href="#253-eq---완전-동등성">2.5.3. Eq - 완전 동등성</a></li><li><a href="#254-partialord---부분-순서----">2.5.4. PartialOrd - 부분 순서 (&lt;, &gt;, &lt;=, &gt;=)</a></li><li><a href="#255-ord---완전-순서">2.5.5. Ord - 완전 순서</a></li><li><a href="#256-hash---해시-eq-일관성-약속">2.5.6. Hash - 해시 (Eq 일관성 약속)</a></li><li><a href="#257-구현-매트릭스">2.5.7. 구현 매트릭스</a></li><li><a href="#258-broadcast-비교-트레잇">2.5.8. broadcast 비교 트레잇</a></li><li><a href="#259-deriveeq-ord-hash-">2.5.9. #[derive(Eq, Ord, Hash, ...)]</a></li><li><a href="#2510-패턴-매칭과-cmp">2.5.10. 패턴 매칭과 cmp</a></li></ul></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="25-비교-트레잇 25-comparison-traits 251-4-트레잇-위계---partial-이-필요한-이유 251-the-4-trait-hierarchy---why-partial-is-needed 252-partialeq---부분-동등성-- 252-partialeq---partial-equality-- default-ne default-ne 사용-예 examples 253-eq---완전-동등성 253-eq---total-equality 254-partialord---부분-순서---- 254-partialord---partial-order---- ordering-타입 the-ordering-type 비교-체이닝-거부 comparison-chaining-rejected 255-ord---완전-순서 255-ord---total-order min--max--clamp min--max--clamp 256-hash---해시-eq-일관성-약속 256-hash---hashing-eq-consistency-promise 사용-예-1 examples-1 사용자-정의 user-defined 충돌-collision collisions 257-구현-매트릭스 257-implementation-matrix 258-broadcast-비교-트레잇 258-broadcast-comparison-traits 259-deriveeq-ord-hash- 259-deriveeq-ord-hash- 2510-패턴-매칭과-cmp 2510-pattern-matching-and-cmp"><a href="../../../../spec/refs-standard-libraries/200-core/205-cmp" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="25-비교-트레잇"><a class="anchor" tabindex="-1" href="#25-비교-트레잇" aria-hidden="true">#</a>2.5. 비교 트레잇</h1>
+<p><code>rok::core::cmp</code> 모듈은 값 사이의 비교를 정의하는 트레잇 패밀리입니다. <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code> 연산자뿐 아니라 해시, 정렬, 패턴 매칭이 모두 이 장의 트레잇을 통해 dispatch 됩니다.</p>
+<p>rok 은 비교를 4-트레잇 위계 (<code>PartialEq</code> / <code>Eq</code> / <code>PartialOrd</code> / <code>Ord</code>) 와 별도의 <code>Hash</code> 트레잇으로 분리합니다. 이렇게 분리하는 이유는 IEEE 754 부동소수의 NaN 처리와 해시 일관성 보장이라는 두 가지 실용 요구를 동시에 만족시키기 위함입니다.</p>
+<h2 id="251-4-트레잇-위계---partial-이-필요한-이유"><a class="anchor" tabindex="-1" href="#251-4-트레잇-위계---partial-이-필요한-이유" aria-hidden="true">#</a>2.5.1. 4 트레잇 위계 - partial 이 필요한 이유</h2>
+<p>위계 구조는 두 가지 관점에서 동시에 정리할 수 있습니다.</p>
+<p><strong>집합 관점</strong> - <code>A ⊃ B</code> 는 &quot;A 를 만족하는 타입의 집합이 B 를 만족하는 타입의 집합을 포함&quot; 한다는 뜻입니다. 즉 A 가 더 일반적이고 B 가 더 specific 입니다.</p>
+<pre><code>PartialEq  ⊃  Eq           // PartialEq 인 타입의 집합 ⊇ Eq 인 타입의 집합
+PartialOrd ⊃  Ord          //  (모든 Eq 는 PartialEq 이지만 그 역은 아님)
+PartialEq  ⊃  PartialOrd
+</code></pre>
+<p><strong>함의 관점 (supertrait)</strong> - <code>B ⇒ A</code> 는 &quot;B 를 구현하면 A 도 자동으로 요구된다&quot; 는 뜻이며, rok 코드로는 <code>trait B: A</code> 로 적습니다. 이때 <strong>A 가 B 의 supertrait</strong> 입니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Eq</span>: <span class="t">PartialEq</span> { ... }                    <span class="c">// PartialEq 가 Eq 의 supertrait</span>
+<span class="k">trait</span> <span class="t">PartialOrd</span>: <span class="t">PartialEq</span> { ... }            <span class="c">// PartialEq 가 PartialOrd 의 supertrait</span>
+<span class="k">trait</span> <span class="t">Ord</span>: <span class="t">PartialOrd</span> + <span class="t">Eq</span> { ... }             <span class="c">// PartialOrd 와 Eq 가 Ord 의 supertrait</span>
+</code></pre>
+<p>두 관점은 정확히 같은 사실을 다른 각도에서 표현합니다. <code>B ⇒ A</code> 면 B 인 타입은 모두 A 이기도 하므로 <code>A ⊃ B</code> 가 자연스럽게 따라옵니다. 즉 supertrait 가 집합 관점에서는 &quot;더 큰 쪽&quot; 입니다.</p>
+<p><code>Hash</code> 트레잇은 위 위계와 별개의 줄에 위치합니다.</p>
+<pre><code>Eq ⊃ Hash         // Eq 인 타입 중 일부만 Hash - Hash 는 Eq 와의 일관성을 약속
+</code></pre>
+<p>partial 이 따로 분리되는 이유는 IEEE 754 floating point 의 NaN 때문입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">f64</span> = <span class="n">0.0</span> / <span class="n">0.0</span>;       <span class="c">// NaN</span>
+<span class="k">let</span> b: <span class="t">f64</span> = <span class="n">0.0</span> / <span class="n">0.0</span>;       <span class="c">// NaN</span>
+a == b;                       <span class="c">//→ false (NaN != NaN by IEEE 754)</span>
+a &lt; b;                        <span class="c">//→ false</span>
+a &gt; b;                        <span class="c">//→ false</span>
+a &lt;= b;                       <span class="c">//→ false</span>
+</code></pre>
+<p>NaN 은 자기 자신과도 같지 않은 값입니다. 이는 reflexivity 위배에 해당하며 <code>a == a</code> 가 보장되지 않습니다. 따라서 타입별 트레잇 구현이 다음과 같이 갈라집니다. <code>f32</code> 와 <code>f64</code> 는 <strong><code>PartialEq</code>, <code>PartialOrd</code></strong> 만 구현되며, <code>i32</code>, <code>bool</code>, <code>str</code> 등은 <strong><code>Eq</code>, <code>Ord</code></strong> 까지 구현되어 총 순서를 만족합니다.</p>
+<p>이러한 분리 덕분에 <code>Hash</code>, <code>HashMap</code>, <code>BTreeMap</code>, sort 알고리듬에서 Hash 의 일관성 약속과 total ordering 보장이 안전하게 유지됩니다.</p>
+<h2 id="252-partialeq---부분-동등성--"><a class="anchor" tabindex="-1" href="#252-partialeq---부분-동등성--" aria-hidden="true">#</a>2.5.2. <code>PartialEq</code> - 부분 동등성 (<code>==</code>, <code>!=</code>)</h2>
+<p>부분 동등성은 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang("eq_trait")]</span>
+<span class="k">trait</span> <span class="t">PartialEq</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("==")]</span>
+    <span class="a">#[infix("≡")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> eq(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("!=")]</span>
+    <span class="a">#[infix("≠")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> ne(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span> {
+        !<span class="k">self</span>.eq(rhs)                <span class="c">// default impl</span>
+    }
+}
+</code></pre>
+<p>PartialEq 가 보장하는 <strong>약속</strong> 은 Symmetric 성질로서 <code>a == b</code> 와 <code>b == a</code> 가 동치이며, Transitive 성질로서 <code>a == b</code> 와 <code>b == c</code> 가 성립하면 <code>a == c</code> 도 성립한다는 점입니다. 다만 reflexivity (<code>a == a</code>) 는 IEEE 754 NaN 때문에 보장되지 않습니다.</p>
+<h3 id="default-ne"><a class="anchor" tabindex="-1" href="#default-ne" aria-hidden="true">#</a>default <code>ne</code></h3>
+<p><code>ne</code> 는 기본적으로 <code>!self.eq(rhs)</code> 로 구현됩니다. 사용자가 성능 최적화 등을 위해 별도로 구현하는 것도 가능합니다.</p>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">let</span> r1 = <span class="n">5i32</span> == <span class="n">5i32</span>;     <span class="c">//→ true</span>
+<span class="k">let</span> r2 = <span class="s">"hi"</span> != <span class="s">"hello"</span>;  <span class="c">//→ true</span>
+
+<span class="k">let</span> nan: <span class="t">f64</span> = <span class="t">f64</span>::<span class="t">NAN</span>;
+<span class="k">let</span> r3 = nan == nan;       <span class="c">//→ false  (PartialEq 의 부분성)</span>
+</code></pre>
+<h2 id="253-eq---완전-동등성"><a class="anchor" tabindex="-1" href="#253-eq---완전-동등성" aria-hidden="true">#</a>2.5.3. <code>Eq</code> - 완전 동등성</h2>
+<p>완전 동등성은 marker trait 으로 정의됩니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Eq</span>: <span class="t">PartialEq</span>&lt;<span class="k">Self</span>&gt; {
+    <span class="c">// marker trait - 추가 메서드 없음</span>
+}
+</code></pre>
+<p><code>Eq</code> 는 <strong>marker trait</strong> 이며, 메서드 없이 <strong>reflexivity</strong> 약속만 추가합니다.</p>
+<p>Eq 가 추가하는 <strong>약속</strong> 은 Reflexive 성질, 즉 <code>a == a</code> 가 항상 true 라는 점입니다. 이 약속이 있어야 <code>HashMap</code> 의 키, <code>BTreeMap</code> 의 키, sort 알고리듬이 정상적으로 작동합니다.</p>
+<p><strong>impl 정책</strong> 은 다음과 같이 정리됩니다. <code>i32</code>, <code>i64</code>, <code>u8</code>..<code>u64</code>, <code>bool</code>, <code>char</code>, <code>c_char</code>, <code>str</code> 등 모든 정수 / 부울 / 문자 / 문자열 타입은 <code>Eq</code> 를 구현합니다. 반면 <code>f32</code>, <code>f64</code>, <code>f64 | none</code> 등 부동소수 또는 부동소수를 포함한 합 타입은 <code>Eq</code> 를 구현하지 않습니다. 사용자 struct 또는 enum 의 <code>#[derive(Eq)]</code> 는 모든 필드가 <code>Eq</code> 일 때만 가능합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">42</span>;
+n == n;       <span class="c">//→ true (Eq 보장)</span>
+</code></pre>
+<h2 id="254-partialord---부분-순서----"><a class="anchor" tabindex="-1" href="#254-partialord---부분-순서----" aria-hidden="true">#</a>2.5.4. <code>PartialOrd</code> - 부분 순서 (<code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>)</h2>
+<p>부분 순서 트레잇은 비교 연산자들을 정의합니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang("cmp_trait")]</span>
+<span class="k">trait</span> <span class="t">PartialOrd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt;: <span class="t">PartialEq</span>&lt;<span class="t">Rhs</span>&gt; {
+    <span class="a">#[infix("&lt;")]</span>
+    <span class="k">fn</span> lt(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("&gt;")]</span>
+    <span class="k">fn</span> gt(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("&lt;=")]</span>
+    <span class="a">#[infix("≤")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> le(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("&gt;=")]</span>
+    <span class="a">#[infix("≥")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> ge(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> partial_cmp(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Ordering</span> | <span class="k">none</span> {
+        <span class="c">// default impl - lt/gt/eq 조합</span>
+        <span class="k">if</span> <span class="k">self</span>.eq(rhs) { <span class="t">Ordering</span>::<span class="t">Equal</span> }
+        <span class="k">else</span> <span class="k">if</span> <span class="k">self</span>.lt(rhs) { <span class="t">Ordering</span>::<span class="t">Less</span> }
+        <span class="k">else</span> <span class="k">if</span> <span class="k">self</span>.gt(rhs) { <span class="t">Ordering</span>::<span class="t">Greater</span> }
+        <span class="k">else</span> { <span class="k">none</span> }                     <span class="c">// NaN vs NaN 등 - 비교 불가</span>
+    }
+}
+</code></pre>
+<p>이 트레잇이 보장하는 <strong>약속</strong> 은 다음과 같습니다. Antisymmetric 성질로서 <code>a &lt; b</code> 이면 <code>!(b &lt; a)</code> 가 성립하며, Transitive 성질로서 정의된 비교에 한해 <code>a &lt; b</code> 와 <code>b &lt; c</code> 가 성립하면 <code>a &lt; c</code> 도 성립합니다. 다만 Trichotomy 는 부분적으로만 성립하므로 두 값 사이 순서가 항상 정의되지는 않으며, NaN 같은 incomparable 값이 존재합니다.</p>
+<p><code>partial_cmp</code> 는 기본 구현이 있는 (provided) 메서드이며 <code>Ordering | none</code> 을 반환합니다. 비교 불가능한 경우 (NaN 등) 에는 <code>none</code> 입니다.</p>
+<h3 id="ordering-타입"><a class="anchor" tabindex="-1" href="#ordering-타입" aria-hidden="true">#</a><code>Ordering</code> 타입</h3>
+<p>3-way 비교의 결과는 다음 enum 으로 표현됩니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Ordering</span> {
+    <span class="t">Less</span>,
+    <span class="t">Equal</span>,
+    <span class="t">Greater</span>,
+}
+</code></pre>
+<p><code>Ord::cmp</code> 는 <code>Ordering</code> 을 직접 반환합니다. <code>Ordering</code> 은 <code>Debug</code> 를 구현합니다 (<code>Less</code> / <code>Equal</code> / <code>Greater</code>).</p>
+<h3 id="비교-체이닝-거부"><a class="anchor" tabindex="-1" href="#비교-체이닝-거부" aria-hidden="true">#</a>비교 체이닝 거부</h3>
+<p><a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2.5</a> 가 정의하는 바에 따르면 비결합 트레잇 chain 은 거부됩니다.</p>
+<pre><code class="language-rok">a &lt; b &lt; c;        <span class="c">// 컴파일 에러 - 비결합 (none) 트레잇 chain 거부</span>
+</code></pre>
+<p>대안으로는 명시적 AND 를 사용합니다.</p>
+<pre><code class="language-rok">a &lt; b &amp;&amp; b &lt; c;   <span class="c">// 명시적 AND</span>
+</code></pre>
+<h2 id="255-ord---완전-순서"><a class="anchor" tabindex="-1" href="#255-ord---완전-순서" aria-hidden="true">#</a>2.5.5. <code>Ord</code> - 완전 순서</h2>
+<p>완전 순서 트레잇은 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang("ord_trait")]</span>
+<span class="k">trait</span> <span class="t">Ord</span>: <span class="t">Eq</span> + <span class="t">PartialOrd</span>&lt;<span class="k">Self</span>&gt; {
+    <span class="k">fn</span> cmp(<span class="k">self</span>, rhs: <span class="k">Self</span>) -&gt; <span class="t">Ordering</span>;
+
+    <span class="c">// default - Ord 가 정의된 두 값은 항상 비교 가능</span>
+    <span class="k">fn</span> min(<span class="k">self</span>, rhs: <span class="k">Self</span>) -&gt; <span class="k">Self</span> {
+        <span class="k">if</span> <span class="k">self</span>.le(rhs) { <span class="k">self</span> } <span class="k">else</span> { rhs }
+    }
+
+    <span class="k">fn</span> max(<span class="k">self</span>, rhs: <span class="k">Self</span>) -&gt; <span class="k">Self</span> {
+        <span class="k">if</span> <span class="k">self</span>.ge(rhs) { <span class="k">self</span> } <span class="k">else</span> { rhs }
+    }
+
+    <span class="k">fn</span> clamp(<span class="k">self</span>, low: <span class="k">Self</span>, high: <span class="k">Self</span>) -&gt; <span class="k">Self</span> {
+        <span class="k">if</span> <span class="k">self</span>.lt(low) { low }
+        <span class="k">else</span> <span class="k">if</span> <span class="k">self</span>.gt(high) { high }
+        <span class="k">else</span> { <span class="k">self</span> }
+    }
+}
+</code></pre>
+<p>Ord 가 추가하는 <strong>약속</strong> 은 Total 성질로서 모든 두 값 사이의 순서가 <code>Less</code>, <code>Equal</code>, <code>Greater</code> 셋 중 하나로 정의된다는 점입니다. 따라서 <code>partial_cmp</code> 가 <code>none</code> 을 반환하지 않으며, 항상 <code>Ordering</code> 값을 돌려줍니다.</p>
+<p>이 보장이 있어야 sort 알고리듬이 정상적으로 작동합니다.</p>
+<p><strong>impl 정책</strong> 을 살펴보면 <code>i32</code>, <code>i64</code>, <code>u*</code>, <code>bool</code>, <code>char</code>, <code>c_char</code>, <code>str</code> 은 <code>Ord</code> 를 구현합니다. 반면 <code>f32</code>, <code>f64</code> 는 NaN 때문에 incomparable 한 경우가 발생하므로 <code>Ord</code> 를 구현하지 않습니다.</p>
+<h3 id="min--max--clamp"><a class="anchor" tabindex="-1" href="#min--max--clamp" aria-hidden="true">#</a><code>min</code> / <code>max</code> / <code>clamp</code></h3>
+<p>3 개의 default 메서드가 제공되므로, impl 측이 별도로 구현하지 않아도 자동으로 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">3i32</span>.min(<span class="n">7i32</span>);              <span class="c">//→ 3</span>
+<span class="k">let</span> m = <span class="n">5</span>.max(<span class="n">10</span>);                   <span class="c">//→ 10</span>
+<span class="k">let</span> c = <span class="n">100</span>.clamp(<span class="n">0</span>, <span class="n">50</span>);            <span class="c">//→ 50</span>
+<span class="k">let</span> nan_safe = <span class="n">1.0f64</span>.clamp(<span class="n">0.0</span>, <span class="n">10.0</span>);  <span class="c">// ERROR - f64 는 Ord 가 정의되지 않음</span>
+                                          <span class="c">// (NaN 안전 clamp 는 별도 메서드 사용)</span>
+</code></pre>
+<h2 id="256-hash---해시-eq-일관성-약속"><a class="anchor" tabindex="-1" href="#256-hash---해시-eq-일관성-약속" aria-hidden="true">#</a>2.5.6. <code>Hash</code> - 해시 (Eq 일관성 약속)</h2>
+<p>해시 트레잇은 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[lang("hash_trait")]</span>
+<span class="k">trait</span> <span class="t">Hash</span>: <span class="t">Eq</span> {
+    <span class="k">fn</span> hash(<span class="k">self</span>) -&gt; <span class="t">u64</span>;
+}
+</code></pre>
+<p><strong>핵심 약속</strong> 은 다음과 같습니다.</p>
+<blockquote>
+<p><code>a == b</code> ⇒ <code>a.hash() == b.hash()</code></p>
+</blockquote>
+<p>이 약속이 <code>HashMap&lt;K, V&gt;</code>, <code>HashSet&lt;K&gt;</code> 의 모든 알고리듬 정확성을 뒷받침합니다.</p>
+<p><code>Hash: Eq</code> 이므로 Eq 를 구현하지 않은 타입은 Hash 도 구현할 수 없습니다. 따라서 <code>f64</code> 는 <code>Eq</code> 를 구현하지 않으므로 <code>Hash</code> 도 할 수 없습니다.</p>
+<h3 id="사용-예-1"><a class="anchor" tabindex="-1" href="#사용-예-1" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::cmp::<span class="t">Hash</span>;
+
+<span class="k">let</span> h1 = <span class="s">"hello"</span>.hash();
+<span class="k">let</span> h2 = <span class="s">"hello"</span>.hash();
+h1 == h2;            <span class="c">//→ true (Hash 일관성)</span>
+
+<span class="k">let</span> h3 = <span class="n">42i32</span>.hash();
+</code></pre>
+<h3 id="사용자-정의"><a class="anchor" tabindex="-1" href="#사용자-정의" aria-hidden="true">#</a>사용자 정의</h3>
+<pre><code class="language-rok"><span class="a">#[derive(PartialEq, Eq, Hash)]</span>
+<span class="k">struct</span> <span class="t">UserId</span> { id: <span class="t">u64</span>; }
+
+<span class="c">// 자동 derive - 모든 필드 (id: u64) 가 Eq+Hash 라 가능</span>
+</code></pre>
+<h3 id="충돌-collision"><a class="anchor" tabindex="-1" href="#충돌-collision" aria-hidden="true">#</a>충돌 (collision)</h3>
+<p>같은 타입의 서로 다른 두 값이 같은 hash 를 반환할 수 있습니다. 즉 <code>a != b</code> 인데도 <code>a.hash() == b.hash()</code> 인 경우가 허용됩니다. 이는 버그가 아니며, 64-bit hash 공간에서는 충돌이 불가피합니다. 충돌 처리는 HashMap 등의 자료구조가 담당합니다.</p>
+<h2 id="257-구현-매트릭스"><a class="anchor" tabindex="-1" href="#257-구현-매트릭스" aria-hidden="true">#</a>2.5.7. 구현 매트릭스</h2>
+<p>각 타입별 트레잇 구현 현황은 다음 표와 같이 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>PartialEq</th><th>Eq</th><th>PartialOrd</th><th>Ord</th><th>Hash</th><th>동작</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td><code>rok.eq.OP</code>, <code>rok.lt.OP</code>, ...</td></tr>
+<tr><td><code>f32</code>, <code>f64</code></td><td>✓</td><td>✗</td><td>✓</td><td>✗</td><td>✗</td><td><code>rok.eq.f64</code>, <code>rok.lt.f64</code></td></tr>
+<tr><td><code>bool</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td><code>rok.eq.bool</code>, <code>rok.lt.bool</code></td></tr>
+<tr><td><code>char</code>, <code>c_char</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td><code>rok.eq.char</code>, ...</td></tr>
+<tr><td><code>str</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic</td></tr>
+<tr><td><code>Tuple&lt;...&gt;</code></td><td>✓ (모든 부분 PartialEq 시)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic, 1-12 항</td></tr>
+<tr><td><code>[T; N]</code></td><td>✓ (T:PartialEq)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic</td></tr>
+<tr><td><code>List&lt;T&gt;</code></td><td>✓ (T:PartialEq 시)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic</td></tr>
+<tr><td><code>Dict&lt;K,V&gt;</code></td><td>✓ (K,V:PartialEq)</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>순서 무관 비교 / 해시</td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td>✓ (T:PartialEq)</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>순서 무관 비교 / 해시</td></tr>
+<tr><td><code>Range&lt;T&gt;</code></td><td>✓ (T:PartialEq)</td><td>...</td><td>...</td><td>...</td><td>...</td><td>start/end 비교</td></tr>
+<tr><td>합 <code>A | B</code></td><td>✓ (모든 항이 구현 시)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>항 순서 → payload</td></tr>
+</tbody></table></div>
+<p><code>Dict</code> 와 <code>Set</code> 은 순서 없는 컨테이너이므로 <code>PartialOrd</code> / <code>Ord</code> 가 없습니다. <code>PartialEq</code> / <code>Eq</code> / <code>Hash</code> 는 원소 (키와 값) 가 그 트레잇을 구현하면 구현되며, 순회 순서와 무관하게 비교하고 해시합니다 (<a href="209-collections">2.9</a>).</p>
+<p><code>List</code> 는 사전식으로 비교합니다. 앞에서부터 원소를 비교해 처음 다른 원소가 순서를 정하고, 한쪽이 다른 쪽의 접두사이면 짧은 쪽이 작습니다.</p>
+<p>합 타입의 두 값은 먼저 <strong>항 (변형) 의 순서</strong> 로, 같은 항이면 그 항 타입의 <code>Ord</code> 로 <strong>payload</strong> 를 비교합니다. 항의 순서는 합 타입의 정규 순서 (<a href="../../refs-lang/002-types/206-sum-types#264-집합-의미론">refs-lang 2.6.4</a>) 이며, 적힌 순서와 무관합니다. <code>none</code> 은 늘 마지막이므로 <code>T | none</code> 에서 <code>none</code> 은 어떤 <code>T</code> 값보다 큽니다. <code>min</code> / <code>max</code> / <code>clamp</code> 도 같은 순서를 따릅니다.</p>
+<h2 id="258-broadcast-비교-트레잇"><a class="anchor" tabindex="-1" href="#258-broadcast-비교-트레잇" aria-hidden="true">#</a>2.5.8. broadcast 비교 트레잇</h2>
+<p><a href="206-broadcast">2.6 broadcast</a> 의 19 개 broadcast 트레잇 중 비교에 해당하는 6 개는 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">DotEq</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".==")]</span> <span class="k">fn</span> dot_eq(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotNe</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".!=")]</span> <span class="k">fn</span> dot_ne(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotLt</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&lt;")]</span> <span class="k">fn</span> dot_lt(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotGt</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&gt;")]</span> <span class="k">fn</span> dot_gt(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotLe</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&lt;=")]</span> <span class="k">fn</span> dot_le(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotGe</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&gt;=")]</span> <span class="k">fn</span> dot_ge(...) -&gt; <span class="t">Output</span>; }
+</code></pre>
+<p>각 트레잇은 List 나 Vec3 등 컨테이너의 element-wise 비교를 담당하며, 결과 타입 (<code>Output</code>) 은 보통 <code>List&lt;bool&gt;</code> 또는 <code>[bool; N]</code> 이 됩니다.</p>
+<p>자세한 broadcast 의미는 <a href="206-broadcast">2.6 broadcast</a> 를 참조합니다.</p>
+<h2 id="259-deriveeq-ord-hash-"><a class="anchor" tabindex="-1" href="#259-deriveeq-ord-hash-" aria-hidden="true">#</a>2.5.9. <code>#[derive(Eq, Ord, Hash, ...)]</code></h2>
+<p><a href="../../refs-lang/006-meta-system/602-built-in-attributes">refs-lang 6.2 <code>#[derive]</code></a> 가 derive 메커니즘을 정의합니다. cmp 트레잇 5 개는 모두 derive 가 가능합니다.</p>
+<pre><code class="language-rok"><span class="a">#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]</span>
+<span class="k">struct</span> <span class="t">Version</span> { major: <span class="t">u32</span>; minor: <span class="t">u32</span>; patch: <span class="t">u32</span>; }
+</code></pre>
+<p>derive 동작은 트레잇별로 다음과 같이 진행됩니다. <code>PartialEq</code> 와 <code>Eq</code> 의 경우 모든 필드 동등성의 AND 로 정의됩니다. <code>PartialOrd</code> 와 <code>Ord</code> 는 필드 선언 순서에 따른 lexicographic 비교로 동작합니다. <code>Hash</code> 는 모든 필드 hash 를 결합해 계산하며, 결합 함수는 사양으로 정하지 않습니다.</p>
+<p>요구 조건은 모든 필드가 (재귀적으로) 같은 트레잇을 구현해야 한다는 점이며, <code>Eq</code> / <code>Ord</code> 는 상위 트레잇 (<code>PartialEq</code> / <code>PartialOrd</code>, <code>Eq</code>) 도 함께 derive 하거나 구현해야 합니다. 한 필드라도 <code>Eq</code> 를 구현하지 않으면 <code>#[derive(Eq)]</code> 는 컴파일 에러가 됩니다.</p>
+<h2 id="2510-패턴-매칭과-cmp"><a class="anchor" tabindex="-1" href="#2510-패턴-매칭과-cmp" aria-hidden="true">#</a>2.5.10. 패턴 매칭과 cmp</h2>
+<p><code>match</code> arm 의 literal 패턴은 <code>PartialEq::eq</code> 를 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> x {
+    <span class="n">0</span> =&gt; <span class="s">"zero"</span>,
+    <span class="n">1</span> =&gt; <span class="s">"one"</span>,
+    _ =&gt; <span class="s">"other"</span>,
+}
+<span class="c">// → 0.eq(x) → 비교, 1.eq(x) → 비교, ...</span>
+</code></pre>
+<p>range 패턴 (<code>0..=10 =&gt;</code>) 은 <code>PartialOrd::le</code> 와 <code>ge</code> 를 사용합니다.</p>
+<p>자세한 패턴 의미는 <a href="../../refs-lang/003-expressions/311-patterns">refs-lang 3.11 패턴</a> 을 참조합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/205-cmp.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="204-ops-assign"><small>Previous</small>2.4. 복합 대입 트레잇</a><a class="next" href="206-broadcast"><small>Next</small>2.6. broadcast - element-wise 연산자</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

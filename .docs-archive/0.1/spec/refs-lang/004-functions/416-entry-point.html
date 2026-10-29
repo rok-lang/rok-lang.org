@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.16. Entry point - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines what code runs, and in what order, when an executable package starts. It is the place that source units left open by saying &quot;the exact form...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/416-entry-point.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.16. Entry point - rok docs">
+<meta property="og:description" content="This section defines what code runs, and in what order, when an executable package starts. It is the place that source units left open by saying &quot;the exact form...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/416-entry-point.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/416-entry-point.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/416-entry-point.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li class="cur"><a aria-current="page" href="416-entry-point">4.16. Entry point</a><ul class="toc"><li><a href="#4161-entry-module-mainrok">4.16.1. Entry module: main.rok</a></li><li><a href="#4162-meaning-of-top-level-statements-implicit-main">4.16.2. Meaning of top-level statements: implicit main</a></li><li><a href="#4163-signature-of-an-explicit-main">4.16.3. Signature of an explicit main</a></li><li><a href="#4164-exit-codes-and-unhandled-exceptions">4.16.4. Exit codes and unhandled exceptions</a></li><li><a href="#4165-async-main">4.16.5. Async main</a></li><li><a href="#4166-modules-are-definition-only">4.16.6. Modules are definition-only</a></li><li><a href="#4167-global-state">4.16.7. Global state</a></li><li><a href="#4168-single-file-execution">4.16.8. Single-File execution</a></li><li><a href="#4169-no-entry-point-attribute">4.16.9. No entry point attribute</a></li><li><a href="#41610-relationship-to-jit--repl">4.16.10. Relationship to JIT / REPL</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="416-entry-point 416-진입점 4161-entry-module-mainrok 4161-진입-모듈-mainrok 4162-meaning-of-top-level-statements-implicit-main 4162-top-level-문의-의미-암묵-main 4163-signature-of-an-explicit-main 4163-명시-main-의-시그니처 4164-exit-codes-and-unhandled-exceptions 4164-종료-코드와-미처리-예외 4165-async-main 4165-비동기-main 4166-modules-are-definition-only 4166-모듈은-정의-전용 4167-global-state 4167-전역-상태 4168-single-file-execution 4168-단일-파일-실행 4169-no-entry-point-attribute 4169-진입점-속성은-없음 41610-relationship-to-jit--repl 41610-jit--repl-과의-관계"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/416-entry-point" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="416-entry-point"><a class="anchor" tabindex="-1" href="#416-entry-point" aria-hidden="true">#</a>4.16. Entry point</h1>
+<p>This section defines what code runs, and in what order, when an executable package starts. It is the place that <a href="../000-meta/003-source-units">source units</a> left open by saying &quot;the exact form of the entry point is defined in the function specification&quot;.</p>
+<h2 id="4161-entry-module-mainrok"><a class="anchor" tabindex="-1" href="#4161-entry-module-mainrok" aria-hidden="true">#</a>4.16.1. Entry module: <code>main.rok</code></h2>
+<p>The root file <code>src/main.rok</code> of an executable package (<a href="../000-meta/003-source-units#executable-package-srcmainrok">0.3.1</a>) is the <strong>entry module</strong>. The entry module provides the entry point in <strong>exactly one</strong> of the following two forms.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Entry point</th><th>Use</th></tr></thead>
+<tbody>
+<tr><td>explicit <code>fn main</code></td><td>the user-declared <code>fn main</code> function</td><td>ordinary applications</td></tr>
+<tr><td>top-level statements</td><td>an <strong>implicit <code>main</code></strong> whose body is the top-level statements</td><td>scripts, examples, short programs</td></tr>
+</tbody></table></div>
+<pre><code class="language-ebnf">main_file   ::= item* fn_main item*            // form 1: explicit main
+              | (item | top_stmt)*             // form 2: top-level statements (no fn main)
+top_stmt    ::= let_stmt | let_else_stmt | expr &quot;;&quot; | block_like_expr &quot;;&quot;?   // 3.9.1
+module_file ::= item*                          // lib.rok and every module file other than main.rok
+</code></pre>
+<p><code>item</code> is an <a href="../005-modules/504-modules#547-items-within-a-module">item in a module</a> (<code>fn</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>impl</code>, <code>const</code>, <code>static</code>, <code>mod</code>, <code>use</code>, etc.), and <code>let_stmt</code> / <code>let_else_stmt</code> / <code>expr &quot;;&quot;</code> are the same as the statements of <a href="../003-expressions/309-block-expressions">block expressions</a>. Control flow (<code>if</code>, <code>match</code>, <code>for</code>, <code>while</code>, <code>loop</code>, <code>try</code>) consists of expressions and is thus included in <code>expr &quot;;&quot;</code>. Unlike a function body, there is no final expression without a terminator (<code>tail_expr</code>) - the implicit <code>main</code> returns no value. A <code>main.rok</code> with only items and no statements (and no <code>fn main</code>) gets an empty implicit <code>main</code>, except in a package that exports WIT: that package is a reactor with no entry point (<a href="../../refs-standard-libraries/100-bare/108-wit#exports">stdlib 1.8.2</a>).</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>If a single <code>main.rok</code> contains <strong>both</strong> top-level statements and a <code>fn main</code> declaration, it is a <strong>compile error</strong>. This rules out any situation where the reader must guess which of two entry points runs.</p>
+</div>
+<pre><code class="language-rok"><span class="c">// main.rok - ERROR</span>
+<span class="k">fn</span> main() { run(); }
+run();                      <span class="c">// ERROR: top-level statement in a file with fn main</span>
+</code></pre>
+<h2 id="4162-meaning-of-top-level-statements-implicit-main"><a class="anchor" tabindex="-1" href="#4162-meaning-of-top-level-statements-implicit-main" aria-hidden="true">#</a>4.16.2. Meaning of top-level statements: implicit <code>main</code></h2>
+<p>The top-level statements of a <code>main.rok</code> without <code>fn main</code> are gathered <strong>in source order</strong> into one function body, which becomes the body of a compiler-synthesized implicit <code>main</code>. Items are not executed and are left out of the body; even when items and statements are interleaved, only the relative order among statements matters.</p>
+<pre><code class="language-rok"><span class="c">// main.rok</span>
+<span class="k">let</span> names = [<span class="s">"ada"</span>, <span class="s">"grace"</span>];
+<span class="k">for</span> n <span class="k">in</span> names {
+    greet(n);               <span class="c">// greet is declared below - visible regardless of order</span>
+}
+
+<span class="k">fn</span> greet(name: <span class="t">str</span>) {
+    println(<span class="s">f"hello, {</span>name<span class="s">}"</span>);
+}
+
+<span class="k">let</span> total = names.len();
+println(<span class="s">f"{</span>total<span class="s">} greeted"</span>);
+</code></pre>
+<p>The file above means the same as:</p>
+<pre><code class="language-rok"><span class="k">fn</span> greet(name: <span class="t">str</span>) {
+    println(<span class="s">f"hello, {</span>name<span class="s">}"</span>);
+}
+
+<span class="k">fn</span> main() <span class="k">throws</span> {          <span class="c">// form of the implicit main - see 4.16.4</span>
+    <span class="k">let</span> names = [<span class="s">"ada"</span>, <span class="s">"grace"</span>];
+    <span class="k">for</span> n <span class="k">in</span> names {
+        greet(n);
+    }
+    <span class="k">let</span> total = names.len();
+    println(<span class="s">f"{</span>total<span class="s">} greeted"</span>);
+}
+</code></pre>
+<p>The following rules follow from this equivalence.</p>
+<ul>
+<li><strong>Items are visible regardless of order.</strong> Items in <code>main.rok</code> belong to module scope like ordinary module items, so a top-level statement may refer to a <code>fn</code> / <code>struct</code> etc. declared after it.
+</li>
+<li><strong>A top-level <code>let</code> is a local variable of the implicit <code>main</code>.</strong> It is not a global variable and is visible only in top-level statements after its declaration (the block scope rules of <a href="../005-modules/501-variable-declaration">variable declarations</a> apply as-is).
+</li>
+<li><strong>A top-level <code>let</code> is not visible inside item bodies.</strong> In the example above, if the body of <code>greet</code> referred to <code>names</code> or <code>total</code>, it would be a name resolution error. Capturing the local variable in a closure is possible (<code>let shout = |s| println(f&quot;{s}! ({total})&quot;);</code>) - the closure is a statement and is created inside the implicit <code>main</code> body.
+</li>
+</ul>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><strong>Why top-level <code>let</code> is not visible to items.</strong> Items exist regardless of order, but a <code>let</code> gets its value only at run time. If <code>fn greet</code> could see a top-level <code>let</code>, the meaning would have to be defined for the case where <code>greet</code> is called <strong>before</strong> that <code>let</code> (e.g., calling <code>greet()</code> on the first line), which amounts to bringing &quot;global initialization order&quot; semantics into the language. rok's principle is to have no global initialization order (4.16.6), so top-level <code>let</code> is restricted to local variables of the implicit <code>main</code>. State that must be shared between items is passed as parameters or declared <code>static</code>.</p>
+</div>
+<h2 id="4163-signature-of-an-explicit-main"><a class="anchor" tabindex="-1" href="#4163-signature-of-an-explicit-main" aria-hidden="true">#</a>4.16.3. Signature of an explicit <code>main</code></h2>
+<p>An explicit <code>fn main</code> has no parameters and no generic parameters, and must have one of the following forms. Any other form is a compile error.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Signature</th><th>Exit code on normal exit</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>fn main()</code></td><td><code>0</code></td><td></td></tr>
+<tr><td><code>fn main() -&gt; i32</code></td><td>the return value</td><td>the return value is the process exit code</td></tr>
+<tr><td><code>fn main() throws</code> / <code>throws (E)</code></td><td><code>0</code></td><td>unhandled exception → 4.16.4</td></tr>
+<tr><td>the three forms above with <code>async</code></td><td>same as above</td><td>4.16.5</td></tr>
+</tbody></table></div>
+<p>There is no <code>main</code> returning <code>Result</code>, and no <code>main</code> combining <code>throws</code> with <code>-&gt; i32</code>. If a specific exit code is needed on error, call <a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env::exit(code)</code></a> in a <code>catch</code>.</p>
+<p>Command-line arguments and environment variables are obtained through the standard library <a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env</code></a>, not through parameters. The <code>unsafe</code> and <code>yield</code> modifiers cannot be applied to <code>main</code>. Visibility (<code>pub</code>) does not affect whether it is the entry point.</p>
+<p>A <code>fn main</code> declared in <code>lib.rok</code> or an ordinary module is not an entry point; it is just an ordinary function named <code>main</code>.</p>
+<h2 id="4164-exit-codes-and-unhandled-exceptions"><a class="anchor" tabindex="-1" href="#4164-exit-codes-and-unhandled-exceptions" aria-hidden="true">#</a>4.16.4. Exit codes and unhandled exceptions</h2>
+<p>The process exit code is determined by how the entry point finishes.</p>
+<ul>
+<li><strong>Normal exit</strong>: <code>0</code> or the returned <code>i32</code>, per the table in 4.16.3.
+</li>
+<li><strong>Unhandled exception</strong>: if an error propagates out of the entry point in a <code>throws</code> main, the runtime prints the exception value to standard error (stderr) and exits with code <strong><code>1</code></strong>. The output format is <code>Display</code> if the value implements <a href="../../refs-standard-libraries/200-core/210-fmt"><code>Display</code></a>, otherwise <code>Debug</code>, and the type name if it has neither (the <a href="../../refs-standard-libraries/200-core/214-error"><code>Error</code></a> trait requires <code>Display</code>, so ordinary error types print with <code>Display</code>). The next line gives the location where the error left <code>main</code>, as <code>  --&gt; path:line:col</code>.
+</li>
+<li><strong>Panic</strong>: panics and fatal errors are not caught by <code>catch</code>; the runtime prints the message to standard error and exits with code <strong><code>101</code></strong> (<a href="414-throws#41413-panics-and-fatal-errors">4.14.13</a>).
+</li>
+<li><strong>Explicit exit</strong>: <a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env::exit(code)</code></a> terminates the process immediately from any point. This path does not run <code>finally</code> or <code>Drop</code>.
+</li>
+</ul>
+<p>The <strong>implicit <code>main</code></strong> is treated as an untyped <code>fn main() throws</code> (error type <code>any Error</code>) (or <code>async fn main() throws</code> if the body contains <code>await</code>, 4.16.5). Errors from throwing calls marked with <code>try</code> in top-level statements may therefore propagate out of the entry point without a separate <code>catch</code>, and an unhandled exception yields exit code <code>1</code> per the rules above. If execution runs to the end normally, the exit code is <code>0</code>.</p>
+<p>On <code>wasm32-wasi</code> (a preview 2 component), <code>wasi:cli/exit</code> carries only success or failure, so any nonzero exit code (including <code>1</code> and <code>101</code>) reaches the host as failure (status 1). <code>wasm32-wasi-threads</code> (preview 1) carries the full code, except that hosts may turn a <code>proc_exit</code> of 126 or more into failure (status 1). A trap such as <code>abort</code> exits with 134.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong>Top-level <code>return</code> is not allowed.</strong> A <code>return</code> at the top level of <code>main.rok</code> is a compile error. If the implicit <code>main</code> needs a nonzero exit code, call <code>env::exit(code)</code>; to express the exit code as a return value, use the explicit <code>fn main() -&gt; i32</code> form. Allowing top-level <code>return</code> would add rules only for the implicit <code>main</code>, such as &quot;what type of <code>return</code> is allowed&quot; and &quot;what does a <code>return</code> inside a top-level block return&quot;, so splitting the entry point into two forms is simpler.</p>
+</div>
+<h2 id="4165-async-main"><a class="anchor" tabindex="-1" href="#4165-async-main" aria-hidden="true">#</a>4.16.5. Async <code>main</code></h2>
+<p><code>async fn main()</code> runs as the top-level task on the runtime <a href="../007-runtime/706-scheduler">scheduler</a>. The platform entry wrapper initializes the runtime, hands the Future created by <code>main</code> to the scheduler, waits until that Future completes, and then determines the exit code by the rules of 4.16.4 (the same behavior as <a href="../../refs-standard-libraries/200-core/220-future"><code>task::block_on</code></a>). Other tasks still running when <code>main</code> finishes are not waited for.</p>
+<p>The implicit <code>main</code> becomes <code>async fn main() throws</code> when <code>await</code> appears directly in a top-level statement (not inside another <code>async</code> block or closure); otherwise it is a synchronous <code>fn main() throws</code>.</p>
+<pre><code class="language-rok"><span class="c">// main.rok - implicit async main</span>
+<span class="k">let</span> body = <span class="k">await</span> http::get(<span class="s">"https://example.com"</span>);
+println(body.len());
+</code></pre>
+<h2 id="4166-modules-are-definition-only"><a class="anchor" tabindex="-1" href="#4166-modules-are-definition-only" aria-hidden="true">#</a>4.16.6. Modules are definition-only</h2>
+<p>Top-level statements are allowed <strong>only in the entry module <code>main.rok</code></strong>. <code>lib.rok</code> and every module file other than <code>main.rok</code> (and inline <code>mod { ... }</code> bodies) may contain only items (<code>module_file ::= item*</code>); a top-level statement there is a <strong>compile error</strong>. For statements in an inline <code>mod x { stmt }</code> body, a dedicated diagnostic pointing to this section is issued.</p>
+<p>As a result, <strong>importing a module (<code>mod</code>, <code>use</code>) runs no code.</strong> This deliberately differs from Python. In Python, <code>import</code> runs a module file's top-level code, so a file used both as a library and as a script must separate the two uses with an <code>if __name__ == &quot;__main__&quot;:</code> guard. rok needs no such guard: code run as a script exists only in <code>main.rok</code>, and every other file causes nothing at import time.</p>
+<p>The rationale for this decision:</p>
+<ul>
+<li><strong>AOT is the reference for meaning</strong> (<a href="../000-meta/001-execution-modes#014-semantic-baseline">0.1.4</a>). Supporting import-time execution in AOT output would require synthesizing per-module initialization functions and their call order at link time. Definition-only modules need no such machinery.
+</li>
+<li><strong>No initialization order semantics.</strong> Import-time code across modules would require defining &quot;which module is initialized first&quot; and &quot;what is visible during cyclic imports&quot;. rok ensures these questions never arise. Initial values of global state are determined at compile time (4.16.7).
+</li>
+<li><strong>Caching and incremental builds.</strong> Since a module's meaning is determined by its definitions alone, caches based on content hashes (<a href="../000-meta/003-source-units#033-package-identifier">0.3.3</a>) and incremental builds need not account for execution side effects.
+</li>
+<li><strong>Package kind is determined by file presence</strong> (<a href="../000-meta/003-source-units#034-the-manifest-rokrokon-is-optional">0.3.4</a>). Executable code lives exactly in <code>src/main.rok</code>, so the answers to &quot;is this an executable package?&quot; and &quot;where is the executable code?&quot; always coincide.
+</li>
+</ul>
+<h2 id="4167-global-state"><a class="anchor" tabindex="-1" href="#4167-global-state" aria-hidden="true">#</a>4.16.7. Global state</h2>
+<p>Module-level global state is declared only with <a href="../005-modules/503-static"><code>static</code></a>, and its initial value must be a <code>const</code> expression evaluable at compile time (<a href="../005-modules/503-static#539-const-restriction-on-initializers">5.3.9</a>). Lazy initialization, computed on first access at run time, is not a language feature but the responsibility of standard library wrappers. Program execution therefore always begins at the first statement of the entry point, and no user code runs before it.</p>
+<h2 id="4168-single-file-execution"><a class="anchor" tabindex="-1" href="#4168-single-file-execution" aria-hidden="true">#</a>4.16.8. Single-File execution</h2>
+<p>A single <code>.rok</code> file that does not belong to a package can be run directly.</p>
+<pre><code>rokc run hello.rok
+rokc build hello.rok
+</code></pre>
+<p>If the file given as an argument is not in the <code>src/</code> of a package, <code>rokc</code> constructs an <strong>anonymous executable package</strong> consisting of that file alone and treats the file as the package's <code>main.rok</code>. The file name has no meaning, and the entry point rules (4.16.1 - 4.16.5) apply exactly as for <code>main.rok</code>. A <code>.rok</code> file beside a package's <code>src/</code>, such as a script in its root, is also run this way. An anonymous package may have file submodules: <code>mod foo;</code> loads <code>foo.rok</code> beside the file (its own submodules in <code>foo/</code>), exactly as in a package's <code>src/</code> (<a href="../005-modules/504-modules#544-package-root">5.4.4</a>). Only source without a file (standard input, a REPL session) cannot; it uses inline modules. Dependencies, if needed, are declared in an inline manifest block at the head of the file and of any of its submodule files (<a href="../009-tools/910-rok-frontend#9107-inline-manifest-for-single-file-scripts">9.10.7</a>). The detailed command forms are defined in <a href="../009-tools/901-rokc-cli"><code>rokc</code> CLI</a>.</p>
+<h2 id="4169-no-entry-point-attribute"><a class="anchor" tabindex="-1" href="#4169-no-entry-point-attribute" aria-hidden="true">#</a>4.16.9. No entry point attribute</h2>
+<p>rok has <strong>no</strong> attribute for designating the entry point (e.g., <code>#[main]</code>). The root file <code>src/main.rok</code> already designates the entry module, and the name <code>main</code> (or top-level statements) designates the entry function, so there is no second means of expressing the same information. Keeping a single mechanism for determining the entry point means &quot;which function runs&quot; can be determined from the file structure alone. <code>main</code> is not a reserved word, and the language does not reserve the name <code>#[main]</code> either.</p>
+<h2 id="41610-relationship-to-jit--repl"><a class="anchor" tabindex="-1" href="#41610-relationship-to-jit--repl" aria-hidden="true">#</a>4.16.10. Relationship to JIT / REPL</h2>
+<p>REPL input and Jupyter cells (<a href="../009-tools/907-jit-cells">JIT cells</a>) mean the same as <strong>appending top-level statements and items, in order, to the end of an implicit <code>main.rok</code></strong>. A cell's <code>let</code> is a local variable of the implicit <code>main</code> and is visible in later cells; a cell's <code>fn</code> / <code>struct</code> become module items. The rules of 4.16.2 apply as-is, so the body of a <code>fn</code> declared in a cell cannot refer to a top-level <code>let</code> from an earlier cell (closure capture is possible).</p>
+<p>Thanks to this equivalence, the principle of <a href="../000-meta/001-execution-modes#the-semantics-are-the-same">0.1.1</a> that &quot;JIT and AOT share the same semantics&quot; also holds for the entry point. A file made by concatenating a notebook's cells in order is a <code>main.rok</code> that produces the same result. The following three, however, are <strong>session operations</strong> that exist only in interactive sessions and are not extensions of the language semantics:</p>
+<ul>
+<li>Re-declaring the same name with <code>let</code> at the top level of a cell (<a href="../009-tools/907-jit-cells#redeclaration-of-the-same-name">9.7.3</a>). This creates a new binding.
+</li>
+<li>Deleting and re-running cells (<a href="../009-tools/907-jit-cells#974-undo--cell-re-execution">9.7.4</a>).
+</li>
+<li>Automatic display of the value of a final expression without a terminator (<a href="../009-tools/907-jit-cells#977-visualization--output">9.7.7</a>). In a file, this is the same as appending <code>;</code> to that expression.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/416-entry-point.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="415-unsafe"><small>Previous</small>4.15. unsafe - function modifier and block expression</a><a class="next" href="../005-modules/"><small>Next</small>5. Variables / modules / visibility / packages overview</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

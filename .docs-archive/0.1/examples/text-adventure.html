@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Text adventure - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A small text adventure with rooms, exits, items and a locked door, played to the end from a prewritten list of commands.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/text-adventure.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Text adventure - rok docs">
+<meta property="og:description" content="A small text adventure with rooms, exits, items and a locked door, played to the end from a prewritten list of commands.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/text-adventure.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li class="cur"><a aria-current="page" href="text-adventure">Text adventure</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="text-adventure"><a class="anchor" tabindex="-1" href="#text-adventure" aria-hidden="true">#</a>Text adventure</h1>
+<p>A small text adventure with rooms, exits, items and a locked door, played to the end from a prewritten list of commands.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Dir</span> { <span class="t">North</span>, <span class="t">South</span>, <span class="t">East</span>, <span class="t">West</span> }
+
+<span class="k">enum</span> <span class="t">Command</span> {
+    <span class="t">Go</span>(<span class="t">Dir</span>),
+    <span class="t">Take</span>(<span class="t">str</span>),
+    <span class="t">Use</span>(<span class="t">str</span>),
+    <span class="t">Look</span>,
+    <span class="t">Inventory</span>,
+    <span class="t">Unknown</span>(<span class="t">str</span>),
+}
+
+<span class="k">struct</span> <span class="t">Room</span> {
+    name: <span class="t">str</span>;
+    desc: <span class="t">str</span>;
+    exits: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">usize</span>&gt;;    <span class="c">// direction name -&gt; room index</span>
+    items: <span class="t">List</span>&lt;<span class="t">str</span>&gt;;
+}
+
+<span class="k">struct</span> <span class="t">Game</span> {
+    rooms: <span class="t">List</span>&lt;<span class="t">Room</span>&gt;;
+    here: <span class="t">usize</span>;
+    bag: <span class="t">List</span>&lt;<span class="t">str</span>&gt;;
+    door_open: <span class="t">bool</span>;
+    won: <span class="t">bool</span>;
+}
+
+<span class="k">fn</span> dir_name(d: <span class="t">Dir</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> d { <span class="t">Dir</span>::<span class="t">North</span> =&gt; <span class="s">"north"</span>, <span class="t">Dir</span>::<span class="t">South</span> =&gt; <span class="s">"south"</span>, <span class="t">Dir</span>::<span class="t">East</span> =&gt; <span class="s">"east"</span>, <span class="t">Dir</span>::<span class="t">West</span> =&gt; <span class="s">"west"</span> }
+}
+
+<span class="k">fn</span> parse(line: <span class="t">str</span>) -&gt; <span class="t">Command</span> {
+    <span class="k">let</span> words: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = line.trim().to_lowercase().split_whitespace().collect();
+    <span class="k">if</span> words.is_empty() { <span class="k">return</span> <span class="t">Command</span>::<span class="t">Unknown</span>(<span class="s">""</span>); }
+    <span class="k">let</span> arg = <span class="k">if</span> words.len() &gt; <span class="n">1</span> { words[<span class="n">1</span>] } <span class="k">else</span> { <span class="s">""</span> };
+    <span class="k">match</span> words[<span class="n">0</span>] {
+        <span class="s">"n"</span> | <span class="s">"north"</span> =&gt; <span class="t">Command</span>::<span class="t">Go</span>(<span class="t">Dir</span>::<span class="t">North</span>),
+        <span class="s">"s"</span> | <span class="s">"south"</span> =&gt; <span class="t">Command</span>::<span class="t">Go</span>(<span class="t">Dir</span>::<span class="t">South</span>),
+        <span class="s">"e"</span> | <span class="s">"east"</span> =&gt; <span class="t">Command</span>::<span class="t">Go</span>(<span class="t">Dir</span>::<span class="t">East</span>),
+        <span class="s">"w"</span> | <span class="s">"west"</span> =&gt; <span class="t">Command</span>::<span class="t">Go</span>(<span class="t">Dir</span>::<span class="t">West</span>),
+        <span class="s">"go"</span> =&gt; parse(arg),
+        <span class="s">"take"</span> | <span class="s">"get"</span> =&gt; <span class="t">Command</span>::<span class="t">Take</span>(arg),
+        <span class="s">"use"</span> =&gt; <span class="t">Command</span>::<span class="t">Use</span>(arg),
+        <span class="s">"look"</span> | <span class="s">"l"</span> =&gt; <span class="t">Command</span>::<span class="t">Look</span>,
+        <span class="s">"i"</span> | <span class="s">"inventory"</span> =&gt; <span class="t">Command</span>::<span class="t">Inventory</span>,
+        _ =&gt; <span class="t">Command</span>::<span class="t">Unknown</span>(line),
+    }
+}
+
+<span class="k">impl</span> <span class="t">Game</span> {
+    <span class="k">fn</span> describe(<span class="k">self</span>) {
+        <span class="k">let</span> room = <span class="k">self</span>.rooms[<span class="k">self</span>.here];
+        println(<span class="s">f"== {</span>room.name<span class="s">} ==\n{</span>room.desc<span class="s">}"</span>);
+        <span class="k">if</span> !room.items.is_empty() { println(<span class="s">f"You see: {</span>room.items<span class="s">:?</span><span class="s">}"</span>); }
+    }
+
+    <span class="k">fn</span> step(<span class="k">ref</span> <span class="k">self</span>, cmd: <span class="t">Command</span>) {
+        <span class="k">match</span> cmd {
+            <span class="t">Command</span>::<span class="t">Go</span>(d) =&gt; {
+                <span class="k">let</span> way = dir_name(d);
+                <span class="k">match</span> <span class="k">self</span>.rooms[<span class="k">self</span>.here].exits.get(way) {
+                    next: <span class="t">usize</span> =&gt; {
+                        <span class="k">if</span> <span class="k">self</span>.rooms[next].name == <span class="s">"Vault"</span> &amp;&amp; !<span class="k">self</span>.door_open {
+                            println(<span class="s">"The vault door is locked."</span>);
+                        } <span class="k">else</span> {
+                            <span class="k">self</span>.here = next;
+                            <span class="k">self</span>.describe();
+                        }
+                    },
+                    <span class="k">none</span> =&gt; println(<span class="s">f"You can't go {</span>way<span class="s">}."</span>),
+                }
+            },
+            <span class="t">Command</span>::<span class="t">Take</span>(item) =&gt; {
+                <span class="k">let</span> items = <span class="k">self</span>.rooms[<span class="k">self</span>.here].items;
+                <span class="k">match</span> items.iter().position(|x| x == item) {
+                    i: <span class="t">usize</span> =&gt; {
+                        <span class="k">self</span>.bag.push(items.remove(i));
+                        println(<span class="s">f"Taken: {</span>item<span class="s">}."</span>);
+                    },
+                    <span class="k">none</span> =&gt; println(<span class="s">f"There is no {</span>item<span class="s">} here."</span>),
+                }
+            },
+            <span class="t">Command</span>::<span class="t">Use</span>(item) =&gt; {
+                <span class="k">if</span> !<span class="k">self</span>.bag.iter().<span class="k">any</span>(|x| x == item) {
+                    println(<span class="s">f"You don't have a {</span>item<span class="s">}."</span>);
+                } <span class="k">else</span> <span class="k">if</span> item == <span class="s">"key"</span> &amp;&amp; <span class="k">self</span>.rooms[<span class="k">self</span>.here].name == <span class="s">"Hall"</span> {
+                    <span class="k">self</span>.door_open = <span class="k">true</span>;
+                    println(<span class="s">"The key turns. The vault door swings open."</span>);
+                } <span class="k">else</span> <span class="k">if</span> item == <span class="s">"lamp"</span> &amp;&amp; <span class="k">self</span>.rooms[<span class="k">self</span>.here].name == <span class="s">"Vault"</span> {
+                    <span class="k">self</span>.won = <span class="k">true</span>;
+                    println(<span class="s">"The lamp reveals a pile of gold. You win!"</span>);
+                } <span class="k">else</span> {
+                    println(<span class="s">f"Nothing happens."</span>);
+                }
+            },
+            <span class="t">Command</span>::<span class="t">Look</span> =&gt; <span class="k">self</span>.describe(),
+            <span class="t">Command</span>::<span class="t">Inventory</span> =&gt; println(<span class="s">f"You carry: {</span><span class="k">self</span>.bag<span class="s">:?</span><span class="s">}"</span>),
+            <span class="t">Command</span>::<span class="t">Unknown</span>(text) =&gt; println(<span class="s">f"I don't understand \"{</span>text<span class="s">}\"."</span>),
+        }
+    }
+}
+
+<span class="k">fn</span> room(name: <span class="t">str</span>, desc: <span class="t">str</span>, exits: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">usize</span>&gt;, items: <span class="t">List</span>&lt;<span class="t">str</span>&gt;) -&gt; <span class="t">Room</span> {
+    <span class="t">Room</span> { name: name, desc: desc, exits: exits, items: items }
+}
+
+<span class="k">let</span> game = <span class="t">Game</span> {
+    rooms: [
+        room(<span class="s">"Cellar"</span>, <span class="s">"Damp stone walls. Stairs lead north."</span>, {<span class="s">"north"</span>: <span class="n">1usize</span>}, [<span class="s">"lamp"</span>]),
+        room(<span class="s">"Hall"</span>, <span class="s">"A long hall with a heavy door to the east."</span>, {<span class="s">"south"</span>: <span class="n">0usize</span>, <span class="s">"west"</span>: <span class="n">2usize</span>, <span class="s">"east"</span>: <span class="n">3usize</span>}, []),
+        room(<span class="s">"Library"</span>, <span class="s">"Dusty shelves everywhere."</span>, {<span class="s">"east"</span>: <span class="n">1usize</span>}, [<span class="s">"book"</span>, <span class="s">"key"</span>]),
+        room(<span class="s">"Vault"</span>, <span class="s">"It is pitch dark."</span>, {<span class="s">"west"</span>: <span class="n">1usize</span>}, []),
+    ],
+    here: <span class="n">0</span>,
+    bag: [],
+    door_open: <span class="k">false</span>,
+    won: <span class="k">false</span>,
+};
+
+<span class="c">// Scripted input instead of stdin.</span>
+<span class="k">let</span> script = [<span class="s">"look"</span>, <span class="s">"take lamp"</span>, <span class="s">"north"</span>, <span class="s">"east"</span>, <span class="s">"go west"</span>, <span class="s">"take key"</span>, <span class="s">"take sword"</span>,
+              <span class="s">"dance"</span>, <span class="s">"e"</span>, <span class="s">"use key"</span>, <span class="s">"e"</span>, <span class="s">"i"</span>, <span class="s">"use lamp"</span>];
+
+game.describe();
+<span class="k">for</span> line <span class="k">in</span> script {
+    <span class="k">if</span> game.won { <span class="k">break</span>; }
+    println(<span class="s">f"\n&gt; {</span>line<span class="s">}"</span>);
+    game.step(parse(line));
+}
+</code></pre>
+<pre class="output"><code class="language-output">== Cellar ==
+Damp stone walls. Stairs lead north.
+You see: [&quot;lamp&quot;]
+
+&gt; look
+== Cellar ==
+Damp stone walls. Stairs lead north.
+You see: [&quot;lamp&quot;]
+
+&gt; take lamp
+Taken: lamp.
+
+&gt; north
+== Hall ==
+A long hall with a heavy door to the east.
+
+&gt; east
+The vault door is locked.
+
+&gt; go west
+== Library ==
+Dusty shelves everywhere.
+You see: [&quot;book&quot;, &quot;key&quot;]
+
+&gt; take key
+Taken: key.
+
+&gt; take sword
+There is no sword here.
+
+&gt; dance
+I don't understand &quot;dance&quot;.
+
+&gt; e
+== Hall ==
+A long hall with a heavy door to the east.
+
+&gt; use key
+The key turns. The vault door swings open.
+
+&gt; e
+== Vault ==
+It is pitch dark.
+
+&gt; i
+You carry: [&quot;lamp&quot;, &quot;key&quot;]
+
+&gt; use lamp
+The lamp reveals a pile of gold. You win!
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Player input is first parsed into a <code>Command</code> enum, and the game logic only deals with that enum. String handling and state changes are kept apart, which makes new commands easy to add, and the compiler checks that <code>match</code> covers every variant (<a href="../learn/05-sum-types">Sum types</a>, <a href="../spec/refs-lang/003-expressions/312-match-expression">3.12 match</a>).
+</li>
+<li>Or-patterns such as <code>&quot;n&quot; | &quot;north&quot; =&gt; ...</code> group aliases, and <code>&quot;go&quot;</code> calls <code>parse</code> again on the remaining words so <code>go west</code> and <code>west</code> become the same command (<a href="../spec/refs-lang/003-expressions/311-patterns#or-patterns">3.11 Patterns</a>).
+</li>
+<li><code>Dict::get</code> returns <code>usize | none</code>. Splitting into <code>next: usize =&gt; ...</code> and <code>none =&gt; ...</code> handles &quot;no exit that way&quot; naturally (<a href="../std/core/collections/dict#struct.Dict"><code>Dict</code></a>).
+</li>
+<li>The game state <code>Game</code> changes in place through <code>step(ref self, ...)</code>. A room's <code>items</code> is a <code>List</code>, so taking it out with <code>let items = self.rooms[self.here].items;</code> and calling <code>remove</code> also changes the room's own list (<a href="../learn/08-collections-iterators">Collections and iterators</a>).
+</li>
+<li>The <code>script</code> list is fed in one line at a time instead of standard input. To make it a real game, replace this loop with one that reads from <code>io::stdin()</code> (<a href="../learn/13-io">I/O</a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/text-adventure.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="tcp-echo"><small>Previous</small>TCP echo server</a><a class="next" href="word-count"><small>Next</small>Word count</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

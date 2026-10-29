@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.14. error - Error traits / types - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::error / rok::core::panic modules provide the authority for error handling. rok has a single error model. A function that can throw an error write...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/214-error.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.14. error - Error traits / types - rok docs">
+<meta property="og:description" content="The rok::core::error / rok::core::panic modules provide the authority for error handling. rok has a single error model. A function that can throw an error write...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/214-error.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/214-error.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/214-error.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li class="cur"><a aria-current="page" href="214-error">2.14. error - Error traits / types</a><ul class="toc"><li><a href="#2141-model-overview---throws-to-throw-result-to-hold">2.14.1. Model overview - throws to throw, Result to hold</a></li><li><a href="#2142-resultt-e---enum-for-holding">2.14.2. Result&lt;T, E&gt; - enum for holding</a></li><li><a href="#2143-error-trait---the-surface-of-an-error">2.14.3. Error trait - the surface of an error</a></li><li><a href="#2144-built-in-error-types">2.14.4. Built-in error types</a></li><li><a href="#2145-panic_fn--oom_fn--unreachable_fn---compiler-hooks">2.14.5. panic_fn / oom_fn / unreachable_fn - compiler hooks</a></li><li><a href="#2146-try--catch--throw--throws--finally">2.14.6. try / catch / throw / throws / finally</a></li><li><a href="#2147-converting-between-result-and-throws">2.14.7. Converting between Result and throws</a></li><li><a href="#2148-module-mapping">2.14.8. Module mapping</a></li><li><a href="#2149-comparison-with-other-languages">2.14.9. Comparison with other languages</a></li></ul></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="214-error---error-traits--types 214-error---에러-트레잇--타입 2141-model-overview---throws-to-throw-result-to-hold 2141-모델-개요---던지면-throws-담아-두면-result 2142-resultt-e---enum-for-holding 2142-resultt-e---보관용-enum core-methods 핵심-메서드 result-has-no- result-에는--가-없습니다 2143-error-trait---the-surface-of-an-error 2143-error-트레잇---에러의-표면 chain---source chain---source 2144-built-in-error-types 2144-내장-에러-타입 fatal-errors fatal-에러 2145-panic_fn--oom_fn--unreachable_fn---compiler-hooks 2145-panic_fn--oom_fn--unreachable_fn---컴파일러-hook where-panics-occur panic-이-일어나는-자리 oom-handling oom-처리 using-unreachable unreachable-사용 assert--assert_eq--assert_ne assert--assert_eq--assert_ne 2146-try--catch--throw--throws--finally 2146-try--catch--throw--throws--finally signature-model 시그니처-모델 try--catch-form try--catch-형태 finally finally throw-and-branch-types throw-와-분기-타입 2147-converting-between-result-and-throws 2147-result--throws-변환 throwing-call--resultt-e throwing-호출--resultt-e resultt-e--throw resultt-e--throw extracting-as-t--none t--none-으로-추출 2148-module-mapping 2148-모듈-매핑 2149-comparison-with-other-languages 2149-다른-언어와의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/214-error" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="214-error---error-traits--types"><a class="anchor" tabindex="-1" href="#214-error---error-traits--types" aria-hidden="true">#</a>2.14. error - Error traits / types</h1>
+<p>The <code>rok::core::error</code> / <code>rok::core::panic</code> modules provide the authority for error handling. rok has a single error model. A function that can throw an error writes <code>throws</code> in its signature, and the caller marks the call with <code>try</code> (<a href="../../refs-lang/004-functions/414-throws">refs-lang 4.14</a>). <code>Result&lt;T, E&gt;</code> is an ordinary enum for <strong>holding an error as a value</strong>; it is not a means of propagating errors.</p>
+<p>This chapter defines three of the 48 lang slots: <code>panic_fn</code> / <code>oom_fn</code> / <code>unreachable_fn</code>.</p>
+<h2 id="2141-model-overview---throws-to-throw-result-to-hold"><a class="anchor" tabindex="-1" href="#2141-model-overview---throws-to-throw-result-to-hold" aria-hidden="true">#</a>2.14.1. Model overview - <code>throws</code> to throw, <code>Result</code> to hold</h2>
+<pre><code class="language-rok"><span class="c">// (a) throwing - throws and try</span>
+<span class="k">fn</span> parse_int(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> !s.is_digit() { <span class="k">throw</span> <span class="t">ParseError</span> { input: s, pos: <span class="n">0</span>, reason: <span class="s">"not a digit"</span> }; }
+    s.to_i32()
+}
+
+<span class="k">let</span> n = <span class="k">try</span> parse_int(<span class="s">"42"</span>) <span class="k">catch</span> e: <span class="t">ParseError</span> {
+    log(<span class="s">f"parse failed: {</span>e<span class="s">:?</span><span class="s">}"</span>);
+    <span class="n">0</span>
+};
+
+<span class="c">// (b) holding - Result</span>
+<span class="k">let</span> results: <span class="t">List</span>&lt;<span class="t">Result</span>&lt;<span class="t">i32</span>, <span class="t">ParseError</span>&gt;&gt; =
+    inputs.map(|s| <span class="t">Result</span>::catching(|| <span class="k">try</span> parse_int(s)));
+
+<span class="k">for</span> r <span class="k">in</span> results {
+    <span class="k">match</span> r {
+        <span class="t">Ok</span>(v) =&gt; total = total + v,
+        <span class="t">Err</span>(e) =&gt; failures.push(e),
+    }
+}
+</code></pre>
+<p>The choice follows a one-line rule: <strong>use <code>throws</code> if the error must flow to the caller, and <code>Result</code> if the error must be kept to deal with later.</strong></p>
+<div class="table-wrap"><table>
+<thead><tr><th>Situation</th><th>Tool</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>Operation that can fail (I/O, parse, lookup)</td><td><code>throws</code></td><td><code>try</code> at every call site makes the flow visible</td></tr>
+<tr><td>API boundary / public</td><td><code>throws (E)</code> / <code>throws</code></td><td>error type exposed in the signature</td></tr>
+<tr><td>Collecting parallel results, passing results to callbacks</td><td><code>Result&lt;T, E&gt;</code></td><td>keeps the error as a value</td></tr>
+<tr><td>Gathering several errors to report at once, caching results</td><td><code>Result&lt;T, E&gt;</code></td><td>stored as a value and handled later</td></tr>
+<tr><td>Ignore failure, only the value is needed</td><td><code>try?</code></td><td>received as <code>T | none</code></td></tr>
+<tr><td>Failure is a program bug</td><td><code>try!</code></td><td>panics on failure</td></tr>
+</tbody></table></div>
+<h2 id="2142-resultt-e---enum-for-holding"><a class="anchor" tabindex="-1" href="#2142-resultt-e---enum-for-holding" aria-hidden="true">#</a>2.14.2. <code>Result&lt;T, E&gt;</code> - enum for holding</h2>
+<p><code>Result&lt;T, E&gt;</code> is an ordinary enum in <code>rok::core::error</code>.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; {
+    <span class="t">Ok</span>(<span class="t">T</span>),
+    <span class="t">Err</span>(<span class="t">E</span>),
+}
+</code></pre>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>rok has <strong>no <code>Some</code> / <code>None</code> enum variants</strong>. <code>Option&lt;T&gt;</code> itself <strong>does not exist</strong>;
+the sum type <code>T | none</code> is used in its place. <code>Result</code> is defined as a separate enum because <strong>both branches carry meaningful data</strong>.</p>
+</div>
+<h3 id="core-methods"><a class="anchor" tabindex="-1" href="#core-methods" aria-hidden="true">#</a>Core methods</h3>
+<p>The core methods of <code>Result</code> are:</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; {
+    <span class="k">fn</span> is_ok(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_err(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> ok(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> err(<span class="k">self</span>) -&gt; <span class="t">E</span> | <span class="k">none</span>;
+
+    <span class="k">fn</span> unwrap(<span class="k">self</span>) -&gt; <span class="t">T</span>;                               <span class="c">// panics on Err</span>
+    <span class="k">fn</span> unwrap_or(<span class="k">self</span>, default: <span class="t">T</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> unwrap_or_else(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">E</span>) -&gt; <span class="t">T</span>) -&gt; <span class="t">T</span>;
+
+    <span class="k">fn</span> map&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">U</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">U</span>, <span class="t">E</span>&gt;;
+    <span class="k">fn</span> map_err&lt;<span class="t">F</span>&gt;(<span class="k">self</span>, g: <span class="k">fn</span>(<span class="t">E</span>) -&gt; <span class="t">F</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">F</span>&gt;;
+    <span class="k">fn</span> and_then&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">U</span>, <span class="t">E</span>&gt;) -&gt; <span class="t">Result</span>&lt;<span class="t">U</span>, <span class="t">E</span>&gt;;
+    <span class="k">fn</span> or_else&lt;<span class="t">F</span>&gt;(<span class="k">self</span>, g: <span class="k">fn</span>(<span class="t">E</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">F</span>&gt;) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">F</span>&gt;;
+
+    <span class="k">fn</span> get(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">T</span>;                       <span class="c">// throws on Err - back into the error flow</span>
+    <span class="k">fn</span> catching(f: <span class="k">fn</span>() <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">T</span>) -&gt; <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt;;   <span class="c">// captures the error flow as a value</span>
+}
+</code></pre>
+<p><code>get</code> and <code>catching</code> bridge the two worlds. <code>catching</code> calls a throwing function and holds the outcome as <code>Ok</code> on success or <code>Err</code> on error; <code>get</code> extracts the held value and rethrows the error if it is <code>Err</code>.</p>
+<h3 id="result-has-no-"><a class="anchor" tabindex="-1" href="#result-has-no-" aria-hidden="true">#</a><code>Result</code> has no <code>?</code></h3>
+<p>The postfix <code>?</code> of <a href="../../refs-lang/003-expressions/314-error-control-flow#31410-the--operator---early-return-of-none">refs-lang 3.14.10</a> is only for <code>T | none</code>. Using <code>?</code> on a <code>Result</code> value makes the compiler emit the following diagnostic.</p>
+<pre><code class="language-rok"><span class="k">fn</span> load(r: <span class="t">Result</span>&lt;<span class="t">Config</span>, <span class="t">IoError</span>&gt;) -&gt; <span class="t">Result</span>&lt;<span class="t">Config</span>, <span class="t">IoError</span>&gt; {
+    <span class="k">let</span> cfg = r?;
+    <span class="c">// ERROR: `?` is only for `T | none`. Use `throws` and `try` to propagate errors.</span>
+    ...
+}
+</code></pre>
+<p>To propagate a held error to the caller, declare the function <code>throws</code> and write <code>try r.get()</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> load(r: <span class="t">Result</span>&lt;<span class="t">Config</span>, <span class="t">IoError</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Config</span> {
+    <span class="k">try</span> r.get()
+}
+</code></pre>
+<h2 id="2143-error-trait---the-surface-of-an-error"><a class="anchor" tabindex="-1" href="#2143-error-trait---the-surface-of-an-error" aria-hidden="true">#</a>2.14.3. <code>Error</code> trait - the surface of an error</h2>
+<p>The surface of every error type is defined by the <code>Error</code> trait.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Error</span>: <span class="t">Display</span> + <span class="t">Debug</span> {
+    <span class="k">fn</span> source(<span class="k">self</span>) -&gt; <span class="k">any</span> <span class="t">Error</span> | <span class="k">none</span> {
+        <span class="k">none</span>                                  <span class="c">// default - no chain</span>
+    }
+}
+</code></pre>
+<p>An error type implements this trait and uses <code>Display</code> for message output and <code>Debug</code> for debug display. An untyped <code>throws</code> is shorthand for <code>throws (any Error)</code>, so values thrown by an untyped throwing function must implement <code>Error</code>. To hold or pass errors regardless of type, use <code>any Error</code>, a <a href="../../refs-lang/002-types/202-any-slot">constrained <code>any</code></a> (<code>any Error | none</code> is <code>(any Error) | none</code>).</p>
+<h3 id="chain---source"><a class="anchor" tabindex="-1" href="#chain---source" aria-hidden="true">#</a>Chain - <code>source()</code></h3>
+<p>When wrapping an error, the cause chain can be expressed as follows.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">ConfigError</span> {
+    msg: <span class="t">str</span>;
+    cause: <span class="k">any</span> <span class="t">Error</span> | <span class="k">none</span>;
+}
+
+<span class="k">impl</span> <span class="t">Error</span> <span class="k">for</span> <span class="t">ConfigError</span> {
+    <span class="k">fn</span> source(<span class="k">self</span>) -&gt; <span class="k">any</span> <span class="t">Error</span> | <span class="k">none</span> {
+        <span class="k">self</span>.cause
+    }
+}
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">ConfigError</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">try</span> f.write_str(<span class="k">self</span>.msg)
+    }
+}
+</code></pre>
+<p>When a value is stored in <code>cause</code>, the compiler checks at compile time that its static type implements <code>Error</code>. With a chain built this way, the REPL or a logger can follow it and print a traceback of causes.</p>
+<pre><code class="language-rok"><span class="k">let</span> cfg = <span class="k">try</span> parse_config(text) <span class="k">catch</span> e: <span class="t">ParseError</span> {
+    <span class="k">throw</span> <span class="t">ConfigError</span> { msg: <span class="s">"bad config"</span>, cause: e };
+};
+</code></pre>
+<h2 id="2144-built-in-error-types"><a class="anchor" tabindex="-1" href="#2144-built-in-error-types" aria-hidden="true">#</a>2.14.4. Built-in error types</h2>
+<p>The error types the standard library provides by default are defined as follows.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">TypeError</span> {
+    expected: <span class="t">str</span>;
+    actual: <span class="t">str</span>;
+}
+
+<span class="k">struct</span> <span class="t">ValueError</span> {
+    msg: <span class="t">str</span>;
+}
+
+<span class="k">struct</span> <span class="t">IndexError</span> {
+    index: <span class="t">i64</span>;
+    len: <span class="t">usize</span>;
+}
+
+<span class="k">struct</span> <span class="t">OverflowError</span> {
+    op: <span class="t">str</span>;          <span class="c">// "add" / "mul" / ...</span>
+    ty: <span class="t">str</span>;          <span class="c">// "i32" / "i64" / ...</span>
+}
+
+<span class="k">struct</span> <span class="t">ParseError</span> {
+    input: <span class="t">str</span>;
+    pos: <span class="t">usize</span>;
+    reason: <span class="t">str</span>;
+}
+
+<span class="k">struct</span> <span class="t">ConversionError</span> {
+    msg: <span class="t">str</span>;
+}
+
+<span class="k">struct</span> <span class="t">ZeroError</span>;
+</code></pre>
+<p>Each type implements <code>Error + Display + Debug</code>, and its <code>Display</code> body provides a human-friendly message. Where each error is thrown:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Thrown by</th></tr></thead>
+<tbody>
+<tr><td><code>TypeError</code></td><td>runtime cast failure, type check failure</td></tr>
+<tr><td><code>ValueError</code></td><td>general invalid value (parsers / APIs, etc.)</td></tr>
+<tr><td><code>IndexError</code></td><td>out-of-range argument to a throwing API that takes an index (the bounds check of <code>xs[10]</code> panics)</td></tr>
+<tr><td><code>OverflowError</code></td><td>range exceeded in a checked conversion such as <code>try_into</code> (arithmetic overflow panics)</td></tr>
+<tr><td><code>ParseError</code></td><td>parse failure such as <code>str → number</code> (ROKON uses <code>RokonError</code>)</td></tr>
+<tr><td><code>ConversionError</code></td><td>default for <code>TryFrom::Error</code>; failure of a non-numeric conversion (<a href="211-conversion#2114-tryfromu-trait---fallible-conversion">2.11.4</a>); <code>try_from</code> of <code>NonNan</code> / <code>Finite</code></td></tr>
+<tr><td><code>ZeroError</code></td><td>0 passed to <code>NonZero::try_from</code> (<a href="202-non-zero#222-nonzerot---zero-forbidden">2.2.2</a>)</td></tr>
+</tbody></table></div>
+<h3 id="fatal-errors"><a class="anchor" tabindex="-1" href="#fatal-errors" aria-hidden="true">#</a>Fatal errors</h3>
+<p>The following types are classified as Fatal.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">StackOverflowError</span>;     <span class="c">// Fatal - cannot be caught</span>
+<span class="k">struct</span> <span class="t">OutOfMemoryError</span>;       <span class="c">// Fatal - cannot be caught</span>
+<span class="k">struct</span> <span class="t">InternalError</span>;          <span class="c">// Fatal - compiler-internal bug</span>
+</code></pre>
+<p>A Fatal error is not a <code>throws</code> error and cannot be caught with <code>catch</code>. Like a panic, it prints a message to stderr and ends the process with exit code <code>101</code> (<a href="../../refs-lang/003-expressions/314-error-control-flow#3148-panics-and-fatal-errors">refs-lang 3.14.8</a>).</p>
+<h2 id="2145-panic_fn--oom_fn--unreachable_fn---compiler-hooks"><a class="anchor" tabindex="-1" href="#2145-panic_fn--oom_fn--unreachable_fn---compiler-hooks" aria-hidden="true">#</a>2.14.5. <code>panic_fn</code> / <code>oom_fn</code> / <code>unreachable_fn</code> - compiler hooks</h2>
+<p>At the bottom of the error model are hook functions that the compiler calls directly.</p>
+<pre><code class="language-rok"><span class="k">mod</span> panic {                         <span class="c">// rok::core::panic</span>
+    <span class="a">#[lang("panic_fn")]</span>
+    <span class="k">fn</span> panic(msg: <span class="t">str</span>) -&gt; ! {
+        rok_panic_str(msg)           <span class="c">// prints to stderr, then exit code 101</span>
+    }
+
+    <span class="a">#[lang("oom_fn")]</span>
+    <span class="k">fn</span> oom() -&gt; ! {
+        rok_oom()                    <span class="c">// "fatal error: out of memory", exit code 101</span>
+    }
+
+    <span class="a">#[lang("unreachable_fn")]</span>
+    <span class="k">fn</span> unreachable() -&gt; ! {
+        <span class="c">// the unreachable position of an exhaustive match arm</span>
+    }
+}
+</code></pre>
+<p>Each function has return type <code>-&gt; !</code> (never) and never returns normally.</p>
+<h3 id="where-panics-occur"><a class="anchor" tabindex="-1" href="#where-panics-occur" aria-hidden="true">#</a>Where panics occur</h3>
+<p>The compiler calls <code>panic_fn</code> in the following places. In every case the panic cannot be caught with <code>catch</code>, and <code>finally</code> and <code>Drop</code> do not run.</p>
+<ul>
+<li>The error path of <code>try!</code> - the message is the error value's <code>Display</code> (or <code>Debug</code> if there is none)
+</li>
+<li>Division by zero, integer overflow, bounds check failure
+</li>
+<li>Explicit panic calls in the standard library, such as <code>Result::unwrap</code> on <code>Err</code>
+</li>
+</ul>
+<p><code>throw</code> is not a panic. <code>throw</code> only produces the error result of a throwing function (<a href="../../refs-lang/008-abi/809-lowering-control#897-throw">refs-lang 8.9.7</a>) and does not go through <code>panic_fn</code>.</p>
+<h3 id="oom-handling"><a class="anchor" tabindex="-1" href="#oom-handling" aria-hidden="true">#</a>OOM handling</h3>
+<p>When a GC allocation fails, OOM is handled as follows. The runtime cannot call a rok function by name, so it calls the runtime symbol <code>rok_oom</code> directly instead of <code>oom()</code> (<a href="../../refs-lang/008-abi/805-extern-symbols#857-diagnostic-area">refs-lang 8.5.7</a>).</p>
+<pre><code>rok_gc_alloc_slow:
+    if !try_collect_and_retry() {
+        rok_oom();                       // &quot;fatal error: out of memory&quot;, exit 101
+    }
+</code></pre>
+<p>core's <code>oom()</code> calls the same <code>rok_oom</code>, so both paths produce the same output and exit code.</p>
+<p>OOM is Fatal and is not caught.</p>
+<h3 id="using-unreachable"><a class="anchor" tabindex="-1" href="#using-unreachable" aria-hidden="true">#</a>Using <code>unreachable</code></h3>
+<p><code>unreachable</code> marks a branch that cannot be reached.</p>
+<pre><code class="language-rok"><span class="k">match</span> (x: <span class="t">i32</span> | <span class="t">f64</span>) {
+    v: <span class="t">i32</span> =&gt; process_int(v),
+    v: <span class="t">f64</span> =&gt; process_float(v),
+    <span class="c">// the compiler confirms every variant is handled - no unreachable position</span>
+}
+
+<span class="c">// or explicitly.</span>
+<span class="k">fn</span> require_positive(x: <span class="t">i32</span>) -&gt; <span class="t">u32</span> {
+    <span class="k">if</span> x &lt; <span class="n">0</span> { rok::core::panic::unreachable() }     <span class="c">// guaranteed by the caller</span>
+    x <span class="k">as</span> <span class="t">u32</span>
+}
+</code></pre>
+<p>The compiler inserts <code>unreachable</code> automatically in these places:</p>
+<ul>
+<li>dead arms after the <code>match</code> exhaustiveness check
+</li>
+<li>positions where the else of <code>if let ... else</code> is guaranteed to be divergent
+</li>
+</ul>
+<h3 id="assert--assert_eq--assert_ne"><a class="anchor" tabindex="-1" href="#assert--assert_eq--assert_ne" aria-hidden="true">#</a><code>assert</code> / <code>assert_eq</code> / <code>assert_ne</code></h3>
+<pre><code class="language-rok"><span class="k">fn</span> assert(cond: <span class="t">bool</span>, msg: <span class="t">str</span> = <span class="s">""</span>) -&gt; ();
+<span class="k">fn</span> assert_eq&lt;<span class="t">T</span>: <span class="t">PartialEq</span> + <span class="t">Debug</span>&gt;(left: <span class="t">T</span>, right: <span class="t">T</span>, msg: <span class="t">str</span> = <span class="s">""</span>) -&gt; ();
+<span class="k">fn</span> assert_ne&lt;<span class="t">T</span>: <span class="t">PartialEq</span> + <span class="t">Debug</span>&gt;(left: <span class="t">T</span>, right: <span class="t">T</span>, msg: <span class="t">str</span> = <span class="s">""</span>) -&gt; ();
+</code></pre>
+<p>They are usable anywhere through the core prelude. If the condition is false they panic (exit code 101). The message is as follows; if <code>msg</code> is not empty, <code>: msg</code> is appended.</p>
+<pre><code>assertion failed[: msg]
+assertion `left == right` failed[: msg]
+  left: &lt;Debug of left&gt;
+ right: &lt;Debug of right&gt;
+</code></pre>
+<p><code>assert_ne</code> uses <code>left != right</code>; everything else is the same.</p>
+<h2 id="2146-try--catch--throw--throws--finally"><a class="anchor" tabindex="-1" href="#2146-try--catch--throw--throws--finally" aria-hidden="true">#</a>2.14.6. <code>try</code> / <code>catch</code> / <code>throw</code> / <code>throws</code> / <code>finally</code></h2>
+<p>The syntax is governed by <a href="../../refs-lang/003-expressions/314-error-control-flow">refs-lang 3.14 Error control flow</a> and <a href="../../refs-lang/004-functions/414-throws">refs-lang 4.14 <code>throws</code> signatures</a>; this section covers only standard library conventions.</p>
+<h3 id="signature-model"><a class="anchor" tabindex="-1" href="#signature-model" aria-hidden="true">#</a>Signature model</h3>
+<p>Throwing behavior in a function signature takes one of five forms.</p>
+<pre><code class="language-rok"><span class="k">fn</span> foo() -&gt; <span class="t">T</span>                      <span class="c">// non-throwing - never throws</span>
+<span class="k">fn</span> foo() <span class="k">throws</span> -&gt; <span class="t">T</span>               <span class="c">// untyped - throws (any Error)</span>
+<span class="k">fn</span> foo() <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">T</span>           <span class="c">// typed single - only E</span>
+<span class="k">fn</span> foo() <span class="k">throws</span> (<span class="t">A</span> | <span class="t">B</span> | <span class="t">C</span>) -&gt; <span class="t">T</span>   <span class="c">// typed sum - only A | B | C</span>
+<span class="k">fn</span> foo(f: <span class="k">fn</span>() <span class="k">throws</span> -&gt; <span class="t">T</span>) <span class="k">rethrows</span> -&gt; <span class="t">T</span>   <span class="c">// throws only when f throws</span>
+</code></pre>
+<p>Untyped <code>throws</code> is the recommended default for public APIs because it keeps the API specification light. <code>throws (E)</code> suits library-internal APIs, embedded environments, or cases where the catch side needs to branch on the error. The typed sum <code>throws (A | B | C)</code> extends Swift SE-0413 typed throws to sum types. Standard library higher-order functions that take function parameters use <code>rethrows</code>, so that a call passing a non-throwing closure can be written without <code>try</code>.</p>
+<h3 id="try--catch-form"><a class="anchor" tabindex="-1" href="#try--catch-form" aria-hidden="true">#</a><code>try</code> / <code>catch</code> form</h3>
+<p><code>catch</code> is a postfix expression; when it catches an error, the value of the handler block becomes the value of the whole expression.</p>
+<pre><code class="language-rok"><span class="k">let</span> result = <span class="k">try</span> compute() <span class="k">catch</span> e: <span class="t">TypeError</span> {
+    log(<span class="s">f"type error: {</span>e<span class="s">}"</span>);
+    default_value
+};
+</code></pre>
+<h3 id="finally"><a class="anchor" tabindex="-1" href="#finally" aria-hidden="true">#</a><code>finally</code></h3>
+<p>A <code>finally</code> block can be used for resource cleanup and the like.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = <span class="k">try</span> <span class="t">File</span>::open(path);
+<span class="k">try</span> {
+    process(f);
+} <span class="k">catch</span> e: <span class="t">IoError</span> {
+    log(<span class="s">f"io error: {</span>e<span class="s">}"</span>);
+} <span class="k">finally</span> {
+    f.close();      <span class="c">// runs on both normal completion and error</span>
+}
+</code></pre>
+<p>The execution semantics of <code>finally</code>:</p>
+<ul>
+<li>It runs on normal completion.
+</li>
+<li>It runs on completion after a catch.
+</li>
+<li>When an uncaught error propagates, it runs and then the error propagates.
+</li>
+<li>It runs when leaving via <code>return</code> / <code>break</code> / <code>continue</code>.
+</li>
+<li>On a panic or Fatal error it does not run, because the process ends immediately.
+</li>
+</ul>
+<p>An error thrown inside <code>finally</code> replaces the current error.</p>
+<h3 id="throw-and-branch-types"><a class="anchor" tabindex="-1" href="#throw-and-branch-types" aria-hidden="true">#</a><code>throw</code> and branch types</h3>
+<p><code>throw value;</code> is a statement, and a block ending in <code>throw</code> is divergent. The branch result type therefore reflects only the other branches' types. For example, the result of <code>if c { x } else { throw e; }</code> has the type of <code>x</code>.</p>
+<h2 id="2147-converting-between-result-and-throws"><a class="anchor" tabindex="-1" href="#2147-converting-between-result-and-throws" aria-hidden="true">#</a>2.14.7. Converting between <code>Result</code> and <code>throws</code></h2>
+<p>The two tools can be converted into each other explicitly.</p>
+<h3 id="throwing-call--resultt-e"><a class="anchor" tabindex="-1" href="#throwing-call--resultt-e" aria-hidden="true">#</a>Throwing call → <code>Result&lt;T, E&gt;</code></h3>
+<p><code>Result::catching</code> calls a throwing closure and holds the outcome. It can also be built directly with a <code>catch</code> expression.</p>
+<pre><code class="language-rok"><span class="k">let</span> r: <span class="t">Result</span>&lt;<span class="t">i32</span>, <span class="t">ParseError</span>&gt; = <span class="t">Result</span>::catching(|| <span class="k">try</span> parse_int(s));
+<span class="k">let</span> r: <span class="t">Result</span>&lt;<span class="t">i32</span>, <span class="t">ParseError</span>&gt; = <span class="k">try</span> <span class="t">Ok</span>(parse_int(s)) <span class="k">catch</span> e { <span class="t">Err</span>(e) };
+</code></pre>
+<h3 id="resultt-e--throw"><a class="anchor" tabindex="-1" href="#resultt-e--throw" aria-hidden="true">#</a><code>Result&lt;T, E&gt;</code> → throw</h3>
+<p><code>get</code> rethrows an <code>Err</code>. The enclosing function's <code>throws</code> must accept that error type.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first_ok(rs: <span class="t">List</span>&lt;<span class="t">Result</span>&lt;<span class="t">i32</span>, <span class="t">ParseError</span>&gt;&gt;) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">try</span> rs[<span class="n">0</span>].get()
+}
+</code></pre>
+<h3 id="extracting-as-t--none"><a class="anchor" tabindex="-1" href="#extracting-as-t--none" aria-hidden="true">#</a>Extracting as <code>T | none</code></h3>
+<p>To discard the error and keep only the value, use <code>try?</code> on a throwing call and <code>ok()</code> / <code>err()</code> on a held <code>Result</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">i32</span> | <span class="k">none</span> = <span class="k">try</span>? parse_int(<span class="s">"42"</span>);
+<span class="k">let</span> r: <span class="t">Result</span>&lt;<span class="t">i32</span>, <span class="t">ParseError</span>&gt; = <span class="t">Result</span>::catching(|| <span class="k">try</span> parse_int(<span class="s">"42"</span>));
+<span class="k">if</span> <span class="k">let</span> <span class="t">Ok</span>(v) = r { <span class="k">use</span>(v); }
+<span class="k">if</span> <span class="k">let</span> n: <span class="t">i32</span> = r.ok() { <span class="k">use</span>(n); }     <span class="c">// extracted as T | none</span>
+</code></pre>
+<h2 id="2148-module-mapping"><a class="anchor" tabindex="-1" href="#2148-module-mapping" aria-hidden="true">#</a>2.14.8. Module mapping</h2>
+<p>The traits each error type implements:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Display</th><th>Debug</th><th>Error</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>TypeError</code></td><td>✓</td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td><code>ValueError</code></td><td>✓</td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td><code>IndexError</code></td><td>✓</td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td><code>OverflowError</code></td><td>✓</td><td>✓</td><td>✓</td><td>range exceeded in a checked conversion</td></tr>
+<tr><td><code>ParseError</code></td><td>✓</td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td><code>IoError</code></td><td>✓</td><td>✓</td><td>✓</td><td>std tier (target-dependent)</td></tr>
+<tr><td><code>StackOverflowError</code></td><td>✓</td><td>✓</td><td>✓</td><td>Fatal - cannot be caught</td></tr>
+<tr><td><code>OutOfMemoryError</code></td><td>✓</td><td>✓</td><td>✓</td><td>Fatal - cannot be caught</td></tr>
+<tr><td><code>InternalError</code></td><td>✓</td><td>✓</td><td>✓</td><td>Fatal - on a compiler bug</td></tr>
+<tr><td><code>Result&lt;T, E&gt;</code></td><td>✗</td><td>✓ (T,E:Debug)</td><td>✗</td><td>enum for holding</td></tr>
+<tr><td><code>any Error</code></td><td>✓</td><td>✓</td><td>✓</td><td>constrained any - can chain</td></tr>
+</tbody></table></div>
+<p><code>Display</code> provides a user-friendly message; for example, <code>IndexError { index: 10, len: 3 }</code> reads <code>&quot;index 10 out of bounds (len 3)&quot;</code>. <code>Debug</code> shows the structure as is. An <code>any Error</code> value calls the <code>Display</code> / <code>Debug</code> / <code>source</code> of its actual type through the runtime tag.</p>
+<h2 id="2149-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#2149-comparison-with-other-languages" aria-hidden="true">#</a>2.14.9. Comparison with other languages</h2>
+<p>Compared with other major languages, rok's error model sits as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>Swift</th><th>Java</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Base model</td><td><code>Result&lt;T, E&gt;</code></td><td><code>throws</code></td><td><code>throws</code></td><td><code>throws</code> - <code>Result</code> is for holding</td></tr>
+<tr><td>Call-site marker</td><td><code>?</code></td><td><code>try</code></td><td><strong>none</strong></td><td><code>try</code> / <code>try?</code> / <code>try!</code></td></tr>
+<tr><td>typed throws</td><td><strong>none</strong></td><td><code>throws(E)</code> (single type)</td><td><code>throws E1, E2</code></td><td><code>throws (E)</code> / <code>throws (A | B)</code></td></tr>
+<tr><td><code>?</code> operator</td><td><code>Result?</code></td><td>optional chaining</td><td><strong>none</strong></td><td>only for <code>T | none</code></td></tr>
+<tr><td>Option type</td><td><code>Option&lt;T&gt;</code></td><td><code>Optional&lt;T&gt;</code></td><td><code>Optional&lt;T&gt;</code></td><td><strong>none</strong> - uses <code>T | none</code></td></tr>
+<tr><td>Implementation</td><td>return value</td><td>return value (error register)</td><td>stack unwinding</td><td>return value <code>{ is_err, payload }</code></td></tr>
+<tr><td>panic</td><td><code>panic!</code></td><td><code>fatalError</code></td><td><code>Error</code></td><td><code>panic_fn</code> - cannot be caught, exit code 101</td></tr>
+</tbody></table></div>
+<p>rok differs in three main ways. First, there is no <code>Option</code>; the sum type <code>T | none</code> takes its place, removing one type. Second, error propagation is unified under <code>throws</code> and <code>try</code>, and <code>Result</code> serves only to hold errors as values. Third, the typed sum throws <code>throws (A | B | C)</code> is more expressive than Swift's typed throws, which accepts only a single type.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/214-error.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="213-marker"><small>Previous</small>2.13. marker - Clone / Copy / Drop</a><a class="next" href="215-string"><small>Next</small>2.15. Strings - str / char / c_char</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

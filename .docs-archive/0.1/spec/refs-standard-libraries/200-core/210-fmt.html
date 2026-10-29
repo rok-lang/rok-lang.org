@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.10. fmt - Formatting traits - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::fmt module defines the family of traits that convert values to human-readable strings. Every format spec in an f-string - f&quot;{x}&quot;, f&quot;{x:?}&quot;, f&quot;{n:...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/210-fmt.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.10. fmt - Formatting traits - rok docs">
+<meta property="og:description" content="The rok::core::fmt module defines the family of traits that convert values to human-readable strings. Every format spec in an f-string - f&quot;{x}&quot;, f&quot;{x:?}&quot;, f&quot;{n:...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/210-fmt.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/210-fmt.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/210-fmt.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li class="cur"><a aria-current="page" href="210-fmt">2.10. fmt - Formatting traits</a><ul class="toc"><li><a href="#2101-dispatch">2.10.1. Dispatch</a></li><li><a href="#2102-formatter">2.10.2. Formatter</a></li><li><a href="#2103-display">2.10.3. Display</a></li><li><a href="#2104-debug">2.10.4. Debug</a></li><li><a href="#2105-integer-spec">2.10.5. Integer spec</a></li><li><a href="#2106-floating-point-output">2.10.6. Floating-point output</a></li><li><a href="#2107-full-f-string-format-spec-grammar">2.10.7. Full f-string format spec grammar</a></li><li><a href="#2108-align--fill--width--precision">2.10.8. align / fill / width / precision</a></li><li><a href="#2109-module-mapping">2.10.9. Module mapping</a></li><li><a href="#21010-derivedebug">2.10.10. #[derive(Debug)]</a></li><li><a href="#21011-repl--print--automatic-output">2.10.11. REPL / print / automatic output</a></li><li><a href="#21012-fmterror">2.10.12. FmtError</a></li><li><a href="#21013-comparison-with-other-languages">2.10.13. Comparison with other languages</a></li><li><a href="#21014-derive-policy-summary">2.10.14. Derive policy summary</a></li></ul></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="210-fmt---formatting-traits 210-fmt---포맷-트레잇 2101-dispatch 2101-dispatch 2102-formatter 2102-formatter 2103-display 2103-display 2104-debug 2104-debug display-vs-debug display-vs-debug-차이 user-defined--derive 사용자-정의--derive 2105-integer-spec 2105-정수의-spec 2106-floating-point-output 2106-부동소수-출력 2107-full-f-string-format-spec-grammar 2107-f-string-format-spec-전체-문법 dynamic-spec 동적-spec 2108-align--fill--width--precision 2108-align--fill--width--precision 2109-module-mapping 2109-모듈-매핑 21010-derivedebug 21010-derivedebug 21011-repl--print--automatic-output 21011-repl--print--자동-출력 21012-fmterror 21012-fmterror 21013-comparison-with-other-languages 21013-다른-언어와의-비교 21014-derive-policy-summary 21014-derive-정책-요약"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/210-fmt" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="210-fmt---formatting-traits"><a class="anchor" tabindex="-1" href="#210-fmt---formatting-traits" aria-hidden="true">#</a>2.10. fmt - Formatting traits</h1>
+<p>The <code>rok::core::fmt</code> module defines the family of traits that convert values to human-readable strings. Every format spec in an f-string - <code>f&quot;{x}&quot;</code>, <code>f&quot;{x:?}&quot;</code>, <code>f&quot;{n:08b}&quot;</code>, and so on - dispatches to the traits in this chapter.</p>
+<p>The lexical decomposition in <a href="../../refs-lang/001-lexical/107-string-literals">refs-lang 1.7.4 f-string format spec</a> and the trait dispatch in this chapter together determine the meaning of an f-string.</p>
+<h2 id="2101-dispatch"><a class="anchor" tabindex="-1" href="#2101-dispatch" aria-hidden="true">#</a>2.10.1. Dispatch</h2>
+<p>An f-string hole <code>{expr[:spec]}</code> calls <code>Debug::fmt</code> if the spec's <code>type</code> is <code>?</code>, and <code>Display::fmt</code> otherwise. The rest of the spec (fill / align / sign / <code>#</code> / <code>0</code> / width / precision and <code>b o x X e E f</code>) is carried by the <code>Formatter</code>.</p>
+<ul>
+<li>Numbers (all integers, floating-point types, <code>int</code>, <code>float</code>) apply the spec directly to their own output (2.10.5, 2.10.6).
+</li>
+<li>The <code>fmt</code> of any other value does not look at the spec (<code>f.width()</code> is <code>none</code>). The value writes itself as is; the Formatter then applies fill / align / width and truncates by precision.
+</li>
+</ul>
+<p><code>d</code> / <code>g</code> / <code>s</code> are other names for the default notation. The meaning of each symbol and flag is defined in <a href="../../refs-lang/001-lexical/107-string-literals#173-format-strings">refs-lang 1.7.3</a>. An f-string does not build an intermediate string per hole; it writes each hole in turn into the buffer of a single Formatter.</p>
+<h2 id="2102-formatter"><a class="anchor" tabindex="-1" href="#2102-formatter" aria-hidden="true">#</a>2.10.2. <code>Formatter</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Formatter</span> { .. }                       <span class="c">// output buffer + current spec</span>
+<span class="k">enum</span> <span class="t">Alignment</span> { <span class="t">Left</span>, <span class="t">Right</span>, <span class="t">Center</span>, <span class="t">Equal</span> }
+<span class="k">enum</span> <span class="t">Sign</span> { <span class="t">Plus</span>, <span class="t">Minus</span>, <span class="t">Space</span> }
+
+<span class="k">impl</span> <span class="t">Formatter</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">Formatter</span>;
+    <span class="k">fn</span> with_capacity(n: <span class="t">usize</span>) -&gt; <span class="t">Formatter</span>;
+    <span class="k">fn</span> with_spec(spec: <span class="t">FormatSpec</span>) -&gt; <span class="t">Formatter</span>;
+    <span class="k">fn</span> finish(<span class="k">self</span>) -&gt; <span class="t">str</span>;                   <span class="c">// text written so far</span>
+
+    <span class="k">fn</span> write_str(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+    <span class="k">fn</span> write_char(<span class="k">ref</span> <span class="k">self</span>, c: <span class="t">char</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+    <span class="k">fn</span> pad(<span class="k">ref</span> <span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);             <span class="c">// applies fill / align / width / precision</span>
+    <span class="k">fn</span> pad_integral(<span class="k">ref</span> <span class="k">self</span>, is_nonnegative: <span class="t">bool</span>, prefix: <span class="t">str</span>, digits: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+                                                            <span class="c">// sign + # prefix + 0 / fill padding</span>
+
+    <span class="k">fn</span> fill(<span class="k">self</span>) -&gt; <span class="t">char</span>;
+    <span class="k">fn</span> align(<span class="k">self</span>) -&gt; <span class="t">Alignment</span> | <span class="k">none</span>;       <span class="c">// none: default (right for numbers, left otherwise)</span>
+    <span class="k">fn</span> sign(<span class="k">self</span>) -&gt; <span class="t">Sign</span> | <span class="k">none</span>;
+    <span class="k">fn</span> alternate(<span class="k">self</span>) -&gt; <span class="t">bool</span>;               <span class="c">// #</span>
+    <span class="k">fn</span> pad_zero(<span class="k">self</span>) -&gt; <span class="t">bool</span>;                <span class="c">// 0</span>
+    <span class="k">fn</span> width(<span class="k">self</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+    <span class="k">fn</span> precision(<span class="k">self</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+}
+</code></pre>
+<p><code>FormatSpec</code> is a parsed spec value. A static spec is parsed at compile time; a dynamic spec (one containing <code>{..}</code> / <code>${..}</code>) is parsed once at runtime.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">FormatSpec</span> {
+    fill: <span class="t">char</span>; align: <span class="t">Alignment</span> | <span class="k">none</span>; sign: <span class="t">Sign</span> | <span class="k">none</span>; alt: <span class="t">bool</span>; zero: <span class="t">bool</span>;
+    width: <span class="t">usize</span> | <span class="k">none</span>; precision: <span class="t">usize</span> | <span class="k">none</span>; ty: <span class="t">char</span>;
+}
+<span class="k">impl</span> <span class="t">FormatSpec</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">FormatSpec</span>;                   <span class="c">// empty spec</span>
+    <span class="k">fn</span> parse(text: <span class="t">str</span>) -&gt; <span class="t">FormatSpec</span>;        <span class="c">// panics on an invalid spec</span>
+}
+</code></pre>
+<h2 id="2103-display"><a class="anchor" tabindex="-1" href="#2103-display" aria-hidden="true">#</a>2.10.3. <code>Display</code></h2>
+<pre><code class="language-rok"><span class="a">#[lang("display_trait")]</span>
+<span class="k">trait</span> <span class="t">Display</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+}
+</code></pre>
+<p>This is the default dispatch for <code>f&quot;{x}&quot;</code>. The <code>fmt</code> of a primitive number applies the spec and writes in a single runtime call.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">str</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) { <span class="k">try</span> f.write_str(<span class="k">self</span>) }
+}
+
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Point</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">try</span> f.write_str(<span class="s">"("</span>);
+        <span class="k">try</span> <span class="t">Display</span>::fmt(<span class="k">self</span>.x, <span class="k">ref</span> f);
+        <span class="k">try</span> f.write_str(<span class="s">", "</span>);
+        <span class="k">try</span> <span class="t">Display</span>::fmt(<span class="k">self</span>.y, <span class="k">ref</span> f);
+        <span class="k">try</span> f.write_str(<span class="s">")"</span>);
+    }
+}
+
+<span class="s">f"{</span><span class="t">Point</span> { x: <span class="n">1.5</span>, y: <span class="n">2.5</span> }<span class="s">}"</span>;       <span class="c">//→ "(1.5, 2.5)"</span>
+<span class="s">f"{</span><span class="t">Point</span> { x: <span class="n">1.5</span>, y: <span class="n">2.5</span> }<span class="s">:&gt;12</span><span class="s">}"</span>;   <span class="c">//→ "  (1.5, 2.5)"   (f.width() inside Point::fmt is none)</span>
+</code></pre>
+<ul>
+<li>The call site requires <code>ref</code> (<code>Display::fmt(x, ref f)</code>). The form <code>x.fmt(f)</code> is ambiguous for a type that implements both <code>Display</code> and <code>Debug</code>, so the call is written as a path.
+</li>
+<li><code>Display</code> is not derived. The type's designer decides its representation.
+</li>
+</ul>
+<h2 id="2104-debug"><a class="anchor" tabindex="-1" href="#2104-debug" aria-hidden="true">#</a>2.10.4. <code>Debug</code></h2>
+<pre><code class="language-rok"><span class="a">#[lang("debug_trait")]</span>
+<span class="k">trait</span> <span class="t">Debug</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>);
+}
+
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">str</span> { .. }    <span class="c">// a valid rok string literal</span>
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">char</span> { .. }   <span class="c">// a valid rok character literal</span>
+</code></pre>
+<p>This is the dispatch for <code>f&quot;{x:?}&quot;</code>; it aims for a representation that can be read back. The Debug output of <code>str</code> / <code>char</code> is a rok literal. Quotes, <code>\\</code>, <code>\n</code> / <code>\r</code> / <code>\t</code>, and so on are escaped; other control characters and bidi characters (U+202A..U+202E, U+2066..U+2069, etc.) are written as <code>\u{..}</code>.</p>
+<h3 id="display-vs-debug"><a class="anchor" tabindex="-1" href="#display-vs-debug" aria-hidden="true">#</a>Display vs Debug</h3>
+<p>The two traits serve different purposes, summarized in the following table.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>Display</code></th><th><code>Debug</code></th></tr></thead>
+<tbody>
+<tr><td>Audience</td><td>end user</td><td>developer</td></tr>
+<tr><td>Accuracy</td><td>readability first</td><td>no information loss (aims to round-trip)</td></tr>
+<tr><td>Quotes</td><td>string as is (no quotes)</td><td>string wrapped in <code>&quot;...&quot;</code> (with escapes)</td></tr>
+<tr><td>Containers</td><td>usually not defined</td><td>automatic for every collection</td></tr>
+<tr><td>derive</td><td><strong>not allowed</strong> (manual impl)</td><td><strong>allowed</strong> (<code>#[derive(Debug)]</code>)</td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="k">let</span> s = <span class="s">"hello\nworld"</span>;
+<span class="k">let</span> d1 = <span class="s">f"{</span>s<span class="s">}"</span>;        <span class="c">//→ hello</span>
+                        <span class="c">//   world          (Display - as is)</span>
+<span class="k">let</span> d2 = <span class="s">f"{</span>s<span class="s">:?</span><span class="s">}"</span>;      <span class="c">//→ "hello\nworld"  (Debug - escaped)</span>
+</code></pre>
+<h3 id="user-defined--derive"><a class="anchor" tabindex="-1" href="#user-defined--derive" aria-hidden="true">#</a>User-defined / derive</h3>
+<pre><code class="language-rok"><span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+
+<span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1.5</span>, y: <span class="n">2.5</span> };
+<span class="k">let</span> s = <span class="s">f"{</span>p<span class="s">:?</span><span class="s">}"</span>;              <span class="c">//→ "Point { x: 1.5, y: 2.5 }"</span>
+</code></pre>
+<p><code>Debug</code> can be derived automatically by composing the Debug output of every field.</p>
+<h2 id="2105-integer-spec"><a class="anchor" tabindex="-1" href="#2105-integer-spec" aria-hidden="true">#</a>2.10.5. Integer spec</h2>
+<div class="table-wrap"><table>
+<thead><tr><th><code>type</code></th><th>Integer</th></tr></thead>
+<tbody>
+<tr><td>(none), <code>d</code>, <code>g</code>, <code>s</code></td><td>decimal</td></tr>
+<tr><td><code>f</code></td><td>fixed point (<code>{5:.2f}</code> → <code>5.00</code>)</td></tr>
+<tr><td><code>b</code> <code>o</code> <code>x</code> <code>X</code></td><td>binary / octal / hex (<code>0b</code> / <code>0o</code> / <code>0x</code> with <code>#</code>)</td></tr>
+<tr><td><code>e</code> <code>E</code></td><td>exponent notation</td></tr>
+</tbody></table></div>
+<p>Giving <code>b o x X</code> to a floating-point value is a compile error (static spec) or a panic (dynamic spec). A negative fixed-width integer prints as the two's complement at that type's width (<code>{-1i8:x}</code> is <code>&quot;ff&quot;</code>). <code>int</code> is written as sign and magnitude (the <code>int</code> value -255 with <code>{n:x}</code> is <code>&quot;-ff&quot;</code>).</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">u32</span> = <span class="n">0xCAFE</span>;
+<span class="s">f"{</span>n<span class="s">:b</span><span class="s">}"</span>;        <span class="c">//→ "1100101011111110"</span>
+<span class="s">f"{</span>n<span class="s">:#x</span><span class="s">}"</span>;       <span class="c">//→ "0xcafe"</span>
+<span class="s">f"{</span>n<span class="s">:X</span><span class="s">}"</span>;        <span class="c">//→ "CAFE"</span>
+<span class="s">f"{</span><span class="n">42</span><span class="s">:08b</span><span class="s">}"</span>;     <span class="c">//→ "00101010"</span>
+<span class="s">f"{</span><span class="n">42</span><span class="s">:e</span><span class="s">}"</span>;       <span class="c">//→ "4.2e1"</span>
+</code></pre>
+<h2 id="2106-floating-point-output"><a class="anchor" tabindex="-1" href="#2106-floating-point-output" aria-hidden="true">#</a>2.10.6. Floating-point output</h2>
+<ul>
+<li><code>{}</code> writes the shortest digit string that reads back to the same value, and does not use exponent notation. <code>1.0</code> is <code>1</code>, <code>0.1</code> is <code>0.1</code>, NaN is <code>NaN</code>, infinity is <code>inf</code> / <code>-inf</code>.
+</li>
+<li><code>{:e}</code> writes the same digits in exponent notation (<code>0.15</code> is <code>1.5e-1</code>). <code>{:E}</code> uses <code>E</code>.
+</li>
+<li>With a precision, the value is rounded to that many digits (<code>{x:.3e}</code>, <code>{x:.2}</code>).
+</li>
+<li>A promoted <code>float</code> (exponent outside f64 range) is written in exponent notation even with <code>{}</code> (<code>1.5e400</code>).
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">f64</span> = <span class="n">12345.678</span>;
+<span class="s">f"{</span>x<span class="s">}"</span>;          <span class="c">//→ "12345.678"</span>
+<span class="s">f"{</span>x<span class="s">:e</span><span class="s">}"</span>;        <span class="c">//→ "1.2345678e4"</span>
+<span class="s">f"{</span>x<span class="s">:.3e</span><span class="s">}"</span>;      <span class="c">//→ "1.235e4"</span>
+<span class="s">f"{</span><span class="n">1.0</span><span class="s">}"</span>;        <span class="c">//→ "1"</span>
+</code></pre>
+<h2 id="2107-full-f-string-format-spec-grammar"><a class="anchor" tabindex="-1" href="#2107-full-f-string-format-spec-grammar" aria-hidden="true">#</a>2.10.7. Full f-string format spec grammar</h2>
+<p>The authority is <a href="../../refs-lang/001-lexical/107-string-literals#173-format-strings">refs-lang 1.7.3</a>; this is a summary.</p>
+<pre><code>spec      = [fill][align][sign][#][0][width][.precision][type]
+align     = &quot;&lt;&quot; | &quot;&gt;&quot; | &quot;^&quot; | &quot;=&quot;
+sign      = &quot;+&quot; | &quot;-&quot; | &quot; &quot;
+type      = &quot;&quot; | &quot;s&quot; | &quot;d&quot; | &quot;g&quot; | &quot;f&quot; | &quot;?&quot; | &quot;b&quot; | &quot;o&quot; | &quot;x&quot; | &quot;X&quot; | &quot;e&quot; | &quot;E&quot;
+width     = unsigned-int | hole
+precision = unsigned-int | hole
+hole      = &quot;{&quot; expr &quot;}&quot; | &quot;${&quot; expr &quot;}&quot;      // nested hole, no spec of its own
+fill      = any single char (default: space)
+</code></pre>
+<h3 id="dynamic-spec"><a class="anchor" tabindex="-1" href="#dynamic-spec" aria-hidden="true">#</a>Dynamic spec</h3>
+<pre><code class="language-rok"><span class="k">let</span> s1 = <span class="s">f"{</span>x<span class="s">:.{</span>prec<span class="s">}</span><span class="s">}"</span>;               <span class="c">//→ "3.1416"        (dynamic precision)</span>
+<span class="k">let</span> s2 = <span class="s">f"{</span>x<span class="s">:&gt;${</span>width<span class="s">}.${</span>prec<span class="s">}</span><span class="s">}"</span>;     <span class="c">//→ "    3.1416"    (dynamic width + precision)</span>
+<span class="k">let</span> s3 = <span class="s">f"{</span>x<span class="s">:{</span>full_spec<span class="s">}</span><span class="s">}"</span>;           <span class="c">//→ ...             (entire spec dynamic)</span>
+</code></pre>
+<p><code>$$</code> inside a spec is a single <code>$</code>. A <code>$</code> in the body text is literal (<code>f&quot;cost: $100&quot;</code>). A static spec is checked at compile time; if a dynamic spec expands to an invalid result, it panics at runtime. The lexer's tokenization follows &quot;Lexical processing&quot; in refs-lang 1.7.3.</p>
+<h2 id="2108-align--fill--width--precision"><a class="anchor" tabindex="-1" href="#2108-align--fill--width--precision" aria-hidden="true">#</a>2.10.8. align / fill / width / precision</h2>
+<p><code>Formatter::pad</code> handles the spec's align, fill and width automatically, so a user impl only produces the <strong>content</strong>.</p>
+<p>Without an explicit align, numbers (integers, floating-point) are right-aligned and all other types are left-aligned. When <code>&lt;</code> / <code>&gt;</code> / <code>^</code> (and fill) are given, any type follows that alignment. <code>?</code> (Debug) also accepts width / align.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">42</span>;
+
+<span class="s">f"{</span>n<span class="s">}"</span>;              <span class="c">//→ "42"            (default)</span>
+<span class="s">f"{</span>n<span class="s">:5</span><span class="s">}"</span>;            <span class="c">//→ "   42"         (width 5, numbers right-aligned by default)</span>
+<span class="s">f"{</span>n<span class="s">:&lt;5</span><span class="s">}"</span>;           <span class="c">//→ "42   "         (left)</span>
+<span class="s">f"{</span>n<span class="s">:&gt;5</span><span class="s">}"</span>;           <span class="c">//→ "   42"         (right)</span>
+<span class="s">f"{</span>n<span class="s">:^5</span><span class="s">}"</span>;           <span class="c">//→ " 42  "         (center)</span>
+<span class="s">f"{</span>n<span class="s">:0&gt;5</span><span class="s">}"</span>;          <span class="c">//→ "00042"         (fill 0)</span>
+<span class="s">f"{</span>n<span class="s">:*^7</span><span class="s">}"</span>;          <span class="c">//→ "**42***"       (fill *, center, width 7)</span>
+<span class="s">f"{</span>n<span class="s">:=+5</span><span class="s">}"</span>;          <span class="c">//→ "+  42"         (= : pad between sign and digits, + : sign on positives)</span>
+<span class="s">f"{</span>n<span class="s">:+=5</span><span class="s">}"</span>;          <span class="c">//→ "+++42"         (fill '+', align '=')</span>
+<span class="s">f"{</span>-<span class="n">42</span><span class="s">:=6</span><span class="s">}"</span>;         <span class="c">//→ "-   42"</span>
+<span class="s">f"{</span>-<span class="n">42</span><span class="s">:06</span><span class="s">}"</span>;         <span class="c">//→ "-00042"        (0 : pad with 0, = alignment)</span>
+<span class="s">f"{</span>n<span class="s">:+</span><span class="s">}"</span>;            <span class="c">//→ "+42"           (+ : sign on positives too)</span>
+<span class="s">f"{</span><span class="s">"ab"</span><span class="s">:5</span><span class="s">}"</span>;         <span class="c">//→ "ab   "         (strings left-aligned by default)</span>
+</code></pre>
+<p><code>precision</code> is applied the same way.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">f64</span> = <span class="n">3.141592653589793</span>;
+<span class="s">f"{</span>x<span class="s">:.2</span><span class="s">}"</span>;           <span class="c">//→ "3.14"          (2 digits after the point)</span>
+<span class="s">f"{</span>x<span class="s">:.0</span><span class="s">}"</span>;           <span class="c">//→ "3"</span>
+<span class="s">f"{</span>x<span class="s">:10.4</span><span class="s">}"</span>;         <span class="c">//→ "    3.1416"    (width 10, precision 4, numbers right-aligned by default)</span>
+<span class="s">f"{</span>x<span class="s">:&lt;10.4</span><span class="s">}"</span>;        <span class="c">//→ "3.1416    "    (left alignment requires explicit &lt;)</span>
+</code></pre>
+<p>Precision on a string is interpreted as truncation to a maximum length; precision on an integer is ignored.</p>
+<pre><code class="language-rok"><span class="k">let</span> s = <span class="s">"hello world"</span>;
+<span class="s">f"{</span>s<span class="s">:.5</span><span class="s">}"</span>;           <span class="c">//→ "hello"</span>
+<span class="s">f"{</span>n<span class="s">:.3</span><span class="s">}"</span>;           <span class="c">//→ "42"</span>
+</code></pre>
+<h2 id="2109-module-mapping"><a class="anchor" tabindex="-1" href="#2109-module-mapping" aria-hidden="true">#</a>2.10.9. Module mapping</h2>
+<p>The following table lists which traits each type implements.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Display</th><th>Debug</th></tr></thead>
+<tbody>
+<tr><td>integers, <code>int</code>, floating-point, <code>float</code></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>bool</code>, <code>char</code>, <code>str</code></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>List&lt;T&gt;</code>, <code>Set&lt;T&gt;</code></td><td>✗</td><td>✓ (T: Debug)</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td>✗</td><td>✓ (K, V: Debug)</td></tr>
+<tr><td><code>(A, B, ..)</code></td><td>✗</td><td>✓ (all Debug)</td></tr>
+<tr><td><code>T | none</code></td><td>✗</td><td>✓ (T: Debug)</td></tr>
+<tr><td><code>Result&lt;T, E&gt;</code></td><td>✗</td><td>✓ (T, E: Debug)</td></tr>
+</tbody></table></div>
+<p><code>Display</code> exists only for scalars, strings and user types that implement it by hand; containers do not have it. <code>Debug</code> exists for almost every type and is produced by derive.</p>
+<h2 id="21010-derivedebug"><a class="anchor" tabindex="-1" href="#21010-derivedebug" aria-hidden="true">#</a>2.10.10. <code>#[derive(Debug)]</code></h2>
+<pre><code class="language-rok"><span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">User</span> { id: <span class="t">u64</span>; name: <span class="t">str</span>; }
+
+<span class="k">let</span> u = <span class="t">User</span> { id: <span class="n">1</span>, name: <span class="s">"Alice"</span> };
+<span class="k">let</span> s = <span class="s">f"{</span>u<span class="s">:?</span><span class="s">}"</span>;          <span class="c">//→ User { id: 1, name: "Alice" }</span>
+</code></pre>
+<p>The derive works as follows. A struct prints as <code>TypeName { field1: &lt;field1:?&gt;, field2: &lt;field2:?&gt;, ... }</code>, and a tuple struct prints as <code>TypeName(&lt;f1:?&gt;, &lt;f2:?&gt;, ...)</code>. An enum prints as <code>VariantName</code> or <code>VariantName(...)</code> / <code>VariantName { ... }</code>. The derive requires every field to implement <code>Debug</code> (recursively).</p>
+<p>There is no <code>#[derive(Display)]</code>. Deciding the representation is the user's responsibility.</p>
+<h2 id="21011-repl--print--automatic-output"><a class="anchor" tabindex="-1" href="#21011-repl--print--automatic-output" aria-hidden="true">#</a>2.10.11. REPL / <code>print</code> / automatic output</h2>
+<p>The REPL section of <a href="../../refs-lang/009-tools/907-jit-cells">refs-lang 9.7 JIT cell execution flow</a> defines the following.</p>
+<pre><code class="language-rok">&gt; <span class="k">let</span> x = <span class="n">42</span>;
+&gt; x
+<span class="t">i32</span>: <span class="n">42</span>
+
+&gt; <span class="n">1</span> + <span class="n">2</span>
+<span class="t">i32</span>: <span class="n">3</span>
+
+&gt; <span class="s">"hello"</span>
+<span class="t">str</span>: <span class="s">"hello"</span>
+</code></pre>
+<p>When the REPL automatically prints the last expression, it prints <code>type: value</code> with the value formatted by <code>Debug</code>; for a type without <code>Debug</code>, only the type (<a href="../../refs-lang/009-tools/907-jit-cells#977-visualization--output">refs-lang 9.7.7</a>, <a href="212-reflect#2124-repl-output">2.12.4</a>).</p>
+<p>By contrast, <code>println</code> and <code>print</code> dispatch only to <code>Display</code>.</p>
+<pre><code class="language-rok">println(<span class="s">f"x = {</span>x<span class="s">}"</span>);          <span class="c">// Display</span>
+println(<span class="s">f"x = {</span>x<span class="s">:?</span><span class="s">}"</span>);        <span class="c">// Debug (explicit spec)</span>
+</code></pre>
+<h2 id="21012-fmterror"><a class="anchor" tabindex="-1" href="#21012-fmterror" aria-hidden="true">#</a>2.10.12. <code>FmtError</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">FmtError</span>;
+</code></pre>
+<p>The error for a failed write to a stream. It does not occur when writing to memory (f-strings, <code>Formatter::new</code>, etc.). Every fmt method is <code>throws (FmtError)</code>, so calls are marked with <code>try</code> to propagate.</p>
+<h2 id="21013-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#21013-comparison-with-other-languages" aria-hidden="true">#</a>2.10.13. Comparison with other languages</h2>
+<p>The following table shows where rok's fmt design sits relative to Rust and Python.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust <code>Display</code>/<code>Debug</code></th><th>Python <code>__str__</code>/<code>__repr__</code></th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Human / debug split</td><td>✓ separate traits</td><td>✓ separate methods</td><td>✓ separate traits</td></tr>
+<tr><td>Debug derive</td><td><code>#[derive(Debug)]</code></td><td>automatic default</td><td><code>#[derive(Debug)]</code></td></tr>
+<tr><td>Display derive</td><td><strong>not allowed</strong></td><td><strong>not allowed</strong> (manual)</td><td><strong>not allowed</strong></td></tr>
+<tr><td>Radix / exponent</td><td>6 traits</td><td>format spec</td><td><code>Formatter</code> carrying the spec</td></tr>
+<tr><td>Dynamic spec</td><td>positional args (<code>{0:.*}</code>)</td><td>f-string <code>{:.{prec}}</code></td><td><code>${...}</code> expression ($-sigil)</td></tr>
+<tr><td>Spec syntax</td><td>Python-like</td><td>PEP 3101</td><td>Python-like + <code>${...}</code></td></tr>
+</tbody></table></div>
+<p>rok's most distinctive choice is to separate dynamic spec insertion visually with <code>${...}</code>, avoiding the nested-brace ambiguity of Python's <code>{:.{prec}}</code>. The notation is also isomorphic to the <code>$</code> sigil of JS, Kotlin and Scala.</p>
+<h2 id="21014-derive-policy-summary"><a class="anchor" tabindex="-1" href="#21014-derive-policy-summary" aria-hidden="true">#</a>2.10.14. Derive policy summary</h2>
+<p>Among the fmt traits, only <code>Debug</code> can be derived. <code>Display</code> is not a derive target: the user-facing surface is decided differently in each domain, so automatic derivation does not fit, and there is no meaningful default form for <code>Display</code>. Types that need a display representation should implement <code>Display</code> by hand.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/210-fmt.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="209-collections"><small>Previous</small>2.9. Collections - List / Dict / Set / Tuple / Slice</a><a class="next" href="211-conversion"><small>Next</small>2.11. Conversion traits</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.5. Extern &quot;C&quot; symbols - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Defines the signatures of the symbols exposed by librokr.a. Compiler-generated code and the standard library call these symbols.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/805-extern-symbols.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.5. Extern &quot;C&quot; symbols - rok docs">
+<meta property="og:description" content="Defines the signatures of the symbols exposed by librokr.a. Compiler-generated code and the standard library call these symbols.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/805-extern-symbols.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/805-extern-symbols.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/805-extern-symbols.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li class="cur"><a aria-current="page" href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a><ul class="toc"><li><a href="#850-thread-safety-classes">8.5.0. Thread-safety classes</a></li><li><a href="#850a-rokfn---c-abi-form-of-function-values">8.5.0a. RokFn - C ABI form of function values</a></li><li><a href="#851-gc-area">8.5.1. GC area</a></li><li><a href="#852-runtime-area">8.5.2. Runtime area</a></li><li><a href="#853-coroutine-area">8.5.3. Coroutine area</a></li><li><a href="#854-scheduler-area">8.5.4. Scheduler area</a></li><li><a href="#855-io--timer-area">8.5.5. I/O / Timer area</a></li><li><a href="#856-error-propagation-no-symbols">8.5.6. Error propagation (no symbols)</a></li><li><a href="#857-diagnostic-area">8.5.7. Diagnostic area</a></li><li><a href="#858-symbol-naming-conventions">8.5.8. Symbol naming conventions</a></li><li><a href="#859-compatibility-of-function-signatures">8.5.9. Compatibility of function signatures</a></li><li><a href="#8510-calling-convention">8.5.10. Calling convention</a></li><li><a href="#8511-example-slow-call-from-the-tlab-fast-path">8.5.11. Example: slow call from the TLAB fast path</a></li><li><a href="#8512-auxiliary-symbols-appendix-non-normative">8.5.12. Auxiliary symbols (appendix, non-normative)</a></li></ul></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="85-extern-c-symbols 85-extern-c-심볼 850-thread-safety-classes 850-thread-safety-분류 850a-rokfn---c-abi-form-of-function-values 850a-rokfn---함수-값의-c-abi-형태 851-gc-area 851-gc-영역 rok_gc_alloc_slow rok_gc_alloc_slow rok_alloc_raw--rok_realloc_raw rok_alloc_raw--rok_realloc_raw rok_gc_wb_slow rok_gc_wb_slow rok_gc_register_type rok_gc_register_type rok_gc_pin--rok_gc_unpin rok_gc_pin--rok_gc_unpin rok_gc_collect rok_gc_collect rok_gc_secret_new--rok_gc_secret_wipe rok_gc_secret_new--rok_gc_secret_wipe 852-runtime-area 852-runtime-영역 rok_runtime_init rok_runtime_init rok_runtime_shutdown rok_runtime_shutdown rok_exit rok_exit string-helpers 문자열-helper rok_runtime_yield rok_runtime_yield rok_enter_native--rok_leave_native rok_enter_native--rok_leave_native rok_native_reenter--rok_native_resume rok_native_reenter--rok_native_resume rok_thread_init--rok_thread_shutdown rok_thread_init--rok_thread_shutdown internal-symbol-families 내부-심볼-무리 functions-that-are-not-safepoints safepoint-가-아닌-함수 853-coroutine-area 853-coroutine-영역 rok_coro_frame_alloc rok_coro_frame_alloc rok_coro_park--rok_coro_unpark rok_coro_park--rok_coro_unpark 854-scheduler-area 854-scheduler-영역 rok_task_worker_--rok_time_now_ns rok_task_worker_--rok_time_now_ns rok_thread_spawn rok_thread_spawn rok_task_hooks_install--rok_task_key rok_task_hooks_install--rok_task_key rok_sync_wait--rok_sync_wake rok_sync_wait--rok_sync_wake rok_thread_join rok_thread_join rok_thread_detach--rok_cpu_count rok_thread_detach--rok_cpu_count rok_static_init_begin--rok_static_init_end rok_static_init_begin--rok_static_init_end rok_gc_add_root rok_gc_add_root rok_os_---os-helpers-internal-subject-to-change rok_os_---os-helper-내부-변경-가능 rok_deque_---work-stealing-deque rok_deque_---work-stealing-deque 855-io--timer-area 855-io--timer-영역 rok_io_register--rok_timer_register rok_io_register--rok_timer_register rok_io_---reactor-internal-subject-to-change rok_io_---reactor-내부-변경-가능 rok_net_---socket-helpers-internal-subject-to-change rok_net_---소켓-helper-내부-변경-가능 856-error-propagation-no-symbols 856-에러-전달-심볼-없음 857-diagnostic-area 857-diagnostic-영역 rok_panic rok_panic rok_panic_str rok_panic_str rok_panic_at rok_panic_at rok_uncaught_error--rok_uncaught_error_at rok_uncaught_error--rok_uncaught_error_at rok_oom rok_oom stack-overflow 스택-오버플로 858-symbol-naming-conventions 858-심볼-명명-규약 859-compatibility-of-function-signatures 859-함수-시그니처의-호환성 8510-calling-convention 8510-calling-convention 8511-example-slow-call-from-the-tlab-fast-path 8511-사용-예-tlab-fast-path-의-slow-호출 8512-auxiliary-symbols-appendix-non-normative 8512-보조-심볼-부록-비규범"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/805-extern-symbols" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="85-extern-c-symbols"><a class="anchor" tabindex="-1" href="#85-extern-c-symbols" aria-hidden="true">#</a>8.5. Extern &quot;C&quot; symbols</h1>
+<p>Defines the signatures of the <a href="../000-meta/007-glossary#extern-c-symbol">symbols</a> exposed by <code>librokr.a</code>. Compiler-generated code and the standard library call these symbols.</p>
+<p>On the rok side they are declared with the runtime ABI <code>extern &quot;rok&quot;</code> (<a href="../005-modules/509-extern-block#592-abi-specifiers">5.9.2</a>), which the toolchain places in <code>rok::core::rt</code> as <code>pub(pkg)</code>. In the blocks below a <code>fn</code> value is <code>RokFn</code> (8.5.0a) and all other values are as in the C ABI. <code>str</code> is <code>struct { const uint8_t *ptr; size_t len; }</code>; runtime functions taking or returning <code>str</code> follow the platform C ABI for a 16-byte struct (<a href="806-calling-convention#863-struct-arguments--return-small-struct-rule">8.6.3</a>), like <code>RokFn</code>: by value in registers where the ABI allows, never split between registers and the stack, and by reference on Windows x64. A program may declare a runtime symbol itself (<code>extern &quot;rok&quot;</code> / <code>extern &quot;C&quot;</code>); its declaration must have the signature given here, and a different one is an error.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>Every symbol starts with the <code>rok_</code> prefix, to avoid symbol collisions with external libraries and user code.</p>
+</div>
+<h2 id="850-thread-safety-classes"><a class="anchor" tabindex="-1" href="#850-thread-safety-classes" aria-hidden="true">#</a>8.5.0. Thread-safety classes</h2>
+<p>Each symbol definition carries a <strong>Thread-safety</strong> annotation. It is part of the contract between compiler-emitted code and the runtime and states in which calling contexts the symbol may be called safely. There are six classes.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Class</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>thread-safe</code></td><td>Safe to call concurrently from multiple threads (the runtime synchronizes internally)</td></tr>
+<tr><td><code>caller-thread-only</code></td><td>Bound to the calling thread's context - another thread cannot act on behalf of that caller</td></tr>
+<tr><td><code>process-init</code></td><td>Exactly once at process start, before entering mt</td></tr>
+<tr><td><code>process-shutdown</code></td><td>Exactly once at process exit, after mt ends</td></tr>
+<tr><td><code>per-thread-init</code></td><td>Once at the start of each worker thread, by that thread for itself</td></tr>
+<tr><td><code>per-thread-shutdown</code></td><td>Once at the end of each worker thread, by that thread for itself</td></tr>
+</tbody></table></div>
+<p><code>caller-thread-only</code> means the function's effects are tied to the caller's TLS slots or stack frame, so another thread cannot act on behalf of that caller. It does not mean the function is non-reentrant; multiple threads may call it concurrently, each for itself.</p>
+<h2 id="850a-rokfn---c-abi-form-of-function-values"><a class="anchor" tabindex="-1" href="#850a-rokfn---c-abi-form-of-function-values" aria-hidden="true">#</a>8.5.0a. <code>RokFn</code> - C ABI form of function values</h2>
+<p>The C representation used when passing a rok function value <code>{code, env}</code> (<a href="../004-functions/404-function-type#representation-of-function-values">4.4</a>) to a runtime symbol.</p>
+<pre><code class="language-c">typedef struct {
+    void *code;   // code pointer that takes env as its first argument
+    void *env;    // capture environment (NULL for named functions)
+} RokFn;
+</code></pre>
+<p><code>RokFn</code> is <strong>passed by value</strong> as a C struct. The actual register assignment follows the target C ABI's rules for 16-byte structs.</p>
+<h2 id="851-gc-area"><a class="anchor" tabindex="-1" href="#851-gc-area" aria-hidden="true">#</a>8.5.1. GC area</h2>
+<h3 id="rok_gc_alloc_slow"><a class="anchor" tabindex="-1" href="#rok_gc_alloc_slow" aria-hidden="true">#</a><code>rok_gc_alloc_slow</code></h3>
+<p>The <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> slow path from <a href="../007-runtime/702-allocation">Allocation</a>. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_alloc_slow(size: usize, align: usize, type_id: u32) -&gt; GcBuf&lt;u8&gt;;
+}
+</code></pre>
+<p>The arguments and return value mean:</p>
+<ul>
+<li><code>size</code>: the total object size: the 16-byte header plus the payload, aligned.
+</li>
+<li><code>align</code>: the object's alignment requirement, usually 8, larger when <code>#[repr(align(N))]</code> is specified.
+</li>
+<li><code>type_id</code>: the object's type ID.
+</li>
+<li>Returns: a GC reference (<code>GcBuf&lt;u8&gt;</code>, the runtime ABI's GC pointer) to the object, starting at the header; the function fills in type_id and gc_flags.
+</li>
+</ul>
+<p>It never returns null. Out of memory is fatal (<code>rok_oom</code>), and a request above <code>isize::MAX</code> is the fatal error &quot;allocation too large&quot; (exit 101).</p>
+<h3 id="rok_alloc_raw--rok_realloc_raw"><a class="anchor" tabindex="-1" href="#rok_alloc_raw--rok_realloc_raw" aria-hidden="true">#</a><code>rok_alloc_raw</code> / <code>rok_realloc_raw</code></h3>
+<p>Allocates raw memory outside the GC (<a href="../../refs-standard-libraries/100-bare/104-alloc">stdlib 1.4 alloc</a>). <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_alloc_raw(size: usize, align: usize, zeroed: i32) -&gt; usize;
+    fn rok_realloc_raw(ptr: usize, old_size: usize, align: usize, new_size: usize) -&gt; usize;
+}
+</code></pre>
+<p>If <code>zeroed</code> is nonzero, the allocated memory is zero-filled. <code>rok_alloc_raw</code> returns null (<code>0</code>) if <code>size</code> is 0, if <code>align</code> is not a power of two, or if allocation fails; it does not abort. <code>rok_realloc_raw</code> also returns null on failure. Failure handling is the caller's (<code>rok::bare::alloc</code>) responsibility.</p>
+<h3 id="rok_gc_wb_slow"><a class="anchor" tabindex="-1" href="#rok_gc_wb_slow" aria-hidden="true">#</a><code>rok_gc_wb_slow</code></h3>
+<p>The write barrier slow path from <a href="../007-runtime/704-barriers-and-roots">Barriers and root tracking</a>. <strong>Thread-safety: <code>caller-thread-only</code></strong> (records into the wb log buffer in TLS).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_wb_slow(obj: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<p>The argument <code>obj</code> is a pointer to the object containing the modified slot; there is no return value. Effect: adds obj to the remembered set and flushes when the log is full.</p>
+<h3 id="rok_gc_register_type"><a class="anchor" tabindex="-1" href="#rok_gc_register_type" aria-hidden="true">#</a><code>rok_gc_register_type</code></h3>
+<p>Registers a type's <a href="802-scan-table">ScanTable</a>. <strong>Thread-safety: <code>process-init</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_register_type(type_id: u32, scan_table: ConstPtr&lt;u8&gt;);
+}
+</code></pre>
+<p>Called at process start, before entering mt, so no synchronization is needed.</p>
+<h3 id="rok_gc_pin--rok_gc_unpin"><a class="anchor" tabindex="-1" href="#rok_gc_pin--rok_gc_unpin" aria-hidden="true">#</a><code>rok_gc_pin</code> / <code>rok_gc_unpin</code></h3>
+<p>Pinning of <a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> objects (see <a href="../007-runtime/701-object-layout">Object layout and memory spaces</a> and <a href="../005-modules/509-extern-block"><code>extern</code> blocks (FFI declarations)</a>). <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_pin(obj: Ptr&lt;u8&gt;) -&gt; Ptr&lt;u8&gt;;       // returns the pinned object (same address)
+    fn rok_gc_unpin(obj: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<p>A GC pointer passed to an <code>extern &quot;C&quot;</code> function or a blocking runtime call is not moved even without pinning, because the argument stays in a root until the call ends (<a href="../007-runtime/704-barriers-and-roots#objects-pointed-to-by-roots-are-not-moved">7.4.1</a>). Pinning is needed only when C code keeps the pointer after the call. Pin sets <code>PINNED</code> on the object, excluding it from evacuation and keeping it alive; unpin releases it.</p>
+<h3 id="rok_gc_collect"><a class="anchor" tabindex="-1" href="#rok_gc_collect" aria-hidden="true">#</a><code>rok_gc_collect</code></h3>
+<p>An explicit <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> trigger, rarely used. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_collect();
+}
+</code></pre>
+<p>Performs a full collection and returns after it finishes.</p>
+<h3 id="rok_gc_secret_new--rok_gc_secret_wipe"><a class="anchor" tabindex="-1" href="#rok_gc_secret_new--rok_gc_secret_wipe" aria-hidden="true">#</a><code>rok_gc_secret_new</code> / <code>rok_gc_secret_wipe</code></h3>
+<p>Secret storage for <code>rok::core::crypto::Secret</code> (<a href="../../refs-standard-libraries/200-core/221-crypto#2215-security-considerations">stdlib 2.21.5</a>). <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_secret_new(len: usize) -&gt; GcBuf&lt;u8&gt;;
+    fn rok_gc_secret_wipe(obj: GcBuf&lt;u8&gt;);
+}
+</code></pre>
+<p><code>rok_gc_secret_new</code> allocates a LOS object of type id 1 (no references) with <code>WIPE</code> set (<a href="801-object-header-abi#813-gc_flags-offset-4-u32">8.1.3</a>). Its zeroed payload holds <code>len</code> bytes rounded up to a multiple of 8. It may collect first, and a request above <code>isize::MAX</code> is the fatal error &quot;allocation too large&quot;. <code>rok_gc_secret_wipe</code> overwrites the whole payload with volatile stores followed by a compiler fence; it neither allocates nor blocks, so it is no safepoint (<a href="804-safepoint">8.4</a>). The collector overwrites the payload the same way before it frees the object.</p>
+<h2 id="852-runtime-area"><a class="anchor" tabindex="-1" href="#852-runtime-area" aria-hidden="true">#</a>8.5.2. Runtime area</h2>
+<h3 id="rok_runtime_init"><a class="anchor" tabindex="-1" href="#rok_runtime_init" aria-hidden="true">#</a><code>rok_runtime_init</code></h3>
+<p>Initializes the runtime. <strong>Thread-safety: <code>process-init</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_runtime_init();
+}
+</code></pre>
+<p>Called right after process start, before <code>main()</code>. Effects: creates the worker pool, mmaps the GC spaces and initializes the I/O driver. The compiler-generated C-ABI <code>main</code> calls <code>rok.register_types</code> right after this call (<a href="802-scan-table#8213-registration-time">8.2.13</a>).</p>
+<p>The runtime additionally exports the thread-local block <code>rok_tls</code> (<a href="803-tls-slots#838-form-of-compiler-emission">8.3.8</a>).</p>
+<h3 id="rok_runtime_shutdown"><a class="anchor" tabindex="-1" href="#rok_runtime_shutdown" aria-hidden="true">#</a><code>rok_runtime_shutdown</code></h3>
+<p>Shuts down the runtime. <strong>Thread-safety: <code>process-shutdown</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_runtime_shutdown();
+}
+</code></pre>
+<p>Called right after <code>main()</code> ends. Every other rok thread stops for good at its next safepoint, after finishing any runtime or C code it is in. Then the worker pool shuts down and outstanding resources are released.</p>
+<h3 id="rok_exit"><a class="anchor" tabindex="-1" href="#rok_exit" aria-hidden="true">#</a><code>rok_exit</code></h3>
+<p>Terminates the process immediately. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_exit(code: i32) -&gt; !;
+}
+</code></pre>
+<p><a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env::exit</code></a> calls this symbol. <code>finally</code> and <code>Drop</code> are not run (<a href="../004-functions/416-entry-point#4164-exit-codes-and-unhandled-exceptions">4.16.4</a>).</p>
+<h3 id="string-helpers"><a class="anchor" tabindex="-1" href="#string-helpers" aria-hidden="true">#</a>String helpers</h3>
+<p>Internal helpers backing <code>FromStr</code> and <code>str::bytes</code> (<a href="../../refs-standard-libraries/200-core/215-string">stdlib 2.15</a>). <strong>Thread-safety: <code>thread-safe</code></strong>. <code>str</code> arguments use the struct form of the preamble.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_str_eq(a: str, b: str) -&gt; i32;                            // 1 if equal, else 0
+    fn rok_str_byte(s: str, i: usize) -&gt; u8;                         // i-th byte (bounds check is the caller's)
+    fn rok_str_slice(s: str, start: usize, end: usize, at: str) -&gt; str;  // s[start:end]. panics at location at if the range / UTF-8 boundary is wrong
+    fn rok_str_parse_int(s: str, radix: u32, signed: i32, bits: u32, out: GcBuf&lt;i64&gt;) -&gt; i32;
+                                        // 0 ok, 1 empty, 2 invalid digit, 3 out of range; value bits in out[0]
+    fn rok_str_parse_float(s: str, out: GcBuf&lt;f64&gt;) -&gt; i32;           // 0 ok, 2 invalid, 3 out of range (finite digits past the type's range); value in out[0]
+}
+</code></pre>
+<h3 id="rok_runtime_yield"><a class="anchor" tabindex="-1" href="#rok_runtime_yield" aria-hidden="true">#</a><code>rok_runtime_yield</code></h3>
+<p>The <code>yield</code> function of the <a href="804-safepoint">Safepoint protocol</a>, i.e. the slow path of the safepoint poll. <strong>Thread-safety: <code>caller-thread-only</code></strong> (called by the calling mutator as a result of polling its own yield_flag).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_runtime_yield();
+}
+</code></pre>
+<h3 id="rok_enter_native--rok_leave_native"><a class="anchor" tabindex="-1" href="#rok_enter_native--rok_leave_native" aria-hidden="true">#</a><code>rok_enter_native</code> / <code>rok_leave_native</code></h3>
+<p>Slow paths of the native bracket (<a href="804-safepoint#8410-native-calls">8.4.10</a>). <strong>Thread-safety: <code>caller-thread-only</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_enter_native();                // entering C: this thread counts as PARKED
+    fn rok_leave_native();                // back from C: wait out a running collection
+}
+</code></pre>
+<p>The compiler inlines the fast path around every <code>extern &quot;C&quot;</code> call: a seq_cst store of <code>PARKED</code> / <code>RUNNING</code> to the mutator state, then a check of the yield flag. Only when the flag is set does it call these.</p>
+<h3 id="rok_native_reenter--rok_native_resume"><a class="anchor" tabindex="-1" href="#rok_native_reenter--rok_native_resume" aria-hidden="true">#</a><code>rok_native_reenter</code> / <code>rok_native_resume</code></h3>
+<p>The entry and exit of every <code>extern &quot;C&quot; fn</code> definition, so that a C callback runs as a mutator. <strong>Thread-safety: <code>caller-thread-only</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_native_reenter() -&gt; u32;       // if the thread was PARKED (inside C), leave native; returns whether it was
+    fn rok_native_resume(parked: u32);    // re-enter native if reenter left it
+}
+</code></pre>
+<h3 id="rok_thread_init--rok_thread_shutdown"><a class="anchor" tabindex="-1" href="#rok_thread_init--rok_thread_shutdown" aria-hidden="true">#</a><code>rok_thread_init</code> / <code>rok_thread_shutdown</code></h3>
+<p>Worker thread lifecycle. <strong>Thread-safety: <code>rok_thread_init</code> is <code>per-thread-init</code>, <code>rok_thread_shutdown</code> is <code>per-thread-shutdown</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_init();
+    fn rok_thread_shutdown();
+}
+</code></pre>
+<p>Called at the start and end of each worker thread to initialize or tear down the TLS of the <a href="803-tls-slots">TLS slots</a>.</p>
+<h3 id="internal-symbol-families"><a class="anchor" tabindex="-1" href="#internal-symbol-families" aria-hidden="true">#</a>Internal symbol families</h3>
+<p>These families are runtime-internal helpers of the reference runtime and are not part of the ABI contract: <code>rok_fmt_*</code>, <code>rok_str_*</code> helpers, <code>rok_char_*</code>, <code>rok_nat_*</code>, <code>rok_stdio_*</code>, <code>rok_time_*</code>, <code>rok_gc_stats_*</code>, <code>rok_buf_*</code>, <code>rok_cstr_len</code>.</p>
+<h3 id="functions-that-are-not-safepoints"><a class="anchor" tabindex="-1" href="#functions-that-are-not-safepoints" aria-hidden="true">#</a>Functions that are not safepoints</h3>
+<p>On the rok side they are declared in an <code>extern &quot;rok&quot;</code> block marked <code>#[no_safepoint]</code> (<a href="../005-modules/509-extern-block#592-abi-specifiers">5.9.2</a>).</p>
+<p>The following runtime functions are guaranteed never to allocate and never to block, so a call to them is not a safepoint (<a href="804-safepoint#842-emission-sites">8.4.2</a>, <a href="809-lowering-control#8912-shadow-stack-frame">8.9.12</a>): <code>rok_str_len</code>, <code>rok_str_byte</code>, <code>rok_str_cmp</code>, <code>rok_str_eq</code>, <code>rok_str_eq_at</code>, <code>rok_str_find</code>, <code>rok_str_rfind</code>, <code>rok_str_char_count</code>, <code>rok_str_hash</code>, <code>rok_str_bytes_buf</code>, <code>rok_buf_copy</code>, the <code>rok_char_*</code> property and case functions, <code>rok_fmt_len</code>, <code>rok_f64_*</code>, <code>rok_f32_*</code>.</p>
+<h2 id="853-coroutine-area"><a class="anchor" tabindex="-1" href="#853-coroutine-area" aria-hidden="true">#</a>8.5.3. Coroutine area</h2>
+<h3 id="rok_coro_frame_alloc"><a class="anchor" tabindex="-1" href="#rok_coro_frame_alloc" aria-hidden="true">#</a><code>rok_coro_frame_alloc</code></h3>
+<p>Allocates a <a href="../007-runtime/708-coroutine">coroutine</a> frame. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_coro_frame_alloc(size: usize, type_id: u32) -&gt; GcBuf&lt;u8&gt;;
+}
+</code></pre>
+<p>Nearly identical to <code>rok_gc_alloc_slow</code>, but allows frame-specific handling.</p>
+<h3 id="rok_coro_park--rok_coro_unpark"><a class="anchor" tabindex="-1" href="#rok_coro_park--rok_coro_unpark" aria-hidden="true">#</a><code>rok_coro_park</code> / <code>rok_coro_unpark</code></h3>
+<p>The compiler does not emit these two symbols (<code>await</code> uses the parking registry of <code>rok::core::task</code>). The runtime provides them for C and low-level code. The address of <code>frame</code> (any GC object) is the parking key, and <code>rok_coro_unpark(frame)</code> wakes every waker parked on that key. Calling them outside a task executor aborts.</p>
+<p><strong>Thread-safety: <code>rok_coro_park</code> is <code>caller-thread-only</code></strong> (parks the calling coroutine itself), <strong><code>rok_coro_unpark</code> is <code>thread-safe</code></strong> (may be called from another thread).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_coro_park(frame: Ptr&lt;u8&gt;, waker: Ptr&lt;u8&gt;);
+    fn rok_coro_unpark(frame: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<p><code>rok_coro_park</code> suspends the coroutine and registers the waker. <code>rok_coro_unpark</code> resumes the coroutine by pushing it onto the task queue.</p>
+<p>Here <code>waker</code> is an <strong>opaque pointer (<code>Ptr&lt;u8&gt;</code>)</strong> to a bundle of wake function and context, i.e. the runtime's <code>Waker</code> object (<a href="../../refs-standard-libraries/200-core/220-future">2.20.2</a>). The internal representation of <code>Waker</code> is not exposed across the C ABI boundary, so the <code>waker</code> argument has type <code>Ptr&lt;u8&gt;</code> everywhere, including <a href="../007-runtime/708-coroutine">7.8.8</a> (likewise for <code>rok_io_register</code> and <code>rok_timer_register</code>). The exact layout of the pointed-to object is determined by the coroutine implementation.</p>
+<h2 id="854-scheduler-area"><a class="anchor" tabindex="-1" href="#854-scheduler-area" aria-hidden="true">#</a>8.5.4. Scheduler area</h2>
+<p>The task runtime (spawn, join, cancel, executor) is rok code in <code>rok::core::task</code> (<a href="../../refs-standard-libraries/200-core/218-task">stdlib 2.18</a>). The runtime provides only the executor slot, thread and parking symbols below.</p>
+<h3 id="rok_task_worker_--rok_time_now_ns"><a class="anchor" tabindex="-1" href="#rok_task_worker_--rok_time_now_ns" aria-hidden="true">#</a><code>rok_task_worker_*</code> / <code>rok_time_now_ns</code></h3>
+<p>Functions that store and retrieve the current thread's executor worker (<a href="../../refs-standard-libraries/200-core/218-task">stdlib 2.18</a>) in the TLS slot <code>rok_tls_task_worker</code> (<a href="803-tls-slots#831-tls-slot-structure">8.3.1</a>), plus a clock. <strong>Thread-safety: <code>caller-thread-only</code></strong> (<code>rok_time_now_ns</code> is <code>thread-safe</code>).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_task_worker_present() -&gt; i32;       // 1 if this thread is a worker
+    fn rok_task_worker_get() -&gt; usize;         // worker object address, 0 if none
+    fn rok_task_worker_set(w: usize);          // a live GC object or 0. Pinned while installed
+    fn rok_task_worker_clear();                // = rok_task_worker_set(0)
+    fn rok_time_now_ns() -&gt; i64;               // monotonic clock (ns)
+}
+</code></pre>
+<h3 id="rok_thread_spawn"><a class="anchor" tabindex="-1" href="#rok_thread_spawn" aria-hidden="true">#</a><code>rok_thread_spawn</code></h3>
+<p>Creates a 1:1 OS thread. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_spawn(f: RokFn, stack_size: usize, id: u64) -&gt; usize;
+    fn rok_thread_new_id() -&gt; u64;
+    fn rok_thread_id() -&gt; u64;                        // worker id of the current thread
+    fn rok_thread_sleep_ns(ns: i64);
+    fn rok_thread_yield_now();
+}
+</code></pre>
+<p><code>rok_thread_spawn</code> runs the rok closure <code>f</code> (a <code>RokFn</code>, passed by value) on an OS thread (<code>stack_size</code> 0 means the default). <code>id</code> is a value obtained from <code>rok_thread_new_id</code> and becomes the new thread's <code>rok_tls_worker_id</code>. The return value is a join handle, or 0 if creation fails. <code>env</code> is a GC root until the thread finishes.</p>
+<h3 id="rok_task_hooks_install--rok_task_key"><a class="anchor" tabindex="-1" href="#rok_task_hooks_install--rok_task_key" aria-hidden="true">#</a><code>rok_task_hooks_install</code> / <code>rok_task_key</code></h3>
+<p>The executor of <code>rok::core::task</code> installs hooks into the runtime. The runtime's I/O driver, timer, and <code>rok_coro_park</code> / <code>rok_coro_unpark</code> use these hooks to wake and suspend tasks. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_task_hooks_install(
+        io: extern &quot;C&quot; fn(fd: i32, interest: u32, waker: Ptr&lt;u8&gt;),
+        timer: extern &quot;C&quot; fn(deadline_ns: u64, waker: Ptr&lt;u8&gt;),
+        park: extern &quot;C&quot; fn(key: Ptr&lt;u8&gt;, waker: Ptr&lt;u8&gt;),
+        unpark: extern &quot;C&quot; fn(key: Ptr&lt;u8&gt;),
+        restart: extern &quot;C&quot; fn(),               // restart executor work lost with a failed REPL cell
+    );                                          // the first installation wins
+    unsafe fn rok_task_key(obj: Ptr&lt;u8&gt;) -&gt; usize;   // GC object address as a park key
+}
+</code></pre>
+<p><code>rok_task_key</code> uses the address as a key, so it sets <code>NOMOVE</code> (<a href="801-object-header-abi#813-gc_flags-offset-4-u32">8.1.3</a>) on the object. The object is never moved afterwards. Identity comparisons used only within a call use <code>buf_same</code> (<a href="../../refs-standard-libraries/200-core/209-collections">stdlib 2.9</a>), which pins nothing.</p>
+<h3 id="rok_sync_wait--rok_sync_wake"><a class="anchor" tabindex="-1" href="#rok_sync_wait--rok_sync_wake" aria-hidden="true">#</a><code>rok_sync_wait</code> / <code>rok_sync_wake</code></h3>
+<p>Waiting and waking for synchronization primitives (<code>Mutex</code>, <code>Condvar</code>, <code>Once</code>). <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_sync_wait(buf: Ptr&lt;u8&gt;, index: usize, expected: i32, timeout_ns: i64);   // wait while the GcBuf&lt;i32&gt; element equals expected. timeout_ns &lt; 0 means forever
+    fn rok_sync_wake(buf: Ptr&lt;u8&gt;, index: usize);                                    // wake all threads waiting on that element
+}
+</code></pre>
+<p><code>rok_sync_wait</code> may return without a reason to wake, so the caller re-checks its condition. While waiting, the thread is considered stopped with respect to the GC.</p>
+<h3 id="rok_thread_join"><a class="anchor" tabindex="-1" href="#rok_thread_join" aria-hidden="true">#</a><code>rok_thread_join</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_join(handle: usize) -&gt; i32;          // 0 on success
+}
+</code></pre>
+<h3 id="rok_thread_detach--rok_cpu_count"><a class="anchor" tabindex="-1" href="#rok_thread_detach--rok_cpu_count" aria-hidden="true">#</a><code>rok_thread_detach</code> / <code>rok_cpu_count</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_detach(handle: usize) -&gt; i32;   // OS resources are released when it ends; can no longer be joined. 0 on success
+    fn rok_cpu_count() -&gt; usize;                  // number of online CPUs (at least 1) - size of the par pool
+}
+</code></pre>
+<h3 id="rok_static_init_begin--rok_static_init_end"><a class="anchor" tabindex="-1" href="#rok_static_init_begin--rok_static_init_end" aria-hidden="true">#</a><code>rok_static_init_begin</code> / <code>rok_static_init_end</code></h3>
+<p>Back the lazy initialization of <code>static</code>s whose initializer is not <code>const</code> (<a href="../005-modules/503-static">5.3</a>). <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_static_init_begin(state: Ptr&lt;u8&gt;, at: ConstPtr&lt;u8&gt;, at_len: usize) -&gt; i32;   // 1: caller runs the initializer, 0: already ready
+    fn rok_static_init_end(state: Ptr&lt;u8&gt;);            // publish initialization completion
+}
+</code></pre>
+<p><code>state</code> is the state byte of that <code>static</code> (0 new, 1 in progress, 2 ready). If another thread is initializing, <code>rok_static_init_begin</code> waits until it finishes, during which the thread is considered stopped with respect to the GC. <code>at</code> / <code>at_len</code> is the <code>path:line:col</code> of the code reading the static; an initializer that reads its own static panics there (<a href="../004-functions/414-throws#41413-panics-and-fatal-errors">4.14.13</a>).</p>
+<h3 id="rok_gc_add_root"><a class="anchor" tabindex="-1" href="#rok_gc_add_root" aria-hidden="true">#</a><code>rok_gc_add_root</code></h3>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_add_root(word: ConstPtr&lt;usize&gt;);   // register a static's reference word as a GC root until process exit
+}
+</code></pre>
+<p>Startup code generated by the compiler calls this for every <code>static</code> that holds a GC reference.</p>
+<h3 id="rok_os_---os-helpers-internal-subject-to-change"><a class="anchor" tabindex="-1" href="#rok_os_---os-helpers-internal-subject-to-change" aria-hidden="true">#</a><code>rok_os_*</code> - OS helpers (internal, subject to change)</h3>
+<p>Internal symbols backing the standard library <code>rok::std</code> (fs, io, env, process). They are not covered by ABI stability and may change, so user code does not call them directly.</p>
+<pre><code>rok_os_strerror  rok_os_open      rok_os_close     rok_os_read      rok_os_read_all
+rok_os_write     rok_os_write_all rok_os_fsync     rok_os_ftruncate rok_os_lseek
+rok_os_dup       rok_os_fchmod    rok_os_flock     rok_os_copy_fd   rok_os_stat
+rok_os_mkdir     rok_os_unlink    rok_os_rename    rok_os_link      rok_os_opendir
+rok_os_readdir   rok_os_closedir  rok_os_getcwd    rok_os_chdir     rok_os_realpath
+rok_os_stdin_line rok_os_stdin_read rok_os_flush_stdout
+rok_os_argc      rok_os_arg       rok_os_env_at    rok_os_getenv    rok_os_setenv
+rok_os_spawn     rok_os_waitpid   rok_os_kill      rok_os_getpid    rok_os_getppid
+rok_os_abort
+</code></pre>
+<h3 id="rok_deque_---work-stealing-deque"><a class="anchor" tabindex="-1" href="#rok_deque_---work-stealing-deque" aria-hidden="true">#</a><code>rok_deque_*</code> - work-stealing deque</h3>
+<p>The lock-free Chase-Lev deque of the task scheduler (<a href="../007-runtime/706-scheduler#762-work-stealing-structure">7.6.2</a>). The deque and its ring are GC objects traced by the GC, so elements that exist only inside a deque are kept alive. <strong>Thread-safety:</strong> <code>push</code> / <code>pop</code> only from the owning thread; <code>steal</code> and <code>len</code> from any thread.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_deque_new() -&gt; GcBuf&lt;u8&gt;;                                 // empty deque (GC object)
+    unsafe fn rok_deque_push(d: Ptr&lt;u8&gt;, item: usize);               // owner: push at the end (GC reference)
+    unsafe fn rok_deque_pop(d: Ptr&lt;u8&gt;, out: Ptr&lt;u8&gt;, index: usize) -&gt; i32;    // owner: newest element into out[index], 1 if any
+    unsafe fn rok_deque_steal(d: Ptr&lt;u8&gt;, out: Ptr&lt;u8&gt;, index: usize) -&gt; i32;  // oldest element into out[index], 1 if any
+    unsafe fn rok_deque_len(d: Ptr&lt;u8&gt;) -&gt; usize;                    // element count (approximate under contention)
+}
+</code></pre>
+<p><code>out</code> is a <code>GcBuf</code> holding GC references; the result is written at <code>index</code>. These functions contain no safepoints.</p>
+<h2 id="855-io--timer-area"><a class="anchor" tabindex="-1" href="#855-io--timer-area" aria-hidden="true">#</a>8.5.5. I/O / Timer area</h2>
+<h3 id="rok_io_register--rok_timer_register"><a class="anchor" tabindex="-1" href="#rok_io_register--rok_timer_register" aria-hidden="true">#</a><code>rok_io_register</code> / <code>rok_timer_register</code></h3>
+<p>Let C or low-level code register a task to be woken when an fd is ready or at a point in time. Internally they use the reactor (<a href="../007-runtime/707-io-and-timer">7.7</a>) and the executor's timer. Calling them outside a task executor aborts.</p>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_io_register(fd: i32, interest: u32, waker: Ptr&lt;u8&gt;);
+    fn rok_timer_register(deadline: u64, waker: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<ul>
+<li><code>fd</code>: the file descriptor.
+</li>
+<li><code>interest</code>: <code>1</code> = read, <code>2</code> = write (the two may be ORed).
+</li>
+<li><code>waker</code>: a single-element <code>GcBuf&lt;Waker&gt;</code>. Registration is edge-triggered and wakes <strong>only once</strong> (spurious wakeups are possible). If the fd is already ready or cannot be watched, it wakes immediately.
+</li>
+<li><code>deadline</code>: an absolute time (ns) on the <code>rok_time_now_ns</code> clock. When that time is reached, the waker is woken once.
+</li>
+</ul>
+<h3 id="rok_io_---reactor-internal-subject-to-change"><a class="anchor" tabindex="-1" href="#rok_io_---reactor-internal-subject-to-change" aria-hidden="true">#</a><code>rok_io_*</code> - reactor (internal, subject to change)</h3>
+<p>Internal symbols making up the reactor of the <a href="../007-runtime/707-io-and-timer">I/O driver</a>. They are not covered by ABI stability and may change. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_io_poller() -&gt; i32;                    // the process's kqueue / epoll fd (created on first call)
+    fn rok_io_watch(fd: i32) -&gt; i32;              // register fd for read / write edge-triggered (re-registering is harmless), 0 or -errno
+    fn rok_io_poll(out: Ptr&lt;u8&gt;, max: usize) -&gt; i32;   // blocks until something changes (parked for the GC), event count or -errno
+}
+</code></pre>
+<p><code>rok_io_poll</code> writes up to <code>max</code> events into <code>out</code>, a <code>GcBuf&lt;i64&gt;</code>, as <code>fd * 2 + direction</code> (read 0, write 1).</p>
+<h3 id="rok_net_---socket-helpers-internal-subject-to-change"><a class="anchor" tabindex="-1" href="#rok_net_---socket-helpers-internal-subject-to-change" aria-hidden="true">#</a><code>rok_net_*</code> - socket helpers (internal, subject to change)</h3>
+<p>Internal symbols backing the standard library <code>rok::std::net</code> (<a href="../../refs-standard-libraries/300-std/302-net">stdlib 3.2</a>). They are not covered by ABI stability and may change, so user code does not call them directly. Sockets are always created non-blocking, and failures are returned as <code>-errno</code>.</p>
+<pre><code>rok_net_socket     rok_net_bind       rok_net_listen     rok_net_connect
+rok_net_sock_error rok_net_accept     rok_net_addr       rok_net_send
+rok_net_send_to    rok_net_recv_from  rok_net_shutdown   rok_net_setopt
+rok_net_multicast_v4 rok_net_wait     rok_net_resolve    rok_net_gai_strerror
+</code></pre>
+<p><code>rok_net_wait</code> is a <code>poll(2)</code> with which a blocking call waits for readiness (a native section for the GC); <code>rok_net_resolve</code> is <code>getaddrinfo</code>.</p>
+<h2 id="856-error-propagation-no-symbols"><a class="anchor" tabindex="-1" href="#856-error-propagation-no-symbols" aria-hidden="true">#</a>8.5.6. Error propagation (no symbols)</h2>
+<p><code>throw</code> / <code>try</code> / <code>catch</code> from <a href="../003-expressions/314-error-control-flow">Error control flow</a> have no runtime symbols. A throwing function returns the error as part of its return value (<a href="806-calling-convention#865-return-of-throwing-functions-value-based-error-propagation">8.6.5</a>), and the call site checks that value and branches (<a href="809-lowering-control#896-try--catch--finally-value-based-branching">8.9.6</a>). There is therefore no runtime call to throw an error or fetch the current error, and there are no TLS slots or jmp_buf for error handling.</p>
+<h2 id="857-diagnostic-area"><a class="anchor" tabindex="-1" href="#857-diagnostic-area" aria-hidden="true">#</a>8.5.7. Diagnostic area</h2>
+<p>Exit codes below (<code>101</code> etc.) reach the host as plain failure on <code>wasm32-wasi</code> (<a href="../004-functions/416-entry-point#4164-exit-codes-and-unhandled-exceptions">4.16.4</a>).</p>
+<h3 id="rok_panic"><a class="anchor" tabindex="-1" href="#rok_panic" aria-hidden="true">#</a><code>rok_panic</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong> (callable from any thread; the process exits immediately).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_panic(msg: ConstPtr&lt;u8&gt;, msg_len: usize);   // does not return
+}
+</code></pre>
+<p>An unrecoverable panic; fatal. This function does not return: it prints the message to stderr and terminates the process with exit code <code>101</code>. <code>catch</code> and <code>finally</code> are not run.</p>
+<h3 id="rok_panic_str"><a class="anchor" tabindex="-1" href="#rok_panic_str" aria-hidden="true">#</a><code>rok_panic_str</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_panic_str(msg: str) -&gt; !;          // msg is (ptr, len)
+}
+</code></pre>
+<p>Same as <code>rok_panic</code> but takes the message as a <code>str</code>. It prints no location and is used only for panics internal to the runtime.</p>
+<h3 id="rok_panic_at"><a class="anchor" tabindex="-1" href="#rok_panic_at" aria-hidden="true">#</a><code>rok_panic_at</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    #[track_caller]
+    fn rok_panic_at(msg: str) -&gt; !;
+}
+</code></pre>
+<p>The declaration is <code>#[track_caller]</code> (<a href="../006-meta-system/602-built-in-attributes#6212-track_caller-passing-the-call-site">6.2.12</a>), so the symbol takes the caller's location as a hidden trailing <code>str</code> argument (<code>&quot;path:line:col&quot;</code>): <code>rok_panic_at(msg, at)</code>.</p>
+<p>Prints in the format of <a href="../004-functions/414-throws#41413-panics-and-fatal-errors">4.14.13</a> and exits with code <code>101</code>. Core's <code>panic</code> and compiler-generated panics (bounds checks, overflow, division by zero, etc.) call this symbol.</p>
+<h3 id="rok_uncaught_error--rok_uncaught_error_at"><a class="anchor" tabindex="-1" href="#rok_uncaught_error--rok_uncaught_error_at" aria-hidden="true">#</a><code>rok_uncaught_error</code> / <code>rok_uncaught_error_at</code></h3>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_uncaught_error(what: str) -&gt; !;              // uncaught exception: print what to stderr, exit code 1
+    fn rok_uncaught_error_at(what: str, at: str) -&gt; !;  // followed by a &quot;  --&gt; &lt;at&gt;&quot; line
+}
+</code></pre>
+<p>Handle errors propagated out of the entry point (<a href="../004-functions/416-entry-point#4164-exit-codes-and-unhandled-exceptions">4.16.4</a>). The declarations live in core.</p>
+<h3 id="rok_oom"><a class="anchor" tabindex="-1" href="#rok_oom" aria-hidden="true">#</a><code>rok_oom</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_oom() -&gt; !;
+}
+</code></pre>
+<p>Prints <code>fatal error: out of memory</code> to stderr and exits with code <code>101</code>. Allocation failures inside the runtime and core's <code>oom()</code> both go through this symbol. The runtime cannot call rok functions by name, so on allocation failure it uses this symbol directly instead of calling the function in the <code>oom_fn</code> slot.</p>
+<h3 id="stack-overflow"><a class="anchor" tabindex="-1" href="#stack-overflow" aria-hidden="true">#</a>Stack overflow</h3>
+<p>When a thread's stack overflows, the runtime flushes stdout (if possible), prints the following to stderr and aborts (SIGABRT). Unlike a panic, there is no unwinding and no <code>finally</code> execution.</p>
+<pre><code>thread '&lt;name&gt;' has overflowed its stack
+</code></pre>
+<p><code>&lt;name&gt;</code> is the thread name given with <code>thread::Builder::name</code> (also set as the OS thread name, <a href="../007-runtime/#runtime-error-stack-overflow">7. Runtime</a>). This covers the main thread (<code>rok_runtime_init</code>), <code>rok_thread_spawn</code> threads (including executor workers, and deep <code>await</code> chains), and C threads that called <code>rok_thread_init</code>. The runtime records the guard range below each thread's stack in the TLS slot <code>rok_tls_stack_guard</code> (<a href="803-tls-slots#831-tls-slot-structure">8.3.1</a>) and installs an alternate signal stack (<code>sigaltstack</code>). Only SIGSEGV / SIGBUS within that range is reported as a stack overflow; other faults follow the default behavior. On wasm a module cannot catch the trap; the host reports it (the shipped JS host prints the message above).</p>
+<h2 id="858-symbol-naming-conventions"><a class="anchor" tabindex="-1" href="#858-symbol-naming-conventions" aria-hidden="true">#</a>8.5.8. Symbol naming conventions</h2>
+<p>The area of each symbol prefix is summarized below.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Prefix</th><th>Area</th></tr></thead>
+<tbody>
+<tr><td><code>rok_gc_*</code></td><td>GC</td></tr>
+<tr><td><code>rok_runtime_*</code></td><td>Runtime in general</td></tr>
+<tr><td><code>rok_thread_*</code></td><td>OS threads</td></tr>
+<tr><td><code>rok_coro_*</code></td><td>Coroutines</td></tr>
+<tr><td><code>rok_task_*</code></td><td>Tasks</td></tr>
+<tr><td><code>rok_io_*</code></td><td>I/O</td></tr>
+<tr><td><code>rok_timer_*</code></td><td>Timers</td></tr>
+<tr><td><code>rok_panic</code></td><td>Diagnostics</td></tr>
+</tbody></table></div>
+<p>This prefix convention avoids symbol collisions with external libraries and user code. The tables of 8.5.1 - 8.5.7 list the normative runtime symbols; the runtime may export further implementation-defined <code>rok_*</code> symbols (e.g. <code>rok_fmt_*</code>, <code>rok_os_*</code>, <code>rok_stdio_*</code>, <code>rok_static_init_*</code>).</p>
+<h2 id="859-compatibility-of-function-signatures"><a class="anchor" tabindex="-1" href="#859-compatibility-of-function-signatures" aria-hidden="true">#</a>8.5.9. Compatibility of function signatures</h2>
+<p>Each function signature is part of the <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a>. The change policy is:</p>
+<ul>
+<li>minor: only compatible changes are allowed; adding arguments is handled through function wrappers.
+</li>
+<li>major: breaking changes are possible, and the ABI version hash changes.
+</li>
+</ul>
+<p>See the stability policy in the <a href="./">overview</a> for details.</p>
+<h2 id="8510-calling-convention"><a class="anchor" tabindex="-1" href="#8510-calling-convention" aria-hidden="true">#</a>8.5.10. Calling convention</h2>
+<p>All functions above use the target platform's C ABI calling convention, e.g. System V x86_64, AAPCS aarch64, MS x64 Windows.</p>
+<h2 id="8511-example-slow-call-from-the-tlab-fast-path"><a class="anchor" tabindex="-1" href="#8511-example-slow-call-from-the-tlab-fast-path" aria-hidden="true">#</a>8.5.11. Example: slow call from the TLAB fast path</h2>
+<pre><code class="language-mlir">; LLVM IR (when the fast path fails)
+%t = call ptr @llvm.threadlocal.address(ptr @rok_tls)
+%cursor_p = getelementptr i8, ptr %t, i64 8          ; tlab_cursor at p
+%cursor = load i8*, i8** %cursor_p
+%new_cursor = getelementptr i8, i8* %cursor, i64 24
+%limit_p = getelementptr i8, ptr %t, i64 16          ; tlab_limit at 2p
+%limit = load i8*, i8** %limit_p
+%check = icmp ugt i8* %new_cursor, %limit
+br i1 %check, label %slow, label %fast
+
+slow:
+  %obj = call i8* @rok_gc_alloc_slow(i64 24, i64 8, i32 12345)
+  br label %cont
+
+fast:
+  store i8* %new_cursor, i8** %cursor_p
+  br label %cont
+
+cont:
+  %obj_phi = phi i8* [%obj_slow, %slow], [%cursor, %fast]
+  ; ... continue
+</code></pre>
+<p>The example shows the LLVM IR structure combining the fast path and the slow path.</p>
+<h2 id="8512-auxiliary-symbols-appendix-non-normative"><a class="anchor" tabindex="-1" href="#8512-auxiliary-symbols-appendix-non-normative" aria-hidden="true">#</a>8.5.12. Auxiliary symbols (appendix, non-normative)</h2>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>This section is <strong>non-normative</strong>. The symbols below are auxiliary symbols exported by the reference runtime (<code>rokr</code>). They are not part of the main ABI tables (8.5.1 ~ 8.5.11) and carry no stability promise; the runtime may export further implementation-defined <code>rok_*</code> symbols (8.5.8).</p>
+</div>
+<p>Signatures use the same notation as the main text (<code>Ptr&lt;T&gt;</code> = mutable raw pointer, <code>ConstPtr&lt;T&gt;</code> = read-only raw pointer). String arguments are NUL-terminated C strings.</p>
+<pre><code>extern &quot;rok&quot; {
+    // memory
+    fn rok_free(ptr: Ptr&lt;u8&gt;);                             // null ignored
+    fn rok_load_i32(ptr: ConstPtr&lt;i32&gt;) -&gt; i32;
+    fn rok_load_i64(ptr: ConstPtr&lt;i64&gt;) -&gt; i64;
+    fn rok_load_f64(ptr: ConstPtr&lt;f64&gt;) -&gt; f64;
+    fn rok_store_i32(ptr: Ptr&lt;i32&gt;, val: i32);
+    fn rok_store_i64(ptr: Ptr&lt;i64&gt;, val: i64);
+    fn rok_store_f64(ptr: Ptr&lt;f64&gt;, val: f64);
+
+    // C strings
+    fn rok_str_len(s: ConstPtr&lt;u8&gt;) -&gt; usize;              // null → 0
+
+    // GC
+    fn rok_gc_collect_young();                             // force a minor collection
+    fn rok_gc_weak_new(target: Ptr&lt;u8&gt;) -&gt; Ptr&lt;u8&gt;;       // a weak cell (type id 3) to target
+    fn rok_gc_weak_get(cell: Ptr&lt;u8&gt;) -&gt; Ptr&lt;u8&gt;;         // the target, or null once freed
+
+    // process exit
+    fn rok_set_exit_hook(hook: extern &quot;C&quot; fn(i32) | null);
+        // called with the exit status, on the ending thread, before a panic,
+        // uncaught error, exit or (Windows) stack overflow ends the process;
+        // the process ends when it returns
+
+    // REPL host (session save / restore)
+    fn rok_session_hold(timeout_ns: i64) -&gt; i32;          // stop the world at a quiet moment: no poll / blocking job
+                                                           //   running, no thread stopped inside a lock; 0: not within
+                                                           //   timeout_ns (still requested)
+    fn rok_session_unhold();                               // withdraw a pending or granted hold
+    fn rok_session_resume();                               // resume the world after a hold
+    fn rok_session_enter();                                // executor threads' gates around a poll / blocking job
+    fn rok_session_leave();
+    fn rok_session_pass();
+    fn rok_lock_notes() -&gt; i32;                            // 1 in a session host
+    fn rok_lock_note(word: GcBuf&lt;i32&gt;, kind: i32) -&gt; i32;  // kind: 0 Mutex, 1 read, 2 write, 3 running Once; 1 = noted
+    fn rok_lock_drop(word: GcBuf&lt;i32&gt;);
+    fn rok_world_threads(out: Ptr&lt;u64&gt;, cap: usize) -&gt; usize;   // world stopped: OS ids of the other mutators (Windows)
+    fn rok_session_restored(lost: ConstPtr&lt;u64&gt;, n: usize);     // session put back; n == SIZE_MAX: every other thread is gone
+    fn rok_thread_lost(worker_id: u64) -&gt; i32;             // 1 if that thread was found gone after a failed cell
+    fn rok_io_quiesce();                                   // Windows: cancel in-flight I/O before memory is put back
+    fn rok_watch_writes();                                 // Windows: write-watch the heap; call before runtime init
+    static rok_page_epoch: u64;                            // Windows: bumped when watched pages change without a write
+                                                           //   or a watched block is released
+}
+</code></pre>
+<p>The following rules apply.</p>
+<ul>
+<li>User code and the standard library must not depend on these symbols. Their signatures may change or be removed without notice.
+</li>
+<li>They share the <code>rok_</code> prefix but are not included in the area table of 8.5.8. To avoid name collisions, normative symbols of the specification do not reuse these names.
+</li>
+<li><code>rok_panic</code> does not belong to this appendix. The signature <code>rok_panic(msg: ConstPtr&lt;u8&gt;, msg_len: usize)</code> in <a href="#857-diagnostic-area">8.5.7</a> is authoritative, and an implementation exporting a different signature is non-conformant.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/805-extern-symbols.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="804-safepoint"><small>Previous</small>8.4. Safepoint protocol</a><a class="next" href="806-calling-convention"><small>Next</small>8.6. Calling convention</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

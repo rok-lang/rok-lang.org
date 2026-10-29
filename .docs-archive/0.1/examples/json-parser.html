@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JSON parser - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="JSON values as an enum, a character-level recursive-descent parser that reports error positions with throws, and an indenting pretty printer.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/json-parser.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="JSON parser - rok docs">
+<meta property="og:description" content="JSON values as an enum, a character-level recursive-descent parser that reports error positions with throws, and an indenting pretty printer.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/json-parser.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li class="cur"><a aria-current="page" href="json-parser">JSON parser</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="json-parser"><a class="anchor" tabindex="-1" href="#json-parser" aria-hidden="true">#</a>JSON parser</h1>
+<p>JSON values as an enum, a character-level recursive-descent parser that reports error positions with <code>throws</code>, and an indenting pretty printer.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// A small JSON parser: recursive descent over chars, errors with positions, pretty printer.</span>
+
+<span class="k">enum</span> <span class="t">Json</span> { <span class="t">Null</span>, <span class="t">Bool</span>(<span class="t">bool</span>), <span class="t">Num</span>(<span class="t">f64</span>), <span class="t">Str</span>(<span class="t">str</span>), <span class="t">Arr</span>(<span class="t">List</span>&lt;<span class="t">Json</span>&gt;), <span class="t">Obj</span>(<span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">Json</span>&gt;) }
+
+<span class="k">struct</span> <span class="t">ParseError</span> { msg: <span class="t">str</span>; pos: <span class="t">usize</span>; }
+
+<span class="k">struct</span> <span class="t">Parser</span> { cs: <span class="t">List</span>&lt;<span class="t">char</span>&gt;; pos: <span class="t">usize</span> = <span class="n">0</span>; }
+
+<span class="k">impl</span> <span class="t">Parser</span> {
+    <span class="k">fn</span> peek(<span class="k">self</span>) -&gt; <span class="t">char</span> | <span class="k">none</span> { <span class="k">self</span>.cs.get(<span class="k">self</span>.pos) }
+
+    <span class="k">fn</span> fail(<span class="k">self</span>, msg: <span class="t">str</span>) -&gt; <span class="t">ParseError</span> { <span class="t">ParseError</span> { msg: msg, pos: <span class="k">self</span>.pos } }
+
+    <span class="k">fn</span> skip_ws(<span class="k">ref</span> <span class="k">self</span>) {
+        <span class="k">while</span> <span class="k">self</span>.peek()?.is_whitespace() ?? <span class="k">false</span> { <span class="k">self</span>.pos += <span class="n">1</span>; }
+    }
+
+    <span class="c">// Skip whitespace, then consume `c` if it is next.</span>
+    <span class="k">fn</span> eat(<span class="k">ref</span> <span class="k">self</span>, c: <span class="t">char</span>) -&gt; <span class="t">bool</span> {
+        <span class="k">self</span>.skip_ws();
+        <span class="k">if</span> <span class="k">self</span>.peek() != c { <span class="k">return</span> <span class="k">false</span>; }
+        <span class="k">self</span>.pos += <span class="n">1</span>;
+        <span class="k">true</span>
+    }
+
+    <span class="k">fn</span> expect(<span class="k">ref</span> <span class="k">self</span>, c: <span class="t">char</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) {
+        <span class="k">if</span> !<span class="k">self</span>.eat(c) { <span class="k">throw</span> <span class="k">self</span>.fail(<span class="s">f"expected '{</span>c<span class="s">}'"</span>); }
+    }
+
+    <span class="k">fn</span> value(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">Json</span> {
+        <span class="k">self</span>.skip_ws();
+        <span class="k">let</span> c: <span class="t">char</span> = <span class="k">self</span>.peek() <span class="k">else</span> { <span class="k">throw</span> <span class="k">self</span>.fail(<span class="s">"unexpected end of input"</span>); };
+        <span class="k">match</span> c {
+            <span class="s">'n'</span> =&gt; <span class="k">try</span> <span class="k">self</span>.word(<span class="s">"null"</span>, <span class="t">Json</span>::<span class="t">Null</span>),
+            <span class="s">'t'</span> =&gt; <span class="k">try</span> <span class="k">self</span>.word(<span class="s">"true"</span>, <span class="t">Json</span>::<span class="t">Bool</span>(<span class="k">true</span>)),
+            <span class="s">'f'</span> =&gt; <span class="k">try</span> <span class="k">self</span>.word(<span class="s">"false"</span>, <span class="t">Json</span>::<span class="t">Bool</span>(<span class="k">false</span>)),
+            <span class="s">'"'</span> =&gt; <span class="t">Json</span>::<span class="t">Str</span>(<span class="k">try</span> <span class="k">self</span>.string()),
+            <span class="s">'['</span> =&gt; <span class="k">try</span> <span class="k">self</span>.array(),
+            <span class="s">'{'</span> =&gt; <span class="k">try</span> <span class="k">self</span>.object(),
+            _ =&gt; <span class="k">if</span> c == <span class="s">'-'</span> || c.is_ascii_digit() { <span class="k">try</span> <span class="k">self</span>.number() } <span class="k">else</span> { <span class="k">throw</span> <span class="k">self</span>.fail(<span class="s">f"unexpected '{</span>c<span class="s">}'"</span>); },
+        }
+    }
+
+    <span class="k">fn</span> word(<span class="k">ref</span> <span class="k">self</span>, w: <span class="t">str</span>, v: <span class="t">Json</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">Json</span> {
+        <span class="k">for</span> c <span class="k">in</span> w.chars() {
+            <span class="k">if</span> <span class="k">self</span>.peek() != c { <span class="k">throw</span> <span class="k">self</span>.fail(<span class="s">f"invalid literal, expected {</span>w<span class="s">}"</span>); }
+            <span class="k">self</span>.pos += <span class="n">1</span>;
+        }
+        v
+    }
+
+    <span class="k">fn</span> number(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">Json</span> {
+        <span class="k">let</span> start = <span class="k">self</span>.pos;
+        <span class="k">let</span> sb = <span class="t">StrBuf</span>::new();
+        <span class="k">while</span> <span class="k">let</span> c: <span class="t">char</span> = <span class="k">self</span>.peek() {
+            <span class="k">if</span> !(c.is_ascii_digit() || <span class="s">"+-.eE"</span>.contains(<span class="s">f"{</span>c<span class="s">}"</span>)) { <span class="k">break</span>; }
+            sb.push(c);
+            <span class="k">self</span>.pos += <span class="n">1</span>;
+        }
+        <span class="k">let</span> text = sb.to_str();
+        <span class="k">let</span> n = <span class="k">try</span> text.parse::&lt;<span class="t">f64</span>&gt;() <span class="k">catch</span> _ { <span class="k">throw</span> <span class="t">ParseError</span> { msg: <span class="s">f"bad number '{</span>text<span class="s">}'"</span>, pos: start }; };
+        <span class="t">Json</span>::<span class="t">Num</span>(n)
+    }
+
+    <span class="k">fn</span> string(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">str</span> {
+        <span class="k">self</span>.pos += <span class="n">1</span>; <span class="c">// opening quote</span>
+        <span class="k">let</span> sb = <span class="t">StrBuf</span>::new();
+        <span class="k">loop</span> {
+            <span class="k">let</span> c: <span class="t">char</span> = <span class="k">self</span>.peek() <span class="k">else</span> { <span class="k">throw</span> <span class="k">self</span>.fail(<span class="s">"unterminated string"</span>); };
+            <span class="k">self</span>.pos += <span class="n">1</span>;
+            <span class="k">if</span> c == <span class="s">'"'</span> { <span class="k">break</span>; }
+            <span class="k">if</span> c != <span class="s">'\\'</span> { sb.push(c); <span class="k">continue</span>; }
+            <span class="k">let</span> e: <span class="t">char</span> = <span class="k">self</span>.peek() <span class="k">else</span> { <span class="k">throw</span> <span class="k">self</span>.fail(<span class="s">"unterminated string"</span>); };
+            <span class="k">self</span>.pos += <span class="n">1</span>;
+            <span class="k">match</span> e {
+                <span class="s">'n'</span> =&gt; sb.push(<span class="s">'\n'</span>),
+                <span class="s">'t'</span> =&gt; sb.push(<span class="s">'\t'</span>),
+                <span class="s">'"'</span> | <span class="s">'\\'</span> | <span class="s">'/'</span> =&gt; sb.push(e),
+                _ =&gt; <span class="k">throw</span> <span class="t">ParseError</span> { msg: <span class="s">f"unknown escape '\\{</span>e<span class="s">}'"</span>, pos: <span class="k">self</span>.pos - <span class="n">2</span> },
+            }
+        }
+        sb.to_str()
+    }
+
+    <span class="k">fn</span> array(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">Json</span> {
+        <span class="k">self</span>.pos += <span class="n">1</span>;
+        <span class="k">let</span> items: <span class="t">List</span>&lt;<span class="t">Json</span>&gt; = [];
+        <span class="k">if</span> <span class="k">self</span>.eat(<span class="s">']'</span>) { <span class="k">return</span> <span class="t">Json</span>::<span class="t">Arr</span>(items); }
+        <span class="k">loop</span> {
+            items.push(<span class="k">try</span> <span class="k">self</span>.value());
+            <span class="k">if</span> <span class="k">self</span>.eat(<span class="s">']'</span>) { <span class="k">return</span> <span class="t">Json</span>::<span class="t">Arr</span>(items); }
+            <span class="k">try</span> <span class="k">self</span>.expect(<span class="s">','</span>);
+        }
+    }
+
+    <span class="k">fn</span> object(<span class="k">ref</span> <span class="k">self</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">Json</span> {
+        <span class="k">self</span>.pos += <span class="n">1</span>;
+        <span class="k">let</span> fields: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">Json</span>&gt; = <span class="t">OrderedDict</span>::new();
+        <span class="k">if</span> <span class="k">self</span>.eat(<span class="s">'}'</span>) { <span class="k">return</span> <span class="t">Json</span>::<span class="t">Obj</span>(fields); }
+        <span class="k">loop</span> {
+            <span class="k">self</span>.skip_ws();
+            <span class="k">if</span> <span class="k">self</span>.peek() != <span class="s">'"'</span> { <span class="k">throw</span> <span class="k">self</span>.fail(<span class="s">"expected a string key"</span>); }
+            <span class="k">let</span> key = <span class="k">try</span> <span class="k">self</span>.string();
+            <span class="k">try</span> <span class="k">self</span>.expect(<span class="s">':'</span>);
+            fields[key] = <span class="k">try</span> <span class="k">self</span>.value();
+            <span class="k">if</span> <span class="k">self</span>.eat(<span class="s">'}'</span>) { <span class="k">return</span> <span class="t">Json</span>::<span class="t">Obj</span>(fields); }
+            <span class="k">try</span> <span class="k">self</span>.expect(<span class="s">','</span>);
+        }
+    }
+}
+
+<span class="k">fn</span> parse(text: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">Json</span> {
+    <span class="k">let</span> cs: <span class="t">List</span>&lt;<span class="t">char</span>&gt; = [];
+    <span class="k">for</span> c <span class="k">in</span> text.chars() { cs.push(c); }
+    <span class="k">let</span> p = <span class="t">Parser</span> { cs: cs };
+    <span class="k">let</span> v = <span class="k">try</span> p.value();
+    p.skip_ws();
+    <span class="k">if</span> p.pos &lt; cs.len() { <span class="k">throw</span> p.fail(<span class="s">"trailing characters"</span>); }
+    v
+}
+
+<span class="c">// Render `parts` one per line between `open` and `close`.</span>
+<span class="k">fn</span> block(open: <span class="t">str</span>, close: <span class="t">str</span>, parts: <span class="t">List</span>&lt;<span class="t">str</span>&gt;, depth: <span class="t">usize</span>) -&gt; <span class="t">str</span> {
+    <span class="k">if</span> parts.is_empty() { <span class="k">return</span> <span class="s">f"{</span>open<span class="s">}{</span>close<span class="s">}"</span>; }
+    <span class="k">let</span> sb = <span class="t">StrBuf</span>::new();
+    sb.push_str(open);
+    <span class="k">for</span> (i, p) <span class="k">in</span> parts.iter().enumerate() {
+        <span class="k">let</span> comma = <span class="k">if</span> i + <span class="n">1</span> &lt; parts.len() { <span class="s">","</span> } <span class="k">else</span> { <span class="s">""</span> };
+        sb.push_str(<span class="s">f"\n{</span><span class="s">"  "</span>.repeat(depth + <span class="n">1</span>)<span class="s">}{</span>p<span class="s">}{</span>comma<span class="s">}"</span>);
+    }
+    sb.push_str(<span class="s">f"\n{</span><span class="s">"  "</span>.repeat(depth)<span class="s">}{</span>close<span class="s">}"</span>);
+    sb.to_str()
+}
+
+<span class="k">fn</span> pretty(v: <span class="t">Json</span>, depth: <span class="t">usize</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> v {
+        <span class="t">Json</span>::<span class="t">Null</span> =&gt; <span class="s">"null"</span>,
+        <span class="t">Json</span>::<span class="t">Bool</span>(b) =&gt; <span class="s">f"{</span>b<span class="s">}"</span>,
+        <span class="t">Json</span>::<span class="t">Num</span>(n) =&gt; <span class="s">f"{</span>n<span class="s">}"</span>,
+        <span class="t">Json</span>::<span class="t">Str</span>(s) =&gt; <span class="s">f"{</span>s<span class="s">:?</span><span class="s">}"</span>,
+        <span class="t">Json</span>::<span class="t">Arr</span>(items) =&gt; {
+            <span class="k">let</span> parts: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+            <span class="k">for</span> x <span class="k">in</span> items { parts.push(pretty(x, depth + <span class="n">1</span>)); }
+            block(<span class="s">"["</span>, <span class="s">"]"</span>, parts, depth)
+        },
+        <span class="t">Json</span>::<span class="t">Obj</span>(fields) =&gt; {
+            <span class="k">let</span> parts: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+            <span class="k">for</span> (k, x) <span class="k">in</span> fields.entries() { parts.push(<span class="s">f"{</span>k<span class="s">:?</span><span class="s">}: {</span>pretty(x, depth + <span class="n">1</span>)<span class="s">}"</span>); }
+            block(<span class="s">"{"</span>, <span class="s">"}"</span>, parts, depth)
+        },
+    }
+}
+
+<span class="k">fn</span> main() {
+    <span class="k">let</span> doc = <span class="s">"{\"name\": \"rok\", \"tags\": [\"fast\", \"safe\"], \"version\": 0.1, \"stars\": 1.2e3,
+               \"stable\": false, \"deps\": {}, \"notes\": null, \"quote\": \"say \\\"hi\\\"\"}"</span>;
+    <span class="k">let</span> v = <span class="k">try</span> parse(doc) <span class="k">catch</span> e { println(<span class="s">f"error: {</span>e.msg<span class="s">} at {</span>e.pos<span class="s">}"</span>); <span class="k">return</span>; };
+    println(pretty(v, <span class="n">0</span>));
+
+    <span class="k">for</span> bad <span class="k">in</span> [<span class="s">"[1, 2,]"</span>, <span class="s">"{\"a\" 1}"</span>, <span class="s">"[tru]"</span>, <span class="s">"\"open"</span>, <span class="s">"[1] x"</span>, <span class="s">"-"</span>] {
+        <span class="k">try</span> parse(bad) <span class="k">catch</span> e { println(<span class="s">f"{</span>bad<span class="s">:&lt;9</span><span class="s">} -&gt; {</span>e.msg<span class="s">} at offset {</span>e.pos<span class="s">}"</span>); };
+    }
+}
+</code></pre>
+<pre class="output"><code class="language-output">{
+  &quot;name&quot;: &quot;rok&quot;,
+  &quot;tags&quot;: [
+    &quot;fast&quot;,
+    &quot;safe&quot;
+  ],
+  &quot;version&quot;: 0.1,
+  &quot;stars&quot;: 1200,
+  &quot;stable&quot;: false,
+  &quot;deps&quot;: {},
+  &quot;notes&quot;: null,
+  &quot;quote&quot;: &quot;say \&quot;hi\&quot;&quot;
+}
+[1, 2,]   -&gt; unexpected ']' at offset 6
+{&quot;a&quot; 1}   -&gt; expected ':' at offset 5
+[tru]     -&gt; invalid literal, expected true at offset 4
+&quot;open     -&gt; unterminated string at offset 5
+[1] x     -&gt; trailing characters at offset 4
+-         -&gt; bad number '-' at offset 0
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>A JSON value is the six-variant enum <code>Json</code>. Arrays and objects hold themselves recursively as <code>List&lt;Json&gt;</code> and <code>OrderedDict&lt;str, Json&gt;</code>; objects use <code>OrderedDict</code> to keep key order (<a href="../learn/05-sum-types">Sum types</a>, <a href="../learn/06-structs-enums-traits">Structs, enums and traits</a>).
+</li>
+<li>The parser is a struct holding the position <code>pos</code>, and the methods that advance it take <code>ref self</code>. When such a method returns (or throws), the updated <code>self</code> is written back to the caller (<a href="../spec/refs-lang/004-functions/407-ref-keyword#475-exception-for-method-receivers">4.7.5 method receivers</a>).
+</li>
+<li>End of input is checked with <code>let c: char = self.peek() else { throw ...; };</code>. <code>peek()</code> returns <code>char | none</code>, so <code>let-else</code> leaves on <code>none</code>, and below it <code>c</code> is a <code>char</code> (<a href="../spec/refs-lang/003-expressions/316-let-else#3161-form">3.16 <code>let-else</code></a>).
+</li>
+<li>Every error is a single <code>ParseError</code> carrying a message and a position. Errors thrown by the standard library, such as a failed number parse, are turned into positioned errors with <code>catch _ { throw ParseError { ... }; }</code> (<a href="../learn/10-errors">Errors</a>).
+</li>
+<li>Output is built by the recursive function <code>pretty</code>, which returns a string. For arrays and objects each element is rendered first, then <code>block</code> adds indentation and commas; string values use <code>{s:?}</code> (Debug) for quotes and escapes (<a href="../learn/09-strings">Strings</a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/json-parser.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="interpreter"><small>Previous</small>A small Lisp interpreter</a><a class="next" href="matrix"><small>Next</small>Matrix operations</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

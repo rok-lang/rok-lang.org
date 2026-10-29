@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. 어휘 구조 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 장은 rok 소스 코드를 토큰으로 분해하는 규칙을 다룹니다. 구체적으로는 파일과 줄을 시작으로 식별자, 키워드, 리터럴, 그리고 연산자 토큰까지 토큰화 단계에서 마주치는 모든 요소를 살펴봅니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/001-lexical/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1. 어휘 구조 - rok docs">
+<meta property="og:description" content="이 장은 rok 소스 코드를 토큰으로 분해하는 규칙을 다룹니다. 구체적으로는 파일과 줄을 시작으로 식별자, 키워드, 리터럴, 그리고 연산자 토큰까지 토큰화 단계에서 마주치는 모든 요소를 살펴봅니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/001-lexical/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/001-lexical/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/001-lexical/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a class="cur" href="./">1. 어휘 구조</a></p><ul class="toc"><li><a href="#목차">목차</a></li></ul><ul class="pages"><li><a href="101-source-files">1.1. 소스 파일</a></li><li><a href="102-lexical-structure">1.2. 어휘 구조</a></li><li><a href="103-statement-terminator">1.3. 문장 종결자</a></li><li><a href="104-identifiers">1.4. 식별자</a></li><li><a href="105-keywords">1.5. 키워드</a></li><li><a href="106-numeric-literals">1.6. 숫자 리터럴</a></li><li><a href="107-string-literals">1.7. 문자열 리터럴</a></li><li><a href="108-character-literals">1.8. 문자 리터럴</a></li><li><a href="109-other-literals">1.9. 진리값과 센티넬 리터럴</a></li><li><a href="110-punctuation-and-operator-tokens">1.10. 구두점과 연산자 토큰</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="1-어휘-구조 1-lexical-structure 목차 contents"><a href="../../../../spec/refs-lang/001-lexical/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="1-어휘-구조"><a class="anchor" tabindex="-1" href="#1-어휘-구조" aria-hidden="true">#</a>1. 어휘 구조</h1>
+<p>이 장은 rok 소스 코드를 토큰으로 분해하는 규칙을 다룹니다. 구체적으로는 파일과 줄을 시작으로 식별자, 키워드, 리터럴, 그리고 연산자 토큰까지 토큰화 단계에서 마주치는 모든 요소를 살펴봅니다.</p>
+<p>타입과 표현식, 문장과 같은 상위 레이어는 이미 토큰화가 끝난 입력을 받아서 처리하기 때문에, 토큰화 단계에서 적용되는 규칙은 모두 이 장 한 곳에 모여 있습니다.</p>
+<h2 id="목차"><a class="anchor" tabindex="-1" href="#목차" aria-hidden="true">#</a>목차</h2>
+<ul>
+<li><a href="101-source-files">1.1. 소스 파일</a>. 패키지, 디렉토리, <code>.rok</code> 파일.
+</li>
+<li><a href="102-lexical-structure">1.2. 어휘 구조</a>. 줄, 공백, 주석.
+</li>
+<li><a href="103-statement-terminator">1.3. 문장 종결자</a>. <code>;</code> 와 자동 삽입 규칙.
+</li>
+<li><a href="104-identifiers">1.4. 식별자</a>. 이름 형식.
+</li>
+<li><a href="105-keywords">1.5. 키워드</a>. 예약어 목록.
+</li>
+<li><a href="106-numeric-literals">1.6. 숫자 리터럴</a>.
+</li>
+<li><a href="107-string-literals">1.7. 문자열 리터럴</a>.
+</li>
+<li><a href="108-character-literals">1.8. 문자 리터럴</a>.
+</li>
+<li><a href="109-other-literals">1.9. 진리값과 센티넬 리터럴</a>. <code>true</code>, <code>false</code>, <code>none</code>.
+</li>
+<li><a href="110-punctuation-and-operator-tokens">1.10. 구두점과 연산자 토큰</a>.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/001-lexical/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../000-meta/008-notation"><small>Previous</small>0.8. 표기법</a><a class="next" href="101-source-files"><small>Next</small>1.1. 소스 파일</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

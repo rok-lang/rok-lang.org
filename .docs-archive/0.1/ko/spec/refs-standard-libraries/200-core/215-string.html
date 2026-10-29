@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.15. 문자열 - str / char / c_char - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::str 모듈은 문자열과 문자 타입의 권위 정의를 제공합니다. rok 은 UTF-8 우선 정책을 채택하고 있어서, 모든 in-process 문자열은 UTF-8 로 다루며, FFI 경계에서만 c_char 를 사용합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/215-string.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.15. 문자열 - str / char / c_char - rok docs">
+<meta property="og:description" content="rok::core::str 모듈은 문자열과 문자 타입의 권위 정의를 제공합니다. rok 은 UTF-8 우선 정책을 채택하고 있어서, 모든 in-process 문자열은 UTF-8 로 다루며, FFI 경계에서만 c_char 를 사용합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/215-string.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/215-string.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/215-string.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li class="cur"><a aria-current="page" href="215-string">2.15. 문자열 - str / char / c_char</a><ul class="toc"><li><a href="#2151-문자열-모델---불변-str-과-가변-strbuf">2.15.1. 문자열 모델 - 불변 str 과 가변 StrBuf</a></li><li><a href="#2152-str---불변-utf-8-문자열">2.15.2. str - 불변 UTF-8 문자열</a></li><li><a href="#2153-sab-슬라이싱---utf-8-안전">2.15.3. s[a:b] 슬라이싱 - UTF-8 안전</a></li><li><a href="#2154-char---unicode-scalar-value">2.15.4. char - Unicode scalar value</a></li><li><a href="#2155-c_char---c-abi-1-byte-언어-기본값">2.15.5. c_char - C ABI 1-byte (언어 기본값)</a></li><li><a href="#2156-utf-8-invariant---모든-in-process-문자열">2.15.6. UTF-8 invariant - 모든 in-process 문자열</a></li><li><a href="#2157-fromstr-트레잇---파싱">2.15.7. FromStr 트레잇 - 파싱</a></li><li><a href="#2158-모듈-매핑">2.15.8. 모듈 매핑</a></li><li><a href="#2159-다른-언어와의-비교">2.15.9. 다른 언어와의 비교</a></li></ul></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="215-문자열---str--char--c_char 215-strings---str--char--c_char 2151-문자열-모델---불변-str-과-가변-strbuf 2151-string-model---immutable-str-and-mutable-strbuf rust--python--rok-모델-비교 rust--python--rok-model-comparison 2152-str---불변-utf-8-문자열 2152-str---immutable-utf-8-string 핵심-메서드 core-methods strbuf---가변-buffer strbuf---mutable-buffer 문자열-리터럴---hello string-literals---hello 트레잇-구현 trait-implementations 2153-sab-슬라이싱---utf-8-안전 2153-sab-slicing---utf-8-safe 직접-indexing-거부 direct-indexing-rejected 부분-문자열은-복사하지-않음 substrings-are-not-copied 2154-char---unicode-scalar-value 2154-char---unicode-scalar-value 리터럴--메서드 literals--methods 변환 conversion 트레잇-구현-1 trait-implementations-1 2155-c_char---c-abi-1-byte-언어-기본값 2155-c_char---c-abi-1-byte-language-built-in 리터럴 literals char-vs-c_char-차이 char-vs-c_char 2156-utf-8-invariant---모든-in-process-문자열 2156-utf-8-invariant---every-in-process-string 검증-우회의-이유 why-validation-bypass-is-restricted byte--str-변환 byte--str-conversion 2157-fromstr-트레잇---파싱 2157-fromstr-trait---parsing 2158-모듈-매핑 2158-module-mapping 2159-다른-언어와의-비교 2159-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/200-core/215-string" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="215-문자열---str--char--c_char"><a class="anchor" tabindex="-1" href="#215-문자열---str--char--c_char" aria-hidden="true">#</a>2.15. 문자열 - <code>str</code> / <code>char</code> / <code>c_char</code></h1>
+<p><code>rok::core::str</code> 모듈은 문자열과 문자 타입의 권위 정의를 제공합니다. rok 은 <strong>UTF-8 우선</strong> 정책을 채택하고 있어서, 모든 in-process 문자열은 UTF-8 로 다루며, FFI 경계에서만 <code>c_char</code> 를 사용합니다.</p>
+<p>이 장은 48 개의 lang slot 중 세 개를 정의합니다. 첫째로 <code>str_type</code> 은 <code>rok::core::str::str</code> 에 연결되며 언어 기본값에 해당하는 lowercase struct 입니다. 둘째로 <code>char_type</code> 은 내장 <code>char</code> 이며, 이 장이 그 메서드를 정의합니다. 셋째로 <code>cchar_type</code> 은 <code>rok::core::str::c_char</code> 에 연결되며 마찬가지로 언어 기본값입니다.</p>
+<h2 id="2151-문자열-모델---불변-str-과-가변-strbuf"><a class="anchor" tabindex="-1" href="#2151-문자열-모델---불변-str-과-가변-strbuf" aria-hidden="true">#</a>2.15.1. 문자열 모델 - 불변 <code>str</code> 과 가변 <code>StrBuf</code></h2>
+<p><code>str</code> 은 불변 UTF-8 문자열 값이고, 문자열을 만들어 가는 가변 buffer 는 별도 타입 <code>StrBuf</code> 입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>의미</th><th>메모리 표현</th><th>mutability</th></tr></thead>
+<tbody>
+<tr><td><code>str</code></td><td>UTF-8 문자열 값</td><td><code>(ptr, len)</code> 값 - 바이트는 immortal 상수 또는 GC 객체</td><td><strong>불변</strong></td></tr>
+<tr><td><code>StrBuf</code></td><td>늘어나는 UTF-8 buffer</td><td>GC heap 객체</td><td>가변</td></tr>
+<tr><td><code>char</code></td><td>Unicode scalar value (PascalCase struct + keyword)</td><td>4B (u32)</td><td>(값 - 변경 X)</td></tr>
+<tr><td><code>c_char</code></td><td>C ABI 1-byte char (FFI primitive)</td><td>1B (i8 또는 u8 - target dep)</td><td>(값)</td></tr>
+</tbody></table></div>
+<h3 id="rust--python--rok-모델-비교"><a class="anchor" tabindex="-1" href="#rust--python--rok-모델-비교" aria-hidden="true">#</a>Rust / Python / rok 모델 비교</h3>
+<p>세 언어가 문자열을 어떻게 다루는지 비교하면 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>Python</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>값</td><td><code>&amp;str</code></td><td><code>str</code></td><td><code>str</code> (불변 <code>(ptr, len)</code>)</td></tr>
+<tr><td>가변 buffer</td><td><code>String</code></td><td><code>io.StringIO</code> 등</td><td><code>StrBuf</code></td></tr>
+<tr><td>메모리</td><td>borrow checker</td><td>refcount</td><td>GC</td></tr>
+</tbody></table></div>
+<p>rok 의 <code>str</code> 은 수명 추적이 필요 없다는 점에서 Python 의 불변 <code>str</code> 에 가깝고, 표현은 Rust 의 <code>&amp;str</code> 처럼 <code>(ptr, len)</code> 쌍입니다. 런타임에 만들어지는 문자열의 바이트는 GC 객체 (type id <code>1</code>, <a href="../../refs-lang/008-abi/802-scan-table#8212-런타임-예약-type-id">refs-lang 8.2.12</a>) 에 있습니다.</p>
+<h2 id="2152-str---불변-utf-8-문자열"><a class="anchor" tabindex="-1" href="#2152-str---불변-utf-8-문자열" aria-hidden="true">#</a>2.15.2. <code>str</code> - 불변 UTF-8 문자열</h2>
+<pre><code class="language-rok"><span class="a">#[lang("str_type")]</span>
+<span class="k">struct</span> <span class="t">str</span> {
+    ptr: <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;;
+    len: <span class="t">usize</span>;            <span class="c">// byte length (NOT char count)</span>
+}
+</code></pre>
+<p><code>str</code> 는 언어 기본값이라 컴파일러가 직접 인식하므로 <code>#[keyword]</code> 가 따로 필요하지 않습니다. lowercase struct 이름이 사용자 코드의 타입 표기와 동일합니다.</p>
+<p><code>str</code> 은 값으로 전달되는 <code>(ptr, len)</code> 쌍이며, 가리키는 바이트는 바뀌지 않습니다. 문자열을 바꾸는 연산은 모두 새 <code>str</code> 을 돌려줍니다.</p>
+<h3 id="핵심-메서드"><a class="anchor" tabindex="-1" href="#핵심-메서드" aria-hidden="true">#</a>핵심 메서드</h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">str</span> {
+    <span class="k">fn</span> from_utf8(bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">Utf8Error</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> from_utf8_lossy(bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; | <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">str</span>;   <span class="c">// 잘못된 시퀀스마다 → U+FFFD</span>
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                  <span class="c">// byte 길이</span>
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> as_bytes(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;         <span class="c">// 복사 없는 읽기 전용 view</span>
+    <span class="k">fn</span> byte(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">u8</span>;          <span class="c">// O(1), 범위 밖이면 panic</span>
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;;        <span class="c">// FFI</span>
+
+    <span class="c">// 읽기 메서드</span>
+    <span class="k">fn</span> chars(<span class="k">self</span>) -&gt; <span class="t">CharsIter</span>;            <span class="c">// Unicode scalar iterator</span>
+    <span class="k">fn</span> bytes(<span class="k">self</span>) -&gt; <span class="t">BytesIter</span>;            <span class="c">// u8 iterator</span>
+    <span class="k">fn</span> char_indices(<span class="k">self</span>) -&gt; <span class="t">CharIndicesIter</span>;
+    <span class="k">fn</span> lines(<span class="k">self</span>) -&gt; <span class="t">LinesIter</span>;            <span class="c">// 끝의 \r 제거, 마지막 빈 줄은 내지 않음</span>
+    <span class="k">fn</span> split(<span class="k">self</span>, sep: <span class="t">str</span>) -&gt; <span class="t">SplitIter</span>;  <span class="c">// 빈 조각도 유지 ("a,,b" → "a", "", "b")</span>
+    <span class="k">fn</span> split_whitespace(<span class="k">self</span>) -&gt; <span class="t">SplitWhitespaceIter</span>;   <span class="c">// Unicode White_Space 로 나눔 (trim 과 같은 집합)</span>
+
+    <span class="k">fn</span> starts_with(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> ends_with(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> contains(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> find(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+    <span class="k">fn</span> rfind(<span class="k">self</span>, pat: <span class="t">str</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;
+
+    <span class="k">fn</span> strip_prefix(<span class="k">self</span>, prefix: <span class="t">str</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;   <span class="c">// 접두가 있으면 뗀 나머지</span>
+    <span class="k">fn</span> strip_suffix(<span class="k">self</span>, suffix: <span class="t">str</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;
+    <span class="k">fn</span> split_once(<span class="k">self</span>, sep: <span class="t">str</span>) -&gt; (<span class="t">str</span>, <span class="t">str</span>) | <span class="k">none</span>; <span class="c">// 처음 sep 의 앞 / 뒤</span>
+    <span class="k">fn</span> repeat(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">str</span>;
+
+    <span class="k">fn</span> trim(<span class="k">self</span>) -&gt; <span class="t">str</span>;                   <span class="c">// Unicode White_Space 를 뗌</span>
+    <span class="k">fn</span> trim_start(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> trim_end(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+
+    <span class="k">fn</span> to_lowercase(<span class="k">self</span>) -&gt; <span class="t">str</span>;           <span class="c">// 새 str (Unicode 전체 매핑 - 1:N, 문맥 규칙 포함)</span>
+    <span class="k">fn</span> to_uppercase(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> replace(<span class="k">self</span>, from: <span class="t">str</span>, to: <span class="t">str</span>) -&gt; <span class="t">str</span>;   <span class="c">// 빈 from 은 모든 char 경계에서 맞음: "ab".replace("", "-") == "-a-b-"</span>
+
+    <span class="k">fn</span> parse&lt;<span class="t">T</span>: <span class="t">FromStr</span>&gt;(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">T</span>::<span class="t">Err</span>) -&gt; <span class="t">T</span>;
+
+    <span class="c">// UTF-8 안전 slicing - byte boundary 검증</span>
+    <span class="c">// (s[a:b] desugar 가 본 메서드 dispatch)</span>
+    <span class="k">fn</span> slice(<span class="k">self</span>, range: <span class="t">Range</span>&lt;<span class="t">usize</span>&gt;) -&gt; <span class="t">str</span>;        <span class="c">// s[a:b] 와 같음, 바이트 공유</span>
+}
+</code></pre>
+<p><code>as_ptr</code> 는 문자열 바이트가 있는 자리를 가리키는 포인터를 돌려줍니다. 포인터 값이 나올 수 있는 함수 (변수나 식의 타입이 <code>rok::bare::ptr</code> 타입을 이름에 담는 함수: 타입 인자 (<code>List&lt;ConstPtr&lt;u8&gt;&gt;</code>) 나 함수 타입 안이어도 됩니다) 에서 그 <code>str</code> 을 담은 변수가 scope 안에 있는 동안, GC 는 문자열을 옮기지 않고 포인터는 유효합니다. generator 나 <code>async</code> 본문에서는 <code>yield</code> / <code>await</code> 를 지나서도 그렇습니다. 그 밖에서는 변수가 문자열을 마지막 사용까지만 붙들며, 다른 객체를 통해서만 닿는 문자열은 GC 가 옮길 수 있고 pin 되지 않습니다 (<a href="../100-bare/106-gc-pin">stdlib 1.6</a>). 바이트를 더 오래 그 자리에 두려면 문자열을 pin 합니다 (<a href="../100-bare/106-gc-pin#166-추출-메서드">1.6.6</a>).</p>
+<h3 id="strbuf---가변-buffer"><a class="anchor" tabindex="-1" href="#strbuf---가변-buffer" aria-hidden="true">#</a><code>StrBuf</code> - 가변 buffer</h3>
+<p>문자열을 조금씩 만들어 갈 때는 <code>StrBuf</code> 를 씁니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">StrBuf</span> { <span class="c">/* GC heap - ptr / len / capacity */</span> }
+
+<span class="k">impl</span> <span class="t">StrBuf</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">StrBuf</span>;
+    <span class="k">fn</span> push(<span class="k">self</span>, c: <span class="t">char</span>);                 <span class="c">// char 1 개 추가 (UTF-8 인코딩)</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> push_byte(<span class="k">self</span>, b: <span class="t">u8</span>);       <span class="c">// 내용이 UTF-8 로 남도록 호출자가 보장. 안전한 바이트 경로는 str::from_utf8</span>
+    <span class="k">fn</span> push_str(<span class="k">self</span>, s: <span class="t">str</span>);
+    <span class="k">fn</span> capacity(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> to_str(<span class="k">self</span>) -&gt; <span class="t">str</span>;                 <span class="c">// 현재 내용의 불변 str</span>
+}
+</code></pre>
+<p><code>StrBuf</code> 는 컬렉션처럼 참조 핸들이므로 메서드가 <code>self</code> 를 받습니다 (<a href="209-collections">2.9</a>).</p>
+<pre><code class="language-rok"><span class="k">let</span> buf = <span class="t">StrBuf</span>::new();
+<span class="k">for</span> x <span class="k">in</span> xs {
+    buf.push_str(<span class="s">f"{</span>x<span class="s">},"</span>);
+}
+<span class="k">let</span> s: <span class="t">str</span> = buf.to_str();
+</code></pre>
+<h3 id="문자열-리터럴---hello"><a class="anchor" tabindex="-1" href="#문자열-리터럴---hello" aria-hidden="true">#</a>문자열 리터럴 - <code>&quot;hello&quot;</code></h3>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;        <span class="c">// immortal 상수 바이트를 가리키는 str</span>
+</code></pre>
+<p><code>&quot;hello&quot;</code> 리터럴은 immortal 영역의 상수 바이트를 가리키는 <code>str</code> 값으로 lower 됩니다. <code>str</code> 이 불변이므로 복사나 copy-on-write 가 없습니다.</p>
+<h3 id="트레잇-구현"><a class="anchor" tabindex="-1" href="#트레잇-구현" aria-hidden="true">#</a>트레잇 구현</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>impl</th><th>동작</th></tr></thead>
+<tbody>
+<tr><td><code>Display</code></td><td>✓</td><td>self 그대로</td></tr>
+<tr><td><code>Debug</code></td><td>✓</td><td><code>&quot;...&quot;</code> 이스케이프</td></tr>
+<tr><td><code>Clone</code></td><td>✓</td><td>같은 값 (불변이라 바이트 공유)</td></tr>
+<tr><td><code>Copy</code></td><td>✓</td><td><code>(ptr, len)</code> 값 복사</td></tr>
+<tr><td><code>PartialEq</code></td><td>✓</td><td>내용 비교 (byte-wise)</td></tr>
+<tr><td><code>Eq</code></td><td>✓</td><td></td></tr>
+<tr><td><code>PartialOrd</code></td><td>✓</td><td>lexicographic byte</td></tr>
+<tr><td><code>Ord</code></td><td>✓</td><td></td></tr>
+<tr><td><code>Hash</code></td><td>✓</td><td></td></tr>
+<tr><td><code>IntoIterator</code></td><td><strong>없음</strong></td><td><code>.chars()</code> 명시 - byte vs char 모호성 회피</td></tr>
+<tr><td><code>Add&lt;str&gt;</code> (<code>s + t</code>)</td><td>✓ → str (concat - 새 str)</td><td></td></tr>
+<tr><td><code>AddAssign&lt;str&gt;</code> (<code>s += t</code>)</td><td>✓ → <code>s = s + t</code> (새 str 로 교체)</td><td></td></tr>
+<tr><td><code>FromIterator&lt;char&gt;</code></td><td>✓</td><td><code>(chars).collect::&lt;str&gt;()</code></td></tr>
+<tr><td><code>FromIterator&lt;str&gt;</code></td><td>✓</td><td><code>(strs).collect::&lt;str&gt;()</code></td></tr>
+</tbody></table></div>
+<div class="callout note"><p class="callout-title">참고</p>
+<p><code>str</code> 는 불변 값이라 <code>let t = s;</code> 는 <code>(ptr, len)</code> 을 복사할 뿐이며, 어느 쪽도 내용을 바꿀 수 없습니다.</p>
+</div>
+<h2 id="2153-sab-슬라이싱---utf-8-안전"><a class="anchor" tabindex="-1" href="#2153-sab-슬라이싱---utf-8-안전" aria-hidden="true">#</a>2.15.3. <code>s[a:b]</code> 슬라이싱 - UTF-8 안전</h2>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello, 세계!"</span>;
+s.len();                       <span class="c">//→ 14  (byte 길이 - "hello, " 7 + 한국어 3바이트 × 2 + "!" 1)</span>
+s.chars().count();             <span class="c">//→ 10  (char 개수)</span>
+
+<span class="k">let</span> s2 = s[<span class="n">7</span>:<span class="n">13</span>];              <span class="c">//→ "세계"  (byte boundary OK)</span>
+<span class="k">let</span> s3 = s[<span class="n">8</span>:<span class="n">9</span>];               <span class="c">// panic - UTF-8 sequence 중간 byte</span>
+<span class="k">let</span> s4 = s[<span class="n">7</span>:<span class="n">100</span>];             <span class="c">//→ "세계!" (끝은 길이로 잘라 맞춤)</span>
+<span class="k">let</span> s5 = s[-<span class="n">1</span>:];               <span class="c">//→ "!"</span>
+</code></pre>
+<p><code>str</code> / <code>StrBuf</code> 의 경계는 바이트 offset 입니다. 경계는 먼저 Python 처럼 잘라 맞추고 (음수는 끝에서부터, <a href="../../refs-lang/003-expressions/306-indexing-and-slicing#362-슬라이싱-arrstartend">refs-lang 3.6.2</a>), 그 위치가 UTF-8 sequence 중간이면 panic 합니다. 결과는 원래 바이트를 공유하는 <code>str</code> 입니다 (아래). <code>str</code> 슬라이스에는 step 이 없으며 <code>s[::2]</code> 는 타입 에러입니다.</p>
+<h3 id="직접-indexing-거부"><a class="anchor" tabindex="-1" href="#직접-indexing-거부" aria-hidden="true">#</a>직접 indexing 거부</h3>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;
+<span class="k">let</span> c = s[<span class="n">0</span>];                  <span class="c">// ERROR - `Index&lt;usize&gt;` 정의 안 함</span>
+                               <span class="c">//         이유: byte vs char 모호 + UTF-8 안전성</span>
+</code></pre>
+<p>이 경우 <code>s.chars().next()</code> 나 <code>s.byte(0)</code> 처럼 의도를 명시해야 합니다.</p>
+<h3 id="부분-문자열은-복사하지-않음"><a class="anchor" tabindex="-1" href="#부분-문자열은-복사하지-않음" aria-hidden="true">#</a>부분 문자열은 복사하지 않음</h3>
+<p><code>str</code> <code>s</code> 에 대한 <code>s[a:b]</code>, <code>lines</code>, <code>split*</code>, <code>split_whitespace</code>, <code>split_once</code>, <code>trim*</code>, <code>strip_*</code> 의 결과는 원래 바이트를 공유하는 <code>str</code> 이며 O(1) 입니다 (<a href="../../refs-lang/008-abi/808-lowering-types#881-원시-정수--부동소수">refs-lang 8.8.1</a>). 그래서 작은 조각이 큰 원본을 살려 둡니다. 떼어 내는 API 는 없습니다. <code>as_bytes()</code> 도 복사 없는 읽기 전용 <code>Slice&lt;u8&gt;</code> view 입니다. <code>StrBuf</code> 의 slice 는 그 범위의 사본을 담은 새 <code>str</code> 이며 O(b − a) 입니다: <code>str</code> 은 불변이므로 아직 바뀔 수 있는 buffer 를 공유할 수 없습니다.</p>
+<h2 id="2154-char---unicode-scalar-value"><a class="anchor" tabindex="-1" href="#2154-char---unicode-scalar-value" aria-hidden="true">#</a>2.15.4. <code>char</code> - Unicode scalar value</h2>
+<p><code>char</code> 는 언어 내장 타입입니다 (<a href="201-numbers">2.1</a>): struct 가 아닌 4 바이트 Unicode scalar value 이며, 이 모듈이 그 메서드를 정의합니다.</p>
+<p>Unicode scalar value 의 범위는 0..=0xD7FF 와 0xE000..=0x10FFFF 의 합집합입니다. Surrogate 범위인 0xD800..=0xDFFF 는 <strong>자동 niche</strong> 로 활용되어, <code>char | none</code> 이 4B 로 인코딩될 수 있습니다.</p>
+<h3 id="리터럴--메서드"><a class="anchor" tabindex="-1" href="#리터럴--메서드" aria-hidden="true">#</a>리터럴 / 메서드</h3>
+<pre><code class="language-rok"><span class="k">let</span> c: <span class="t">char</span> = <span class="s">'A'</span>;                   <span class="c">//→ U+0041</span>
+<span class="k">let</span> k: <span class="t">char</span> = <span class="s">'한'</span>;                  <span class="c">//→ U+D55C</span>
+<span class="k">let</span> e: <span class="t">char</span> = <span class="s">'😀'</span>;                  <span class="c">//→ U+1F600</span>
+
+c.to_lowercase();                    <span class="c">//→ 'a'</span>
+c.is_alphabetic();                   <span class="c">//→ true</span>
+c.is_ascii();                        <span class="c">//→ true</span>
+<span class="k">try</span> <span class="s">'1'</span>.to_digit(<span class="n">10</span>);                <span class="c">//→ 1 (u32, 실패 시 ValueError)</span>
+c.len_utf8();                        <span class="c">//→ 1 (UTF-8 인코딩 시 byte 수)</span>
+e.len_utf8();                        <span class="c">//→ 4</span>
+</code></pre>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">char</span> {
+    <span class="k">fn</span> from_u32(n: <span class="t">u32</span>) -&gt; <span class="t">char</span> | <span class="k">none</span>;                  <span class="c">// surrogate / 범위 밖이면 none</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> from_u32_unchecked(n: <span class="t">u32</span>) -&gt; <span class="t">char</span>;        <span class="c">// 검사 없음 - 호출자가 scalar value 를 보장</span>
+    <span class="k">fn</span> from_digit(d: <span class="t">u32</span>, radix: <span class="t">u32</span>) -&gt; <span class="t">char</span>;           <span class="c">// d &gt;= radix 나 radix 가 2..=36 밖이면 panic</span>
+    <span class="k">fn</span> to_digit(<span class="k">self</span>, radix: <span class="t">u32</span>) <span class="k">throws</span> (<span class="t">ValueError</span>) -&gt; <span class="t">u32</span>;
+    <span class="k">fn</span> is_digit(<span class="k">self</span>, radix: <span class="t">u32</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> len_utf8(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> len_utf16(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+
+    <span class="c">// Unicode 속성</span>
+    <span class="k">fn</span> is_alphabetic(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_lowercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_uppercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_whitespace(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_numeric(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_alphanumeric(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_control(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> to_lowercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;       <span class="c">// 1:1 매핑만</span>
+    <span class="k">fn</span> to_uppercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;
+
+    <span class="c">// ASCII</span>
+    <span class="k">fn</span> is_ascii(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_uppercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;     <span class="k">fn</span> is_ascii_lowercase(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_alphabetic(<span class="k">self</span>) -&gt; <span class="t">bool</span>;    <span class="k">fn</span> is_ascii_digit(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_alphanumeric(<span class="k">self</span>) -&gt; <span class="t">bool</span>;  <span class="k">fn</span> is_ascii_hexdigit(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_whitespace(<span class="k">self</span>) -&gt; <span class="t">bool</span>;    <span class="k">fn</span> is_ascii_control(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_ascii_graphic(<span class="k">self</span>) -&gt; <span class="t">bool</span>;       <span class="k">fn</span> is_ascii_punctuation(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> to_ascii_uppercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;     <span class="k">fn</span> to_ascii_lowercase(<span class="k">self</span>) -&gt; <span class="t">char</span>;
+    <span class="k">fn</span> eq_ignore_ascii_case(<span class="k">self</span>, other: <span class="t">char</span>) -&gt; <span class="t">bool</span>;
+}
+</code></pre>
+<p><code>char</code> 의 <code>to_lowercase</code> / <code>to_uppercase</code> 는 한 문자를 돌려주므로 1:1 매핑만 적용합니다. 한 문자가 여러 문자로 바뀌는 경우는 그대로 둡니다 (<code>'ß'.to_uppercase() == 'ß'</code>). <code>str</code> 의 <code>to_lowercase</code> / <code>to_uppercase</code> 는 1:N 과 문맥 규칙 (그리스어 끝 시그마 <code>Σ</code> → <code>ς</code>) 까지 포함한 전체 매핑입니다 (<code>&quot;ß&quot;.to_uppercase() == &quot;SS&quot;</code>).</p>
+<p>Unicode 속성과 대소문자 표는 UCD 18.0.0 입니다.</p>
+<h3 id="변환"><a class="anchor" tabindex="-1" href="#변환" aria-hidden="true">#</a>변환</h3>
+<pre><code class="language-rok"><span class="t">char</span>::from_u32(<span class="n">0x41</span>);                <span class="c">//→ 'A' (char | none - surrogate 는 none)</span>
+<span class="t">char</span>::from_digit(<span class="n">5</span>, <span class="n">10</span>);             <span class="c">//→ '5'</span>
+
+<span class="k">let</span> n: <span class="t">u32</span> = c <span class="k">as</span> <span class="t">u32</span>;               <span class="c">//→ 65 (lossless)</span>
+<span class="k">let</span> c2: <span class="t">char</span> = n <span class="k">as</span> <span class="t">char</span>;            <span class="c">//→ ERROR - u8 만 `as char` 가능</span>
+<span class="k">let</span> b: <span class="t">u8</span> = <span class="n">0x41</span>;
+<span class="k">let</span> c4: <span class="t">char</span> = b <span class="k">as</span> <span class="t">char</span>;            <span class="c">//→ 'A' (u8 은 늘 scalar value)</span>
+<span class="k">let</span> c3 = <span class="k">try</span> <span class="t">char</span>::try_from(n);      <span class="c">//→ char (TryFrom&lt;u32&gt; - from_u32 를 써서, none 이면 OverflowError)</span>
+</code></pre>
+<h3 id="트레잇-구현-1"><a class="anchor" tabindex="-1" href="#트레잇-구현-1" aria-hidden="true">#</a>트레잇 구현</h3>
+<p><code>char</code> 는 모든 cmp / fmt 트레잇과 함께 <code>Copy</code>, <code>Clone</code>, <code>Hash</code> 를 구현합니다. niche 는 자동으로 적용되어 <code>char | none</code> 의 크기가 4B 가 됩니다.</p>
+<h2 id="2155-c_char---c-abi-1-byte-언어-기본값"><a class="anchor" tabindex="-1" href="#2155-c_char---c-abi-1-byte-언어-기본값" aria-hidden="true">#</a>2.15.5. <code>c_char</code> - C ABI 1-byte (언어 기본값)</h2>
+<pre><code class="language-rok"><span class="a">#[lang("cchar_type")]</span>
+<span class="k">struct</span> c_char {
+    value: <span class="t">i8</span> 또는 <span class="t">u8</span>;     <span class="c">// target dep (signedness 가 OS / arch 별 다름)</span>
+}
+</code></pre>
+<p><code>c_char</code> 는 언어 기본값에 해당하는 FFI primitive 로, 컴파일러가 직접 인식하는 lowercase struct 입니다.</p>
+<p>C 의 <code>char</code> 와 ABI 호환을 이루며, UTF-8 인코딩 단위가 아니라 raw byte 라는 점에 유의해야 합니다. 용도는 다음과 같이 FFI 전용입니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> strlen(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> strcmp(a: <span class="t">ConstPtr</span>&lt;c_char&gt;, b: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">i32</span>;
+}
+</code></pre>
+<h3 id="리터럴"><a class="anchor" tabindex="-1" href="#리터럴" aria-hidden="true">#</a>리터럴</h3>
+<pre><code class="language-rok"><span class="k">let</span> c: c_char = c<span class="s">'A'</span>;        <span class="c">//→ 65 (i8/u8 - target dep)</span>
+<span class="k">let</span> n: c_char = c<span class="s">'\n'</span>;       <span class="c">//→ 10</span>
+</code></pre>
+<p>prefix <code>c'...'</code> 형태를 사용하여 char 와 분리합니다.</p>
+<h3 id="char-vs-c_char-차이"><a class="anchor" tabindex="-1" href="#char-vs-c_char-차이" aria-hidden="true">#</a>char vs c_char 차이</h3>
+<p>두 타입을 비교하면 차이가 분명히 드러납니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>char</code></th><th><code>c_char</code></th></tr></thead>
+<tbody>
+<tr><td>크기</td><td>4 bytes</td><td>1 byte</td></tr>
+<tr><td>의미</td><td>Unicode scalar (code point)</td><td>C ABI byte</td></tr>
+<tr><td>범위</td><td>0..=0x10FFFF (surrogate 제외)</td><td>0..=255 또는 -128..=127</td></tr>
+<tr><td>멀티바이트</td><td>단일 char 가 BMP / SMP 모두 표현</td><td>멀티바이트 char = byte 시퀀스</td></tr>
+<tr><td>리터럴</td><td><code>'A'</code></td><td><code>c'A'</code></td></tr>
+<tr><td>등록</td><td>표준 라이브러리 추가 (<code>#[keyword]</code>)</td><td>언어 기본값</td></tr>
+<tr><td>사용처</td><td>일반 문자열 처리</td><td>FFI / 바이트 단위 처리</td></tr>
+</tbody></table></div>
+<p>따라서 표준 라이브러리 함수에서는 <strong><code>char</code> 우선</strong> 사용을 원칙으로 하며, <code>c_char</code> 는 명시적인 FFI 경계에서만 활용합니다.</p>
+<h2 id="2156-utf-8-invariant---모든-in-process-문자열"><a class="anchor" tabindex="-1" href="#2156-utf-8-invariant---모든-in-process-문자열" aria-hidden="true">#</a>2.15.6. UTF-8 invariant - 모든 in-process 문자열</h2>
+<p><code>str</code> 는 항상 UTF-8 valid 임이 보장되며, 그 근거는 다음과 같습니다. 우선 생성자가 검증을 수행하므로 <code>str::from_utf8(bytes)</code> 는 잘못된 바이트열에 대해 <code>Utf8Error</code> 를 던집니다 (<code>throws (Utf8Error)</code>). 다음으로 슬라이싱이 byte boundary 를 검증하여 멀티바이트 시퀀스 중간을 거부합니다. 또한 <code>push</code> 나 <code>insert</code> 같은 in-place 수정 역시 UTF-8 무결성을 보장합니다. 마지막으로 <code>rok::bare::str_from_bytes_unchecked</code> 만이 검증을 우회할 수 있으며 이는 unsafe tier 에 속합니다.</p>
+<h3 id="검증-우회의-이유"><a class="anchor" tabindex="-1" href="#검증-우회의-이유" aria-hidden="true">#</a>검증 우회의 이유</h3>
+<p>UTF-8 invariant 가 <strong>깨지면</strong> 어떤 문제가 생기는지 살펴볼 필요가 있습니다. 우선 <code>chars()</code> 가 <code>IndexError</code> 를 던지거나 무한 루프에 빠질 수 있고, 멀티바이트 sequence 가 잘려서 표시가 깨질 수 있으며, 더 나아가 overlong encoding 같은 security 이슈가 발생할 수도 있습니다.</p>
+<p>따라서 표준 라이브러리가 빌드 시점에 검증을 보장함으로써, 사용자 코드에서 <code>str.chars()</code> 등이 항상 안전하게 동작합니다. unsafe 진입 없이는 invariant 가 깨질 수 없습니다.</p>
+<h3 id="byte--str-변환"><a class="anchor" tabindex="-1" href="#byte--str-변환" aria-hidden="true">#</a>byte ↔ str 변환</h3>
+<pre><code class="language-rok"><span class="k">let</span> bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0x68</span>, <span class="n">0x65</span>, <span class="n">0x6C</span>, <span class="n">0x6C</span>, <span class="n">0x6F</span>];
+<span class="k">let</span> s: <span class="t">str</span> = <span class="k">try</span> <span class="t">str</span>::from_utf8(bytes);
+                                          <span class="c">//→ "hello"</span>
+
+<span class="k">let</span> invalid: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = [<span class="n">0xFF</span>, <span class="n">0xFE</span>];
+<span class="k">let</span> s: <span class="t">str</span> = <span class="k">try</span> <span class="t">str</span>::from_utf8(invalid);
+                                          <span class="c">//→ throw Utf8Error { ... }</span>
+</code></pre>
+<p><code>str::from_utf8_lossy(bytes)</code> 는 던지지 않습니다: 잘못된 시퀀스의 maximal subpart 하나하나 (Unicode §3.9, U+FFFD Substitution of Maximal Subparts; WHATWG UTF-8 decoder 의 동작) 가 U+FFFD 하나가 됩니다.</p>
+<h2 id="2157-fromstr-트레잇---파싱"><a class="anchor" tabindex="-1" href="#2157-fromstr-트레잇---파싱" aria-hidden="true">#</a>2.15.7. <code>FromStr</code> 트레잇 - 파싱</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">FromStr</span> {
+    <span class="k">type</span> <span class="t">Err</span>;
+    <span class="k">fn</span> from_str(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">Err</span>) -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<p><code>str.parse::&lt;T&gt;()</code> 는 <code>throws (T::Err)</code> 이며 이 트레잇을 통해 dispatch 됩니다. 숫자 타입과 <code>bool</code> 의 <code>Err</code> 는 core 의 <code>ParseError { input, pos, reason }</code> (<a href="214-error#2144-내장-에러-타입">2.14.4</a>) 입니다. 숫자 파싱은 런타임 helper <code>rok_str_parse_int</code> / <code>rok_str_parse_float</code> 위에 구현됩니다 (<a href="../../refs-lang/008-abi/805-extern-symbols#문자열-helper">refs-lang 8.5</a>). 실수의 <code>FromStr</code> 는 유한한 숫자가 타입의 범위를 넘으면 <code>number out of range</code> 로 실패하며, <code>inf</code> / <code>NaN</code> 텍스트는 파싱됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span> <span class="s">"42"</span>.parse();         <span class="c">// FromStr for i32</span>
+<span class="k">let</span> f: <span class="t">f64</span> = <span class="k">try</span> <span class="s">"3.14"</span>.parse();       <span class="c">// FromStr for f64</span>
+<span class="k">let</span> b: <span class="t">bool</span> = <span class="k">try</span> <span class="s">"true"</span>.parse();      <span class="c">// FromStr for bool</span>
+
+<span class="c">// 사용자 정의</span>
+<span class="k">impl</span> <span class="t">FromStr</span> <span class="k">for</span> <span class="t">Color</span> {
+    <span class="k">type</span> <span class="t">Err</span> = <span class="t">ParseColorError</span>;
+    <span class="k">fn</span> from_str(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseColorError</span>) -&gt; <span class="t">Color</span> { ... }
+}
+<span class="k">let</span> c: <span class="t">Color</span> = <span class="k">try</span> <span class="s">"red"</span>.parse();
+</code></pre>
+<p><code>FromStr</code> 은 <a href="211-conversion">2.11 conversion</a> 의 <code>TryFrom&lt;str&gt;</code> 와 <strong>별개</strong> 입니다. <code>str → T</code> 변환만 다루며 fallible 함을 명시적으로 드러낸다는 차이가 있습니다.</p>
+<h2 id="2158-모듈-매핑"><a class="anchor" tabindex="-1" href="#2158-모듈-매핑" aria-hidden="true">#</a>2.15.8. 모듈 매핑</h2>
+<p>세 타입의 등록 방식과 구현 위치는 다음 표에 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>struct 이름</th><th>등록</th><th>구현</th></tr></thead>
+<tbody>
+<tr><td><code>str</code></td><td><code>str</code> (lowercase)</td><td>언어 기본값</td><td>표준 라이브러리</td></tr>
+<tr><td><code>StrBuf</code></td><td><code>StrBuf</code></td><td>일반 타입</td><td>표준 라이브러리</td></tr>
+<tr><td><code>c_char</code></td><td><code>c_char</code> (lowercase)</td><td>언어 기본값</td><td>표준 라이브러리</td></tr>
+<tr><td><code>char</code></td><td><code>char</code> (내장)</td><td>언어 기본</td><td>컴파일러 (메서드: 표준 라이브러리)</td></tr>
+</tbody></table></div>
+<p>intrinsic 부착에 관해서는, <code>str</code> 메서드 본문 일부와 <code>char</code> 메서드 일부에 <code>#[intrinsic(&quot;rok.str.*&quot;)]</code> 또는 <code>#[intrinsic(&quot;rok.char.*&quot;)]</code> 가 부착됩니다.</p>
+<h2 id="2159-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#2159-다른-언어와의-비교" aria-hidden="true">#</a>2.15.9. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>Python 3</th><th>Java</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>타입 분리</td><td><code>&amp;str</code> + <code>String</code></td><td><code>str</code> (단일)</td><td><code>String</code></td><td><code>str</code> + <code>StrBuf</code></td></tr>
+<tr><td>mutability</td><td><code>String</code> 만 가변</td><td><strong>불변</strong></td><td><strong>불변</strong></td><td><code>str</code> 불변, <code>StrBuf</code> 가변</td></tr>
+<tr><td>인코딩</td><td>UTF-8</td><td>unspecified (구현 의존)</td><td>UTF-16</td><td>UTF-8</td></tr>
+<tr><td>char</td><td><code>char</code> (4B)</td><td><code>str</code> (single-char)</td><td><code>char</code> (2B = code unit)</td><td><code>char</code> (4B Unicode scalar)</td></tr>
+<tr><td>FFI byte</td><td><code>c_char</code> / <code>u8</code></td><td><code>bytes</code></td><td><code>byte</code></td><td><code>c_char</code> (1B target dep)</td></tr>
+<tr><td>len 의미</td><td>byte len</td><td>char count</td><td>UTF-16 code unit</td><td>byte len (<code>.chars().count()</code> 명시)</td></tr>
+<tr><td>index <code>s[i]</code></td><td><strong>없음</strong></td><td>char (Python str)</td><td>UTF-16 code unit</td><td><strong>없음</strong> (chars/bytes 명시)</td></tr>
+</tbody></table></div>
+<p>먼저 <code>str</code> 을 불변 <code>(ptr, len)</code> 값으로 두고 가변 buffer 는 <code>StrBuf</code> 로 분리했습니다. GC 가 있으므로 Rust 와 달리 수명 구분은 필요 없습니다. 다음으로 <code>len()</code> 이 <strong>byte length</strong> 를 의미하도록 하여 Rust 와 동형으로 맞추었고, char 개수는 <code>chars().count()</code> 로 따로 얻습니다. 또한 <code>s[i]</code> 를 <strong>제공하지 않음</strong>으로써 Rust 와 동형을 유지하고 byte vs char 모호성을 회피합니다. <code>char</code> 를 4B Unicode scalar 로 정의함으로써 Java 의 2B UTF-16 code unit 이 야기하는 surrogate 함정을 피할 수 있게 되었습니다. 마지막으로 <code>c_char</code> 를 별도 타입으로 두어 <code>char</code> 와 ABI 를 명확히 구분합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/215-string.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="214-error"><small>Previous</small>2.14. error - 에러 트레잇 / 타입</a><a class="next" href="216-sync"><small>Next</small>2.16. sync - 동시성 primitive</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

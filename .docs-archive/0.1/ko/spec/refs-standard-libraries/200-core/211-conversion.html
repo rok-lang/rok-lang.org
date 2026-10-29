@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.11. 변환 트레잇 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::convert 모듈은 값을 한 타입에서 다른 타입으로 옮기는 트레잇 패밀리를 정의합니다. rok 의 변환 정책에서 가장 핵심이 되는 원칙은 silent 정보 손실을 거부하는 것입니다. 따라서 .into() 는 lossless 한 변환만을 허용하며, 손실이 발생할 수 ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/211-conversion.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.11. 변환 트레잇 - rok docs">
+<meta property="og:description" content="rok::core::convert 모듈은 값을 한 타입에서 다른 타입으로 옮기는 트레잇 패밀리를 정의합니다. rok 의 변환 정책에서 가장 핵심이 되는 원칙은 silent 정보 손실을 거부하는 것입니다. 따라서 .into() 는 lossless 한 변환만을 허용하며, 손실이 발생할 수 ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/211-conversion.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/211-conversion.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/211-conversion.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li class="cur"><a aria-current="page" href="211-conversion">2.11. 변환 트레잇</a><ul class="toc"><li><a href="#2111-변환-정책---4-갈래">2.11.1. 변환 정책 - 4 갈래</a></li><li><a href="#2112-fromu-트레잇---lossless-변환">2.11.2. From&lt;U&gt; 트레잇 - lossless 변환</a></li><li><a href="#2113-into-트레잇---from-의-mirror">2.11.3. Into 트레잇 - From 의 mirror</a></li><li><a href="#2114-tryfromu-트레잇---fallible-변환">2.11.4. TryFrom&lt;U&gt; 트레잇 - fallible 변환</a></li><li><a href="#2115-saturating_into--wrapping_into---명시-정책">2.11.5. saturating_into / wrapping_into - 명시 정책</a></li><li><a href="#2116-as-t---bit-재해석--numeric-cast">2.11.6. as T - bit 재해석 / numeric cast</a></li><li><a href="#2117-literal-context-auto-from---컴파일-타임-range-check">2.11.7. literal context auto-From - 컴파일 타임 range check</a></li><li><a href="#2118-from-impl-매트릭스---primitive-사이">2.11.8. From impl 매트릭스 - primitive 사이</a></li><li><a href="#2119-from-impl---사용자-타입">2.11.9. From impl - 사용자 타입</a></li><li><a href="#21110-산술-결과의-자동-변환---없음">2.11.10. 산술 결과의 자동 변환 - 없음</a></li><li><a href="#21111-다른-언어와의-비교---디자인-결정-근거">2.11.11. 다른 언어와의 비교 - 디자인 결정 근거</a></li><li><a href="#21112-모듈-매핑">2.11.12. 모듈 매핑</a></li></ul></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="211-변환-트레잇 211-conversion-traits 2111-변환-정책---4-갈래 2111-conversion-policy---four-kinds 디자인-근거 design-rationale 2112-fromu-트레잇---lossless-변환 2112-fromu-trait---lossless-conversion 사용-예 example import import 2113-into-트레잇---from-의-mirror 2113-into-trait---mirror-of-from 사용-예-1 example-1 from-우선---디자인-패턴 prefer-from---design-pattern lossless-의-컴파일-검증 compile-time-check-of-losslessness 2114-tryfromu-트레잇---fallible-변환 2114-tryfromu-trait---fallible-conversion tryinto-자동-mirror automatic-tryinto-mirror 2115-saturating_into--wrapping_into---명시-정책 2115-saturating_into--wrapping_into---explicit-policy saturating_into---범위-끝으로-clamp saturating_into---clamp-to-the-range-ends wrapping_into---모듈러-산술 wrapping_into---modular-arithmetic 2116-as-t---bit-재해석--numeric-cast 2116-as-t---bit-reinterpretation--numeric-cast as-의-한계 limits-of-as 2117-literal-context-auto-from---컴파일-타임-range-check 2117-literal-context-auto-from---compile-time-range-check 2118-from-impl-매트릭스---primitive-사이 2118-from-impl-matrix---between-primitives 정수--정수-signed integer--integer-signed 정수--정수-unsigned integer--integer-unsigned unsigned--signed-lossless-만 unsigned--signed-lossless-only 정수--부동소수 integer--floating-point 부동소수-사이 between-floating-point-types int--float-와-fixed-primitive int--float-and-fixed-primitives 2119-from-impl---사용자-타입 2119-from-impls---user-types try_from-도-동일-패턴 try_from-follows-the-same-pattern 21110-산술-결과의-자동-변환---없음 21110-automatic-conversion-of-arithmetic-results---none 21111-다른-언어와의-비교---디자인-결정-근거 21111-comparison-with-other-languages---design-rationale 21112-모듈-매핑 21112-module-mapping"><a href="../../../../spec/refs-standard-libraries/200-core/211-conversion" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="211-변환-트레잇"><a class="anchor" tabindex="-1" href="#211-변환-트레잇" aria-hidden="true">#</a>2.11. 변환 트레잇</h1>
+<p><code>rok::core::convert</code> 모듈은 값을 한 타입에서 다른 타입으로 옮기는 트레잇 패밀리를 정의합니다. rok 의 변환 정책에서 가장 핵심이 되는 원칙은 silent 정보 손실을 거부하는 것입니다. 따라서 <code>.into()</code> 는 lossless 한 변환만을 허용하며, 손실이 발생할 수 있는 변환의 경우에는 사용자가 명시적으로 그 정책을 선택하도록 설계됩니다.</p>
+<p><a href="../../refs-lang/002-types/214-cast-and-conversion">refs-lang 2.14 형 변환</a> 의 syntax 는 본 트레잇으로 dispatch 됩니다.</p>
+<h2 id="2111-변환-정책---4-갈래"><a class="anchor" tabindex="-1" href="#2111-변환-정책---4-갈래" aria-hidden="true">#</a>2.11.1. 변환 정책 - 4 갈래</h2>
+<p>rok 은 변환의 <strong>의도</strong> 에 따라 네 갈래로 분리해 다룹니다. 사용자는 매번 어느 갈래에 해당하는지를 명시해야 합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>갈래</th><th>메서드</th><th>의미</th><th>실패 시</th></tr></thead>
+<tbody>
+<tr><td><strong>lossless</strong></td><td><code>.into::&lt;T&gt;()</code></td><td>정보 손실 0 - 항상 성공</td><td>컴파일 / 런타임 에러</td></tr>
+<tr><td><strong>fallible</strong></td><td><code>.try_into::&lt;T&gt;()</code></td><td>손실 가능 - 호출자가 처리</td><td>대상의 <code>TryFrom::Error</code> 를 throw</td></tr>
+<tr><td><strong>saturate</strong></td><td><code>.saturating_into::&lt;T&gt;()</code></td><td>범위 밖이면 i32::MAX / MIN 으로 clamp</td><td>명시 saturate (사용자 선택)</td></tr>
+<tr><td><strong>bit</strong></td><td><code>.wrapping_into::&lt;T&gt;()</code> 또는 <code>as T</code></td><td>bit 재해석 - 모듈러 산술 / 비트 패턴</td><td>명시 wrap (사용자 선택)</td></tr>
+</tbody></table></div>
+<p>각 갈래의 메서드 이름이 그 자체로 의도를 명시합니다. 예를 들어 사용자가 <code>.into()</code> 를 적으면 <strong>lossless</strong> 의도이고, <code>.saturating_into()</code> 를 적으면 <strong>saturate</strong> 의도가 됩니다. 컴파일러는 어떤 의미인지를 추측하지 않습니다.</p>
+<h3 id="디자인-근거"><a class="anchor" tabindex="-1" href="#디자인-근거" aria-hidden="true">#</a>디자인 근거</h3>
+<p>silent saturate 나 silent wrap 은 사용자가 모르는 사이에 값이 변형되어 디버그하기 어려운 버그를 만들어 냅니다. rok 은 JS 가 Number → BigInt 를 도입하면서 얻은 교훈, 그리고 NumPy 가 wrap 에서 OverflowError 로 이동하면서 얻은 교훈을 함께 받아들였습니다.</p>
+<h2 id="2112-fromu-트레잇---lossless-변환"><a class="anchor" tabindex="-1" href="#2112-fromu-트레잇---lossless-변환" aria-hidden="true">#</a>2.11.2. <code>From&lt;U&gt;</code> 트레잇 - lossless 변환</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">From</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">fn</span> from(value: <span class="t">U</span>) -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<p><code>From::from(u)</code> 는 항상 성공하는 변환이며, 정보 손실이 전혀 발생하지 않습니다.</p>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">42</span>;
+<span class="k">let</span> big: <span class="t">i64</span> = <span class="t">i64</span>::from(n);     <span class="c">// i32 → i64 (lossless 항상 가능)</span>
+
+<span class="k">let</span> x: <span class="t">int</span> = <span class="t">int</span>::from(<span class="n">42i32</span>);   <span class="c">// i32 → int (lossless)</span>
+</code></pre>
+<h3 id="import"><a class="anchor" tabindex="-1" href="#import" aria-hidden="true">#</a>import</h3>
+<p><code>From</code> 은 <a href="../000-meta/002-import">묵시 <code>use rok::core::**;</code></a> 에 의해 자동으로 사용 가능하므로, 별도의 <code>use</code> 선언이 필요하지 않습니다.</p>
+<h2 id="2113-into-트레잇---from-의-mirror"><a class="anchor" tabindex="-1" href="#2113-into-트레잇---from-의-mirror" aria-hidden="true">#</a>2.11.3. <code>Into</code> 트레잇 - <code>From</code> 의 mirror</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Into</span> {
+    <span class="k">fn</span> into&lt;<span class="t">T</span>: <span class="t">From</span>&lt;<span class="k">Self</span>&gt;&gt;(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">S</span>&gt; <span class="t">Into</span> <span class="k">for</span> <span class="t">S</span> {
+    <span class="k">fn</span> into&lt;<span class="t">T</span>: <span class="t">From</span>&lt;<span class="t">S</span>&gt;&gt;(<span class="k">self</span>) -&gt; <span class="t">T</span> { <span class="t">T</span>::from(<span class="k">self</span>) }
+}
+</code></pre>
+<p><code>Into</code> 는 타입 파라미터가 없는 트레잇이고, 제네릭 메서드 <code>into</code> 하나를 가집니다. blanket impl 하나가 모든 타입에 <code>into</code> 를 주므로, <code>x.into()</code> 는 <code>T::from(x)</code> 입니다. 대상 타입 <code>T</code> 는 기대 타입 (<code>let</code> 주석, 인자 자리 등) 이나 <code>x.into::&lt;T&gt;()</code> 에서 정해집니다. 사용자는 <code>Into</code> 를 구현하지 않고 <code>From</code> 만 작성합니다.</p>
+<p>변환 가능성을 바운드로 적을 때는 <code>From</code> 쪽으로 씁니다. <code>T: Into&lt;U&gt;</code> 라는 바운드는 없습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> widen&lt;<span class="t">T</span>, <span class="t">U</span>: <span class="t">From</span>&lt;<span class="t">T</span>&gt;&gt;(x: <span class="t">T</span>) -&gt; <span class="t">U</span> { x.into() }      <span class="c">// OK - U: From&lt;T&gt;</span>
+<span class="k">fn</span> widen2&lt;<span class="t">T</span>: <span class="t">Into</span>&lt;<span class="t">U</span>&gt;, <span class="t">U</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">U</span> { x.into() }     <span class="c">// ERROR - Into 는 타입 인자를 받지 않음</span>
+</code></pre>
+<h3 id="사용-예-1"><a class="anchor" tabindex="-1" href="#사용-예-1" aria-hidden="true">#</a>사용 예</h3>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">42</span>;
+<span class="k">let</span> big: <span class="t">i64</span> = n.into();         <span class="c">// i32::into::&lt;i64&gt;() 자동 - From&lt;i32&gt; for i64 사용</span>
+<span class="k">let</span> big_typed: <span class="t">i64</span> = (<span class="n">42i32</span>).into();
+</code></pre>
+<h3 id="from-우선---디자인-패턴"><a class="anchor" tabindex="-1" href="#from-우선---디자인-패턴" aria-hidden="true">#</a><code>From</code> 우선 - 디자인 패턴</h3>
+<p>스택 명시 변환은 다음 두 형태로 표현할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="c">// 형태 1: From 직접</span>
+<span class="k">let</span> big = <span class="t">i64</span>::from(<span class="n">42i32</span>);
+
+<span class="c">// 형태 2: into 메서드</span>
+<span class="k">let</span> big: <span class="t">i64</span> = (<span class="n">42i32</span>).into();
+</code></pre>
+<p>두 형태는 의미상 동등합니다. <code>from</code> 은 대상 타입 명시가 호출 자리에서 그대로 보이는 반면, <code>into</code> 는 <strong>annotation</strong> 이 대상 타입을 결정하게 합니다. 따라서 가독성이나 패턴에 따라 적절한 쪽을 선택하면 됩니다.</p>
+<h3 id="lossless-의-컴파일-검증"><a class="anchor" tabindex="-1" href="#lossless-의-컴파일-검증" aria-hidden="true">#</a>lossless 의 컴파일 검증</h3>
+<p>만약 <code>From&lt;U&gt; for T</code> 가 impl 되어 있지 않은 조합을 시도한다면 컴파일 에러가 발생합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> big: <span class="t">i64</span> = <span class="n">1000</span>;
+<span class="k">let</span> small: <span class="t">i32</span> = big.into();   <span class="c">// 컴파일 에러 - From&lt;i64&gt; for i32 없음</span>
+                                <span class="c">//   (lossless 불가)</span>
+</code></pre>
+<p>이 경우에는 <code>try_into</code>, <code>saturating_into</code>, <code>as</code> 중 하나를 명시적으로 선택해야 합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> small: <span class="t">i32</span> = <span class="k">try</span> big.try_into();       <span class="c">// throws, 호출자 처리</span>
+<span class="k">let</span> small: <span class="t">i32</span> = big.saturating_into();    <span class="c">// saturate 명시</span>
+<span class="k">let</span> small: <span class="t">i32</span> = big <span class="k">as</span> <span class="t">i32</span>;               <span class="c">// wrap 명시</span>
+</code></pre>
+<h2 id="2114-tryfromu-트레잇---fallible-변환"><a class="anchor" tabindex="-1" href="#2114-tryfromu-트레잇---fallible-변환" aria-hidden="true">#</a>2.11.4. <code>TryFrom&lt;U&gt;</code> 트레잇 - fallible 변환</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">TryFrom</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">type</span> <span class="t">Error</span> = <span class="t">ConversionError</span>;
+    <span class="k">fn</span> try_from(value: <span class="t">U</span>) <span class="k">throws</span> (<span class="k">Self</span>::<span class="t">Error</span>) -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<p><code>try_from</code> 은 변환이 실패할 수 있다는 사실을 시그니처에서 직접 표현합니다. 에러 타입은 연관 타입 <code>Error</code> 이며, 기본값은 <a href="214-error"><code>ConversionError</code></a> 입니다 (impl 이 생략하면 기본값, <a href="../../refs-lang/002-types/208-trait">refs-lang 2.8.3</a>). 숫자 변환 impl (정수 ↔ 정수, 부동소수 → 정수, <code>int</code> / <code>float</code> 변환, <code>TryFrom&lt;u32&gt; for char</code>) 은 <code>type Error = OverflowError;</code> 를 선언합니다. <code>throws</code> 시그니처를 가지므로 사용자는 호출을 <code>try</code> 로 표시해 전파하거나, <code>catch</code> 로 처리하거나, <code>try?</code> 로 <code>T | none</code> 을 받을 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> big: <span class="t">i64</span> = <span class="n">9999999999</span>;
+<span class="k">let</span> small_result: <span class="t">i32</span> = <span class="k">try</span> <span class="t">i32</span>::try_from(big);  <span class="c">// try 로 전파</span>
+<span class="k">let</span> small_catch: <span class="t">i32</span> = <span class="k">try</span> <span class="t">i32</span>::try_from(big) <span class="k">catch</span> e: <span class="t">OverflowError</span> { default };
+<span class="k">let</span> small_opt: <span class="t">i32</span> | <span class="k">none</span> = <span class="k">try</span>? <span class="t">i32</span>::try_from(big);
+</code></pre>
+<h3 id="tryinto-자동-mirror"><a class="anchor" tabindex="-1" href="#tryinto-자동-mirror" aria-hidden="true">#</a><code>TryInto</code> 자동 mirror</h3>
+<p><code>From</code> ↔ <code>Into</code> 와 동일한 패턴이 적용됩니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">TryInto</span> {
+    <span class="k">fn</span> try_into&lt;<span class="t">T</span>: <span class="t">TryFrom</span>&lt;<span class="k">Self</span>&gt;&gt;(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">T</span>::<span class="t">Error</span>) -&gt; <span class="t">T</span>;
+}
+<span class="k">impl</span>&lt;<span class="t">S</span>&gt; <span class="t">TryInto</span> <span class="k">for</span> <span class="t">S</span> { ... }            <span class="c">// = try T::try_from(self)</span>
+</code></pre>
+<p>숫자 변환의 <code>try_from</code> 이 던지는 <code>OverflowError { op, ty }</code> (<a href="214-error">2.14</a>) 의 <code>op</code> 은 <code>&quot;try_from&quot;</code>, <code>ty</code> 는 대상 타입 이름 (<code>&quot;i32&quot;</code> 등) 입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> small: <span class="t">i32</span> = <span class="k">try</span> big.try_into();     <span class="c">// = try i32::try_from(big)</span>
+</code></pre>
+<h2 id="2115-saturating_into--wrapping_into---명시-정책"><a class="anchor" tabindex="-1" href="#2115-saturating_into--wrapping_into---명시-정책" aria-hidden="true">#</a>2.11.5. <code>saturating_into</code> / <code>wrapping_into</code> - 명시 정책</h2>
+<p>손실이 가능한 변환에 대해서는 사용자가 값 변형 정책을 직접 명시합니다. 그 수단으로 다음 두 메서드가 제공됩니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">SaturatingFrom</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">fn</span> saturating_from(value: <span class="t">U</span>) -&gt; <span class="k">Self</span>;    <span class="c">// 범위 밖이면 가까운 끝</span>
+}
+<span class="k">trait</span> <span class="t">SaturatingInto</span> {
+    <span class="k">fn</span> saturating_into&lt;<span class="t">T</span>: <span class="t">SaturatingFrom</span>&lt;<span class="k">Self</span>&gt;&gt;(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+
+<span class="k">trait</span> <span class="t">WrappingFrom</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">fn</span> wrapping_from(value: <span class="t">U</span>) -&gt; <span class="k">Self</span>;      <span class="c">// 하위 비트 유지 (= as)</span>
+}
+<span class="k">trait</span> <span class="t">WrappingInto</span> {
+    <span class="k">fn</span> wrapping_into&lt;<span class="t">T</span>: <span class="t">WrappingFrom</span>&lt;<span class="k">Self</span>&gt;&gt;(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+</code></pre>
+<p><code>From</code> / <code>Into</code> 와 같은 모양입니다. 변환 자체는 <code>SaturatingFrom</code> / <code>WrappingFrom</code> impl 이고, <code>saturating_into</code> / <code>wrapping_into</code> 는 blanket impl 이 주는 제네릭 메서드입니다.</p>
+<h3 id="saturating_into---범위-끝으로-clamp"><a class="anchor" tabindex="-1" href="#saturating_into---범위-끝으로-clamp" aria-hidden="true">#</a><code>saturating_into</code> - 범위 끝으로 clamp</h3>
+<pre><code class="language-rok"><span class="k">let</span> big: <span class="t">i64</span> = <span class="n">9999999999</span>;
+<span class="k">let</span> small: <span class="t">i32</span> = big.saturating_into();    <span class="c">//→ i32::MAX (= 2147483647)</span>
+
+<span class="k">let</span> big_neg: <span class="t">i64</span> = -<span class="n">9999999999</span>;
+<span class="k">let</span> small_neg: <span class="t">i32</span> = big_neg.saturating_into();  <span class="c">//→ i32::MIN</span>
+</code></pre>
+<p>이 정책은 DSP, 신호 처리, UI clamp 등의 영역에서 유용하게 쓰입니다.</p>
+<h3 id="wrapping_into---모듈러-산술"><a class="anchor" tabindex="-1" href="#wrapping_into---모듈러-산술" aria-hidden="true">#</a><code>wrapping_into</code> - 모듈러 산술</h3>
+<pre><code class="language-rok"><span class="k">let</span> big: <span class="t">i64</span> = <span class="n">0x100000001</span>;
+<span class="k">let</span> small: <span class="t">i32</span> = big.wrapping_into();      <span class="c">//→ 1 (하위 32 비트)</span>
+</code></pre>
+<p><code>as i32</code> 와 같은 의미이지만, 명시적인 메서드 호출 형태로 의도를 표현해 준다는 점이 다릅니다. 이 정책은 hash 계산이나 비트마스킹 도메인에 적합합니다.</p>
+<h2 id="2116-as-t---bit-재해석--numeric-cast"><a class="anchor" tabindex="-1" href="#2116-as-t---bit-재해석--numeric-cast" aria-hidden="true">#</a>2.11.6. <code>as T</code> - bit 재해석 / numeric cast</h2>
+<p><code>as</code> 키워드 (<a href="../../refs-lang/002-types/214-cast-and-conversion">refs-lang 2.14</a>) 는 numeric / bit 변환을 <strong>명시</strong> 하는 수단입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">256</span>;
+<span class="k">let</span> b: <span class="t">u8</span> = n <span class="k">as</span> <span class="t">u8</span>;             <span class="c">// 하위 8 비트 = 0</span>
+<span class="k">let</span> b2: <span class="t">u8</span> = <span class="n">257</span> <span class="k">as</span> <span class="t">u8</span>;          <span class="c">// 1</span>
+<span class="k">let</span> b_neg: <span class="t">u8</span> = -<span class="n">1i32</span> <span class="k">as</span> <span class="t">u8</span>;     <span class="c">// 255</span>
+
+<span class="k">let</span> f: <span class="t">f64</span> = <span class="n">1.7</span>;
+<span class="k">let</span> i: <span class="t">i32</span> = f <span class="k">as</span> <span class="t">i32</span>;            <span class="c">// 1 (절삭, IEEE 754 → integer)</span>
+<span class="k">let</span> f2: <span class="t">f32</span> = <span class="n">3.14f64</span> <span class="k">as</span> <span class="t">f32</span>;     <span class="c">// 3.14 → f32 (IEEE 754 narrowing)</span>
+</code></pre>
+<p><code>as</code> 의 동작은 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>변환</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td>정수 → 같은 폭 정수 (signed/unsigned 상호)</td><td>bit 패턴 그대로 - 부호 해석만 바뀜</td></tr>
+<tr><td>좁은 정수 → 넓은 정수</td><td>sign-extend (signed) 또는 zero-extend (unsigned)</td></tr>
+<tr><td>넓은 정수 → 좁은 정수</td><td>절삭 (하위 비트만)</td></tr>
+<tr><td>정수 → 부동소수</td><td>IEEE 754 표현으로 (정밀도 손실 가능)</td></tr>
+<tr><td>부동소수 → 정수</td><td>0 쪽으로 절삭. 범위 밖은 MIN/MAX 로 saturate, NaN → 0 (모든 최적화 수준)</td></tr>
+<tr><td>부동소수 → 같은/다른 폭 부동소수</td><td>IEEE 754 round</td></tr>
+<tr><td><code>u8</code> → <code>char</code></td><td>그 code point (U+0000..=U+00FF)</td></tr>
+<tr><td><code>char</code> → 정수</td><td>code point (좁은 정수면 절삭)</td></tr>
+</tbody></table></div>
+<p><code>char</code> 로의 <code>as</code> 는 <code>u8</code> 에서만 됩니다. 다른 정수 / 부동소수 / <code>bool</code> / <code>c_char</code> 는 타입 에러이며, 넓은 값은 <code>char::from_u32(n)</code> (<code>char | none</code>) 으로 바꿉니다 (<a href="215-string">2.15.4</a>).</p>
+<h3 id="as-의-한계"><a class="anchor" tabindex="-1" href="#as-의-한계" aria-hidden="true">#</a><code>as</code> 의 한계</h3>
+<p><code>as</code> 는 numeric 과 비트 변환에 한정됩니다. 따라서 임의 타입 사이의 변환은 거부됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; z: <span class="t">f64</span>; }
+<span class="k">let</span> v = <span class="t">Vec3</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span>, z: <span class="n">3.0</span> };
+<span class="k">let</span> s: <span class="t">str</span> = v <span class="k">as</span> <span class="t">str</span>;     <span class="c">// 컴파일 에러 - `as` 는 user struct 거부</span>
+</code></pre>
+<p>user 타입 사이의 변환은 <code>From</code> / <code>Into</code> 트레잇으로 명시해야 합니다.</p>
+<h2 id="2117-literal-context-auto-from---컴파일-타임-range-check"><a class="anchor" tabindex="-1" href="#2117-literal-context-auto-from---컴파일-타임-range-check" aria-hidden="true">#</a>2.11.7. literal context auto-From - 컴파일 타임 range check</h2>
+<p>annotation 이 붙은 literal 의 경우에는 컴파일 타임 range check 와 lossless 변환이 함께 적용됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">i32</span> = <span class="n">42</span>;             <span class="c">// OK - 42 가 i32 범위</span>
+<span class="k">let</span> y: <span class="t">i32</span> = <span class="n">9999999999</span>;     <span class="c">// 컴파일 에러 - literal 이 i32 범위 밖</span>
+<span class="k">let</span> z: <span class="t">f32</span> = <span class="n">3.14</span>;           <span class="c">// OK - round to nearest f32</span>
+<span class="k">let</span> w: <span class="t">u8</span> = <span class="n">256</span>;             <span class="c">// 컴파일 에러 - 256 ∉ u8 0..=255</span>
+</code></pre>
+<p><code>T::from(1)</code> / <code>1.into()</code> 처럼 리터럴로 impl 을 고르는 규칙은 <a href="../../refs-lang/003-expressions/301-operator-dispatch#impl-고르기">refs-lang 3.1.3</a> 을 따릅니다. 이러한 메커니즘이 가능한 이유는 literal 자체가 컴파일 타임에 알려진 값이기 때문입니다. runtime 값을 변환하는 경우에는 <code>from</code>, <code>into</code>, <code>try_into</code>, <code>as</code> 중 하나를 반드시 명시해야 합니다.</p>
+<h2 id="2118-from-impl-매트릭스---primitive-사이"><a class="anchor" tabindex="-1" href="#2118-from-impl-매트릭스---primitive-사이" aria-hidden="true">#</a>2.11.8. <code>From</code> impl 매트릭스 - primitive 사이</h2>
+<p>표준 라이브러리가 제공하는 <code>From&lt;U&gt; for T</code> impl 표는 다음과 같습니다 (lossless 만 표시).</p>
+<h3 id="정수--정수-signed"><a class="anchor" tabindex="-1" href="#정수--정수-signed" aria-hidden="true">#</a>정수 → 정수 (signed)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th>i8</th><th>i16</th><th>i32</th><th>i64</th><th>isize</th><th>int</th></tr></thead>
+<tbody>
+<tr><td><code>i8</code></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>i16</code></td><td></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>i32</code></td><td></td><td></td><td></td><td>✓</td><td>✓ (target≥32)</td><td>✓</td></tr>
+<tr><td><code>i64</code></td><td></td><td></td><td></td><td></td><td>✓ (target=64)</td><td>✓</td></tr>
+<tr><td><code>isize</code></td><td></td><td></td><td></td><td>✓ (target≤64)</td><td></td><td>✓</td></tr>
+</tbody></table></div>
+<h3 id="정수--정수-unsigned"><a class="anchor" tabindex="-1" href="#정수--정수-unsigned" aria-hidden="true">#</a>정수 → 정수 (unsigned)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th>u8</th><th>u16</th><th>u32</th><th>u64</th><th>usize</th><th>int (always lossless)</th></tr></thead>
+<tbody>
+<tr><td><code>u8</code></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>u16</code></td><td></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>u32</code></td><td></td><td></td><td></td><td>✓</td><td>✓ (target≥32)</td><td>✓</td></tr>
+<tr><td><code>u64</code></td><td></td><td></td><td></td><td></td><td>✓ (target=64)</td><td>✓</td></tr>
+<tr><td><code>usize</code></td><td></td><td></td><td></td><td>✓ (target≤64)</td><td></td><td>✓</td></tr>
+</tbody></table></div>
+<h3 id="unsigned--signed-lossless-만"><a class="anchor" tabindex="-1" href="#unsigned--signed-lossless-만" aria-hidden="true">#</a>unsigned → signed (lossless 만)</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th>i8</th><th>i16</th><th>i32</th><th>i64</th><th>int</th></tr></thead>
+<tbody>
+<tr><td><code>u8</code></td><td></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>u16</code></td><td></td><td></td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td><code>u32</code></td><td></td><td></td><td></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>u64</code></td><td></td><td></td><td></td><td></td><td>✓</td></tr>
+</tbody></table></div>
+<p>unsigned 에서 같거나 더 좁은 signed 로의 변환 (예를 들어 u32 → i32) 은 lossless 가 보장되지 않으므로, 이 경우에는 <code>try_into</code> 또는 <code>as</code> 를 사용해야 합니다.</p>
+<h3 id="정수--부동소수"><a class="anchor" tabindex="-1" href="#정수--부동소수" aria-hidden="true">#</a>정수 → 부동소수</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th>f32</th><th>f64</th></tr></thead>
+<tbody>
+<tr><td><code>i8</code></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>i16</code></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>i32</code></td><td></td><td>✓ (precision 손실 가능)</td></tr>
+<tr><td><code>i64</code></td><td></td><td>(precision 손실)</td></tr>
+</tbody></table></div>
+<p>f32 는 24-bit mantissa, f64 는 53-bit mantissa 이므로 그 비트 폭 안에서만 lossless 가 성립합니다.</p>
+<h3 id="부동소수-사이"><a class="anchor" tabindex="-1" href="#부동소수-사이" aria-hidden="true">#</a>부동소수 사이</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th>f32</th><th>f64</th><th>float</th></tr></thead>
+<tbody>
+<tr><td><code>f32</code></td><td></td><td>✓</td><td>✓</td></tr>
+<tr><td><code>f64</code></td><td></td><td></td><td>✓</td></tr>
+</tbody></table></div>
+<p>f64 → f32 는 narrowing 변환이므로 <code>try_into</code>, <code>saturating_into</code>, <code>as</code> 중 하나를 사용해야 합니다.</p>
+<h3 id="int--float-와-fixed-primitive"><a class="anchor" tabindex="-1" href="#int--float-와-fixed-primitive" aria-hidden="true">#</a>int / float 와 fixed primitive</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>from \ to</th><th>i32</th><th>i64</th><th>f64</th></tr></thead>
+<tbody>
+<tr><td><code>int</code></td><td><code>try_into</code> 만</td><td><code>try_into</code> 만</td><td><code>into</code> (반올림, 예외)</td></tr>
+<tr><td><code>float</code></td><td><code>try_into</code> (절삭)</td><td><code>try_into</code></td><td><code>into</code> (예외)</td></tr>
+</tbody></table></div>
+<p><code>From&lt;int&gt; for f64</code> 와 <code>From&lt;float&gt; for f64</code> 는 2.11.2 의 &quot;From 은 lossless&quot; 에 대한 <strong>문서화된 예외</strong> 입니다. <code>int</code> 는 가장 가까운 f64 로 반올림하고, 지수가 f64 범위 밖으로 promote 된 <code>float</code> 는 f64 로 표현할 수 없어 손실됩니다. 손실이 드러나야 하는 자리에서는 <code>to_f64()</code> 나 <code>as f64</code> 를 쓰기를 권장합니다.</p>
+<p><code>int → fixed</code> 의 경우 lossless 가 보장되지 않습니다 (int 가 fixed 범위 밖일 수 있기 때문입니다). 따라서 <code>try_into</code> 또는 <code>saturating_into</code> 를 사용해야 합니다.</p>
+<p>반면 <code>fixed → int</code> 는 항상 lossless 입니다 (<code>From&lt;i32&gt; for int</code> 등이 모두 impl 되어 있습니다).</p>
+<h2 id="2119-from-impl---사용자-타입"><a class="anchor" tabindex="-1" href="#2119-from-impl---사용자-타입" aria-hidden="true">#</a>2.11.9. <code>From</code> impl - 사용자 타입</h2>
+<p>사용자 타입 사이의 변환은 <code>impl From&lt;U&gt; for T</code> 를 직접 작성해 정의합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Celsius</span> { degree: <span class="t">f64</span>; }
+<span class="k">struct</span> <span class="t">Fahrenheit</span> { degree: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">From</span>&lt;<span class="t">Celsius</span>&gt; <span class="k">for</span> <span class="t">Fahrenheit</span> {
+    <span class="k">fn</span> from(c: <span class="t">Celsius</span>) -&gt; <span class="t">Fahrenheit</span> {
+        <span class="t">Fahrenheit</span> { degree: c.degree * <span class="n">9.0</span> / <span class="n">5.0</span> + <span class="n">32.0</span> }
+    }
+}
+
+<span class="k">let</span> c = <span class="t">Celsius</span> { degree: <span class="n">100.0</span> };
+<span class="k">let</span> f: <span class="t">Fahrenheit</span> = c.into();   <span class="c">//→ Fahrenheit { degree: 212.0 }</span>
+</code></pre>
+<p>이때 blanket <code>Into</code> 가 <code>c.into()</code> 를 <code>Fahrenheit::from(c)</code> 로 이어 주므로, 사용자가 <code>Into</code> 를 직접 작성할 필요는 없습니다.</p>
+<h3 id="try_from-도-동일-패턴"><a class="anchor" tabindex="-1" href="#try_from-도-동일-패턴" aria-hidden="true">#</a><code>try_from</code> 도 동일 패턴</h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">TryFrom</span>&lt;<span class="t">str</span>&gt; <span class="k">for</span> <span class="t">i32</span> {
+    <span class="k">type</span> <span class="t">Error</span> = <span class="t">OverflowError</span>;
+    <span class="k">fn</span> try_from(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="k">Self</span>::<span class="t">Error</span>) -&gt; <span class="t">i32</span> {
+        <span class="c">// s 가 i32 range 안의 정수 string 이면 그 값, 아니면 OverflowError 를 throw</span>
+        ...
+    }
+}
+
+<span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span> <span class="s">"42"</span>.try_into();
+</code></pre>
+<p>모든 고정 폭 정수 타입은 자기 <code>FromStr</code> 위에 이런 식으로 <code>TryFrom&lt;str&gt;</code> 을 구현합니다: 빈 텍스트, 잘못된 숫자, 범위 밖의 값은 <code>OverflowError { op: &quot;try_from&quot;, ty }</code> 를 던집니다. 부동소수 타입, <code>bool</code>, <code>char</code> 는 <code>FromStr</code> 만 제공합니다.</p>
+<h2 id="21110-산술-결과의-자동-변환---없음"><a class="anchor" tabindex="-1" href="#21110-산술-결과의-자동-변환---없음" aria-hidden="true">#</a>2.11.10. 산술 결과의 자동 변환 - 없음</h2>
+<p>arithmetic 결과의 auto-From (<a href="../../refs-lang/002-types/214-cast-and-conversion">refs-lang 2.14</a>) 은 <strong>literal context</strong> 에서만 적용됩니다. value 산술 결과는 자동으로 변환되지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">i32</span> = <span class="n">5</span>;
+<span class="k">let</span> b: <span class="t">i32</span> = <span class="n">3</span>;
+<span class="k">let</span> c: <span class="t">i32</span> = a + b;          <span class="c">// OK - i32 + i32 = i32</span>
+
+<span class="k">let</span> big: <span class="t">i32</span> = a + b * <span class="n">1000000</span>;
+<span class="c">// → a + b * 1000000 의 결과가 i32 범위면 OK, 밖이면 (debug=panic / release=wrap)</span>
+<span class="c">// silent saturate / silent promote 안 함</span>
+
+<span class="k">let</span> auto: <span class="t">i64</span> = a + b;       <span class="c">// 컴파일 에러 - i32 결과를 i64 에 silent promote 안 함</span>
+<span class="k">let</span> auto: <span class="t">i64</span> = (a + b) <span class="k">as</span> <span class="t">i64</span>;  <span class="c">// 명시 변환 OK</span>
+<span class="k">let</span> auto: <span class="t">i64</span> = (a + b).into();  <span class="c">// From&lt;i32&gt; for i64 (lossless) 명시</span>
+</code></pre>
+<h2 id="21111-다른-언어와의-비교---디자인-결정-근거"><a class="anchor" tabindex="-1" href="#21111-다른-언어와의-비교---디자인-결정-근거" aria-hidden="true">#</a>2.11.11. 다른 언어와의 비교 - 디자인 결정 근거</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>언어</th><th>변환 모델</th><th>rok 과의 차이</th></tr></thead>
+<tbody>
+<tr><td>Rust</td><td><code>From</code>/<code>Into</code> lossless, <code>as</code> wrap, <code>try_into</code> Result</td><td>rok 과 가장 유사 - <code>saturating_into</code>/<code>wrapping_into</code> 메서드는 rok 이 명시 추가</td></tr>
+<tr><td>Swift</td><td>모든 정수 변환 trapping 기본, <code>.init(clamping:)</code> opt-in</td><td>rok 은 trapping 거부 - debug=panic + release=wrap (fixed-width 산술), 변환은 명시</td></tr>
+<tr><td>Julia</td><td><code>Int32(big)</code> trapping, <code>convert</code> 함수 패밀리</td><td>rok 은 trait 메서드로 통일 (<code>from</code>/<code>into</code>)</td></tr>
+<tr><td>Python</td><td><code>int(x)</code>/<code>float(x)</code> 함수 - 항상 무한 정밀도</td><td>rok 의 <code>int</code> / <code>float</code> 는 같은 정신, fixed primitive 는 별개 세계</td></tr>
+<tr><td>C</td><td>implicit conversion (<code>int</code> → <code>long</code> 자동)</td><td>rok 명시 거부 - silent type mixing 차단</td></tr>
+</tbody></table></div>
+<p>이러한 비교를 토대로 rok 이 채택한 핵심 디자인 결정은 다음과 같습니다. 먼저 silent 정보 손실을 거부합니다 (Rust 의 영향을 받았습니다). 다음으로 4 갈래 (<code>into</code>, <code>try_into</code>, <code>saturating_into</code>, <code>as</code>) 를 명시함으로써 의도 표현을 강제합니다. 또한 literal context 에서만 auto-From 을 허용하며, runtime value 의 경우에는 명시를 강제합니다. 마지막으로 <code>int</code> / <code>float</code> 의 auto-promote 와 fixed primitive 를 분리하는데, 이는 Python 과 Smalltalk 의 영향에서 나온 결정입니다.</p>
+<h2 id="21112-모듈-매핑"><a class="anchor" tabindex="-1" href="#21112-모듈-매핑" aria-hidden="true">#</a>2.11.12. 모듈 매핑</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>lang slot</th><th>표준 라이브러리 위치</th></tr></thead>
+<tbody>
+<tr><td><code>From&lt;U&gt;</code></td><td>(없음 - derive 가능)</td><td>표준 라이브러리</td></tr>
+<tr><td><code>Into</code></td><td>(blanket impl)</td><td>표준 라이브러리</td></tr>
+<tr><td><code>TryFrom&lt;U&gt;</code></td><td>(없음)</td><td>표준 라이브러리</td></tr>
+<tr><td><code>TryInto</code></td><td>(blanket impl)</td><td>표준 라이브러리</td></tr>
+<tr><td><code>SaturatingFrom&lt;U&gt;</code></td><td>(없음)</td><td>표준 라이브러리</td></tr>
+<tr><td><code>SaturatingInto</code></td><td>(blanket impl)</td><td>표준 라이브러리</td></tr>
+<tr><td><code>WrappingFrom&lt;U&gt;</code></td><td>(없음)</td><td>표준 라이브러리</td></tr>
+<tr><td><code>WrappingInto</code></td><td>(blanket impl)</td><td>표준 라이브러리</td></tr>
+</tbody></table></div>
+<p>primitive 사이의 모든 lossless 변환 impl 에는 <code>#[intrinsic(&quot;rok.cast.FROM.TO&quot;)]</code> 가 부착됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">From</span>&lt;<span class="t">i32</span>&gt; <span class="k">for</span> <span class="t">i64</span> {
+    <span class="a">#[intrinsic("rok.cast.i32.i64")]</span>
+    <span class="k">fn</span> from(value: <span class="t">i32</span>) -&gt; <span class="t">i64</span> { ... }
+}
+</code></pre>
+<p><code>as T</code> 의 numeric cast 도 같은 intrinsic 을 사용하며, lossless 와 wrapping 사이의 분기는 컴파일러가 선택합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/211-conversion.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="210-fmt"><small>Previous</small>2.10. fmt - 포맷 트레잇</a><a class="next" href="212-reflect"><small>Next</small>2.12. reflect - Reflect / Inspect</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

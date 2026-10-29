@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.4. #[lang] slot mapping table - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The #[lang(slot_name)] attribute (refs-lang 6.4) registers a standard library item in a slot that the compiler can look up. This chapter collects in one place, ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/000-meta/004-lang-slot-table.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.4. #[lang] slot mapping table - rok docs">
+<meta property="og:description" content="The #[lang(slot_name)] attribute (refs-lang 6.4) registers a standard library item in a slot that the compiler can look up. This chapter collects in one place, ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/000-meta/004-lang-slot-table.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/000-meta/004-lang-slot-table.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/000-meta/004-lang-slot-table.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">0. Standard library meta</a></p><ul class="pages"><li><a href="001-tier-model">0.1. The 3-tier model</a></li><li><a href="002-import">0.2. Import policy - implicit use rok::core::**;</a></li><li><a href="003-intrinsics">0.3. Intrinsic mechanism - the compiler ↔ standard library boundary</a></li><li class="cur"><a aria-current="page" href="004-lang-slot-table">0.4. #[lang] slot mapping table</a><ul class="toc"><li><a href="#041-slot-classification">0.4.1. Slot classification</a></li><li><a href="#042-type-slots-14">0.4.2. Type slots (14)</a></li><li><a href="#043-trait-slots-30">0.4.3. Trait slots (30)</a></li><li><a href="#044-function-slots-3">0.4.4. Function slots (3)</a></li><li><a href="#045-method-slots-1">0.4.5. Method slots (1)</a></li><li><a href="#046-slot-consumers-where-the-compiler-looks-up-slots">0.4.6. Slot consumers: where the compiler looks up slots</a></li><li><a href="#047-duplicate--missing-detection">0.4.7. Duplicate / missing detection</a></li><li><a href="#048-slot-naming-policy">0.4.8. Slot naming policy</a></li></ul></li><li><a href="005-notation">0.5. Notation</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="04-lang-slot-mapping-table 04-lang-슬롯-매핑-표 041-slot-classification 041-slot-분류 042-type-slots-14 042-타입-슬롯-14 043-trait-slots-30 043-트레잇-슬롯-30 044-function-slots-3 044-함수-슬롯-3 045-method-slots-1 045-메서드-슬롯-1 046-slot-consumers-where-the-compiler-looks-up-slots 046-슬롯-사용-측-컴파일러의-lookup-위치 047-duplicate--missing-detection 047-중복--누락-검출 048-slot-naming-policy 048-슬롯-이름-정책"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/000-meta/004-lang-slot-table" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="04-lang-slot-mapping-table"><a class="anchor" tabindex="-1" href="#04-lang-slot-mapping-table" aria-hidden="true">#</a>0.4. <code>#[lang]</code> slot mapping table</h1>
+<p>The <code>#[lang(slot_name)]</code> attribute (<a href="../../refs-lang/006-meta-system/604-lang-magic">refs-lang 6.4</a>) registers a standard library item in a <strong>slot</strong> that the compiler can look up. This chapter collects in one place, in tabular form, every slot name, its meaning, and the item it is attached to.</p>
+<p>The slot table is the authoritative location in the spec; the compiler, the standard library and users all refer to it to stay consistent. If slot names drift, the contract between the language and the library breaks down, so any change starts from this table.</p>
+<h2 id="041-slot-classification"><a class="anchor" tabindex="-1" href="#041-slot-classification" aria-hidden="true">#</a>0.4.1. Slot classification</h2>
+<p>The 48 slots fall into four groups according to their responsibility. The table below shows the role and slot count of each group at a glance, indicating which category the detailed tables in the following sections belong to.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Group</th><th>Responsibility</th><th>Slots</th></tr></thead>
+<tbody>
+<tr><td>Type</td><td>Standard library types rok recognizes as <strong>concrete types</strong></td><td>14</td></tr>
+<tr><td>Trait</td><td>Traits rok uses for <strong>operator / control-flow desugaring</strong>, derive, and thread-boundary checks</td><td>30</td></tr>
+<tr><td>Method</td><td>Methods rok <strong>calls automatically</strong> (drop)</td><td>1</td></tr>
+<tr><td>Function</td><td>Standard library functions rok calls as <strong>intrinsic calls</strong></td><td>3</td></tr>
+<tr><td>Total</td><td></td><td><strong>48</strong></td></tr>
+</tbody></table></div>
+<h2 id="042-type-slots-14"><a class="anchor" tabindex="-1" href="#042-type-slots-14" aria-hidden="true">#</a>0.4.2. Type slots (14)</h2>
+<p>Type slots indicate the concrete type the compiler lowers to when it encounters a literal or keyword. This group divides further into two kinds. First, there are the language default types exposed directly as lowercase identifiers. They need no separate keyword registration and are the primitives users encounter every day.</p>
+<p>Language defaults (lowercase struct, no <code>#[keyword]</code> needed):</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot name</th><th>Meaning</th><th>Standard library item</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td><code>i32_type</code></td><td><code>i32</code> primitive</td><td><code>rok::core::num::i32</code></td><td>2.1</td></tr>
+<tr><td><code>i64_type</code></td><td><code>i64</code> primitive</td><td><code>rok::core::num::i64</code></td><td>2.1</td></tr>
+<tr><td><code>f32_type</code></td><td><code>f32</code> primitive</td><td><code>rok::core::num::f32</code></td><td>2.1</td></tr>
+<tr><td><code>f64_type</code></td><td><code>f64</code> primitive</td><td><code>rok::core::num::f64</code></td><td>2.1</td></tr>
+<tr><td><code>usize_type</code></td><td><code>usize</code> primitive</td><td><code>rok::core::num::usize</code></td><td>2.1</td></tr>
+<tr><td><code>isize_type</code></td><td><code>isize</code> primitive</td><td><code>rok::core::num::isize</code></td><td>2.1</td></tr>
+<tr><td><code>bool_type</code></td><td><code>bool</code> primitive</td><td><code>rok::core::num::bool</code></td><td>2.1</td></tr>
+<tr><td><code>cchar_type</code></td><td><code>c_char</code> primitive (FFI)</td><td><code>rok::core::str::c_char</code></td><td>2.15</td></tr>
+<tr><td><code>str_type</code></td><td><code>str</code> primitive (UTF-8 view)</td><td><code>rok::core::str::str</code></td><td>2.15</td></tr>
+<tr><td><code>char_type</code></td><td><code>char</code> primitive (Unicode scalar)</td><td><code>char</code> (methods: <code>rok::core::str</code>)</td><td>2.15</td></tr>
+</tbody></table></div>
+<p>Second, there are the PascalCase types additionally provided by the standard library. These expose a familiar lowercase alias to users separately via <code>#[keyword(...)]</code>; items directly entangled with language syntax gather here, such as the auto-promoting <code>int</code> and <code>float</code>, the <code>none</code> sentinel, and the <code>Range</code> literal.</p>
+<p>Standard library additions (PascalCase struct + <code>#[keyword(...)]</code>):</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot name</th><th>Meaning</th><th>Standard library item</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td><code>none_type</code></td><td>Type of the <code>none</code> literal</td><td><code>rok::core::marker::NoneSentinel</code></td><td>2.13</td></tr>
+<tr><td><code>int_type</code></td><td><code>int</code> auto-promote type</td><td><code>rok::core::num::Int</code> + <code>#[keyword(&quot;int&quot;)]</code></td><td>2.1</td></tr>
+<tr><td><code>float_type</code></td><td><code>float</code> auto-promote type</td><td><code>rok::core::num::Float</code> + <code>#[keyword(&quot;float&quot;)]</code></td><td>2.1</td></tr>
+<tr><td><code>range_type</code></td><td><code>Range&lt;T&gt;</code> (<code>a..b</code>)</td><td><code>rok::core::range::Range</code> + <code>#[literal( expr &quot;..&quot; expr )]</code></td><td>2.7</td></tr>
+</tbody></table></div>
+<p>A compiler that provides the primitive types built in may leave <code>i32_type</code> ... <code>str_type</code>, <code>none_type</code> and <code>char_type</code> unattached.</p>
+<h2 id="043-trait-slots-30"><a class="anchor" tabindex="-1" href="#043-trait-slots-30" aria-hidden="true">#</a>0.4.3. Trait slots (30)</h2>
+<p>Trait slots indicate which trait the compiler goes to when user-written syntax is desugared into a standard library trait call. Core syntax such as <code>for</code> loops, indexing, slicing, formatting and <code>await</code> all resolves through the traits registered here, so this table is the thickest bridge between the language syntax and the library.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot name</th><th>Meaning</th><th>Standard library trait</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td><code>iterator_trait</code></td><td>Stepping in <code>for x in xs</code></td><td><code>rok::core::iter::Iterator</code></td><td>2.7</td></tr>
+<tr><td><code>into_iterator_trait</code></td><td>Start of <code>for x in xs</code></td><td><code>rok::core::iter::IntoIterator</code></td><td>2.7</td></tr>
+<tr><td><code>index_trait</code></td><td><code>arr[i]</code> read</td><td><code>rok::core::ops::Index</code></td><td>2.3</td></tr>
+<tr><td><code>index_set_trait</code></td><td><code>arr[i] = v</code> write</td><td><code>rok::core::ops::IndexSet</code></td><td>2.3</td></tr>
+<tr><td><code>slice_trait</code></td><td><code>s[1:3]</code> slicing</td><td><code>rok::core::ops::Sliceable</code></td><td>2.3</td></tr>
+<tr><td><code>display_trait</code></td><td><code>f&quot;{x}&quot;</code> default format</td><td><code>rok::core::fmt::Display</code></td><td>2.10</td></tr>
+<tr><td><code>debug_trait</code></td><td><code>f&quot;{x:?}&quot;</code> debug format</td><td><code>rok::core::fmt::Debug</code></td><td>2.10</td></tr>
+<tr><td><code>future_trait</code></td><td>Stepping in <code>await expr</code></td><td><code>rok::core::future::Future</code></td><td>2.20</td></tr>
+</tbody></table></div>
+<p>Next come the operator trait slots. The dispatch target of an operator token is determined by the <code>#[infix]</code> / <code>#[prefix]</code> (<a href="../../refs-lang/006-meta-system/607-operator-magic">refs-lang 6.7</a>) attached to each trait method, and precedence is fixed by the table in <a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2</a>; the slots below are fixed locations that let the compiler find &quot;the addition trait&quot;, &quot;the comparison trait&quot;, etc. by name during primitive lowering and diagnostics. Compound assignment (<code>AddAssign</code>, etc., 2.4), broadcast (<code>DotAdd</code>, etc., 2.6) and floored modulo (<code>Modulo</code>, <code>%%</code>) traits need only <code>#[infix]</code> registration and have no slots.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot name</th><th>Meaning</th><th>Standard library trait</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td><code>add_trait</code></td><td><code>a + b</code></td><td><code>rok::core::ops::Add</code></td><td>2.3</td></tr>
+<tr><td><code>sub_trait</code></td><td><code>a - b</code></td><td><code>rok::core::ops::Sub</code></td><td>2.3</td></tr>
+<tr><td><code>mul_trait</code></td><td><code>a * b</code></td><td><code>rok::core::ops::Mul</code></td><td>2.3</td></tr>
+<tr><td><code>div_trait</code></td><td><code>a / b</code></td><td><code>rok::core::ops::Div</code></td><td>2.3</td></tr>
+<tr><td><code>rem_trait</code></td><td><code>a % b</code></td><td><code>rok::core::ops::Rem</code></td><td>2.3</td></tr>
+<tr><td><code>neg_trait</code></td><td><code>-a</code> (prefix)</td><td><code>rok::core::ops::Neg</code></td><td>2.3</td></tr>
+<tr><td><code>not_trait</code></td><td><code>!a</code></td><td><code>rok::core::ops::Not</code></td><td>2.3</td></tr>
+<tr><td><code>bitnot_trait</code></td><td><code>~a</code></td><td><code>rok::core::ops::BitNot</code></td><td>2.3</td></tr>
+<tr><td><code>bitand_trait</code></td><td><code>a &amp; b</code></td><td><code>rok::core::ops::BitAnd</code></td><td>2.3</td></tr>
+<tr><td><code>bitor_trait</code></td><td><code>a | b</code></td><td><code>rok::core::ops::BitOr</code></td><td>2.3</td></tr>
+<tr><td><code>bitxor_trait</code></td><td><code>a ^ b</code></td><td><code>rok::core::ops::BitXor</code></td><td>2.3</td></tr>
+<tr><td><code>shl_trait</code></td><td><code>a &lt;&lt; b</code></td><td><code>rok::core::ops::Shl</code></td><td>2.3</td></tr>
+<tr><td><code>shr_trait</code></td><td><code>a &gt;&gt; b</code></td><td><code>rok::core::ops::Shr</code></td><td>2.3</td></tr>
+<tr><td><code>logical_and_trait</code></td><td><code>a &amp;&amp; b</code></td><td><code>rok::core::ops::LogicalAnd</code></td><td>2.3</td></tr>
+<tr><td><code>logical_or_trait</code></td><td><code>a || b</code></td><td><code>rok::core::ops::LogicalOr</code></td><td>2.3</td></tr>
+<tr><td><code>eq_trait</code></td><td><code>==</code> / <code>!=</code>, literal patterns</td><td><code>rok::core::cmp::PartialEq</code></td><td>2.5</td></tr>
+<tr><td><code>cmp_trait</code></td><td><code>&lt;</code> / <code>&gt;</code> / <code>&lt;=</code> / <code>&gt;=</code>, range patterns</td><td><code>rok::core::cmp::PartialOrd</code></td><td>2.5</td></tr>
+<tr><td><code>ord_trait</code></td><td>Total order (<code>#[derive(Ord)]</code>)</td><td><code>rok::core::cmp::Ord</code></td><td>2.5</td></tr>
+<tr><td><code>hash_trait</code></td><td>Hash (<code>#[derive(Hash)]</code>)</td><td><code>rok::core::cmp::Hash</code></td><td>2.5</td></tr>
+<tr><td><code>clone_trait</code></td><td>Clone (<code>#[derive(Clone)]</code>)</td><td><code>rok::core::marker::Clone</code></td><td>2.13</td></tr>
+<tr><td><code>send_trait</code></td><td>Auto marker - safe to move across threads</td><td><code>rok::core::marker::Send</code></td><td>2.13</td></tr>
+<tr><td><code>sync_trait</code></td><td>Auto marker - safe to share across threads</td><td><code>rok::core::marker::Sync</code></td><td>2.13</td></tr>
+</tbody></table></div>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Comparison slot names and trait names do not correspond one-to-one. <code>eq_trait</code> is attached to <code>PartialEq</code>, which defines the equality operators, and <code>cmp_trait</code> to <code>PartialOrd</code>, which defines the ordering operators. The marker traits <code>Eq</code>, <code>Copy</code> and <code>Default</code> have no slots: sum types get them structurally (<code>T | none</code> is <code>Eq</code> when <code>T</code> is; its <code>Default</code> is <code>none</code>), so the compiler finds them by their fixed paths in <code>rok::core</code>.</p>
+</div>
+<h2 id="044-function-slots-3"><a class="anchor" tabindex="-1" href="#044-function-slots-3" aria-hidden="true">#</a>0.4.4. Function slots (3)</h2>
+<p>Function slots are for standard library functions that the compiler calls directly, like intrinsics. They mainly cover abnormal termination paths - <code>throw</code>, OOM, unreachable - and are used where a uniform entry point is needed outside normal flow.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot name</th><th>Meaning</th><th>Standard library function</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td><code>panic_fn</code></td><td>Abort function called on panic</td><td><code>rok::core::panic::panic</code></td><td>2.14</td></tr>
+<tr><td><code>oom_fn</code></td><td>OOM abort (runtime allocation failure calls <code>rok_oom</code> directly)</td><td><code>rok::core::panic::oom</code></td><td>2.14</td></tr>
+<tr><td><code>unreachable_fn</code></td><td>Called by the compiler at unreachable points</td><td><code>rok::core::panic::unreachable</code></td><td>2.14</td></tr>
+</tbody></table></div>
+<h2 id="045-method-slots-1"><a class="anchor" tabindex="-1" href="#045-method-slots-1" aria-hidden="true">#</a>0.4.5. Method slots (1)</h2>
+<p>Method slots are for methods the compiler calls automatically without the user writing the call. There is only one: disposal when a <code>using</code> binding is released. The <code>?</code> operator is expanded directly by the compiler for <code>T | none</code> (<a href="../../refs-lang/003-expressions/314-error-control-flow#31410-the--operator---early-return-of-none">refs-lang 3.14.10</a>), so it has no method slot. Cloning a value (<code>Clone::clone</code>) is never called automatically (<a href="../200-core/213-marker#2132-clone---deep-copy">2.13.2</a>), so it is registered as the trait slot <code>clone_trait</code>, not a method slot.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot name</th><th>Meaning</th><th>Standard library method</th><th>Ref</th></tr></thead>
+<tbody>
+<tr><td><code>drop_method</code></td><td>Called when a <code>using</code> block releases</td><td><code>rok::core::marker::Drop::drop</code></td><td>2.13</td></tr>
+</tbody></table></div>
+<h2 id="046-slot-consumers-where-the-compiler-looks-up-slots"><a class="anchor" tabindex="-1" href="#046-slot-consumers-where-the-compiler-looks-up-slots" aria-hidden="true">#</a>0.4.6. Slot consumers: where the compiler looks up slots</h2>
+<p>Where the previous sections listed &quot;which slots exist&quot;, this section summarizes the reverse: &quot;when the compiler looks up which slot&quot;. When tracing which standard library item a line of user syntax resolves to, the following table is the starting point.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Compiler action</th><th>Slot looked up</th></tr></thead>
+<tbody>
+<tr><td>Lowering the <code>none</code> literal</td><td><code>none_type</code></td></tr>
+<tr><td>Literal type of <code>42</code> (no expected type)</td><td><code>i32_type</code></td></tr>
+<tr><td>Literal type of <code>3.14</code> (no expected type)</td><td><code>f64_type</code></td></tr>
+<tr><td>Literal type of <code>&quot;hello&quot;</code></td><td><code>str_type</code></td></tr>
+<tr><td>Desugaring <code>for x in xs</code></td><td><code>into_iterator_trait</code>, <code>iterator_trait</code></td></tr>
+<tr><td>Desugaring <code>arr[i]</code></td><td><code>index_trait</code></td></tr>
+<tr><td>Desugaring <code>arr[i] = v</code></td><td><code>index_set_trait</code></td></tr>
+<tr><td>Desugaring <code>s[1:3]</code></td><td><code>slice_trait</code></td></tr>
+<tr><td>Desugaring a default <code>f&quot;{x}&quot;</code> hole</td><td><code>display_trait</code></td></tr>
+<tr><td>Desugaring <code>f&quot;{x:?}&quot;</code></td><td><code>debug_trait</code></td></tr>
+<tr><td>Desugaring <code>await expr</code></td><td><code>future_trait</code></td></tr>
+<tr><td>Primitive lowering of arithmetic / bitwise / logical operators</td><td><code>add_trait</code> ... <code>logical_or_trait</code></td></tr>
+<tr><td><code>==</code> / <code>!=</code>, literal pattern matching</td><td><code>eq_trait</code></td></tr>
+<tr><td><code>&lt;</code> / <code>&gt;</code> / <code>&lt;=</code> / <code>&gt;=</code>, range pattern matching</td><td><code>cmp_trait</code></td></tr>
+<tr><td>Expanding <code>#[derive(Clone / Ord / Hash)]</code></td><td><code>clone_trait</code>, <code>ord_trait</code>, <code>hash_trait</code></td></tr>
+<tr><td>Lowering panic (including <code>try!</code> failure)</td><td><code>panic_fn</code></td></tr>
+<tr><td>On OOM</td><td><code>oom_fn</code></td></tr>
+<tr><td>Unreachable after <code>match</code> exhaustiveness check of all arms</td><td><code>unreachable_fn</code></td></tr>
+<tr><td>Releasing a <code>using</code> block</td><td><code>drop_method</code></td></tr>
+<tr><td>Automatic <code>Send</code> / <code>Sync</code> implementation, <code>+ Send</code> checks</td><td><code>send_trait</code>, <code>sync_trait</code></td></tr>
+</tbody></table></div>
+<h2 id="047-duplicate--missing-detection"><a class="anchor" tabindex="-1" href="#047-duplicate--missing-detection" aria-hidden="true">#</a>0.4.7. Duplicate / missing detection</h2>
+<p>If two standard library items are attached to the same slot, the compiler rejects it (the duplicate detection rule of refs-lang 6.4.6). Conversely, if a required slot such as <code>iterator_trait</code> is missing, compilation of the features that depend on it - here, <code>for</code> loops - is rejected. Both are devices that force the slot contract to have a single source of truth.</p>
+<p>The actual attached items are stated in each chapter of <a href="../200-core/">200-core/</a>. Every slot in this table has its <code>#[lang(...)]</code> attachment site in the chapter indicated by the &quot;Ref&quot; column. A slot name not in this table is a compile error per <a href="../../refs-lang/006-meta-system/604-lang-magic">refs-lang 6.4.8</a> - for example, <code>Stream</code> has no slot (<a href="../200-core/208-stream">2.8.10</a>).</p>
+<h2 id="048-slot-naming-policy"><a class="anchor" tabindex="-1" href="#048-slot-naming-policy" aria-hidden="true">#</a>0.4.8. Slot naming policy</h2>
+<p>Finally, the naming rules to follow when adding a new slot or renaming an existing one. Consistent names let the kind of a slot be guessed just by scanning the table, so the policy is not taken lightly.</p>
+<p>Names are written in snake_case: type slots take the <code>_type</code> suffix, trait slots the <code>_trait</code> suffix, function slots the <code>_fn</code> suffix, and method slots the <code>_method</code> suffix (<code>drop_method</code>). A slot designating a whole trait is unified under a single <code>_trait</code> even if the compiler handles several methods or derives of that trait; method slots are limited to cases where the compiler <strong>automatically calls one specific method</strong>. By this criterion, <code>Clone</code> is registered as <code>clone_trait</code>, not <code>clone_method</code>. The suffix also determines the attachment site: a <code>_trait</code> slot is attached to <strong>the trait declaration itself</strong>, a <code>_method</code> slot to <strong>the corresponding method inside the trait</strong>, a <code>_type</code> slot to a type declaration, and a <code>_fn</code> slot to a function declaration; attaching it elsewhere is rejected by the signature check of <a href="../../refs-lang/006-meta-system/604-lang-magic">refs-lang 6.4.7</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/000-meta/004-lang-slot-table.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="003-intrinsics"><small>Previous</small>0.3. Intrinsic mechanism - the compiler ↔ standard library boundary</a><a class="next" href="005-notation"><small>Next</small>0.5. Notation</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

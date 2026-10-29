@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.8. Jupyter kernel integration - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines the rok kernel of the Jupyter surface.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/908-jupyter-integration.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.8. Jupyter kernel integration - rok docs">
+<meta property="og:description" content="This section defines the rok kernel of the Jupyter surface.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/908-jupyter-integration.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/908-jupyter-integration.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/908-jupyter-integration.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li class="cur"><a aria-current="page" href="908-jupyter-integration">9.8. Jupyter kernel integration</a><ul class="toc"><li><a href="#981-kernel">9.8.1. Kernel</a></li><li><a href="#982-local-native-kernel-operation">9.8.2. Local native kernel: operation</a></li><li><a href="#983-kernelspec-installation">9.8.3. kernelspec installation</a></li><li><a href="#984-interrupt--shutdown">9.8.4. Interrupt / shutdown</a></li><li><a href="#985-code-completion">9.8.5. Code completion</a></li><li><a href="#986-inspect_request-help">9.8.6. inspect_request: help</a></li><li><a href="#987-code-sharing-between-repl-and-jupyter">9.8.7. Code sharing between REPL and Jupyter</a></li><li><a href="#988-security--isolation">9.8.8. Security / isolation</a></li><li><a href="#989-next">9.8.9. Next</a></li></ul></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="98-jupyter-kernel-integration 98-jupyter-커널-통합 981-kernel 981-커널 notebook-cells-and-repl-cells 노트북-셀과-repl-셀 982-local-native-kernel-operation 982-로컬-네이티브-커널-동작 socket-channels 소켓-채널 message-format 메시지-형식 supported-messages 지원하는-메시지 execution 실행 983-kernelspec-installation 983-kernelspec-설치 984-interrupt--shutdown 984-인터럽트--종료 interrupt 인터럽트 shutdown-kernel-restart 종료-kernel-restart 985-code-completion 985-코드-자동-완성 986-inspect_request-help 986-inspect_request-도움말 987-code-sharing-between-repl-and-jupyter 987-repl-과-jupyter-의-코드-공유 differences 차이 988-security--isolation 988-보안--격리 989-next 989-다음"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/908-jupyter-integration" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="98-jupyter-kernel-integration"><a class="anchor" tabindex="-1" href="#98-jupyter-kernel-integration" aria-hidden="true">#</a>9.8. Jupyter kernel integration</h1>
+<p>This section defines the rok kernel of the <a href="../000-meta/001-execution-modes">Jupyter surface</a>.</p>
+<h2 id="981-kernel"><a class="anchor" tabindex="-1" href="#981-kernel" aria-hidden="true">#</a>9.8.1. Kernel</h2>
+<p>Jupyter runs the rok kernel as a separate process and communicates over the ZeroMQ-based Jupyter wire protocol. The kernel announces <code>protocol_version</code> as <code>&quot;5.3&quot;</code> (the value <code>jupyter_client</code> expects; works with clients 5.3 and later). In this form all OS resources, i.e. files, network and external processes, are available.</p>
+<p>The kernel runs on <strong>the same cell session</strong> as the terminal REPL and follows the rules of <a href="907-jit-cells#970-rules-of-the-cell-session">9.7.0</a>: each cell runs exactly once, bindings and items carry over to later cells, and a failed cell leaves no trace in the bindings. The kernel's engine is the same <a href="906-jit-engine">JIT session</a> as the REPL.</p>
+<h3 id="notebook-cells-and-repl-cells"><a class="anchor" tabindex="-1" href="#notebook-cells-and-repl-cells" aria-hidden="true">#</a>Notebook cells and REPL cells</h3>
+<p>A notebook cell is split into several REPL cells by the same rules the terminal REPL uses to split input, and they run in order. As in IPython, <strong>only the last value</strong> is displayed as the result. If a later part of a notebook cell fails, the effects of the earlier parts (the preceding REPL cells) remain.</p>
+<h2 id="982-local-native-kernel-operation"><a class="anchor" tabindex="-1" href="#982-local-native-kernel-operation" aria-hidden="true">#</a>9.8.2. Local native kernel: operation</h2>
+<p>When the user selects &quot;rok&quot; as the notebook's kernel, Jupyter runs the command of the kernelspec (9.8.3) as a separate process.</p>
+<pre><code>rokc jupyter --connection-file &lt;path&gt;       # also accepts rokc options such as --extern
+rok jupyter --connection-file &lt;path&gt;        # resolves dependencies, then runs rokc jupyter
+</code></pre>
+<p>The kernel reads the ZMQ ports and key from the connection file, then binds and listens on its five sockets. Once all five accept connections, it writes the line <code>rokc jupyter: ready</code> to its stderr, before output capture starts. Only the <code>tcp</code> transport is supported (no <code>ipc</code>), and CURVE encryption is not used. Messages are HMAC-signed with the connection file's key.</p>
+<h3 id="socket-channels"><a class="anchor" tabindex="-1" href="#socket-channels" aria-hidden="true">#</a>Socket channels</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Channel</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>shell</code></td><td>Requests (execute, kernel_info, complete, is_complete, etc.)</td></tr>
+<tr><td><code>iopub</code></td><td>Output and status broadcast (status, stream, execute_result, etc.)</td></tr>
+<tr><td><code>stdin</code></td><td>Unused - no input requests are sent (stdin is <code>/dev/null</code>)</td></tr>
+<tr><td><code>control</code></td><td>interrupt, shutdown</td></tr>
+<tr><td><code>heartbeat</code></td><td>Sends back whatever it receives (echo)</td></tr>
+</tbody></table></div>
+<h3 id="message-format"><a class="anchor" tabindex="-1" href="#message-format" aria-hidden="true">#</a>Message format</h3>
+<p>Each message is serialized as six or more ZMQ frames.</p>
+<pre><code>[b&quot;u-u-i-d&quot;,         # zmq identity(ies)
+ b&quot;&lt;IDS|MSG&gt;&quot;,       # delimiter
+ b&quot;baddad42&quot;,         # HMAC signature (with key)
+ b&quot;{header}&quot;,          # header JSON
+ b&quot;{parent_header}&quot;,   # parent header JSON
+ b&quot;{metadata}&quot;,        # metadata JSON
+ b&quot;{content}&quot;,         # content JSON
+]
+</code></pre>
+<p>The detailed format follows the Jupyter wire protocol standard. Every request is wrapped in iopub <code>status: busy</code> and <code>status: idle</code>.</p>
+<h3 id="supported-messages"><a class="anchor" tabindex="-1" href="#supported-messages" aria-hidden="true">#</a>Supported messages</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Request</th><th>Reply</th></tr></thead>
+<tbody>
+<tr><td><code>kernel_info_request</code></td><td><code>language_info</code> with name <code>rok</code>, mimetype <code>text/x-rok</code>, file_extension <code>.rok</code>, <code>protocol_version</code> <code>&quot;5.3&quot;</code></td></tr>
+<tr><td><code>execute_request</code></td><td>See &quot;Execution&quot; below</td></tr>
+<tr><td><code>is_complete_request</code></td><td><code>complete</code> / <code>incomplete</code> decided by the REPL continuation rules</td></tr>
+<tr><td><code>complete_request</code></td><td>Session names, members and keywords as candidates (9.8.5)</td></tr>
+<tr><td><code>inspect_request</code></td><td><code>found: true</code> with <code>text/plain</code> help for the name at the cursor (9.8.6), else <code>false</code></td></tr>
+<tr><td><code>history_request</code></td><td>The cells executed by this kernel</td></tr>
+<tr><td><code>comm_info_request</code></td><td>Empty list</td></tr>
+<tr><td><code>shutdown_request</code></td><td>On shell or control. Exits after replying</td></tr>
+<tr><td><code>interrupt_request</code></td><td>On control (9.8.4)</td></tr>
+</tbody></table></div>
+<h3 id="execution"><a class="anchor" tabindex="-1" href="#execution" aria-hidden="true">#</a>Execution</h3>
+<p>On receiving an <code>execute_request</code>, the kernel sends:</p>
+<ol>
+<li>iopub <code>execute_input</code> (code and execution count).
+</li>
+<li>The cell's output <strong>after it finishes</strong>: stdout / stderr as iopub <code>stream</code>. Output is not sent incrementally during execution.
+</li>
+<li>If there is a value, iopub <code>execute_result</code>: <code>text/plain</code> holding the same <code>type: value</code> as the REPL (9.7.7).
+</li>
+<li>On failure, iopub <code>error</code>: <code>evalue</code> is the first line of stderr, <code>traceback</code> is the lines of stderr.
+</li>
+<li>shell <code>execute_reply</code> (including <code>execution_count</code>, with success / failure status).
+</li>
+</ol>
+<p>The only output MIME type is <code>text/plain</code>.</p>
+<h2 id="983-kernelspec-installation"><a class="anchor" tabindex="-1" href="#983-kernelspec-installation" aria-hidden="true">#</a>9.8.3. kernelspec installation</h2>
+<p>Jupyter only recognizes kernels installed in a kernelspec directory.</p>
+<pre><code>rok jupyter install [--env &lt;name&gt;]
+</code></pre>
+<p>The kernelspec is <code>kernels/rok/kernel.json</code> under the directory below. Installed with <code>--env &lt;name&gt;</code>, it is <code>kernels/rok-&lt;name&gt;/</code>, with display name <code>rok (&lt;name&gt;)</code> and command <code>rok --env &lt;name&gt; jupyter ...</code>.</p>
+<ol>
+<li><code>$JUPYTER_DATA_DIR</code> if set
+</li>
+<li><code>~/Library/Jupyter</code> on macOS
+</li>
+<li>Otherwise <code>$XDG_DATA_HOME/jupyter</code>, or <code>~/.local/share/jupyter</code> if unset
+</li>
+</ol>
+<p><code>kernel.json</code> runs the <code>rok</code> proxy (<a href="910-rok-frontend#9106-toolchain">9.10.6</a>) and records the <code>ROK_HOME</code> and <code>PATH</code> at installation time in <code>env</code>.</p>
+<pre><code class="language-json">{
+  &quot;argv&quot;: [&quot;/home/u/.rok/bin/rok&quot;, &quot;jupyter&quot;, &quot;--connection-file&quot;, &quot;{connection_file}&quot;],
+  &quot;display_name&quot;: &quot;rok&quot;,
+  &quot;language&quot;: &quot;rok&quot;,
+  &quot;interrupt_mode&quot;: &quot;message&quot;,
+  &quot;env&quot;: { &quot;ROK_HOME&quot;: &quot;/home/u/.rok&quot;, &quot;PATH&quot;: &quot;&lt;PATH at install time&gt;&quot; }
+}
+</code></pre>
+<p>Once installed, the rok kernel is usable from Jupyter, VS Code, nteract and others.</p>
+<h2 id="984-interrupt--shutdown"><a class="anchor" tabindex="-1" href="#984-interrupt--shutdown" aria-hidden="true">#</a>9.8.4. Interrupt / shutdown</h2>
+<h3 id="interrupt"><a class="anchor" tabindex="-1" href="#interrupt" aria-hidden="true">#</a>Interrupt</h3>
+<p>Since <code>interrupt_mode</code> is <code>&quot;message&quot;</code>, an interrupt arrives as an <code>interrupt_request</code> on the control socket. The running cell is terminated and the session continues from the state before that cell (as for a failed cell, <a href="907-jit-cells#970-rules-of-the-cell-session">9.7.0</a>). A cell still being compiled cannot be interrupted.</p>
+<h3 id="shutdown-kernel-restart"><a class="anchor" tabindex="-1" href="#shutdown-kernel-restart" aria-hidden="true">#</a>Shutdown (kernel restart)</h3>
+<p>After replying to a <code>shutdown_request</code> on the shell or control socket, the kernel cleans up the session and exits the process. On restart, Jupyter launches it again automatically.</p>
+<h2 id="985-code-completion"><a class="anchor" tabindex="-1" href="#985-code-completion" aria-hidden="true">#</a>9.8.5. Code completion</h2>
+<p><code>complete_request</code> matches the fragment before the cursor against the session's bindings, items, module paths, members and keywords, and replies with <code>{ matches, cursor_start, cursor_end }</code>.</p>
+<h2 id="986-inspect_request-help"><a class="anchor" tabindex="-1" href="#986-inspect_request-help" aria-hidden="true">#</a>9.8.6. inspect_request: help</h2>
+<p><code>inspect_request</code> (Shift+Tab) replies with <code>found: true</code> and, as <code>text/plain</code>, the name at the cursor as <code>name: type</code>, its signature and doc comments (<code>///</code> / <code>//!</code> of <a href="../001-lexical/102-lexical-structure">Lexical structure</a>). For an unknown name it is <code>found: false</code>.</p>
+<h2 id="987-code-sharing-between-repl-and-jupyter"><a class="anchor" tabindex="-1" href="#987-code-sharing-between-repl-and-jupyter" aria-hidden="true">#</a>9.8.7. Code sharing between REPL and Jupyter</h2>
+<p>Code written in the REPL can be moved to Jupyter cells unchanged, and vice versa, because both follow the same cell session and the same semantics (<a href="907-jit-cells#970-rules-of-the-cell-session">9.7.0</a>).</p>
+<h3 id="differences"><a class="anchor" tabindex="-1" href="#differences" aria-hidden="true">#</a>Differences</h3>
+<p>The two surfaces differ in a few respects, summarized below.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>REPL</th><th>Jupyter</th></tr></thead>
+<tbody>
+<tr><td>Input</td><td>One line / one expression</td><td>One cell (multiple lines)</td></tr>
+<tr><td>Output</td><td>text only</td><td>text (<code>text/plain</code>)</td></tr>
+<tr><td>State</td><td>Discarded on exit</td><td>Cells kept in the notebook file</td></tr>
+</tbody></table></div>
+<h2 id="988-security--isolation"><a class="anchor" tabindex="-1" href="#988-security--isolation" aria-hidden="true">#</a>9.8.8. Security / isolation</h2>
+<p>The kernel runs arbitrary code with the user's privileges. No isolation is performed.</p>
+<h2 id="989-next"><a class="anchor" tabindex="-1" href="#989-next" aria-hidden="true">#</a>9.8.9. Next</h2>
+<p>The following <a href="909-debug-tools">Debug / diagnostic tools</a> defines gdb-friendly features, profiling, <code>--emit</code> and more.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/908-jupyter-integration.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="907-jit-cells"><small>Previous</small>9.7. JIT cell execution flow and state management</a><a class="next" href="909-debug-tools"><small>Next</small>9.9. Debug / diagnostic tools</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

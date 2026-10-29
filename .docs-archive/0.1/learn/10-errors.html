@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10. Error Handling - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Things that can fail, like a missing file or bad input, are everywhere. rok has a single error model. A function that can throw writes throws in its signature, ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/10-errors.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="10. Error Handling - rok docs">
+<meta property="og:description" content="Things that can fail, like a missing file or bad input, are everywhere. rok has a single error model. A function that can throw writes throws in its signature, ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/10-errors.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li class="cur"><a aria-current="page" href="10-errors">10. Error Handling</a><ul class="toc"><li><a href="#throws-throw-and-try">throws, throw, and try</a></li><li><a href="#try-and--a-default-instead-of-an-error">try? and ??: a default instead of an error</a></li><li><a href="#catch-selecting-by-type">catch: selecting by type</a></li><li><a href="#block-form-and-finally">Block form and finally</a></li><li><a href="#your-own-error-types">Your own error types</a></li><li><a href="#rethrows-throwing-only-as-much-as-the-argument-does">rethrows: throwing only as much as the argument does</a></li><li><a href="#using-cleaning-up-resources">using: cleaning up resources</a></li><li><a href="#errors-and-panics">Errors and panics</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="10-error-handling"><a class="anchor" tabindex="-1" href="#10-error-handling" aria-hidden="true">#</a>10. Error Handling</h1>
+<p>Things that can fail, like a missing file or bad input, are everywhere. rok has a single error model. A function that can throw writes <code>throws</code> in its signature, and the caller marks that call with <code>try</code>. As a result, every point where an error can flow is visible in the code.</p>
+<h2 id="throws-throw-and-try"><a class="anchor" tabindex="-1" href="#throws-throw-and-try" aria-hidden="true">#</a><code>throws</code>, <code>throw</code>, and <code>try</code></h2>
+<p>Write <code>throws</code> after the parameter list, before <code>-&gt;</code>. In the body, <code>throw</code> throws an error value. For most code the standard library's <code>ValueError { msg }</code> is all you need; you don't have to define an error type.</p>
+<p>You must put <code>try</code> on every call to a function that throws. If the call fails, the error goes to the nearest <code>catch</code>; if there is none, it propagates out of the enclosing function, which must then be <code>throws</code> too.</p>
+<pre><code class="language-rok"><span class="k">fn</span> parse_age(s: <span class="t">str</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span> s.parse();
+    <span class="k">if</span> n &lt; <span class="n">0</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">f"age {</span>n<span class="s">} is negative"</span> }; }
+    n
+}
+
+<span class="k">fn</span> total_age(xs: <span class="t">List</span>&lt;<span class="t">str</span>&gt;) <span class="k">throws</span> -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> sum = <span class="n">0</span>;
+    <span class="k">for</span> x <span class="k">in</span> xs {
+        sum += <span class="k">try</span> parse_age(x);     <span class="c">// an error leaves total_age here</span>
+    }
+    sum
+}
+
+println(<span class="s">f"{</span><span class="k">try</span> total_age([<span class="s">"30"</span>, <span class="s">"12"</span>])<span class="s">}"</span>);
+<span class="k">let</span> t = <span class="k">try</span> total_age([<span class="s">"30"</span>, <span class="s">"-1"</span>]) <span class="k">catch</span> e { println(<span class="s">f"error: {</span>e<span class="s">}"</span>); <span class="n">0</span> };
+println(<span class="s">f"{</span>t<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">42
+error: age -1 is negative
+0
+</code></pre>
+<p><code>catch e { .. }</code> handles the error on the spot, and its block's value is used instead. <code>try</code> covers the entire expression to its right: <code>try a(b())</code> marks both calls together, and <code>try { .. }</code> covers every call inside the block.</p>
+<p>A plain <code>throws</code> means the function can throw any error type (short for <code>throws (any Error)</code>); <code>s.parse()</code> throws a <code>ParseError</code>, and <code>parse_age</code> passes it on unchanged. Listing the exact error types is covered <a href="#your-own-error-types">below</a>.</p>
+<h3 id="errors-at-the-top-of-a-script"><a class="anchor" tabindex="-1" href="#errors-at-the-top-of-a-script" aria-hidden="true">#</a>Errors at the top of a script</h3>
+<p>A program's top-level statements form an implicit <code>main</code> that <code>throws</code>. So in a script, <code>try</code> alone is enough: an error nobody catches ends the program with a message on stderr and exit code 1.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span> <span class="s">"abc"</span>.parse();
+println(<span class="s">f"{</span>n<span class="s">}"</span>);
+</code></pre>
+<pre><code class="language-text">$ rok run
+error: `main` returned an uncaught error: cannot parse &quot;abc&quot;: invalid digit
+  --&gt; src/main.rok:1:18
+$ echo $?
+1
+</code></pre>
+<p>An explicit <code>fn main()</code> that is not <code>throws</code> must handle every error itself; write <code>fn main() throws { .. }</code> to let them out.</p>
+<h2 id="try-and--a-default-instead-of-an-error"><a class="anchor" tabindex="-1" href="#try-and--a-default-instead-of-an-error" aria-hidden="true">#</a><code>try?</code> and <code>??</code>: a default instead of an error</h2>
+<p>Often you just want a fallback value. <code>try? e</code> discards the error and yields <code>none</code>, and <code>??</code> replaces <code>none</code> with a default. Close the <code>try?</code> with parentheses before <code>??</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> parse_port(s: <span class="t">str</span>) -&gt; <span class="t">i32</span> {
+    (<span class="k">try</span>? s.parse::&lt;<span class="t">i32</span>&gt;()) ?? <span class="n">8080</span>
+}
+
+println(<span class="s">f"{</span>parse_port(<span class="s">"3000"</span>)<span class="s">} {</span>parse_port(<span class="s">"abc"</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">3000 8080
+</code></pre>
+<p>To ignore an error on purpose, write <code>let _ = try? f();</code>. <code>try! e</code> turns an error into a panic; use it only when failing there would be a bug.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>On error</th></tr></thead>
+<tbody>
+<tr><td><code>try e</code></td><td>Nearest <code>catch</code>, or propagate</td></tr>
+<tr><td><code>try? e</code></td><td>Discard the error and yield <code>none</code></td></tr>
+<tr><td><code>try! e</code></td><td>Panic (treated as a program bug)</td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="k">fn</span> save(n: <span class="t">i32</span>) <span class="k">throws</span> {
+    <span class="k">if</span> n &lt; <span class="n">0</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">"negative"</span> }; }
+    println(<span class="s">f"saved {</span>n<span class="s">}"</span>);
+}
+
+<span class="k">let</span> _ = <span class="k">try</span>? save(<span class="n">1</span>);
+<span class="k">let</span> _ = <span class="k">try</span>? save(-<span class="n">1</span>);         <span class="c">// the error is dropped</span>
+<span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span>! <span class="s">"42"</span>.parse();
+println(<span class="s">f"{</span>n<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">saved 1
+42
+</code></pre>
+<h2 id="catch-selecting-by-type"><a class="anchor" tabindex="-1" href="#catch-selecting-by-type" aria-hidden="true">#</a><code>catch</code>: selecting by type</h2>
+<p><code>catch</code> patterns are tested from top to bottom, and the first matching block runs. <code>e: T</code> selects by type, and inside that branch <code>e</code> has that type, so you can read its fields. A final <code>catch e</code> takes everything else.</p>
+<pre><code class="language-rok"><span class="k">fn</span> read_age(s: <span class="t">str</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> n: <span class="t">i32</span> = <span class="k">try</span> s.parse();
+    <span class="k">if</span> n &lt; <span class="n">0</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">f"age {</span>n<span class="s">} is negative"</span> }; }
+    n
+}
+
+<span class="k">for</span> s <span class="k">in</span> [<span class="s">"30"</span>, <span class="s">"x"</span>, <span class="s">"-1"</span>] {
+    <span class="k">let</span> age = <span class="k">try</span> read_age(s)
+    <span class="k">catch</span> e: <span class="t">ValueError</span> { println(<span class="s">f"  {</span>e.msg<span class="s">}"</span>); -<span class="n">1</span> }
+    <span class="k">catch</span> e { println(<span class="s">f"  {</span>e<span class="s">}"</span>); -<span class="n">1</span> };
+    println(<span class="s">f"{</span>s<span class="s">} -&gt; {</span>age<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">30 -&gt; 30
+  cannot parse &quot;x&quot;: invalid digit
+x -&gt; -1
+  age -1 is negative
+-1 -&gt; -1
+</code></pre>
+<h2 id="block-form-and-finally"><a class="anchor" tabindex="-1" href="#block-form-and-finally" aria-hidden="true">#</a>Block form and <code>finally</code></h2>
+<p>To wrap several steps at once, use the <code>try { .. } catch .. { .. }</code> form. A <code>finally</code> block runs last no matter how control leaves: normal completion, an error, <code>return</code>, and so on.</p>
+<pre><code class="language-rok"><span class="k">fn</span> half(n: <span class="t">i32</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> n % <span class="n">2</span> != <span class="n">0</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">f"{</span>n<span class="s">} is odd"</span> }; }
+    n / <span class="n">2</span>
+}
+
+<span class="k">for</span> input <span class="k">in</span> [<span class="n">8</span>, <span class="n">6</span>] {
+    <span class="k">let</span> r = <span class="k">try</span> {
+        <span class="k">let</span> a = <span class="k">try</span> half(input);
+        <span class="k">let</span> b = <span class="k">try</span> half(a);
+        a + b
+    } <span class="k">catch</span> e {
+        println(<span class="s">f"failed: {</span>e<span class="s">}"</span>);
+        <span class="n">0</span>
+    } <span class="k">finally</span> {
+        println(<span class="s">f"done with {</span>input<span class="s">}"</span>);
+    };
+    println(<span class="s">f"result {</span>r<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">done with 8
+result 6
+failed: 3 is odd
+done with 6
+result 0
+</code></pre>
+<h2 id="your-own-error-types"><a class="anchor" tabindex="-1" href="#your-own-error-types" aria-hidden="true">#</a>Your own error types</h2>
+<p>When callers need to tell failures apart, define an error type: a struct or enum with <code>Debug</code> and <code>Display</code> that implements the <code>Error</code> trait (the <code>Display</code> shape is the one from <a href="06-structs-enums-traits#operator-traits">chapter 6</a>). A signature can then list exactly what it throws, <code>throws (E)</code>, or several kinds as a sum, <code>throws (A | B)</code>. The compiler checks that every listed type is handled or passed on.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">NotFound</span> { key: <span class="t">str</span>; }
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">NotFound</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) { <span class="k">try</span> f.write_str(<span class="s">f"no key {</span><span class="k">self</span>.key<span class="s">}"</span>); }
+}
+<span class="k">impl</span> <span class="t">Error</span> <span class="k">for</span> <span class="t">NotFound</span> {}
+
+<span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">Invalid</span> { reason: <span class="t">str</span>; }
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Invalid</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) { <span class="k">try</span> f.write_str(<span class="k">self</span>.reason); }
+}
+<span class="k">impl</span> <span class="t">Error</span> <span class="k">for</span> <span class="t">Invalid</span> {}
+
+<span class="k">fn</span> lookup(key: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NotFound</span> | <span class="t">Invalid</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> key == <span class="s">""</span> { <span class="k">throw</span> <span class="t">Invalid</span> { reason: <span class="s">"empty key"</span> }; }
+    <span class="k">if</span> key != <span class="s">"a"</span> { <span class="k">throw</span> <span class="t">NotFound</span> { key: key }; }
+    <span class="n">1</span>
+}
+
+<span class="k">fn</span> describe(key: <span class="t">str</span>) -&gt; <span class="t">str</span> {
+    <span class="k">try</span> <span class="s">f"found {</span>lookup(key)<span class="s">}"</span>
+    <span class="k">catch</span> e: <span class="t">NotFound</span> { <span class="s">f"missing: {</span>e.key<span class="s">}"</span> }
+    <span class="k">catch</span> e: <span class="t">Invalid</span> { <span class="s">f"invalid: {</span>e<span class="s">}"</span> }
+}
+
+<span class="k">fn</span> main() {
+    <span class="k">for</span> k <span class="k">in</span> [<span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">""</span>] {
+        println(describe(k));
+    }
+}
+</code></pre>
+<pre class="output"><code class="language-output">found 1
+missing: b
+invalid: empty key
+</code></pre>
+<p>The error kinds of <code>lookup</code> are closed as <code>NotFound | Invalid</code>, so <code>describe</code>, which covers both types, becomes a function that no longer throws. The compiler checks this. Use a plain <code>throws</code> when the set of error kinds is hard to close, as in a public API; the receiver catches everything with <code>catch e</code> or narrows first, as in <code>catch e: ValueError</code> (<a href="../spec/refs-lang/004-functions/414-throws#4143-untyped-throws">4.14.3</a>).</p>
+<p>Any pattern can follow <code>catch</code>, so a struct pattern can pull out fields directly.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Debug)]</span>
+<span class="k">struct</span> <span class="t">NotFound</span> { key: <span class="t">str</span>; }
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">NotFound</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) { <span class="k">try</span> f.write_str(<span class="s">f"no key {</span><span class="k">self</span>.key<span class="s">}"</span>); }
+}
+<span class="k">impl</span> <span class="t">Error</span> <span class="k">for</span> <span class="t">NotFound</span> {}
+
+<span class="k">fn</span> lookup(key: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NotFound</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> key != <span class="s">"a"</span> { <span class="k">throw</span> <span class="t">NotFound</span> { key: key }; }
+    <span class="n">1</span>
+}
+
+<span class="k">for</span> key <span class="k">in</span> [<span class="s">"a"</span>, <span class="s">"b"</span>] {
+    <span class="k">let</span> n = <span class="k">try</span> lookup(key)
+    <span class="k">catch</span> <span class="t">NotFound</span> { key } { println(<span class="s">f"missing: {</span>key<span class="s">}"</span>); <span class="n">0</span> };
+    println(<span class="s">f"{</span>n<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">1
+missing: b
+0
+</code></pre>
+<h2 id="rethrows-throwing-only-as-much-as-the-argument-does"><a class="anchor" tabindex="-1" href="#rethrows-throwing-only-as-much-as-the-argument-does" aria-hidden="true">#</a><code>rethrows</code>: throwing only as much as the argument does</h2>
+<p>A higher-order function that takes a function as an argument can be declared <code>rethrows</code>. If the function passed in does not throw, the call needs no <code>try</code>; you add <code>try</code> only when passing a throwing function.</p>
+<pre><code class="language-rok"><span class="k">fn</span> apply_all(xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;, f: <span class="k">fn</span>(<span class="t">i32</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span>) <span class="k">rethrows</span> -&gt; <span class="t">List</span>&lt;<span class="t">i32</span>&gt; {
+    <span class="k">let</span> out: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+    <span class="k">for</span> x <span class="k">in</span> xs { out.push(<span class="k">try</span> f(x)); }
+    out
+}
+
+<span class="k">fn</span> half(n: <span class="t">i32</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> n % <span class="n">2</span> != <span class="n">0</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">f"{</span>n<span class="s">} is odd"</span> }; }
+    n / <span class="n">2</span>
+}
+
+<span class="k">let</span> doubled = apply_all([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>], |x| x * <span class="n">2</span>);
+println(<span class="s">f"{</span>doubled<span class="s">:?</span><span class="s">}"</span>);
+<span class="k">let</span> halves = <span class="k">try</span> apply_all([<span class="n">2</span>, <span class="n">4</span>], half) <span class="k">catch</span> _ { [] };
+println(<span class="s">f"{</span>halves<span class="s">:?</span><span class="s">}"</span>);
+<span class="k">let</span> bad = <span class="k">try</span> apply_all([<span class="n">2</span>, <span class="n">3</span>], half) <span class="k">catch</span> e { println(<span class="s">f"{</span>e<span class="s">}"</span>); [] };
+println(<span class="s">f"{</span>bad<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[2, 4, 6]
+[1, 2]
+3 is odd
+[]
+</code></pre>
+<h2 id="using-cleaning-up-resources"><a class="anchor" tabindex="-1" href="#using-cleaning-up-resources" aria-hidden="true">#</a><code>using</code>: cleaning up resources</h2>
+<p>The GC reclaims memory, but resources such as files, sockets, and locks must be closed at a definite point. <code>using x = acquire_expr { .. }</code> calls <code>x</code>'s <code>Drop::drop</code> however the block is exited (normally, via <code>return</code>, or by error propagation). Multiple resources are separated by commas and cleaned up in reverse order.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Conn</span> { name: <span class="t">str</span>; }
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">Conn</span> {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) { println(<span class="s">f"close {</span><span class="k">self</span>.name<span class="s">}"</span>); }
+}
+
+<span class="k">fn</span> open(name: <span class="t">str</span>) -&gt; <span class="t">Conn</span> {
+    println(<span class="s">f"open {</span>name<span class="s">}"</span>);
+    <span class="t">Conn</span> { name: name }
+}
+
+<span class="k">fn</span> work() <span class="k">throws</span> -&gt; <span class="t">i32</span> {
+    <span class="k">using</span> a = open(<span class="s">"db"</span>), b = open(<span class="s">"cache"</span>) {
+        println(<span class="s">"working"</span>);
+        <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">"query failed"</span> };
+    }
+}
+
+<span class="k">try</span> work() <span class="k">catch</span> e { println(<span class="s">f"work failed: {</span>e<span class="s">}"</span>); };
+</code></pre>
+<pre class="output"><code class="language-output">open db
+open cache
+working
+close cache
+close db
+work failed: query failed
+</code></pre>
+<p><code>using</code> is an expression, so it can also produce a value, as in <code>let text = using f = try fs::open(path) { try f.read_to_end() };</code>. Remember that ordinary <code>let</code> bindings are not <code>drop</code>ped when they go out of scope. When you need deterministic cleanup, use <code>using</code>.</p>
+<h2 id="errors-and-panics"><a class="anchor" tabindex="-1" href="#errors-and-panics" aria-hidden="true">#</a>Errors and panics</h2>
+<p>An error from <code>throws</code> is &quot;a failure that can happen&quot;. By contrast, an out-of-range index, division by zero, a failed <code>try!</code>, or a call to <code>panic(..)</code> is a <strong>panic</strong>, which is treated as a program bug. A panic cannot be caught with <code>catch</code>; it writes a message to stderr and exits with code 101. Cleanup in <code>finally</code> and <code>using</code> does not run either.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> i = <span class="n">7</span>;
+println(<span class="s">f"{</span>xs[i]<span class="s">}"</span>);
+</code></pre>
+<pre><code class="language-text">thread 'main' panicked at main.rok:3:12:
+List index out of bounds
+</code></pre>
+<p>Use <code>Result&lt;T, E&gt;</code> only when you need to hold an error as a value (to collect several results or handle them later). The rule is: &quot;if you throw it, <code>throws</code>; if you keep it, <code>Result</code>&quot;.</p>
+<pre><code class="language-rok"><span class="k">fn</span> half(n: <span class="t">i32</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> n % <span class="n">2</span> != <span class="n">0</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">f"{</span>n<span class="s">} is odd"</span> }; }
+    n / <span class="n">2</span>
+}
+
+<span class="k">for</span> n <span class="k">in</span> [<span class="n">4</span>, <span class="n">5</span>] {
+    <span class="k">let</span> r = <span class="t">Result</span>::catching(|| <span class="k">try</span> half(n));
+    println(<span class="s">f"{</span>n<span class="s">}: ok={</span>r.is_ok()<span class="s">} value={</span>r.unwrap_or(-<span class="n">1</span>)<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">4: ok=true value=2
+5: ok=false value=-1
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>A function that can throw declares <code>throws</code> (before <code>-&gt;</code>) and throws with <code>throw</code>; <code>ValueError { msg }</code> covers most needs.
+</li>
+<li>Calls are marked with <code>try</code>. An uncaught error propagates to the enclosing function; at the top of a script it ends the program with exit code 1.
+</li>
+<li><code>(try? e) ?? default</code> gives a fallback; <code>let _ = try? f();</code> ignores an error; <code>try!</code> turns it into a panic.
+</li>
+<li><code>catch</code> is an expression that selects by pattern, and <code>finally</code> always runs.
+</li>
+<li>Define your own error types (<code>Display</code> + <code>Error</code>) when callers must tell failures apart, and list them with <code>throws (A | B)</code>.
+</li>
+<li><code>rethrows</code> throws only when the function it received throws.
+</li>
+<li>Resources bound with <code>using</code> are cleaned up however the block is exited.
+</li>
+<li>A panic is an uncatchable bug signal. Use <code>Result</code> only when you need to hold an error as a value.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/003-expressions/314-error-control-flow">Error control flow</a>, <a href="../spec/refs-lang/004-functions/414-throws"><code>throws</code> signatures</a>, <a href="../spec/refs-lang/003-expressions/317-using-expression"><code>using</code> expressions</a>, <a href="../spec/refs-lang/003-expressions/314-error-control-flow#3148-panics-and-fatal-errors">Panics and fatal errors</a>
+</li>
+<li>Standard library spec: <a href="../spec/refs-standard-libraries/200-core/214-error">error</a>
+</li>
+<li>API: <a href="../std/core/error#trait.Error"><code>Error</code></a>, <a href="../std/core/error#struct.ValueError"><code>ValueError</code></a>, <a href="../std/core/error#enum.Result"><code>Result</code></a>, <a href="../std/core/marker#trait.Drop"><code>Drop</code></a>
+</li>
+<li>Next chapter: <a href="11-modules-packages">11. Modules and Packages</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/10-errors.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="09-strings"><small>Previous</small>9. Strings and f-strings</a><a class="next" href="11-modules-packages"><small>Next</small>11. Modules and Packages</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

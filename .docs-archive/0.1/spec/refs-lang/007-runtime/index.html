@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7. Runtime overview - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This block defines the implementation specification of the rok runtime system (GC, task scheduler, coroutines). The system works identically under both engines ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7. Runtime overview - rok docs">
+<meta property="og:description" content="This block defines the implementation specification of the rok runtime system (GC, task scheduler, coroutines). The system works identically under both engines ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/index.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a class="cur" href="./">7. Runtime overview</a></p><ul class="toc"><li><a href="#contents">Contents</a></li><li><a href="#key-decisions">Key decisions</a></li><li><a href="#zero-dependency-principle">Zero-dependency principle</a></li><li><a href="#mn-model">M:N model</a></li><li><a href="#single-a-output">Single .a output</a></li><li><a href="#runtime-error-stack-overflow">Runtime error: stack overflow</a></li><li><a href="#interface-with-the-compiler">Interface with the compiler</a></li></ul><ul class="pages"><li><a href="701-object-layout">7.1. Object layout and memory spaces</a></li><li><a href="702-allocation">7.2. Allocation</a></li><li><a href="703-gc-algorithm">7.3. GC algorithm</a></li><li><a href="704-barriers-and-roots">7.4. Barriers and root tracking</a></li><li><a href="705-concurrent-collection">7.5. Concurrent mark</a></li><li><a href="706-scheduler">7.6. Scheduler</a></li><li><a href="707-io-and-timer">7.7. I/O driver and timers</a></li><li><a href="708-coroutine">7.8. Coroutines</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="7-runtime-overview 7-런타임-개요 contents 목차 key-decisions 핵심-결정 zero-dependency-principle 의존성-0-원칙 mn-model mn-모델 single-a-output 단일-a-산출물 runtime-error-stack-overflow 런타임-오류-스택-오버플로 interface-with-the-compiler 컴파일러와의-인터페이스"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/007-runtime/" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="7-runtime-overview"><a class="anchor" tabindex="-1" href="#7-runtime-overview" aria-hidden="true">#</a>7. Runtime overview</h1>
+<p>This block defines the implementation specification of the rok runtime system (<a href="../000-meta/007-glossary#gc-garbage-collector">GC</a>, task scheduler, coroutines). The system works identically under both engines (<a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> / <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a>) of <a href="../000-meta/001-execution-modes">Execution engines and the user surface</a>.</p>
+<h2 id="contents"><a class="anchor" tabindex="-1" href="#contents" aria-hidden="true">#</a>Contents</h2>
+<p>The sections of this chapter are:</p>
+<ul>
+<li><a href="701-object-layout">7.1. Object layout and memory spaces</a>
+</li>
+<li><a href="702-allocation">7.2. Allocation</a>
+</li>
+<li><a href="703-gc-algorithm">7.3. GC algorithm</a>
+</li>
+<li><a href="704-barriers-and-roots">7.4. Barriers and root tracking</a>
+</li>
+<li><a href="705-concurrent-collection">7.5. Concurrent mark</a>
+</li>
+<li><a href="706-scheduler">7.6. Scheduler</a>
+</li>
+<li><a href="707-io-and-timer">7.7. I/O driver and timers</a>
+</li>
+<li><a href="708-coroutine">7.8. Coroutines</a>
+</li>
+</ul>
+<h2 id="key-decisions"><a class="anchor" tabindex="-1" href="#key-decisions" aria-hidden="true">#</a>Key decisions</h2>
+<p>The decisions for the runtime's core components are summarized as:</p>
+<pre><code>GC          in-house Immix + Sticky Mark-Bit generations
+Scheduler   M:N work-stealing
+Coroutine   compiler-generated state machine (stackless)
+</code></pre>
+<p>All three are implemented in-house, with zero dependencies on external libraries.</p>
+<h2 id="zero-dependency-principle"><a class="anchor" tabindex="-1" href="#zero-dependency-principle" aria-hidden="true">#</a>Zero-dependency principle</h2>
+<p>The runtime does not depend on external libraries. Specifically, it does not use:</p>
+<ul>
+<li>external GC libraries (Boehm GC, MMTk, etc.);
+</li>
+<li>external async runtimes;
+</li>
+<li>external coroutine libraries.
+</li>
+</ul>
+<p>Platform system interfaces (<code>libc</code>, OS headers, etc.) do not count as dependencies, since they are an essential part of the OS interface.</p>
+<h2 id="mn-model"><a class="anchor" tabindex="-1" href="#mn-model" aria-hidden="true">#</a>M:N model</h2>
+<p>The scheduler follows an M:N hybrid model.</p>
+<pre><code>OS Thread (worker) x N  ──── rok task / coroutine x M
+                                   (typically M &gt;&gt; N)
+</code></pre>
+<p>The default N is the number of CPU cores and can be adjusted by runtime configuration. One OS thread performs several roles: Scheduler Worker, Mutator, I/O Driver and GC Worker. Currently, however, the I/O driver is handled by a single separate reactor thread (<a href="707-io-and-timer">7.7</a>).</p>
+<p>With this integration, all runtime activity is handled in one thread pool without the cost of separate threads.</p>
+<h2 id="single-a-output"><a class="anchor" tabindex="-1" href="#single-a-output" aria-hidden="true">#</a>Single .a output</h2>
+<p>The runtime is distributed as a single staticlib, <code>librokr.a</code>. Building a user package links <code>librokr.a</code>, producing an executable binary with no further external dependencies.</p>
+<h2 id="runtime-error-stack-overflow"><a class="anchor" tabindex="-1" href="#runtime-error-stack-overflow" aria-hidden="true">#</a>Runtime error: stack overflow</h2>
+<p>When a thread's stack overflows, the runtime flushes stdout (if possible), prints the following to stderr, and aborts (SIGABRT). Unlike a panic, there is no unwinding and <code>finally</code> does not run.</p>
+<pre><code>thread '&lt;name&gt;' has overflowed its stack
+</code></pre>
+<p><code>&lt;name&gt;</code> is the thread's name: the name given with <code>thread::Builder::name</code> (<a href="../../refs-standard-libraries/300-std/304-thread">stdlib 3.4</a>), which is also set as the OS thread name. The main thread is <code>main</code>, and an unnamed thread is <code>&lt;unnamed&gt;</code>. This applies to the main thread, <code>thread::spawn</code> threads, and executor workers (including deep <code>await</code> chains). The detection mechanism (guard range and <code>sigaltstack</code>) and TLS slots are in <a href="../008-abi/805-extern-symbols#stack-overflow">8.5.7</a>. On wasm a module cannot catch the trap; the host reports it (the shipped JS host prints the message above).</p>
+<h2 id="interface-with-the-compiler"><a class="anchor" tabindex="-1" href="#interface-with-the-compiler" aria-hidden="true">#</a>Interface with the compiler</h2>
+<p>The runtime communicates with compiler-generated code through a fixed <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a>. The interface consists of three elements:</p>
+<ul>
+<li>The object layout (16-byte header + payload).
+</li>
+<li><code>extern &quot;C&quot;</code> functions such as <code>rok_gc_alloc_slow</code>, <code>rok_runtime_yield</code>, <code>rok_thread_spawn</code>.
+</li>
+<li>Coroutines are compiler-generated state machines and do not use <code>llvm.coro.*</code> (<a href="708-coroutine">7.8</a>). For GC roots, the compiler emits shadow stack frames directly, without intrinsics (<a href="704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">7.4.1</a>).
+</li>
+</ul>
+<p>This ABI is defined in detail in <a href="../008-abi/">8. Runtime ABI / MLIR lowering</a>; this chapter covers only internal behavior.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/007-runtime/README.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../006-meta-system/611-include"><small>Previous</small>6.11. Compile-time file embedding</a><a class="next" href="701-object-layout"><small>Next</small>7.1. Object layout and memory spaces</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

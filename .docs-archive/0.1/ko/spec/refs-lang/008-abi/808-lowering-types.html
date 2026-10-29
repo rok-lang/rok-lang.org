@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.8. Lowering: 데이터 타입과 표현식 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 절에서는 rok 의 값과 타입, 그리고 식이 MLIR 표준 다이얼렉트로 어떻게 lower 되는지를 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/808-lowering-types.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.8. Lowering: 데이터 타입과 표현식 - rok docs">
+<meta property="og:description" content="이 절에서는 rok 의 값과 타입, 그리고 식이 MLIR 표준 다이얼렉트로 어떻게 lower 되는지를 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/808-lowering-types.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/808-lowering-types.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/808-lowering-types.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">8. 런타임 ABI / MLIR lowering 개요</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. 객체 헤더 ABI</a></li><li><a href="802-scan-table">8.2. ScanTable 직렬화 포맷</a></li><li><a href="803-tls-slots">8.3. Mutator TLS 슬롯 레이아웃</a></li><li><a href="804-safepoint">8.4. Safepoint 프로토콜</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; 심볼</a></li><li><a href="806-calling-convention">8.6. Calling Convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR 다이얼렉트 사용</a></li><li class="cur"><a aria-current="page" href="808-lowering-types">8.8. Lowering: 데이터 타입과 표현식</a><ul class="toc"><li><a href="#881-원시-정수--부동소수">8.8.1. 원시 정수 / 부동소수</a></li><li><a href="#882-산술-연산">8.8.2. 산술 연산</a></li><li><a href="#883-struct-의-표현">8.8.3. struct 의 표현</a></li><li><a href="#884-tuple-struct-의-표현">8.8.4. tuple struct 의 표현</a></li><li><a href="#885-tuple-타입">8.8.5. tuple 타입</a></li><li><a href="#886-enum-의-표현">8.8.6. enum 의 표현</a></li><li><a href="#887-union-비태그-의-표현">8.8.7. union (비태그) 의 표현</a></li><li><a href="#888-합-타입-a--b-의-표현">8.8.8. 합 타입 (A | B) 의 표현</a></li><li><a href="#889-any-슬롯의-표현">8.8.9. any 슬롯의 표현</a></li><li><a href="#8810-배열-타입-t-n">8.8.10. 배열 타입: [T; N]</a></li><li><a href="#8811-함수-타입-fn---">8.8.11. 함수 타입: fn(...) -&gt; ...</a></li><li><a href="#8812-클로저의-표현">8.8.12. 클로저의 표현</a></li><li><a href="#8813-식별자--변수-접근">8.8.13. 식별자 / 변수 접근</a></li><li><a href="#8814-리터럴-desugar">8.8.14. 리터럴 desugar</a></li></ul></li><li><a href="809-lowering-control">8.9. Lowering: 제어 흐름과 GC 통합</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: 코루틴과 제네릭</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="88-lowering-데이터-타입과-표현식 88-lowering-data-types-and-expressions 881-원시-정수--부동소수 881-primitive-integers--floating-point 882-산술-연산 882-arithmetic-operations 883-struct-의-표현 883-representation-of-struct 필드-접근 field-access 필드-쓰기 field-write 884-tuple-struct-의-표현 884-representation-of-tuple-struct 885-tuple-타입 885-tuple-types 886-enum-의-표현 886-representation-of-enum 변형-생성 variant-construction 변형-매칭 variant-matching 887-union-비태그-의-표현 887-representation-of-untagged-union 888-합-타입-a--b-의-표현 888-representation-of-sum-types-a--b 889-any-슬롯의-표현 889-representation-of-any-slots any-의-동적-디스패치 dynamic-dispatch-on-any 8810-배열-타입-t-n 8810-array-types-t-n 8811-함수-타입-fn--- 8811-function-types-fn--- 8812-클로저의-표현 8812-representation-of-closures 8813-식별자--변수-접근 8813-identifier--variable-access 8814-리터럴-desugar 8814-literal-desugaring"><a href="../../../../spec/refs-lang/008-abi/808-lowering-types" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="88-lowering-데이터-타입과-표현식"><a class="anchor" tabindex="-1" href="#88-lowering-데이터-타입과-표현식" aria-hidden="true">#</a>8.8. Lowering: 데이터 타입과 표현식</h1>
+<p>이 절에서는 rok 의 값과 타입, 그리고 식이 MLIR 표준 다이얼렉트로 어떻게 lower 되는지를 정의합니다.</p>
+<h2 id="881-원시-정수--부동소수"><a class="anchor" tabindex="-1" href="#881-원시-정수--부동소수" aria-hidden="true">#</a>8.8.1. 원시 정수 / 부동소수</h2>
+<p>원시 수치 타입은 다음과 같이 MLIR 타입으로 매핑됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>rok 타입</th><th>MLIR 타입</th></tr></thead>
+<tbody>
+<tr><td><code>i8</code> ~ <code>i64</code></td><td><code>i8</code> ~ <code>i64</code></td></tr>
+<tr><td><code>u8</code> ~ <code>u64</code></td><td><code>i8</code> ~ <code>i64</code> (sign 은 op 가 결정)</td></tr>
+<tr><td><code>usize</code> / <code>isize</code></td><td><code>index</code> 또는 타깃별 <code>iN</code></td></tr>
+<tr><td><code>f32</code> / <code>f64</code></td><td><code>f32</code> / <code>f64</code></td></tr>
+<tr><td><code>bool</code></td><td><code>i1</code> (또는 i8, <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 에 따라)</td></tr>
+<tr><td><code>char</code></td><td><code>i32</code> (Unicode 코드포인트)</td></tr>
+<tr><td><code>c_char</code></td><td><code>i8</code></td></tr>
+</tbody></table></div>
+<p><code>str</code> 은 <code>!llvm.struct&lt;(ptr, iN)&gt;</code> (포인터와 <code>usize</code> 바이트 길이) 로 값 전달되는 불변 쌍입니다. 리터럴은 immortal 상수를, 런타임에 만든 문자열은 GC 객체 (type id <code>1</code>, <a href="802-scan-table#8212-런타임-예약-type-id">8.2.12</a>) 의 payload 를 가리킵니다.</p>
+<ul>
+<li><code>s[a:b]</code> 는 <code>(ptr + a, b - a)</code> 이며 원래 바이트를 공유합니다 (O(1)).
+</li>
+<li><code>ptr</code> 은 GC 객체의 어느 바이트든 (끝의 NUL 포함) 가리킬 수 있고, 객체 전체를 살려 둡니다. GC 는 이를 내부 포인터로 다루며, evacuation 은 offset 을 지켜 고쳐 씁니다.
+</li>
+<li>리터럴과 런타임이 새로 만든 문자열은 바이트 뒤에 NUL 이 있습니다. slice 는 없을 수 있습니다.
+</li>
+</ul>
+<p>여기서 한 가지 유의할 점이 있습니다. MLIR 의 정수 타입 자체에는 부호 정보가 없으며, 부호 해석은 연산자 (<code>addi</code> 나 <code>subi</code> 등) 가 결정합니다.</p>
+<h2 id="882-산술-연산"><a class="anchor" tabindex="-1" href="#882-산술-연산" aria-hidden="true">#</a>8.8.2. 산술 연산</h2>
+<p>산술 식은 아래와 같이 <code>arith</code> 다이얼렉트의 연산으로 lower 됩니다.</p>
+<pre><code>a + b            →   arith.addi %a, %b : i32
+a - b            →   arith.subi %a, %b : i32
+a * b            →   arith.muli %a, %b : i32
+a / b            →   arith.divsi %a, %b : i32  (signed) / divui (unsigned)
+a % b            →   arith.remsi / remui
+
+a + b (f64)      →   arith.addf %a, %b : f64
+a &lt; b            →   arith.cmpi &quot;slt&quot;, %a, %b : i32  (signed less than)
+                       또는 arith.cmpf &quot;olt&quot;, %a, %b : f64
+</code></pre>
+<p><a href="../003-expressions/301-operator-dispatch">연산자 디스패치</a> 의 트레잇 매핑은 원시 타입에 대해 위와 같이 lower 됩니다. 한편 사용자 정의 트레잇 구현은 제네릭 단형화를 거친 뒤 함수 호출로 lower 됩니다.</p>
+<h2 id="883-struct-의-표현"><a class="anchor" tabindex="-1" href="#883-struct-의-표현" aria-hidden="true">#</a>8.8.3. <code>struct</code> 의 표현</h2>
+<p><code>struct</code> 는 값 타입이며 (<a href="../002-types/203-struct#238-값-의미">2.3.8</a>) 객체 헤더가 없습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+</code></pre>
+<p>필드들로 된 LLVM struct 로 lower 되며, 배치는 <a href="../002-types/203-struct#236-메모리-레이아웃">2.3.6</a> 을 따릅니다.</p>
+<pre><code>!Point = !llvm.struct&lt;&quot;Point&quot;, (f64, f64)&gt;
+</code></pre>
+<p>구조체 값은 SSA 레지스터, 스택 슬롯, 또는 담는 쪽 안에 inline 으로 있습니다: 다른 구조체의 필드, <code>List</code> 버퍼의 원소, 클로저 환경이나 coroutine frame 의 슬롯. 대입과 인자 전달은 필드를 복사합니다. 컴파일러는 관찰할 수 없는 곳에서만 값을 내부적으로 box 할 수 있습니다.</p>
+<h3 id="필드-접근"><a class="anchor" tabindex="-1" href="#필드-접근" aria-hidden="true">#</a>필드 접근</h3>
+<p>SSA 값의 <code>p.x</code> 는 <code>extractvalue</code> 이고, 스택 슬롯이나 inline 위치에서는 필드 주소를 통한 load 입니다.</p>
+<pre><code>%val  = llvm.extractvalue %p[0] : !Point
+%addr = llvm.getelementptr %slot[0, 0] : (!llvm.ptr) -&gt; !llvm.ptr, !Point
+%val2 = llvm.load %addr : !llvm.ptr -&gt; f64
+</code></pre>
+<h3 id="필드-쓰기"><a class="anchor" tabindex="-1" href="#필드-쓰기" aria-hidden="true">#</a>필드 쓰기</h3>
+<p><code>p.x = 1.0f64</code> 는 변수 자신의 사본을 바꿉니다: SSA 값이면 <code>insertvalue</code>, 슬롯이면 필드 주소로의 store 입니다.</p>
+<pre><code>%p2 = llvm.insertvalue %one, %p[0] : !Point
+</code></pre>
+<p>구조체가 GC heap 객체 안에 inline 으로 있고 필드가 GC 참조를 가지면, 그 store 는 write barrier 를 거칩니다 (<a href="../007-runtime/704-barriers-and-roots">배리어와 루트</a>). 스택 슬롯에 있는 구조체의 포인터 필드는 GC 루트입니다 (<a href="../007-runtime/704-barriers-and-roots">7.4</a>).</p>
+<h2 id="884-tuple-struct-의-표현"><a class="anchor" tabindex="-1" href="#884-tuple-struct-의-표현" aria-hidden="true">#</a>8.8.4. tuple <code>struct</code> 의 표현</h2>
+<p>다음과 같은 tuple <code>struct</code> 를 살펴보겠습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Pair</span>(<span class="t">i32</span>, <span class="t">i32</span>);
+</code></pre>
+<p>이는 일반 <code>struct</code> 와 동일하게 표현되며, 다만 필드 이름 대신 위치 인덱스로 접근합니다.</p>
+<h2 id="885-tuple-타입"><a class="anchor" tabindex="-1" href="#885-tuple-타입" aria-hidden="true">#</a>8.8.5. tuple 타입</h2>
+<p>다음과 같은 tuple 타입은</p>
+<pre><code class="language-rok">(<span class="t">i32</span>, <span class="t">str</span>, <span class="t">bool</span>)
+</code></pre>
+<p><code>!llvm.struct&lt;(i32, !llvm.ptr, i1)&gt;</code> 로 lower 됩니다. <code>struct</code> 처럼 헤더 없는 값입니다.</p>
+<h2 id="886-enum-의-표현"><a class="anchor" tabindex="-1" href="#886-enum-의-표현" aria-hidden="true">#</a>8.8.6. <code>enum</code> 의 표현</h2>
+<p><a href="../002-types/204-enum"><code>enum</code></a> 의 <code>enum</code> 은 tagged <code>union</code> 형태로 lower 됩니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Result</span> {
+    <span class="t">Ok</span>(<span class="t">i32</span>),
+    <span class="t">Err</span>(<span class="t">str</span>),
+    <span class="t">Pending</span>,
+}
+</code></pre>
+<p>이는 다음과 같이 표현됩니다.</p>
+<pre><code>!Result = !llvm.struct&lt;&quot;Result&quot;, (
+    i32,                                // type_id
+    i32,                                // gc_flags
+    i64,                                // gc_word
+    i32,                                // discriminant (tag)
+    !llvm.struct&lt;(i64)&gt;                 // 가장 큰 변형의 payload (8 바이트)
+)&gt;
+</code></pre>
+<p>여기서 discriminant 는 변형 식별자 (<code>Ok</code>=0, <code>Err</code>=1, <code>Pending</code>=2) 를 담고, payload 는 모든 변형의 <code>union</code> 으로서 가장 큰 변형의 크기를 갖습니다.</p>
+<h3 id="변형-생성"><a class="anchor" tabindex="-1" href="#변형-생성" aria-hidden="true">#</a>변형 생성</h3>
+<p>변형을 생성하는 식은 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="t">Result</span>::<span class="t">Ok</span>(<span class="n">42</span>)
+</code></pre>
+<p>이는 다음 MLIR 시퀀스로 lower 됩니다.</p>
+<pre><code>; struct 할당 + 헤더 채우기 + tag 채우기 + payload 채우기
+%obj = call @rok_gc_alloc_slow(...)
+; ... 헤더 ...
+%tag_addr = llvm.getelementptr %obj [0, 3] : ...
+llvm.store i32 0, %tag_addr  ; Ok = 0
+%payload_addr = llvm.getelementptr %obj [0, 4] : ...
+llvm.store %42_i32, %payload_addr
+</code></pre>
+<p>더 짧은 변형의 payload 로 만든 union 값은 그 payload 뒤의 바이트에 0 을 담습니다. 그래서 거기서 복사한 root word 는 null 이나 참조이며, 결코 오래된 스택 값이 아닙니다 (<a href="809-lowering-control#8912-shadow-stack-frame">8.9.12</a>).</p>
+<h3 id="변형-매칭"><a class="anchor" tabindex="-1" href="#변형-매칭" aria-hidden="true">#</a>변형 매칭</h3>
+<p>변형을 매칭하는 식을 살펴봅니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    <span class="t">Ok</span>(n) =&gt; ...,
+    <span class="t">Err</span>(s) =&gt; ...,
+    <span class="t">Pending</span> =&gt; ...,
+}
+</code></pre>
+<p>이는 decision tree 형태의 MLIR 로 lower 됩니다.</p>
+<pre><code>%tag = llvm.load %v[3] : i32
+
+cf.switch %tag, [
+  default: ^unreachable,    ; 모든 변형이 case 에 있어 default 도달 안 함
+  0: ^ok,
+  1: ^err,
+  2: ^pending
+]
+
+^ok:
+  %payload = llvm.load %v[4] : i32
+  ; ... n 으로 사용 ...
+  br ^end
+
+^err:
+  %payload_str = llvm.load %v[4] : !llvm.ptr
+  ; ... s 로 사용 ...
+  br ^end
+
+^pending:
+  ; ...
+  br ^end
+</code></pre>
+<h2 id="887-union-비태그-의-표현"><a class="anchor" tabindex="-1" href="#887-union-비태그-의-표현" aria-hidden="true">#</a>8.8.7. <code>union</code> (비태그) 의 표현</h2>
+<p><a href="../002-types/205-union"><code>union</code></a> 의 <code>union</code> 을 살펴보겠습니다.</p>
+<pre><code class="language-rok"><span class="k">union</span> <span class="t">EpollData</span> {
+    ptr: <span class="t">usize</span>;
+    fd: <span class="t">i32</span>;
+    val: <span class="t">u64</span>;
+}
+</code></pre>
+<p>이는 가장 큰 필드 크기를 갖는 <code>!llvm.struct&lt;(i64)&gt;</code> 로 lower 됩니다. 각 필드 접근은 bitcast 나 getelementptr 를 통해 같은 메모리를 다른 형으로 해석하는 방식으로 처리됩니다. 필드 읽기는 소스에서 <code>unsafe</code> 안에 있어야 합니다 (<a href="../002-types/205-union">2.5</a>).</p>
+<h2 id="888-합-타입-a--b-의-표현"><a class="anchor" tabindex="-1" href="#888-합-타입-a--b-의-표현" aria-hidden="true">#</a>8.8.8. 합 타입 (<code>A | B</code>) 의 표현</h2>
+<p><a href="../002-types/206-sum-types">합 타입</a> 의 합 타입은 다음과 같이 다룹니다.</p>
+<pre><code class="language-rok"><span class="k">type</span> <span class="t">X</span> = <span class="t">i32</span> | <span class="t">f64</span>
+</code></pre>
+<p>이는 <code>!llvm.struct&lt;(i32, i64)&gt;</code> 로 표현되며, tag (i32) 와 payload (i64, 가장 큰 변형 크기) 의 조합입니다.</p>
+<p>만약 niche 최적화 (<a href="../002-types/207-niche-optimization">niche 최적화</a>) 가 적용된다면 tag 자리가 사라지고 합집합 비트 패턴만 남게 됩니다.</p>
+<pre><code class="language-rok"><span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>
+</code></pre>
+<p>위 타입은 <code>!llvm.ptr</code> (단일 포인터, null 이 곧 <code>none</code> 을 의미하는 자동 niche) 로 lower 됩니다.</p>
+<h2 id="889-any-슬롯의-표현"><a class="anchor" tabindex="-1" href="#889-any-슬롯의-표현" aria-hidden="true">#</a>8.8.9. <code>any</code> 슬롯의 표현</h2>
+<p><a href="../002-types/202-any-slot"><code>any</code> 슬롯</a> 의 동적 슬롯을 살펴봅니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="k">any</span> = ...
+</code></pre>
+<p>이는 <code>(i32 tag, usize payload)</code> 쌍으로 lower 되며, tag 는 type_id 입니다. <code>any Tr</code> 과 맨 <code>any</code> 의 표현은 같습니다.</p>
+<pre><code>!Any = !llvm.struct&lt;(i32, iN)&gt;      ; iN = 타깃의 포인터 폭 (usize)
+</code></pre>
+<p>포인터 폭 이하의 숫자·<code>bool</code>·<code>char</code> 값은 payload 에 직접 담깁니다. 그 밖의 값은 GC heap 의 box 이고 payload 는 그 포인터입니다. 따라서 payload 가 포인터인지는 tag 로만 알 수 있으며, GC 는 <code>any</code> 슬롯을 scan 할 때 tag 를 보고 판단해야 합니다.</p>
+<h3 id="any-의-동적-디스패치"><a class="anchor" tabindex="-1" href="#any-의-동적-디스패치" aria-hidden="true">#</a><code>any</code> 의 동적 디스패치</h3>
+<p>다음 식을 봅니다.</p>
+<pre><code class="language-rok">v + <span class="n">1i32</span>     <span class="c">// v: any</span>
+</code></pre>
+<p>이는 런타임 검사를 동반하는 다음 MLIR 로 lower 됩니다.</p>
+<pre><code>%tag = llvm.extractvalue %v[0] : i32
+
+cf.switch %tag, [
+  default: ^trap,
+  TAG_I32: ^add_i32,
+  TAG_F64: ^add_f64,       ; 다른 피연산자 타입 불일치는 ^trap (panic, exit 101)
+  ...
+]
+
+^add_i32:
+  %payload = llvm.extractvalue %v[1] : i64     ; 64-bit 타깃
+  %i = llvm.trunc %payload : i64 to i32
+  %sum = arith.addi %i, %1_const : i32
+  ; 결과를 any 로 다시 wrap
+  ...
+</code></pre>
+<p>이러한 분기 구조는 런타임에 모든 가능한 타입을 검사해야 한다는 점에서, <code>any</code> 슬롯이 가지는 비용이라 할 수 있습니다.</p>
+<h2 id="8810-배열-타입-t-n"><a class="anchor" tabindex="-1" href="#8810-배열-타입-t-n" aria-hidden="true">#</a>8.8.10. 배열 타입: <code>[T; N]</code></h2>
+<p><a href="../002-types/201-type-expressions">타입 표현식</a> 의 고정 크기 배열을 살펴보겠습니다.</p>
+<pre><code class="language-rok">[<span class="t">i32</span>; <span class="n">8</span>]
+</code></pre>
+<p>이는 <code>!llvm.array&lt;8 x i32&gt;</code> 로 lower 됩니다. GC 객체 안에 자리하는 경우라면 16 바이트 헤더가 배열 앞에 붙습니다.</p>
+<h2 id="8811-함수-타입-fn---"><a class="anchor" tabindex="-1" href="#8811-함수-타입-fn---" aria-hidden="true">#</a>8.8.11. 함수 타입: <code>fn(...) -&gt; ...</code></h2>
+<p><a href="../004-functions/404-function-type">함수 타입</a> 을 살펴봅니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span>(<span class="t">i32</span>, <span class="t">i32</span>) -&gt; <span class="t">i32</span>
+</code></pre>
+<p>이는 <code>(i32, i32) -&gt; i32</code> 타입의 함수 포인터, 즉 <code>!llvm.ptr</code> 또는 <code>!llvm.func&lt;...&gt;</code> 로 lower 됩니다. 함수 포인터 값은 값으로서 변수에 저장될 수 있습니다.</p>
+<h2 id="8812-클로저의-표현"><a class="anchor" tabindex="-1" href="#8812-클로저의-표현" aria-hidden="true">#</a>8.8.12. 클로저의 표현</h2>
+<p><a href="../004-functions/405-closure">클로저</a> 중 캡처가 있는 클로저를 살펴봅니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="n">10</span>;
+<span class="k">let</span> f = |x| x + n;       <span class="c">// n 캡처</span>
+</code></pre>
+<p>이는 다음과 같은 MLIR 로 lower 됩니다.</p>
+<pre><code>; 클로저 객체 = 환경 + 코드 포인터
+!Closure = !llvm.struct&lt;(
+    i32, i32, i64,                ; GC header
+    !llvm.ptr,                    ; 함수 포인터 (코드)
+    i32                            ; 환경: n 의 복사본
+)&gt;
+
+; 호출 시
+%env = llvm.getelementptr %clo[0, 4] : ...
+%fn_ptr = llvm.extractvalue %clo[0, 3] : !llvm.ptr
+%result = llvm.call %fn_ptr(%env, %x) : ...
+</code></pre>
+<p>호출 시 환경은 함수의 추가 첫 인자로 전달됩니다.</p>
+<h2 id="8813-식별자--변수-접근"><a class="anchor" tabindex="-1" href="#8813-식별자--변수-접근" aria-hidden="true">#</a>8.8.13. 식별자 / 변수 접근</h2>
+<p><a href="../005-modules/501-variable-declaration">변수 선언</a> 의 지역 변수를 살펴보겠습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="n">42i32</span>;
+<span class="k">let</span> y = x + <span class="n">1i32</span>;
+</code></pre>
+<p>이는 LLVM 의 SSA 형태로 lower 됩니다.</p>
+<pre><code>%x = arith.constant 42 : i32
+%y = arith.addi %x, %1 : i32
+</code></pre>
+<p>지역 변수는 SSA 로 lower 하며, 스택 슬롯이 필요한 지역은 <code>llvm.alloca</code> 와 load / store 로 둡니다 (debug / release 같음).</p>
+<pre><code class="language-rok"><span class="k">let</span> counter = <span class="n">0i32</span>;
+counter = counter + <span class="n">1i32</span>;
+</code></pre>
+<p>이는 다음과 같이 lower 됩니다.</p>
+<pre><code>%counter_ref = llvm.alloca %c1 x i32 : (i64) -&gt; !llvm.ptr
+llvm.store %0, %counter_ref : i32, !llvm.ptr
+
+%loaded = llvm.load %counter_ref : !llvm.ptr -&gt; i32
+%new = arith.addi %loaded, %1 : i32
+llvm.store %new, %counter_ref : i32, !llvm.ptr
+</code></pre>
+<p>최적화 빌드에서는 LLVM 의 mem2reg 가 이를 다시 SSA 로 올립니다.</p>
+<h2 id="8814-리터럴-desugar"><a class="anchor" tabindex="-1" href="#8814-리터럴-desugar" aria-hidden="true">#</a>8.8.14. 리터럴 desugar</h2>
+<p><a href="../006-meta-system/605-literal-magic"><code>#[literal]</code> 매직</a> 의 컬렉션 리터럴을 살펴봅니다.</p>
+<pre><code class="language-rok">[<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
+</code></pre>
+<p>이는 표준 라이브러리의 <code>list_literal(1, 2, 3)</code> 함수 호출로 desugar 되어, 일반적인 함수 호출 lowering 을 따라갑니다.</p>
+<p>한편 문자열과 숫자 리터럴은 컴파일 타임 <code>const</code> 로 처리되어 .rodata 에 저장되며, 이후에는 포인터 또는 값으로 사용됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/008-abi/808-lowering-types.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="807-mlir-dialects"><small>Previous</small>8.7. MLIR 다이얼렉트 사용</a><a class="next" href="809-lowering-control"><small>Next</small>8.9. Lowering: 제어 흐름과 GC 통합</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

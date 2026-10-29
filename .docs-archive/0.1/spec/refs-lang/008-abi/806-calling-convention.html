@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.6. Calling convention - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This document defines the register and stack conventions used for function calls. It follows the platform C ABI by default and states only the parts that differ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/806-calling-convention.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.6. Calling convention - rok docs">
+<meta property="og:description" content="This document defines the register and stack conventions used for function calls. It follows the platform C ABI by default and states only the parts that differ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/806-calling-convention.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/806-calling-convention.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/806-calling-convention.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li class="cur"><a aria-current="page" href="806-calling-convention">8.6. Calling convention</a><ul class="toc"><li><a href="#861-default-platform-c-abi">8.6.1. Default: platform C ABI</a></li><li><a href="#862-register-arguments--return">8.6.2. Register arguments / return</a></li><li><a href="#863-struct-arguments--return-small-struct-rule">8.6.3. struct arguments / return: small struct rule</a></li><li><a href="#864-gc-object-pointers-as-ordinary-pointers">8.6.4. GC object pointers: as ordinary pointers</a></li><li><a href="#865-return-of-throwing-functions-value-based-error-propagation">8.6.5. Return of throwing functions: value-based error propagation</a></li><li><a href="#866-rok-to-rok-calling-convention">8.6.6. rok-to-rok calling convention</a></li><li><a href="#867-tail-calls">8.6.7. Tail calls</a></li><li><a href="#868-abi-of-inline-functions">8.6.8. ABI of inline functions</a></li><li><a href="#869-evaluation-order-of-argument-passing">8.6.9. Evaluation order of argument passing</a></li><li><a href="#8610-variadic-functions">8.6.10. Variadic functions</a></li><li><a href="#8611-function-pointer-abi">8.6.11. Function pointer ABI</a></li><li><a href="#8612-closure-calls">8.6.12. Closure calls</a></li><li><a href="#8613-async-function-calls">8.6.13. Async function calls</a></li><li><a href="#8614-stability">8.6.14. Stability</a></li></ul></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="86-calling-convention 86-calling-convention 861-default-platform-c-abi 861-기본-플랫폼-c-abi 862-register-arguments--return 862-레지스터-인자--반환 863-struct-arguments--return-small-struct-rule 863-struct-인자--반환-small-struct-rule 864-gc-object-pointers-as-ordinary-pointers 864-gc-객체-포인터-일반-포인터로 865-return-of-throwing-functions-value-based-error-propagation 865-throwing-함수의-반환-값-기반-에러-전달 866-rok-to-rok-calling-convention 866-rok-사이의-호출-규약 867-tail-calls 867-tail-call 868-abi-of-inline-functions 868-inline-함수의-abi 869-evaluation-order-of-argument-passing 869-매개변수-전달의-평가-순서 8610-variadic-functions 8610-가변-인자-variadic-함수 8611-function-pointer-abi 8611-함수-포인터-abi 8612-closure-calls 8612-클로저-호출 8613-async-function-calls 8613-비동기-함수-호출 8614-stability 8614-안정성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/806-calling-convention" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="86-calling-convention"><a class="anchor" tabindex="-1" href="#86-calling-convention" aria-hidden="true">#</a>8.6. Calling convention</h1>
+<p>This document defines the register and stack conventions used for function calls. It follows the platform C <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> by default and states only the parts that differ.</p>
+<h2 id="861-default-platform-c-abi"><a class="anchor" tabindex="-1" href="#861-default-platform-c-abi" aria-hidden="true">#</a>8.6.1. Default: platform C ABI</h2>
+<p>Every function declared as an <a href="805-extern-symbols">Extern &quot;C&quot; symbol</a> uses the platform's C ABI. Calls between rok functions use the same registers, but pass aggregates differently (8.6.6).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Platform</th><th>ABI</th></tr></thead>
+<tbody>
+<tr><td>Linux x86_64</td><td>System V AMD64</td></tr>
+<tr><td>Linux aarch64</td><td>AAPCS64</td></tr>
+<tr><td>Linux i686</td><td>System V i386</td></tr>
+<tr><td>Linux armv7</td><td>AAPCS</td></tr>
+<tr><td>macOS (x86_64 / aarch64)</td><td>System V / AAPCS64</td></tr>
+<tr><td>Windows x86_64</td><td>MS x64</td></tr>
+<tr><td>Windows aarch64</td><td>AAPCS64 (MS variant)</td></tr>
+<tr><td>WASM</td><td>clang's WebAssembly C ABI</td></tr>
+</tbody></table></div>
+<p>The LLVM backend handles register assignment of scalar arguments, but it does not classify how aggregates (struct / tuple / array) are passed across the C boundary. That classification is <strong>the frontend's (rokc's) job</strong>; rokc classifies by the same rules as clang and hands the result to LLVM (8.6.3). This specification defines only the remaining variations and additions. Under the WebAssembly C ABI an aggregate with a single scalar is passed as that scalar, and any other aggregate by pointer to a caller copy (results through <code>sret</code>); runtime <code>str</code> arguments are passed by reference.</p>
+<h2 id="862-register-arguments--return"><a class="anchor" tabindex="-1" href="#862-register-arguments--return" aria-hidden="true">#</a>8.6.2. Register arguments / return</h2>
+<p>The default argument and return registers defined by each ABI are used as is.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Platform</th><th>Argument registers (integer)</th><th>Return (integer)</th></tr></thead>
+<tbody>
+<tr><td>Linux x86_64</td><td>rdi, rsi, rdx, rcx, r8, r9</td><td>rax, rdx</td></tr>
+<tr><td>Windows x86_64</td><td>rcx, rdx, r8, r9</td><td>rax</td></tr>
+<tr><td>aarch64</td><td>x0 ~ x7</td><td>x0, x1</td></tr>
+<tr><td>i686</td><td>(stack only)</td><td>eax, edx</td></tr>
+<tr><td>armv7</td><td>r0 ~ r3</td><td>r0, r1</td></tr>
+</tbody></table></div>
+<p>Floating-point and vector values likewise use the standard registers defined by each ABI (xmm0-7, vN, sN, etc.).</p>
+<h2 id="863-struct-arguments--return-small-struct-rule"><a class="anchor" tabindex="-1" href="#863-struct-arguments--return-small-struct-rule" aria-hidden="true">#</a>8.6.3. <code>struct</code> arguments / return: small <code>struct</code> rule</h2>
+<p>When an aggregate is passed by value across the C boundary (<code>extern &quot;C&quot;</code> declarations and definitions), rokc classifies it according to the target ABI by the same rules as clang and coerces it into a form LLVM can move in registers. An HFA fits in up to four float / double registers.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Target</th><th>Classification</th></tr></thead>
+<tbody>
+<tr><td>AAPCS64 (Linux / Apple / Windows arm64)</td><td>An HFA (1 ~ 4 elements of the same floating-point type) becomes <code>[n x f32]</code> / <code>[n x f64]</code>. Other aggregates of 16 bytes or less become <code>i64</code> / <code>[2 x i64]</code> (return values of 8 bytes or less become <code>iN</code>). Larger ones: arguments are passed as a pointer to a caller copy, returns use <code>sret</code></td></tr>
+<tr><td>System V x86_64</td><td>Each eightbyte is classified INTEGER / SSE and placed in integer / SSE registers. If registers run out, the whole aggregate is passed <code>byval</code>. Above 16 bytes: arguments <code>byval</code>, returns <code>sret</code></td></tr>
+<tr><td>Windows x64</td><td>Aggregates of size 1 / 2 / 4 / 8 bytes become <code>iN</code>. Others: arguments by reference (pointer to a caller copy), returns <code>sret</code></td></tr>
+<tr><td>Other targets</td><td>Passing an aggregate value across the C boundary is a compile error</td></tr>
+</tbody></table></div>
+<ul>
+<li><code>signext</code> / <code>zeroext</code> on narrow integer parameters and returns (<code>i8</code> / <code>i16</code> / <code>u8</code> / <code>u16</code> / <code>bool</code> / <code>c_char</code>) follow the platform C ABI: x86_64 SysV and Apple arm64 extend <code>i8</code> / <code>i16</code> / <code>bool</code>; Linux AAPCS64 extends none; Windows x64 extends only <code>bool</code>.
+</li>
+<li>Every function carries an inline stack probe, so a large frame touches the guard page instead of skipping it.
+</li>
+<li>The same classification applies to <code>extern &quot;C&quot; fn</code> <strong>definitions</strong>. A definition has a separate C-ABI entry point called from C; calls from rok keep using the rok convention.
+</li>
+<li>On System V i386, the in-aggregate alignment of <code>i64</code> / <code>u64</code> / <code>f64</code> is 4 bytes (same as C).
+</li>
+<li>This classification does not apply to calls between rok functions (8.6.6). It is needed only where rok meets C, including runtime functions taking or returning <code>str</code> (a 16-byte struct; by reference on Windows x64, <a href="805-extern-symbols">8.5</a>).
+</li>
+</ul>
+<h2 id="864-gc-object-pointers-as-ordinary-pointers"><a class="anchor" tabindex="-1" href="#864-gc-object-pointers-as-ordinary-pointers" aria-hidden="true">#</a>8.6.4. GC object pointers: as ordinary pointers</h2>
+<p>GC object pointers are passed with the same ABI as the platform's ordinary pointers. No special registers or tagged pointers are used.</p>
+<p>They must, however, be registered in the <a href="../000-meta/007-glossary#shadow-stack">shadow stack</a> of <a href="../007-runtime/704-barriers-and-roots">Barriers and root tracking</a> before and after the call.</p>
+<p>This registration is done by the link / unlink of the shadow stack frame emitted by the compiler (<a href="809-lowering-control#8912-shadow-stack-frame">8.9.12</a>).</p>
+<h2 id="865-return-of-throwing-functions-value-based-error-propagation"><a class="anchor" tabindex="-1" href="#865-return-of-throwing-functions-value-based-error-propagation" aria-hidden="true">#</a>8.6.5. Return of throwing functions: value-based error propagation</h2>
+<p>A function with a <a href="../004-functions/414-throws"><code>throws</code> signature</a> returns its error as part of the return value. No separate unwinding mechanism or runtime symbol is used.</p>
+<pre><code>fn f(args) throws (E) -&gt; T
+</code></pre>
+<p>The ABI return type of this function is a <code>struct</code> of two fields:</p>
+<pre><code class="language-mlir">!Throws_T_E = !llvm.struct&lt;(i1, !Payload_T_E)&gt;
+; field 0: is_err - 0 on success, 1 on error
+; field 1: payload - union(T, E). Read as T if is_err is 0, as E if 1
+</code></pre>
+<p>The payload is a union with the size and alignment of the larger of <code>T</code> and <code>E</code>. If <code>T</code> is unit, the payload holds only <code>E</code>. The error channel is distinguished by the signature, so <code>T</code> and <code>E</code> may be the same type. For untyped <code>throws</code> (<code>throws (any Error)</code>), <code>E</code> is an <code>any Error</code> value in the same tag + payload representation as <a href="../002-types/202-any-slot"><code>any</code></a> (<a href="808-lowering-types">8.8</a>).</p>
+<p>Field 0 may be stored wider than <code>i1</code> (an <code>i32</code> when the payload holds GC references, so the collector reads it as a sum tag); only bit 0 is significant, and when the payload is at least 4-aligned the offsets, size and registers are those of <code>{i1, payload}</code>. Values of <code>ref</code> parameters (<a href="../004-functions/407-ref-keyword">4.7</a>) of a throwing function travel beside the carrier as an implementation-defined part of the return value.</p>
+<p>This <code>struct</code> is passed through the platform C ABI like any other return value: in registers within the limits of 8.6.3, via sret beyond them. A <code>try</code> at the call site checks field 0 and branches; the detailed lowering is defined in <a href="809-lowering-control#896-try--catch--finally-value-based-branching">8.9.6</a>.</p>
+<p>This scheme was chosen for the following reasons.</p>
+<ul>
+<li>It works the same on every platform (including WASM; no DWARF or platform EH infrastructure is needed).
+</li>
+<li>It does not conflict with the <a href="../000-meta/007-glossary#shadow-stack">shadow stack</a>. Errors also leave frames through the ordinary return path, so each frame pops its shadow stack normally.
+</li>
+<li>The cost on the no-error path is a single branch after return; entering <code>try</code> or <code>catch</code> costs nothing.
+</li>
+</ul>
+<h2 id="866-rok-to-rok-calling-convention"><a class="anchor" tabindex="-1" href="#866-rok-to-rok-calling-convention" aria-hidden="true">#</a>8.6.6. rok-to-rok calling convention</h2>
+<p>Calls between rok functions pass scalars in the registers of 8.6.2. An aggregate (struct, tuple, array, <code>str</code>) over 64 bytes is passed by address and returned through a leading result pointer. The callee copies a by-address argument on entry, so the caller's value is not modified. The callee may write the result through the result pointer at any point before it returns, after copying its by-address arguments. The result pointer may therefore point at a by-address argument, but at no other memory the callee reads during the call. This holds for every rok-to-rok call, including calls into prebuilt code, exported functions and function values. A direct call also passes the caller's <code>rok_tls</code> block address (<a href="803-tls-slots#838-form-of-compiler-emission">8.3.8</a>) as a hidden last pointer argument, after the declared ones; a function value, an <code>#[export_name]</code> rok function and the <code>any</code> dispatcher take none (8.6.11). Smaller aggregates are passed and returned as first-class aggregates, lowered the way LLVM's SelectionDAG lowers them on the target, with one exception: on 32-bit Arm, an array whose elements are 1 or 2 bytes is passed and returned by address, like an aggregate over 64 bytes, because LLVM's own lowering of such stack arguments differs between caller and callee. Both backends produce exactly this lowering, so code from either calls the other. It differs from the C ABI classification of 8.6.3. The rules below apply to aggregates of 64 bytes or less.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>A value passed by address is moved in memory (<code>memcpy</code>), never as a first-class aggregate.</p>
+</div>
+<p><strong>Arguments</strong></p>
+<ul>
+<li>An aggregate is split into its scalar leaves, each taking the next register of its class; when registers run out, the remaining leaves go on the stack. A <code>str</code> may therefore be split between the last argument register and the stack.
+</li>
+<li>AArch64: an array of <code>i64</code> / <code>ptr</code> / <code>f32</code> / <code>f64</code> takes consecutive registers of its class. If it does not fit in the remaining registers, it goes on the stack whole and the rest of that register class is marked used. Arrays of <code>i8</code> / <code>i16</code> / <code>i32</code> are split like structs.
+</li>
+<li>Stack slots: on Apple targets, top-level scalar arguments take their natural size and alignment, and <code>i1</code> / <code>i8</code> / <code>i16</code> leaves of an aggregate take 4-byte slots. On other targets every stack slot is 8 bytes.
+</li>
+</ul>
+<p><strong>Results</strong></p>
+<ul>
+<li>AArch64: up to 8 integer (<code>x0</code>-<code>x7</code>) and 8 floating-point (<code>v0</code>-<code>v7</code>) registers. A larger result is returned through an sret pointer passed in <code>x8</code> (not returned).
+</li>
+<li>x86-64: up to three integer registers (<code>rax</code>, <code>rdx</code>, <code>rcx</code>); floating-point results use <code>xmm0</code> / <code>xmm1</code>, then x87 <code>st0</code> / <code>st1</code>. A result needing a 4th integer or 5th floating-point register is returned through an sret pointer passed in <code>rdi</code> and returned in <code>rax</code>.
+</li>
+</ul>
+<p><strong>Windows</strong></p>
+<ul>
+<li>Windows x64: integer and floating-point arguments share four register positions (<code>rcx</code> <code>rdx</code> <code>r8</code> <code>r9</code> / <code>xmm0</code>-<code>xmm3</code>); each argument takes the next position, in the register of its class. Stack slots are 8 bytes, after the caller's 32-byte home area. The sret pointer is passed in <code>rcx</code>; results are otherwise as on x86-64.
+</li>
+<li>Windows arm64: AAPCS64 as above. A C variadic call passes every floating-point argument in integer registers.
+</li>
+</ul>
+<p><strong>Narrow integers</strong></p>
+<p>A callee must not rely on the upper bits of narrow integer or <code>bool</code> arguments and results; a caller may extend them. The native backend masks an incoming <code>bool</code> to bit 0 and re-extends narrow values.</p>
+<p>A function no other module can reach (internal, never used as a value) may use an implementation-defined convention.</p>
+<p>Calls to <code>extern &quot;C&quot;</code> and <code>extern &quot;rok&quot;</code> runtime functions use the C ABI rules of 8.6.1-8.6.5.</p>
+<h2 id="867-tail-calls"><a class="anchor" tabindex="-1" href="#867-tail-calls" aria-hidden="true">#</a>8.6.7. Tail calls</h2>
+<p>LLVM's <code>tail call</code> optimization applies automatically to ordinary functions. It is not applied to coroutines because of their state machine structure.</p>
+<h2 id="868-abi-of-inline-functions"><a class="anchor" tabindex="-1" href="#868-abi-of-inline-functions" aria-hidden="true">#</a>8.6.8. ABI of inline functions</h2>
+<p>The effect of <code>#[inline]</code> (<a href="../006-meta-system/602-built-in-attributes">built-in attributes</a>) is that the call itself may disappear. In that case the calling convention has no meaning.</p>
+<p><code>#[inline(never)]</code> functions are always called and follow the ordinary ABI.</p>
+<h2 id="869-evaluation-order-of-argument-passing"><a class="anchor" tabindex="-1" href="#869-evaluation-order-of-argument-passing" aria-hidden="true">#</a>8.6.9. Evaluation order of argument passing</h2>
+<p>The left-to-right evaluation order of <a href="../004-functions/402-parameters">parameters</a> is orthogonal to the calling convention.</p>
+<p>Left-to-right evaluation means each argument expression is evaluated in order starting from the left. Which register or stack slot receives each result is a separate question decided by the ABI.</p>
+<p>Some C and C++ ABIs favor right-to-left evaluation because of stack push order. rok, however, guarantees left-to-right semantics, and the compiler reconciles the two requirements using temporaries and registers as needed.</p>
+<h2 id="8610-variadic-functions"><a class="anchor" tabindex="-1" href="#8610-variadic-functions" aria-hidden="true">#</a>8.6.10. Variadic functions</h2>
+<p>The <code>...T</code> variadic of <a href="../004-functions/402-parameters">parameters</a> is a language-level variadic that bundles the arguments into a single slice view (<code>Slice&lt;T&gt;</code>) (usually the same ABI as a struct argument). It is a separate concept from the platform's C variadic (<code>...</code> variable arguments).</p>
+<p>C variadic functions (e.g. <code>printf</code>) can be called directly through <code>extern &quot;C&quot;</code>, in which case the ABI follows the platform's C variadic convention.</p>
+<pre><code>extern &quot;C&quot; {
+    fn printf(fmt: ConstPtr&lt;c_char&gt;, ...);
+}
+</code></pre>
+<ul>
+<li><code>...</code> may appear only in declarations in an <code>extern</code> block, and only as the last parameter. rok function definitions cannot have C variadics.
+</li>
+<li>C default argument promotion applies to arguments in variadic positions: <code>bool</code>, <code>i8</code>, <code>i16</code>, <code>u8</code>, <code>u16</code> and <code>c_char</code> are passed as <code>c_int</code> (<code>i32</code>), <code>f32</code> as <code>f64</code>, and <code>str</code> as <code>char*</code> (a NUL-terminated byte pointer).
+</li>
+<li>Aggregates (struct / tuple / array) cannot be passed as variadic arguments (compile error).
+</li>
+</ul>
+<h2 id="8611-function-pointer-abi"><a class="anchor" tabindex="-1" href="#8611-function-pointer-abi" aria-hidden="true">#</a>8.6.11. Function pointer ABI</h2>
+<p><code>fn(...) -&gt; ...</code> from <a href="../004-functions/404-function-type">Function types</a> uses the same calling convention for indirect calls.</p>
+<pre><code class="language-mlir">%fn_ptr = ; ... function pointer ...
+%result = call i32 %fn_ptr(...)
+</code></pre>
+<p>Arguments and returns have the same ABI, so direct and indirect calls share the same interface, except for the hidden <code>rok_tls</code> address of 8.6.6: a function value takes none. Its code pointer is a thunk that reads the address itself and calls the function with it.</p>
+<h2 id="8612-closure-calls"><a class="anchor" tabindex="-1" href="#8612-closure-calls" aria-hidden="true">#</a>8.6.12. Closure calls</h2>
+<p>A closure as described in <a href="../004-functions/405-closure">Closures</a> is a single unit bundling an environment and a code pointer.</p>
+<p>A call works as follows.</p>
+<pre><code>The environment pointer as the first argument, followed by the ordinary arguments.
+</code></pre>
+<p>This environment argument is how the closure body accesses captured variables.</p>
+<p>LLVM compiles it like an ordinary function (the environment is just the first argument).</p>
+<h2 id="8613-async-function-calls"><a class="anchor" tabindex="-1" href="#8613-async-function-calls" aria-hidden="true">#</a>8.6.13. Async function calls</h2>
+<p>An <code>async fn</code> from <a href="../004-functions/412-async">Async</a> returns a Future ptr immediately when called, following the ordinary function call ABI.</p>
+<pre><code>let f = async_fn(args);     // returns immediately (Future ptr)
+let r = await f;             // coroutine mechanism
+</code></pre>
+<p><code>await</code> consists of ordinary calls (polling the target future) and returns of the state machine (<a href="810-lowering-coroutine-generic">8.10</a>), and works on top of the ordinary ABI.</p>
+<h2 id="8614-stability"><a class="anchor" tabindex="-1" href="#8614-stability" aria-hidden="true">#</a>8.6.14. Stability</h2>
+<p>This calling convention follows the platform C ABI, so it has no separate stability decision. rok stays compatible within the range the platform guarantees compatibility.</p>
+<p>The return value layout of throwing functions (8.6.5) is part of the runtime ABI; any change follows the stability policy in the <a href="./">overview</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/806-calling-convention.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="805-extern-symbols"><small>Previous</small>8.5. Extern &quot;C&quot; symbols</a><a class="next" href="807-mlir-dialects"><small>Next</small>8.7. MLIR dialect usage</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

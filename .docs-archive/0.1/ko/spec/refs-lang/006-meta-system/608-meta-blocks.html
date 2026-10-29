@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.8. 사용자 정의 메타 정의 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="메타 정의 (meta definition) 는 사용자 정의 코드 생성기입니다. 모두 하나의 메커니즘입니다. 입력의 일부를 바인딩하고, rok 코드와 템플릿 토큰 (6.9) 으로 된 템플릿을 위생적으로 (6.8.9) 그리고 고정점까지 (6.8.8) 전사합니다. 차이는 오직 무엇으로 트리거...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.8. 사용자 정의 메타 정의 - rok docs">
+<meta property="og:description" content="메타 정의 (meta definition) 는 사용자 정의 코드 생성기입니다. 모두 하나의 메커니즘입니다. 입력의 일부를 바인딩하고, rok 코드와 템플릿 토큰 (6.9) 으로 된 템플릿을 위생적으로 (6.8.9) 그리고 고정점까지 (6.8.8) 전사합니다. 차이는 오직 무엇으로 트리거...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/608-meta-blocks.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">6. 메타 시스템 개요</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. 속성 문법</a></li><li><a href="602-built-in-attributes">6.2. 내장 속성</a></li><li><a href="603-cfg">6.3. #[cfg] 조건부 컴파일</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] 매직</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] 매직</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] 매직</a></li><li><a href="607-operator-magic">6.7. 연산자 매직</a></li><li class="cur"><a aria-current="page" href="608-meta-blocks">6.8. 사용자 정의 메타 정의</a><ul class="toc"><li><a href="#681-attribute-로-트리거되는-세-형태">6.8.1. attribute 로 트리거되는 세 형태</a></li><li><a href="#682-impl_derivetraitname-사용자-정의-derive">6.8.2. #[impl_derive(TraitName)] 사용자 정의 derive</a></li><li><a href="#683-impl_attributename-사용자-정의-attribute">6.8.3. #[impl_attribute(name)] 사용자 정의 attribute</a></li><li><a href="#684-impl_derive_attributetrait-attr-필드별-derive-attribute">6.8.4. #[impl_derive_attribute(Trait, attr)] 필드별 derive attribute</a></li><li><a href="#685-본체-템플릿-블록">6.8.5. 본체 (템플릿 블록)</a></li><li><a href="#686-pub--가시성">6.8.6. pub / 가시성</a></li><li><a href="#687-본체-시작자-derive--attribute">6.8.7. 본체 시작자 (@derive / @attribute)</a></li><li><a href="#688-fixed-point-확장">6.8.8. fixed-point 확장</a></li><li><a href="#689-토큰-스트림-조작-없음">6.8.9. 토큰 스트림 조작 없음</a></li><li><a href="#6810-proc-macro-와의-비교">6.8.10. proc-macro 와의 비교</a></li><li><a href="#6811-등록가시성과의-결합">6.8.11. 등록/가시성과의 결합</a></li><li><a href="#6812-macro-형태">6.8.12. macro 형태</a></li><li><a href="#6813-정리">6.8.13. 정리</a></li></ul></li><li><a href="609-template-tokens">6.9. 템플릿 토큰과 확장</a></li><li><a href="610-reflection">6.10. 리플렉션</a></li><li><a href="611-include">6.11. 컴파일 시점 파일 포함</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="68-사용자-정의-메타-정의 68-user-defined-meta-definitions 681-attribute-로-트리거되는-세-형태 681-the-attribute-triggered-forms 682-impl_derivetraitname-사용자-정의-derive 682-impl_derivetraitname-user-defined-derive 683-impl_attributename-사용자-정의-attribute 683-impl_attributename-user-defined-attribute 684-impl_derive_attributetrait-attr-필드별-derive-attribute 684-impl_derive_attributetrait-attr-per-field-derive-attribute 685-본체-템플릿-블록 685-body-template-block 686-pub--가시성 686-pub--visibility 687-본체-시작자-derive--attribute 687-body-introducers-derive--attribute 688-fixed-point-확장 688-fixed-point-expansion 689-토큰-스트림-조작-없음 689-no-token-stream-manipulation 6810-proc-macro-와의-비교 6810-comparison-with-proc-macros 6811-등록가시성과의-결합 6811-combination-with-registrationvisibility 6812-macro-형태 6812-the-macro-form 정의 definition 호출 invocation 매처와-fragment matchers-and-fragments 반복 repetition 이름-합성 name-synthesis 라이브러리의-보일러플레이트 the-librarys-boilerplate 재귀 recursion 내장--폼은-예약 built-in--forms-are-reserved 도구-지원과-위생 tooling-and-hygiene 6813-정리 6813-summary"><a href="../../../../spec/refs-lang/006-meta-system/608-meta-blocks" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="68-사용자-정의-메타-정의"><a class="anchor" tabindex="-1" href="#68-사용자-정의-메타-정의" aria-hidden="true">#</a>6.8. 사용자 정의 메타 정의</h1>
+<p><strong>메타 정의 (meta definition)</strong> 는 사용자 정의 코드 생성기입니다. 모두 하나의 메커니즘입니다. 입력의 일부를 바인딩하고, rok 코드와 템플릿 토큰 (<a href="609-template-tokens">6.9</a>) 으로 된 템플릿을 위생적으로 (<a href="#689-토큰-스트림-조작-없음">6.8.9</a>) 그리고 고정점까지 (<a href="#688-fixed-point-확장">6.8.8</a>) 전사합니다. 차이는 오직 <strong>무엇으로 트리거되고 어떤 입력을 바인딩하는가</strong> 뿐입니다. 네 가지 형태가 있으며, 앞의 셋은 항목에 붙인 attribute 로, 넷째는 호출로 트리거됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>정의</th><th>트리거</th><th>바인딩</th></tr></thead>
+<tbody>
+<tr><td>derive</td><td><code>#[impl_derive(T)] @derive {}</code></td><td>타입에 <code>#[derive(T)]</code></td><td>타입의 shape (<code>@Self</code>, <code>@for_fields</code>)</td></tr>
+<tr><td>attribute</td><td><code>#[impl_attribute(n)] @attribute {}</code></td><td>항목에 <code>#[n]</code></td><td>항목 (<code>@item</code>)</td></tr>
+<tr><td>필드별 derive attribute</td><td><code>#[impl_derive_attribute(T, a)] @derive {}</code></td><td><code>#[derive(T)]</code> + 필드 <code>#[a]</code></td><td>shape + 필드 attribute</td></tr>
+<tr><td><strong>macro</strong></td><td><code>#[impl_macro(n)] @macro { (m) =&gt; {t} }</code></td><td><code>n!(..)</code> 호출</td><td>호출의 토큰 (<code>@x: expr</code>, <code>@rep</code>)</td></tr>
+</tbody></table></div>
+<p>앞의 셋은 <em>붙인 타입/항목으로부터</em> 코드를 생성하고, macro 는 <em>호출자가 쓴 것으로부터</em> 생성합니다. 나머지가 할 수 없는 바로 그 수요입니다 (<a href="#6812-macro-형태">6.8.12</a>). 넷은 템플릿 엔진, <code>@</code> 토큰, 위생, 아래의 도구 보장을 공유하며, 바인딩 입력이 다른 지점만 이 장과 <a href="609-template-tokens">6.9</a> 에서 짚습니다. 이 넷이 rok 의 전체 메타프로그래밍 표면입니다. 함께 Rust 의 derive·attribute·함수형 매크로를 대체하되, 절차적 코드나 원시 토큰 조작은 없습니다.</p>
+<pre><code>meta_block      ::= meta_attr visibility? meta_kind block
+meta_attr       ::= &quot;#&quot; &quot;[&quot; meta_kind_attr &quot;(&quot; meta_args &quot;)&quot; &quot;]&quot;
+meta_kind_attr  ::= &quot;impl_derive&quot; | &quot;impl_attribute&quot; | &quot;impl_derive_attribute&quot; | &quot;impl_macro&quot;
+meta_kind       ::= &quot;@derive&quot; | &quot;@attribute&quot; | &quot;@macro&quot;
+meta_args       ::= identifier (&quot;,&quot; identifier)*
+
+# @macro 블록은 평평한 템플릿 대신 규칙들을 담습니다:
+macro_body      ::= macro_rule+
+macro_rule      ::= &quot;(&quot; matcher &quot;)&quot; &quot;=&gt;&quot; block
+</code></pre>
+<h2 id="681-attribute-로-트리거되는-세-형태"><a class="anchor" tabindex="-1" href="#681-attribute-로-트리거되는-세-형태" aria-hidden="true">#</a>6.8.1. attribute 로 트리거되는 세 형태</h2>
+<p>attribute 로 트리거되는 세 형태는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(TraitName)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">TraitName</span> <span class="k">for</span> @<span class="k">Self</span> { ... }
+}
+
+<span class="a">#[impl_attribute(name)]</span> <span class="k">pub</span> @attribute {
+    @item                                    <span class="c">// 원본 항목 재사용</span>
+    <span class="k">fn</span> additional_helper() { ... }            <span class="c">// 추가 항목 생성</span>
+}
+
+<span class="a">#[impl_derive_attribute(Trait, attr)]</span> <span class="k">pub</span> @derive {
+    @for_fields {
+        @apply_if(@has_derive_attr(attr)) {
+            <span class="c">// 그 attr 가 부착된 필드만 처리</span>
+        }
+    }
+}
+</code></pre>
+<p>각 형태가 어떤 용도로 쓰이는지는 아래 표에 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>용도</th></tr></thead>
+<tbody>
+<tr><td><code>#[impl_derive(TraitName)]</code></td><td>사용자 정의 derive</td></tr>
+<tr><td><code>#[impl_attribute(name)]</code></td><td>사용자 정의 attribute (item wrapper)</td></tr>
+<tr><td><code>#[impl_derive_attribute(Trait, attr)]</code></td><td>필드별 derive attribute</td></tr>
+</tbody></table></div>
+<p>호출로 트리거되는 넷째 형태 <code>macro</code> 는 <a href="#6812-macro-형태">6.8.12</a> 에서 정의합니다.</p>
+<h2 id="682-impl_derivetraitname-사용자-정의-derive"><a class="anchor" tabindex="-1" href="#682-impl_derivetraitname-사용자-정의-derive" aria-hidden="true">#</a>6.8.2. <code>#[impl_derive(TraitName)]</code> 사용자 정의 derive</h2>
+<p>다음은 사용자 정의 derive 의 예시입니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(MyHash)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyHash</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> my_hash(<span class="k">self</span>) -&gt; <span class="t">u64</span> {
+            <span class="k">let</span> h: <span class="t">u64</span> = <span class="n">0u64</span>;
+            @for_fields {
+                h = combine_hash(h, <span class="k">self</span>.@field.my_hash());
+            }
+            h
+        }
+    }
+}
+
+<span class="c">// 사용처</span>
+<span class="a">#[derive(MyHash)]</span>
+<span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+<span class="c">// → 자동 생성됨.</span>
+<span class="c">//   impl MyHash for Point {</span>
+<span class="c">//       fn my_hash(self) -&gt; u64 {</span>
+<span class="c">//           let h: u64 = 0u64;</span>
+<span class="c">//           h = combine_hash(h, self.x.my_hash());</span>
+<span class="c">//           h = combine_hash(h, self.y.my_hash());</span>
+<span class="c">//           h</span>
+<span class="c">//       }</span>
+<span class="c">//   }</span>
+</code></pre>
+<p>이 형태는 <code>#[impl_derive(이름)]</code> 와 본체 (템플릿 블록) 로 구성되며, 사용처에서 <code>#[derive(이름)]</code> 가 등장하면 템플릿이 그 타입에 대해 확장되어 코드가 생성됩니다.</p>
+<h2 id="683-impl_attributename-사용자-정의-attribute"><a class="anchor" tabindex="-1" href="#683-impl_attributename-사용자-정의-attribute" aria-hidden="true">#</a>6.8.3. <code>#[impl_attribute(name)]</code> 사용자 정의 attribute</h2>
+<p>다음은 사용자 정의 attribute 의 예시입니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(timed)]</span> <span class="k">pub</span> @attribute {
+    @accept(<span class="k">fn</span>)                                  <span class="c">// fn 항목에만 부착 가능</span>
+
+    <span class="k">fn</span> @item.name(@item.params) -&gt; @item.return_type {
+        <span class="k">let</span> start = now();
+        <span class="k">let</span> result = {
+            @item.body
+        };
+        log(<span class="s">f"@item.name took {</span>now() - start<span class="s">}"</span>);
+        result
+    }
+}
+
+<span class="c">// 사용처</span>
+<span class="a">#[timed]</span>
+<span class="k">fn</span> process(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    expensive(x)
+}
+<span class="c">// → 자동 생성됨.</span>
+<span class="c">//   fn process(x: i32) -&gt; i32 {</span>
+<span class="c">//       let start = now();</span>
+<span class="c">//       let result = { expensive(x) };</span>
+<span class="c">//       log(f"process took {now() - start}");</span>
+<span class="c">//       result</span>
+<span class="c">//   }</span>
+</code></pre>
+<p>이는 항목을 감싸는 wrapper 에 해당하며, 원본 항목 (<code>@item</code>) 의 내용과 시그니처를 재사용해 변환된 형태를 생성합니다. 함수뿐 아니라 <code>struct</code>, <code>enum</code>, <code>impl</code> 에도 부착할 수 있고, 대상 제한은 <code>@accept</code> 로 표시합니다.</p>
+<h2 id="684-impl_derive_attributetrait-attr-필드별-derive-attribute"><a class="anchor" tabindex="-1" href="#684-impl_derive_attributetrait-attr-필드별-derive-attribute" aria-hidden="true">#</a>6.8.4. <code>#[impl_derive_attribute(Trait, attr)]</code> 필드별 derive attribute</h2>
+<p>필드별 derive attribute 의 예시는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive_attribute(Serialize, rename)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">Serialize</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> serialize(<span class="k">self</span>) -&gt; <span class="t">Json</span> {
+            <span class="k">let</span> obj = <span class="t">JsonObj</span>::new();
+            @for_fields {
+                @apply_if(@has_derive_attr(rename)) {
+                    obj.set(@derive_attr(rename), <span class="k">self</span>.@field.serialize());
+                }
+                @apply_if(!@has_derive_attr(rename)) {
+                    obj.set(@field.name.as_str(), <span class="k">self</span>.@field.serialize());
+                }
+            }
+            obj.into()
+        }
+    }
+}
+
+<span class="c">// 사용처</span>
+<span class="a">#[derive(Serialize)]</span>
+<span class="k">struct</span> <span class="t">User</span> {
+    <span class="a">#[rename("user_name")]</span>
+    name: <span class="t">str</span>;
+    age: <span class="t">i32</span>;
+}
+<span class="c">// → 자동 생성.</span>
+<span class="c">//   impl Serialize for User {</span>
+<span class="c">//       fn serialize(self) -&gt; Json {</span>
+<span class="c">//           let obj = JsonObj::new();</span>
+<span class="c">//           obj.set("user_name", self.name.serialize());</span>
+<span class="c">//           obj.set("age", self.age.serialize());</span>
+<span class="c">//           obj.into()</span>
+<span class="c">//       }</span>
+<span class="c">//   }</span>
+</code></pre>
+<p>이 형태는 두 인자, 즉 derive 의 대상이 되는 Trait 와 필드별 정보를 표시하는 attribute 를 받으며, derive 의 본체 안에서 필드의 attribute 정보를 읽어 분기합니다.</p>
+<h2 id="685-본체-템플릿-블록"><a class="anchor" tabindex="-1" href="#685-본체-템플릿-블록" aria-hidden="true">#</a>6.8.5. 본체 (템플릿 블록)</h2>
+<p>모든 형태에서 본체는 템플릿 블록이며, 일반 rok 코드와 템플릿 토큰 (attribute 로 트리거되는 형태는 <code>@Self</code>, <code>@field</code>, <code>@for_fields</code>; macro 는 <code>@x</code>, <code>@rep</code>, <code>@for</code>, <code>@concat</code>, <a href="#6812-macro-형태">6.8.12</a>) 이 함께 들어갑니다.</p>
+<p>자세한 템플릿 토큰 목록은 <a href="609-template-tokens">템플릿 토큰과 확장</a> 에서 정의합니다.</p>
+<h2 id="686-pub--가시성"><a class="anchor" tabindex="-1" href="#686-pub--가시성" aria-hidden="true">#</a>6.8.6. <code>pub</code> / 가시성</h2>
+<p>가시성은 다음과 같이 표기합니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> @derive { ... }
+<span class="k">pub</span>(<span class="k">pkg</span>) @attribute { ... }
+@derive { ... }                  <span class="c">// 비공개</span>
+</code></pre>
+<p>가시성 키워드는 템플릿 블록 자체에 부착합니다. 효과는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>가시성</th><th>쓸 수 있는 곳</th></tr></thead>
+<tbody>
+<tr><td><code>pub</code> (<code>pub(pkg)</code> 포함)</td><td>빌드 전체. <code>use</code> 없이 <code>#[derive(X)]</code> / <code>#[x]</code> 로 씀</td></tr>
+<tr><td>비공개</td><td>메타 블록을 정의한 파일 안</td></tr>
+</tbody></table></div>
+<p>derive 와 attribute 이름은 모듈 경로를 갖지 않는 빌드 전역 이름입니다 (6.8.11). 메타 블록이나 키워드 처리기의 <code>#[cfg]</code> 는 그것을 정의한 패키지의 cfg (그 패키지 자신의 feature, <a href="../009-tools/910-rok-frontend#9104c-features">9.10.4c</a>) 로 평가합니다.</p>
+<h2 id="687-본체-시작자-derive--attribute"><a class="anchor" tabindex="-1" href="#687-본체-시작자-derive--attribute" aria-hidden="true">#</a>6.8.7. 본체 시작자 (<code>@derive</code> / <code>@attribute</code>)</h2>
+<p>본체 시작자는 템플릿의 종류를 표시하는 역할을 합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>시작자</th><th>용도</th></tr></thead>
+<tbody>
+<tr><td><code>@derive</code></td><td>derive 정의 (<code>impl_derive</code>, <code>impl_derive_attribute</code>)</td></tr>
+<tr><td><code>@attribute</code></td><td>attribute 정의 (<code>impl_attribute</code>)</td></tr>
+<tr><td><code>@macro</code></td><td>macro 정의 (<code>impl_macro</code>); 블록이 규칙들을 담음 (<a href="#6812-macro-형태">6.8.12</a>)</td></tr>
+</tbody></table></div>
+<p>이 시작자가 어떤 템플릿 토큰이 본체 안에서 의미를 갖는지 결정합니다. 예를 들어 <code>@item</code> 은 attribute 전용이고, 매처 토큰 (<code>@x: expr</code>, <code>@rep</code>) 은 <code>@macro</code> 전용입니다.</p>
+<h2 id="688-fixed-point-확장"><a class="anchor" tabindex="-1" href="#688-fixed-point-확장" aria-hidden="true">#</a>6.8.8. fixed-point 확장</h2>
+<p>템플릿 확장 결과가 또 다른 derive 또는 attribute 가 부착된 항목을 만들어 내면, 그 항목은 재귀적으로 확장됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(adds_helper)]</span> <span class="k">pub</span> @attribute {
+    @item                                       <span class="c">// 원본 항목 그대로</span>
+
+    <span class="a">#[derive(MyHelper)]</span>                          <span class="c">// 새 항목 - 다시 derive 처리됨</span>
+    <span class="k">struct</span> <span class="t">Helper</span> { ... }
+}
+</code></pre>
+<p>위 attribute 가 적용되면 본체의 <code>#[derive(MyHelper)]</code> 가 다음 확장 패스에서 다시 처리됩니다.</p>
+<p>확장은 더 이상 확장할 derive 나 attribute 가 남아 있지 않은 고정점 (fixed-point) 에 도달하면 종료됩니다.</p>
+<p>순환 확장 (A 가 B 를 호출하고 B 가 다시 A 를 호출하는 경우) 은 컴파일러가 검출하여 ERROR 를 발생시킵니다. 메시지는 순환 경로 (<code>A → B → A</code>) 를 보여 줍니다.</p>
+<h2 id="689-토큰-스트림-조작-없음"><a class="anchor" tabindex="-1" href="#689-토큰-스트림-조작-없음" aria-hidden="true">#</a>6.8.9. 토큰 스트림 조작 없음</h2>
+<p>모든 메타 정의(attribute 로 트리거되는 세 형태와 macro)는 오직 템플릿 토큰만으로 코드를 생성합니다. Rust 의 <code>syn</code> 이나 <code>quote</code> 같은 임의 토큰 변환 기능도, 컴파일타임에 코드를 실행하는 절차적 형태도 rok 에 존재하지 않습니다.</p>
+<p>이러한 제약은 메타 정의의 출력이 컴파일러가 이해할 수 있는 rok 코드임을 보장하기 위한 것이며, 도구 친화성과 디버깅 가능성을 동시에 확보합니다.</p>
+<h2 id="6810-proc-macro-와의-비교"><a class="anchor" tabindex="-1" href="#6810-proc-macro-와의-비교" aria-hidden="true">#</a>6.8.10. proc-macro 와의 비교</h2>
+<p>Rust 의 proc macro 와 rok 메타 블록을 비교하면 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust proc macro</th><th>rok 메타 블록</th></tr></thead>
+<tbody>
+<tr><td>입력</td><td>임의 토큰 스트림</td><td>항목의 구조 정보 (필드, 변형 등)</td></tr>
+<tr><td>출력</td><td>임의 토큰 스트림</td><td>rok 코드와 템플릿 토큰</td></tr>
+<tr><td>위생</td><td>proc macro 의 결정에 따름</td><td>자동 (hygienic)</td></tr>
+<tr><td>디버깅</td><td>출력 토큰 확인</td><td>확장된 AST 확인</td></tr>
+<tr><td>표현력</td><td>매우 높음</td><td>제한적</td></tr>
+</tbody></table></div>
+<p>rok 의 선택은 표현력을 제한하는 대신 예측 가능성과 디버깅 용이성을 얻는 쪽에 무게를 두고 있습니다.</p>
+<h2 id="6811-등록가시성과의-결합"><a class="anchor" tabindex="-1" href="#6811-등록가시성과의-결합" aria-hidden="true">#</a>6.8.11. 등록/가시성과의 결합</h2>
+<p><code>#[impl_derive(TraitName)]</code> 가 부착된 메타 블록은 <code>TraitName</code> 이라는 derive 를, <code>#[impl_attribute(name)]</code> 는 <code>#[name]</code> attribute 를, <code>#[impl_macro(name)]</code> 는 <code>name!</code> 매크로를 등록합니다. 컴파일러는 parse 전에 라이브러리와 사용자 패키지의 모든 파일에서 메타 블록을 모으므로, 정의 위치나 파일 순서와 무관하게 쓸 수 있습니다. 메타 블록에 붙은 <code>#[cfg]</code> 가 거짓이면 그 블록은 등록되지 않습니다 (<a href="609-template-tokens#cfg-와의-관계">6.9.9</a>).</p>
+<p><code>pub</code> 메타 블록은 <code>use</code> 없이 빌드 전체에서 보입니다 (6.8.6). 메타 블록은 이름 공간의 항목이 아니므로 <code>use</code> 로 가져오는 대상도 아닙니다.</p>
+<pre><code class="language-rok"><span class="c">// pkg::derives</span>
+<span class="a">#[impl_derive(MyHash)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyHash</span> <span class="k">for</span> @<span class="k">Self</span> { ... }
+}
+
+<span class="c">// 다른 모듈 - import 없이 사용</span>
+<span class="a">#[derive(MyHash)]</span>
+<span class="k">struct</span> <span class="t">Foo</span> { ... }
+</code></pre>
+<p>다음은 에러입니다.</p>
+<ul>
+<li>같은 derive·attribute·macro 이름을 두 메타 블록이 등록하는 것 (하나의 macro 는 모든 규칙을 담은 하나의 <code>@macro</code> 블록).
+</li>
+<li>내장 derive (<a href="602-built-in-attributes">6.2.1</a>: <code>Clone</code>, <code>Copy</code>, <code>Default</code>, <code>Debug</code>, <code>PartialEq</code>, <code>Eq</code>, <code>PartialOrd</code>, <code>Ord</code>, <code>Hash</code>) 나 내장 attribute (<code>cfg</code>, <code>derive</code>, <code>test</code>, <code>inline</code>, <code>repr</code>, <code>keyword</code> 등 6.2 ~ 6.7 의 속성) 의 이름을 메타 블록이 다시 정의하는 것.
+</li>
+</ul>
+<h2 id="6812-macro-형태"><a class="anchor" tabindex="-1" href="#6812-macro-형태" aria-hidden="true">#</a>6.8.12. macro 형태</h2>
+<p><strong>macro</strong> 는 호출로 트리거되는 메타 정의입니다. derive 나 attribute 가 붙인 타입/항목으로부터 코드를 생성하는 반면, macro 는 <code>name!(..)</code> 처럼 <em>호출</em> 되어 그 자리에 코드로 확장됩니다. 호출자가 쓴 것으로부터 코드를 생성합니다. attribute 로 트리거되는 형태들이 할 수 없는 바로 그 수요, 즉 타입의 필드가 아니라 호출이 주도하는 반복·생성을 담당합니다.</p>
+<h3 id="정의"><a class="anchor" tabindex="-1" href="#정의" aria-hidden="true">#</a>정의</h3>
+<p>다른 형태와 똑같이, macro 는 <code>#[impl_macro(name)]</code>, 가시성, <code>@macro</code> 시작자, 그리고 블록입니다. 블록은 평평한 템플릿 대신 하나 이상의 <strong>규칙</strong> 을 담습니다. 각 규칙은 괄호 안의 매처, <code>=&gt;</code> (<a href="../003-expressions/312-match-expression"><code>match</code></a> 의 arm 과 같은 화살표), 중괄호 안의 템플릿입니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(name)]</span> <span class="k">pub</span> @macro {
+    ( &lt;matcher&gt; ) =&gt; { &lt;template&gt; }
+    ( &lt;matcher&gt; ) =&gt; { &lt;template&gt; }
+    ..
+}
+</code></pre>
+<p><code>#[impl_macro(name)]</code> 는 <code>#[impl_derive(T)]</code> 가 derive <code>T</code> 를 등록하는 것과 똑같이 매크로 <code>name!</code> 을 등록합니다. 호출 시 규칙을 위에서 아래로 시도해 매처가 처음 맞는 규칙이 확장됩니다. 하나도 안 맞으면 그 호출 위치에서 컴파일 에러입니다. macro 의 이름은 derive·attribute 처럼 <code>use</code> 없이 쓰는 빌드 전역 이름이며 (<a href="#686-pub--가시성">6.8.6</a>), 모든 호출의 끝 <code>!</code> 가 함수가 아니라 매크로임을 표시합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(twice)]</span> <span class="k">pub</span> @macro {
+    ( @e: expr ) =&gt; { { <span class="k">let</span> v = @e; (v, v) } }
+}
+
+<span class="k">let</span> p = twice!(compute());      <span class="c">// (그 값, 같은 값)</span>
+</code></pre>
+<h3 id="호출"><a class="anchor" tabindex="-1" href="#호출" aria-hidden="true">#</a>호출</h3>
+<p>macro 는 <code>name!( .. )</code>, <code>name![ .. ]</code>, <code>name!{ .. }</code> 로 호출합니다. 구분자는 서로 바꿔 써도 의미가 같습니다. 인자는 임의의 <strong>토큰 트리</strong> 입니다. <code>()</code> <code>[]</code> <code>{}</code> 가 균형 잡힌 모든 토큰이라, 렉서와 포매터는 매크로를 몰라도 호출을 토큰 단위로 읽습니다. macro 는 다음 위치에서, 템플릿이 내는 것에 따라 확장됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>위치</th><th>예</th><th>템플릿이 내는 것</th></tr></thead>
+<tbody>
+<tr><td>식</td><td><code>let xs = grid![1, 2; 3, 4];</code></td><td>식</td></tr>
+<tr><td>문</td><td><code>debug!(&quot;here&quot;);</code></td><td>0개 이상의 문</td></tr>
+<tr><td>항목</td><td><code>int_impl!(i8, i16, i32);</code> (모듈 수준)</td><td>0개 이상의 항목</td></tr>
+<tr><td>타입</td><td><code>let f: fn_ptr!(i32, i32) = ..;</code></td><td>타입</td></tr>
+<tr><td>패턴</td><td><code>match x { pair!(a, b) =&gt; .. }</code></td><td>패턴</td></tr>
+</tbody></table></div>
+<h3 id="매처와-fragment"><a class="anchor" tabindex="-1" href="#매처와-fragment" aria-hidden="true">#</a>매처와 fragment</h3>
+<p>매처는 토큰 패턴입니다. 매처 안의 리터럴 토큰은 호출에 그대로 나타나야 하고, <strong>메타변수</strong> <code>@name: &lt;fragment&gt;</code> 는 호출의 일부를 템플릿용으로 캡처합니다. fragment 는 얼마만큼을 무엇으로 파싱할지 정합니다: <code>expr</code>, <code>stmt</code>, <code>block</code>, <code>ty</code>, <code>pat</code>, <code>path</code>, <code>ident</code>, <code>literal</code>, <code>item</code>, 또는 <code>tt</code> (원시 토큰 트리 하나). <code>tt</code> 를 뺀 fragment 는 그 문법의 실제 구문 노드로 파싱되므로 <code>@e: expr</code> 의 인자는 타입을 갖고 검사되며 언어 서버가 그 안의 이름을 해석합니다 (<a href="#도구-지원과-위생">6.8.12</a>). <code>tt</code> 만은 rok 문법이 아닌 DSL 을 위해 파싱 없이 캡처되며, 그래도 균형은 유지합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(clamp)]</span> <span class="k">pub</span> @macro {
+    ( @x: expr , @lo: expr , @hi: expr ) =&gt; {
+        { <span class="k">let</span> v = @x; <span class="k">if</span> v &lt; @lo { @lo } <span class="k">else</span> <span class="k">if</span> v &gt; @hi { @hi } <span class="k">else</span> { v } }
+    }
+}
+</code></pre>
+<h3 id="반복"><a class="anchor" tabindex="-1" href="#반복" aria-hidden="true">#</a>반복</h3>
+<p><code>@rep</code> 은 하위 패턴을 0회 이상 매칭하고, <code>@for</code> (<a href="609-template-tokens#693-필드-반복">6.9.3</a> 의 <code>@for_fields</code> 와 같은 반복자, 여기서는 캡처한 시퀀스에 적용) 는 원소마다 한 번씩 전사합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(list)]</span> <span class="k">pub</span> @macro {
+    ( @rep[sep = <span class="s">","</span>] { @x: expr } ) =&gt; {
+        { <span class="k">let</span> acc = <span class="t">List</span>::new(); @<span class="k">for</span> @x { acc.push(@x); } acc }
+    }
+}
+
+<span class="k">let</span> xs = list![a, b, c];        <span class="c">// acc.push(a); acc.push(b); acc.push(c);</span>
+</code></pre>
+<p><code>@rep[sep = &quot;,&quot;] { &lt;하위 패턴&gt; }</code> 은 하위 패턴을 <code>sep</code> 토큰으로 구분해 반복 매칭합니다 (<code>sep</code> 은 선택, <code>trailing</code> 이면 끝에 구분자 하나 허용). <code>@rep</code> 안에서 캡처한 메타변수는 시퀀스를 바인딩합니다. <code>@for @x { &lt;본체&gt; }</code> 는 원소마다 본체를 냅니다. 한 <code>@rep</code> 의 여러 메타변수는 lockstep 으로 돌며 길이가 같아야 합니다. <code>@rep</code> 과 <code>@for</code> 는 중첩됩니다. shape 토큰(<code>@Self</code>, <code>@field</code>, <code>@apply_if</code> 등)은 타입-구동 형태의 것이지 macro 의 것이 아닙니다. macro 는 검사할 shape 가 없어, 쓰면 에러입니다.</p>
+<h3 id="이름-합성"><a class="anchor" tabindex="-1" href="#이름-합성" aria-hidden="true">#</a>이름 합성</h3>
+<p><code>@concat(..)</code> 은 이름 토큰과 문자열 리터럴을 하나의 식별자로 이어, macro 가 서로 다른 이름의 항목을 생성하게 합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(accessors)]</span> <span class="k">pub</span> @macro {
+    ( @rep[sep = <span class="s">","</span>] { @f: ident : @t: ty } ) =&gt; {
+        @<span class="k">for</span> @f { <span class="k">fn</span> @concat(get_, @f)(<span class="k">self</span>) -&gt; @t { <span class="k">self</span>.@f } }
+    }
+}
+<span class="c">// accessors!{ x: i32, y: i32 } -&gt; fn get_x(self) -&gt; i32 { self.x }  (그리고 get_y)</span>
+</code></pre>
+<p><code>@concat</code> 이 만든 이름은 <strong>기록</strong> 됩니다. 컴파일러가 생성된 항목을 그 생성 이름으로 인덱싱하므로 심볼 검색·정의로 이동·참조 찾기가 도달합니다. <code>@concat</code> 은 정의나 경로 위치에서만 식별자를 만들며, 조각은 이름 토큰과 문자열 리터럴이고 임의 구문을 조립할 수는 없습니다.</p>
+<h3 id="라이브러리의-보일러플레이트"><a class="anchor" tabindex="-1" href="#라이브러리의-보일러플레이트" aria-hidden="true">#</a>라이브러리의 보일러플레이트</h3>
+<p>macro 의 전형적 이유는 작성자가 적은 고정 목록에 정의를 반복하는 것, 곧 attribute 로 트리거되는 형태로는 할 수 없는 일입니다. <a href="../../refs-standard-libraries/200-core/"><code>rok::core::num</code></a> 의 손으로 복사한 타입별 impl 을 대체합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_macro(nonzero_div)]</span> <span class="k">pub</span> @macro {
+    ( @rep[sep = <span class="s">","</span>] { @t: ty } ) =&gt; {
+        @<span class="k">for</span> @t {
+            <span class="k">impl</span> <span class="t">Div</span>&lt;<span class="t">NonZero</span>&lt;@t&gt;&gt; <span class="k">for</span> @t {
+                <span class="k">type</span> <span class="t">Output</span> = @t;
+                <span class="k">const</span> <span class="k">fn</span> div(<span class="k">self</span>, rhs: <span class="t">NonZero</span>&lt;@t&gt;) -&gt; @t { <span class="k">self</span> / rhs.<span class="n">0</span> }
+            }
+        }
+    }
+}
+
+nonzero_div!(<span class="t">i8</span>, <span class="t">i16</span>, <span class="t">i32</span>, <span class="t">i64</span>, <span class="t">u8</span>, <span class="t">u16</span>, <span class="t">u32</span>, <span class="t">u64</span>);
+</code></pre>
+<h3 id="재귀"><a class="anchor" tabindex="-1" href="#재귀" aria-hidden="true">#</a>재귀</h3>
+<p>템플릿은 자신을 포함해 매크로를 호출할 수 있고, 매크로 호출이 남지 않을 때까지 확장이 반복됩니다. 한계가 있습니다. 깊이가 한도 (256) 를 넘으면 그 호출을 가리키는 컴파일 에러라, 끝나지 않는 매크로는 멈추지 않고 실패합니다. 상호 재귀도 같은 깊이에 셈하며, attribute 형태와 마찬가지로 순환은 경로와 함께 보고됩니다 (<a href="#688-fixed-point-확장">6.8.8</a>).</p>
+<h3 id="내장--폼은-예약"><a class="anchor" tabindex="-1" href="#내장--폼은-예약" aria-hidden="true">#</a>내장 <code>!</code>-폼은 예약</h3>
+<p><code>cfg!</code> (<a href="603-cfg">6.3</a>) 와 <code>include_str!</code> / <code>include_bytes!</code> (<a href="611-include">6.11</a>) 은 <code>!</code> 로 끝나지만 고정된 컴파일러 내장폼이지 매크로가 아니며, 재정의·가림·매크로 이름으로 쓰기가 불가합니다. 컴파일러가 제공하는 <code>!</code>-폼은 이들뿐이고, 그 밖의 모든 <code>name!</code> 은 rok 으로 정의한 매크로입니다.</p>
+<h3 id="도구-지원과-위생"><a class="anchor" tabindex="-1" href="#도구-지원과-위생" aria-hidden="true">#</a>도구 지원과 위생</h3>
+<p>macro 는 모든 메타 정의의 보장 (<a href="#689-토큰-스트림-조작-없음">6.8.9</a>) 을 지키며, 호출 위치가 더하는 세부는 다음과 같습니다.</p>
+<ul>
+<li><strong>위생</strong> 은 자동입니다. 템플릿이 들여온 이름은 새 이름이라 호출 위치를 포획하거나 포획되지 않고, 메타변수로 넘어온 이름은 호출 위치에서 해석됩니다.
+</li>
+<li><strong>span</strong>: 확장된 모든 토큰이 호출의 span 을 지녀, 진단은 확장을 note 로 보이며 호출을 가리킵니다.
+</li>
+<li><strong>해석</strong>: fragment 가 실제 노드로 파싱되고 합성 이름이 인덱싱되므로, 호버·정의로 이동·참조 찾기가 매크로를 관통합니다. 인자 안으로, 그리고 생성한 항목 위로.
+</li>
+<li><strong>요청 시 확장</strong>: 언어 서버가 호출을 그 자리에서 펼칠 수 있습니다 (<a href="../009-tools/909-debug-tools">9.9.13</a>).
+</li>
+<li><strong>포매팅</strong>: 포매터는 호출 인자가 rok fragment 이면 포맷하고, 원시 <code>tt</code> DSL 은 균형 구분자 안에서 쓴 그대로 둡니다.
+</li>
+</ul>
+<h2 id="6813-정리"><a class="anchor" tabindex="-1" href="#6813-정리" aria-hidden="true">#</a>6.8.13. 정리</h2>
+<p>이 네 형태(derive, attribute, 필드별 derive attribute, 그리고 호출로 트리거되는 macro)가 하나의 템플릿 엔진 위에서 rok 의 전체 메타프로그래밍 표면을 구성합니다. 절차적 매크로만큼의 표현력은 없지만, derive·attribute·필드별 attribute·호출부 생성이라는 핵심 사용 사례를 모두, 각각 위생적이고 도구가 따라갈 수 있는 형태로 다룹니다.</p>
+<p><a href="609-template-tokens">템플릿 토큰과 확장</a> 에서는 템플릿 토큰의 정확한 목록(타입 주도 입력과 호출 주도 입력 둘 다)과 확장 메커니즘을 정의합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/006-meta-system/608-meta-blocks.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="607-operator-magic"><small>Previous</small>6.7. 연산자 매직</a><a class="next" href="609-template-tokens"><small>Next</small>6.9. 템플릿 토큰과 확장</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

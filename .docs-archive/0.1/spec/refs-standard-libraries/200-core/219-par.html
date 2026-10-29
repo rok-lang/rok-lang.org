@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.19. par - Parallel processing API - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::par module provides a data-parallel API. Its design is inspired by Rust's Rayon, and it runs on the same work-stealing scheduler as task::*.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/219-par.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.19. par - Parallel processing API - rok docs">
+<meta property="og:description" content="The rok::core::par module provides a data-parallel API. Its design is inspired by Rust's Rayon, and it runs on the same work-stealing scheduler as task::*.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/219-par.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/219-par.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/219-par.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li class="cur"><a aria-current="page" href="219-par">2.19. par - Parallel processing API</a><ul class="toc"><li><a href="#2191-core-api">2.19.1. Core API</a></li><li><a href="#2192-parfor_each-vs-iterator">2.19.2. par::for_each vs Iterator</a></li><li><a href="#2193-parscope---structured-parallelism">2.19.3. par::scope - structured parallelism</a></li><li><a href="#2194-parreduce---associativity-required">2.19.4. par::reduce - associativity required</a></li><li><a href="#2195-parjoin---exactly-two">2.19.5. par::join - exactly two</a></li><li><a href="#2196-simd--gpu-integration">2.19.6. SIMD / GPU integration</a></li><li><a href="#2197-module-mapping">2.19.7. Module mapping</a></li></ul></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="219-par---parallel-processing-api 219-par---병렬-처리-api 2191-core-api 2191-핵심-api example 사용-예 2192-parfor_each-vs-iterator 2192-parfor_each-vs-iterator 2193-parscope---structured-parallelism 2193-parscope---구조적-병렬 partry_scope---cancel-on-the-first-error partry_scope---첫-에러에서-취소 2194-parreduce---associativity-required 2194-parreduce---결합-법칙-요구 2195-parjoin---exactly-two 2195-parjoin---정확히-2-개 2196-simd--gpu-integration 2196-simd--gpu-통합 2197-module-mapping 2197-모듈-매핑"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/219-par" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="219-par---parallel-processing-api"><a class="anchor" tabindex="-1" href="#219-par---parallel-processing-api" aria-hidden="true">#</a>2.19. par - Parallel processing API</h1>
+<p>The <code>rok::core::par</code> module provides a data-parallel API. Its design is inspired by Rust's Rayon, and it runs on the same work-stealing scheduler as <code>task::*</code>.</p>
+<p>Because <code>use rok::core::**;</code> applies implicitly, <code>par::for_each</code>, <code>par::map</code> and the rest are usable without any import; the module prefix <code>par::</code> is still kept. Where the parallel intent should be visibly clear, writing <code>use rok::core::par::*;</code> explicitly is recommended.</p>
+<h2 id="2191-core-api"><a class="anchor" tabindex="-1" href="#2191-core-api" aria-hidden="true">#</a>2.19.1. Core API</h2>
+<p>The core API consists of six functions.</p>
+<pre><code class="language-rok"><span class="k">fn</span> for_each&lt;<span class="t">I</span>: <span class="t">IntoIterator</span>&lt;<span class="t">Item</span> = <span class="t">T</span>&gt;, <span class="t">T</span>: <span class="t">Send</span>&gt;(iter: <span class="t">I</span>, f: <span class="k">fn</span>(<span class="t">T</span>) + <span class="t">Send</span> + <span class="t">Sync</span>);
+<span class="k">fn</span> map&lt;<span class="t">I</span>: <span class="t">IntoIterator</span>&lt;<span class="t">Item</span> = <span class="t">T</span>&gt;, <span class="t">T</span>: <span class="t">Send</span>, <span class="t">U</span>: <span class="t">Send</span>&gt;(iter: <span class="t">I</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">U</span> + <span class="t">Send</span> + <span class="t">Sync</span>) -&gt; <span class="t">List</span>&lt;<span class="t">U</span>&gt;;
+<span class="k">fn</span> reduce&lt;<span class="t">T</span>: <span class="t">Send</span> + <span class="t">Sync</span>&gt;(iter: <span class="t">List</span>&lt;<span class="t">T</span>&gt;, init: <span class="t">T</span>, f: <span class="k">fn</span>(<span class="t">T</span>, <span class="t">T</span>) -&gt; <span class="t">T</span> + <span class="t">Send</span> + <span class="t">Sync</span>) -&gt; <span class="t">T</span>;
+<span class="k">fn</span> filter&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(iter: <span class="t">List</span>&lt;<span class="t">T</span>&gt;, pred: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">bool</span> + <span class="t">Send</span> + <span class="t">Sync</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;
+<span class="k">fn</span> join&lt;<span class="t">T1</span>: <span class="t">Send</span>, <span class="t">T2</span>: <span class="t">Send</span>&gt;(f1: <span class="k">fn</span>() -&gt; <span class="t">T1</span> + <span class="t">Send</span>, f2: <span class="k">fn</span>() -&gt; <span class="t">T2</span> + <span class="t">Send</span>) -&gt; (<span class="t">T1</span>, <span class="t">T2</span>);    <span class="c">// 2 in parallel</span>
+<span class="k">fn</span> scope(f: <span class="k">fn</span>(<span class="t">Scope</span>));                                          <span class="c">// dynamic spawn</span>
+</code></pre>
+<p>The <code>f</code> of <code>for_each</code> / <code>map</code> / <code>reduce</code> / <code>filter</code> is called by several workers at once, so it is <code>+ Send + Sync</code>.</p>
+<ul>
+<li><code>for_each</code> / <code>map</code> / <code>filter</code> preserve input order. The result <code>List</code> of <code>map</code> / <code>filter</code> is in the same order as the input.
+</li>
+<li><code>for_each</code> / <code>map</code> / <code>filter</code> give each item to a worker. Two items must not reach one collection that is not <code>Sync</code> (<a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>). Each call first looks for a collection reached from two items, following the items' parts and the elements of their collections to any depth, as a hand-off copy does, but not into collections of plain values (numbers, <code>bool</code>, <code>str</code>): if it finds one, the items run one after another on the calling thread, so nothing races and in-place changes stay as with workers, and a warning names the call site (once per site). Slices only read: items may share a list through slices of it (chunks of one big list), as long as no item holds the list itself; the elements a slice reaches are followed one by one. The check marks each collection the items reach in the object's header (about 15 ns per collection for one-list items and about 50 ns per collection on nested items, mostly the memory reads; items with no collection cost nothing): for many small items with little work each it can exceed the work. The warning says what to write instead: give each item its own values (<code>.clone()</code> a shared one before storing it), or share read-only data through <code>Frozen</code> (2.16.4b) or another <code>Sync</code> type, which the check does not follow. A future among the items counts as its frame: two items holding one future run one at a time too. <code>par</code> does not hand its items over, so a future whose frame captures a collection cannot be an item (a compile error): spawn such futures as tasks instead (<a href="218-task#2181-core-api">2.18.1</a>). The result of <code>filter</code> shares the input's items.
+</li>
+<li><code>reduce</code> splits the input into chunks, folds each chunk in parallel, then folds <code>init</code> and the chunk results in order. If the input is empty it returns <code>init</code>.
+</li>
+<li>Children spawned inside a <code>scope</code> are all joined when the scope ends.
+</li>
+<li><code>par</code> runs on the same work-stealing pool as tasks (<a href="218-task#2183-scheduler-model---work-stealing">2.18.3</a>). A worker waiting inside <code>par</code> runs other tasks meanwhile, so calling <code>par</code> inside a task does not deadlock. The <code>Scope</code> passed to <code>scope</code> and its handle are:
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Scope</span> { <span class="c">/* list of jobs in the scope */</span> }
+<span class="k">impl</span> <span class="t">Scope</span> {
+    <span class="k">fn</span> spawn&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Send</span>) -&gt; <span class="t">ScopeHandle</span>&lt;<span class="t">T</span>&gt;;
+}
+
+<span class="k">struct</span> <span class="t">ScopeHandle</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* one spawned job */</span> }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">ScopeHandle</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> join(<span class="k">self</span>) -&gt; <span class="t">T</span>;          <span class="c">// waits until that job finishes</span>
+}
+</code></pre>
+<p>When <code>scope</code> ends it also waits for every job that was not joined.</p>
+<pre><code class="language-rok"></code></pre>
+<h3 id="example"><a class="anchor" tabindex="-1" href="#example" aria-hidden="true">#</a>Example</h3>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::par::*;
+
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = (<span class="n">0</span>..<span class="n">1000</span>).collect();
+
+par::for_each(xs, |x| { process(x) });
+
+<span class="k">let</span> squared: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = par::map(xs, |x| x * x);
+
+<span class="k">let</span> total: <span class="t">i32</span> = par::reduce(squared, <span class="n">0</span>, |a, b| a + b);
+
+<span class="k">let</span> (a, b) = par::join(
+    || compute_a(),
+    || compute_b(),
+);
+
+par::scope(|s| {
+    <span class="k">for</span> chunk <span class="k">in</span> chunks {
+        s.spawn(|| process_chunk(chunk));
+    }
+});           <span class="c">// ← every spawn is guaranteed complete at the end of the scope</span>
+</code></pre>
+<h2 id="2192-parfor_each-vs-iterator"><a class="anchor" tabindex="-1" href="#2192-parfor_each-vs-iterator" aria-hidden="true">#</a>2.19.2. <code>par::for_each</code> vs Iterator</h2>
+<p>Sequential and parallel processing are distinguished by the form of the call.</p>
+<pre><code class="language-rok">xs.into_iter().for_each(f);     <span class="c">// sequential (single thread)</span>
+par::for_each(xs, f);            <span class="c">// parallel (worker pool)</span>
+</code></pre>
+<p>Work is distributed data-parallel in chunks, and the work-stealing scheduler automatically balances unbalanced workloads.</p>
+<h2 id="2193-parscope---structured-parallelism"><a class="anchor" tabindex="-1" href="#2193-parscope---structured-parallelism" aria-hidden="true">#</a>2.19.3. <code>par::scope</code> - structured parallelism</h2>
+<p><code>par::scope</code> is a structured parallel API that can spawn work dynamically.</p>
+<pre><code class="language-rok">par::scope(|s| {
+    <span class="k">let</span> h1 = s.spawn(|| task1());
+    <span class="k">let</span> h2 = s.spawn(|| task2());
+    <span class="c">// results of h1, h2 are usable (inside the scope)</span>
+    <span class="c">// joined automatically at the end of the scope</span>
+});
+</code></pre>
+<p>This follows the structured concurrency form: the scope blocks until every child spawn has completed.</p>
+<h3 id="partry_scope---cancel-on-the-first-error"><a class="anchor" tabindex="-1" href="#partry_scope---cancel-on-the-first-error" aria-hidden="true">#</a><code>par::try_scope</code> - cancel on the first error</h3>
+<p>For children that throw errors, use <code>try_scope</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> try_scope&lt;<span class="t">E</span>: <span class="t">Send</span>&gt;(f: <span class="k">fn</span>(<span class="t">TryScope</span>&lt;<span class="t">E</span>&gt;) <span class="k">throws</span> (<span class="t">E</span>)) <span class="k">throws</span> (<span class="t">E</span>);
+
+<span class="k">impl</span>&lt;<span class="t">E</span>&gt; <span class="t">TryScope</span>&lt;<span class="t">E</span>&gt; {
+    <span class="k">fn</span> spawn&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>() <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">T</span> + <span class="t">Send</span>) -&gt; <span class="t">TryScopeHandle</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt;;
+    <span class="k">fn</span> is_cancelled(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>, <span class="t">E</span>: <span class="t">Send</span>&gt; <span class="t">TryScopeHandle</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; {
+    <span class="k">fn</span> join(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">T</span>;     <span class="c">// its own error, or the scope's first error if cancelled before starting</span>
+}
+</code></pre>
+<p>If one child throws, the scope is cancelled. Children not yet started are not run, and children already running run to completion. When all children have finished, <code>try_scope</code> rethrows that first error. A running child can check <code>is_cancelled()</code> to finish early.</p>
+<pre><code class="language-rok"><span class="k">try</span> par::try_scope(|s| {
+    <span class="k">let</span> a = s.spawn(|| <span class="k">try</span> load(<span class="s">"a"</span>));
+    <span class="k">let</span> b = s.spawn(|| <span class="k">try</span> load(<span class="s">"b"</span>));
+    use_both(<span class="k">try</span> a.join(), <span class="k">try</span> b.join());
+});
+</code></pre>
+<h2 id="2194-parreduce---associativity-required"><a class="anchor" tabindex="-1" href="#2194-parreduce---associativity-required" aria-hidden="true">#</a>2.19.4. <code>par::reduce</code> - associativity required</h2>
+<p>The signature of <code>par::reduce</code> is as follows; using it involves some mathematical conditions.</p>
+<pre><code class="language-rok"><span class="k">fn</span> reduce&lt;<span class="t">T</span>: <span class="t">Send</span> + <span class="t">Sync</span>&gt;(iter: <span class="t">List</span>&lt;<span class="t">T</span>&gt;, init: <span class="t">T</span>, f: <span class="k">fn</span>(<span class="t">T</span>, <span class="t">T</span>) -&gt; <span class="t">T</span> + <span class="t">Send</span> + <span class="t">Sync</span>) -&gt; <span class="t">T</span>;
+</code></pre>
+<p>The combining function <code>f</code> must be associative for the result to be deterministic. <code>init</code> should preferably be the <strong>identity</strong>: 0 for <code>+</code>, 1 for <code>*</code>. For a non-associative function, such as floating-point summation accumulating large values, the <strong>result may be nondeterministic</strong> and needs explicit care.</p>
+<pre><code class="language-rok"><span class="k">let</span> sum: <span class="t">i64</span> = par::reduce([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>], <span class="n">0</span>, |a, b| a + b);    <span class="c">//→ 15</span>
+
+<span class="c">// floating-point - the result may differ slightly</span>
+<span class="k">let</span> total: <span class="t">f64</span> = par::reduce(values, <span class="n">0.0</span>, |a, b| a + b);
+</code></pre>
+<h2 id="2195-parjoin---exactly-two"><a class="anchor" tabindex="-1" href="#2195-parjoin---exactly-two" aria-hidden="true">#</a>2.19.5. <code>par::join</code> - exactly two</h2>
+<p>Use <code>par::join</code> to run two jobs concurrently and receive the pair of results.</p>
+<pre><code class="language-rok"><span class="k">let</span> (a, b) = par::join(
+    || expensive_computation_1(),
+    || expensive_computation_2(),
+);
+</code></pre>
+<p>Two jobs are the most common fork-join form, so a dedicated function is provided. For N jobs, use <code>par::for_each</code> or <code>par::scope</code>.</p>
+<h2 id="2196-simd--gpu-integration"><a class="anchor" tabindex="-1" href="#2196-simd--gpu-integration" aria-hidden="true">#</a>2.19.6. SIMD / GPU integration</h2>
+<p>The <code>par</code> module centers on CPU data parallelism. SIMD multiversioning is applied automatically inside <code>par::map</code> according to target_feature; GPU acceleration is not part of the standard libraries; libraries reach it through <code>rok::bare::mlir</code> (<a href="../100-bare/109-mlir">1.9</a>).</p>
+<pre><code class="language-rok">par::map(xs, |x| heavy_op(x));     <span class="c">// CPU work-stealing + automatic SIMD</span>
+</code></pre>
+<h2 id="2197-module-mapping"><a class="anchor" tabindex="-1" href="#2197-module-mapping" aria-hidden="true">#</a>2.19.7. Module mapping</h2>
+<p>The module location and internal strategy of each API:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>Module</th><th>Strategy</th></tr></thead>
+<tbody>
+<tr><td><code>par::for_each</code></td><td><code>rok::core::par</code></td><td>chunk + work-steal</td></tr>
+<tr><td><code>par::map</code></td><td><code>rok::core::par</code></td><td>parallel collect</td></tr>
+<tr><td><code>par::reduce</code></td><td><code>rok::core::par</code></td><td>tree reduction</td></tr>
+<tr><td><code>par::filter</code></td><td><code>rok::core::par</code></td><td>parallel collect, then dedup</td></tr>
+<tr><td><code>par::join</code></td><td><code>rok::core::par</code></td><td>2-task work-steal</td></tr>
+<tr><td><code>par::scope</code></td><td><code>rok::core::par</code></td><td>spawn handle + auto-join</td></tr>
+</tbody></table></div>
+<p>Internally it is one layer on top of <code>task::spawn</code>, sharing the same scheduler.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/219-par.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="218-task"><small>Previous</small>2.18. task - M:N scheduler task API</a><a class="next" href="220-future"><small>Next</small>2.20. future - Future / await integration</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

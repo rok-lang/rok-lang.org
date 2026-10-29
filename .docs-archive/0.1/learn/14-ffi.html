@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>14. FFI Basics - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter shows how to call functions written in C from rok, and how to hand rok functions to C. Operating systems and countless libraries expose their funct...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/14-ffi.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="14. FFI Basics - rok docs">
+<meta property="og:description" content="This chapter shows how to call functions written in C from rok, and how to hand rok functions to C. Operating systems and countless libraries expose their funct...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/14-ffi.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li class="cur"><a aria-current="page" href="14-ffi">14. FFI Basics</a><ul class="toc"><li><a href="#extern-c-blocks">extern &quot;C&quot; blocks</a></li><li><a href="#why-unsafe-is-required">Why unsafe is required</a></li><li><a href="#c-characters-and-nullable-pointers">C characters and nullable pointers</a></li><li><a href="#pointers-and-memory-rokbareptr">Pointers and memory: rok::bare::ptr</a></li><li><a href="#callbacks-extern-c-fn">Callbacks: extern &quot;C&quot; fn</a></li><li><a href="#linking-libraries-link">Linking libraries: #[link]</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="14-ffi-basics"><a class="anchor" tabindex="-1" href="#14-ffi-basics" aria-hidden="true">#</a>14. FFI Basics</h1>
+<p>This chapter shows how to call functions written in C from rok, and how to hand rok functions to C. Operating systems and countless libraries expose their functionality through the C ABI, so knowing FFI (foreign function interface) lets you use features the standard library does not provide.</p>
+<p>All examples really run against libc on macOS / Linux.</p>
+<h2 id="extern-c-blocks"><a class="anchor" tabindex="-1" href="#extern-c-blocks" aria-hidden="true">#</a><code>extern &quot;C&quot;</code> blocks</h2>
+<p>To use a C function, first declare its signature in an <code>extern &quot;C&quot; { ... }</code> block. There is no body; the declaration ends with <code>;</code>. The name is the C symbol name as is.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> strlen(s: <span class="t">str</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> abs(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> getpid() -&gt; <span class="t">i32</span>;
+}
+
+println(<span class="s">f"strlen: {</span><span class="k">unsafe</span> { strlen(<span class="s">"hello, C"</span>) }<span class="s">}"</span>);
+println(<span class="s">f"abs: {</span><span class="k">unsafe</span> { abs(-<span class="n">42</span>) }<span class="s">}"</span>);
+println(<span class="s">f"pid positive: {</span><span class="k">unsafe</span> { getpid() } &gt; <span class="n">0</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">strlen: 8
+abs: 42
+pid positive: true
+</code></pre>
+<p>Write C types as primitive types of the same size: <code>int</code> is <code>i32</code>, <code>size_t</code> is <code>usize</code>, <code>double</code> is <code>f64</code>. A <code>str</code> parameter is passed as a NUL-terminated <code>char*</code>; rok makes a NUL-terminated copy when needed.</p>
+<p><code>extern</code> blocks may only appear at module top level, and must name the ABI string (<code>&quot;C&quot;</code>).</p>
+<h2 id="why-unsafe-is-required"><a class="anchor" tabindex="-1" href="#why-unsafe-is-required" aria-hidden="true">#</a>Why <code>unsafe</code> is required</h2>
+<p>The compiler has no way to check that a C function behaves as its signature says. Passing a bad pointer or getting the declaration wrong can corrupt memory. So every function in an <code>extern &quot;C&quot;</code> block is implicitly <code>unsafe</code> and can only be called inside <code>unsafe { ... }</code>.</p>
+<pre><code class="language-text">error[E200]: call to unsafe function `abs` outside an `unsafe` block or `unsafe fn` (spec 4.15; C functions are implicitly unsafe)
+  --&gt; main.rok:4:12
+   |
+ 4 | println(f&quot;{abs(-1)}&quot;);
+   |            ^^^^^^^
+</code></pre>
+<p>An <code>unsafe</code> block says &quot;I guarantee safety here.&quot; Good practice is to keep these blocks small and wrap dangerous calls in safe rok functions, so only a safe API is visible from outside.</p>
+<h2 id="c-characters-and-nullable-pointers"><a class="anchor" tabindex="-1" href="#c-characters-and-nullable-pointers" aria-hidden="true">#</a>C characters and nullable pointers</h2>
+<p>A C <code>char</code> is one byte; in rok it is the <code>c_char</code> type with <code>c'A'</code> literals. It is a different type from the Unicode <code>char</code> (<code>'A'</code>), so code touching the FFI boundary stands out.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> toupper(c: <span class="t">i32</span>) -&gt; <span class="t">i32</span>;
+}
+
+<span class="k">let</span> c: c_char = c<span class="s">'a'</span>;
+<span class="k">let</span> up = <span class="k">unsafe</span> { toupper(c <span class="k">as</span> <span class="t">i32</span>) };
+println(<span class="s">f"toupper: {</span>up<span class="s">} = {</span>up <span class="k">as</span> <span class="t">u8</span> <span class="k">as</span> <span class="t">char</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">toupper: 65 = A
+</code></pre>
+<p>If a C function can return NULL, declare its return type as <code>CPtr&lt;T&gt;</code>. A <code>CPtr</code> is a pointer that can hold null, just like in C; <code>as_const()</code> extracts a non-null <code>ConstPtr&lt;T&gt; | none</code>. The example below reads the result of <code>getenv</code> byte by byte and copies it into a <code>str</code>. The dangerous part is confined to <code>from_c</code>, and only the safe <code>env_var</code> is exposed.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::ptr::{<span class="t">CPtr</span>, <span class="t">ConstPtr</span>};
+
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> getenv(name: <span class="t">str</span>) -&gt; <span class="t">CPtr</span>&lt;c_char&gt;;
+    <span class="k">fn</span> setenv(name: <span class="t">str</span>, value: <span class="t">str</span>, overwrite: <span class="t">i32</span>) -&gt; <span class="t">i32</span>;
+    <span class="k">fn</span> strerror(code: <span class="t">i32</span>) -&gt; <span class="t">str</span>;
+}
+
+<span class="c">// Copy a NUL-terminated C string into a rok str.</span>
+<span class="k">unsafe</span> <span class="k">fn</span> from_c(p: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">str</span> {
+    <span class="k">let</span> sb = <span class="t">StrBuf</span>::new();
+    <span class="k">let</span> i: <span class="t">usize</span> = <span class="n">0</span>;
+    <span class="k">loop</span> {
+        <span class="k">let</span> b = p.add(i).read();
+        <span class="k">if</span> b == c<span class="s">'\0'</span> { <span class="k">break</span>; }
+        sb.push_byte(b <span class="k">as</span> <span class="t">u8</span>);
+        i += <span class="n">1</span>;
+    }
+    sb.to_str()
+}
+
+<span class="k">fn</span> env_var(name: <span class="t">str</span>) -&gt; <span class="t">str</span> | <span class="k">none</span> {
+    <span class="k">let</span> p = <span class="k">unsafe</span> { getenv(name) }.as_const()?;
+    <span class="k">unsafe</span> { from_c(p) }
+}
+
+<span class="k">unsafe</span> { setenv(<span class="s">"ROK_FFI_DEMO"</span>, <span class="s">"hello"</span>, <span class="n">1</span>) };
+println(env_var(<span class="s">"ROK_FFI_DEMO"</span>) ?? <span class="s">"(unset)"</span>);
+println(env_var(<span class="s">"ROK_FFI_MISSING"</span>) ?? <span class="s">"(unset)"</span>);
+println(<span class="k">unsafe</span> { strerror(<span class="n">2</span>) });
+</code></pre>
+<pre class="output"><code class="language-output">hello
+(unset)
+No such file or directory
+</code></pre>
+<p>For a function that never returns NULL, such as <code>strerror</code>, declare the return type as <code>str</code> and rok measures the length with <code>strlen</code> and converts it to a string.</p>
+<h2 id="pointers-and-memory-rokbareptr"><a class="anchor" tabindex="-1" href="#pointers-and-memory-rokbareptr" aria-hidden="true">#</a>Pointers and memory: <code>rok::bare::ptr</code></h2>
+<p>Passing a buffer to C requires raw pointers. The <code>rok::bare</code> layer provides these types:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>C equivalent</th><th>null</th></tr></thead>
+<tbody>
+<tr><td><code>Ptr&lt;T&gt;</code></td><td><code>T*</code></td><td>no (null is expressed as <code>none</code>)</td></tr>
+<tr><td><code>ConstPtr&lt;T&gt;</code></td><td><code>const T*</code></td><td>no</td></tr>
+<tr><td><code>CPtr&lt;T&gt;</code></td><td><code>T*</code></td><td>yes</td></tr>
+</tbody></table></div>
+<p>The basic operations are <code>read()</code> / <code>write()</code> through the pointer, <code>add(n)</code> (advance by n elements), and <code>cast::&lt;U&gt;()</code>. Memory comes from the C heap via <code>rok::bare::alloc</code> and you return it yourself. The GC does not manage this memory, so forgetting <code>dealloc</code> leaks it.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::ptr::{<span class="t">Ptr</span>, <span class="t">ConstPtr</span>, size_of};
+<span class="k">use</span> rok::bare::alloc;
+
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+<span class="k">let</span> p = <span class="k">unsafe</span> { alloc::alloc_array::&lt;<span class="t">i32</span>&gt;(xs.len()) }.as_ptr() ?? panic(<span class="s">"out of memory"</span>);
+<span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..xs.len() { <span class="k">unsafe</span> { p.add(i).write(xs[i] * <span class="n">2</span>) }; }
+<span class="k">let</span> second = <span class="k">unsafe</span> { p.add(<span class="n">1</span>).read() };
+println(<span class="s">f"second: {</span>second<span class="s">}, i32 is {</span>size_of::&lt;<span class="t">i32</span>&gt;()<span class="s">} bytes"</span>);
+<span class="k">unsafe</span> { alloc::dealloc_array(p, xs.len()) };
+</code></pre>
+<pre class="output"><code class="language-output">second: 40, i32 is 4 bytes
+</code></pre>
+<p>When exchanging structs with C, add <code>#[repr(C)]</code> so the field layout matches C.</p>
+<pre><code class="language-rok"><span class="a">#[repr(C)]</span>
+<span class="k">struct</span> <span class="t">DivT</span> { quot: <span class="t">i32</span>; rem: <span class="t">i32</span>; }
+
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> div(num: <span class="t">i32</span>, den: <span class="t">i32</span>) -&gt; <span class="t">DivT</span>;
+}
+
+<span class="k">let</span> r = <span class="k">unsafe</span> { div(<span class="n">17</span>, <span class="n">5</span>) };
+println(<span class="s">f"17 / 5 = {</span>r.quot<span class="s">} rem {</span>r.rem<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">17 / 5 = 3 rem 2
+</code></pre>
+<h2 id="callbacks-extern-c-fn"><a class="anchor" tabindex="-1" href="#callbacks-extern-c-fn" aria-hidden="true">#</a>Callbacks: <code>extern &quot;C&quot; fn</code></h2>
+<p>For C functions that take a function pointer, such as <code>qsort</code>, compile a rok function with the C ABI and pass it. Just put <code>extern &quot;C&quot;</code> before the function definition. Such a function is not a closure, so it cannot capture surrounding variables, and its parameters and return type must be FFI-compatible (integers, floats, pointers, <code>#[repr(C)]</code> structs).</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::ptr::{<span class="t">Ptr</span>, <span class="t">ConstPtr</span>, size_of};
+<span class="k">use</span> rok::bare::alloc;
+
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> qsort(base: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;, n: <span class="t">usize</span>, size: <span class="t">usize</span>, cmp: <span class="k">extern</span> <span class="s">"C"</span> <span class="k">fn</span>(<span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;, <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">i32</span>);
+}
+
+<span class="k">extern</span> <span class="s">"C"</span> <span class="k">fn</span> by_value(a: <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;, b: <span class="t">ConstPtr</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> x = <span class="k">unsafe</span> { a.cast::&lt;<span class="t">i32</span>&gt;().read() };
+    <span class="k">let</span> y = <span class="k">unsafe</span> { b.cast::&lt;<span class="t">i32</span>&gt;().read() };
+    <span class="k">if</span> x &lt; y { -<span class="n">1</span> } <span class="k">else</span> <span class="k">if</span> x &gt; y { <span class="n">1</span> } <span class="k">else</span> { <span class="n">0</span> }
+}
+
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">42</span>, <span class="n">7</span>, <span class="n">19</span>, <span class="n">3</span>, <span class="n">25</span>];
+<span class="k">let</span> p = <span class="k">unsafe</span> { alloc::alloc_array::&lt;<span class="t">i32</span>&gt;(xs.len()) }.as_ptr() ?? panic(<span class="s">"out of memory"</span>);
+<span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..xs.len() { <span class="k">unsafe</span> { p.add(i).write(xs[i]) }; }
+
+<span class="k">unsafe</span> { qsort(p.cast::&lt;<span class="t">u8</span>&gt;(), xs.len(), size_of::&lt;<span class="t">i32</span>&gt;(), by_value) };
+
+<span class="k">let</span> sorted: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+<span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..xs.len() { sorted.push(<span class="k">unsafe</span> { p.add(i).read() }); }
+<span class="k">unsafe</span> { alloc::dealloc_array(p, xs.len()) };
+println(<span class="s">f"{</span>sorted<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">[3, 7, 19, 25, 42]
+</code></pre>
+<p><code>str</code> is not an FFI type, so it cannot be a parameter of an <code>extern &quot;C&quot; fn</code>. The compiler tells you to use a <code>Ptr&lt;u8&gt;</code> and a length instead.</p>
+<p>To let C find a rok function by name, set its symbol name with <code>#[export_name]</code>. The example below declares that symbol again as a C function in the same program and calls it.</p>
+<pre><code class="language-rok"><span class="a">#[export_name("rok_add")]</span>
+<span class="k">pub</span> <span class="k">extern</span> <span class="s">"C"</span> <span class="k">fn</span> add(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { a + b }
+
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> rok_add(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; <span class="t">i32</span>;
+}
+
+println(<span class="s">f"{</span><span class="k">unsafe</span> { rok_add(<span class="n">2</span>, <span class="n">3</span>) }<span class="s">}"</span>);
+println(<span class="s">f"{</span>add(<span class="n">4</span>, <span class="n">5</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">5
+9
+</code></pre>
+<h2 id="linking-libraries-link"><a class="anchor" tabindex="-1" href="#linking-libraries-link" aria-hidden="true">#</a>Linking libraries: <code>#[link]</code></h2>
+<p>libc functions are linked without anything extra. For other libraries, put <code>#[link(&quot;name&quot;)]</code> on the <code>extern</code> block. This is the same as passing <code>-lname</code> to the linker.</p>
+<pre><code class="language-rok"><span class="a">#[link("m")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> sqrt(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+    <span class="k">fn</span> pow(x: <span class="t">f64</span>, y: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+}
+
+println(<span class="s">f"{</span><span class="k">unsafe</span> { sqrt(<span class="n">2.0</span>) }<span class="s">:.4</span><span class="s">}"</span>);
+println(<span class="s">f"{</span><span class="k">unsafe</span> { pow(<span class="n">2.0</span>, <span class="n">10.0</span>) }<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">1.4142
+1024
+</code></pre>
+<p>To select a static library, write <code>#[link(name = &quot;foo&quot;, kind = &quot;static&quot;)]</code>.</p>
+<p>libc and libm are always linked. Any other library needs <code>#[link]</code>, like zlib below.</p>
+<pre><code class="language-rok"><span class="a">#[link("z")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> zlibVersion() -&gt; <span class="t">str</span>;
+}
+println(<span class="s">f"zlib {</span><span class="k">unsafe</span> { zlibVersion() }<span class="s">}"</span>);
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>Declare C functions with <code>extern &quot;C&quot; { fn name(..) -&gt; T; }</code> and call them inside <code>unsafe { }</code>.
+</li>
+<li>A C <code>char</code> is <code>c_char</code> / <code>c'A'</code>; a pointer that may be NULL is <code>CPtr&lt;T&gt;</code>.
+</li>
+<li>Handle C memory with <code>read</code> / <code>write</code> / <code>add</code> / <code>cast</code> on <code>Ptr</code> / <code>ConstPtr</code>, and with <code>rok::bare::alloc</code>.
+</li>
+<li>Structs use <code>#[repr(C)]</code>, callbacks use <code>extern &quot;C&quot; fn</code>, exported names use <code>#[export_name]</code>.
+</li>
+<li>Confine dangerous calls to small <code>unsafe</code> functions and expose safe functions to the outside.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/005-modules/509-extern-block">5.9 extern blocks</a>, <a href="../spec/refs-lang/004-functions/415-unsafe">4.15 unsafe</a>, <a href="../spec/refs-lang/006-meta-system/602-built-in-attributes#623-link-naming-an-external-library">6.2.3 the link attribute</a>, <a href="../spec/refs-lang/001-lexical/108-character-literals">C-compatible characters</a>
+</li>
+<li>Standard library spec: <a href="../spec/refs-standard-libraries/100-bare/107-ffi">FFI</a>, <a href="../spec/refs-standard-libraries/100-bare/101-ptr">Pointers</a>
+</li>
+<li>API: <a href="../std/bare/ptr">rok::bare::ptr</a>, <a href="../std/bare/alloc">rok::bare::alloc</a>, <a href="../std/bare/mem">rok::bare::mem</a>
+</li>
+<li>Next chapter: <a href="15-rokon">15. ROKON</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/14-ffi.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="13-io"><small>Previous</small>13. File and Network IO</a><a class="next" href="15-rokon"><small>Next</small>15. ROKON</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

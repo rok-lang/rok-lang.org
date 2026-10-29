@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.8. Lowering: data types and expressions - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines how rok values, types and expressions are lowered to standard MLIR dialects.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/808-lowering-types.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.8. Lowering: data types and expressions - rok docs">
+<meta property="og:description" content="This section defines how rok values, types and expressions are lowered to standard MLIR dialects.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/808-lowering-types.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/808-lowering-types.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/808-lowering-types.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li class="cur"><a aria-current="page" href="808-lowering-types">8.8. Lowering: data types and expressions</a><ul class="toc"><li><a href="#881-primitive-integers--floating-point">8.8.1. Primitive integers / floating-point</a></li><li><a href="#882-arithmetic-operations">8.8.2. Arithmetic operations</a></li><li><a href="#883-representation-of-struct">8.8.3. Representation of struct</a></li><li><a href="#884-representation-of-tuple-struct">8.8.4. Representation of tuple struct</a></li><li><a href="#885-tuple-types">8.8.5. Tuple types</a></li><li><a href="#886-representation-of-enum">8.8.6. Representation of enum</a></li><li><a href="#887-representation-of-untagged-union">8.8.7. Representation of (untagged) union</a></li><li><a href="#888-representation-of-sum-types-a--b">8.8.8. Representation of sum types (A | B)</a></li><li><a href="#889-representation-of-any-slots">8.8.9. Representation of any slots</a></li><li><a href="#8810-array-types-t-n">8.8.10. Array types: [T; N]</a></li><li><a href="#8811-function-types-fn---">8.8.11. Function types: fn(...) -&gt; ...</a></li><li><a href="#8812-representation-of-closures">8.8.12. Representation of closures</a></li><li><a href="#8813-identifier--variable-access">8.8.13. Identifier / variable access</a></li><li><a href="#8814-literal-desugaring">8.8.14. Literal desugaring</a></li></ul></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="88-lowering-data-types-and-expressions 88-lowering-데이터-타입과-표현식 881-primitive-integers--floating-point 881-원시-정수--부동소수 882-arithmetic-operations 882-산술-연산 883-representation-of-struct 883-struct-의-표현 field-access 필드-접근 field-write 필드-쓰기 884-representation-of-tuple-struct 884-tuple-struct-의-표현 885-tuple-types 885-tuple-타입 886-representation-of-enum 886-enum-의-표현 variant-construction 변형-생성 variant-matching 변형-매칭 887-representation-of-untagged-union 887-union-비태그-의-표현 888-representation-of-sum-types-a--b 888-합-타입-a--b-의-표현 889-representation-of-any-slots 889-any-슬롯의-표현 dynamic-dispatch-on-any any-의-동적-디스패치 8810-array-types-t-n 8810-배열-타입-t-n 8811-function-types-fn--- 8811-함수-타입-fn--- 8812-representation-of-closures 8812-클로저의-표현 8813-identifier--variable-access 8813-식별자--변수-접근 8814-literal-desugaring 8814-리터럴-desugar"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/808-lowering-types" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="88-lowering-data-types-and-expressions"><a class="anchor" tabindex="-1" href="#88-lowering-data-types-and-expressions" aria-hidden="true">#</a>8.8. Lowering: data types and expressions</h1>
+<p>This section defines how rok values, types and expressions are lowered to standard MLIR dialects.</p>
+<h2 id="881-primitive-integers--floating-point"><a class="anchor" tabindex="-1" href="#881-primitive-integers--floating-point" aria-hidden="true">#</a>8.8.1. Primitive integers / floating-point</h2>
+<p>Primitive numeric types map to MLIR types as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>rok type</th><th>MLIR type</th></tr></thead>
+<tbody>
+<tr><td><code>i8</code> ~ <code>i64</code></td><td><code>i8</code> ~ <code>i64</code></td></tr>
+<tr><td><code>u8</code> ~ <code>u64</code></td><td><code>i8</code> ~ <code>i64</code> (sign determined by the op)</td></tr>
+<tr><td><code>usize</code> / <code>isize</code></td><td><code>index</code> or target-specific <code>iN</code></td></tr>
+<tr><td><code>f32</code> / <code>f64</code></td><td><code>f32</code> / <code>f64</code></td></tr>
+<tr><td><code>bool</code></td><td><code>i1</code> (or i8, depending on the <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a>)</td></tr>
+<tr><td><code>char</code></td><td><code>i32</code> (Unicode code point)</td></tr>
+<tr><td><code>c_char</code></td><td><code>i8</code></td></tr>
+</tbody></table></div>
+<p><code>str</code> is an immutable pair passed by value as <code>!llvm.struct&lt;(ptr, iN)&gt;</code> (a pointer and a <code>usize</code> byte length). Literals point to immortal constants; strings created at runtime point to the payload of a GC object (type id <code>1</code>, <a href="802-scan-table#8212-runtime-reserved-type-ids">8.2.12</a>).</p>
+<ul>
+<li><code>s[a:b]</code> is <code>(ptr + a, b - a)</code> and shares the original bytes (O(1)).
+</li>
+<li><code>ptr</code> may point to any byte of a GC object (including the trailing NUL) and keeps the whole object alive. The GC treats it as an interior pointer, and evacuation rewrites it preserving the offset.
+</li>
+<li>Literals and strings newly created by the runtime have a NUL after their bytes. Slices may not.
+</li>
+</ul>
+<p>Note that MLIR integer types themselves carry no sign; signedness is determined by the operator (<code>addi</code>, <code>subi</code>, etc.).</p>
+<h2 id="882-arithmetic-operations"><a class="anchor" tabindex="-1" href="#882-arithmetic-operations" aria-hidden="true">#</a>8.8.2. Arithmetic operations</h2>
+<p>Arithmetic expressions are lowered to <code>arith</code> dialect operations as follows.</p>
+<pre><code>a + b            →   arith.addi %a, %b : i32
+a - b            →   arith.subi %a, %b : i32
+a * b            →   arith.muli %a, %b : i32
+a / b            →   arith.divsi %a, %b : i32  (signed) / divui (unsigned)
+a % b            →   arith.remsi / remui
+
+a + b (f64)      →   arith.addf %a, %b : f64
+a &lt; b            →   arith.cmpi &quot;slt&quot;, %a, %b : i32  (signed less than)
+                       or arith.cmpf &quot;olt&quot;, %a, %b : f64
+</code></pre>
+<p>The trait mapping of <a href="../003-expressions/301-operator-dispatch">operator dispatch</a> is lowered as above for primitive types. User-defined trait implementations are lowered to function calls after generic monomorphization.</p>
+<h2 id="883-representation-of-struct"><a class="anchor" tabindex="-1" href="#883-representation-of-struct" aria-hidden="true">#</a>8.8.3. Representation of <code>struct</code></h2>
+<p>A <code>struct</code> is a value type (<a href="../002-types/203-struct#238-value-semantics">2.3.8</a>) and has no object header.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Point</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+</code></pre>
+<p>It is lowered to an LLVM struct of its fields, in the layout of <a href="../002-types/203-struct#236-memory-layout">2.3.6</a>.</p>
+<pre><code>!Point = !llvm.struct&lt;&quot;Point&quot;, (f64, f64)&gt;
+</code></pre>
+<p>A struct value lives in SSA registers, in stack slots, or inline in its container: a field of another struct, an element of a <code>List</code> buffer, a slot of a closure environment or coroutine frame. Assignment and argument passing copy the fields. The compiler may box a value internally only where the box cannot be observed.</p>
+<h3 id="field-access"><a class="anchor" tabindex="-1" href="#field-access" aria-hidden="true">#</a>Field access</h3>
+<p><code>p.x</code> on an SSA value is an <code>extractvalue</code>; on a stack slot or an inline location it is a load through a field address.</p>
+<pre><code>%val  = llvm.extractvalue %p[0] : !Point
+%addr = llvm.getelementptr %slot[0, 0] : (!llvm.ptr) -&gt; !llvm.ptr, !Point
+%val2 = llvm.load %addr : !llvm.ptr -&gt; f64
+</code></pre>
+<h3 id="field-write"><a class="anchor" tabindex="-1" href="#field-write" aria-hidden="true">#</a>Field write</h3>
+<p><code>p.x = 1.0f64</code> updates the variable's own copy: <code>insertvalue</code> on an SSA value, or a store to the field address of its slot.</p>
+<pre><code>%p2 = llvm.insertvalue %one, %p[0] : !Point
+</code></pre>
+<p>When the struct is stored inline in a GC heap object and the field holds a GC reference, the store goes through the write barrier (<a href="../007-runtime/704-barriers-and-roots">Barriers and roots</a>). Pointer fields of a struct in a stack slot are GC roots (<a href="../007-runtime/704-barriers-and-roots">7.4</a>).</p>
+<h2 id="884-representation-of-tuple-struct"><a class="anchor" tabindex="-1" href="#884-representation-of-tuple-struct" aria-hidden="true">#</a>8.8.4. Representation of tuple <code>struct</code></h2>
+<p>Consider the tuple <code>struct</code>:</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Pair</span>(<span class="t">i32</span>, <span class="t">i32</span>);
+</code></pre>
+<p>It is represented the same as an ordinary <code>struct</code>, except that fields are accessed by positional index instead of by name.</p>
+<h2 id="885-tuple-types"><a class="anchor" tabindex="-1" href="#885-tuple-types" aria-hidden="true">#</a>8.8.5. Tuple types</h2>
+<p>The tuple type</p>
+<pre><code class="language-rok">(<span class="t">i32</span>, <span class="t">str</span>, <span class="t">bool</span>)
+</code></pre>
+<p>is lowered to <code>!llvm.struct&lt;(i32, !llvm.ptr, i1)&gt;</code>. Like a <code>struct</code>, it is a value with no header.</p>
+<h2 id="886-representation-of-enum"><a class="anchor" tabindex="-1" href="#886-representation-of-enum" aria-hidden="true">#</a>8.8.6. Representation of <code>enum</code></h2>
+<p>An <code>enum</code> from <a href="../002-types/204-enum"><code>enum</code></a> is lowered as a tagged <code>union</code>.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Result</span> {
+    <span class="t">Ok</span>(<span class="t">i32</span>),
+    <span class="t">Err</span>(<span class="t">str</span>),
+    <span class="t">Pending</span>,
+}
+</code></pre>
+<p>It is represented as:</p>
+<pre><code>!Result = !llvm.struct&lt;&quot;Result&quot;, (
+    i32,                                // type_id
+    i32,                                // gc_flags
+    i64,                                // gc_word
+    i32,                                // discriminant (tag)
+    !llvm.struct&lt;(i64)&gt;                 // payload of the largest variant (8 bytes)
+)&gt;
+</code></pre>
+<p>The discriminant holds the variant identifier (<code>Ok</code>=0, <code>Err</code>=1, <code>Pending</code>=2), and the payload is the <code>union</code> of all variants, with the size of the largest variant.</p>
+<h3 id="variant-construction"><a class="anchor" tabindex="-1" href="#variant-construction" aria-hidden="true">#</a>Variant construction</h3>
+<p>Constructing a variant:</p>
+<pre><code class="language-rok"><span class="t">Result</span>::<span class="t">Ok</span>(<span class="n">42</span>)
+</code></pre>
+<p>is lowered to the following MLIR sequence.</p>
+<pre><code>; allocate struct + fill header + fill tag + fill payload
+%obj = call @rok_gc_alloc_slow(...)
+; ... header ...
+%tag_addr = llvm.getelementptr %obj [0, 3] : ...
+llvm.store i32 0, %tag_addr  ; Ok = 0
+%payload_addr = llvm.getelementptr %obj [0, 4] : ...
+llvm.store %42_i32, %payload_addr
+</code></pre>
+<p>A union value built from a shorter variant's payload holds zero in the bytes past that payload, so a root word copied from it is null or a reference, never stale stack (<a href="809-lowering-control#8912-shadow-stack-frame">8.9.12</a>).</p>
+<h3 id="variant-matching"><a class="anchor" tabindex="-1" href="#variant-matching" aria-hidden="true">#</a>Variant matching</h3>
+<p>Matching variants:</p>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    <span class="t">Ok</span>(n) =&gt; ...,
+    <span class="t">Err</span>(s) =&gt; ...,
+    <span class="t">Pending</span> =&gt; ...,
+}
+</code></pre>
+<p>is lowered to MLIR in decision tree form.</p>
+<pre><code>%tag = llvm.load %v[3] : i32
+
+cf.switch %tag, [
+  default: ^unreachable,    ; every variant has a case, so default is never reached
+  0: ^ok,
+  1: ^err,
+  2: ^pending
+]
+
+^ok:
+  %payload = llvm.load %v[4] : i32
+  ; ... used as n ...
+  br ^end
+
+^err:
+  %payload_str = llvm.load %v[4] : !llvm.ptr
+  ; ... used as s ...
+  br ^end
+
+^pending:
+  ; ...
+  br ^end
+</code></pre>
+<h2 id="887-representation-of-untagged-union"><a class="anchor" tabindex="-1" href="#887-representation-of-untagged-union" aria-hidden="true">#</a>8.8.7. Representation of (untagged) <code>union</code></h2>
+<p>Consider a <code>union</code> from <a href="../002-types/205-union"><code>union</code></a>.</p>
+<pre><code class="language-rok"><span class="k">union</span> <span class="t">EpollData</span> {
+    ptr: <span class="t">usize</span>;
+    fd: <span class="t">i32</span>;
+    val: <span class="t">u64</span>;
+}
+</code></pre>
+<p>It is lowered to <code>!llvm.struct&lt;(i64)&gt;</code>, the size of its largest field. Each field access interprets the same memory as a different type through bitcast or getelementptr. Field reads must be inside <code>unsafe</code> in the source (<a href="../002-types/205-union">2.5</a>).</p>
+<h2 id="888-representation-of-sum-types-a--b"><a class="anchor" tabindex="-1" href="#888-representation-of-sum-types-a--b" aria-hidden="true">#</a>8.8.8. Representation of sum types (<code>A | B</code>)</h2>
+<p>Sum types from <a href="../002-types/206-sum-types">Sum types</a> are handled as follows.</p>
+<pre><code class="language-rok"><span class="k">type</span> <span class="t">X</span> = <span class="t">i32</span> | <span class="t">f64</span>
+</code></pre>
+<p>This is represented as <code>!llvm.struct&lt;(i32, i64)&gt;</code>, a combination of tag (i32) and payload (i64, the size of the largest variant).</p>
+<p>If niche optimization (<a href="../002-types/207-niche-optimization">niche optimization</a>) applies, the tag slot disappears and only the union bit pattern remains.</p>
+<pre><code class="language-rok"><span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>
+</code></pre>
+<p>This type is lowered to <code>!llvm.ptr</code> (a single pointer; an automatic niche in which null means <code>none</code>).</p>
+<h2 id="889-representation-of-any-slots"><a class="anchor" tabindex="-1" href="#889-representation-of-any-slots" aria-hidden="true">#</a>8.8.9. Representation of <code>any</code> slots</h2>
+<p>Consider the dynamic slot from <a href="../002-types/202-any-slot"><code>any</code> slot</a>.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="k">any</span> = ...
+</code></pre>
+<p>It is lowered to an <code>(i32 tag, usize payload)</code> pair, where the tag is the type_id. <code>any Tr</code> and bare <code>any</code> have the same representation.</p>
+<pre><code>!Any = !llvm.struct&lt;(i32, iN)&gt;      ; iN = target pointer width (usize)
+</code></pre>
+<p>Number, <code>bool</code> and <code>char</code> values no wider than a pointer are stored directly in the payload. Other values are boxes on the GC heap, and the payload is the pointer to the box. Whether the payload is a pointer is therefore known only from the tag, and the GC must look at the tag when scanning an <code>any</code> slot.</p>
+<h3 id="dynamic-dispatch-on-any"><a class="anchor" tabindex="-1" href="#dynamic-dispatch-on-any" aria-hidden="true">#</a>Dynamic dispatch on <code>any</code></h3>
+<p>Consider:</p>
+<pre><code class="language-rok">v + <span class="n">1i32</span>     <span class="c">// v: any</span>
+</code></pre>
+<p>It is lowered to the following MLIR with runtime checks.</p>
+<pre><code>%tag = llvm.extractvalue %v[0] : i32
+
+cf.switch %tag, [
+  default: ^trap,
+  TAG_I32: ^add_i32,
+  TAG_F64: ^add_f64,       ; other operand type mismatches go to ^trap (panic, exit 101)
+  ...
+]
+
+^add_i32:
+  %payload = llvm.extractvalue %v[1] : i64     ; 64-bit target
+  %i = llvm.trunc %payload : i64 to i32
+  %sum = arith.addi %i, %1_const : i32
+  ; wrap the result back into any
+  ...
+</code></pre>
+<p>This branching structure, which must check every possible type at runtime, is the cost of <code>any</code> slots.</p>
+<h2 id="8810-array-types-t-n"><a class="anchor" tabindex="-1" href="#8810-array-types-t-n" aria-hidden="true">#</a>8.8.10. Array types: <code>[T; N]</code></h2>
+<p>Consider a fixed-size array from <a href="../002-types/201-type-expressions">Type expressions</a>.</p>
+<pre><code class="language-rok">[<span class="t">i32</span>; <span class="n">8</span>]
+</code></pre>
+<p>It is lowered to <code>!llvm.array&lt;8 x i32&gt;</code>. Inside a GC object, a 16-byte header precedes the array.</p>
+<h2 id="8811-function-types-fn---"><a class="anchor" tabindex="-1" href="#8811-function-types-fn---" aria-hidden="true">#</a>8.8.11. Function types: <code>fn(...) -&gt; ...</code></h2>
+<p>Consider a <a href="../004-functions/404-function-type">function type</a>.</p>
+<pre><code class="language-rok"><span class="k">fn</span>(<span class="t">i32</span>, <span class="t">i32</span>) -&gt; <span class="t">i32</span>
+</code></pre>
+<p>It is lowered to a function pointer of type <code>(i32, i32) -&gt; i32</code>, i.e. <code>!llvm.ptr</code> or <code>!llvm.func&lt;...&gt;</code>. Function pointer values can be stored in variables as values.</p>
+<h2 id="8812-representation-of-closures"><a class="anchor" tabindex="-1" href="#8812-representation-of-closures" aria-hidden="true">#</a>8.8.12. Representation of closures</h2>
+<p>Consider a capturing <a href="../004-functions/405-closure">closure</a>.</p>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="n">10</span>;
+<span class="k">let</span> f = |x| x + n;       <span class="c">// captures n</span>
+</code></pre>
+<p>It is lowered to the following MLIR.</p>
+<pre><code>; closure object = environment + code pointer
+!Closure = !llvm.struct&lt;(
+    i32, i32, i64,                ; GC header
+    !llvm.ptr,                    ; function pointer (code)
+    i32                            ; environment: copy of n
+)&gt;
+
+; on call
+%env = llvm.getelementptr %clo[0, 4] : ...
+%fn_ptr = llvm.extractvalue %clo[0, 3] : !llvm.ptr
+%result = llvm.call %fn_ptr(%env, %x) : ...
+</code></pre>
+<p>On call, the environment is passed as an extra first argument to the function.</p>
+<h2 id="8813-identifier--variable-access"><a class="anchor" tabindex="-1" href="#8813-identifier--variable-access" aria-hidden="true">#</a>8.8.13. Identifier / variable access</h2>
+<p>Consider local variables from <a href="../005-modules/501-variable-declaration">Variable declarations</a>.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="n">42i32</span>;
+<span class="k">let</span> y = x + <span class="n">1i32</span>;
+</code></pre>
+<p>They are lowered to LLVM SSA form.</p>
+<pre><code>%x = arith.constant 42 : i32
+%y = arith.addi %x, %1 : i32
+</code></pre>
+<p>Locals are lowered to SSA; locals that need a stack slot use <code>llvm.alloca</code> and load / store (same in debug and release).</p>
+<pre><code class="language-rok"><span class="k">let</span> counter = <span class="n">0i32</span>;
+counter = counter + <span class="n">1i32</span>;
+</code></pre>
+<p>This is lowered to:</p>
+<pre><code>%counter_ref = llvm.alloca %c1 x i32 : (i64) -&gt; !llvm.ptr
+llvm.store %0, %counter_ref : i32, !llvm.ptr
+
+%loaded = llvm.load %counter_ref : !llvm.ptr -&gt; i32
+%new = arith.addi %loaded, %1 : i32
+llvm.store %new, %counter_ref : i32, !llvm.ptr
+</code></pre>
+<p>In optimized builds, LLVM's mem2reg promotes this back to SSA.</p>
+<h2 id="8814-literal-desugaring"><a class="anchor" tabindex="-1" href="#8814-literal-desugaring" aria-hidden="true">#</a>8.8.14. Literal desugaring</h2>
+<p>Consider a collection literal from <a href="../006-meta-system/605-literal-magic"><code>#[literal]</code> magic</a>.</p>
+<pre><code class="language-rok">[<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
+</code></pre>
+<p>It desugars to a call to the standard library function <code>list_literal(1, 2, 3)</code> and follows ordinary function call lowering.</p>
+<p>String and numeric literals are handled as compile-time <code>const</code>s stored in .rodata and are then used as pointers or values.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/808-lowering-types.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="807-mlir-dialects"><small>Previous</small>8.7. MLIR dialect usage</a><a class="next" href="809-lowering-control"><small>Next</small>8.9. Lowering: control flow and GC integration</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

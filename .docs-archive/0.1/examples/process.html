@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Child processes - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Run external programs such as echo, a shell pipeline and tr with rok::std::process::Command, and work with their output, exit codes, environment variables and s...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/process.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Child processes - rok docs">
+<meta property="og:description" content="Run external programs such as echo, a shell pipeline and tr with rok::std::process::Command, and work with their output, exit codes, environment variables and s...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/process.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li class="cur"><a aria-current="page" href="process">Child processes</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="child-processes"><a class="anchor" tabindex="-1" href="#child-processes" aria-hidden="true">#</a>Child processes</h1>
+<p>Run external programs such as <code>echo</code>, a shell pipeline and <code>tr</code> with <code>rok::std::process::Command</code>, and work with their output, exit codes, environment variables and standard input.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::process::{<span class="t">Command</span>, <span class="t">Stdio</span>, <span class="t">Output</span>};
+<span class="k">use</span> rok::std::io::<span class="t">IoError</span>;
+
+<span class="c">// Captured bytes as trimmed text.</span>
+<span class="k">fn</span> text(bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">str</span> {
+    (<span class="k">try</span> <span class="t">str</span>::from_utf8(bytes) <span class="k">catch</span> _ { <span class="s">"&lt;not utf-8&gt;"</span> }).trim()
+}
+
+<span class="k">fn</span> show(label: <span class="t">str</span>, out: <span class="t">Output</span>) {
+    println(<span class="s">f"{</span>label<span class="s">}: [{</span>text(out.stdout)<span class="s">}] ({</span>out.status<span class="s">})"</span>);
+}
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="c">// 1. Run a program and capture what it prints.</span>
+    show(<span class="s">"echo"</span>, <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"echo"</span>).args([<span class="s">"hello"</span>, <span class="s">"from"</span>, <span class="s">"a child"</span>]).output());
+
+    <span class="c">// 2. A shell pipeline: the shell does the piping for us.</span>
+    <span class="k">let</span> sorted = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"sh"</span>)
+        .args([<span class="s">"-c"</span>, <span class="s">"printf 'pear\\napple\\nfig\\napple\\n' | sort | uniq -c | sort -rn"</span>])
+        .output();
+    println(<span class="s">"word counts:"</span>);
+    <span class="k">for</span> line <span class="k">in</span> text(sorted.stdout).lines() { println(<span class="s">f"  {</span>line.trim()<span class="s">}"</span>); }
+
+    <span class="c">// 3. Exit codes and stderr.</span>
+    <span class="k">let</span> failed = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"sh"</span>).args([<span class="s">"-c"</span>, <span class="s">"echo oops &gt;&amp;2; exit 3"</span>]).output();
+    println(<span class="s">f"success={</span>failed.status.success()<span class="s">} code={</span>failed.status.code() ?? -<span class="n">1</span><span class="s">} stderr=[{</span>text(failed.stderr)<span class="s">}]"</span>);
+
+    <span class="c">// 4. Environment variables for the child only.</span>
+    <span class="k">let</span> greet = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"sh"</span>)
+        .args([<span class="s">"-c"</span>, <span class="s">"echo \"$GREETING, $NAME\""</span>])
+        .env(<span class="s">"GREETING"</span>, <span class="s">"annyeong"</span>)
+        .env(<span class="s">"NAME"</span>, <span class="s">"rok"</span>)
+        .output();
+    show(<span class="s">"env"</span>, greet);
+
+    <span class="k">let</span> clean = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"/usr/bin/env"</span>).env_clear().env(<span class="s">"ONLY"</span>, <span class="s">"1"</span>).output();
+    show(<span class="s">"env_clear"</span>, clean);
+
+    <span class="c">// 5. Feed the child's stdin ourselves and read its stdout.</span>
+    <span class="k">let</span> child = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"tr"</span>).args([<span class="s">"a-z"</span>, <span class="s">"A-Z"</span>])
+        .stdin(<span class="t">Stdio</span>::<span class="t">Piped</span>)
+        .stdout(<span class="t">Stdio</span>::<span class="t">Piped</span>)
+        .spawn();
+    <span class="k">let</span> input = child.stdin ?? panic(<span class="s">"stdin not piped"</span>);
+    <span class="k">try</span> input.write_str(<span class="s">"shout this\n"</span>);
+    <span class="k">try</span> input.close();   <span class="c">// EOF lets `tr` finish</span>
+    <span class="k">let</span> shouted = <span class="k">try</span> (child.stdout ?? panic(<span class="s">"stdout not piped"</span>)).read_to_str();
+    println(<span class="s">f"tr: [{</span>shouted.trim()<span class="s">}] ({</span><span class="k">try</span> child.wait()<span class="s">})"</span>);
+
+    <span class="c">// 6. A working directory for the child.</span>
+    show(<span class="s">"pwd"</span>, <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"pwd"</span>).current_dir(<span class="s">"/"</span>).output());
+
+    <span class="c">// 7. A missing program is an IoError, not a crash.</span>
+    <span class="k">let</span> ok = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"no-such-program"</span>).status().success() <span class="k">catch</span> e {
+        println(<span class="s">f"spawn failed: {</span>e.kind()<span class="s">:?</span><span class="s">}"</span>);
+        <span class="k">false</span>
+    };
+    println(<span class="s">f"ok={</span>ok<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">echo: [hello from a child] (exit status: 0)
+word counts:
+  2 apple
+  1 pear
+  1 fig
+success=false code=3 stderr=[oops]
+env: [annyeong, rok] (exit status: 0)
+env_clear: [ONLY=1] (exit status: 0)
+tr: [SHOUT THIS] (exit status: 0)
+pwd: [/] (exit status: 0)
+spawn failed: NotFound
+ok=false
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li><a href="../std/std/process#struct.Command"><code>Command</code></a> is a builder. Methods such as <code>args</code>, <code>env</code>, <code>current_dir</code> and <code>stdin</code> return the updated command, so calls chain on one line, ending with one of <code>output()</code>, <code>status()</code> or <code>spawn()</code> (<a href="../spec/refs-standard-libraries/300-std/307-process#371-command-builder">3.7.1 <code>Command</code> builder</a>).
+</li>
+<li><code>output()</code> waits for the child to finish and collects both stdout and stderr into an <a href="../std/std/process#struct.Output"><code>Output</code></a>. It drains both pipes together, so the child never stalls on a full pipe. <code>str::from_utf8</code> turns the bytes into a string.
+</li>
+<li>The pipe (<code>|</code>) is handled by <code>sh -c</code>, not by rok. It is the simplest option when you need shell syntax.
+</li>
+<li><code>env</code> adds a variable for the child only, and <code>env_clear</code> empties the inherited environment. The parent's environment does not change.
+</li>
+<li><code>spawn()</code> returns a <a href="../std/std/process#struct.Child"><code>Child</code></a> without waiting. Write to the <code>stdin</code> opened with <code>Stdio::Piped</code>, send EOF with <code>close()</code>, then read <code>stdout</code> and <code>wait()</code>.
+</li>
+<li>A missing executable throws an <code>IoError</code>. <code>try ... catch e { ... }</code> catches it on the spot and substitutes a default (<a href="../spec/refs-lang/003-expressions/314-error-control-flow">3.14 Error control flow</a>, <a href="../learn/10-errors">Errors</a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/process.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="par-map"><small>Previous</small>Parallel map / reduce</a><a class="next" href="rokon-config"><small>Next</small>ROKON configuration</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

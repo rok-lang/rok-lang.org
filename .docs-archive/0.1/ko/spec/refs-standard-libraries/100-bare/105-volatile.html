@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.5. volatile 메모리 접근 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::volatile 모듈은 컴파일러가 함부로 최적화하지 않는 메모리 read / write 를 제공합니다. hardware register, MMIO, signal handler, DMA buffer 같이 매 접근이 그대로 실행되어야 하는 자리에서는 이 통로가 필수입니다...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/105-volatile.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.5. volatile 메모리 접근 - rok docs">
+<meta property="og:description" content="rok::bare::volatile 모듈은 컴파일러가 함부로 최적화하지 않는 메모리 read / write 를 제공합니다. hardware register, MMIO, signal handler, DMA buffer 같이 매 접근이 그대로 실행되어야 하는 자리에서는 이 통로가 필수입니다...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/105-volatile.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/105-volatile.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/105-volatile.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li class="cur"><a aria-current="page" href="105-volatile">1.5. volatile 메모리 접근</a><ul class="toc"><li><a href="#151-동기">1.5.1. 동기</a></li><li><a href="#152-api">1.5.2. API</a></li><li><a href="#153-사용처">1.5.3. 사용처</a></li><li><a href="#154-주의---atomic-과-다름">1.5.4. 주의 - atomic 과 다름</a></li><li><a href="#155-lowering">1.5.5. lowering</a></li></ul></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="15-volatile-메모리-접근 15-volatile-memory-access 151-동기 151-motivation 152-api 152-api 153-사용처 153-uses 154-주의---atomic-과-다름 154-caution---not-the-same-as-atomic 155-lowering 155-lowering"><a href="../../../../spec/refs-standard-libraries/100-bare/105-volatile" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="15-volatile-메모리-접근"><a class="anchor" tabindex="-1" href="#15-volatile-메모리-접근" aria-hidden="true">#</a>1.5. volatile 메모리 접근</h1>
+<p><code>rok::bare::volatile</code> 모듈은 컴파일러가 함부로 최적화하지 않는 메모리 read / write 를
+제공합니다. hardware register, MMIO, signal handler, DMA buffer 같이 매 접근이 그대로
+실행되어야 하는 자리에서는 이 통로가 필수입니다.</p>
+<h2 id="151-동기"><a class="anchor" tabindex="-1" href="#151-동기" aria-hidden="true">#</a>1.5.1. 동기</h2>
+<p>평범한 read / write 는 컴파일러가 자유롭게 제거하거나 재배열하거나 합쳐 버릴 수 있습니다.
+다음 코드를 봅니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u32</span>&gt; = mmio_register;
+<span class="k">unsafe</span> {
+    p.write(<span class="n">1</span>);                <span class="c">// 컴파일러: dead store 가능 (다음 write 가 덮어씀)</span>
+    p.write(<span class="n">2</span>);                <span class="c">// 실제 hardware 는 1 → 2 두 번 받아야 함</span>
+}
+</code></pre>
+<p>여기서 컴파일러는 첫 write 를 dead store 로 보고 지워 버릴 수 있지만, 실제 hardware 는
+1 과 2 를 차례로 받아야 정상 동작하는 경우가 있습니다. 그래서 <code>volatile</code> 은 이러한 최적화를
+거부하고 작성된 그대로의 접근을 강제합니다.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> {
+    rok::bare::volatile::write(p, <span class="n">1</span>);    <span class="c">// 반드시 hardware 에 1 write</span>
+    rok::bare::volatile::write(p, <span class="n">2</span>);    <span class="c">// 반드시 2 write</span>
+}
+</code></pre>
+<h2 id="152-api"><a class="anchor" tabindex="-1" href="#152-api" aria-hidden="true">#</a>1.5.2. API</h2>
+<p>API 는 단출하게 read 와 write 두 함수로 구성됩니다.</p>
+<pre><code class="language-rok"><span class="c">// rok::bare::volatile</span>
+<span class="k">unsafe</span> <span class="k">fn</span> read&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> write&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>);
+</code></pre>
+<p>같은 동작을 <code>Ptr&lt;T&gt;::read_volatile</code> / <code>write_volatile</code> 메서드 형태로도 쓸 수 있고,
+이쪽이 더 자연스러운 자리도 많습니다 (<a href="101-ptr#112-ptrt---strict-provenance-api">1.1.2</a>).</p>
+<h2 id="153-사용처"><a class="anchor" tabindex="-1" href="#153-사용처" aria-hidden="true">#</a>1.5.3. 사용처</h2>
+<p><code>volatile</code> 이 필요한 자리는 대체로 다음 같은 패턴으로 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>자리</th><th>이유</th></tr></thead>
+<tbody>
+<tr><td>MMIO register</td><td>hardware 가 read 만으로도 side effect</td></tr>
+<tr><td>Memory-mapped 디바이스</td><td>DMA 등</td></tr>
+<tr><td>signal handler 변수</td><td>signal 안에서 변경 - 외부에서 봐야 함</td></tr>
+<tr><td>spinlock retry loop</td><td>다른 thread 가 변경한 값 반복 read</td></tr>
+</tbody></table></div>
+<h2 id="154-주의---atomic-과-다름"><a class="anchor" tabindex="-1" href="#154-주의---atomic-과-다름" aria-hidden="true">#</a>1.5.4. 주의 - atomic 과 다름</h2>
+<p>흔한 오해 하나를 짚고 갑니다. <code>volatile</code> 은 어디까지나 컴파일러 최적화를 차단할 뿐,
+atomic 보장을 주지는 않습니다.</p>
+<ul>
+<li>multi-thread 에서 race condition 은 여전히 발생합니다
+</li>
+<li>memory ordering 도 강제하지 않습니다
+</li>
+</ul>
+<p>따라서 multi-thread 사이에서 공유하는 변수에는
+<a href="../200-core/216-sync#2162-atomict---lock-free-원자"><code>Atomic&lt;T&gt;</code></a> 를 써야 하고,
+<code>volatile</code> 은 <strong>hardware MMIO</strong> 에 한정해서 쓰는 도구로 남겨 두어야 합니다.</p>
+<h2 id="155-lowering"><a class="anchor" tabindex="-1" href="#155-lowering" aria-hidden="true">#</a>1.5.5. lowering</h2>
+<p><code>volatile::read</code> 와 <code>volatile::write</code> 는 LLVM 의 <code>load volatile</code> / <code>store volatile</code> 로 lower 되며, intrinsic 이름은 각각 <code>rok.volatile.read.T</code> 와 <code>rok.volatile.write.T</code> 입니다.</p>
+<p>자세한 atomic 관련 내용은 <a href="../200-core/216-sync">2.16 sync</a> 에서 다루고, 이 장은
+atomic 이 아닌 자리에 한해서만 권위를 가집니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/105-volatile.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="104-alloc"><small>Previous</small>1.4. raw allocation - alloc / dealloc / realloc</a><a class="next" href="106-gc-pin"><small>Next</small>1.6. Pinned&lt;T&gt; - GC pinning</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.6. Visibility - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Giving each item - function, type, trait, module, const, static - a visibility controls how far it is exposed.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/506-visibility.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="5.6. Visibility - rok docs">
+<meta property="og:description" content="Giving each item - function, type, trait, module, const, static - a visibility controls how far it is exposed.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/506-visibility.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/506-visibility.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/506-visibility.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">5. Variables / modules / visibility / packages overview</a></p><ul class="pages"><li><a href="501-variable-declaration">5.1. Variable declarations</a></li><li><a href="502-const">5.2. const</a></li><li><a href="503-static">5.3. static</a></li><li><a href="504-modules">5.4. Modules</a></li><li><a href="505-use">5.5. use (imports)</a></li><li class="cur"><a aria-current="page" href="506-visibility">5.6. Visibility</a><ul class="toc"><li><a href="#561-four-levels">5.6.1. Four levels</a></li><li><a href="#562-default-no-visibility-keyword">5.6.2. Default: no visibility keyword</a></li><li><a href="#563-pub-the-widest-exposure">5.6.3. pub: the widest exposure</a></li><li><a href="#564-pubpkg-within-the-package">5.6.4. pub(pkg): within the package</a></li><li><a href="#565-pubsub-submodules">5.6.5. pub(sub): submodules</a></li><li><a href="#566-inclusion-between-levels">5.6.6. Inclusion between levels</a></li><li><a href="#567-glob-imports-and-visibility">5.6.7. Glob imports and visibility</a></li><li><a href="#568-visibility-of-struct-fields">5.6.8. Visibility of struct fields</a></li><li><a href="#569-visibility-of-enum-variants">5.6.9. Visibility of enum variants</a></li><li><a href="#5610-visibility-of-impl-methods">5.6.10. Visibility of impl methods</a></li><li><a href="#5611-visibility-of-use">5.6.11. Visibility of use</a></li><li><a href="#5612-position-of-visibility">5.6.12. Position of visibility</a></li><li><a href="#5613-visibility-and-name-resolution">5.6.13. Visibility and name resolution</a></li></ul></li><li><a href="507-paths">5.7. Paths</a></li><li><a href="508-re-export">5.8. Re-exports (pub use)</a></li><li><a href="509-extern-block">5.9. extern blocks (FFI declarations)</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="56-visibility 56-가시성 561-four-levels 561-네-단계 562-default-no-visibility-keyword 562-기본-가시성-키워드-없음 563-pub-the-widest-exposure 563-pub-가장-넓은-공개 564-pubpkg-within-the-package 564-pubpkg-패키지-내부 565-pubsub-submodules 565-pubsub-하위-모듈 566-inclusion-between-levels 566-단계의-포함-관계 567-glob-imports-and-visibility 567-glob-import-와-가시성 568-visibility-of-struct-fields 568-struct-필드의-가시성 fields-of-tuple-structs tuple-struct-의-필드 569-visibility-of-enum-variants 569-enum-변형의-가시성 5610-visibility-of-impl-methods 5610-impl-메서드의-가시성 5611-visibility-of-use 5611-use-의-가시성 5612-position-of-visibility 5612-가시성의-위치 5613-visibility-and-name-resolution 5613-가시성과-이름-해소"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/005-modules/506-visibility" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="56-visibility"><a class="anchor" tabindex="-1" href="#56-visibility" aria-hidden="true">#</a>5.6. Visibility</h1>
+<p>Giving each item - function, type, trait, module, <code>const</code>, <code>static</code> - a visibility controls how far it is exposed.</p>
+<pre><code>visibility      ::= &quot;pub&quot; (&quot;(&quot; reach &quot;)&quot;)?
+reach           ::= &quot;pkg&quot; | &quot;sub&quot;
+</code></pre>
+<h2 id="561-four-levels"><a class="anchor" tabindex="-1" href="#561-four-levels" aria-hidden="true">#</a>5.6.1. Four levels</h2>
+<p>Visibility has four levels:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Keyword</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>(none)</td><td>Module-private. Within the same module only.</td></tr>
+<tr><td><code>pub(sub)</code></td><td>Only within submodules of the same module tree.</td></tr>
+<tr><td><code>pub(pkg)</code></td><td>Within the same package only.</td></tr>
+<tr><td><code>pub</code></td><td>Also from external packages.</td></tr>
+</tbody></table></div>
+<p>The narrowest scope is the default, private; the widest is <code>pub</code>.</p>
+<p><code>pkg</code> and <code>sub</code> are contextual keywords that act as qualifiers only inside the <code>pub(...)</code> parentheses; elsewhere they are ordinary identifiers (see <a href="../001-lexical/105-keywords#visibility-qualifiers-pkg--sub">1.5.4 Visibility qualifiers</a>).</p>
+<h2 id="562-default-no-visibility-keyword"><a class="anchor" tabindex="-1" href="#562-default-no-visibility-keyword" aria-hidden="true">#</a>5.6.2. Default: no visibility keyword</h2>
+<p>Without a visibility keyword an item is module-private and visible only within the same module.</p>
+<pre><code class="language-rok"><span class="k">mod</span> m {
+    <span class="k">fn</span> helper() -&gt; <span class="t">i32</span> { <span class="n">42i32</span> }   <span class="c">// module-private (default)</span>
+    <span class="k">pub</span> <span class="k">fn</span> api() -&gt; <span class="t">i32</span> { helper() }
+}
+
+<span class="k">let</span> r = m::api();                   <span class="c">// OK</span>
+<span class="k">let</span> h = m::helper();                <span class="c">// ERROR - module-private</span>
+</code></pre>
+<p>A private <code>mod</code> is visible from the parent module that declared it and from that parent's submodules.</p>
+<h2 id="563-pub-the-widest-exposure"><a class="anchor" tabindex="-1" href="#563-pub-the-widest-exposure" aria-hidden="true">#</a>5.6.3. <code>pub</code>: the widest exposure</h2>
+<p>For the widest exposure, add <code>pub</code>.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">fn</span> calculate(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { ... }
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">Point</span> { <span class="k">pub</span> x: <span class="t">f64</span>; <span class="k">pub</span> y: <span class="t">f64</span>; }
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">Display</span> { ... }
+</code></pre>
+<p>Items declared this way can be imported with <code>use</code> and used from other packages.</p>
+<h2 id="564-pubpkg-within-the-package"><a class="anchor" tabindex="-1" href="#564-pubpkg-within-the-package" aria-hidden="true">#</a>5.6.4. <code>pub(pkg)</code>: within the package</h2>
+<p><code>pub(pkg)</code> means public within the package.</p>
+<pre><code class="language-rok"><span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> internal_helper() -&gt; <span class="t">i32</span> { ... }
+</code></pre>
+<p>It is visible from any module in the same package but not from external packages. Dependency packages and each tier of <code>rok::</code> are separate packages too (<a href="507-paths#5714-paths-between-packages">5.7.14</a>).</p>
+<p>This level is for package-internal library tooling: functions and types that are not public API but must be shared across modules.</p>
+<h2 id="565-pubsub-submodules"><a class="anchor" tabindex="-1" href="#565-pubsub-submodules" aria-hidden="true">#</a>5.6.5. <code>pub(sub)</code>: submodules</h2>
+<p><code>pub(sub)</code> is used to share only within one branch of the module tree.</p>
+<pre><code class="language-rok"><span class="k">mod</span> parent {
+    <span class="k">pub</span>(sub) <span class="k">fn</span> shared_within_subtree() -&gt; <span class="t">i32</span> { ... }
+
+    <span class="k">pub</span> <span class="k">mod</span> child {
+        <span class="k">pub</span> <span class="k">fn</span> use_it() -&gt; <span class="t">i32</span> { sup::shared_within_subtree() }   <span class="c">// OK</span>
+    }
+}
+</code></pre>
+<p>It is visible only in <code>parent</code> and all of <code>parent</code>'s descendant modules, not in parent or sibling modules.</p>
+<p>This level is for tooling internal to a group of modules, shared only within one branch of the module tree.</p>
+<h2 id="566-inclusion-between-levels"><a class="anchor" tabindex="-1" href="#566-inclusion-between-levels" aria-hidden="true">#</a>5.6.6. Inclusion between levels</h2>
+<p>Visibility forms a monotonically increasing lattice.</p>
+<pre><code>pub  ⊇  pub(pkg)  ⊇  pub(sub)  ⊇  private
+</code></pre>
+<p>The inclusion for <code>pub(sub)</code> is meaningful only among the related modules, that is, the defining module and its descendants.</p>
+<ul>
+<li><code>pub</code> is visible to every caller.
+</li>
+<li><code>pub(pkg)</code> is visible only within the same package.
+</li>
+<li><code>pub(sub)</code> is visible only within the same module tree.
+</li>
+<li>private is visible only within the same module.
+</li>
+</ul>
+<h2 id="567-glob-imports-and-visibility"><a class="anchor" tabindex="-1" href="#567-glob-imports-and-visibility" aria-hidden="true">#</a>5.6.7. Glob imports and visibility</h2>
+<p>A glob import (<code>*</code>, <code>**</code>, including the implicit <code>use rok::core::**</code>) imports only items visible from the importing module. An item is pulled in only if its reach includes that module, and invisible items neither hide names nor cause conflicts. There is no per-item glob-block marker; to narrow the external surface, create a separate <code>prelude</code> module and curate it with <code>pub use</code>.</p>
+<h2 id="568-visibility-of-struct-fields"><a class="anchor" tabindex="-1" href="#568-visibility-of-struct-fields" aria-hidden="true">#</a>5.6.8. Visibility of <code>struct</code> fields</h2>
+<p>Each field may be given its own visibility.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Account</span> {
+    <span class="k">pub</span> id: <span class="t">i64</span>;                    <span class="c">// readable externally</span>
+    <span class="k">pub</span> balance: <span class="t">f64</span>;               <span class="c">// readable externally</span>
+        secret: <span class="t">str</span>;                <span class="c">// module-private</span>
+}
+</code></pre>
+<p>Field visibility works independently of the visibility of the <code>struct</code> itself.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">struct</span> <span class="t">Counter</span> {                <span class="c">// the struct itself is visible externally</span>
+        count: <span class="t">i32</span> = <span class="n">0i32</span>;          <span class="c">// the field is module-private (default)</span>
+}
+
+<span class="k">let</span> c = <span class="t">Counter</span> { count: <span class="n">0i32</span> };    <span class="c">// ERROR - private field, cannot construct directly from outside</span>
+<span class="k">let</span> c = <span class="t">Counter</span>::new();             <span class="c">// OK - factory method (if any)</span>
+</code></pre>
+<p>This is the standard pattern for exposing a type while preventing direct instantiation (newtype, opaque type).</p>
+<h3 id="fields-of-tuple-structs"><a class="anchor" tabindex="-1" href="#fields-of-tuple-structs" aria-hidden="true">#</a>Fields of tuple structs</h3>
+<p>Each field of a tuple struct also has its own visibility, private by default.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">struct</span> <span class="t">S</span>(<span class="k">pub</span> <span class="t">i32</span>, <span class="t">i32</span>);         <span class="c">// field 0 is pub, field 1 is private</span>
+</code></pre>
+<ul>
+<li>Constructing with <code>S(a, b)</code> requires every field to be visible at the use site. If any field is private, outside its visibility scope a constructor function is used (<code>NonZero::new</code>).
+</li>
+<li>Reading or assigning <code>x.N</code> requires field N to be visible.
+</li>
+<li>In the pattern <code>S(p0, p1, ..)</code>, every position whose subpattern is not <code>_</code> must be visible. The same holds for struct patterns with named fields (only the touched fields are checked).
+</li>
+<li>A <code>(</code> immediately after <code>pub</code> is read as a visibility restriction (<code>pub(pkg)</code> etc.). To make a field of tuple type public, add another pair of parentheses: <code>struct S(pub ((i32, i32)));</code>.
+</li>
+</ul>
+<h2 id="569-visibility-of-enum-variants"><a class="anchor" tabindex="-1" href="#569-visibility-of-enum-variants" aria-hidden="true">#</a>5.6.9. Visibility of <code>enum</code> variants</h2>
+<p>Variants have no separate visibility; they follow the visibility of the <code>enum</code>. A visibility keyword before a variant is a compile error.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">enum</span> <span class="t">Shape</span> {
+    <span class="t">Circle</span>(<span class="t">f64</span>),                    <span class="c">// pub - follows Shape</span>
+    <span class="t">Square</span>(<span class="t">f64</span>),
+}
+
+<span class="k">pub</span> <span class="k">enum</span> <span class="t">Bad</span> {
+    <span class="k">pub</span> <span class="t">A</span>,                          <span class="c">// ERROR - no visibility on variants</span>
+}
+</code></pre>
+<p>Payload fields of variants also have no per-field visibility; they follow the <code>enum</code>. Unlike <code>struct</code> fields, hiding a single variant would make exhaustiveness impossible for external <code>match</code>es, hence this rule. By this rule the standard library's <code>pub enum Result&lt;T, E&gt; { Ok(T), Err(E) }</code> makes <code>Ok</code> / <code>Err</code> public.</p>
+<h2 id="5610-visibility-of-impl-methods"><a class="anchor" tabindex="-1" href="#5610-visibility-of-impl-methods" aria-hidden="true">#</a>5.6.10. Visibility of <code>impl</code> methods</h2>
+<p>Methods of an inherent <code>impl</code> (<a href="../002-types/209-impl"><code>impl</code></a>) are module-private by default; to expose them, mark them <code>pub</code> explicitly.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Account</span> {
+    <span class="k">pub</span> <span class="k">fn</span> balance(<span class="k">self</span>) -&gt; <span class="t">f64</span> { <span class="k">self</span>.amount }
+        <span class="k">fn</span> _internal_check(<span class="k">self</span>) { ... }
+}
+</code></pre>
+<p>Methods of a trait <code>impl</code> follow the visibility of the trait and cannot be marked separately.</p>
+<h2 id="5611-visibility-of-use"><a class="anchor" tabindex="-1" href="#5611-visibility-of-use" aria-hidden="true">#</a>5.6.11. Visibility of <code>use</code></h2>
+<p>Imports via <a href="505-use"><code>use</code></a> also have a visibility.</p>
+<pre><code class="language-rok"><span class="k">use</span> foo::bar;                       <span class="c">// module-private (default)</span>
+<span class="k">pub</span> <span class="k">use</span> foo::bar;                   <span class="c">// re-export - visible externally too</span>
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">use</span> foo::bar;              <span class="c">// within the package only</span>
+</code></pre>
+<p>Re-exports, combined with the visibility section of <a href="505-use"><code>use</code></a>, determine the external surface.</p>
+<h2 id="5612-position-of-visibility"><a class="anchor" tabindex="-1" href="#5612-position-of-visibility" aria-hidden="true">#</a>5.6.12. Position of visibility</h2>
+<p>A visibility keyword appears as the first token of an item declaration.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">fn</span> f() { ... }
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> g() { ... }
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">S</span> { ... }
+<span class="k">pub</span> <span class="k">mod</span> m { ... }
+<span class="k">pub</span> <span class="k">const</span> <span class="t">X</span>: <span class="t">i32</span> = <span class="n">0</span>;
+<span class="k">pub</span> <span class="k">static</span> <span class="t">Y</span>: <span class="t">i32</span> = <span class="n">0</span>;
+<span class="k">pub</span> <span class="k">use</span> foo::bar;
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">T</span> { ... }
+</code></pre>
+<p>It may be attached to every declaration form of <code>fn</code>, <code>struct</code>, <code>enum</code>, <code>union</code>, <code>trait</code>, <code>impl</code> (not on the <code>impl</code> itself but on each method), <code>mod</code>, <code>const</code>, <code>static</code>, <code>use</code>, and <code>type</code> (alias).</p>
+<h2 id="5613-visibility-and-name-resolution"><a class="anchor" tabindex="-1" href="#5613-visibility-and-name-resolution" aria-hidden="true">#</a>5.6.13. Visibility and name resolution</h2>
+<p>Combined with <a href="505-use"><code>use</code></a>, an item is visible in the current module only if both of the following hold.</p>
+<ol>
+<li>The item's visibility reaches the current module. Every module segment of the path must also be visible (<code>a::b::f</code> requires <code>a</code>, <code>b</code>, and <code>f</code> all to be visible).
+</li>
+<li>The item is directly visible (a child module or a name imported with <code>use</code>).
+</li>
+</ol>
+<p>When both hold, the item can be used by its short name.</p>
+<p>For an item with insufficient visibility, the compiler diagnostic reports why it is not visible.</p>
+<pre><code>ERROR: 'foo::secret' is not visible from this module.
+       It is declared as private - only visible within 'foo'.
+       To use it externally, add 'pub' or other visibility keyword.
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/005-modules/506-visibility.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="505-use"><small>Previous</small>5.5. use (imports)</a><a class="next" href="507-paths"><small>Next</small>5.7. Paths</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

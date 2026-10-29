@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.4. ROKHIR 포맷 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="미리 빌드한 라이브러리 패키지의 인터페이스 파일 &lt;name&gt;.rokhir 를 정의합니다. ROKHIR 파일은 그 패키지의 lib&lt;name&gt;.a (패키지 아카이브) 옆에 놓이며, archive 의 멤버가 아닙니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.4. ROKHIR 포맷 - rok docs">
+<meta property="og:description" content="미리 빌드한 라이브러리 패키지의 인터페이스 파일 &lt;name&gt;.rokhir 를 정의합니다. ROKHIR 파일은 그 패키지의 lib&lt;name&gt;.a (패키지 아카이브) 옆에 놓이며, archive 의 멤버가 아닙니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">9. 실행 / 툴 개요</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI 인터페이스</a></li><li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a></li><li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a></li><li class="cur"><a aria-current="page" href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a><ul class="toc"><li><a href="#941-동기">9.4.1. 동기</a></li><li><a href="#942-외부-라이브러리-미사용">9.4.2. 외부 라이브러리 미사용</a></li><li><a href="#943-전체-레이아웃">9.4.3. 전체 레이아웃</a></li><li><a href="#944-header-와-producer">9.4.4. Header 와 Producer</a></li><li><a href="#945-varint-인코딩">9.4.5. VarInt 인코딩</a></li><li><a href="#946-meta">9.4.6. Meta</a></li><li><a href="#947-body">9.4.7. Body</a></li><li><a href="#948-분리-컴파일을-위한-규칙">9.4.8. 분리 컴파일을 위한 규칙</a></li><li><a href="#949-읽기와-거부">9.4.9. 읽기와 거부</a></li><li><a href="#9410-rokhir-검사">9.4.10. ROKHIR 검사</a></li><li><a href="#9411-안정성">9.4.11. 안정성</a></li></ul></li><li><a href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a></li><li><a href="906-jit-engine">9.6. JIT 엔진</a></li><li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a></li><li><a href="908-jupyter-integration">9.8. Jupyter 커널 통합</a></li><li><a href="909-debug-tools">9.9. 디버그 / 진단 도구</a></li><li><a href="910-rok-frontend">9.10. rok - 패키지 / 빌드 front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="94-rokhir-포맷 94-rokhir-format 941-동기 941-motivation 942-외부-라이브러리-미사용 942-no-external-libraries 943-전체-레이아웃 943-overall-layout 944-header-와-producer 944-header-and-producer 945-varint-인코딩 945-varint-encoding 946-meta 946-meta 947-body 947-body 948-분리-컴파일을-위한-규칙 948-rules-for-separate-compilation 949-읽기와-거부 949-reading-and-rejection 9410-rokhir-검사 9410-rokhir-inspection 9411-안정성 9411-stability"><a href="../../../../spec/refs-lang/009-tools/904-rokhir-bytecode" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="94-rokhir-포맷"><a class="anchor" tabindex="-1" href="#94-rokhir-포맷" aria-hidden="true">#</a>9.4. ROKHIR 포맷</h1>
+<p>미리 빌드한 라이브러리 패키지의 인터페이스 파일 <code>&lt;name&gt;.rokhir</code> 를 정의합니다. <a href="../000-meta/007-glossary#rokhir-rok-hir-bytecode">ROKHIR</a> 파일은 그 패키지의 <code>lib&lt;name&gt;.a</code> (<a href="903-package-archive">패키지 아카이브</a>) 옆에 놓이며, archive 의 멤버가 아닙니다.</p>
+<h2 id="941-동기"><a class="anchor" tabindex="-1" href="#941-동기" aria-hidden="true">#</a>9.4.1. 동기</h2>
+<p><a href="902-aot-pipeline">AOT 빌드 파이프라인</a> 의 단형화는 호출 지점의 구체 타입을 기준으로 <a href="../000-meta/007-glossary#specialize">specialize</a> 합니다. 따라서 다른 패키지가 한 패키지의 <a href="../000-meta/007-glossary#generic--제네릭">generic</a> <code>fn</code> 을 호출하면 그 호출 지점에서 specialize 가 일어나야 합니다. <a href="../000-meta/007-glossary#concrete-fn--generic-fn">concrete fn</a> 의 obj 만으로는 부족하므로, 다운스트림이 읽을 인터페이스를 따로 둡니다.</p>
+<p>단형화의 입력은 AST 입니다. 그래서 ROKHIR 의 body 는 <strong>잘라 낸 패키지 소스</strong> 이며, 다운스트림의 파서가 그것을 읽습니다.</p>
+<h2 id="942-외부-라이브러리-미사용"><a class="anchor" tabindex="-1" href="#942-외부-라이브러리-미사용" aria-hidden="true">#</a>9.4.2. 외부 라이브러리 미사용</h2>
+<p>의존성 0 원칙에 따라 직렬화 라이브러리도 사용하지 않으며, ROKHIR 은 직접 설계합니다.</p>
+<h2 id="943-전체-레이아웃"><a class="anchor" tabindex="-1" href="#943-전체-레이아웃" aria-hidden="true">#</a>9.4.3. 전체 레이아웃</h2>
+<pre><code>ROKHIR file (little-endian):
++-----------------------------------+
+|  Header                           |  (16 bytes fixed)
+|    magic       &quot;ROKH&quot;    (4 bytes)  |
+|    version     u32  (= 6)         |
+|    flags       u32                |
+|    body_offset u32                |
++-----------------------------------+
+|  Producer string        str       |  &quot;rokc &lt;version&gt; (&lt;compiler id&gt;)&quot;
++-----------------------------------+
+|  Meta                             |
+|    name                 str       |  mount name (--extern &lt;name&gt;=)
+|    hash                 str       |  package hash (0.3.3)
+|    source dir           str       |
+|    gc type offset       varint    |
+|    gc type count        varint    |
+|    features  varint n, n × str    |
++-----------------------------------+
+|  Body (at body_offset)            |
+|    file count           varint    |
+|    file × n: path str, text str   |
++-----------------------------------+
+|  Summaries                        |
+|    count                varint    |
+|    n × (function str, summary str) |
++-----------------------------------+
+</code></pre>
+<p><code>str</code> 은 PrefixVarInt 길이 (9.4.5) 뒤의 UTF-8 바이트입니다. string / type / item section 은 두지 않습니다.</p>
+<h2 id="944-header-와-producer"><a class="anchor" tabindex="-1" href="#944-header-와-producer" aria-hidden="true">#</a>9.4.4. Header 와 Producer</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>크기</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>magic</code></td><td>4</td><td><code>&quot;ROKH&quot;</code></td></tr>
+<tr><td><code>version</code></td><td>u32</td><td>포맷 버전 (<code>6</code>). 레이아웃이나 body 의 내용이 바뀌면 올림: 2 는 <code>features</code> meta, 3 은 body 의 <code>.wit</code> 파일을 더함, 4 는 <code>include_str!</code> / <code>include_bytes!</code> 데이터를 inline 함, 5 는 hand-off summary 를 더함, 6 은 summary 의 exit 종류를 더함</td></tr>
+<tr><td><code>flags</code></td><td>u32</td><td>예약 (0)</td></tr>
+<tr><td><code>body_offset</code></td><td>u32</td><td>body 의 시작 offset</td></tr>
+</tbody></table></div>
+<p>producer 문자열은 <code>rokc &lt;버전&gt; (&lt;compiler id&gt;)</code> 입니다. compiler id 는 그 <code>rokc</code> 실행 파일의 크기와 수정 시각 (<code>&lt;size&gt;-&lt;mtime&gt;</code>, 16 진수) 입니다.</p>
+<h2 id="945-varint-인코딩"><a class="anchor" tabindex="-1" href="#945-varint-인코딩" aria-hidden="true">#</a>9.4.5. VarInt 인코딩</h2>
+<p>MLIR bytecode 와 같은 PrefixVarInt 이며 LEB128 의 변형입니다. 첫 바이트의 앞쪽 1 비트 개수가 뒤따르는 바이트 수이고, 값은 나머지 비트에 big-endian 으로 놓입니다.</p>
+<pre><code>1-byte int  : 0xxxxxxx                    (0 ~ 127)
+2-byte int  : 10xxxxxx xxxxxxxx           (0 ~ 16383)
+3-byte int  : 110xxxxx xxxxxxxx xxxxxxxx  (0 ~ 2097151)
+...
+</code></pre>
+<h2 id="946-meta"><a class="anchor" tabindex="-1" href="#946-meta" aria-hidden="true">#</a>9.4.6. Meta</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td>name</td><td>패키지의 mount 이름. 심볼에 들어가므로 <code>--extern &lt;name&gt;=</code> 과 같아야 함</td></tr>
+<tr><td>hash</td><td>패키지 해시 (<a href="../000-meta/003-source-units#033-패키지-식별자">0.3.3</a>). 심볼 맹글링에 쓰인 값. 표준 라이브러리 패키지 <code>rok</code> 에서는 tier 마다 하나씩인 <code>pkg=hash;...</code> 목록</td></tr>
+<tr><td>source dir</td><td>빌드 때 패키지 소스가 있던 디렉토리. body 의 파일 경로의 기준이며, 다운스트림은 디스크가 아니라 body 를 읽음</td></tr>
+<tr><td>gc type offset / count</td><td>이 패키지의 GC type id 구간 <code>[offset, offset + count)</code> (9.4.8)</td></tr>
+<tr><td>features</td><td>패키지를 빌드할 때의 <code>feature</code> cfg 값. downstream 은 빌드의 다른 cfg 와 이 feature 로 body 를 파싱합니다</td></tr>
+</tbody></table></div>
+<h2 id="947-body"><a class="anchor" tabindex="-1" href="#947-body" aria-hidden="true">#</a>9.4.7. Body</h2>
+<p>body 는 패키지의 <strong>모든 소스 파일</strong> 을 (경로, 텍스트) 쌍으로 담습니다. 각 파일은 다음과 같이 잘려 있습니다.</p>
+<ul>
+<li>구체 (concrete) 함수의 본문은 <code>;</code> 로 잘라 냅니다. 줄바꿈은 남기므로 진단의 줄 번호가 원본과 같습니다. 이 함수들은 archive 의 심볼로 링크됩니다.
+</li>
+<li>다운스트림이 단형화하거나 inline 해야 하는 본문은 남깁니다: 제네릭 함수, <code>async</code> / <code>yield</code> 함수, <code>#[inline]</code> 함수, <code>extern &quot;C&quot;</code> 정의, 트레잇의 기본 메서드, 제네릭 <code>impl</code> 의 메서드.
+</li>
+<li>시그니처, 타입, 트레잇, <code>impl</code>, <code>use</code> 같은 선언은 그대로 둡니다.
+</li>
+<li>남긴 텍스트의 <code>include_str!</code> / <code>include_bytes!</code> 는 그것이 읽은 리터럴로 바꿉니다 (줄 바꿈 유지). 그래서 다운스트림은 포함 파일을 읽지 않으며, 옮긴 라이브러리도 그대로 동작합니다.
+</li>
+</ul>
+<p>소스 파일 뒤에는 패키지의 <code>ffi::wit</code> 항목이 읽는 <code>.wit</code> 파일이 (<a href="../../refs-standard-libraries/100-bare/108-wit">stdlib 1.8</a>) 그 <code>deps/</code> 와 함께 통째로 옵니다. 경로는 source dir 기준이며 <code>..</code> 로 그 밖으로 나갈 수 있습니다. 다운스트림은 WIT 를 디스크가 아니라 body 에서 읽습니다.</p>
+<p>body 뒤에는 패키지 함수들의 hand-off summary (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---스레드-경계-marker">stdlib 2.13.9</a>) 가 옵니다. summary 는 tab 으로 구분한 필드의 줄들입니다:</p>
+<ul>
+<li><code>g &lt;root&gt; &lt;mutex|rwlock|channel&gt; &lt;line&gt; &lt;function&gt; &lt;file&gt;</code>: <code>&lt;root&gt;</code> 를 넘김;
+</li>
+<li><code>s &lt;root&gt; &lt;root&gt;</code>: 하나의 객체;
+</li>
+<li><code>i &lt;root&gt; &lt;root&gt;</code>: 첫째가 사라지면 둘째를 함께 가져감;
+</li>
+<li><code>t &lt;guard parameter&gt; &lt;root&gt;</code>: 그 guard 에 묶임.
+</li>
+<li><code>x &lt;tag|*&gt; [&lt;root&gt;]</code>: 반환한 값이 그 tag 를 가지는 exit 들에서 (<code>*</code>: 알 수 없음; <code>bool</code> 의 0 / 1, 합이나 enum 변형, carrier 의 경우 에러는 1, 값은 0, 2 + 값의 tag), <code>&lt;root&gt;</code> 가 넘긴 것들 가운데 있음. <code>x</code> 줄이 없으면 모든 exit 가 모든 <code>g</code> root 를 넘김.
+</li>
+</ul>
+<p>root 는 매개변수 index 나 <code>r</code> (반환값) 이며, 그 뒤에 <code>.</code> 으로 구분한 필드 경로가 옵니다 (tuple index 는 bit 31 이 켜짐). <code>#fn</code> (<code>#fne</code>: 클로저, 환경 먼저) 이라는 이름 뒤에 U+001F 로 구분한 매개변수 타입 key 가 붙은 항목은 그 매개변수 타입으로 값으로 쓰인 함수들의 summary 를 합칩니다.</p>
+<h2 id="948-분리-컴파일을-위한-규칙"><a class="anchor" tabindex="-1" href="#948-분리-컴파일을-위한-규칙" aria-hidden="true">#</a>9.4.8. 분리 컴파일을 위한 규칙</h2>
+<p>라이브러리를 미리 빌드하면 프로그램 전체를 한 번에 보지 못하므로, 다음 규칙으로 패키지 사이를 맞춥니다.</p>
+<ul>
+<li><strong><code>any</code> tag.</strong> <code>any</code> 슬롯의 tag 는 타입 이름의 31 비트 해시입니다. 그래서 따로 빌드한 패키지가 같은 타입에 같은 tag 를 씁니다.
+</li>
+<li><strong><code>any</code> seed.</strong> 라이브러리가 <code>any</code> 에 넣는 타입을 프로그램이 알도록, 라이브러리는 그 타입들을 쓰는 작은 rok 함수를 body 끝에 덧붙입니다. 프로그램의 닫힌 세계 <code>any</code> dispatcher 가 이 타입들도 포함합니다.
+</li>
+<li><strong>dispatcher 심볼.</strong> <code>any</code> dispatcher 는 <code>rok.any.&lt;hash&gt;</code> 심볼이며, 라이브러리 안에서는 weak, 프로그램에서는 strong 으로 정의됩니다. 링크하면 프로그램의 것이 이깁니다.
+</li>
+<li><strong>합 항 순서.</strong> 합의 항은 내부 타입 번호가 아니라 구조적 키로 정렬하므로 (<a href="../002-types/206-sum-types#정규-순서">2.6.4</a>) 패키지 사이에서 tag 가 일치합니다.
+</li>
+<li><strong>GC type id.</strong> 패키지마다 GC type id 구간 (9.4.6) 을 따로 가집니다. 한 프로그램에서 두 패키지의 구간이 겹치면 에러입니다.
+</li>
+<li><strong>메서드 심볼.</strong> 의존 패키지의 메서드는 안정된 경로 <code>&lt;모듈&gt;::&lt;타입&gt;.&lt;메서드&gt;[__by_&lt;트레잇&gt;]</code> 으로 맹글링됩니다 (<a href="905-symbol-mangling">9.5</a>).
+</li>
+</ul>
+<h2 id="949-읽기와-거부"><a class="anchor" tabindex="-1" href="#949-읽기와-거부" aria-hidden="true">#</a>9.4.9. 읽기와 거부</h2>
+<p><code>--extern name=&lt;name&gt;.rokhir</code> 나 <code>--extern name=lib&lt;name&gt;.a</code> 는 서로 옆의 짝 파일을 찾습니다 (<a href="902-aot-pipeline#923-의존성-해소">9.2.3</a>). 다운스트림은 body 를 소스 overlay 로 파싱해 선언을 얻고, 잘린 함수는 미리 빌드된 심볼로 선언하며, 제네릭은 그 자리에서 단형화한 뒤 archive 를 링크합니다.</p>
+<p>다음이 하나라도 다르면 ROKHIR 을 거부하고 &quot;다시 빌드하라 (rebuild)&quot; 는 에러를 냅니다.</p>
+<ul>
+<li><code>version</code>
+</li>
+<li>producer (다른 <code>rokc</code> 가 만든 ROKHIR)
+</li>
+<li>name (<code>--extern</code> 이름과 ROKHIR 의 mount 이름)
+</li>
+</ul>
+<h2 id="9410-rokhir-검사"><a class="anchor" tabindex="-1" href="#9410-rokhir-검사" aria-hidden="true">#</a>9.4.10. ROKHIR 검사</h2>
+<p><code>rokc rokhir-text &lt;file&gt;</code> 은 ROKHIR 의 버전, producer, meta (<code>features:</code> 포함) 와 interface 파일들의 경로와 텍스트, 그리고 summary 를 출력합니다 (<a href="909-debug-tools#992-rokhir-검사">9.9.2</a>). <code>rokc inspect</code> (<a href="909-debug-tools#9914-패키지-검사">9.9.14</a>) 는 archive 와 함께 요약을 보여 줍니다.</p>
+<h2 id="9411-안정성"><a class="anchor" tabindex="-1" href="#9411-안정성" aria-hidden="true">#</a>9.4.11. 안정성</h2>
+<p>ROKHIR 은 같은 <code>rokc</code> 가 만든 것만 읽습니다 (9.4.9). 포맷이 바뀌면 <code>version</code> 을 올리며, 버전이 다르면 다시 빌드해야 합니다. <a href="../008-abi/">개요</a> 의 안정성 정책을 적용합니다.</p>
+<p>표준 라이브러리는 ROKHIR 로 배포하지 않습니다 (<a href="903-package-archive#936-표준-라이브러리">9.3.6</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/009-tools/904-rokhir-bytecode.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="903-package-archive"><small>Previous</small>9.3. 패키지 아카이브 (.a) 포맷</a><a class="next" href="905-symbol-mangling"><small>Next</small>9.5. 심볼 맹글링 스킴</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

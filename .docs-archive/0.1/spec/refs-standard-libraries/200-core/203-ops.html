@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.3. Arithmetic / bitwise / indexing traits - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::ops module defines the trait family to which rok's operator tokens (refs-lang 1.10) dispatch. Not only the ordinary operators + - * / % &lt;&lt; &gt;&gt; &amp; |...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/203-ops.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.3. Arithmetic / bitwise / indexing traits - rok docs">
+<meta property="og:description" content="The rok::core::ops module defines the trait family to which rok's operator tokens (refs-lang 1.10) dispatch. Not only the ordinary operators + - * / % &lt;&lt; &gt;&gt; &amp; |...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/203-ops.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/203-ops.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/203-ops.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li class="cur"><a aria-current="page" href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a><ul class="toc"><li><a href="#231-arithmetic-traits">2.3.1. Arithmetic traits</a></li><li><a href="#232-unary-traits">2.3.2. Unary traits</a></li><li><a href="#233-bitwise-traits">2.3.3. Bitwise traits</a></li><li><a href="#234-indexing-traits">2.3.4. Indexing traits</a></li><li><a href="#235-trait-implementation-matrix">2.3.5. Trait implementation matrix</a></li><li><a href="#236-user-defined-ops">2.3.6. User-defined ops</a></li><li><a href="#237-relationships-between-traits---output-consistency">2.3.7. Relationships between traits - Output consistency</a></li><li><a href="#238-relationship-to-the-broadcast-traits">2.3.8. Relationship to the broadcast traits</a></li><li><a href="#239-logical-traits---logicaland---logicalor-">2.3.9. Logical traits - LogicalAnd (&amp;&amp;) / LogicalOr (||)</a></li><li><a href="#2310-unicode-math-operator-traits">2.3.10. Unicode math operator traits</a></li></ul></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="23-arithmetic--bitwise--indexing-traits 23-산술--비트--인덱싱-트레잇 231-arithmetic-traits 231-산술-트레잇 add---arithmetic-addition- add---산술-덧셈- output-rules output-규칙 overflow-behavior 오버플로-동작 sub---arithmetic-subtraction-- sub---산술-뺄셈-- mul---arithmetic-multiplication- mul---산술-곱셈- user-defined-meaning 사용자-정의-의미 div---arithmetic-division- div---산술-나눗셈- division-by-zero 0-으로-나누기 rem---arithmetic-remainder- rem---산술-나머지- modulo---floored-modulo- modulo---floored-modulo- 232-unary-traits 232-단항-트레잇 neg---unary-negation-prefix-- neg---단항-부정---전위 not---bitwise-complement--logical-negation- not---비트-반전--논리-부정- bitnot---bitwise-complement- bitnot---비트-반전- 233-bitwise-traits 233-비트-트레잇 bitand---bitwise-and- bitand---비트-and- bitor---bitwise-or- bitor---비트-or- bitxor---bitwise-xor- bitxor---비트-xor- shl---left-bit-shift- shl---좌-비트-시프트- shr---right-bit-shift- shr---우-비트-시프트- 234-indexing-traits 234-인덱싱-트레잇 index---single-element-read-arri index---단일-원소-읽기-arri bounds-checking bounds-검사 indexset---single-element-write-arri--v indexset---단일-원소-쓰기-arri--v sliceable---sub-range-extraction-sab-sabstep sliceable---부분-추출-sab-sabstep 235-trait-implementation-matrix 235-트레잇-구현-매트릭스 arithmetic-traits 산술-트레잇 bitwise-traits 비트-트레잇 indexing-traits 인덱싱-트레잇 236-user-defined-ops 236-사용자-정의-ops 237-relationships-between-traits---output-consistency 237-트레잇-사이의-관계---output-일관성 238-relationship-to-the-broadcast-traits 238-broadcast-트레잇과의-관계 239-logical-traits---logicaland---logicalor- 239-논리-트레잇---logicaland---logicalor- 2310-unicode-math-operator-traits 2310-unicode-수학-연산자-트레잇"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/203-ops" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="23-arithmetic--bitwise--indexing-traits"><a class="anchor" tabindex="-1" href="#23-arithmetic--bitwise--indexing-traits" aria-hidden="true">#</a>2.3. Arithmetic / bitwise / indexing traits</h1>
+<p>The <code>rok::core::ops</code> module defines the trait family to which rok's operator tokens (<a href="../../refs-lang/001-lexical/110-punctuation-and-operator-tokens">refs-lang 1.10</a>) dispatch. Not only the ordinary operators <code>+</code> <code>-</code> <code>*</code> <code>/</code> <code>%</code> <code>&lt;&lt;</code> <code>&gt;&gt;</code> <code>&amp;</code> <code>|</code> <code>^</code> <code>~</code> <code>&amp;&amp;</code> <code>||</code> but also <code>arr[i]</code> indexing and <code>s[1:3]</code> slicing call trait methods defined in this chapter.</p>
+<p>The mechanism of <a href="../../refs-lang/003-expressions/301-operator-dispatch">refs-lang 3.1 Operator dispatch</a> looks up the <strong>contents</strong> of this chapter; this document, refs-standard-libraries 2.3, is the authority for them.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Every operator trait method in this chapter is declared without <code>throws</code>. Operators therefore do not throw errors, and impls cannot add <code>throws</code> (<a href="../../refs-lang/004-functions/414-throws#41411-throws-on-methods">refs-lang 4.14.11</a>). A fallible operation is provided as a named method (<code>checked_div</code> and the like) or returns a <code>Result</code>.</p>
+</div>
+<h2 id="231-arithmetic-traits"><a class="anchor" tabindex="-1" href="#231-arithmetic-traits" aria-hidden="true">#</a>2.3.1. Arithmetic traits</h2>
+<h3 id="add---arithmetic-addition-"><a class="anchor" tabindex="-1" href="#add---arithmetic-addition-" aria-hidden="true">#</a><code>Add</code> - arithmetic addition (<code>+</code>)</h3>
+<p>The first is the addition trait.</p>
+<pre><code class="language-rok"><span class="a">#[lang("add_trait")]</span>
+<span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("+")]</span>
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p><strong>Meaning</strong>: returns the sum of two values.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">i32</span> = <span class="n">5</span>;
+<span class="k">let</span> b: <span class="t">i32</span> = <span class="n">3</span>;
+<span class="k">let</span> c = a + b;        <span class="c">//→ 8 (i32)</span>
+
+<span class="k">let</span> x: <span class="t">f64</span> = <span class="n">1.5</span>;
+<span class="k">let</span> y: <span class="t">f64</span> = <span class="n">2.5</span>;
+<span class="k">let</span> z = x + y;        <span class="c">//→ 4.0 (f64)</span>
+</code></pre>
+<h4 id="output-rules"><a class="anchor" tabindex="-1" href="#output-rules" aria-hidden="true">#</a>Output rules</h4>
+<p>The <code>Output</code> associated type is usually the same as <code>Self</code>, with these exceptions. First, for <code>int + int = int</code>, auto-promote applies: if the result of i32 + i32 lies in the i64 range it is promoted automatically. Second, user-defined arithmetic such as <code>Vec3&lt;f64&gt; + f64 = Vec3&lt;f64&gt;</code> is defined in the form <code>impl Add&lt;f64&gt; for Vec3&lt;f64&gt;</code>.</p>
+<h4 id="overflow-behavior"><a class="anchor" tabindex="-1" href="#overflow-behavior" aria-hidden="true">#</a>Overflow behavior</h4>
+<p>Overflow behavior depends on the type. For <code>i32 + i32</code>, overflow panics when overflow checks are on and wraps when they are off. Checks are controlled by <code>rokc -C overflow-checks[=yes|no]</code> (<a href="../../refs-lang/009-tools/901-rokc-cli#rokc-build-aot-build">refs-lang 9.1.2</a>); by default they are on only at <code>-O0</code>. <code>f32 + f32</code> and <code>f64 + f64</code> follow IEEE 754 addition, so overflow results in ±∞ or NaN. <code>int + int</code> has arbitrary precision, so overflow does not exist. Saturating, checked and wrapping variants are provided as separate methods (<code>saturating_add</code>, <code>checked_add</code>, <code>wrapping_add</code>) defined outside this trait.</p>
+<p>For the full integer overflow policy, see the fixed-width arithmetic section of <a href="211-conversion">2.11 Conversion</a>.</p>
+<h3 id="sub---arithmetic-subtraction--"><a class="anchor" tabindex="-1" href="#sub---arithmetic-subtraction--" aria-hidden="true">#</a><code>Sub</code> - arithmetic subtraction (<code>-</code>)</h3>
+<p>The subtraction trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("sub_trait")]</span>
+<span class="k">trait</span> <span class="t">Sub</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("-")]</span>
+    <span class="k">fn</span> sub(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>It has the same form as <code>Add</code>; <code>a - b</code> dispatches to <code>Sub::sub(a, b)</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">10i32</span> - <span class="n">3i32</span>;     <span class="c">//→ 7</span>
+<span class="k">let</span> s = <span class="n">1.0f64</span> - <span class="n">0.5f64</span>;  <span class="c">//→ 0.5</span>
+</code></pre>
+<h3 id="mul---arithmetic-multiplication-"><a class="anchor" tabindex="-1" href="#mul---arithmetic-multiplication-" aria-hidden="true">#</a><code>Mul</code> - arithmetic multiplication (<code>*</code>)</h3>
+<p>The multiplication trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("mul_trait")]</span>
+<span class="k">trait</span> <span class="t">Mul</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("*")]</span>
+    <span class="k">fn</span> mul(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">6i32</span> * <span class="n">7i32</span>;      <span class="c">//→ 42</span>
+<span class="k">let</span> s = <span class="n">2.5f64</span> * <span class="n">4.0f64</span>;  <span class="c">//→ 10.0</span>
+</code></pre>
+<h4 id="user-defined-meaning"><a class="anchor" tabindex="-1" href="#user-defined-meaning" aria-hidden="true">#</a>User-defined meaning</h4>
+<p>Besides arithmetic multiplication, <code>Mul</code> may carry a domain-specific meaning, matrix multiplication being the typical example.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Matrix2x2</span> { a: <span class="t">f64</span>; b: <span class="t">f64</span>; c: <span class="t">f64</span>; d: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Mul</span>&lt;<span class="t">Matrix2x2</span>&gt; <span class="k">for</span> <span class="t">Matrix2x2</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Matrix2x2</span>;
+
+    <span class="k">fn</span> mul(<span class="k">self</span>, rhs: <span class="t">Matrix2x2</span>) -&gt; <span class="t">Matrix2x2</span> {
+        <span class="t">Matrix2x2</span> {
+            a: <span class="k">self</span>.a * rhs.a + <span class="k">self</span>.b * rhs.c,
+            b: <span class="k">self</span>.a * rhs.b + <span class="k">self</span>.b * rhs.d,
+            c: <span class="k">self</span>.c * rhs.a + <span class="k">self</span>.d * rhs.c,
+            d: <span class="k">self</span>.c * rhs.b + <span class="k">self</span>.d * rhs.d,
+        }
+    }
+}
+</code></pre>
+<p>Element-wise multiplication is covered by <code>DotMul</code> (<code>m .* n</code>) in <a href="206-broadcast">2.6 broadcast</a>.</p>
+<h3 id="div---arithmetic-division-"><a class="anchor" tabindex="-1" href="#div---arithmetic-division-" aria-hidden="true">#</a><code>Div</code> - arithmetic division (<code>/</code>)</h3>
+<p>The division trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("div_trait")]</span>
+<span class="k">trait</span> <span class="t">Div</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("/")]</span>
+    <span class="a">#[infix("÷")]</span>
+    <span class="k">fn</span> div(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">20i32</span> / <span class="n">7i32</span>;      <span class="c">//→ 2 (integer division, truncating)</span>
+<span class="k">let</span> s = <span class="n">20.0f64</span> / <span class="n">7.0f64</span>;  <span class="c">//→ 2.857142857142857</span>
+</code></pre>
+<h4 id="division-by-zero"><a class="anchor" tabindex="-1" href="#division-by-zero" aria-hidden="true">#</a>Division by zero</h4>
+<p>Division by zero is handled per type. Integer <code>i32 / 0</code> panics, and an expression that constant-folds (<code>1 / 0</code>) is a compile error. Floating-point <code>f64 / 0.0</code> yields ±∞ or NaN per IEEE 754.</p>
+<p>To get <code>none</code> instead of a panic, use <code>checked_div</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">20i32</span>.checked_div(<span class="n">7i32</span>);  <span class="c">//→ 2</span>
+<span class="k">let</span> s = <span class="n">20i32</span>.checked_div(<span class="n">0i32</span>);  <span class="c">//→ none</span>
+</code></pre>
+<h3 id="rem---arithmetic-remainder-"><a class="anchor" tabindex="-1" href="#rem---arithmetic-remainder-" aria-hidden="true">#</a><code>Rem</code> - arithmetic remainder (<code>%</code>)</h3>
+<p>The remainder trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("rem_trait")]</span>
+<span class="k">trait</span> <span class="t">Rem</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("%")]</span>
+    <span class="k">fn</span> rem(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">20i32</span> % <span class="n">7i32</span>;     <span class="c">//→ 6</span>
+<span class="k">let</span> s = <span class="n">5.5f64</span> % <span class="n">2.0f64</span>;  <span class="c">//→ 1.5 (IEEE 754 fmod)</span>
+</code></pre>
+<p>Sign rule: the sign of the result follows the dividend (left operand), so <code>(-5) % 3 = -2</code> and <code>5 % (-3) = 2</code> (the truncated-division definition, as in C / Rust).</p>
+<h3 id="modulo---floored-modulo-"><a class="anchor" tabindex="-1" href="#modulo---floored-modulo-" aria-hidden="true">#</a><code>Modulo</code> - floored modulo (<code>%%</code>)</h3>
+<p>The floored (quotient rounded down) remainder trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Modulo</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("%%")]</span>
+    <span class="k">fn</span> modulo(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = (-<span class="n">5i32</span>) %% <span class="n">3i32</span>;     <span class="c">//→ 1   ( = -5 - (-2)*3 )</span>
+<span class="k">let</span> s = <span class="n">5i32</span> %% (-<span class="n">3i32</span>);     <span class="c">//→ -1  ( = 5 - (-2)*(-3) )</span>
+<span class="k">let</span> t = (-<span class="n">7.5f64</span>) %% <span class="n">2.0f64</span>; <span class="c">//→ 0.5</span>
+</code></pre>
+<p>It differs from <code>Rem</code> in the sign rule of the result. <code>a %% b = a - floor(a / b) * b</code>, so the sign of the result <strong>follows the divisor <code>b</code></strong> (like Python's <code>%</code>). For a positive divisor the result always lies in <code>[0, b)</code>, giving a positive residue even for a negative dividend; for a negative divisor it lies in <code>(b, 0]</code> (<code>7 %% -3 = -2</code>). It differs from Euclidean modulo (always non-negative) for negative divisors. It is common in index wrap-around and modular arithmetic. A zero result of a float <code>%%</code> has the divisor's sign (<code>44.0 %% -4.0 = -0.0</code>).</p>
+<pre><code class="language-rok"><span class="c">// common pattern - negative index wrap-around</span>
+<span class="k">let</span> i: <span class="t">i32</span> = -<span class="n">1</span>;
+<span class="k">let</span> len: <span class="t">i32</span> = <span class="n">8</span>;
+<span class="k">let</span> wrapped = i %% len;      <span class="c">//→ 7    (i % len would give -1)</span>
+</code></pre>
+<p>The sign difference between <code>Rem</code> and <code>Modulo</code> is summarized below.</p>
+<div class="table-wrap"><table>
+<thead><tr><th><code>a</code></th><th><code>b</code></th><th><code>a % b</code> (Rem)</th><th><code>a %% b</code> (Modulo)</th></tr></thead>
+<tbody>
+<tr><td><code>7</code></td><td><code>3</code></td><td><code>1</code></td><td><code>1</code></td></tr>
+<tr><td><code>-7</code></td><td><code>3</code></td><td><code>-1</code></td><td><code>2</code></td></tr>
+<tr><td><code>7</code></td><td><code>-3</code></td><td><code>1</code></td><td><code>-2</code></td></tr>
+<tr><td><code>-7</code></td><td><code>-3</code></td><td><code>-1</code></td><td><code>-1</code></td></tr>
+</tbody></table></div>
+<p>The two tokens map to separate traits, so a type may implement only one of them or give them different meanings. The standard library's primitive integer / floating-point impls follow the definitions in the table above exactly.</p>
+<p>The <code>%%</code> token is defined in <a href="../../refs-lang/001-lexical/110-punctuation-and-operator-tokens">refs-lang 1.10 Punctuation and operator tokens</a>; its precedence in the <a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2</a> table is level 8, the same as <code>%</code>, left-associative.</p>
+<h2 id="232-unary-traits"><a class="anchor" tabindex="-1" href="#232-unary-traits" aria-hidden="true">#</a>2.3.2. Unary traits</h2>
+<h3 id="neg---unary-negation-prefix--"><a class="anchor" tabindex="-1" href="#neg---unary-negation-prefix--" aria-hidden="true">#</a><code>Neg</code> - unary negation (prefix <code>-</code>)</h3>
+<p>The unary negation trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("neg_trait")]</span>
+<span class="k">trait</span> <span class="t">Neg</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[prefix("-")]</span>
+    <span class="k">fn</span> neg(<span class="k">self</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = -<span class="n">5i32</span>;       <span class="c">//→ -5</span>
+<span class="k">let</span> s = -<span class="n">3.14f64</span>;    <span class="c">//→ -3.14</span>
+<span class="k">let</span> t = -(a + b);    <span class="c">//→ -(a+b)</span>
+</code></pre>
+<p>This trait is meaningful only for signed integers and floating-point types; <code>u32</code> has no <code>Neg</code> impl.</p>
+<p>In particular, the negation of <code>i32::MIN</code> (= -2147483648) is not representable, so it panics in debug builds and wraps in release builds (= i32::MIN unchanged). Use <code>wrapping_neg</code> for an explicit wrap, or <code>checked_neg</code> for a <code>T | none</code> result.</p>
+<h3 id="not---bitwise-complement--logical-negation-"><a class="anchor" tabindex="-1" href="#not---bitwise-complement--logical-negation-" aria-hidden="true">#</a><code>Not</code> - bitwise complement / logical negation (<code>!</code>)</h3>
+<p>The <code>Not</code> trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("not_trait")]</span>
+<span class="k">trait</span> <span class="t">Not</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[prefix("!")]</span>
+    <span class="k">fn</span> not(<span class="k">self</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = !<span class="k">true</span>;       <span class="c">//→ false</span>
+<span class="k">let</span> s = !<span class="n">0u8</span>;        <span class="c">//→ 255 (all bits 1)</span>
+<span class="k">let</span> t = !<span class="n">0xFFi32</span>;    <span class="c">//→ 0xFFFFFF00 (all 32 bits inverted)</span>
+</code></pre>
+<p>Per-type behavior: <code>bool::not(true) = false</code> and <code>bool::not(false) = true</code>, acting as logical negation. <code>u8::not(0) = 0xFF</code> and <code>i32::not(0) = -1</code>, by contrast, act as bitwise complement.</p>
+<h3 id="bitnot---bitwise-complement-"><a class="anchor" tabindex="-1" href="#bitnot---bitwise-complement-" aria-hidden="true">#</a><code>BitNot</code> - bitwise complement (<code>~</code>)</h3>
+<p>The <code>~</code> token (<a href="../../refs-lang/001-lexical/110-punctuation-and-operator-tokens">refs-lang 1.10.3</a>) is an integer-only bitwise complement.</p>
+<pre><code class="language-rok"><span class="a">#[lang("bitnot_trait")]</span>
+<span class="k">trait</span> <span class="t">BitNot</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[prefix("~")]</span>
+    <span class="k">fn</span> bitnot(<span class="k">self</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> s = ~<span class="n">0u8</span>;        <span class="c">//→ 255</span>
+<span class="k">let</span> t = ~<span class="n">0i32</span>;       <span class="c">//→ -1</span>
+</code></pre>
+<p>For integer types, <code>~x</code> gives the same result as <code>!x</code>. <code>BitNot</code>, however, is implemented only for <code>i*</code> / <code>u*</code> and not for <code>bool</code>, so <code>~true</code> is a compile error. The recommended idiom is <code>!</code> for logical negation and <code>~</code> when the intent is to show a bitwise complement.</p>
+<h2 id="233-bitwise-traits"><a class="anchor" tabindex="-1" href="#233-bitwise-traits" aria-hidden="true">#</a>2.3.3. Bitwise traits</h2>
+<h3 id="bitand---bitwise-and-"><a class="anchor" tabindex="-1" href="#bitand---bitwise-and-" aria-hidden="true">#</a><code>BitAnd</code> - bitwise AND (<code>&amp;</code>)</h3>
+<p>The bitwise AND trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("bitand_trait")]</span>
+<span class="k">trait</span> <span class="t">BitAnd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("&amp;")]</span>
+    <span class="k">fn</span> bitand(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">0xF0i32</span> &amp; <span class="n">0x0Fi32</span>;   <span class="c">//→ 0x00</span>
+<span class="k">let</span> s = <span class="n">0xFFi32</span> &amp; <span class="n">0x0Fi32</span>;   <span class="c">//→ 0x0F</span>
+<span class="k">let</span> b = <span class="k">true</span> &amp; <span class="k">false</span>;         <span class="c">//→ false (bool also has a BitAnd impl)</span>
+</code></pre>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><code>&amp;&amp;</code> and <code>&amp;</code> differ. <code>&amp;&amp;</code> is short-circuit logical AND; <code>&amp;</code> is bitwise AND.
+For bool the two give the same result but evaluate at different times.</p>
+</div>
+<h3 id="bitor---bitwise-or-"><a class="anchor" tabindex="-1" href="#bitor---bitwise-or-" aria-hidden="true">#</a><code>BitOr</code> - bitwise OR (<code>|</code>)</h3>
+<p>The bitwise OR trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("bitor_trait")]</span>
+<span class="k">trait</span> <span class="t">BitOr</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("|")]</span>
+    <span class="k">fn</span> bitor(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">0xF0i32</span> | <span class="n">0x0Fi32</span>;   <span class="c">//→ 0xFF</span>
+</code></pre>
+<h3 id="bitxor---bitwise-xor-"><a class="anchor" tabindex="-1" href="#bitxor---bitwise-xor-" aria-hidden="true">#</a><code>BitXor</code> - bitwise XOR (<code>^</code>)</h3>
+<p>The bitwise XOR trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("bitxor_trait")]</span>
+<span class="k">trait</span> <span class="t">BitXor</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("^")]</span>
+    <span class="k">fn</span> bitxor(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">0xFFi32</span> ^ <span class="n">0x0Fi32</span>;   <span class="c">//→ 0xF0</span>
+<span class="k">let</span> s = <span class="n">0b1010</span> ^ <span class="n">0b1100</span>;     <span class="c">//→ 0b0110</span>
+</code></pre>
+<h3 id="shl---left-bit-shift-"><a class="anchor" tabindex="-1" href="#shl---left-bit-shift-" aria-hidden="true">#</a><code>Shl</code> - left bit shift (<code>&lt;&lt;</code>)</h3>
+<p>The left shift trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("shl_trait")]</span>
+<span class="k">trait</span> <span class="t">Shl</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("&lt;&lt;")]</span>
+    <span class="k">fn</span> shl(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">1i32</span> &lt;&lt; <span class="n">4</span>;     <span class="c">//→ 16</span>
+<span class="k">let</span> s = <span class="n">0xFFi32</span> &lt;&lt; <span class="n">24</span>; <span class="c">//→ 0xFF000000</span>
+</code></pre>
+<p>When the shift count is greater than or equal to the bit width, debug builds panic and release builds wrap (in practice this is close to undefined under LLVM's definition, so users are advised to use explicit wrapping).</p>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">1i32</span>.wrapping_shl(<span class="n">40</span>);  <span class="c">// explicit - shifts by 40 % 32 = 8</span>
+</code></pre>
+<h3 id="shr---right-bit-shift-"><a class="anchor" tabindex="-1" href="#shr---right-bit-shift-" aria-hidden="true">#</a><code>Shr</code> - right bit shift (<code>&gt;&gt;</code>)</h3>
+<p>The right shift trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("shr_trait")]</span>
+<span class="k">trait</span> <span class="t">Shr</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="a">#[infix("&gt;&gt;")]</span>
+    <span class="k">fn</span> shr(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">256i32</span> &gt;&gt; <span class="n">4</span>;  <span class="c">//→ 16</span>
+<span class="k">let</span> s = -<span class="n">1i32</span> &gt;&gt; <span class="n">1</span>;   <span class="c">//→ -1 (signed = arithmetic shift, sign extension)</span>
+<span class="k">let</span> t = -<span class="n">1u32</span> &gt;&gt; <span class="n">1</span>;   <span class="c">//→ 0x7FFFFFFF (unsigned = logical shift)</span>
+</code></pre>
+<p>Signed integers use an arithmetic shift (sign-extend); unsigned integers use a logical shift.</p>
+<h2 id="234-indexing-traits"><a class="anchor" tabindex="-1" href="#234-indexing-traits" aria-hidden="true">#</a>2.3.4. Indexing traits</h2>
+<p>Indexing and slicing are <strong>language syntax</strong> (<a href="../../refs-lang/003-expressions/306-indexing-and-slicing">refs-lang 3.6</a>), but the actual dispatch goes through the traits of this section.</p>
+<h3 id="index---single-element-read-arri"><a class="anchor" tabindex="-1" href="#index---single-element-read-arri" aria-hidden="true">#</a><code>Index</code> - single-element read (<code>arr[i]</code>)</h3>
+<p>The <code>Index</code> trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("index_trait")]</span>
+<span class="k">trait</span> <span class="t">Index</span>&lt;<span class="t">Idx</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="k">fn</span> index(<span class="k">self</span>, idx: <span class="t">Idx</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+<span class="k">let</span> v = xs[<span class="n">1</span>];        <span class="c">//→ 20</span>
+<span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;
+<span class="k">let</span> c = s.chars().next();   <span class="c">//→ 'h' (char | none) - str has no Index (2.9.8)</span>
+</code></pre>
+<h4 id="bounds-checking"><a class="anchor" tabindex="-1" href="#bounds-checking" aria-hidden="true">#</a>Bounds checking</h4>
+<p>Bounds are handled as follows. An out-of-range index (<code>xs[100]</code>) panics (operators do not throw errors). A negative signed-integer index counts from the end (<code>xs[-1]</code> is the last element, <a href="../../refs-lang/003-expressions/306-indexing-and-slicing#361-indexing-arri">refs-lang 3.6.1</a>). If <code>len + i &lt; 0</code>, it panics.</p>
+<p>To get a <code>T | none</code> result instead of a panic, use <code>xs.get(i)</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = xs.get(<span class="n">100</span>);  <span class="c">//→ none</span>
+</code></pre>
+<h3 id="indexset---single-element-write-arri--v"><a class="anchor" tabindex="-1" href="#indexset---single-element-write-arri--v" aria-hidden="true">#</a><code>IndexSet</code> - single-element write (<code>arr[i] = v</code>)</h3>
+<p>The <code>IndexSet</code> trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("index_set_trait")]</span>
+<span class="k">trait</span> <span class="t">IndexSet</span>&lt;<span class="t">Idx</span>&gt; {
+    <span class="k">type</span> <span class="t">Value</span>;
+
+    <span class="k">fn</span> index_set(<span class="k">self</span>, idx: <span class="t">Idx</span>, value: <span class="t">Value</span>);     <span class="c">// collections are reference handles - self</span>
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+xs[<span class="n">1</span>] = <span class="n">99</span>;           <span class="c">// IndexSet::index_set(xs, 1, 99)</span>
+xs[<span class="n">1</span>];                <span class="c">//→ 99</span>
+</code></pre>
+<p>It is separate from <code>Index</code> because read-only containers (e.g. an immutable view of a tuple) must still be able to implement <code>Index</code>. <code>IndexSet</code> is therefore a separate opt-in.</p>
+<p><code>IndexSet</code> also panics when out of range, while <code>xs.set(i, v)</code> throws <code>IndexError</code> (<code>throws (IndexError)</code>).</p>
+<h3 id="sliceable---sub-range-extraction-sab-sabstep"><a class="anchor" tabindex="-1" href="#sliceable---sub-range-extraction-sab-sabstep" aria-hidden="true">#</a><code>Sliceable</code> - sub-range extraction (<code>s[a:b]</code>, <code>s[a:b:step]</code>)</h3>
+<p>The slice trait is defined as follows. The trait is named <code>Sliceable</code>, and the resulting view type is <code>Slice&lt;T&gt;</code> (<a href="209-collections#297-slicet---view">2.9.7</a>). The names are split because under the implicit glob one name cannot refer to both.</p>
+<pre><code class="language-rok"><span class="a">#[lang("slice_trait")]</span>
+<span class="k">trait</span> <span class="t">Sliceable</span>&lt;<span class="t">R</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+
+    <span class="k">fn</span> slice(<span class="k">self</span>, range: <span class="t">R</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p><code>xs[a:b]</code> is <code>xs.slice(a..b)</code>, and <code>xs[a:b:k]</code> is <code>xs.slice(..).step(k)</code> over the range computed by Python's <code>slice.indices</code> (<a href="../../refs-lang/003-expressions/306-indexing-and-slicing#362-slicing-arrstartend">refs-lang 3.6.2</a>). The semantics match Python slices: bounds are clamped to the length, out-of-range bounds never panic, and <code>xs</code> is evaluated once. <code>xs[a..b]</code> and <code>xs[..]</code> are the same. Every <code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> implementation clamps its range with <code>rok::core::index::clamp_range</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>];
+<span class="k">let</span> s = xs[<span class="n">1</span>:<span class="n">3</span>];       <span class="c">//→ Slice&lt;i32&gt; view of [2, 3]</span>
+<span class="k">let</span> r = xs[::<span class="n">2</span>];       <span class="c">//→ [1, 3, 5] (step=2)</span>
+<span class="k">let</span> v = xs[::-<span class="n">1</span>];      <span class="c">//→ [5, 4, 3, 2, 1] (reversed)</span>
+
+<span class="k">let</span> str_part = <span class="s">"hello"</span>[<span class="n">1</span>:<span class="n">4</span>];  <span class="c">//→ "ell" (new str)</span>
+</code></pre>
+<p>The standard library implements <code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> for <code>List&lt;T&gt;</code>, <code>Slice&lt;T&gt;</code>, <code>[T; N]</code>, <code>str</code> and <code>StrBuf</code>. <code>List</code> / <code>Slice</code> / arrays return a <code>Slice&lt;T&gt;</code> view; <code>str</code> / <code>StrBuf</code> return a new <code>str</code> copy after checking UTF-8 boundaries. Negative bounds count from the end and are then clamped; slice assignment is not supported. For an owned copy, use <code>xs[1:3].to_list()</code>.</p>
+<h2 id="235-trait-implementation-matrix"><a class="anchor" tabindex="-1" href="#235-trait-implementation-matrix" aria-hidden="true">#</a>2.3.5. Trait implementation matrix</h2>
+<p>Every ops trait impl for primitive types carries <code>#[intrinsic(&quot;rok.OP.TYPE&quot;)]</code> and binds directly to a compiler backend PrimOp (<a href="../000-meta/003-intrinsics">0.3</a>). This means:</p>
+<ul>
+<li>An operator on primitive operands (<code>a + b</code>) is lowered directly to a machine operation without a method call.
+</li>
+<li>A call by name (<code>a.add(b)</code>, <code>Add::add(a, b)</code>) is lowered to the same machine operation.
+</li>
+</ul>
+<h3 id="arithmetic-traits"><a class="anchor" tabindex="-1" href="#arithmetic-traits" aria-hidden="true">#</a>Arithmetic traits</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Module</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><code>i8</code>..<code>i64</code>, <code>isize</code></td><td><code>rok::core::num</code></td><td><code>rok.add.i32</code> / <code>rok.sub.i32</code> / <code>rok.rem.i32</code> / <code>rok.mod.i32</code> ...</td></tr>
+<tr><td><code>u8</code>..<code>u64</code>, <code>usize</code></td><td><code>rok::core::num</code></td><td><code>rok.add.u32</code> / ... (unsigned family, <code>Modulo</code> ≡ <code>Rem</code>)</td></tr>
+<tr><td><code>f32</code>, <code>f64</code></td><td><code>rok::core::num</code></td><td><code>rok.add.f32</code> / <code>rok.add.f64</code> / <code>rok.mod.f64</code> (floored)</td></tr>
+<tr><td><code>int</code></td><td><code>rok::core::num</code></td><td>auto-promote logic</td></tr>
+<tr><td><code>float</code></td><td><code>rok::core::num</code></td><td>(same as above - auto-promote)</td></tr>
+</tbody></table></div>
+<h3 id="bitwise-traits"><a class="anchor" tabindex="-1" href="#bitwise-traits" aria-hidden="true">#</a>Bitwise traits</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Module</th><th>intrinsic</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code>, <code>bool</code></td><td><code>rok::core::num</code></td><td><code>rok.and.OP</code>, <code>rok.or.OP</code>, <code>rok.xor.OP</code>, <code>rok.shl.OP</code>, <code>rok.shr.OP</code></td></tr>
+</tbody></table></div>
+<p><code>f32</code> and <code>f64</code> do not implement BitAnd and the like, since they are meaningless there.</p>
+<h3 id="indexing-traits"><a class="anchor" tabindex="-1" href="#indexing-traits" aria-hidden="true">#</a>Indexing traits</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Defined by</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td>Standard library</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td>Standard library (Idx = K)</td></tr>
+<tr><td><code>[T; N]</code></td><td>Compiler-synthesized (primitive array)</td></tr>
+<tr><td><code>str</code></td><td>Standard library (Slice only - <code>Index&lt;usize&gt;</code> undefined, direct byte access rejected)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>Standard library</td></tr>
+<tr><td><code>Tuple</code></td><td>Compiler-synthesized (<code>.0</code>, <code>.1</code> form) - <code>Index</code> undefined (compile-time tuple access only)</td></tr>
+</tbody></table></div>
+<h2 id="236-user-defined-ops"><a class="anchor" tabindex="-1" href="#236-user-defined-ops" aria-hidden="true">#</a>2.3.6. User-defined ops</h2>
+<p>Users outside the standard library may freely implement the traits through <code>impl Add for MyType</code> and the like. Trait dispatch then leads to a call of <code>MyType::add</code>.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; z: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">Vec3</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Vec3</span>;
+
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Vec3</span>) -&gt; <span class="t">Vec3</span> {
+        <span class="t">Vec3</span> {
+            x: <span class="k">self</span>.x + rhs.x,
+            y: <span class="k">self</span>.y + rhs.y,
+            z: <span class="k">self</span>.z + rhs.z,
+        }
+    }
+}
+
+<span class="k">let</span> a = <span class="t">Vec3</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span>, z: <span class="n">3.0</span> };
+<span class="k">let</span> b = <span class="t">Vec3</span> { x: <span class="n">0.5</span>, y: <span class="n">0.5</span>, z: <span class="n">0.5</span> };
+<span class="k">let</span> c = a + b;        <span class="c">//→ Vec3 { x: 1.5, y: 2.5, z: 3.5 }</span>
+</code></pre>
+<p>Attaching <code>#[intrinsic]</code> to user ops, however, is <strong>forbidden</strong> (refs-standard-libraries 0.3.5), because the body is authoritative.</p>
+<h2 id="237-relationships-between-traits---output-consistency"><a class="anchor" tabindex="-1" href="#237-relationships-between-traits---output-consistency" aria-hidden="true">#</a>2.3.7. Relationships between traits - <code>Output</code> consistency</h2>
+<p>In an expression combining several traits (<code>a + b * c</code>), the <code>Output</code> types must be consistent.</p>
+<pre><code class="language-rok"><span class="k">let</span> r = a + b * c;
+<span class="c">//   = Add::add(a, Mul::mul(b, c))</span>
+<span class="c">//   requires: &lt;typeof(b) as Mul&lt;typeof(c)&gt;&gt;::Output compatible with Add's Rhs</span>
+</code></pre>
+<p>Every primitive arithmetic impl in the standard library uses <code>Output = Self</code>. User types may define it freely, but <code>Output = Self</code> is recommended for tool friendliness, such as compiler error messages.</p>
+<h2 id="238-relationship-to-the-broadcast-traits"><a class="anchor" tabindex="-1" href="#238-relationship-to-the-broadcast-traits" aria-hidden="true">#</a>2.3.8. Relationship to the broadcast traits</h2>
+<p><code>a + b</code> dispatches to <code>Add::add</code> and <code>a .+ b</code> dispatches to <code>DotAdd::dot_add</code>, so the two operations are handled by distinct traits. Ordinary arithmetic types (Vec3 and the like) usually implement both. The details are in <a href="206-broadcast">2.6 broadcast</a>.</p>
+<h2 id="239-logical-traits---logicaland---logicalor-"><a class="anchor" tabindex="-1" href="#239-logical-traits---logicaland---logicalor-" aria-hidden="true">#</a>2.3.9. Logical traits - <code>LogicalAnd</code> (<code>&amp;&amp;</code>) / <code>LogicalOr</code> (<code>||</code>)</h2>
+<p><code>&amp;&amp;</code> and <code>||</code> are connected to trait methods in the same way as other operators. Precedence and associativity are fixed by the <a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2</a> table.</p>
+<pre><code class="language-rok"><span class="a">#[lang("logical_and_trait")]</span>
+<span class="k">trait</span> <span class="t">LogicalAnd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&amp;&amp;")]</span>
+    <span class="k">fn</span> logical_and(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="a">#[lang("logical_or_trait")]</span>
+<span class="k">trait</span> <span class="t">LogicalOr</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("||")]</span>
+    <span class="k">fn</span> logical_or(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+}
+</code></pre>
+<p>The standard library implements these two traits only for <code>bool</code>. When both operands are <code>bool</code>, the compiler identifies this implementation through the <code>logical_and_trait</code> / <code>logical_or_trait</code> slots and lowers it to a <strong>short-circuit</strong> branch instead of a method call - <code>a &amp;&amp; b</code> does not evaluate <code>b</code> if <code>a</code> is <code>false</code>.</p>
+<div class="callout warning"><p class="callout-title">Warning</p>
+<p>If a user type implements <code>LogicalAnd</code> / <code>LogicalOr</code>, <code>a &amp;&amp; b</code> becomes an ordinary trait method call, so <strong>both operands are evaluated</strong> (no short-circuit). This is the same rule as the broadcast forms <code>.&amp;&amp;</code> / <code>.||</code> (<a href="206-broadcast">2.6</a>). The language guarantees short-circuit only for <code>bool</code> operands.</p>
+</div>
+<h2 id="2310-unicode-math-operator-traits"><a class="anchor" tabindex="-1" href="#2310-unicode-math-operator-traits" aria-hidden="true">#</a>2.3.10. Unicode math operator traits</h2>
+<p>The Unicode operators of <a href="../../refs-lang/001-lexical/110-punctuation-and-operator-tokens#unicode-mathematical-operators">refs-lang 1.10.3</a> are connected to the following traits. Every method has an ASCII name, so it can be called as a method instead of an operator. Precedence is fixed by the <a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2</a> table. <code>÷</code> is a synonym of <code>Div</code> above, and <code>≡ ≠ ≤ ≥</code> are synonyms from <a href="205-cmp">2.5 cmp</a>.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Cross</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {               <span class="c">// a × b - level 8</span>
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("×")]</span>
+    <span class="k">fn</span> cross(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Dot</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {                 <span class="c">// a ⋅ b - level 8</span>
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("⋅")]</span>
+    <span class="k">fn</span> dot(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Compose</span>&lt;<span class="t">Rhs</span>&gt; {                    <span class="c">// f ∘ g - level 9, (f ∘ g)(x) = f(g(x))</span>
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("∘")]</span>
+    <span class="k">fn</span> compose(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Sqrt</span> {                            <span class="c">// √x - prefix unary</span>
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[prefix("√")]</span>
+    <span class="k">fn</span> sqrt(<span class="k">self</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Contains</span>&lt;<span class="t">Item</span>&gt; {                  <span class="c">// a ∈ s, a ∉ s - level 4</span>
+    <span class="a">#[infix("∈", swap)]</span>
+    <span class="k">fn</span> contains(<span class="k">self</span>, item: <span class="t">Item</span>) -&gt; <span class="t">bool</span>;
+    <span class="a">#[infix("∉", swap)]</span>
+    <span class="k">fn</span> not_contains(<span class="k">self</span>, item: <span class="t">Item</span>) -&gt; <span class="t">bool</span> { !<span class="k">self</span>.contains(item) }
+}
+
+<span class="k">trait</span> <span class="t">Subset</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {              <span class="c">// a ⊂ b, a ⊆ b - level 4</span>
+    <span class="a">#[infix("⊂")]</span>
+    <span class="k">fn</span> is_proper_subset(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+    <span class="a">#[infix("⊆")]</span>
+    <span class="k">fn</span> is_subset(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+}
+
+<span class="k">trait</span> <span class="t">Union</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {               <span class="c">// a ∪ b - level 7</span>
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("∪")]</span>
+    <span class="k">fn</span> <span class="k">union</span>(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Intersect</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {           <span class="c">// a ∩ b - level 8</span>
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("∩")]</span>
+    <span class="k">fn</span> intersection(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p><code>∈ ∉</code> take the container on the right, so they are connected with <code>swap</code> (<a href="../../refs-lang/006-meta-system/607-operator-magic#672-arguments">refs-lang 6.7.2</a>). <code>a ∈ xs</code> is <code>xs.contains(a)</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Standard library implementations</th></tr></thead>
+<tbody>
+<tr><td><code>Sqrt</code></td><td><code>f32</code>, <code>f64</code> (<code>#[intrinsic(&quot;rok.sqrt.TYPE&quot;)]</code>)</td></tr>
+<tr><td><code>Contains</code></td><td><code>List&lt;T&gt;</code>, <code>Set&lt;T&gt;</code>, <code>Dict&lt;K, V&gt;</code> (keys), <code>str</code> (substring), <code>Range&lt;T&gt;</code></td></tr>
+<tr><td><code>Subset</code>, <code>Union</code>, <code>Intersect</code></td><td><code>Set&lt;T&gt;</code></td></tr>
+<tr><td><code>Compose</code></td><td>Function types <code>fn(B) -&gt; C</code> and <code>fn(A) -&gt; B</code></td></tr>
+<tr><td><code>Cross</code>, <code>Dot</code></td><td>No standard library implementation - implemented by vector types</td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/203-ops.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="202-non-zero"><small>Previous</small>2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a><a class="next" href="204-ops-assign"><small>Next</small>2.4. Compound assignment traits</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

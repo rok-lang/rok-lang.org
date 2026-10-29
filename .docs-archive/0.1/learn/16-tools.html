@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>16. Tools - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter tours the tools you keep at hand while writing code: the formatter, the linter, tests and benchmarks, documentation generation, editor support (LSP...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/16-tools.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="16. Tools - rok docs">
+<meta property="og:description" content="This chapter tours the tools you keep at hand while writing code: the formatter, the linter, tests and benchmarks, documentation generation, editor support (LSP...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/16-tools.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li class="cur"><a aria-current="page" href="16-tools">16. Tools</a><ul class="toc"><li><a href="#rok-test-tests">rok test: tests</a></li><li><a href="#rok-bench-benchmarks">rok bench: benchmarks</a></li><li><a href="#rok-fmt-the-formatter">rok fmt: the formatter</a></li><li><a href="#rok-lint-and-rok-check">rok lint and rok check</a></li><li><a href="#rok-doc-doc-comments-and-api-docs">rok doc: doc comments and API docs</a></li><li><a href="#editors-rokls">Editors: rokls</a></li><li><a href="#repl-and-jupyter">REPL and Jupyter</a></li><li><a href="#looking-inside-the-compiler">Looking inside the compiler</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="16-tools"><a class="anchor" tabindex="-1" href="#16-tools" aria-hidden="true">#</a>16. Tools</h1>
+<p>This chapter tours the tools you keep at hand while writing code: the formatter, the linter, tests and benchmarks, documentation generation, editor support (LSP), the REPL and Jupyter, and debug options for looking inside the compiler. All of them start from the single <code>rok</code> command.</p>
+<p>The output in this chapter comes from actually running the package below. It was created with <code>rok new mathx</code>, and <code>src/main.rok</code> was changed to this:</p>
+<pre><code class="language-rok"><span class="c">//! Small math helpers.</span>
+
+<span class="c">/// Greatest common divisor of `a` and `b`.</span>
+<span class="k">pub</span> <span class="k">fn</span> gcd(a: <span class="t">i64</span>, b: <span class="t">i64</span>) -&gt; <span class="t">i64</span> {
+    <span class="k">if</span> b == <span class="n">0</span> { a } <span class="k">else</span> { gcd(b, a % b) }
+}
+
+<span class="c">/// The `n`-th Fibonacci number.</span>
+<span class="k">pub</span> <span class="k">fn</span> fib(n: <span class="t">i64</span>) -&gt; <span class="t">i64</span> {
+    <span class="k">if</span> n &lt; <span class="n">2</span> { <span class="k">return</span> n; }
+    fib(n - <span class="n">1</span>) + fib(n - <span class="n">2</span>)
+}
+
+println(<span class="s">f"gcd(12, 18) = {</span>gcd(<span class="n">12</span>, <span class="n">18</span>)<span class="s">}, fib(10) = {</span>fib(<span class="n">10</span>)<span class="s">}"</span>);
+
+<span class="a">#[test]</span>
+<span class="k">fn</span> gcd_works() {
+    assert_eq(gcd(<span class="n">12</span>, <span class="n">18</span>), <span class="n">6</span>);
+    assert_eq(gcd(<span class="n">7</span>, <span class="n">0</span>), <span class="n">7</span>);
+}
+
+<span class="a">#[test]</span>
+<span class="k">fn</span> fib_works() {
+    assert_eq(fib(<span class="n">10</span>), <span class="n">55</span>);
+}
+
+<span class="a">#[test]</span>
+<span class="k">fn</span> fib_wrong() {
+    assert_eq(fib(<span class="n">5</span>), <span class="n">6</span>, <span class="s">"deliberately wrong"</span>);
+}
+
+<span class="a">#[bench]</span>
+<span class="k">fn</span> fib_20() {
+    fib(<span class="n">20</span>);
+}
+</code></pre>
+<h2 id="rok-test-tests"><a class="anchor" tabindex="-1" href="#rok-test-tests" aria-hidden="true">#</a><code>rok test</code>: tests</h2>
+<p>A function marked <code>#[test]</code> is a test. Test functions are left out of normal builds; <code>rok test</code> collects them and builds them separately. Checks use <code>assert</code>, <code>assert_eq</code>, and <code>assert_ne</code>, which panic on failure. You can pass a message as the last argument.</p>
+<p>Each test runs in its own process, so if one panics the rest keep running. <code>fib_wrong</code> in the package above is deliberately wrong.</p>
+<pre><code class="language-text">$ rok test
+   Compiling mathx (.)
+    Finished in 0.69s
+
+running 3 tests
+test gcd_works ... ok
+test fib_works ... ok
+test fib_wrong ... FAILED
+
+failures:
+
+---- fib_wrong ----
+thread 'main' panicked at src/main.rok:29:5:
+assertion `left == right` failed: deliberately wrong
+  left: 5
+ right: 6
+(panicked (exit 101))
+
+failures:
+    fib_wrong
+
+test result: FAILED. 2 passed; 1 failed; 0 filtered out; finished in 0.22s
+</code></pre>
+<p>If anything fails, the exit code is 1, so it works in CI as is. Passing part of a name (or a small regex using <code>^</code>, <code>$</code>, <code>.*</code>) as an argument runs only the matching tests.</p>
+<pre><code class="language-text">$ rok test gcd
+   Compiling mathx (.)
+    Finished in 0.37s
+
+running 1 test
+test gcd_works ... ok
+
+test result: ok. 1 passed; 0 failed; 2 filtered out; finished in 0.22s
+</code></pre>
+<p>Use <code>--show-output</code> to also see output from passing tests, and <code>--threads=N</code> to set how many tests run concurrently.</p>
+<h2 id="rok-bench-benchmarks"><a class="anchor" tabindex="-1" href="#rok-bench-benchmarks" aria-hidden="true">#</a><code>rok bench</code>: benchmarks</h2>
+<p><code>rok bench</code> calls each <code>#[bench]</code> function many times in an optimized build (<code>-O2</code>) and measures the average time per call. The numbers vary by machine and by run.</p>
+<pre><code class="language-text">$ rok bench
+   Compiling mathx (.)
+    Finished in 0.42s
+
+running 1 bench
+bench fib_20 ... bench:       34,204 ns/iter (+/- 1,712)
+
+bench result: ok. 1 measured; 0 failed; 0 filtered out; finished in 0.36s
+</code></pre>
+<p><code>--iters=N</code> is the number of calls per sample, and <code>--samples=N</code> is the number of samples. Filters work as in <code>rok test</code>.</p>
+<h2 id="rok-fmt-the-formatter"><a class="anchor" tabindex="-1" href="#rok-fmt-the-formatter" aria-hidden="true">#</a><code>rok fmt</code>: the formatter</h2>
+<p><code>rok fmt</code> rewrites the package's <code>.rok</code> and <code>.rokon</code> files into the standard format. rok's formatter is deliberately conservative: it <strong>leaves tokens, spacing within a line, and comments alone</strong>, and only fixes indentation (4 spaces per bracket depth), trailing whitespace, and runs of blank lines. So the formatter never changes the meaning of code or alignment a person set up by hand.</p>
+<p>Checking a <code>fib</code> with messed-up indentation, mixed tabs, and trailing whitespace using <code>--check</code> leaves the file untouched, shows the lines that would change, and exits with code 1. This mode is a good fit for CI.</p>
+<pre><code class="language-text">$ rok fmt --check
+Diff in ./src/main.rok:
++   10     if n &lt; 2 { return n; }
++   11     let unused = 1;
++   12     fib(n - 1) + fib(n - 2)
+-   10   if n &lt; 2 { return n; }
+-   11   let unused = 1;
+-   12 	fib(n - 1) + fib(n - 2)
+$ rok fmt
+$ rok fmt --check
+$
+</code></pre>
+<p>Without <code>--check</code>, it quietly fixes the files. Running it on every save in your editor is convenient.</p>
+<h2 id="rok-lint-and-rok-check"><a class="anchor" tabindex="-1" href="#rok-lint-and-rok-check" aria-hidden="true">#</a><code>rok lint</code> and <code>rok check</code></h2>
+<p><code>rok lint</code> does not compile; it runs only type checking and lints. It catches the <code>let unused = 1;</code> left in above.</p>
+<pre><code class="language-text">$ rok lint
+    Checking mathx (.)
+warning[E503]: unused variable `unused`
+   --&gt; src/main.rok:11:5
+    |
+ 11 |     let unused = 1;
+    |     ^^^
+    |
+    = note: if this is intentional, prefix it with an underscore: `_unused`
+    = note: `#[warn(unused_variables)]` on by default
+     Checked mathx: 0 errors, 1 warning
+    Finished in 0.38s
+</code></pre>
+<p>Every lint defaults to <code>warn</code>. The level can be changed in three places, and later ones win:</p>
+<ol>
+<li>The <code>lints</code> field in <code>rok.rokon</code>: <code>lints: { &quot;unused&quot;: &quot;deny&quot;, &quot;dead_code&quot;: &quot;allow&quot; }</code>
+</li>
+<li><code>-A</code> / <code>-W</code> / <code>-D</code> (allow / warn / deny) on the command line
+</li>
+<li>Attributes in source: <code>#[allow(dead_code)]</code> on an item, <code>#![deny(unused)]</code> at the top of a file
+</li>
+</ol>
+<p>Instead of a single lint (<code>unused_variables</code>), you can name a group (<code>unused</code>, <code>nonstandard_style</code>, <code>all</code>). If any <code>deny</code> lint fires, the exit code is 1.</p>
+<pre><code class="language-text">$ rok lint -D unused
+    Checking mathx (.)
+error[E503]: unused variable `unused`
+   --&gt; src/main.rok:11:5
+    |
+ 11 |     let unused = 1;
+    |     ^^^
+    |
+    = note: if this is intentional, prefix it with an underscore: `_unused`
+    = note: `-D unused` on the command line
+     Checked mathx: 1 error, 0 warnings
+    Finished in 0.31s
+</code></pre>
+<p>See the full list with <code>rokc lint --list</code> (piping it into <code>head</code> is fine: when the reader of its output goes away, <code>rok</code> and <code>rokc</code> stop quietly instead of reporting an error). <code>rok check</code> goes further and also runs code generation, but does not link or produce an executable. It is faster than a build, so use it to answer &quot;does it compile?&quot; The examples from here on use a throwaway <code>hello</code> package, so the errors and low-level output do not disturb <code>mathx</code>.</p>
+<pre><code class="language-text">$ rok check
+    Checking hello (.)
+error[E200]: mismatched types: `let s` expects `str`, found `i32`
+  --&gt; src/main.rok:2:1
+   |
+ 2 | let s: str = square(7);
+   | ^^^
+     Checked hello: 1 error, 0 warnings
+    Finished in 0.32s
+</code></pre>
+<p>For machine-readable output, add <code>--message-format=json</code>. Each diagnostic is printed as one line of JSON.</p>
+<h2 id="rok-doc-doc-comments-and-api-docs"><a class="anchor" tabindex="-1" href="#rok-doc-doc-comments-and-api-docs" aria-hidden="true">#</a><code>rok doc</code>: doc comments and API docs</h2>
+<p><code>///</code> documents the item directly below it, and <code>//!</code> documents the module (file) containing the comment. In the package above, the first line <code>//! Small math helpers.</code> becomes the module description, and the <code>///</code> above <code>gcd</code> and <code>fib</code> become the function descriptions. Doc text can use markdown such as headings, lists, inline code, code blocks, and links.</p>
+<pre><code class="language-text">$ rok doc
+ Documenting mathx (.)
+    Finished in 0.22s
+   Generated ./target/doc/index.html
+</code></pre>
+<p><code>target/doc/</code> gets HTML for the public (<code>pub</code>) items of the package and its dependencies, plus a search index. This site's <a href="../std/core/">standard library API</a> is generated the same way, from doc comments in the library source.</p>
+<h2 id="editors-rokls"><a class="anchor" tabindex="-1" href="#editors-rokls" aria-hidden="true">#</a>Editors: <code>rokls</code></h2>
+<p><code>rokls</code> is an LSP (Language Server Protocol) server. It provides diagnostics, hover, go to definition, document symbols, completion, and formatting. <code>rok lsp</code> and <code>rokc lsp</code> are the same server. It communicates over standard IO, so any editor with LSP support only needs to be told the command to run.</p>
+<p>For Neovim (0.11 or later), add this to <code>init.lua</code>:</p>
+<pre><code class="language-text">vim.filetype.add({ extension = { rok = &quot;rok&quot;, rokon = &quot;rokon&quot; } })
+vim.lsp.config(&quot;rokls&quot;, {
+  cmd = { &quot;rokls&quot; },
+  filetypes = { &quot;rok&quot;, &quot;rokon&quot; },
+  root_markers = { &quot;rok.rokon&quot; },
+})
+vim.lsp.enable(&quot;rokls&quot;)
+</code></pre>
+<p>For Helix, add this to <code>languages.toml</code>:</p>
+<pre><code class="language-text">[language-server.rokls]
+command = &quot;rokls&quot;
+
+[[language]]
+name = &quot;rok&quot;
+scope = &quot;source.rok&quot;
+file-types = [&quot;rok&quot;]
+roots = [&quot;rok.rokon&quot;]
+language-servers = [&quot;rokls&quot;]
+</code></pre>
+<p>In other editors such as VS Code, register <code>rokls</code> with a generic LSP client extension. <code>rokls</code> must be on your <code>PATH</code>.</p>
+<h2 id="repl-and-jupyter"><a class="anchor" tabindex="-1" href="#repl-and-jupyter" aria-hidden="true">#</a>REPL and Jupyter</h2>
+<p>A closer look at the REPL (<code>rok</code> or <code>rok repl</code>) from chapter 1. Each cell runs once, and top-level <code>let</code> bindings and <code>fn</code> / <code>struct</code> definitions carry over to later cells. An expression cell shows <code>type: value</code>; a <code>let</code> cell shows nothing. A cell of several statements shows the value of its last expression, if it ends in one. Unlike regular source, you can <code>let</code> the same name again, and redefining an <code>fn</code> replaces it. A cell that errors leaves no trace.</p>
+<pre><code class="language-text">$ rok repl
+&gt; let xs = [3, 1, 2];
+&gt; xs.len()
+usize: 3
+&gt; xs.sort(); xs
+List&lt;i32&gt;: [1, 2, 3]
+&gt; :type xs
+List&lt;i32&gt;
+&gt; fn twice(x: i32) -&gt; i32 { x * 2 }
+&gt; twice(21)
+i32: 42
+&gt; :quit
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>:type expr</code></td><td>Print the type without evaluating</td></tr>
+<tr><td><code>:reset</code></td><td>Forget all cells and start over</td></tr>
+<tr><td><code>:add name</code>, <code>:add name --path path</code></td><td>Add a dependency to the current session (installed into the environment, or added to the package; never into a script)</td></tr>
+<tr><td><code>:help</code>, <code>:quit</code></td><td>Help, quit</td></tr>
+</tbody></table></div>
+<p>A closure that captures variables can't be kept in a cell's top-level <code>let</code>, because each closure has its own unnamed type. The cell is rejected:</p>
+<pre><code class="language-text">&gt; let x = 3;
+&gt; let f = |n: i32| n * x;
+error: `f: closure(i32) -&gt; i32` cannot be kept for later cells (its type has no name)
+</code></pre>
+<p>Give the binding a function type, <code>let f: fn(i32) -&gt; i32 = |n: i32| n * x;</code>, which carries over. (An <code>fn</code> carries over too, but it cannot see cell variables such as <code>x</code>; pass them as arguments.) Closures used inside a cell, as in <code>xs.iter().map(|n| n * x)</code>, work as usual.</p>
+<p><code>rok repl --package path</code> starts with a library package attached and <code>use name::*;</code> already in place. Handy for trying out functions while building a library.</p>
+<p>The same cell engine is available in Jupyter notebooks. Register the kernel once, and you can pick the <code>rok</code> kernel in Jupyter, VS Code notebooks, and so on.</p>
+<pre><code class="language-text">$ rok jupyter install
+   Installed kernel `rok` (/Users/me/Library/Jupyter/kernels/rok/kernel.json)
+</code></pre>
+<p>It is installed under <code>~/Library/Jupyter</code> on macOS and <code>~/.local/share/jupyter</code> elsewhere; <code>JUPYTER_DATA_DIR</code> changes the location.</p>
+<h2 id="looking-inside-the-compiler"><a class="anchor" tabindex="-1" href="#looking-inside-the-compiler" aria-hidden="true">#</a>Looking inside the compiler</h2>
+<p>To see how long each build stage takes, add <code>-v</code>.</p>
+<pre><code class="language-text">$ rok build -v
+   Compiling hello (.)
+   Stage: front end (250ms)
+    Building ./target/debug/hello
+   Stage: codegen + link (160ms)
+    Finished in 0.41s
+</code></pre>
+<p><code>--emit</code> writes intermediate artifacts to <code>target/debug/build/</code>. The kinds are <code>ast</code>, <code>hir</code>, <code>mir</code>, <code>mlir</code>, <code>llvmir</code>, <code>asm</code>, <code>obj</code>, and <code>expanded</code> (the result of meta expansion).</p>
+<pre><code class="language-text">$ rok emit --emit=llvmir
+   Compiling hello (.)
+       Wrote ./target/debug/build/hello.ll
+    Finished in 0.32s
+$ grep define target/debug/build/hello.ll | head -2
+define i32 @_Y2cfee941__square_(i32 %0) {
+define void @_Y2cfee941__main_() {
+</code></pre>
+<p>Names starting with <code>_Y</code> are rok's mangled symbols. When you meet one in a debugger or profiler, decode it with <code>rokc demangle</code>.</p>
+<pre><code class="language-text">$ rokc demangle _Y2cfee941__square_
+package:  2cfee941
+path:     (root)
+name:     square
+generics: (none)
+</code></pre>
+<p>Building with <code>-g</code> includes DWARF debug info, so you can step through source lines in <code>lldb</code> / <code>gdb</code>. gdb shows only the active variant of a sum or an enum on its own; for lldb, the toolchain ships formatters that do the same, and <code>rokc --print lldbinit</code> prints the command that loads them.</p>
+<pre><code class="language-text">$ lldb -O &quot;$(rokc --print lldbinit)&quot; ./target/debug/hello
+$ rokc --print lldbinit &gt;&gt; ~/.lldbinit      # or load them every time
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>rok test</code> / <code>rok bench</code> build and run <code>#[test]</code> / <code>#[bench]</code> functions separately. Each test gets its own process.
+</li>
+<li><code>rok fmt</code> only fixes indentation and blank lines. In CI, use <code>rok fmt --check</code>.
+</li>
+<li><code>rok lint</code> runs lints; <code>rok check</code> goes as far as code generation. Lint levels resolve in the order <code>rok.rokon</code> &lt; <code>-A/-W/-D</code> &lt; source attributes.
+</li>
+<li>From <code>///</code> and <code>//!</code> doc comments, <code>rok doc</code> generates HTML in <code>target/doc/</code>.
+</li>
+<li>Register <code>rokls</code> as the LSP server in your editor.
+</li>
+<li>The REPL has <code>:type</code> / <code>:reset</code> / <code>:add</code>; for notebooks, <code>rok jupyter install</code>.
+</li>
+<li>To dig into problems: <code>-v</code>, <code>--emit</code>, <code>rokc demangle</code>, <code>-g</code> (with <code>rokc --print lldbinit</code> for lldb).
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-lang/009-tools/901-rokc-cli">rokc CLI</a>, <a href="../spec/refs-lang/009-tools/901-rokc-cli#9111-standard-format-rokc-fmt">Standard format</a>, <a href="../spec/refs-lang/006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">Lint control</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend">rok front-end</a>, <a href="../spec/refs-lang/009-tools/907-jit-cells">JIT cells and the REPL</a>, <a href="../spec/refs-lang/009-tools/908-jupyter-integration">Jupyter</a>, <a href="../spec/refs-lang/009-tools/909-debug-tools">Debug tools</a>, <a href="../spec/refs-lang/009-tools/905-symbol-mangling">Symbol mangling</a>
+</li>
+<li>API: <a href="../std/core/panic">assert functions in rok::core</a>
+</li>
+<li>Next chapter: <a href="17-conditional-compilation">17. Conditional Compilation</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/16-tools.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="15-rokon"><small>Previous</small>15. ROKON</a><a class="next" href="17-conditional-compilation"><small>Next</small>17. Conditional Compilation</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

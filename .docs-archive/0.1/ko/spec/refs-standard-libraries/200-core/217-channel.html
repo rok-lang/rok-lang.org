@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.17. channel - 메시지 패싱 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::channel 모듈은 task 와 thread 사이에서 메시지를 주고받기 위한 채널 primitive 를 제공합니다. 설계 측면에서는 Go 의 channel 과 Rust 의 mpsc::channel 에서 영감을 받았습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/217-channel.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.17. channel - 메시지 패싱 - rok docs">
+<meta property="og:description" content="rok::core::channel 모듈은 task 와 thread 사이에서 메시지를 주고받기 위한 채널 primitive 를 제공합니다. 설계 측면에서는 Go 의 channel 과 Rust 의 mpsc::channel 에서 영감을 받았습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/217-channel.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/217-channel.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/217-channel.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li class="cur"><a aria-current="page" href="217-channel">2.17. channel - 메시지 패싱</a><ul class="toc"><li><a href="#2171-기본-형태">2.17.1. 기본 형태</a></li><li><a href="#2172-sendert--receivert">2.17.2. Sender&lt;T&gt; / Receiver&lt;T&gt;</a></li><li><a href="#2173-close-의미">2.17.3. close 의미</a></li><li><a href="#2174-multi-producer">2.17.4. multi-producer</a></li><li><a href="#2175-for--stream-통합">2.17.5. for / Stream 통합</a></li><li><a href="#2176-모듈-매핑">2.17.6. 모듈 매핑</a></li></ul></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="217-channel---메시지-패싱 217-channel---message-passing 2171-기본-형태 2171-basic-form 사용-예 example 2172-sendert--receivert 2172-sendert--receivert 2173-close-의미 2173-close-semantics 2174-multi-producer 2174-multi-producer 2175-for--stream-통합 2175-for--stream-integration 2176-모듈-매핑 2176-module-mapping"><a href="../../../../spec/refs-standard-libraries/200-core/217-channel" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="217-channel---메시지-패싱"><a class="anchor" tabindex="-1" href="#217-channel---메시지-패싱" aria-hidden="true">#</a>2.17. channel - 메시지 패싱</h1>
+<p><code>rok::core::channel</code> 모듈은 task 와 thread 사이에서 메시지를 주고받기 위한 채널 primitive 를 제공합니다. 설계 측면에서는 Go 의 channel 과 Rust 의 <code>mpsc::channel</code> 에서 영감을 받았습니다.</p>
+<p>이 모듈은 <code>use rok::core::**;</code> 가 묵시적으로 적용되므로, <code>channel</code> 과 <code>Sender</code>, <code>Receiver</code> 같은 이름을 별도의 import 없이 곧바로 사용할 수 있습니다. 즉 <code>channel::&lt;T&gt;()</code> 나 <code>Sender&lt;T&gt;</code> 처럼 짧게 표기하면 됩니다. 다만 시각적으로 출처를 분명히 드러내야 하는 자리에서는 <code>use rok::core::channel::*;</code> 를 명시적으로 적어 두는 편을 권장합니다.</p>
+<h2 id="2171-기본-형태"><a class="anchor" tabindex="-1" href="#2171-기본-형태" aria-hidden="true">#</a>2.17.1. 기본 형태</h2>
+<p>채널을 만드는 함수는 두 가지 형태로 제공됩니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> channel&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;() -&gt; (<span class="t">Sender</span>&lt;<span class="t">T</span>&gt;, <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt;);
+<span class="k">fn</span> channel_bounded&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(cap: <span class="t">usize</span>) -&gt; (<span class="t">Sender</span>&lt;<span class="t">T</span>&gt;, <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt;);
+</code></pre>
+<p>먼저 <code>channel&lt;T&gt;()</code> 는 <strong>unbounded</strong> 채널을 만듭니다. capacity 가 무한하다는 의미이며, 실질적으로는 메모리 한계까지 메시지를 받아들입니다. 반면 <code>channel_bounded&lt;T&gt;(cap)</code> 은 <strong>bounded</strong> 채널을 만들며, capacity 가 <code>cap</code> 으로 고정되어 큐가 가득 차면 sender 쪽이 block 됩니다. <code>channel_bounded(0)</code> 은 rendezvous 채널로, <code>send</code> 는 receiver 가 그 값을 받을 때까지 기다립니다. 이 채널의 <code>try_send</code> 는 기다리는 receiver 가 없으면 <code>TrySendError::Full</code> 을 던집니다. <code>recv</code> 로 막힌 스레드뿐 아니라 <code>recv_async</code> / <code>for await</code> 에서 중단된 task 도 기다리는 receiver 로 셉니다.</p>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<p>다음은 가장 단순한 형태의 사용 예시입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">i32</span>&gt;();
+
+task::spawn(<span class="k">async</span> {
+    <span class="k">try</span> tx.send(<span class="n">1</span>);
+    <span class="k">try</span> tx.send(<span class="n">2</span>);
+    <span class="k">try</span> tx.send(<span class="n">3</span>);
+});
+
+<span class="k">while</span> <span class="k">let</span> v: <span class="t">i32</span> = rx.recv() {
+    <span class="k">use</span>(v);                  <span class="c">//→ 1, 2, 3</span>
+}
+</code></pre>
+<h2 id="2172-sendert--receivert"><a class="anchor" tabindex="-1" href="#2172-sendert--receivert" aria-hidden="true">#</a>2.17.2. <code>Sender&lt;T&gt;</code> / <code>Receiver&lt;T&gt;</code></h2>
+<p>채널의 양 끝을 이루는 두 타입은 다음과 같이 정의됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Sender</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+<span class="k">struct</span> <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Sender</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> send(<span class="k">self</span>, value: <span class="t">T</span>) <span class="k">throws</span> (<span class="t">SendError</span>&lt;<span class="t">T</span>&gt;);
+    <span class="k">fn</span> try_send(<span class="k">self</span>, value: <span class="t">T</span>) <span class="k">throws</span> (<span class="t">TrySendError</span>&lt;<span class="t">T</span>&gt;);
+    <span class="k">fn</span> send_async(<span class="k">self</span>, value: <span class="t">T</span>) -&gt; <span class="t">SendFuture</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// try await tx.send_async(v) - task 만 중단, throws (SendError&lt;T&gt;)</span>
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">Sender</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// 다중 sender</span>
+    <span class="k">fn</span> close(<span class="k">self</span>);                          <span class="c">// 이 sender 를 닫음</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> recv(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;               <span class="c">// none = 모든 sender 가 close</span>
+    <span class="k">fn</span> try_recv(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;           <span class="c">// none = 비어있음 또는 closed</span>
+    <span class="k">fn</span> recv_async(<span class="k">self</span>) -&gt; <span class="t">RecvFuture</span>&lt;<span class="t">T</span>&gt;;    <span class="c">// await rx.recv_async() - task 만 중단, Output = T | none</span>
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">ChannelIter</span>&lt;<span class="t">T</span>&gt;;         <span class="c">// for x in rx { ... }</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Stream</span> <span class="k">for</span> <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; {         <span class="c">// for await v in rx - task 만 중단</span>
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">T</span>;
+    ...
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">IntoIterator</span> <span class="k">for</span> <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; {   <span class="c">// for x in rx - 모든 sender 가 close 되면 끝</span>
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">T</span>;
+    <span class="k">type</span> <span class="t">IntoIter</span> = <span class="t">ChannelIter</span>&lt;<span class="t">T</span>&gt;;
+}
+
+<span class="k">enum</span> <span class="t">SendError</span>&lt;<span class="t">T</span>&gt; { <span class="t">Closed</span>(<span class="t">T</span>) }
+<span class="k">enum</span> <span class="t">TrySendError</span>&lt;<span class="t">T</span>&gt; { <span class="t">Full</span>(<span class="t">T</span>), <span class="t">Closed</span>(<span class="t">T</span>) }
+<span class="c">// 둘 다 Display, Debug, Error 를 구현 (메시지는 값이 아니라 경우를 말함)</span>
+</code></pre>
+<p><code>T: Send</code> 이면 <code>Sender&lt;T&gt;</code> 와 <code>Receiver&lt;T&gt;</code> 도 <code>Send</code> 이므로 다른 task 나 스레드로 옮길 수 있습니다 (<a href="213-marker#2139-send--sync---스레드-경계-marker">2.13.9</a>). <code>send</code>, <code>try_send</code>, <code>send_async</code> 는 값이 닿는 컬렉션의 복사본을 큐에 넣습니다 (2.13.9): 받는 쪽은 보낸 쪽과 컬렉션을 공유하지 않습니다.</p>
+<p><code>recv</code> 와 <code>send</code> (bounded 가 가득 찬 경우, rendezvous 에서 값이 받아질 때까지) 는 스레드를 block 합니다. async 코드에서 task 만 중단하려면 <code>await rx.recv_async()</code>, <code>for await v in rx</code>, <code>try await tx.send_async(v)</code> 를 씁니다. <code>send_async</code> 는 bounded 채널이 가득 찬 동안, rendezvous 채널에서는 receiver 가 값을 가져갈 때까지 task 를 중단합니다. <code>send</code> 와 같이, 이 sender 가 이미 <code>close()</code> 되었으면 값을 담은 <code>SendError::Closed</code> 를 던집니다. 취소된 <code>recv_async</code> 는 값을 꺼내지 않고, 취소된 <code>send_async</code> 는 값을 보내지 않습니다 (<a href="218-task#2184-협력적-취소---taskcancel">2.18.4</a>). <code>Mutex::lock</code> / <code>lock_async</code> 도 같은 구분입니다 (<a href="216-sync">2.16</a>).</p>
+<h2 id="2173-close-의미"><a class="anchor" tabindex="-1" href="#2173-close-의미" aria-hidden="true">#</a>2.17.3. close 의미</h2>
+<p>채널이 닫히는 시점과 그 신호가 전달되는 방식은 다음과 같습니다. 우선 모든 sender 가 <code>close()</code> 되면 채널은 closed 상태가 됩니다. 이때 receiver 쪽에서는 <code>recv()</code> 가 <code>none</code> 을 반환하여 close 신호를 받게 됩니다. rok 은 scope 종료 시 자동 drop 이 없으므로 (<a href="213-marker#2134-drop---using-해제-시-정리">2.13.4</a>), sender 를 닫는 것은 명시적인 <code>close()</code> 입니다.</p>
+<p>다음은 <code>close()</code> 로 채널을 닫는 예시입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">i32</span>&gt;();
+<span class="k">try</span> tx.send(<span class="n">1</span>);
+tx.close();            <span class="c">// 명시 close</span>
+
+rx.recv();             <span class="c">//→ 1</span>
+rx.recv();             <span class="c">//→ none  (closed)</span>
+</code></pre>
+<h2 id="2174-multi-producer"><a class="anchor" tabindex="-1" href="#2174-multi-producer" aria-hidden="true">#</a>2.17.4. multi-producer</h2>
+<p><code>Sender&lt;T&gt;</code> 는 <code>Clone</code> 을 구현하므로, 여러 task 가 같은 채널에 메시지를 보낼 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">str</span>&gt;();
+<span class="k">let</span> tx2 = tx.clone();
+
+task::spawn(<span class="k">async</span> { <span class="k">try</span> tx.send(<span class="s">"hello"</span>); });
+task::spawn(<span class="k">async</span> { <span class="k">try</span> tx2.send(<span class="s">"world"</span>); });
+
+<span class="k">let</span> v1 = rx.recv();
+<span class="k">let</span> v2 = rx.recv();
+</code></pre>
+<p>반면 <code>Receiver&lt;T&gt;</code> 는 Clone 을 구현하지 않으므로 single consumer 로 동작합니다. 이는 mpsc - multi producer single consumer - 모델을 의미합니다. 만약 multi-consumer 가 필요한 상황이라면 별도의 fan-out task 를 두어 분배하는 방식을 택하면 됩니다.</p>
+<h2 id="2175-for--stream-통합"><a class="anchor" tabindex="-1" href="#2175-for--stream-통합" aria-hidden="true">#</a>2.17.5. <code>for</code> / <code>Stream</code> 통합</h2>
+<p><code>Receiver&lt;T&gt;</code> 는 <code>IntoIterator&lt;Item = T&gt;</code> 를 구현하므로 <code>for</code> 문에서 자연스럽게 사용할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">for</span> v <span class="k">in</span> rx {
+    <span class="k">use</span>(v);                  <span class="c">// 채널 close 까지 반복</span>
+}
+</code></pre>
+<p>이에 더해 비동기 iterator 인 <code>Stream&lt;Item = T&gt;</code> 도 함께 구현되므로, <code>for await</code> 구문도 동일하게 사용 가능합니다.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> v <span class="k">in</span> rx {
+    <span class="k">await</span> handle(v);
+}
+</code></pre>
+<p>자세한 내용은 <a href="207-iter">2.7 iter</a> 와 <a href="208-stream">2.8 stream</a> 를 참고합니다.</p>
+<h2 id="2176-모듈-매핑"><a class="anchor" tabindex="-1" href="#2176-모듈-매핑" aria-hidden="true">#</a>2.17.6. 모듈 매핑</h2>
+<p>각 타입과 함수가 어디에 구현되는지는 다음 표로 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>모듈</th><th>내부 구조</th></tr></thead>
+<tbody>
+<tr><td><code>Sender&lt;T&gt;</code></td><td><code>rok::core::channel::sender</code></td><td>atomic ref count + queue</td></tr>
+<tr><td><code>Receiver&lt;T&gt;</code></td><td><code>rok::core::channel::receiver</code></td><td>queue + parking</td></tr>
+<tr><td><code>channel&lt;T&gt;()</code></td><td><code>rok::core::channel</code></td><td>Arc-like internal state</td></tr>
+</tbody></table></div>
+<p>내부 큐 구조는 bounded 채널의 경우 Tokio mpsc 와 유사한 ring buffer 를 사용하고, unbounded 채널의 경우 segmented linked-list 를 사용합니다. bounded 채널의 큐는 lock-free 이며, unbounded 채널의 segment 리스트는 lock 을 쓸 수 있습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/217-channel.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="216-sync"><small>Previous</small>2.16. sync - 동시성 primitive</a><a class="next" href="218-task"><small>Next</small>2.18. task - M:N 스케줄러 task API</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

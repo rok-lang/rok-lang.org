@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.9. impl - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="impl 블록은 어떤 타입에 메서드를 부착하거나, 어떤 타입에 트레잇을 구현하는 컨테이너입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/209-impl.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.9. impl - rok docs">
+<meta property="og:description" content="impl 블록은 어떤 타입에 메서드를 부착하거나, 어떤 타입에 트레잇을 구현하는 컨테이너입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/209-impl.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/209-impl.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/209-impl.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li><a href="208-trait">2.8. trait</a></li><li class="cur"><a aria-current="page" href="209-impl">2.9. impl</a><ul class="toc"><li><a href="#291-두-형태">2.9.1. 두 형태</a></li><li><a href="#292-메서드의-self-관례">2.9.2. 메서드의 self 관례</a></li><li><a href="#293-한-타입에-대한-여러-impl-블록">2.9.3. 한 타입에 대한 여러 impl 블록</a></li><li><a href="#294-제네릭-impl">2.9.4. 제네릭 impl</a></li><li><a href="#295-orphan-규칙">2.9.5. Orphan 규칙</a></li><li><a href="#296-메서드-가시성">2.9.6. 메서드 가시성</a></li><li><a href="#297-고유-impl-vs-트레잇-impl-의-메서드-충돌">2.9.7. 고유 impl vs 트레잇 impl 의 메서드 충돌</a></li><li><a href="#298-동일-메서드-두-번-정의-금지">2.9.8. 동일 메서드 두 번 정의 금지</a></li></ul></li><li><a href="210-generics">2.10. 제네릭</a></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="29-impl 29-impl 291-두-형태 291-two-forms 고유-impl-inherent-메서드-부착 inherent-impl-attaching-methods 트레잇-impl-트레잇-구현 trait-impl-implementing-a-trait impl-안의-상수 constants-in-an-impl 292-메서드의-self-관례 292-the-self-convention-for-methods 293-한-타입에-대한-여러-impl-블록 293-multiple-impl-blocks-for-one-type 294-제네릭-impl 294-generic-impl 295-orphan-규칙 295-orphan-rule 일관성-coherence coherence 296-메서드-가시성 296-method-visibility 297-고유-impl-vs-트레잇-impl-의-메서드-충돌 297-method-conflicts-between-inherent-and-trait-impls 298-동일-메서드-두-번-정의-금지 298-no-defining-the-same-method-twice"><a href="../../../../spec/refs-lang/002-types/209-impl" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="29-impl"><a class="anchor" tabindex="-1" href="#29-impl" aria-hidden="true">#</a>2.9. <code>impl</code></h1>
+<p><code>impl</code> 블록은 어떤 타입에 메서드를 부착하거나, 어떤 타입에 트레잇을 구현하는 컨테이너입니다.</p>
+<h2 id="291-두-형태"><a class="anchor" tabindex="-1" href="#291-두-형태" aria-hidden="true">#</a>2.9.1. 두 형태</h2>
+<p><code>impl</code> 블록의 문법은 다음과 같이 두 가지 형태를 가집니다.</p>
+<pre><code>impl_block      ::= &quot;impl&quot; generics? type_expr &quot;{&quot; impl_item* &quot;}&quot;
+                  | &quot;unsafe&quot;? &quot;impl&quot; generics? type_expr &quot;for&quot; type_expr where_clause? &quot;{&quot; impl_item* &quot;}&quot;
+                  | &quot;impl&quot; generics? &quot;!&quot; type_expr &quot;for&quot; type_expr where_clause? &quot;{&quot; &quot;}&quot;
+impl_item       ::= fn_decl
+                  | &quot;type&quot; identifier &quot;=&quot; type_expr &quot;;&quot;
+                  | const_decl
+</code></pre>
+<p><code>impl &lt;</code> 의 <code>&lt;</code> 는 뒤에 제네릭 매개변수가 올 때만 (<code>&lt;&gt;</code>, <code>&lt;T&gt;</code>, <code>&lt;T:</code>, <code>&lt;T,</code>, <code>&lt;T =</code>, <code>&lt;const N</code>) <code>generics</code> 를 엽니다. 그 밖이면 대상 타입의 시작입니다. 예: inherent <code>impl &lt;A as P&gt;::Out { .. }</code>.</p>
+<h3 id="고유-impl-inherent-메서드-부착"><a class="anchor" tabindex="-1" href="#고유-impl-inherent-메서드-부착" aria-hidden="true">#</a>고유 <code>impl</code> (inherent). 메서드 부착</h3>
+<p>먼저 고유 <code>impl</code> 의 예시부터 살펴보겠습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { <span class="t">Point</span> { x: <span class="n">0.0f64</span>, y: <span class="n">0.0f64</span> } }
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+}
+</code></pre>
+<p>이 형태는 <code>impl 타입 { ... }</code> 의 모습을 가지며, 본체는 함수 정의의 모음으로 이루어집니다. 그리고 이렇게 정의된 함수는 그 타입의 메서드가 됩니다.</p>
+<p>고정 배열과 튜플에도 고유 <code>impl</code> 을 둘 수 있습니다. 표준 라이브러리는 이것으로 배열에 <code>len()</code> / <code>is_empty()</code> 를 줍니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; [<span class="t">T</span>; <span class="t">N</span>] {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span> { <span class="t">N</span> }
+}
+
+<span class="k">impl</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; (<span class="t">A</span>, <span class="t">B</span>) {
+    <span class="k">fn</span> swap(<span class="k">self</span>) -&gt; (<span class="t">B</span>, <span class="t">A</span>) { (<span class="k">self</span>.<span class="n">1</span>, <span class="k">self</span>.<span class="n">0</span>) }
+}
+</code></pre>
+<h3 id="트레잇-impl-트레잇-구현"><a class="anchor" tabindex="-1" href="#트레잇-impl-트레잇-구현" aria-hidden="true">#</a>트레잇 <code>impl</code>. 트레잇 구현</h3>
+<p>다음으로 트레잇 <code>impl</code> 의 예시를 살펴보겠습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Describe</span> <span class="k">for</span> <span class="t">Point</span> {
+    <span class="k">fn</span> describe(<span class="k">self</span>) -&gt; <span class="t">str</span> { <span class="s">f"({</span><span class="k">self</span>.x<span class="s">}, {</span><span class="k">self</span>.y<span class="s">})"</span> }
+}
+
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">Point</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Point</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Point</span>) -&gt; <span class="t">Point</span> { ... }
+}
+</code></pre>
+<p>이 형태는 <code>impl 트레잇 for 타입 { ... }</code> 의 모습을 가집니다. 본체에는 <a href="208-trait"><code>trait</code></a> 가 요구한 메서드의 본체와 연관 타입의 구체 정의가 옵니다. 한편 트레잇이 기본 메서드를 제공한 항목은 본체에서 생략할 수 있으며, 그러면 기본 본체를 사용합니다.</p>
+<p>impl 메서드는 트레잇 선언의 매개변수 개수와, receiver 를 뺀 각 매개변수에 같은 <code>ref</code> 를 가져야 하며, 선언이 값을 돌려줄 때 정확히 값을 돌려줘야 합니다. 그렇지 않으면 impl 에서 에러이며, 그 에러는 선언을 보여 줍니다. impl 메서드의 <code>throws</code> 는 트레잇 메서드의 <code>throws</code> 와 같아야 합니다. impl 이 <code>throws</code> 를 새로 붙이거나 에러 타입을 넓힐 수 없습니다 (<a href="../004-functions/414-throws#41411-메서드의-throws">4.14.11</a>).</p>
+<p><code>Send</code> / <code>Sync</code> 는 자동 marker 트레잇이며 두 가지 수동 선언이 있습니다 (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---스레드-경계-marker">stdlib 2.13.9</a>).</p>
+<ul>
+<li>opt-in: <code>unsafe impl Send for X {}</code>. <code>unsafe impl</code> 은 <code>Send</code> / <code>Sync</code> 에만 쓸 수 있고, 이 두 트레잇의 수동 구현에는 반드시 필요합니다.
+</li>
+<li>opt-out: <code>impl !Send for X {}</code>, <code>impl&lt;T&gt; !Send for Cell&lt;T&gt; {}</code>. 자동 구현을 막으며, 본체는 비어 있어야 합니다. <code>!</code> 는 <code>Send</code> / <code>Sync</code> 에만 쓸 수 있습니다.
+</li>
+</ul>
+<h3 id="impl-안의-상수"><a class="anchor" tabindex="-1" href="#impl-안의-상수" aria-hidden="true">#</a><code>impl</code> 안의 상수</h3>
+<p><code>impl</code> 블록 안의 <code>const N: T = v;</code> 는 그 타입의 연관 상수입니다. 바깥에서는 <code>Type::N</code> 으로, <code>impl</code> 안에서는 <code>Self::N</code> 으로 읽습니다. 트레잇이 선언한 연관 상수 (<a href="208-trait#283a-연관-상수-associated-const">2.8.3a</a>) 는 트레잇 <code>impl</code> 에서 값을 정합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Circle</span> {
+    <span class="k">const</span> <span class="t">UNIT</span>: <span class="t">f64</span> = <span class="n">1.0</span>;
+    <span class="k">fn</span> unit() -&gt; <span class="t">Circle</span> { <span class="t">Circle</span> { r: <span class="k">Self</span>::<span class="t">UNIT</span> } }
+}
+<span class="k">let</span> r = <span class="t">Circle</span>::<span class="t">UNIT</span>;
+</code></pre>
+<p><code>impl</code> 의 대상이나 트레잇 인자는 projection (<code>&lt;T as Tr&gt;::X</code>) 이거나 뒤에 선언된 항목을 가리켜도 됩니다. 이것은 모든 항목을 등록한 뒤에 해소합니다.</p>
+<p><code>impl</code> 의 대상은 제네릭이든 아니든 타입 별칭을 가리킬 수 있습니다. 별칭은 펼쳐지며, 그 <code>impl</code> 은 별칭이 가리키는 타입으로 적은 것과 같습니다: <code>type Al&lt;T&gt; = S&lt;T&gt;;</code> 이면 <code>impl&lt;T&gt; Al&lt;T&gt; { .. }</code> 는 <code>impl&lt;T&gt; S&lt;T&gt; { .. }</code> 이고 <code>impl&lt;T&gt; Tr for Al&lt;T&gt;</code> 는 <code>impl&lt;T&gt; Tr for S&lt;T&gt;</code> 입니다. 인자 일부를 고정한 별칭 (<code>type Names&lt;V&gt; = Dict&lt;str, V&gt;;</code>) 은 그 인스턴스만 덮는 <code>impl</code> 을 줍니다.</p>
+<h2 id="292-메서드의-self-관례"><a class="anchor" tabindex="-1" href="#292-메서드의-self-관례" aria-hidden="true">#</a>2.9.2. 메서드의 <code>self</code> 관례</h2>
+<p>본체의 함수가 인스턴스 메서드가 되려면 첫 매개변수가 <code>self</code> (또는 <code>ref self</code>) 여야 합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { ... }                    <span class="c">// 정적 - Type::method() 호출</span>
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }  <span class="c">// 인스턴스 - instance.method() 호출</span>
+    <span class="k">fn</span> replace_with(<span class="k">ref</span> <span class="k">self</span>, other: <span class="t">Point</span>) { ... } <span class="c">// ref self - caller 의 변수 재할당 가능</span>
+}
+</code></pre>
+<p><code>self</code> 매개변수의 정확한 의미와 <code>ref self</code> 의 동작은 함수 사양에서 정의합니다. 본 문서에서는 <code>self</code> 유무가 정적 메서드와 인스턴스 메서드를 구분한다는 점까지만 짚고 넘어가겠습니다.</p>
+<h2 id="293-한-타입에-대한-여러-impl-블록"><a class="anchor" tabindex="-1" href="#293-한-타입에-대한-여러-impl-블록" aria-hidden="true">#</a>2.9.3. 한 타입에 대한 여러 <code>impl</code> 블록</h2>
+<p>같은 타입에 대해 고유 <code>impl</code> 은 여러 블록으로 나누어도 됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> origin() -&gt; <span class="t">Point</span> { ... }
+}
+
+<span class="k">impl</span> <span class="t">Point</span> {
+    <span class="k">fn</span> distance(<span class="k">self</span>, other: <span class="t">Point</span>) -&gt; <span class="t">f64</span> { ... }
+}
+</code></pre>
+<p>이 형태는 시각적이고 조직적인 묶음일 뿐이며, 결과는 한 본체에 모은 것과 같습니다.</p>
+<p>다만 같은 타입에 대해 같은 트레잇의 <code>impl</code> 은 한 번만 가능합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Point</span> { ... }
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Point</span> { ... }   <span class="c">// ERROR - 중복 구현</span>
+</code></pre>
+<h2 id="294-제네릭-impl"><a class="anchor" tabindex="-1" href="#294-제네릭-impl" aria-hidden="true">#</a>2.9.4. 제네릭 <code>impl</code></h2>
+<p><code>impl</code> 도 제네릭으로 선언할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span> { ... }
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Add</span> <span class="k">for</span> <span class="t">Pair</span>&lt;<span class="t">T</span>&gt; <span class="k">where</span> <span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Pair</span>&lt;<span class="t">T</span>::<span class="t">Output</span>&gt;;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Pair</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Pair</span>&lt;<span class="t">T</span>::<span class="t">Output</span>&gt; { ... }
+}
+</code></pre>
+<p><code>impl</code> 뒤에 <code>&lt;...&gt;</code> 로 타입 매개변수를 선언하며, 이 매개변수는 대상 타입과 트레잇 인자, 연관 타입 어디에든 등장할 수 있습니다. 또한 <code>where</code> 절로 추가 제약을 둘 수 있는데, 이는 트레잇 선언과 동일한 방식입니다.</p>
+<p>제네릭 <code>impl</code> 은 그 매개변수가 만들 수 있는 대상의 인스턴스를 덮습니다: <code>impl&lt;V&gt; P&lt;str, V&gt;</code> 는 <code>P&lt;str, i32&gt;</code> 에는 메서드를 주지만 <code>P&lt;i32, i32&gt;</code> 에는 주지 않습니다.</p>
+<h2 id="295-orphan-규칙"><a class="anchor" tabindex="-1" href="#295-orphan-규칙" aria-hidden="true">#</a>2.9.5. Orphan 규칙</h2>
+<p>다른 패키지에서 정의된 트레잇을 또 다른 패키지에서 정의된 타입에 구현하는 것은 금지합니다.</p>
+<pre><code class="language-rok"><span class="c">// 트레잇 Display, 타입 i32 가 모두 표준 라이브러리(다른 패키지) 정의</span>
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">i32</span> { ... }     <span class="c">// ERROR - 둘 다 외부 패키지</span>
+</code></pre>
+<p>따라서 트레잇이 현재 패키지 정의이거나, 아니면 대상 타입이 현재 패키지 정의이거나 둘 중 하나는 반드시 충족되어야 합니다. 내장 타입 (원시 타입, 튜플, 배열, 함수 타입) 은 <code>rok::core</code> 에서 정의된 것으로 칩니다.</p>
+<p>이 규칙의 단위는 <a href="../000-meta/003-source-units">소스 단위</a> 의 패키지입니다. 그러므로 같은 패키지 안의 다른 모듈끼리는 자유롭게 <code>impl</code> 할 수 있습니다.</p>
+<p>이 규칙은 같은 (트레잇, 타입) 쌍에 대해 충돌하는 <code>impl</code> 이 두 패키지에서 동시에 만들어지지 않도록 하기 위한 장치이며, 일관성을 보장하기 위한 것입니다.</p>
+<h3 id="일관성-coherence"><a class="anchor" tabindex="-1" href="#일관성-coherence" aria-hidden="true">#</a>일관성 (coherence)</h3>
+<p>한 (트레잇, 타입) 쌍에는 <code>impl</code> 이 하나뿐이며, 특수화 (specialization) 는 없습니다.</p>
+<ul>
+<li>제네릭 <code>impl</code> 은 쓰이는 타입마다 단형화됩니다.
+</li>
+<li>구체 <code>impl</code> 은 그 구체 타입이 제네릭 <code>impl</code> 의 바운드를 만족할 때만 제네릭 <code>impl</code> 과 겹칩니다.
+</li>
+<li>제네릭 <code>impl</code> 두 개는 대상 (과 트레잇 인자) 이 단일화 (unify) 되면 겹치며, 선언 시점에 에러로 보고합니다. 단일화 뒤에도 제네릭으로 남는 매개변수의 바운드는 둘을 떼어 놓지 않습니다. 두 바운드를 모두 만족하는 타입이 아직 없어도 에러입니다 (Rust 의 coherence 와 같음).
+</li>
+<li>겹침을 따질 때 <code>T?</code> 와 <code>T | none</code> 은 같은 타입입니다.
+</li>
+<li>부정 추론은 알려진 타입에만 합니다.
+<ol>
+<li>단일화로 구체 타입이 된 매개변수는 그 바운드를 검사합니다. <code>impl&lt;U: Num&gt; X for Pair&lt;U, i32&gt;</code> 와 <code>impl&lt;U&gt; X for Pair&lt;str, U&gt;</code> 는 단일화하면 <code>U = str</code> 인데 <code>str: Num</code> 이 아니므로 겹치지 않습니다.
+</li>
+<li>알려진 타입 생성자에 대한 바운드 (<code>List&lt;T&gt;: Iterator</code>) 는, 그 트레잇의 impl 중 그 생성자나 맨 매개변수를 대상으로 하는 것이 없으면 둘을 떼어 놓습니다. 그래서 <code>impl&lt;I: Iterator&gt; IntoIterator for I</code> 와 <code>impl&lt;T&gt; IntoIterator for List&lt;T&gt;</code> 가 함께 있을 수 있습니다.
+</li>
+</ol>
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Display</span>&gt; <span class="t">Describe</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Hash</span>&gt; <span class="t">Describe</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }   <span class="c">// ERROR - i32 가 Display 와 Hash 를 모두 만족</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Shape</span>&gt; <span class="t">Area</span> <span class="k">for</span> <span class="t">T</span> { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Color</span>&gt; <span class="t">Area</span> <span class="k">for</span> <span class="t">T</span> { ... }            <span class="c">// ERROR - T 와 T 가 단일화됨 (바운드 무관)</span>
+</code></pre>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Display</span>&gt; <span class="t">Describe</span> <span class="k">for</span> <span class="t">T</span> { ... }
+<span class="k">impl</span> <span class="t">Describe</span> <span class="k">for</span> <span class="t">i32</span> { ... }        <span class="c">// ERROR - i32: Display 라서 위 impl 과 겹침</span>
+</code></pre>
+<h2 id="296-메서드-가시성"><a class="anchor" tabindex="-1" href="#296-메서드-가시성" aria-hidden="true">#</a>2.9.6. 메서드 가시성</h2>
+<p>고유 <code>impl</code> 의 메서드 가시성은 기본이 모듈 비공개입니다. 같은 모듈 안에서는 자유롭게 호출할 수 있으며, 외부에 노출하려면 <code>pub</code> 을 명시해야 합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Account</span> {
+    <span class="k">pub</span> <span class="k">fn</span> balance(<span class="k">self</span>) -&gt; <span class="t">f64</span> { <span class="k">self</span>.amount }      <span class="c">// 외부 공개</span>
+        <span class="k">fn</span> _internal_check(<span class="k">self</span>) { ... }              <span class="c">// 모듈 내부만</span>
+}
+</code></pre>
+<p>이러한 결정은 <a href="203-struct"><code>struct</code></a> 와 <a href="204-enum"><code>enum</code></a> 의 가시성 모델과 일치합니다. <code>impl</code> 블록 자체는 시각적 묶음일 뿐 가시성 단위가 아니며, 가시성 단위는 어디까지나 모듈입니다.</p>
+<p>한편 트레잇 <code>impl</code> 의 메서드는 그 트레잇의 가시성을 따르므로, 따로 표시할 수 없습니다.</p>
+<h2 id="297-고유-impl-vs-트레잇-impl-의-메서드-충돌"><a class="anchor" tabindex="-1" href="#297-고유-impl-vs-트레잇-impl-의-메서드-충돌" aria-hidden="true">#</a>2.9.7. 고유 <code>impl</code> vs 트레잇 <code>impl</code> 의 메서드 충돌</h2>
+<p>같은 메서드 이름이 고유 <code>impl</code> 과 트레잇 <code>impl</code> 양쪽에 있으면, 호출 지점에서 모호하지 않은 방식으로 선택해야 합니다. 정확한 해소 규칙은 <a href="../004-functions/409-method#트레잇-사이의-이름-충돌">메서드</a> 에서 정의합니다.</p>
+<h2 id="298-동일-메서드-두-번-정의-금지"><a class="anchor" tabindex="-1" href="#298-동일-메서드-두-번-정의-금지" aria-hidden="true">#</a>2.9.8. 동일 메서드 두 번 정의 금지</h2>
+<p>같은 타입에 같은 이름의 메서드를 두 번 정의하면 컴파일 에러입니다. 한 <code>impl</code> 블록 안이든 여러 고유 <code>impl</code> 블록 (<a href="#293-한-타입에-대한-여러-impl-블록">2.9.3</a>) 에 걸쳐서든, 한 트레잇 <code>impl</code> 안에서든 마찬가지입니다 (오버로딩 없음). 서로 다른 트레잇에서 온 같은 이름의 메서드는 허용됩니다 (<a href="#297-고유-impl-vs-트레잇-impl-의-메서드-충돌">2.9.7</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/209-impl.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="208-trait"><small>Previous</small>2.8. trait</a><a class="next" href="210-generics"><small>Next</small>2.10. 제네릭</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

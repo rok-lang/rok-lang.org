@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.7. Operator magic - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The three attributes #[infix], #[prefix], and #[postfix] only connect operator tokens to trait methods. Precedence and associativity are fixed at the language l...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/607-operator-magic.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.7. Operator magic - rok docs">
+<meta property="og:description" content="The three attributes #[infix], #[prefix], and #[postfix] only connect operator tokens to trait methods. Precedence and associativity are fixed at the language l...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/607-operator-magic.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/607-operator-magic.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/607-operator-magic.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">6. Meta-system overview</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. Attribute syntax</a></li><li><a href="602-built-in-attributes">6.2. Built-in attributes</a></li><li><a href="603-cfg">6.3. #[cfg] conditional compilation</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] magic</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] magic</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] magic</a></li><li class="cur"><a aria-current="page" href="607-operator-magic">6.7. Operator magic</a><ul class="toc"><li><a href="#671-the-three-attributes">6.7.1. The three attributes</a></li><li><a href="#672-arguments">6.7.2. Arguments</a></li><li><a href="#673-connection-mechanism">6.7.3. Connection mechanism</a></li><li><a href="#674-unicode-and-multiple-aliases">6.7.4. Unicode and multiple aliases</a></li><li><a href="#675-conflict-checking">6.7.5. Conflict checking</a></li><li><a href="#676-multiple-positions-of-the-same-token">6.7.6. Multiple positions of the same token</a></li><li><a href="#677-dot-prefixed-broadcast-mappings">6.7.7. Dot-prefixed (broadcast) mappings</a></li><li><a href="#678-visibility-of-mappings">6.7.8. Visibility of mappings</a></li><li><a href="#679-user-defined-operators">6.7.9. User-defined operators</a></li><li><a href="#6710-precedence-and-associativity-levels">6.7.10. Precedence and associativity levels</a></li><li><a href="#6711-when-it-is-evaluated">6.7.11. When it is evaluated</a></li><li><a href="#6712-no-aliases-at-different-levels">6.7.12. No aliases at different levels</a></li><li><a href="#6713-attachment-only-to-trait-methods">6.7.13. Attachment only to trait methods</a></li><li><a href="#6714-summary">6.7.14. Summary</a></li></ul></li><li><a href="608-meta-blocks">6.8. User-defined meta definitions</a></li><li><a href="609-template-tokens">6.9. Template tokens and expansion</a></li><li><a href="610-reflection">6.10. Reflection</a></li><li><a href="611-include">6.11. Compile-time file embedding</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="67-operator-magic 67-연산자-매직 671-the-three-attributes 671-세-속성 672-arguments 672-인자 673-connection-mechanism 673-연결-메커니즘 674-unicode-and-multiple-aliases 674-unicode-및-다중-alias 675-conflict-checking 675-충돌-검사 676-multiple-positions-of-the-same-token 676-같은-토큰의-여러-위치 677-dot-prefixed-broadcast-mappings 677-점-접두-브로드캐스트-매핑 678-visibility-of-mappings 678-매핑의-가시성 679-user-defined-operators 679-사용자-정의-연산자 6710-precedence-and-associativity-levels 6710-우선순위와-결합성-등급 6711-when-it-is-evaluated 6711-평가-시점 6712-no-aliases-at-different-levels 6712-다른-단계의-alias-금지 6713-attachment-only-to-trait-methods 6713-트레잇-메서드-외-부착-금지 6714-summary 6714-정리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/006-meta-system/607-operator-magic" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="67-operator-magic"><a class="anchor" tabindex="-1" href="#67-operator-magic" aria-hidden="true">#</a>6.7. Operator magic</h1>
+<p>The three attributes <code>#[infix]</code>, <code>#[prefix]</code>, and <code>#[postfix]</code> only connect operator tokens to trait methods. Precedence and associativity are fixed at the language level by the table in <a href="../003-expressions/302-precedence-and-associativity#323-precedence-and-associativity-table">3.2.3</a> and cannot be set or changed by these attributes. They are core magics required for the desugaring mechanism of <a href="../003-expressions/301-operator-dispatch">operator dispatch</a> to work.</p>
+<pre><code>infix_attr      ::= &quot;#&quot; &quot;[&quot; &quot;infix&quot; &quot;(&quot; string_lit (&quot;,&quot; like_arg)? (&quot;,&quot; &quot;swap&quot;)? &quot;)&quot; &quot;]&quot;
+prefix_attr     ::= &quot;#&quot; &quot;[&quot; &quot;prefix&quot; &quot;(&quot; string_lit (&quot;,&quot; like_arg)? &quot;)&quot; &quot;]&quot;
+postfix_attr    ::= &quot;#&quot; &quot;[&quot; &quot;postfix&quot; &quot;(&quot; string_lit (&quot;,&quot; like_arg)? &quot;)&quot; &quot;]&quot;
+like_arg        ::= &quot;like&quot; &quot;=&quot; string_lit
+</code></pre>
+<h2 id="671-the-three-attributes"><a class="anchor" tabindex="-1" href="#671-the-three-attributes" aria-hidden="true">#</a>6.7.1. The three attributes</h2>
+<p>First, an example of how the three attributes are used.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("+")]</span>
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Neg</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[prefix("-")]</span>
+    <span class="k">fn</span> neg(<span class="k">self</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Degrees</span> {
+    <span class="a">#[postfix("°", like = "?")]</span>    <span class="c">// extension token - same level as postfix ?</span>
+    <span class="k">fn</span> degrees(<span class="k">self</span>) -&gt; <span class="t">f64</span>;
+}
+</code></pre>
+<p>Where each attribute is attached and which form of operation it expresses:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Attribute</th><th>Position</th><th>Form</th></tr></thead>
+<tbody>
+<tr><td><code>#[infix(sym)]</code></td><td>trait method</td><td>binary (<code>a SYM b</code>)</td></tr>
+<tr><td><code>#[prefix(sym)]</code></td><td>trait method</td><td>prefix unary (<code>SYM a</code>)</td></tr>
+<tr><td><code>#[postfix(sym)]</code></td><td>trait method</td><td>postfix unary (<code>a SYM</code>)</td></tr>
+</tbody></table></div>
+<h2 id="672-arguments"><a class="anchor" tabindex="-1" href="#672-arguments" aria-hidden="true">#</a>6.7.2. Arguments</h2>
+<p>The arguments each attribute takes:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Argument</th><th>Meaning</th><th>Required?</th></tr></thead>
+<tbody>
+<tr><td><code>sym</code></td><td>Operator token (string literal)</td><td>Required</td></tr>
+<tr><td><code>like</code></td><td>Existing token the new token follows (its level and associativity)</td><td>Required, only for tokens not in the 3.2 table</td></tr>
+<tr><td><code>swap</code></td><td>Connects with operands swapped (infix only)</td><td>Optional</td></tr>
+</tbody></table></div>
+<p><code>swap</code> connects a binary operation with its two operands swapped. <code>contains</code> with <code>#[infix(&quot;∈&quot;, swap)]</code> desugars <code>a ∈ b</code> into <code>b.contains(a)</code>. It exists for operators whose container is not on the left (<code>∈ ∉</code>).</p>
+<p><code>like</code> cannot be written for tokens in the 3.2 table. There are no arguments specifying precedence or associativity (<code>prec</code>, <code>left</code> / <code>right</code> / <code>none</code>, etc.); writing one is a compile error.</p>
+<pre><code class="language-rok"><span class="a">#[infix("+")]</span>
+<span class="a">#[prefix("-")]</span>
+<span class="a">#[infix("⊕", like = "+")]</span>      <span class="c">// new token - same level and associativity as +</span>
+</code></pre>
+<h2 id="673-connection-mechanism"><a class="anchor" tabindex="-1" href="#673-connection-mechanism" aria-hidden="true">#</a>6.7.3. Connection mechanism</h2>
+<p>How the compiler behaves when <code>#[infix(&quot;+&quot;)]</code> is attached to the trait method <code>add</code>:</p>
+<p>First, the <code>+</code> token is bound to that trait as its connection point. The compiler then desugars the expression <code>a + b</code> into <code>&lt;typeof(a) as the_trait&lt;typeof(b)&gt;&gt;::add(a, b)</code>. Precedence and associativity are the values fixed for <code>+</code> in the table of <a href="../003-expressions/302-precedence-and-associativity">precedence and associativity</a> (7, left-associative).</p>
+<p>All three attributes follow the same pattern; what is bound is only the token, the position, and the trait method.</p>
+<h2 id="674-unicode-and-multiple-aliases"><a class="anchor" tabindex="-1" href="#674-unicode-and-multiple-aliases" aria-hidden="true">#</a>6.7.4. Unicode and multiple aliases</h2>
+<p>Attaching several <code>#[infix]</code> to the same method maps several tokens to that method.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Cmp</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&lt;=")]</span>
+    <span class="a">#[infix("≤")]</span>
+    <span class="k">fn</span> le(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("&gt;=")]</span>
+    <span class="a">#[infix("≥")]</span>
+    <span class="k">fn</span> ge(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("==")]</span>
+    <span class="a">#[infix("≡")]</span>
+    <span class="k">fn</span> eq(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+}
+</code></pre>
+<p>This ties ASCII and Unicode tokens together with the same meaning. The 3.2 table places <code>≤</code>, <code>≥</code>, <code>≠</code>, <code>≡</code> at the same level as their corresponding ASCII tokens.</p>
+<h2 id="675-conflict-checking"><a class="anchor" tabindex="-1" href="#675-conflict-checking" aria-hidden="true">#</a>6.7.5. Conflict checking</h2>
+<p>If different traits are attached to the same (token, position) combination, it is an ERROR at registration.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">MyAdd</span> { <span class="a">#[infix("+")]</span> <span class="k">fn</span> add(...) ... }
+<span class="c">// another library / module.</span>
+<span class="k">trait</span> <span class="t">Add</span> { <span class="a">#[infix("+")]</span> <span class="k">fn</span> add(...) ... }
+<span class="c">// → two traits for the binary '+' position. ERROR.</span>
+</code></pre>
+<p>Each (token, position) combination admits exactly one registration.</p>
+<h2 id="676-multiple-positions-of-the-same-token"><a class="anchor" tabindex="-1" href="#676-multiple-positions-of-the-same-token" aria-hidden="true">#</a>6.7.6. Multiple positions of the same token</h2>
+<p>A token usable in both prefix and binary positions, such as <code>-</code>, is treated as separate registrations.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Sub</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("-")]</span>
+    <span class="k">fn</span> sub(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">Neg</span> {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[prefix("-")]</span>
+    <span class="k">fn</span> neg(<span class="k">self</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>For example, in <code>-a + b</code> the prefix <code>-</code> binds tighter than the binary <code>+</code>, so it is parsed as <code>(-a) + b</code>.</p>
+<p>Binary <code>-</code> and prefix <code>-</code> are separate mappings, so attaching them to different traits is no problem.</p>
+<h2 id="677-dot-prefixed-broadcast-mappings"><a class="anchor" tabindex="-1" href="#677-dot-prefixed-broadcast-mappings" aria-hidden="true">#</a>6.7.7. Dot-prefixed (broadcast) mappings</h2>
+<p>The dot-prefixed tokens of <a href="../003-expressions/303-broadcast-operators">broadcast operators</a> are registered through the same magic.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">DotAdd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".+")]</span>
+    <span class="k">fn</span> dot_add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">trait</span> <span class="t">DotMul</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix(".*")]</span>
+    <span class="k">fn</span> dot_mul(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>Only the token differs; the registration mechanism is exactly the same.</p>
+<h2 id="678-visibility-of-mappings"><a class="anchor" tabindex="-1" href="#678-visibility-of-mappings" aria-hidden="true">#</a>6.7.8. Visibility of mappings</h2>
+<p>A registration through attributes such as <code>#[infix]</code> takes effect only where the trait is visible. Visible means accessible under <a href="../005-modules/506-visibility">5.6</a>: a <code>pub</code> trait reachable by path suffices; no <code>use</code> is needed. Where the trait is not visible, the operator does not work either.</p>
+<p>This rule fits library isolation: a user-defined operator trait defined in a package works only in code that imports that package.</p>
+<p>The standard library's operator traits (<code>Add</code>, <code>Sub</code>, <code>Mul</code>, ...) live in <code>rok::core::ops</code>. Since the compiler implicitly applies <code>use rok::core::**;</code> to every source (<a href="../000-meta/005-standard-libraries-tiers">standard library tiers</a>), arithmetic and comparison expressions work without a separate import.</p>
+<h2 id="679-user-defined-operators"><a class="anchor" tabindex="-1" href="#679-user-defined-operators" aria-hidden="true">#</a>6.7.9. User-defined operators</h2>
+<p>Users can also define operator mappings by attaching attributes such as <code>#[infix]</code> to their own traits.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">CustomCombine</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="a">#[infix("⊕")]</span>
+    <span class="k">fn</span> combine(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+
+<span class="k">impl</span> <span class="t">CustomCombine</span> <span class="k">for</span> <span class="t">MyType</span> { ... }
+
+<span class="k">let</span> r = a ⊕ b;            <span class="c">// user token</span>
+</code></pre>
+<p>A token not in the 3.2 table, such as <code>⊕</code>, names one existing token with <code>like = &quot;+&quot;</code> and follows that token's level and associativity. New levels cannot be created. The token must satisfy the extended-token conditions of <a href="../001-lexical/110-punctuation-and-operator-tokens#1104-extension-tokens">punctuation and operator tokens</a>: every character must be Unicode <code>Pattern_Syntax</code>, and it is an error if it equals an existing fixed token.</p>
+<h2 id="6710-precedence-and-associativity-levels"><a class="anchor" tabindex="-1" href="#6710-precedence-and-associativity-levels" aria-hidden="true">#</a>6.7.10. Precedence and associativity levels</h2>
+<p>The single authoritative location for operator levels is the <a href="../003-expressions/302-precedence-and-associativity#323-precedence-and-associativity-table">3.2.3 precedence table</a>. Neither the standard library nor user code can set or change levels; a new token attaches to one of the existing levels via <code>like</code>.</p>
+<h2 id="6711-when-it-is-evaluated"><a class="anchor" tabindex="-1" href="#6711-when-it-is-evaluated" aria-hidden="true">#</a>6.7.11. When it is evaluated</h2>
+<p>Registrations such as <code>#[infix]</code> are processed in the meta-expansion phase right after parsing. All subsequent expression parsing consults the registration table.</p>
+<p>The order of registration and use within the same compilation unit therefore does not matter, because the scanner pre-pass collects them in advance. The precedence of tokens in the 3.2 table is fixed from the start, independent of registration.</p>
+<h2 id="6712-no-aliases-at-different-levels"><a class="anchor" tabindex="-1" href="#6712-no-aliases-at-different-levels" aria-hidden="true">#</a>6.7.12. No aliases at different levels</h2>
+<p>All aliases attached to the same trait method must be tokens of the same level.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Cmp</span> {
+    <span class="a">#[infix("&lt;")]</span>
+    <span class="a">#[infix("⊲", like = "+")]</span>    <span class="c">// ERROR - &lt; is level 4, + is level 7</span>
+    <span class="k">fn</span> lt(<span class="k">self</span>, rhs: <span class="k">Self</span>) -&gt; <span class="t">bool</span>;
+}
+</code></pre>
+<p>This restriction stems from the assumption that aliases share the same meaning.</p>
+<h2 id="6713-attachment-only-to-trait-methods"><a class="anchor" tabindex="-1" href="#6713-attachment-only-to-trait-methods" aria-hidden="true">#</a>6.7.13. Attachment only to trait methods</h2>
+<p><code>#[infix]</code>, <code>#[prefix]</code>, and <code>#[postfix]</code> can be attached only to method signatures of a trait. They cannot be attached to free functions, <code>impl</code> methods, or ordinary methods outside a trait.</p>
+<pre><code class="language-rok"><span class="k">fn</span> my_add(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { a + b }
+<span class="a">#[infix("+++")]</span>                              <span class="c">// ERROR - cannot attach to a free function</span>
+<span class="k">fn</span> my_concat(a: <span class="t">str</span>, b: <span class="t">str</span>) -&gt; <span class="t">str</span> { ... }
+</code></pre>
+<p>The reason is to bind operator mappings to the trait system and guarantee consistent dispatch.</p>
+<h2 id="6714-summary"><a class="anchor" tabindex="-1" href="#6714-summary" aria-hidden="true">#</a>6.7.14. Summary</h2>
+<p>Operator magic, together with <code>#[lang]</code>, is the core mechanism that implements the binding of language tokens to library traits in the <a href="../000-meta/004-language-vs-standard-libraries">boundary between language and standard library</a>.</p>
+<p>The standard library's operator specification determines the meaning of every token through this magic.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/006-meta-system/607-operator-magic.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="606-keyword-magic"><small>Previous</small>6.6. #[keyword(...)] magic</a><a class="next" href="608-meta-blocks"><small>Next</small>6.8. User-defined meta definitions</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

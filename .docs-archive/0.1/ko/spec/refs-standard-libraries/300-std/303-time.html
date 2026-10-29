@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.3. time:: - 시간 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::std::time 모듈은 세 종류의 시간 타입과 Duration 을 함께 제공합니다. 단조 시계, 벽시계, 그리고 부팅 후 경과 시간을 명확히 분리해 두어, 측정 목적에 맞는 시계를 골라 쓸 수 있도록 했습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/303-time.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.3. time:: - 시간 - rok docs">
+<meta property="og:description" content="rok::std::time 모듈은 세 종류의 시간 타입과 Duration 을 함께 제공합니다. 단조 시계, 벽시계, 그리고 부팅 후 경과 시간을 명확히 분리해 두어, 측정 목적에 맞는 시계를 골라 쓸 수 있도록 했습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/303-time.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/303-time.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/303-time.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li class="cur"><a aria-current="page" href="303-time">3.3. time:: - 시간</a><ul class="toc"><li><a href="#331-4-타입-모델">3.3.1. 4 타입 모델</a></li><li><a href="#332-instant---단조-시계">3.3.2. Instant - 단조 시계</a></li><li><a href="#333-systemtime---벽시계">3.3.3. SystemTime - 벽시계</a></li><li><a href="#334-boottime---부팅-후-시간-suspend-포함">3.3.4. BootTime - 부팅 후 시간 (suspend 포함)</a></li><li><a href="#335-duration">3.3.5. Duration</a></li><li><a href="#336-정책---tai--leap-second-미지원">3.3.6. 정책 - TAI / leap second 미지원</a></li><li><a href="#337-impl--target">3.3.7. impl / target</a></li><li><a href="#338-정책-요약">3.3.8. 정책 요약</a></li></ul></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="33-time---시간 33-time---time 331-4-타입-모델 331-the-four-type-model 332-instant---단조-시계 332-instant---monotonic-clock 사용-예 example 333-systemtime---벽시계 333-systemtime---wall-clock 사용-예-1 example-1 334-boottime---부팅-후-시간-suspend-포함 334-boottime---time-since-boot-including-suspend 335-duration 335-duration duration-산술-정책 duration-arithmetic-policy 336-정책---tai--leap-second-미지원 336-policy---no-tai--leap-second-support 337-impl--target 337-impl--target 338-정책-요약 338-policy-summary"><a href="../../../../spec/refs-standard-libraries/300-std/303-time" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="33-time---시간"><a class="anchor" tabindex="-1" href="#33-time---시간" aria-hidden="true">#</a>3.3. <code>time::</code> - 시간</h1>
+<p><code>rok::std::time</code> 모듈은 세 종류의 시간 타입과 <code>Duration</code> 을 함께 제공합니다. 단조 시계, 벽시계, 그리고 부팅 후 경과 시간을 명확히 분리해 두어, 측정 목적에 맞는 시계를 골라 쓸 수 있도록 했습니다.</p>
+<h2 id="331-4-타입-모델"><a class="anchor" tabindex="-1" href="#331-4-타입-모델" aria-hidden="true">#</a>3.3.1. 4 타입 모델</h2>
+<p>전체 그림은 아래 표와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>의미</th><th>사용처</th></tr></thead>
+<tbody>
+<tr><td><code>Instant</code></td><td>단조 시계 (monotonic)</td><td>duration 측정 / timeout</td></tr>
+<tr><td><code>SystemTime</code></td><td>벽시계 (UTC, NTP 가능)</td><td>파일 mtime / 사용자 표시</td></tr>
+<tr><td><code>BootTime</code></td><td>부팅 후 시간 (suspend 포함)</td><td>모바일 / laptop 앱</td></tr>
+<tr><td><code>Duration</code></td><td>시간 차이 (i64 nanosecond)</td><td>둘 사이 차 / sleep 인자</td></tr>
+</tbody></table></div>
+<p><code>Duration</code> 의 내부 표현은 <code>i64</code> ns 입니다. Rust 가 채택한 <code>u128</code> 은 다소 과잉이라고 판단했으며, <code>i64</code> 로도 약 ±292 년을 표현할 수 있어 실용 범위에서는 부족함이 없습니다.</p>
+<h2 id="332-instant---단조-시계"><a class="anchor" tabindex="-1" href="#332-instant---단조-시계" aria-hidden="true">#</a>3.3.2. <code>Instant</code> - 단조 시계</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Instant</span> { <span class="c">/* opaque - CLOCK_MONOTONIC / QueryPerformanceCounter */</span> }
+
+<span class="k">impl</span> <span class="t">Instant</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">Instant</span>;
+
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> duration_since(<span class="k">self</span>, earlier: <span class="t">Instant</span>) -&gt; <span class="t">Duration</span>;       <span class="c">// self - earlier</span>
+    <span class="k">fn</span> checked_duration_since(<span class="k">self</span>, earlier: <span class="t">Instant</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> saturating_duration_since(<span class="k">self</span>, earlier: <span class="t">Instant</span>) -&gt; <span class="t">Duration</span>;
+
+    <span class="c">// 산술 - 실패 시 none 반환 (Rust 의 saturating-on-overflow silent 회피)</span>
+    <span class="k">fn</span> checked_add(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_sub(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> | <span class="k">none</span>;
+}
+
+<span class="c">// 일반 산술 - overflow 시 overflow 검사가 켜져 있으면 panic, 꺼져 있으면 saturate (3.3.5)</span>
+<span class="k">impl</span> <span class="t">Add</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">Instant</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Instant</span>; ... }
+<span class="k">impl</span> <span class="t">Sub</span>&lt;<span class="t">Instant</span>&gt; <span class="k">for</span> <span class="t">Instant</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Duration</span>; ... }
+<span class="k">impl</span> <span class="t">Sub</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">Instant</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Instant</span>; ... }
+</code></pre>
+<p><code>Instant</code> 의 핵심 특성은 다음과 같이 정리됩니다. 우선 절대로 뒤로 흐르지 않으므로 NTP 보정의 영향을 받지 않습니다. 또한 자체적으로 절대 시간 의미를 가지지 않기 때문에 (process 시작 시점이 기준이므로) <strong>serialize 가 불가능</strong> 합니다. 같은 이유로 process 사이의 비교도 무의미하며, 동일 process 내부에서만 의미가 성립합니다.</p>
+<h3 id="사용-예"><a class="anchor" tabindex="-1" href="#사용-예" aria-hidden="true">#</a>사용 예</h3>
+<p>가장 흔한 패턴은 측정 시작점을 잡아 두고 <code>elapsed</code> 로 경과를 얻는 것입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> start = <span class="t">Instant</span>::now();
+heavy_computation();
+<span class="k">let</span> elapsed = start.elapsed();          <span class="c">// Duration</span>
+log(<span class="s">f"computation took {</span>elapsed<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<h2 id="333-systemtime---벽시계"><a class="anchor" tabindex="-1" href="#333-systemtime---벽시계" aria-hidden="true">#</a>3.3.3. <code>SystemTime</code> - 벽시계</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">SystemTime</span> { <span class="c">/* opaque - CLOCK_REALTIME / GetSystemTimeAsFileTime */</span> }
+
+<span class="k">impl</span> <span class="t">SystemTime</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">SystemTime</span>;
+
+    <span class="k">fn</span> duration_since(<span class="k">self</span>, earlier: <span class="t">SystemTime</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">Duration</span>;
+                                            <span class="c">// earlier &gt; self 면 Err</span>
+
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">Duration</span>;
+
+    <span class="k">fn</span> checked_add(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">SystemTime</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_sub(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">SystemTime</span> | <span class="k">none</span>;
+}
+
+<span class="k">const</span> <span class="t">UNIX_EPOCH</span>: <span class="t">SystemTime</span>;     <span class="c">// 1970-01-01 00:00:00 UTC</span>
+
+<span class="c">// SystemTime ↔ unix timestamp</span>
+<span class="k">impl</span> <span class="t">SystemTime</span> {
+    <span class="k">fn</span> from_unix(secs: <span class="t">i64</span>, nanos: <span class="t">u32</span>) -&gt; <span class="t">SystemTime</span>;
+    <span class="k">fn</span> unix_seconds(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> unix_nanos(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">SystemTimeError</span>) -&gt; <span class="t">i64</span>;   <span class="c">// rok 에 i128 이 없음 - i64 ns 는 약 ±292 년</span>
+}
+
+<span class="k">impl</span> <span class="t">Add</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">SystemTime</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">SystemTime</span>; ... }
+<span class="k">impl</span> <span class="t">Sub</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">SystemTime</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">SystemTime</span>; ... }
+
+<span class="k">struct</span> <span class="t">SystemTimeError</span> {
+    duration: <span class="t">Duration</span>;        <span class="c">// earlier 가 앞서 있던 만큼</span>
+}
+</code></pre>
+<p><code>SystemTime</code> 은 <code>UNIX_EPOCH</code> 기준 <code>i64</code> 나노초이므로 표현 범위는 모든 타깃에서 약 ±292 년입니다. 32-bit 타깃도 64-bit 시간 인터페이스 (<code>time64</code>) 로 시계를 읽으므로 2038 한계가 없습니다.</p>
+<p>반면 <code>SystemTime</code> 의 성격은 사뭇 다릅니다. NTP 보정이나 사용자 변경에 의해 시간이 뒤로 갈 수도 있고, UNIX_EPOCH 를 기준으로 한 절대 시간이므로 <strong>serialize 가 가능</strong> 합니다. 그 덕분에 process 사이에서도 의미 있게 비교할 수 있습니다.</p>
+<h3 id="사용-예-1"><a class="anchor" tabindex="-1" href="#사용-예-1" aria-hidden="true">#</a>사용 예</h3>
+<p>unix timestamp 변환과 파일 mtime 조회는 다음과 같이 자연스럽게 표현됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> now = <span class="t">SystemTime</span>::now();
+<span class="k">let</span> unix = <span class="k">try</span> now.unix_seconds();
+log(<span class="s">f"unix timestamp: {</span>unix<span class="s">}"</span>);
+
+<span class="c">// 파일 mtime</span>
+<span class="k">let</span> meta = <span class="k">try</span> fs::metadata(<span class="s">"data.txt"</span>);
+<span class="k">let</span> mtime: <span class="t">SystemTime</span> = <span class="k">try</span> meta.modified();
+<span class="k">let</span> age = <span class="k">try</span> <span class="t">SystemTime</span>::now().duration_since(mtime);
+log(<span class="s">f"file age: {</span>age<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<h2 id="334-boottime---부팅-후-시간-suspend-포함"><a class="anchor" tabindex="-1" href="#334-boottime---부팅-후-시간-suspend-포함" aria-hidden="true">#</a>3.3.4. <code>BootTime</code> - 부팅 후 시간 (suspend 포함)</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">BootTime</span> { <span class="c">/* CLOCK_BOOTTIME (Linux) / CLOCK_MONOTONIC = mach_continuous_time (macOS) */</span> }
+
+<span class="k">impl</span> <span class="t">BootTime</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">BootTime</span>;
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> duration_since(<span class="k">self</span>, earlier: <span class="t">BootTime</span>) -&gt; <span class="t">Duration</span>;
+}
+</code></pre>
+<p><code>BootTime</code> 과 <code>Instant</code> 의 차이는 suspend 동작에서 갈립니다. <code>Instant</code> 는 Linux <code>CLOCK_MONOTONIC</code> 처럼 suspend 동안에는 멈춰 있는 반면, <code>BootTime</code> 은 <code>CLOCK_BOOTTIME</code> 을 따라 suspend 중에도 계속 진행합니다.</p>
+<p>이러한 차이는 모바일이나 laptop 앱에서 &quot;실제 경과 시간 (suspend 포함)&quot; 을 측정해야 할 때 결정적입니다. Rust 는 2026 시점에도 stable API 가 없는 영역인데, rok 은 이를 일찍 표면에 노출시켜 둡니다.</p>
+<h2 id="335-duration"><a class="anchor" tabindex="-1" href="#335-duration" aria-hidden="true">#</a>3.3.5. <code>Duration</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Duration</span> { ns: <span class="t">i64</span>; }       <span class="c">// i64 nanosecond - 약 ±292년</span>
+
+<span class="k">impl</span> <span class="t">Duration</span> {
+    <span class="k">const</span> <span class="t">ZERO</span>: <span class="t">Duration</span> = <span class="t">Duration</span> { ns: <span class="n">0</span> };
+    <span class="k">const</span> <span class="t">MAX</span>: <span class="t">Duration</span> = <span class="t">Duration</span> { ns: <span class="t">I64_MAX</span> };
+
+    <span class="c">// 생성자</span>
+    <span class="k">fn</span> ns(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> us(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;        <span class="c">// microseconds</span>
+    <span class="k">fn</span> ms(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;        <span class="c">// milliseconds</span>
+    <span class="k">fn</span> sec(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> min(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> hours(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> days(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+
+    <span class="k">fn</span> from_secs_f64(s: <span class="t">f64</span>) -&gt; <span class="t">Duration</span>;        <span class="c">// floating point seconds</span>
+
+    <span class="c">// 추출</span>
+    <span class="k">fn</span> as_ns(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_us(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_ms(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_secs(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> as_secs_f64(<span class="k">self</span>) -&gt; <span class="t">f64</span>;
+
+    <span class="k">fn</span> subsec_ns(<span class="k">self</span>) -&gt; <span class="t">u32</span>;          <span class="c">// 하위 nanosecond 부분</span>
+    <span class="k">fn</span> subsec_us(<span class="k">self</span>) -&gt; <span class="t">u32</span>;
+    <span class="k">fn</span> subsec_ms(<span class="k">self</span>) -&gt; <span class="t">u32</span>;
+}
+
+<span class="c">// 산술</span>
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">Duration</span> { ... }
+<span class="k">impl</span> <span class="t">Sub</span> <span class="k">for</span> <span class="t">Duration</span> { ... }
+<span class="k">impl</span> <span class="t">Mul</span>&lt;<span class="t">i64</span>&gt; <span class="k">for</span> <span class="t">Duration</span> { ... }     <span class="c">// Duration × i64</span>
+<span class="k">impl</span> <span class="t">Div</span>&lt;<span class="t">i64</span>&gt; <span class="k">for</span> <span class="t">Duration</span> { ... }
+<span class="k">impl</span> <span class="t">Mul</span>&lt;<span class="t">Duration</span>&gt; <span class="k">for</span> <span class="t">f64</span> { ... }      <span class="c">// f64 × Duration</span>
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Duration</span> { ... }       <span class="c">// "1.234s" / "5ms" / "1.5µs" / "100ns"</span>
+<span class="k">impl</span> <span class="t">Debug</span> <span class="k">for</span> <span class="t">Duration</span> { ... }         <span class="c">// Display 와 같음</span>
+</code></pre>
+<p><code>Display</code> 는 크기에 맞는 단위 하나로 씁니다. 절댓값이 1 초 이상이면 <code>s</code>, 1 ms 이상이면 <code>ms</code>, 1 µs 이상이면 <code>µs</code>, 그 밖에는 <code>ns</code> 입니다. 그 단위로 나눈 정수부 뒤에 나머지를 소수로 붙이되, 끝의 0 은 지우고 나머지가 0 이면 소수점도 쓰지 않습니다. 음수는 앞에 <code>-</code> 를 붙입니다.</p>
+<pre><code class="language-rok"><span class="t">Duration</span>::ms(<span class="n">1234</span>);      <span class="c">// "1.234s"</span>
+<span class="t">Duration</span>::ms(<span class="n">5</span>);         <span class="c">// "5ms"</span>
+<span class="t">Duration</span>::ns(<span class="n">1500</span>);      <span class="c">// "1.5µs"</span>
+<span class="t">Duration</span>::ns(-<span class="n">20</span>);       <span class="c">// "-20ns"</span>
+</code></pre>
+<p>시간 타입은 모두 <code>PartialEq</code> / <code>Eq</code> / <code>PartialOrd</code> / <code>Ord</code> / <code>Hash</code> 를 구현합니다. <code>Instant</code>, <code>SystemTime</code>, <code>BootTime</code> 은 <code>Debug</code> 도 구현합니다.</p>
+<h3 id="duration-산술-정책"><a class="anchor" tabindex="-1" href="#duration-산술-정책" aria-hidden="true">#</a>Duration 산술 정책</h3>
+<p><code>Duration</code> / <code>SystemTime</code> / <code>Instant</code> / <code>BootTime</code> 의 산술 (<code>duration_since</code>, <code>from_unix</code> 포함) 은 overflow 검사가 켜져 있으면 overflow 에 panic 하고, 꺼져 있으면 saturate 합니다 (<code>-C overflow-checks</code>, <a href="../../refs-lang/009-tools/901-rokc-cli#rokc-build-aot-빌드">refs-lang 9.1.2</a>). 0 으로 나누기는 언제나 panic 입니다. <code>checked_*</code> / <code>saturating_*</code> 변형으로 명시적으로 고를 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Duration</span> {
+    <span class="k">fn</span> checked_add(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_sub(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_mul(<span class="k">self</span>, factor: <span class="t">i64</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+    <span class="k">fn</span> checked_div(<span class="k">self</span>, divisor: <span class="t">i64</span>) -&gt; <span class="t">Duration</span> | <span class="k">none</span>;
+
+    <span class="k">fn</span> saturating_add(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> saturating_sub(<span class="k">self</span>, rhs: <span class="t">Duration</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> saturating_mul(<span class="k">self</span>, factor: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+}
+</code></pre>
+<h2 id="336-정책---tai--leap-second-미지원"><a class="anchor" tabindex="-1" href="#336-정책---tai--leap-second-미지원" aria-hidden="true">#</a>3.3.6. 정책 - TAI / leap second 미지원</h2>
+<p><code>SystemTime</code> 은 어디까지나 <strong>UTC</strong> 이며, leap second 는 처리하지 않습니다 (Linux kernel 자체가 이 부분에서 모호하다는 점도 고려했습니다). TAI (atomic time) 나 leap second 의 정확한 처리가 필요한 경우는 별도 패키지 (<code>rok/chrono</code> 또는 <code>rok/tai</code>) 의 영역으로 분리합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>자리</th><th>권장</th></tr></thead>
+<tbody>
+<tr><td>일반 앱 (timestamp / 측정)</td><td>rok::std::time</td></tr>
+<tr><td>시뮬레이션 / 정밀 천체</td><td>별도 <code>chrono</code>-like 패키지</td></tr>
+<tr><td>금융 / 정확한 leap second</td><td>별도 패키지</td></tr>
+</tbody></table></div>
+<h2 id="337-impl--target"><a class="anchor" tabindex="-1" href="#337-impl--target" aria-hidden="true">#</a>3.3.7. impl / target</h2>
+<p>플랫폼별 구현 매핑은 아래 표를 참고합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>linux</th><th>macos</th><th>windows</th><th>wasi</th></tr></thead>
+<tbody>
+<tr><td><code>Instant</code></td><td>CLOCK_MONOTONIC</td><td>CLOCK_UPTIME_RAW</td><td>QueryPerformanceCounter</td><td>wasi clock</td></tr>
+<tr><td><code>SystemTime</code></td><td>CLOCK_REALTIME</td><td>CLOCK_REALTIME</td><td>GetSystemTimePreciseAsFileTime</td><td>wasi</td></tr>
+<tr><td><code>BootTime</code></td><td>CLOCK_BOOTTIME</td><td>CLOCK_MONOTONIC (mach_continuous_time, sleep 포함)</td><td>QueryPerformanceCounter (~ Instant)</td><td>(no suspend)</td></tr>
+</tbody></table></div>
+<h2 id="338-정책-요약"><a class="anchor" tabindex="-1" href="#338-정책-요약" aria-hidden="true">#</a>3.3.8. 정책 요약</h2>
+<p>본 장의 핵심 결정은 세 가지로 정리됩니다. 먼저 <code>Instant</code> / <code>SystemTime</code> / <code>Duration</code> 을 분리하여 단조 시간과 벽시계 시간을 의미상 구분합니다. 다음으로 Rust 의 std 가 다루지 않는 <code>BootTime</code> 을 별도로 노출하여, suspend 를 포함한 부팅 이후 경과 시간을 직접 확인할 수 있게 합니다. 마지막으로 TAI 와 leap second 는 본 모듈 바깥의 별도 패키지로 분리합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/303-time.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="302-net"><small>Previous</small>3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a><a class="next" href="304-thread"><small>Next</small>3.4. thread:: - OS 스레드 (1:1 모델)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

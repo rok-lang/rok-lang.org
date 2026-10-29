@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.6. Platform targets - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok builds for any platform for which LLVM supports code generation, from any host (--target, 0.2.4). The platforms on which behavior is actually guaranteed, ho...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/006-platform-targets.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.6. Platform targets - rok docs">
+<meta property="og:description" content="rok builds for any platform for which LLVM supports code generation, from any host (--target, 0.2.4). The platforms on which behavior is actually guaranteed, ho...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/006-platform-targets.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/006-platform-targets.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/006-platform-targets.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">0. Introduction</a></p><ul class="pages"><li><a href="001-execution-modes">0.1. Execution engines and user surfaces</a></li><li><a href="002-pipeline">0.2. Compilation pipeline</a></li><li><a href="003-source-units">0.3. Source units</a></li><li><a href="004-language-vs-standard-libraries">0.4. Boundary between the language and the standard libraries</a></li><li><a href="005-standard-libraries-tiers">0.5. Standard library tiers</a></li><li class="cur"><a aria-current="page" href="006-platform-targets">0.6. Platform targets</a><ul class="toc"><li><a href="#061-tier-1-official-support">0.6.1. Tier 1: official support</a></li><li><a href="#062-targets-outside-tier-1-no-guarantee">0.6.2. Targets outside Tier 1: no guarantee</a></li><li><a href="#063-implications-of-32-bit-support">0.6.3. Implications of 32-bit support</a></li><li><a href="#064-simd">0.6.4. SIMD</a></li><li><a href="#065-target-specifications">0.6.5. Target specifications</a></li></ul></li><li><a href="007-glossary">0.7. Glossary</a></li><li><a href="008-notation">0.8. Notation</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="06-platform-targets 06-플랫폼-타깃 061-tier-1-official-support 061-tier-1-정식-지원 64-bit-desktop--server 64-bit-데스크탑--서버 webassembly webassembly 32-bit 32-bit 062-targets-outside-tier-1-no-guarantee 062-tier-1-외-타깃-보증-없음 063-implications-of-32-bit-support 063-32-bit-지원의-함의 064-simd 064-simd 065-target-specifications 065-타깃-명세"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/000-meta/006-platform-targets" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="06-platform-targets"><a class="anchor" tabindex="-1" href="#06-platform-targets" aria-hidden="true">#</a>0.6. Platform targets</h1>
+<p>rok builds for any platform for which LLVM supports code generation, from any host (<code>--target</code>, <a href="002-pipeline#024-backends">0.2.4</a>). The platforms on which behavior is actually guaranteed, however, are fixed in a limited list (Tier 1); other platforms are considered case by case as needed.</p>
+<h2 id="061-tier-1-official-support"><a class="anchor" tabindex="-1" href="#061-tier-1-official-support" aria-hidden="true">#</a>0.6.1. Tier 1: official support</h2>
+<p>For the following 15 targets, CI runs on every PR, and builds and tests are required to pass.</p>
+<h3 id="64-bit-desktop--server"><a class="anchor" tabindex="-1" href="#64-bit-desktop--server" aria-hidden="true">#</a>64-bit desktop / server</h3>
+<p>This group covers the major architectures of Linux, macOS and Windows, including musl variants for static binaries and 64-bit RISC-V Linux.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Target</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>x86_64-unknown-linux-gnu</code></td><td>Primary Linux server / desktop</td></tr>
+<tr><td><code>x86_64-apple-darwin</code></td><td>macOS Intel</td></tr>
+<tr><td><code>aarch64-apple-darwin</code></td><td>macOS Apple Silicon</td></tr>
+<tr><td><code>aarch64-unknown-linux-gnu</code></td><td>ARM servers (AWS Graviton, Raspberry Pi 5, etc.)</td></tr>
+<tr><td><code>x86_64-pc-windows-msvc</code></td><td>Windows desktop</td></tr>
+<tr><td><code>aarch64-pc-windows-msvc</code></td><td>Windows ARM</td></tr>
+<tr><td><code>x86_64-unknown-linux-musl</code></td><td>Alpine / <code>static</code> binary</td></tr>
+<tr><td><code>aarch64-unknown-linux-musl</code></td><td>Same, ARM</td></tr>
+<tr><td><code>riscv64gc-unknown-linux-gnu</code></td><td>RISC-V 64-bit Linux server</td></tr>
+</tbody></table></div>
+<h3 id="webassembly"><a class="anchor" tabindex="-1" href="#webassembly" aria-hidden="true">#</a>WebAssembly</h3>
+<p>Three WebAssembly targets are supported, covering browser-based and server-side execution. WASI sockets (preview 2 components only) and WASI threads (a preview 1 core-module proposal) cannot be combined in one module today, so server-side WASM has two targets.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Target</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>wasm32-unknown-unknown</code></td><td>Browser environment; <code>target_os = &quot;none&quot;</code> (<a href="../006-meta-system/603-cfg">6.3.2</a>)</td></tr>
+<tr><td><code>wasm32-wasi</code></td><td>Server-side WASM: a WASI preview 2 component. <code>wasi:sockets</code> networking; no threads (<code>thread::spawn</code> throws <code>Unsupported</code>)</td></tr>
+<tr><td><code>wasm32-wasi-threads</code></td><td>Server-side WASM with threads: a WASI preview 1 core module using wasi-threads (shared memory). Networking only on listeners the host passes in; connect / bind / DNS throw <code>Unsupported</code></td></tr>
+</tbody></table></div>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>wasmtime removed wasi-threads after v46, so <code>wasm32-wasi-threads</code> will depend on WASI shared-everything-threads in the future.</p>
+</div>
+<h3 id="32-bit"><a class="anchor" tabindex="-1" href="#32-bit" aria-hidden="true">#</a>32-bit</h3>
+<p>For embedded and legacy environments still in active use, the following three 32-bit targets are officially supported.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Target</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>i686-unknown-linux-gnu</code></td><td>32-bit x86 Linux</td></tr>
+<tr><td><code>i686-pc-windows-msvc</code></td><td>32-bit Windows</td></tr>
+<tr><td><code>armv7-unknown-linux-gnueabihf</code></td><td>32-bit ARM Linux (Raspberry Pi 4, etc.)</td></tr>
+</tbody></table></div>
+<p>These 15 targets directly cover most users in science, data, HPC, Jupyter and embedded work.</p>
+<h2 id="062-targets-outside-tier-1-no-guarantee"><a class="anchor" tabindex="-1" href="#062-targets-outside-tier-1-no-guarantee" aria-hidden="true">#</a>0.6.2. Targets outside Tier 1: no guarantee</h2>
+<p>The following targets are not in Tier 1, and this specification does not guarantee behavior on them: <code>powerpc64le-unknown-linux-gnu</code> for IBM Power HPC environments, <code>x86_64-unknown-freebsd</code> for FreeBSD, <code>riscv32imac-unknown-none</code> for RISC-V embedded, and <code>s390x-unknown-linux-gnu</code> for IBM Z mainframes.</p>
+<h2 id="063-implications-of-32-bit-support"><a class="anchor" tabindex="-1" href="#063-implications-of-32-bit-support" aria-hidden="true">#</a>0.6.3. Implications of 32-bit support</h2>
+<p>Because 32-bit targets are in Tier 1, the specification as a whole is defined to work in both 32-bit and 64-bit environments. The object header layout is the same at both bit widths. Atomic operations on 64-bit integers use the target's native 64-bit atomic instructions on 32-bit environments (<code>cmpxchg8b</code> on i686, <code>ldrexd</code> / <code>strexd</code> on ARMv7) or, where none exist, the system atomic library. The bit width of <code>usize</code> follows the target's native pointer width automatically. On wasm32 the heap is linear memory, grown on demand up to the 4 GiB wasm32 limit. On other 32-bit targets the heap available to the garbage collector is about 3.5 GB: the block heap reserves at most 2 GiB contiguous (less if the OS refuses), the rest of the address space holds large objects, and Windows x86 images are large-address-aware. On 64-bit it is effectively unlimited. Time uses 64-bit interfaces (<code>time64</code>) on 32-bit targets too, so <code>SystemTime</code> has the same range everywhere.</p>
+<h2 id="064-simd"><a class="anchor" tabindex="-1" href="#064-simd" aria-hidden="true">#</a>0.6.4. SIMD</h2>
+<p>Builds target the triple's baseline CPU by default, so binaries are portable: x86-64 baseline (SSE2) for <code>x86_64</code>, <code>apple-m1</code> for <code>aarch64-apple-darwin</code>, armv8-a (NEON) for other <code>aarch64</code> targets, and SIMD128 for <code>wasm32</code>. Wider instruction sets (AVX, AVX-512, SVE, ...) are opt-in with <code>-C target-cpu=&lt;cpu&gt;|native</code> and <code>-C target-feature=+avx2,...</code> (<a href="../009-tools/901-rokc-cli">9.1</a>). The compiler does no runtime feature detection; a program that wants it does it itself.</p>
+<p>The library surface for SIMD itself is defined separately in other documents of this specification.</p>
+<h2 id="065-target-specifications"><a class="anchor" tabindex="-1" href="#065-target-specifications" aria-hidden="true">#</a>0.6.5. Target specifications</h2>
+<p>Every target is described by one target specification; the compiler, the linker and the runtime build read nothing else about a target. A target is named by <code>--target</code>: a built-in name (<code>rokc --print target-list</code>: the Tier 1 targets of 0.6.1 and the targets of 0.6.2), or the path of a file <code>&lt;name&gt;.rokon</code> holding a ROKON value <code>TargetSpec { .. }</code> (a custom target, named by the file's stem).</p>
+<p><code>rokc --print target-spec [--target=&lt;t&gt;]</code> prints a target's specification in that form, so a custom target usually starts as a copy of a built-in one. A custom file must give every field; an unknown field is an error. A custom target's runtime and, where the target ships one, its C library come from <code>lib/rok/targets/&lt;name&gt;/</code> of the toolchain; without that directory, a build that links fails naming it.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>llvm_target</code>, <code>deployment_target</code></td><td>LLVM's triple; the minimum OS version appended to it (Mach-O; <code>MACOSX_DEPLOYMENT_TARGET</code> overrides)</td></tr>
+<tr><td><code>arch</code>, <code>os</code>, <code>env</code>, <code>family</code>, <code>endian</code>, <code>pointer_width</code></td><td>The <code>target_*</code> cfg values (<a href="../006-meta-system/603-cfg">6.3.2</a>); an empty <code>env</code> / <code>family</code> sets no key</td></tr>
+<tr><td><code>vendor</code></td><td>Informational</td></tr>
+<tr><td><code>wide_align</code>, <code>max_atomic_width</code>, <code>c_abi</code>, <code>data_layout</code></td><td><code>i64</code> / <code>u64</code> / <code>f64</code> alignment, the widest atomic, the C calling convention (<a href="../008-abi/806-calling-convention">8.6.3</a>), LLVM's data layout</td></tr>
+<tr><td><code>cpu</code>, <code>features</code></td><td>The default CPU and features (the SIMD baseline of 0.6.4)</td></tr>
+<tr><td><code>object_format</code>, <code>linker</code>, <code>pre_link_args</code>, <code>crt_objects</code>, <code>late_link_args</code></td><td>Object format and lld flavor; the target's own linker arguments; C runtime objects; arguments or files after the inputs</td></tr>
+<tr><td><code>dynamic_linking</code>, <code>dynamic_loader</code>, <code>libc</code></td><td>Shared-library support, the ELF interpreter, the C library and whether it ships with the toolchain</td></tr>
+<tr><td><code>rust_target</code></td><td>The Rust target the runtime is built for</td></tr>
+<tr><td><code>exe_suffix</code>, <code>staticlib_prefix</code> / <code>staticlib_suffix</code>, <code>dylib_prefix</code> / <code>dylib_suffix</code>, <code>c_symbol_prefix</code></td><td>File and symbol naming</td></tr>
+<tr><td><code>stack_size</code>, <code>stack_probes</code>, <code>threads</code></td><td>The main thread's stack, stack probing, thread support</td></tr>
+<tr><td><code>native_backend</code>, <code>repl</code>, <code>profile_runtime</code></td><td>rok's own <code>-O0</code> backend, the REPL host, the runtime of <code>-C profile-generate</code></td></tr>
+</tbody></table></div>
+<p>A specification has a stable hash; every build cache keys on it.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/000-meta/006-platform-targets.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="005-standard-libraries-tiers"><small>Previous</small>0.5. Standard library tiers</a><a class="next" href="007-glossary"><small>Next</small>0.7. Glossary</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

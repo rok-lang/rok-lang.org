@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.9. rokon:: - ROKON 데이터 형식 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="ROKON (Rok Object Notation) 은 rok 의 리터럴 문법으로 값을 적는 데이터 형식입니다. 확장자는 .rokon 입니다. Rust 의 RON, Zig 의 ZON 과 같은 자리이며, 패키지 매니페스트 rok.rokon 과 lockfile rok.lock (refs-la...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/309-rokon.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.9. rokon:: - ROKON 데이터 형식 - rok docs">
+<meta property="og:description" content="ROKON (Rok Object Notation) 은 rok 의 리터럴 문법으로 값을 적는 데이터 형식입니다. 확장자는 .rokon 입니다. Rust 의 RON, Zig 의 ZON 과 같은 자리이며, 패키지 매니페스트 rok.rokon 과 lockfile rok.lock (refs-la...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/309-rokon.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/309-rokon.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/309-rokon.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - 시간</a></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li class="cur"><a aria-current="page" href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a><ul class="toc"><li><a href="#391-형식">3.9.1. 형식</a></li><li><a href="#392-rok-타입과의-대응">3.9.2. rok 타입과의 대응</a></li><li><a href="#393-읽기">3.9.3. 읽기</a></li><li><a href="#394-정규-형식">3.9.4. 정규 형식</a></li><li><a href="#395-라이브러리-rokstdrokon">3.9.5. 라이브러리: rok::std::rokon</a></li><li><a href="#396-다른-형식과의-비교">3.9.6. 다른 형식과의 비교</a></li></ul></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="39-rokon---rokon-데이터-형식 39-rokon---the-rokon-data-format 391-형식 391-format 392-rok-타입과의-대응 392-correspondence-with-rok-types 393-읽기 393-reading 394-정규-형식 394-canonical-form 395-라이브러리-rokstdrokon 395-library-rokstdrokon deriverokon deriverokon 한계 limitations 396-다른-형식과의-비교 396-comparison-with-other-formats"><a href="../../../../spec/refs-standard-libraries/300-std/309-rokon" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="39-rokon---rokon-데이터-형식"><a class="anchor" tabindex="-1" href="#39-rokon---rokon-데이터-형식" aria-hidden="true">#</a>3.9. <code>rokon::</code> - ROKON 데이터 형식</h1>
+<p>ROKON (Rok Object Notation) 은 rok 의 리터럴 문법으로 값을 적는 데이터 형식입니다. 확장자는 <code>.rokon</code> 입니다. Rust 의 RON, Zig 의 ZON 과 같은 자리이며, 패키지 매니페스트 <code>rok.rokon</code> 과 lockfile <code>rok.lock</code> (<a href="../../refs-lang/009-tools/910-rok-frontend#9103-rokrokon--roklock">refs-lang 9.10.3</a>) 이 이 형식을 씁니다.</p>
+<h2 id="391-형식"><a class="anchor" tabindex="-1" href="#391-형식" aria-hidden="true">#</a>3.9.1. 형식</h2>
+<p>ROKON 은 rok 식 문법의 부분집합이며, rok 의 lexer / parser 로 읽습니다. 파일 하나에 값 하나입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>예</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>none</td><td><code>none</code></td><td></td></tr>
+<tr><td>bool</td><td><code>true</code>, <code>false</code></td><td></td></tr>
+<tr><td>정수</td><td><code>42</code>, <code>-7</code>, <code>0xff</code>, <code>0b1010</code>, <code>0o17</code>, <code>1_000_000</code></td><td>접미사 없음</td></tr>
+<tr><td>실수</td><td><code>3.14</code>, <code>-1.5e-3</code>, <code>2E10</code></td><td>접미사 없음</td></tr>
+<tr><td>char</td><td><code>'a'</code>, <code>'\n'</code></td><td><code>c'..'</code> 는 안 됨</td></tr>
+<tr><td>문자열</td><td><code>&quot;text&quot;</code>, raw 문자열, 여러 줄 문자열</td><td>f-string 은 안 됨</td></tr>
+<tr><td>리스트</td><td><code>[a, b, c]</code></td><td></td></tr>
+<tr><td>dict</td><td><code>{ &quot;k&quot;: v, 1: w }</code></td><td>키는 값 (문자열, 수 등)</td></tr>
+<tr><td>튜플</td><td><code>(a, b)</code>, <code>(a,)</code></td><td><code>(x)</code> 는 묶음이지 튜플이 아님</td></tr>
+<tr><td>struct</td><td><code>Point { x: 1, y: 2 }</code>, <code>{ x: 1, y: 2 }</code>, <code>Pair(1, 2)</code>, <code>Unit {}</code></td><td>이름은 선택. 필드 이름은 식별자. 튜플 struct 는 <code>Name(a, b)</code></td></tr>
+<tr><td>enum 변형</td><td><code>Shape::Unit</code>, <code>Shape::Circle(1.0, at: p)</code>, <code>Shape::Rect { w: 2, h: 3 }</code></td><td>전체 경로로 적음</td></tr>
+</tbody></table></div>
+<ul>
+<li>쉼표는 뒤에 하나 더 붙여도 됩니다. 주석은 <code>//</code> 와 <code>/* */</code> 입니다.
+</li>
+<li><code>{}</code> 는 빈 struct 이자 빈 dict 입니다 (대상 타입이 정함). <code>{ .. }</code> 하나에는 필드 (식별자 키) 나 키 (값 키) 중 한쪽만 올 수 있으며, 섞으면 에러입니다.
+</li>
+<li>쓸 수 없는 것: 맨 식별자, 연산자 (수 앞의 단항 <code>-</code> 만 허용), 메서드 호출, <code>..</code>, 블록, f-string, Set 리터럴 (<code>{1, 2}</code>, Set 은 리스트로 적음), <code>c'..'</code> 리터럴, 제네릭 경로 (<code>List&lt;i32&gt;::..</code>), 값 뒤에 남은 토큰. 모두 <code>line:col</code> 을 보여 주는 에러입니다.
+</li>
+<li>NaN 과 무한대는 ROKON 표기가 없습니다. 입력의 <code>nan</code> / <code>inf</code> 는 맨 식별자로 거부됩니다.
+</li>
+</ul>
+<div class="callout note"><p class="callout-title">참고</p>
+<p>알려진 한계: 첫 키가 <code>none</code> 인 dict (<code>{ none: 1 }</code>) 는 지원하지 않습니다. rok parser 가 이것을 블록으로 읽기 때문입니다.</p>
+</div>
+<pre><code class="language-rokon"><span class="c">// config.rokon</span>
+<span class="t">Config</span> {
+    name: <span class="s">"geom"</span>,
+    retries: <span class="n">3</span>,
+    ratio: <span class="n">0.75</span>,
+    tags: [<span class="s">"a"</span>, <span class="s">"b"</span>],
+    limits: { <span class="s">"cpu"</span>: <span class="n">2</span>, <span class="s">"mem"</span>: <span class="n">512</span> },
+    mode: <span class="t">Mode</span>::<span class="t">Fast</span>,
+    proxy: <span class="k">none</span>,
+}
+</code></pre>
+<h2 id="392-rok-타입과의-대응"><a class="anchor" tabindex="-1" href="#392-rok-타입과의-대응" aria-hidden="true">#</a>3.9.2. rok 타입과의 대응</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>ROKON</th><th>rok 타입</th></tr></thead>
+<tbody>
+<tr><td><code>none</code></td><td><code>T | none</code> 의 <code>none</code></td></tr>
+<tr><td><code>true</code> / <code>false</code></td><td><code>bool</code></td></tr>
+<tr><td>정수</td><td>모든 정수 타입, <code>int</code>. 실수를 기대하는 자리 (<code>f32</code> / <code>f64</code> / <code>float</code>) 에도 됨</td></tr>
+<tr><td>실수</td><td><code>f32</code>, <code>f64</code>, <code>float</code></td></tr>
+<tr><td>char</td><td><code>char</code></td></tr>
+<tr><td>문자열</td><td><code>str</code></td></tr>
+<tr><td>리스트</td><td><code>List&lt;T&gt;</code>, <code>[T; N]</code>, <code>Set&lt;T&gt;</code>, <code>OrderedSet&lt;T&gt;</code></td></tr>
+<tr><td>dict</td><td><code>Dict&lt;K, V&gt;</code>, <code>OrderedDict&lt;K, V&gt;</code></td></tr>
+<tr><td>튜플</td><td>원소 1 ~ 6 개의 튜플</td></tr>
+<tr><td>struct</td><td><code>struct</code> (<code>#[derive(Rokon)]</code>)</td></tr>
+<tr><td>enum 변형</td><td><code>enum</code> (<code>#[derive(Rokon)]</code>)</td></tr>
+<tr><td>아무 값</td><td><code>Value</code></td></tr>
+</tbody></table></div>
+<h2 id="393-읽기"><a class="anchor" tabindex="-1" href="#393-읽기" aria-hidden="true">#</a>3.9.3. 읽기</h2>
+<p><code>parse</code> 는 텍스트를 <code>Value</code> 로 읽습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>입력</th><th><code>Value</code></th></tr></thead>
+<tbody>
+<tr><td><code>{ ident: v, .. }</code></td><td>이름 없는 <code>Struct</code></td></tr>
+<tr><td><code>{ &quot;k&quot;: v, .. }</code>, <code>{}</code></td><td><code>Dict</code></td></tr>
+<tr><td><code>Name { f: v }</code></td><td>이름 있는 <code>Struct</code></td></tr>
+<tr><td><code>A::B { f: v }</code></td><td><code>Variant</code> (<code>named</code> 에 값)</td></tr>
+<tr><td><code>A::B(a, k: b)</code>, <code>A::B</code></td><td><code>Variant</code> (<code>args</code>, <code>named</code>)</td></tr>
+<tr><td><code>Name(a, b)</code></td><td>경로가 한 마디인 <code>Variant</code> (튜플 struct)</td></tr>
+<tr><td>정수</td><td><code>Int</code> (정확한 <code>int</code>)</td></tr>
+</tbody></table></div>
+<p>타입이 있는 읽기 (<code>from_str</code>, <code>decode</code>) 에서는 대상 타입이 해석을 정합니다.</p>
+<ul>
+<li>struct 대상은 <code>Struct</code>, <code>{}</code>, <code>A::B { .. }</code> 를 받습니다. 그래서 모듈 경로를 붙인 struct 이름 (<code>geom::Point { .. }</code>) 도 됩니다.
+</li>
+<li>적은 이름은 대상과 같아야 합니다. struct 는 경로의 마지막 마디, enum 변형은 마지막 두 마디를 비교합니다.
+</li>
+<li>모르는 필드는 그 필드 이름 위치의 에러입니다.
+</li>
+<li>빠진 필드는 그 필드의 <code>= 기본값</code> 이 있으면 기본값, 타입이 <code>T | none</code> 이면 <code>none</code>, 그 밖에는 에러입니다 (<code>FromRokon::from_missing</code>).
+</li>
+<li>정수 값이 대상 정수 타입의 범위를 넘으면 에러입니다.
+</li>
+<li>이름 있는 변형은 <code>E::V(a, k: b)</code> 로도 읽습니다. 위치 인자가 필드를 순서대로 채우고, 이어서 이름 있는 인자가 채웁니다.
+</li>
+</ul>
+<h2 id="394-정규-형식"><a class="anchor" tabindex="-1" href="#394-정규-형식" aria-hidden="true">#</a>3.9.4. 정규 형식</h2>
+<p><code>rokon::to_string</code> 과 <code>rok</code> (매니페스트를 고치거나 <code>rok.lock</code> 을 쓸 때) 가 내는 정규 형식은 다음과 같습니다. 정규 형식이 곧 읽기 좋은 형식이므로 따로 pretty 함수는 없습니다.</p>
+<ul>
+<li>들여쓰기는 공백 4 칸입니다.
+</li>
+<li>100 칸 안에 들어가면 한 줄로, 아니면 여러 줄로 쓰고 각 원소 뒤에 쉼표를 붙입니다.
+</li>
+<li>실수는 다시 읽어 같은 값이 되는 가장 짧은 표기입니다 (<code>1.0</code>, <code>1.0e300</code>). NaN / 무한대를 쓰려 하면 panic 입니다 (&quot;NaN/infinity has no ROKON form&quot;).
+</li>
+<li>이름 있는 값만 가진 변형의 정규 형식은 <code>E::V { .. }</code> 하나입니다 (<code>Value::Variant</code> 는 형태 표시를 갖지 않음).
+</li>
+<li>문자열과 문자의 bidi 제어 문자 (U+202A-U+202E, U+2066-U+2069) 는 escape 해서 씁니다 (<code>\u{202e}</code>).
+</li>
+<li>정규 형식을 다시 읽으면 같은 값이 됩니다 (round-trip). 읽는 쪽은 범위 밖의 실수 리터럴 (<code>1e999</code>) 을 거부합니다.
+</li>
+</ul>
+<p><code>rokc fmt</code> 는 <code>.rokon</code> 파일이 ROKON 인지 검사하고 들여쓰기만 다시 맞춥니다. 정규 형식으로 다시 쓰지는 않으므로 주석과 배치가 남습니다.</p>
+<h2 id="395-라이브러리-rokstdrokon"><a class="anchor" tabindex="-1" href="#395-라이브러리-rokstdrokon" aria-hidden="true">#</a>3.9.5. 라이브러리: <code>rok::std::rokon</code></h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::rokon;
+
+<span class="k">pub</span> <span class="k">enum</span> <span class="t">Value</span> {
+    <span class="t">None</span>,
+    <span class="t">Bool</span>(<span class="t">bool</span>),
+    <span class="t">Int</span>(<span class="t">int</span>),
+    <span class="t">Float</span>(<span class="t">float</span>),
+    <span class="t">Char</span>(<span class="t">char</span>),
+    <span class="t">Str</span>(<span class="t">str</span>),
+    <span class="t">List</span>(<span class="t">List</span>&lt;<span class="t">Value</span>&gt;),
+    <span class="t">Dict</span>(<span class="t">OrderedDict</span>&lt;<span class="t">Value</span>, <span class="t">Value</span>&gt;),
+    <span class="t">Tuple</span>(<span class="t">List</span>&lt;<span class="t">Value</span>&gt;),
+    <span class="t">Struct</span> { name: <span class="t">str</span> | <span class="k">none</span>; fields: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">Value</span>&gt;; },
+    <span class="t">Variant</span> { path: <span class="t">str</span>; args: <span class="t">List</span>&lt;<span class="t">Value</span>&gt;; named: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">Value</span>&gt;; },
+}
+<span class="k">impl</span> <span class="t">Value</span> {
+    <span class="k">fn</span> to_string(<span class="k">self</span>) -&gt; <span class="t">str</span>;       <span class="c">// 정규 형식</span>
+    <span class="k">fn</span> kind(<span class="k">self</span>) -&gt; <span class="t">str</span>;            <span class="c">// 에러 메시지용 종류 이름 (아래)</span>
+}                                    <span class="c">// + Display, Debug, PartialEq, Eq, Hash</span>
+
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">RokonError</span> { <span class="k">pub</span> msg: <span class="t">str</span>; <span class="k">pub</span> line: <span class="t">u32</span>; <span class="k">pub</span> col: <span class="t">u32</span>; <span class="k">pub</span> path: <span class="t">str</span>; }
+
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">ToRokon</span> { <span class="k">fn</span> to_rokon(<span class="k">self</span>) -&gt; <span class="t">Value</span>; }
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">FromRokon</span> {
+    <span class="k">fn</span> from_rokon(v: <span class="t">Value</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="k">Self</span>;
+    <span class="k">fn</span> from_missing() <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="k">Self</span>;   <span class="c">// 기본: 에러. T | none 은 none</span>
+}
+
+<span class="k">pub</span> <span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="t">Value</span>;
+<span class="k">pub</span> <span class="k">fn</span> to_string&lt;<span class="t">T</span>: <span class="t">ToRokon</span>&gt;(v: <span class="t">T</span>) -&gt; <span class="t">str</span>;
+<span class="k">pub</span> <span class="k">fn</span> from_str&lt;<span class="t">T</span>: <span class="t">FromRokon</span>&gt;(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="t">T</span>;
+<span class="k">pub</span> <span class="k">fn</span> encode&lt;<span class="t">T</span>: <span class="t">ToRokon</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">Value</span>;
+<span class="k">pub</span> <span class="k">fn</span> decode&lt;<span class="t">T</span>: <span class="t">FromRokon</span>&gt;(v: <span class="t">Value</span>, seg: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RokonError</span>) -&gt; <span class="t">T</span>;
+</code></pre>
+<ul>
+<li><code>RokonError</code> 의 <code>Display</code> 는 위치가 있으면 <code>line:col: msg</code>, 없으면 <code>at &lt;path&gt;: msg</code> 입니다. 타입이 있는 읽기의 에러는 <code>.servers[1].port</code>, <code>.limits[&quot;cpu&quot;]</code> 같은 경로를 담으며, <code>from_str</code> 은 그 경로를 입력의 <code>line:col</code> 로 바꿔 줍니다. <code>decode</code> 의 <code>seg</code> 는 경로의 시작 마디입니다.
+</li>
+<li><code>Value::kind</code> 는 에러 메시지에 쓰는 종류 이름이며, 차례로 <code>&quot;none&quot;</code>, <code>&quot;bool&quot;</code>, <code>&quot;integer&quot;</code>, <code>&quot;float&quot;</code>, <code>&quot;char&quot;</code>, <code>&quot;string&quot;</code>, <code>&quot;list&quot;</code>, <code>&quot;dict&quot;</code>, <code>&quot;tuple&quot;</code>, <code>&quot;struct&quot;</code> 이고 <code>Variant</code> 는 <code>&quot;variant `&lt;path&gt;`&quot;</code> 입니다.
+</li>
+<li><code>Value</code> 의 <code>==</code> 와 <code>hash</code> 는 구조적입니다. dict 의 항목과 struct 의 필드는 순서와 무관하게 비교하고, 부동소수는 정체로 비교합니다 (NaN == NaN, -0.0 != 0.0). 이름 없는 빈 struct 와 빈 dict 는 같습니다.
+</li>
+<li><code>Value</code> 의 <code>Debug</code>, <code>==</code>, <code>hash</code> 는 panic 하지 않습니다.
+</li>
+<li>표준 구현: 모든 정수 타입, <code>f32</code> / <code>f64</code>, <code>int</code> / <code>float</code>, <code>bool</code> / <code>char</code> / <code>str</code>, <code>Value</code>, <code>T | none</code>, <code>List</code>, <code>Set</code>, <code>Dict</code>, <code>OrderedDict</code>, <code>OrderedSet</code>, 원소 1 ~ 6 개의 튜플, <code>[T; N]</code>.
+</li>
+</ul>
+<h3 id="deriverokon"><a class="anchor" tabindex="-1" href="#deriverokon" aria-hidden="true">#</a><code>#[derive(Rokon)]</code></h3>
+<p>struct 와 enum (제네릭 포함) 에 <code>ToRokon</code> 과 <code>FromRokon</code> 을 함께 구현합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>정의</th><th>쓰는 모양</th></tr></thead>
+<tbody>
+<tr><td>이름 있는 필드 struct</td><td><code>Name { f: v }</code></td></tr>
+<tr><td>튜플 struct</td><td><code>Name(a, b)</code></td></tr>
+<tr><td>unit struct</td><td><code>Name {}</code></td></tr>
+<tr><td>unit 변형</td><td><code>E::V</code></td></tr>
+<tr><td>튜플 변형</td><td><code>E::V(a)</code></td></tr>
+<tr><td>이름 있는 변형</td><td><code>E::V { f: v }</code></td></tr>
+</tbody></table></div>
+<p>필드의 <code>= 기본값</code> 은 빠진 필드에 쓰입니다 (3.9.3). derive 는 메타 토큰 <code>@Self.name</code>, <code>@Self.is_unit</code> / <code>is_tuple</code> / <code>is_named</code>, <code>@field.has_default</code> / <code>@field.default</code> 로 만듭니다 (<a href="../../refs-lang/006-meta-system/609-template-tokens">refs-lang 6.9</a>).</p>
+<pre><code class="language-rok"><span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Server</span> { host: <span class="t">str</span>; port: <span class="t">u16</span> = <span class="n">80</span>; tls: <span class="t">bool</span> | <span class="k">none</span>; }
+
+<span class="a">#[derive(Rokon)]</span>
+<span class="k">struct</span> <span class="t">Config</span> { name: <span class="t">str</span>; servers: <span class="t">List</span>&lt;<span class="t">Server</span>&gt;; limits: <span class="t">OrderedDict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt;; }
+
+<span class="k">let</span> cfg: <span class="t">Config</span> = <span class="k">try</span> rokon::from_str(text);   <span class="c">// 에러는 "line:col: msg"</span>
+print(rokon::to_string(cfg));
+</code></pre>
+<h3 id="한계"><a class="anchor" tabindex="-1" href="#한계" aria-hidden="true">#</a>한계</h3>
+<ul>
+<li><code>Dict</code> / <code>Set</code> 은 hash 순서로 씁니다. 순서를 지키려면 <code>OrderedDict</code> / <code>OrderedSet</code> 을 씁니다.
+</li>
+<li><code>[T; 0]</code> 은 읽을 수 없습니다.
+</li>
+<li>튜플은 원소 6 개까지입니다.
+</li>
+<li>첫 키가 <code>none</code> 인 dict 는 읽을 수 없습니다 (3.9.1).
+</li>
+</ul>
+<h2 id="396-다른-형식과의-비교"><a class="anchor" tabindex="-1" href="#396-다른-형식과의-비교" aria-hidden="true">#</a>3.9.6. 다른 형식과의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>형식</th><th>struct 표기</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td>RON</td><td><code>Name(field: v)</code></td><td>Rust 와 다른 전용 문법</td></tr>
+<tr><td>ZON</td><td><code>.{ .name = &quot;x&quot; }</code></td><td>Zig 의 익명 struct 리터럴</td></tr>
+<tr><td>ROKON</td><td><code>Name { field: v }</code></td><td>rok 자체의 리터럴 문법 그대로</td></tr>
+</tbody></table></div>
+<p>ROKON 은 별도 문법을 두지 않고 rok 리터럴을 그대로 쓰므로, 소스에 적은 값과 파일에 적은 값이 같은 모양입니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/309-rokon.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="308-path"><small>Previous</small>3.8. path:: - UTF-8 Path (Python 식)</a><a class="next" href="310-crypto"><small>Next</small>3.10. crypto:: - OS 난수 원천</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.6. 인덱싱과 슬라이싱 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="대괄호 ([, ]) 로 둘러싼 표현식은 값의 부분에 접근하는 두 가지 형태에 쓰입니다. 하나는 특정 위치의 원소를 꺼내는 인덱싱이고, 다른 하나는 일정 영역을 잘라내는 슬라이싱입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/306-indexing-and-slicing.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.6. 인덱싱과 슬라이싱 - rok docs">
+<meta property="og:description" content="대괄호 ([, ]) 로 둘러싼 표현식은 값의 부분에 접근하는 두 가지 형태에 쓰입니다. 하나는 특정 위치의 원소를 꺼내는 인덱싱이고, 다른 하나는 일정 영역을 잘라내는 슬라이싱입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/306-indexing-and-slicing.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/306-indexing-and-slicing.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/306-indexing-and-slicing.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li class="cur"><a aria-current="page" href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a><ul class="toc"><li><a href="#361-인덱싱-arri">3.6.1. 인덱싱: arr[i]</a></li><li><a href="#362-슬라이싱-arrstartend">3.6.2. 슬라이싱: arr[start:end]</a></li><li><a href="#363-인덱싱과-슬라이싱의-토큰-분리">3.6.3. 인덱싱과 슬라이싱의 토큰 분리</a></li><li><a href="#364-빈-대괄호와-잘못된-형태">3.6.4. 빈 대괄호와 잘못된 형태</a></li><li><a href="#365-인덱싱과-슬라이싱은-trait-의존">3.6.5. 인덱싱과 슬라이싱은 trait 의존</a></li></ul></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="36-인덱싱과-슬라이싱 36-indexing-and-slicing 361-인덱싱-arri 361-indexing-arri desugar desugaring 음수-인덱스 negative-indices 경계-검사와-실패 bounds-checking-and-failure 362-슬라이싱-arrstartend 362-slicing-arrstartend desugar-1 desugaring-1 슬라이스-결과의-종류 kinds-of-slice-results 슬라이스-대입 slice-assignment 363-인덱싱과-슬라이싱의-토큰-분리 363-token-separation-of-indexing-and-slicing 364-빈-대괄호와-잘못된-형태 364-empty-brackets-and-malformed-forms 365-인덱싱과-슬라이싱은-trait-의존 365-indexing-and-slicing-depend-on-traits"><a href="../../../../spec/refs-lang/003-expressions/306-indexing-and-slicing" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="36-인덱싱과-슬라이싱"><a class="anchor" tabindex="-1" href="#36-인덱싱과-슬라이싱" aria-hidden="true">#</a>3.6. 인덱싱과 슬라이싱</h1>
+<p>대괄호 (<code>[</code>, <code>]</code>) 로 둘러싼 표현식은 값의 부분에 접근하는 두 가지 형태에 쓰입니다. 하나는 특정 위치의 원소를 꺼내는 인덱싱이고, 다른 하나는 일정 영역을 잘라내는 슬라이싱입니다.</p>
+<pre><code>index_expr      ::= primary &quot;[&quot; expr (&quot;,&quot; expr)* &quot;]&quot;
+slice_expr      ::= primary &quot;[&quot; slice_arg (&quot;,&quot; slice_arg)* &quot;]&quot;
+slice_arg       ::= expr
+                  | expr? &quot;:&quot; expr? (&quot;:&quot; expr?)?
+</code></pre>
+<h2 id="361-인덱싱-arri"><a class="anchor" tabindex="-1" href="#361-인덱싱-arri" aria-hidden="true">#</a>3.6.1. 인덱싱: <code>arr[i]</code></h2>
+<p>인덱싱은 대괄호 안에 인덱스 표현식을 적어 해당 자리의 값을 얻는 방식입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = arr[<span class="n">0</span>];
+<span class="k">let</span> last = arr[arr.len() - <span class="n">1</span>];
+<span class="k">let</span> m = matrix[i, j];        <span class="c">// 다차원, 인덱스를 콤마로 구분</span>
+</code></pre>
+<p>좌변에는 임의의 표현식이 올 수 있으며, 대괄호 안에는 한 개 이상의 인덱스 표현식을 콤마로 구분해 적습니다. 결과로는 인덱싱된 자리의 값을 돌려받게 됩니다.</p>
+<h3 id="desugar"><a class="anchor" tabindex="-1" href="#desugar" aria-hidden="true">#</a>desugar</h3>
+<p>인덱싱 표현식은 다음과 같이 트레잇 호출로 desugar 됩니다.</p>
+<pre><code>arr[i]                 →   &lt;typeof(arr) as Index&lt;typeof(i)&gt;&gt;::index(arr, i)
+arr[i] = v;            →   &lt;typeof(arr) as IndexSet&lt;typeof(i)&gt;&gt;::index_set(ref arr, i, v)
+matrix[i, j]           →   &lt;typeof(matrix) as Index&lt;(typeof(i), typeof(j))&gt;&gt;::index(matrix, (i, j))
+</code></pre>
+<p>읽기와 쓰기는 서로 다른 트레잇으로 매핑되기 때문에, 읽기 전용 자료에 쓰기를 시도하면 컴파일 에러가 발생합니다. 다차원 인덱싱은 인덱스들을 튜플로 묶어 단일 인덱스 트레잇 호출로 desugar 됩니다: <code>g[i, j]</code> 는 <code>Index&lt;(I, J)&gt;</code> 를 통한 <code>g[(i, j)]</code> 입니다. 한 타입에 <code>Index&lt;K&gt;</code> impl 이 여럿이면 인자 타입이 그중 하나를 고릅니다.</p>
+<h3 id="음수-인덱스"><a class="anchor" tabindex="-1" href="#음수-인덱스" aria-hidden="true">#</a>음수 인덱스</h3>
+<p>위치로 인덱싱하는 타입 (<code>List</code>, <code>Slice</code>, 고정 배열 <code>[T; N]</code>, 그리고 <code>str</code> / <code>StrBuf</code> 의 슬라이스 경계) 에서 <strong>부호 있는 정수</strong> 인덱스가 음수이면 끝에서부터 셉니다. 실제 위치는 <code>len + i</code> 입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+xs[-<span class="n">1</span>];                <span class="c">// 30</span>
+<span class="k">let</span> i = -<span class="n">2</span>;
+xs[i];                 <span class="c">// 20 - 리터럴뿐 아니라 변수도</span>
+xs[-<span class="n">4</span>];                <span class="c">// panic: index -4 out of bounds for length 3</span>
+</code></pre>
+<ul>
+<li>부호 없는 정수 인덱스는 그대로의 위치이며, 끝에서 세는 추가 비용이 없습니다.
+</li>
+<li>타입 없는 음수 리터럴 인덱스는 <code>isize</code> 입니다.
+</li>
+<li><code>len + i &lt; 0</code> 이면 panic 입니다 (<code>index -4 out of bounds for length 3</code>).
+</li>
+<li>키로 인덱싱하는 타입 (<code>Dict</code>) 은 영향이 없습니다. 음수 키는 그대로 키입니다.
+</li>
+<li>변환에는 <code>rok::core::index::index_from_end(i: isize, len: usize) -&gt; usize</code> 가 쓰입니다.
+</li>
+</ul>
+<p>평가 순서는 대상, 인덱스, (대입이면) 값 순이며 대상은 한 번만 평가됩니다.</p>
+<h3 id="경계-검사와-실패"><a class="anchor" tabindex="-1" href="#경계-검사와-실패" aria-hidden="true">#</a>경계 검사와 실패</h3>
+<p>대괄호 인덱싱은 유효 범위 밖에서 실패할 수 있는데, 실패가 어떤 형태로 드러나는지는 <code>Index</code> 구현이 결정합니다. 보통은 panic 이나 에러 발생 형태로 처리됩니다.</p>
+<p>만약 panic 없이 <code>T | none</code> 값을 받고 싶다면, 라이브러리에서 제공하는 <code>.get(i)</code> 같은 메서드를 사용하면 됩니다.</p>
+<h2 id="362-슬라이싱-arrstartend"><a class="anchor" tabindex="-1" href="#362-슬라이싱-arrstartend" aria-hidden="true">#</a>3.6.2. 슬라이싱: <code>arr[start:end]</code></h2>
+<p>슬라이싱은 대괄호 안에 콜론을 포함한 슬라이스 형태가 들어갈 때 사용되는 형식입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> part = arr[<span class="n">1</span>:<span class="n">3</span>];
+<span class="k">let</span> head = arr[:<span class="n">5</span>];
+<span class="k">let</span> tail = arr[<span class="n">5</span>:];
+<span class="k">let</span> all = arr[:];
+<span class="k">let</span> stepped = arr[::<span class="n">2</span>];
+<span class="k">let</span> reverse = arr[::-<span class="n">1</span>];
+<span class="k">let</span> full = arr[a:b:s];
+<span class="k">let</span> same = arr[<span class="n">1</span>..<span class="n">3</span>];        <span class="c">// 범위로도 - arr[1:3] 과 같음</span>
+<span class="k">let</span> whole = arr[..];         <span class="c">// arr[:] 과 같음</span>
+</code></pre>
+<p>대괄호 안에 슬라이스 형태가 들어가면 슬라이싱으로 처리되며, 그 형태는 다음 BNF 를 따릅니다.</p>
+<pre><code>slice_expr  := expr? ':' expr? (':' expr?)?
+              | range_expr                      // arr[a..b], arr[..]
+              | expr ',' expr ',' ...           // 콤마면 인덱싱
+</code></pre>
+<p>기본 형태인 <code>[start : end]</code> 는 시작 (포함) 부터 끝 (미포함) 까지의 영역을 의미합니다. 여기에 단계를 더한 <code>[start : end : step]</code> 도 쓸 수 있습니다. 의미는 <strong>Python 의 슬라이스와 같습니다</strong>.</p>
+<ul>
+<li>경계는 길이에 맞춰 잘라 맞춥니다 (clamp). 슬라이싱은 범위 때문에 panic 하지 않습니다. <code>xs[5:100]</code> 은 가능한 만큼, <code>start &gt;= end</code> (양수 step) 이면 빈 결과입니다.
+</li>
+<li>부호 있는 정수 경계가 음수이면 끝에서부터 센 뒤 (<code>len + i</code>) 잘라 맞춥니다. <code>xs[-10:]</code> 은 전체, <code>xs[:-10]</code> 은 빈 결과입니다.
+</li>
+<li>step 이 양수이면 생략한 <code>start</code> 는 0, 생략한 <code>end</code> 는 길이입니다. step 을 생략하면 1 입니다.
+</li>
+<li>step 이 음수이면 경계를 Python 처럼 읽습니다. <code>start</code> 에서 시작해 <code>end</code> 바로 앞까지 거꾸로 걷습니다. 생략한 <code>start</code> 는 마지막 원소, 생략한 <code>end</code> 는 첫 원소 앞입니다.
+</li>
+<li>step 이 0 이면 panic 입니다 (<code>slice step must not be zero</code>).
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> xs = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>];
+xs[-<span class="n">2</span>:];               <span class="c">// [4, 5]</span>
+xs[<span class="n">1</span>:-<span class="n">1</span>];              <span class="c">// [2, 3, 4]</span>
+xs[<span class="n">5</span>:<span class="n">100</span>];             <span class="c">// [] - clamp</span>
+xs[-<span class="n">10</span>:];              <span class="c">// [1, 2, 3, 4, 5]</span>
+xs[:-<span class="n">10</span>];              <span class="c">// []</span>
+xs[<span class="n">3</span>:<span class="n">1</span>];               <span class="c">// [] - start &gt;= end</span>
+xs[::-<span class="n">1</span>];              <span class="c">// [5, 4, 3, 2, 1]</span>
+xs[-<span class="n">1</span>:<span class="n">0</span>:-<span class="n">1</span>];           <span class="c">// [5, 4, 3, 2]</span>
+xs[<span class="n">3</span>:<span class="n">1</span>:-<span class="n">1</span>];            <span class="c">// [4, 3] - 위치 3, 2</span>
+xs[<span class="n">1</span>:<span class="n">4</span>:-<span class="n">2</span>];            <span class="c">// []</span>
+xs[::<span class="n">0</span>];               <span class="c">// panic - step 0</span>
+</code></pre>
+<p>단일 원소 인덱싱 (3.6.1) 은 다릅니다. 음수는 끝에서부터 세지만, 범위를 벗어나면 panic 입니다.</p>
+<p><code>str</code> / <code>StrBuf</code> 의 경계는 바이트 offset 이며, 먼저 잘라 맞춘 뒤 그 위치가 UTF-8 문자 중간이면 panic 입니다. <code>str</code> 슬라이스에는 step 이 없습니다 (<code>s[::2]</code> 는 타입 에러).</p>
+<h3 id="desugar-1"><a class="anchor" tabindex="-1" href="#desugar-1" aria-hidden="true">#</a>desugar</h3>
+<p>슬라이싱은 범위와 <code>Sliceable</code> 트레잇 (<a href="../../refs-standard-libraries/200-core/203-ops#234-인덱싱-트레잇">stdlib 2.3.4</a>) 호출로 desugar 됩니다.</p>
+<pre><code>arr[a : b]            →   arr.slice(a..b)                       // 부호 없는 경계, step 없음
+arr[a : b]            →   arr.slice(slice_bound(a, n)..slice_bound(b, n))   // 부호 있는 경계
+arr[a : b : k]        →   arr.slice(slice_range(a, b, k, n)).step(k)
+arr[: b] / arr[a :]   →   생략한 경계는 위의 기본값 (step 이 있으면 slice_range 의 none)
+arr[a..b] / arr[..]   →   arr.slice(a..b) / arr.slice(0..n)
+</code></pre>
+<p><code>n</code> 은 <code>arr.len()</code> 이며 <code>arr</code> 은 한 번만 평가됩니다. 모든 <code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> 구현은 범위를 <code>clamp_range</code> 로 잘라 맞추므로 <code>arr.slice(9..2)</code> 를 직접 불러도 panic 하지 않습니다. 쓰이는 helper 는 <code>rok::core::index</code> 에 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>helper</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>clamp_range(r: Range&lt;usize&gt;, n: usize) -&gt; Range&lt;usize&gt;</code></td><td>끝을 <code>n</code> 으로, 시작을 끝으로 잘라 맞춤</td></tr>
+<tr><td><code>slice_bound(i: isize, len: usize) -&gt; usize</code></td><td>음수면 <code>len + i</code>, 0 아래는 0</td></tr>
+<tr><td><code>slice_range(start: isize | none, stop: isize | none, step: isize, len: usize) -&gt; Range&lt;usize&gt;</code></td><td>Python <code>slice.indices</code> 와 같은 정방향 범위. <code>.step(step)</code> 을 붙이면 <code>arr[start:stop:step]</code></td></tr>
+<tr><td><code>index_from_end(i: isize, len: usize) -&gt; usize</code></td><td>단일 인덱스용. 음수면 <code>len + i</code>, 넘치면 panic</td></tr>
+</tbody></table></div>
+<h3 id="슬라이스-결과의-종류"><a class="anchor" tabindex="-1" href="#슬라이스-결과의-종류" aria-hidden="true">#</a>슬라이스 결과의 종류</h3>
+<p>결과 타입은 <code>Sliceable</code> 의 연관 타입이 정합니다. 표준 라이브러리에서는 다음과 같습니다 (<a href="../../refs-standard-libraries/200-core/209-collections#297-slicet---view">stdlib 2.9.7</a>).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>대상</th><th>결과</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>Slice&lt;T&gt;</code> - 리스트 버퍼의 view (원소 쓰기가 보임)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>Slice&lt;T&gt;</code> - view 의 view</td></tr>
+<tr><td><code>[T; N]</code></td><td><code>Slice&lt;T&gt;</code> - 배열 사본의 view (배열은 값)</td></tr>
+<tr><td><code>str</code>, <code>StrBuf</code></td><td>새 <code>str</code> - 바이트 사본 (<code>str</code> 은 C 문자열로 남아야 하므로), UTF-8 경계 검사</td></tr>
+</tbody></table></div>
+<h3 id="슬라이스-대입"><a class="anchor" tabindex="-1" href="#슬라이스-대입" aria-hidden="true">#</a>슬라이스 대입</h3>
+<p>슬라이스 대입 (<code>arr[1:3] = other;</code>) 은 지원하지 않습니다. 원소를 하나씩 대입하거나 컬렉션 메서드를 씁니다.</p>
+<h2 id="363-인덱싱과-슬라이싱의-토큰-분리"><a class="anchor" tabindex="-1" href="#363-인덱싱과-슬라이싱의-토큰-분리" aria-hidden="true">#</a>3.6.3. 인덱싱과 슬라이싱의 토큰 분리</h2>
+<p>같은 <code>[ ... ]</code> 안이라도, 콤마 (<code>,</code>) 가 등장하면 인덱싱 (다차원 또는 키 튜플) 으로, 콜론 (<code>:</code>) 이 등장하면 슬라이싱으로 해석됩니다. 한 괄호 안에서 두 형태를 섞는 것은 허용되지 않으니 주의해야 합니다.</p>
+<pre><code>arr[1, 2]                  // OK - 인덱싱 (i, j)
+arr[1:3]                   // OK - 슬라이싱
+arr[1:3, 4:6]              // ERROR: 섞임
+</code></pre>
+<p>다차원 슬라이싱이 필요하다면, 표준 라이브러리의 다차원 슬라이스 <code>trait</code> (예컨대 행렬 라이브러리의 <code>MatrixSlice</code> 같은 것) 가 별도 형태로 제공할 수 있습니다.</p>
+<h2 id="364-빈-대괄호와-잘못된-형태"><a class="anchor" tabindex="-1" href="#364-빈-대괄호와-잘못된-형태" aria-hidden="true">#</a>3.6.4. 빈 대괄호와 잘못된 형태</h2>
+<p>다음과 같은 형태들은 모두 잘못된 사용 예에 해당합니다.</p>
+<pre><code>arr[]               // ERROR: 빈 대괄호
+arr[a:b:c:d]        // ERROR: 콜론 셋 이상
+arr[: : :]          // ERROR: 콜론 셋
+</code></pre>
+<p>이러한 형태들은 어휘와 구문 단계에서 거부됩니다.</p>
+<h2 id="365-인덱싱과-슬라이싱은-trait-의존"><a class="anchor" tabindex="-1" href="#365-인덱싱과-슬라이싱은-trait-의존" aria-hidden="true">#</a>3.6.5. 인덱싱과 슬라이싱은 <code>trait</code> 의존</h2>
+<p>언어 자체는 어떤 타입에 인덱싱이나 슬라이싱이 가능한지를 직접 결정하지 않습니다. 표준 라이브러리가 <code>Index</code>, <code>IndexSet</code>, <code>Sliceable</code> 을 적절한 타입에 구현해 두면, 그제서야 <code>arr[i]</code> 와 <code>arr[1:3]</code> 이 그 타입에 대해 동작합니다.</p>
+<p>요컨대 언어가 정의하는 것은 대괄호의 토큰 형태와 desugar 규칙까지이고, 그 의미는 라이브러리의 몫이라고 보면 됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/306-indexing-and-slicing.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="305-member-access-and-method-call"><small>Previous</small>3.5. 멤버 접근과 메서드 호출</a><a class="next" href="307-range-expressions"><small>Next</small>3.7. 범위 표현식</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

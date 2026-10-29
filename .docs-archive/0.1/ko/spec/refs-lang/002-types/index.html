@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2. 타입 시스템 개요 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 장에서는 rok 타입 시스템이 책임지는 범위와 표준 라이브러리에 위임하는 범위를 정합니다. 구체적인 타입 종류와 문법은 후속 문서에서 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2. 타입 시스템 개요 - rok docs">
+<meta property="og:description" content="이 장에서는 rok 타입 시스템이 책임지는 범위와 표준 라이브러리에 위임하는 범위를 정합니다. 구체적인 타입 종류와 문법은 후속 문서에서 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a class="cur" href="./">2. 타입 시스템 개요</a></p><ul class="toc"><li><a href="#목차">목차</a></li><li><a href="#위치-정의-positional-definition">위치 정의 (positional definition)</a></li><li><a href="#두-모드-정적과-점진">두 모드: 정적과 점진</a></li><li><a href="#언어가-정의하는-것">언어가 정의하는 것</a></li><li><a href="#표준-라이브러리가-정의하는-것">표준 라이브러리가 정의하는 것</a></li><li><a href="#점진-타이핑의-경계">점진 타이핑의 경계</a></li><li><a href="#트레잇-as-타입-금지">트레잇-as-타입 금지</a></li><li><a href="#단형화-monomorphization">단형화 (monomorphization)</a></li></ul><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. 제네릭</a></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="2-타입-시스템-개요 2-type-system-overview 목차 contents 위치-정의-positional-definition positional-definition 두-모드-정적과-점진 two-modes-static-and-gradual 언어가-정의하는-것 what-the-language-defines 표준-라이브러리가-정의하는-것 what-the-standard-library-defines 점진-타이핑의-경계 boundary-of-gradual-typing 트레잇-as-타입-금지 trait-as-type-ban 단형화-monomorphization monomorphization"><a href="../../../../spec/refs-lang/002-types/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="2-타입-시스템-개요"><a class="anchor" tabindex="-1" href="#2-타입-시스템-개요" aria-hidden="true">#</a>2. 타입 시스템 개요</h1>
+<p>이 장에서는 rok 타입 시스템이 책임지는 범위와 표준 라이브러리에 위임하는 범위를 정합니다. 구체적인 타입 종류와 문법은 후속 문서에서 정의합니다.</p>
+<h2 id="목차"><a class="anchor" tabindex="-1" href="#목차" aria-hidden="true">#</a>목차</h2>
+<ul>
+<li><a href="201-type-expressions">2.1. 타입 표현식</a>
+</li>
+<li><a href="202-any-slot">2.2. <code>any</code> 슬롯</a>
+</li>
+<li><a href="203-struct">2.3. <code>struct</code></a>
+</li>
+<li><a href="204-enum">2.4. <code>enum</code></a>
+</li>
+<li><a href="205-union">2.5. <code>union</code></a>
+</li>
+<li><a href="206-sum-types">2.6. 합 타입 (<code>A | B</code>)</a>
+</li>
+<li><a href="207-niche-optimization">2.7. niche 최적화</a>
+</li>
+<li><a href="208-trait">2.8. <code>trait</code></a>
+</li>
+<li><a href="209-impl">2.9. <code>impl</code></a>
+</li>
+<li><a href="210-generics">2.10. 제네릭</a>
+</li>
+<li><a href="211-const-generics">2.11. const 제네릭</a>
+</li>
+<li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a>
+</li>
+<li><a href="213-type-paths">2.13. 타입 경로</a>
+</li>
+<li><a href="214-cast-and-conversion">2.14. 형 변환</a>
+</li>
+</ul>
+<h2 id="위치-정의-positional-definition"><a class="anchor" tabindex="-1" href="#위치-정의-positional-definition" aria-hidden="true">#</a>위치 정의 (positional definition)</h2>
+<p>타입은 값에 어떤 모양과 동작이 허용되는지를 컴파일러가 결정하는 정보입니다. rok 의 모든 값은 어떤 타입에 속하며, 타입이 없는 값은 존재하지 않습니다.</p>
+<p>다만 변수의 경우에는 사정이 조금 다릅니다. 변수는 한 가지 타입에 고정되거나 (정적), 여러 타입을 담을 수 있는 슬롯이거나 (동적) 둘 중 하나이며, 두 모드는 같은 언어 안에 공존합니다.</p>
+<h2 id="두-모드-정적과-점진"><a class="anchor" tabindex="-1" href="#두-모드-정적과-점진" aria-hidden="true">#</a>두 모드: 정적과 점진</h2>
+<pre><code>정적 (명시)         let x: i32 = 42i32;     x 는 항상 i32
+정적 (추론)         let z = 42i32;          z 는 초기값의 타입 i32 로 고정
+점진 (any)          let y: any = 42i32;     y 는 모든 타입을 담을 수 있는 슬롯
+</code></pre>
+<p>정적 변수는 선언 시 타입을 명시하거나, 타입을 생략해 초기값에서 추론한 경우에 해당하며, 그 변수는 항상 그 타입의 값만 포함합니다. 반면 점진 변수는 타입 자리에 <code>any</code> 를 명시한 경우로, 이때 변수는 동적 슬롯이 됩니다. 정적이 기본이고, 동적은 <code>any</code> 라고 적힌 곳에만 있습니다.</p>
+<p>이 장에서는 두 모드가 같은 언어 안에 있다는 사실까지만 짚어두기로 합니다.</p>
+<p>이러한 결정의 동기는 <a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 에 있습니다. REPL/Jupyter 탐색과 <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> 정적 컴파일이 같은 코드를 공유해야 하기 때문입니다. 그 결과 탐색용 코드는 타입을 생략한 추론 스타일로, 라이브러리 코드는 타입을 명시한 스타일로 자연스럽게 섞여 쓰이며, 동적 슬롯은 정말 필요한 곳에만 <code>any</code> 로 적어 둡니다.</p>
+<h2 id="언어가-정의하는-것"><a class="anchor" tabindex="-1" href="#언어가-정의하는-것" aria-hidden="true">#</a>언어가 정의하는 것</h2>
+<p>타입에 관해 언어 사양이 직접 정의하는 범위는 다음과 같습니다.</p>
+<p>먼저 타입 표현식의 문법, 즉 타입 이름을 적는 방식을 정의합니다. 그리고 타입을 만드는 컨테이너 문법, 곧 <code>struct</code>, <code>enum</code>, <code>union</code>, <code>trait</code>, <code>impl</code>, 제네릭, 합 타입(<code>|</code>) 을 다룹니다. 또한 동적 슬롯 (<code>any</code>) 의 의미를 규정하며, 제네릭의 단형화 규칙으로서 호출 지점에서 타입 별로 <a href="../000-meta/007-glossary#specialize">specialize</a> 하는 방식을 명시합니다. 마지막으로 컴파일러가 인식해야 하는 타입 시스템 불변, 가령 트레잇-as-타입 금지나 niche 최적화 규칙 등을 정의합니다.</p>
+<h2 id="표준-라이브러리가-정의하는-것"><a class="anchor" tabindex="-1" href="#표준-라이브러리가-정의하는-것" aria-hidden="true">#</a>표준 라이브러리가 정의하는 것</h2>
+<p>타입에 관해 표준 라이브러리가 책임지는 범위는 다음과 같습니다.</p>
+<p>먼저 모든 원시 타입의 이름과 의미, 즉 <code>i32</code>, <code>f64</code>, <code>bool</code>, <code>str</code> 등이 여기에 해당합니다. 그리고 <code>List</code>, <code>Dict</code>, <code>Set</code>, <code>Tuple</code> 등 모든 컬렉션 타입이 표준 라이브러리의 영역입니다. 또한 타입 간 cast, from, into 같은 모든 변환을 다루며, 트레잇의 내용 - 어떤 트레잇이 어떤 메서드를 가지고 어떤 타입에 구현되는가 - 역시 표준 라이브러리에서 결정됩니다. 끝으로 리터럴이 어떤 타입으로 평가되는가 또한 핸들러를 통해 표준 라이브러리에서 정해집니다.</p>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>본 2장은 모양만 정의합니다. 내용은 라이브러리 사양에서 정의합니다.</p>
+</div>
+<h2 id="점진-타이핑의-경계"><a class="anchor" tabindex="-1" href="#점진-타이핑의-경계" aria-hidden="true">#</a>점진 타이핑의 경계</h2>
+<p>점진 타이핑은 <code>any</code> 를 명시한 자리에만 적용됩니다. 타입 명시를 생략한 자리는 어디에서도 동적 슬롯이 되지 않습니다.</p>
+<p>변수에 타입을 적지 않은 경우, 초기값의 타입으로 추론된 정적 슬롯이 됩니다. 함수 매개변수에 타입을 적지 않은 경우, 이는 제네릭 함수로 해석되어 호출 지점에서 단형화됩니다. 동적 슬롯이 되지는 않으므로, 매개변수가 점진 동작을 하도록 하려면 명시적으로 <code>any</code> 를 적어야 합니다. 구조체 필드의 경우에는 타입 명시가 필수입니다. 한편 함수 반환 타입을 적지 않은 경우에는 body 에서 추론하며, 추론할 수 없으면 컴파일 에러가 발생합니다.</p>
+<p>이러한 경계를 두는 까닭은 실행 시 <a href="../000-meta/007-glossary#dispatch-디스패치">dispatch</a> 비용이 생기는 곳을 <code>any</code> 라고 적힌 자리로 한정하기 위함입니다. 변수, 매개변수, 필드 모두 정적이거나 명시적 <code>any</code> 입니다.</p>
+<h2 id="트레잇-as-타입-금지"><a class="anchor" tabindex="-1" href="#트레잇-as-타입-금지" aria-hidden="true">#</a>트레잇-as-타입 금지</h2>
+<p>트레잇 이름을 그대로 변수, 매개변수, 반환 타입으로 적을 수는 없습니다. 다형성이 필요한 경우에는 제네릭, 합 타입, 또는 제약 붙은 <code>any Trait</code> 을 사용합니다.</p>
+<p>런타임 dispatch 는 <code>any</code> 라고 적힌 자리 (<code>any</code>, <code>any Trait</code>) 로만 한정됩니다.</p>
+<h2 id="단형화-monomorphization"><a class="anchor" tabindex="-1" href="#단형화-monomorphization" aria-hidden="true">#</a>단형화 (monomorphization)</h2>
+<p>제네릭 함수와 타입은 호출이나 인스턴스화 지점의 구체 타입 튜플마다 별도 컴파일 결과를 생성합니다.</p>
+<p>예컨대 같은 제네릭 함수가 <code>i32</code> 와 <code>f64</code> 두 호출지에서 쓰이면, 두 개의 고유한 함수 본체가 생성됩니다. 이 방식의 결과로 간접 호출 비용은 0 이 되어 직접 호출과 동일한 성능을 얻습니다. 비용은 컴파일 시간과 바이너리 크기로 나타나지만, MLIR + LLVM 의 dead-code-elimination 으로 대부분 상쇄됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../001-lexical/110-punctuation-and-operator-tokens"><small>Previous</small>1.10. 구두점과 연산자 토큰</a><a class="next" href="201-type-expressions"><small>Next</small>2.1. 타입 표현식</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

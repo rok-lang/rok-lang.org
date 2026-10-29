@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5. Sum Types and none - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="When a value is &quot;either this or that&quot;, rok joins the types with |, as in A | B. This chapter covers sum types and the tools for working with the most common one...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/05-sum-types.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="5. Sum Types and none - rok docs">
+<meta property="og:description" content="When a value is &quot;either this or that&quot;, rok joins the types with |, as in A | B. This chapter covers sum types and the tools for working with the most common one...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/05-sum-types.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li class="cur"><a aria-current="page" href="05-sum-types">5. Sum Types and none</a><ul class="toc"><li><a href="#sum-types-a--b">Sum types A | B</a></li><li><a href="#none-and-t">none and T?</a></li><li><a href="#narrowing-with-is">Narrowing with is</a></li><li><a href="#if-let-and-match">if let and match</a></li><li><a href="#let-else-bail-out-early">let else: bail out early</a></li><li><a href="#defaults-with--and-chaining-with-">Defaults with ?? and chaining with ?.</a></li><li><a href="#postfix--return-early-on-none">Postfix ?: return early on none</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="5-sum-types-and-none"><a class="anchor" tabindex="-1" href="#5-sum-types-and-none" aria-hidden="true">#</a>5. Sum Types and none</h1>
+<p>When a value is &quot;either this or that&quot;, rok joins the types with <code>|</code>, as in <code>A | B</code>. This chapter covers sum types and the tools for working with the most common one, <code>T | none</code>, which means &quot;there may be no value&quot;.</p>
+<h2 id="sum-types-a--b"><a class="anchor" tabindex="-1" href="#sum-types-a--b" aria-hidden="true">#</a>Sum types <code>A | B</code></h2>
+<p>A value of a sum type belongs to exactly one of the listed variants. The value carries a tag recording which one, so <code>match</code> can extract it with a type-test pattern <code>name: Type</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> describe(v: <span class="t">i32</span> | <span class="t">str</span> | <span class="t">bool</span>) -&gt; <span class="t">str</span> {
+    <span class="k">match</span> v {
+        n: <span class="t">i32</span> =&gt; <span class="s">f"integer {</span>n<span class="s">}"</span>,
+        s: <span class="t">str</span> =&gt; <span class="s">f"string {</span>s<span class="s">}"</span>,
+        b: <span class="t">bool</span> =&gt; <span class="s">f"boolean {</span>b<span class="s">}"</span>,
+    }
+}
+
+println(describe(<span class="n">42</span>));
+println(describe(<span class="s">"rok"</span>));
+println(describe(<span class="k">true</span>));
+</code></pre>
+<pre class="output"><code class="language-output">integer 42
+string rok
+boolean true
+</code></pre>
+<p>Sum types are <strong>closed</strong>. The compiler knows every possible variant, so removing the <code>bool</code> arm from the <code>match</code> above is a compile error saying not all cases are handled. When you add a new variant, the compiler points you to every place that needs updating.</p>
+<p>Sum types behave like sets. <code>i32 | str</code> and <code>str | i32</code> are the same type, and <code>i32 | i32</code> is just <code>i32</code>. Long sums can be named with <code>type</code>.</p>
+<pre><code class="language-rok"><span class="k">type</span> <span class="t">Number</span> = <span class="t">i32</span> | <span class="t">f64</span>;
+
+<span class="k">fn</span> half(n: <span class="t">Number</span>) -&gt; <span class="t">f64</span> {
+    <span class="k">match</span> n {
+        i: <span class="t">i32</span> =&gt; i <span class="k">as</span> <span class="t">f64</span> / <span class="n">2.0</span>,
+        f: <span class="t">f64</span> =&gt; f / <span class="n">2.0</span>,
+    }
+}
+
+println(<span class="s">f"{</span>half(<span class="n">7</span>)<span class="s">} {</span>half(<span class="n">1.5</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">3.5 0.75
+</code></pre>
+<h2 id="none-and-t"><a class="anchor" tabindex="-1" href="#none-and-t" aria-hidden="true">#</a><code>none</code> and <code>T?</code></h2>
+<p><code>none</code> is the literal for &quot;no value&quot;. Where other languages use <code>Option&lt;T&gt;</code> or <code>null</code>, rok uses the sum type <code>T | none</code>, written <code>T?</code> for short. There is no <code>Some(..)</code> wrapper, so you return the value as is.</p>
+<pre><code class="language-rok"><span class="k">fn</span> find(xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;, target: <span class="t">i32</span>) -&gt; <span class="t">usize</span>? {
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..xs.len() {
+        <span class="k">if</span> xs[i] == target { <span class="k">return</span> i; }
+    }
+    <span class="k">none</span>
+}
+
+<span class="k">let</span> xs = [<span class="n">3</span>, <span class="n">1</span>, <span class="n">4</span>];
+println(<span class="s">f"{</span>find(xs, <span class="n">4</span>)<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span>find(xs, <span class="n">7</span>)<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">2
+none
+</code></pre>
+<p>The standard library follows the same convention. Lookups that can fail, such as <code>List::get</code>, <code>Dict::get</code>, and <code>List::pop</code>, all return <code>T | none</code>.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Advanced: <code>T | none</code> is nearly free. For types with unused bit patterns, such as <code>bool</code>, pointers, and field-less <code>enum</code>s, <code>none</code> is stored in one of those patterns with no separate tag (<a href="../spec/refs-lang/002-types/207-niche-optimization">niche optimization</a>). That is why <code>bool?</code> is 1 byte.</p>
+</div>
+<h2 id="narrowing-with-is"><a class="anchor" tabindex="-1" href="#narrowing-with-is" aria-hidden="true">#</a>Narrowing with <code>is</code></h2>
+<p><code>x is T</code> is a <code>bool</code> expression that tests whether the value is currently the <code>T</code> variant. When an <code>if</code> condition tests a local variable, the variable is <strong>narrowed</strong> to <code>T</code> inside that branch, so you can use <code>T</code>'s operations directly. The same holds for later conditions joined with <code>&amp;&amp;</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = <span class="n">7</span>;
+<span class="k">if</span> v <span class="k">is</span> <span class="t">i32</span> &amp;&amp; v &gt; <span class="n">5</span> {
+    println(<span class="s">f"big number: {</span>v + <span class="n">1</span><span class="s">}"</span>);
+}
+
+<span class="k">let</span> w: <span class="t">i32</span> | <span class="t">str</span> = <span class="s">"hello"</span>;
+<span class="k">if</span> w <span class="k">is</span> <span class="t">str</span> {
+    println(<span class="s">f"length: {</span>w.len()<span class="s">}"</span>);
+}
+println(<span class="s">f"{</span>w <span class="k">is</span> <span class="t">i32</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">big number: 8
+length: 5
+false
+</code></pre>
+<p>Inside the narrowed branch you can still assign to the variable. A value of the narrowed type keeps the narrowing; a value of another member of the declared type ends it, and from there to the end of the branch the variable has its declared type again.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = <span class="n">5</span>;
+<span class="k">if</span> v <span class="k">is</span> <span class="t">i32</span> {
+    v = v + <span class="n">1</span>;              <span class="c">// still i32</span>
+    println(<span class="s">f"{</span>v * <span class="n">2</span><span class="s">}"</span>);
+    v = <span class="s">"six"</span>;              <span class="c">// ends the narrowing: v is i32 | str again</span>
+    println(<span class="s">f"{</span>v <span class="k">is</span> <span class="t">str</span><span class="s">} {</span>v<span class="s">:?</span><span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">12
+true &quot;six&quot;
+</code></pre>
+<p>After <code>v = &quot;six&quot;</code>, writing <code>v + 1</code> would be a type error, because <code>+</code> is not defined on <code>i32 | str</code>.</p>
+<h2 id="if-let-and-match"><a class="anchor" tabindex="-1" href="#if-let-and-match" aria-hidden="true">#</a><code>if let</code> and <code>match</code></h2>
+<p>To test and bind the value to a new name at the same time, use <code>if let name: T = expr</code>. In <code>match</code>, write <code>none</code> as a literal pattern.</p>
+<pre><code class="language-rok"><span class="k">fn</span> lookup(id: <span class="t">i32</span>) -&gt; <span class="t">str</span>? {
+    <span class="k">if</span> id == <span class="n">1</span> { <span class="s">"kim"</span> } <span class="k">else</span> { <span class="k">none</span> }
+}
+
+<span class="k">if</span> <span class="k">let</span> name: <span class="t">str</span> = lookup(<span class="n">1</span>) {
+    println(<span class="s">f"found: {</span>name<span class="s">}"</span>);
+} <span class="k">else</span> {
+    println(<span class="s">"not found"</span>);
+}
+
+<span class="k">for</span> id <span class="k">in</span> [<span class="n">1</span>, <span class="n">2</span>] {
+    <span class="k">match</span> lookup(id) {
+        name: <span class="t">str</span> =&gt; println(<span class="s">f"{</span>id<span class="s">} → {</span>name<span class="s">}"</span>),
+        <span class="k">none</span> =&gt; println(<span class="s">f"{</span>id<span class="s">} → (none)"</span>),
+    }
+}
+</code></pre>
+<pre class="output"><code class="language-output">found: kim
+1 → kim
+2 → (none)
+</code></pre>
+<h2 id="let-else-bail-out-early"><a class="anchor" tabindex="-1" href="#let-else-bail-out-early" aria-hidden="true">#</a><code>let else</code>: bail out early</h2>
+<p><code>let pattern = expr else { ... };</code> binds the name if the pattern matches and otherwise runs the <code>else</code> block, which must leave the scope with <code>return</code>, <code>break</code>, <code>continue</code>, or <code>throw</code>. This lets you write &quot;bail out early if missing&quot; without extra indentation, and after it the name has the narrowed type.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first_even(xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;) -&gt; <span class="t">i32</span> | <span class="k">none</span> {
+    <span class="k">for</span> x <span class="k">in</span> xs {
+        <span class="k">if</span> x % <span class="n">2</span> == <span class="n">0</span> { <span class="k">return</span> x; }
+    }
+    <span class="k">none</span>
+}
+
+<span class="k">fn</span> report(xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;) -&gt; <span class="t">str</span> {
+    <span class="k">let</span> n: <span class="t">i32</span> = first_even(xs) <span class="k">else</span> {
+        <span class="k">return</span> <span class="s">"no even number"</span>;
+    };
+    <span class="s">f"first even is {</span>n<span class="s">}, half is {</span>n / <span class="n">2</span><span class="s">}"</span>
+}
+
+println(report([<span class="n">1</span>, <span class="n">3</span>, <span class="n">8</span>, <span class="n">10</span>]));
+println(report([<span class="n">1</span>, <span class="n">3</span>]));
+</code></pre>
+<pre class="output"><code class="language-output">first even is 8, half is 4
+no even number
+</code></pre>
+<h2 id="defaults-with--and-chaining-with-"><a class="anchor" tabindex="-1" href="#defaults-with--and-chaining-with-" aria-hidden="true">#</a>Defaults with <code>??</code> and chaining with <code>?.</code></h2>
+<p>Writing <code>match</code> every time gets tedious. <code>a ?? b</code> returns <code>b</code> if <code>a</code> is <code>none</code>, and <code>a</code>'s value otherwise. <code>x?.field</code> and <code>x?.method()</code> evaluate to <code>none</code> when <code>x</code> is <code>none</code>, and only perform the access when there is a value. Combined, &quot;take it if present, otherwise use a default&quot; fits on one line.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">User</span> { name: <span class="t">str</span>; nick: <span class="t">str</span>?; }
+
+<span class="k">let</span> u: <span class="t">User</span>? = <span class="t">User</span> { name: <span class="s">"kim"</span>, nick: <span class="k">none</span> };
+<span class="k">let</span> nobody: <span class="t">User</span>? = <span class="k">none</span>;
+
+println(u?.name ?? <span class="s">"anonymous"</span>);
+println(nobody?.name ?? <span class="s">"anonymous"</span>);
+println(<span class="s">f"{</span>u?.name?.len()<span class="s">:?</span><span class="s">}"</span>);
+
+<span class="k">let</span> scores: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = {<span class="s">"kim"</span>: <span class="n">90</span>};
+println(<span class="s">f"{</span>scores.get(<span class="s">"kim"</span>) ?? <span class="n">0</span><span class="s">} {</span>scores.get(<span class="s">"lee"</span>) ?? <span class="n">0</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">kim
+anonymous
+3
+90 0
+</code></pre>
+<p><code>?.</code> short-circuits. If the left side is <code>none</code>, the method after it is never called.</p>
+<h2 id="postfix--return-early-on-none"><a class="anchor" tabindex="-1" href="#postfix--return-early-on-none" aria-hidden="true">#</a>Postfix <code>?</code>: return early on none</h2>
+<p>When a function has to unwrap several <code>T | none</code> values in sequence, use postfix <code>?</code>. <code>e?</code> extracts the value of <code>e</code>, and if it is <code>none</code>, immediately returns <code>none</code> from the enclosing function. The function's return type must therefore include <code>none</code>.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">User</span> { name: <span class="t">str</span>; nick: <span class="t">str</span>?; }
+
+<span class="k">fn</span> nick_len(u: <span class="t">User</span>?) -&gt; <span class="t">usize</span>? {
+    <span class="k">let</span> user = u?;
+    <span class="k">let</span> nick = user.nick?;
+    nick.len()
+}
+
+println(<span class="s">f"{</span>nick_len(<span class="t">User</span> { name: <span class="s">"a"</span>, nick: <span class="s">"bob"</span> })<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span>nick_len(<span class="t">User</span> { name: <span class="s">"a"</span>, nick: <span class="k">none</span> })<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span>nick_len(<span class="k">none</span>)<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">3
+none
+none
+</code></pre>
+<p><code>?</code> works only on <code>T | none</code>. It is not a way to propagate errors; errors are handled with <code>throws</code> / <code>try</code> (<a href="../spec/refs-lang/003-expressions/314-error-control-flow">error control flow</a>).</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Advanced: if a collection stores <code>none</code> itself (<code>List&lt;i32?&gt;</code>), the result of <code>get</code> is a two-level optional <code>(i32 | none)?</code> that distinguishes &quot;no element&quot; from &quot;a stored none&quot;. <code>??</code>, <code>?.</code>, and <code>?</code> act only on the outer level. See <a href="../spec/refs-lang/002-types/206-sum-types#nested-optional">nested optionals</a> for the full rules.</p>
+</div>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>A | B</code> is a closed sum type. Variant order and duplicates don't matter, and <code>match</code> must handle every variant.
+</li>
+<li>When a value may be absent, use <code>T | none</code>, or <code>T?</code> for short. Return the value as is, without wrapping.
+</li>
+<li><code>x is T</code> both tests and narrows. Extract values with <code>if let x: T = ...</code>, <code>let x: T = ... else { return .. };</code>, and the <code>n: T</code> / <code>none</code> patterns in <code>match</code>.
+</li>
+<li><code>??</code> supplies a default, <code>?.</code> skips the access on none, and postfix <code>?</code> returns from the function on none.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li><a href="../spec/refs-lang/002-types/206-sum-types">2.6. Sum types</a>, <a href="../spec/refs-lang/002-types/201-type-expressions#215a-optional-types-t">2.1.5a. Optional type <code>T?</code></a>
+</li>
+<li><a href="../spec/refs-lang/002-types/202-any-slot#226-narrowing">2.2.6. Narrowing</a>, <a href="../spec/refs-lang/003-expressions/310-if-expression#3105-if-let-combining-with-pattern-matching">3.10.5. <code>if let</code></a>, <a href="../spec/refs-lang/003-expressions/316-let-else">3.16. <code>let-else</code></a>, <a href="../spec/refs-lang/003-expressions/311-patterns">3.11. Patterns</a>
+</li>
+<li><a href="../spec/refs-lang/003-expressions/308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a>, <a href="../spec/refs-lang/003-expressions/314-error-control-flow#31410-the--operator---early-return-of-none">3.14.10. The <code>?</code> operator</a>
+</li>
+<li><a href="../spec/refs-lang/002-types/207-niche-optimization">2.7. Niche optimization</a>
+</li>
+<li>Next chapter: <a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/05-sum-types.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="04-control-flow"><small>Previous</small>4. Control Flow</a><a class="next" href="06-structs-enums-traits"><small>Next</small>6. Structs, Enums, and Traits</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

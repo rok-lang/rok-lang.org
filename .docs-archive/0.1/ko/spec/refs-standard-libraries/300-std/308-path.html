@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.8. path:: - UTF-8 Path (Python 식) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::std::path 모듈은 경로 표현을 정의합니다. 여기서 핵심은 UTF-8 newtype 을 우선시한다는 점인데, 이는 Rust 의 Path 와 OsStr 분리가 가져오는 ergonomic 부담을 회피하면서, 동시에 Python pathlib.Path 의 직관성을 채택하기 위함...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/308-path.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.8. path:: - UTF-8 Path (Python 식) - rok docs">
+<meta property="og:description" content="rok::std::path 모듈은 경로 표현을 정의합니다. 여기서 핵심은 UTF-8 newtype 을 우선시한다는 점인데, 이는 Rust 의 Path 와 OsStr 분리가 가져오는 ergonomic 부담을 회피하면서, 동시에 Python pathlib.Path 의 직관성을 채택하기 위함...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/308-path.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/308-path.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/308-path.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - 시간</a></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li class="cur"><a aria-current="page" href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a><ul class="toc"><li><a href="#381-두-타입---path--rawpath">3.8.1. 두 타입 - Path / RawPath</a></li><li><a href="#382-path---utf-8">3.8.2. Path - UTF-8</a></li><li><a href="#383--연산자---python-pathlib-식">3.8.3. / 연산자 - Python pathlib 식</a></li><li><a href="#383a-aspath---경로-인자">3.8.3a. AsPath - 경로 인자</a></li><li><a href="#384-utf-8-invariant">3.8.4. UTF-8 invariant</a></li><li><a href="#385-rawpath---bytes--wtf-16">3.8.5. RawPath - bytes / WTF-16</a></li><li><a href="#386-canonicalize--normalize-차이">3.8.6. canonicalize / normalize 차이</a></li><li><a href="#387-wasi-호환">3.8.7. WASI 호환</a></li><li><a href="#388-다른-언어와의-비교">3.8.8. 다른 언어와의 비교</a></li></ul></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="38-path---utf-8-path-python-식 38-path---utf-8-path-python-style 381-두-타입---path--rawpath 381-two-types---path--rawpath 382-path---utf-8 382-path---utf-8 383--연산자---python-pathlib-식 383-the--operator---python-pathlib-style 383a-aspath---경로-인자 383a-aspath---path-arguments 384-utf-8-invariant 384-utf-8-invariant 385-rawpath---bytes--wtf-16 385-rawpath---bytes--wtf-16 386-canonicalize--normalize-차이 386-canonicalize-vs-normalize 387-wasi-호환 387-wasi-compatibility 388-다른-언어와의-비교 388-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/300-std/308-path" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="38-path---utf-8-path-python-식"><a class="anchor" tabindex="-1" href="#38-path---utf-8-path-python-식" aria-hidden="true">#</a>3.8. <code>path::</code> - UTF-8 Path (Python 식)</h1>
+<p><code>rok::std::path</code> 모듈은 경로 표현을 정의합니다. 여기서 핵심은 UTF-8 newtype 을 우선시한다는 점인데, 이는 Rust 의 <code>Path</code> 와 <code>OsStr</code> 분리가 가져오는 ergonomic 부담을 회피하면서, 동시에 Python <code>pathlib.Path</code> 의 직관성을 채택하기 위함입니다.</p>
+<h2 id="381-두-타입---path--rawpath"><a class="anchor" tabindex="-1" href="#381-두-타입---path--rawpath" aria-hidden="true">#</a>3.8.1. 두 타입 - <code>Path</code> / <code>RawPath</code></h2>
+<p>rok 의 경로 표현은 두 개의 타입으로 나뉩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>의미</th><th>사용 빈도</th></tr></thead>
+<tbody>
+<tr><td><code>Path</code></td><td>UTF-8 경로 (95%+)</td><td>일반 코드 default</td></tr>
+<tr><td><code>RawPath</code></td><td>OS native bytes (Unix bytes / Windows WTF-16)</td><td>1% (non-UTF-8 파일명)</td></tr>
+</tbody></table></div>
+<p>대부분의 코드는 <code>Path</code> 만 사용하면 충분합니다. <code>RawPath</code> 가 필요해지는 경우는 legacy bytes 가 정말로 요구되는 자리, 예컨대 오래된 unix 시스템과 마주칠 때에 한정됩니다.</p>
+<h2 id="382-path---utf-8"><a class="anchor" tabindex="-1" href="#382-path---utf-8" aria-hidden="true">#</a>3.8.2. <code>Path</code> - UTF-8</h2>
+<p><code>Path</code> 는 불변 값입니다. <code>join</code>, <code>/</code>, <code>with_*</code> 는 모두 새 <code>Path</code> 를 돌려주며, 경로를 제자리에서 바꾸는 <code>PathBuf</code> / <code>push</code> 는 없습니다. <code>p /= q</code> 는 일반 복합 대입 규칙대로 <code>p = p / q</code> 입니다.</p>
+<p><code>Path</code> 의 인터페이스는 다음과 같이 구성됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Path</span> { <span class="c">/* UTF-8 str newtype, GC heap */</span> }
+
+<span class="k">impl</span> <span class="t">Path</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">Path</span>;
+    <span class="k">fn</span> from(s: <span class="t">str</span>) -&gt; <span class="t">Path</span>;
+    <span class="k">fn</span> from_components&lt;<span class="t">I</span>: <span class="t">Iterator</span>&lt;<span class="t">Item</span> = <span class="t">str</span>&gt;&gt;(components: <span class="t">I</span>) -&gt; <span class="t">Path</span>;
+
+    <span class="c">// 분해</span>
+    <span class="k">fn</span> parent(<span class="k">self</span>) -&gt; <span class="t">Path</span> | <span class="k">none</span>;
+    <span class="k">fn</span> file_name(<span class="k">self</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;
+    <span class="k">fn</span> file_stem(<span class="k">self</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;
+    <span class="k">fn</span> extension(<span class="k">self</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;
+    <span class="k">fn</span> components(<span class="k">self</span>) -&gt; <span class="t">Components</span>;   <span class="c">// Iterator&lt;Item = Component&gt; 구현</span>
+    <span class="k">fn</span> ancestors(<span class="k">self</span>) -&gt; <span class="t">Ancestors</span>;     <span class="c">// Iterator&lt;Item = Path&gt; 구현</span>
+
+    <span class="c">// 조작</span>
+    <span class="k">fn</span> join(<span class="k">self</span>, other: <span class="t">Path</span>) -&gt; <span class="t">Path</span>;
+    <span class="k">fn</span> with_file_name(<span class="k">self</span>, name: <span class="t">str</span>) -&gt; <span class="t">Path</span>;
+    <span class="k">fn</span> with_extension(<span class="k">self</span>, ext: <span class="t">str</span>) -&gt; <span class="t">Path</span>;
+    <span class="k">fn</span> strip_prefix(<span class="k">self</span>, base: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">StripPrefixError</span>) -&gt; <span class="t">Path</span>;
+
+    <span class="k">fn</span> is_absolute(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_relative(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> has_root(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> starts_with(<span class="k">self</span>, base: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> ends_with(<span class="k">self</span>, suffix: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> normalize(<span class="k">self</span>) -&gt; <span class="t">Path</span>;             <span class="c">// resolve "." / ".." (lexical)</span>
+
+    <span class="c">// OS 상호작용 (편의 - 내부적으로 fs::*)</span>
+    <span class="k">fn</span> exists(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_file(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_dir(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_symlink(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> metadata(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">fn</span> canonicalize(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Path</span>;     <span class="c">// realpath (filesystem 검증)</span>
+
+    <span class="k">fn</span> as_str(<span class="k">self</span>) -&gt; <span class="t">str</span>;
+    <span class="k">fn</span> to_raw(<span class="k">self</span>) -&gt; <span class="t">RawPath</span>;
+}
+
+<span class="k">enum</span> <span class="t">Component</span> {
+    <span class="t">RootDir</span>,                    <span class="c">// "/"</span>
+    <span class="t">Prefix</span>(<span class="t">str</span>),                <span class="c">// "C:" (Windows)</span>
+    <span class="t">CurDir</span>,                     <span class="c">// "."</span>
+    <span class="t">ParentDir</span>,                  <span class="c">// ".."</span>
+    <span class="t">Normal</span>(<span class="t">str</span>),                <span class="c">// "data"</span>
+}
+</code></pre>
+<h2 id="383--연산자---python-pathlib-식"><a class="anchor" tabindex="-1" href="#383--연산자---python-pathlib-식" aria-hidden="true">#</a>3.8.3. <code>/</code> 연산자 - Python pathlib 식</h2>
+<p>경로 결합의 가독성을 한층 끌어올리기 위해 <code>/</code> 연산자를 도입합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Div</span>&lt;<span class="t">str</span>&gt; <span class="k">for</span> <span class="t">Path</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Path</span>;
+    <span class="a">#[infix("/")]</span>
+    <span class="k">fn</span> div(<span class="k">self</span>, rhs: <span class="t">str</span>) -&gt; <span class="t">Path</span> { <span class="k">self</span>.join(<span class="t">Path</span>::from(rhs)) }
+}
+
+<span class="k">impl</span> <span class="t">Div</span>&lt;<span class="t">Path</span>&gt; <span class="k">for</span> <span class="t">Path</span> { ... }
+</code></pre>
+<p><code>p /= &quot;x&quot;</code> 와 <code>p /= q</code> (<code>q: Path</code>) 도 쓸 수 있으며, <code>p = p / ..</code> 와 같습니다.</p>
+<p><strong>효과</strong> 는 다음 예시에서 분명히 드러납니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> p = <span class="t">Path</span>::from(<span class="s">"/etc"</span>) / <span class="s">"nginx"</span> / <span class="s">"nginx.conf"</span>;
+                                          <span class="c">//→ Path("/etc/nginx/nginx.conf")</span>
+
+<span class="k">let</span> home = env::home_dir()? / <span class="s">".config"</span> / <span class="s">"myapp"</span> / <span class="s">"settings.toml"</span>;
+</code></pre>
+<p>이는 Python 의 <code>Path(&quot;/etc&quot;) / &quot;nginx&quot; / &quot;nginx.conf&quot;</code> 와 <strong>동일한 ergonomics</strong> 를 제공합니다. 그 결과 Rust <code>PathBuf::join</code> 과 <code>push</code> 의 verbose 한 표현을 자연스럽게 회피합니다.</p>
+<h2 id="383a-aspath---경로-인자"><a class="anchor" tabindex="-1" href="#383a-aspath---경로-인자" aria-hidden="true">#</a>3.8.3a. <code>AsPath</code> - 경로 인자</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">AsPath</span> {
+    <span class="k">fn</span> as_path(<span class="k">self</span>) -&gt; <span class="t">Path</span>;
+}
+<span class="k">impl</span> <span class="t">AsPath</span> <span class="k">for</span> <span class="t">str</span> { ... }
+<span class="k">impl</span> <span class="t">AsPath</span> <span class="k">for</span> <span class="t">Path</span> { ... }
+</code></pre>
+<p><code>fs</code> 의 경로 인자는 <code>AsPath</code> 로 받으므로 <code>str</code> 과 <code>Path</code> 를 모두 넘길 수 있습니다 (<code>fs::read(&quot;a.txt&quot;)</code>, <code>fs::read(dir / &quot;a.txt&quot;)</code>).</p>
+<h2 id="384-utf-8-invariant"><a class="anchor" tabindex="-1" href="#384-utf-8-invariant" aria-hidden="true">#</a>3.8.4. UTF-8 invariant</h2>
+<p><code>Path</code> 는 <strong>항상 UTF-8</strong> 입니다. 따라서 <code>Path::from(s)</code> 시점에 <code>s</code> 가 이미 UTF-8 이므로 별도 검증이 필요하지 않습니다.</p>
+<p>다만 OS 가 non-UTF-8 파일명을 반환하는 드문 상황도 존재합니다.</p>
+<ul>
+<li>Unix 의 경우 arbitrary bytes 가 가능하므로 <code>Path::from(...)</code> 은 <strong>lossy 변환</strong> (replacement char <code>U+FFFD</code>) 을 수행합니다.
+</li>
+<li>Windows 의 경우 WTF-16 이며, surrogate pair 처리가 별도로 이루어집니다.
+</li>
+</ul>
+<p>엄격한 변환이 필요하다면 다음과 같이 작성합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> raw: <span class="t">RawPath</span> = ...;
+<span class="k">let</span> p: <span class="t">Path</span> = <span class="k">try</span> <span class="t">Path</span>::try_from(raw);    <span class="c">// UTF-8 이 아니면 NonUtf8Error 를 throw</span>
+<span class="k">let</span> q: <span class="t">Path</span> = <span class="k">try</span> raw.try_into();          <span class="c">// 같음</span>
+</code></pre>
+<p>이 변환은 <code>impl TryFrom&lt;RawPath&gt; for Path { type Error = NonUtf8Error; ... }</code> 입니다 (<a href="../200-core/211-conversion#2114-tryfromu-트레잇---fallible-변환">2.11.4</a>).</p>
+<h2 id="385-rawpath---bytes--wtf-16"><a class="anchor" tabindex="-1" href="#385-rawpath---bytes--wtf-16" aria-hidden="true">#</a>3.8.5. <code>RawPath</code> - bytes / WTF-16</h2>
+<p>OS 의 native 표현이 그대로 필요한 자리를 위해 <code>RawPath</code> 가 마련됩니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">RawPath</span> { <span class="c">/* unix: Vec&lt;u8&gt;, windows: Vec&lt;u16&gt; */</span> }
+
+<span class="k">impl</span> <span class="t">RawPath</span> {
+    <span class="k">fn</span> from_bytes(bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">RawPath</span>;        <span class="c">// unix</span>
+    <span class="k">fn</span> from_wide(wide: <span class="t">List</span>&lt;<span class="t">u16</span>&gt;) -&gt; <span class="t">RawPath</span>;          <span class="c">// windows</span>
+
+    <span class="k">fn</span> as_bytes(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;                    <span class="c">// unix 만</span>
+    <span class="k">fn</span> as_wide(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u16</span>&gt;;                    <span class="c">// windows 만</span>
+
+    <span class="k">fn</span> try_to_path(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">NonUtf8Error</span>) -&gt; <span class="t">Path</span>;
+    <span class="k">fn</span> to_path_lossy(<span class="k">self</span>) -&gt; <span class="t">Path</span>;
+}
+</code></pre>
+<p>Windows 에서 <code>NonUtf8Error.valid_up_to</code> 는 UTF-16 단위를 셉니다. <code>to_path_lossy</code> 는 잘못된 maximal subsequence (Unix) / 짝 없는 surrogate (Windows) 하나하나를 U+FFFD 하나로 바꿉니다.</p>
+<p>대부분의 코드는 이 타입을 마주칠 일이 없습니다. OS 와 직접 syscall 을 주고받는 자리에서만 등장한다고 보면 됩니다.</p>
+<h2 id="386-canonicalize--normalize-차이"><a class="anchor" tabindex="-1" href="#386-canonicalize--normalize-차이" aria-hidden="true">#</a>3.8.6. canonicalize / normalize 차이</h2>
+<p>이 두 함수는 비슷해 보이지만, 동작 방식과 비용 측면에서 분명히 구분됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>함수</th><th>의미</th><th>파일시스템 접근</th></tr></thead>
+<tbody>
+<tr><td><code>normalize()</code></td><td>순수 lexical 정리 (&quot;..&quot; 해석)</td><td><strong>하지 않음</strong></td></tr>
+<tr><td><code>canonicalize()</code></td><td>symlink 해석 + 절대 경로 변환</td><td><strong>함</strong> (<code>realpath</code>)</td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="t">Path</span>::from(<span class="s">"/a/b/../c"</span>).normalize();              <span class="c">//→ "/a/c" (lexical)</span>
+<span class="k">try</span> <span class="t">Path</span>::from(<span class="s">"/a/b/../c"</span>).canonicalize();       <span class="c">//→ symlink 해석된 절대 경로</span>
+</code></pre>
+<p><code>normalize</code> 는 빠르고 syscall 을 동반하지 않으므로 90% 의 자리에서 충분히 제 역할을 해냅니다.</p>
+<h2 id="387-wasi-호환"><a class="anchor" tabindex="-1" href="#387-wasi-호환" aria-hidden="true">#</a>3.8.7. WASI 호환</h2>
+<p><code>Path</code> 는 WASI Preview 2 의 <strong>capability path</strong> 와도 자연스럽게 통합됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> dir: <span class="t">Dir</span> = <span class="k">try</span> <span class="t">Dir</span>::root().open_dir(<span class="s">"data"</span>);
+<span class="k">let</span> f = <span class="k">try</span> dir.open(<span class="t">Path</span>::from(<span class="s">"config.toml"</span>));
+                                          <span class="c">// Path 가 dir 에 상대적 - escape 거부</span>
+</code></pre>
+<p>자세한 capability 모델은 <a href="301-fs">3.1 fs</a> 에서 다룹니다.</p>
+<h2 id="388-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#388-다른-언어와의-비교" aria-hidden="true">#</a>3.8.8. 다른 언어와의 비교</h2>
+<p>설계 결정의 좌표를 명확히 하기 위해, 인접 언어들과 비교해 보자.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>Python <code>pathlib</code></th><th>Go <code>filepath</code></th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>타입</td><td><code>Path</code> / <code>PathBuf</code></td><td><code>Path</code></td><td><code>string</code></td><td><code>Path</code></td></tr>
+<tr><td>owned vs view</td><td>borrowed <code>&amp;Path</code> / owned</td><td><strong>불변</strong></td><td><strong>불변</strong></td><td><strong>불변</strong> (<code>/</code> 는 새 Path)</td></tr>
+<tr><td><code>/</code> 연산자</td><td><strong>없음</strong> (<code>.join()</code> 명시)</td><td><code>/</code></td><td><strong>없음</strong></td><td><code>/</code></td></tr>
+<tr><td>non-UTF-8</td><td><code>OsStr</code> (혼합)</td><td><code>bytes</code> (별도)</td><td><code>string</code> (혼란)</td><td><code>RawPath</code> 분리</td></tr>
+<tr><td>canonicalize</td><td><code>.canonicalize()</code></td><td><code>.resolve()</code></td><td><code>filepath.Abs</code></td><td><code>.canonicalize()</code></td></tr>
+<tr><td>메서드 chain</td><td>OK (대부분)</td><td>excellent</td><td>OK</td><td>excellent</td></tr>
+</tbody></table></div>
+<p>요약하자면 rok 의 <strong>가장 큰 결정</strong> 은 UTF-8 default 와 <code>/</code> 연산자의 결합입니다. 이로써 Python pathlib 의 ergonomics 와 Rust 수준의 performance 를 함께 가져갑니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/308-path.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="307-process"><small>Previous</small>3.7. process:: - 자식 프로세스</a><a class="next" href="309-rokon"><small>Next</small>3.9. rokon:: - ROKON 데이터 형식</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

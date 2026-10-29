@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.1. fs:: - 파일 시스템 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::std::fs 모듈은 파일과 디렉토리, link, 권한 등 파일 시스템 전반에 걸친 연산을 제공합니다. 설계의 출발점은 WASI Preview 2 의 capability-based 모델을 채택했다는 점이며, 그 결과 모든 op 는 Dir 핸들을 통해서만 수행됩니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/301-fs.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.1. fs:: - 파일 시스템 - rok docs">
+<meta property="og:description" content="rok::std::fs 모듈은 파일과 디렉토리, link, 권한 등 파일 시스템 전반에 걸친 연산을 제공합니다. 설계의 출발점은 WASI Preview 2 의 capability-based 모델을 채택했다는 점이며, 그 결과 모든 op 는 Dir 핸들을 통해서만 수행됩니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/301-fs.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/301-fs.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/301-fs.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="301-fs">3.1. fs:: - 파일 시스템</a><ul class="toc"><li><a href="#310-인자-규칙">3.1.0. 인자 규칙</a></li><li><a href="#311-핵심-타입">3.1.1. 핵심 타입</a></li><li><a href="#312-dir-capability">3.1.2. Dir capability</a></li><li><a href="#313-file-메서드">3.1.3. File 메서드</a></li><li><a href="#314-편의-함수-dirroot-위">3.1.4. 편의 함수 (Dir::root() 위)</a></li><li><a href="#314a-비동기-파일-io-_async">3.1.4a. 비동기 파일 I/O (*_async)</a></li><li><a href="#315-사용-예">3.1.5. 사용 예</a></li><li><a href="#316-모듈-매핑--target-가용성">3.1.6. 모듈 매핑 / target 가용성</a></li></ul></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - 시간</a></li><li><a href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="31-fs---파일-시스템 31-fs---file-system 310-인자-규칙 310-argument-rules 311-핵심-타입 311-core-types 312-dir-capability 312-dir-capability 313-file-메서드 313-file-methods mmap mmap 314-편의-함수-dirroot-위 314-convenience-functions-on-dirroot metadata metadata walk walk write_atomic---posix-표준-패턴 write_atomic---the-standard-posix-pattern 314a-비동기-파일-io-_async 314a-asynchronous-file-io-_async 315-사용-예 315-examples 316-모듈-매핑--target-가용성 316-module-mapping--target-availability"><a href="../../../../spec/refs-standard-libraries/300-std/301-fs" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="31-fs---파일-시스템"><a class="anchor" tabindex="-1" href="#31-fs---파일-시스템" aria-hidden="true">#</a>3.1. <code>fs::</code> - 파일 시스템</h1>
+<p><code>rok::std::fs</code> 모듈은 파일과 디렉토리, link, 권한 등 파일 시스템 전반에 걸친 연산을 제공합니다. 설계의 출발점은 WASI Preview 2 의 capability-based 모델을 채택했다는 점이며, 그 결과 모든 op 는 <code>Dir</code> 핸들을 통해서만 수행됩니다.</p>
+<h2 id="310-인자-규칙"><a class="anchor" tabindex="-1" href="#310-인자-규칙" aria-hidden="true">#</a>3.1.0. 인자 규칙</h2>
+<ul>
+<li>아래 시그니처의 경로 매개변수 <code>Path</code> 는 <code>P: AsPath</code> 의 약기입니다. <code>str</code> 과 <code>Path</code> 를 모두 받습니다 (<a href="308-path#383a-aspath---경로-인자">3.8.3a</a>).
+</li>
+<li>쓰기 함수의 데이터 매개변수 <code>data</code> 는 <code>io::AsBytes</code> (<a href="305-io">3.5</a>) 를 받습니다. <code>str</code>, <code>List&lt;u8&gt;</code>, <code>Slice&lt;u8&gt;</code> 를 넘길 수 있습니다.
+</li>
+</ul>
+<p>쓰는 쪽은 <code>AsBytes</code> 를 받고, 읽는 buffer 는 <code>List&lt;u8&gt;</code> 입니다 (<code>read(buf)</code> 가 채움).</p>
+<h2 id="311-핵심-타입"><a class="anchor" tabindex="-1" href="#311-핵심-타입" aria-hidden="true">#</a>3.1.1. 핵심 타입</h2>
+<p>핵심 타입은 OS 핸들을 감싸는 <code>Dir</code> 와 <code>File</code>, 디렉토리를 순회하기 위한 <code>ReadDir</code> 와 <code>DirEntry</code>, 그리고 메타데이터와 권한을 표현하는 <code>Metadata</code> 와 <code>Permissions</code> 로 구성됩니다. 파일을 열 때의 동작 방식은 <code>OpenOptions</code> 구조체로 세밀하게 제어합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Dir</span> { <span class="c">/* OS handle (file descriptor / HANDLE) */</span> }
+<span class="k">struct</span> <span class="t">File</span> { <span class="c">/* OS handle */</span> }
+<span class="k">struct</span> <span class="t">ReadDir</span> { <span class="c">/* iterator over Dir entries - Drop: using 해제 시 닫힘 */</span> }
+<span class="k">struct</span> <span class="t">DirEntry</span> { <span class="c">/* path + metadata cache */</span> }
+<span class="k">struct</span> <span class="t">Metadata</span> { <span class="c">/* size, 시각, perm, ... */</span> }
+<span class="k">struct</span> <span class="t">Permissions</span> { <span class="c">/* readable/writable/executable + mode bits */</span> }
+
+<span class="k">struct</span> <span class="t">OpenOptions</span> {
+    read: <span class="t">bool</span>;
+    write: <span class="t">bool</span>;
+    append: <span class="t">bool</span>;
+    truncate: <span class="t">bool</span>;
+    create: <span class="t">bool</span>;
+    create_new: <span class="t">bool</span>;
+    mode: <span class="t">u32</span>;          <span class="c">// unix permission (default 0o666)</span>
+}
+</code></pre>
+<h2 id="312-dir-capability"><a class="anchor" tabindex="-1" href="#312-dir-capability" aria-hidden="true">#</a>3.1.2. Dir capability</h2>
+<p><code>Dir</code> 는 capability 의 단위가 되는 타입으로, 프로세스 기본 cap 인 <code>root()</code> 외에도 작업 디렉토리, 홈, OS 임시 디렉토리를 각각 <code>cwd()</code>, <code>home()</code>, <code>temp()</code> 로 얻을 수 있습니다. 핸들을 손에 쥐고 나면 그 아래에서 파일을 열거나 디렉토리를 만들고 지우거나 이름을 바꾸는 등 거의 모든 파일 시스템 연산을 수행할 수 있고, 복사 시에는 <code>copy_file_range</code> / <code>FICLONE</code> / <code>clonefile</code> 과 같은 reflink 경로가 자동으로 활용됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Dir</span> {
+    <span class="k">fn</span> root() -&gt; <span class="t">Dir</span>;                            <span class="c">// process default cap</span>
+    <span class="k">fn</span> cwd() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;            <span class="c">// current working dir</span>
+    <span class="k">fn</span> home() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">fn</span> temp() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;           <span class="c">// OS temp dir</span>
+
+    <span class="k">fn</span> open(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;       <span class="c">// open with default OpenOptions::read</span>
+    <span class="k">fn</span> open_with(<span class="k">self</span>, path: <span class="t">Path</span>, opts: <span class="t">OpenOptions</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">fn</span> open_dir(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">fn</span> create(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;     <span class="c">// open + create + truncate</span>
+
+    <span class="k">fn</span> read_dir(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">ReadDir</span>;            <span class="c">// using 으로 묶으면 해제 시 닫힘; let 으로 버리면 프로세스 끝까지 열림</span>
+    <span class="k">fn</span> metadata(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">fn</span> exists(<span class="k">self</span>, path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> create_dir(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> create_dir_all(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> remove_file(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> remove_dir(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> remove_dir_all(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> rename(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> copy(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+                                          <span class="c">// reflink 를 먼저 시도 (macOS: clonefileat), 안 되면 바이트 복사</span>
+    <span class="k">fn</span> symlink(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> hardlink(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+</code></pre>
+<p>내부적으로 <code>Dir</code> 는 openat 계열을 사용합니다. <code>Dir::root()</code> 가 아닌 <code>Dir</code> 은 절대 경로와 <code>..</code> 를 담은 경로를 거부하므로, 그 디렉토리 아래로 접근이 한정됩니다. 이 검사는 경로 글자에 대한 것이므로, 디렉토리 안의 symlink 를 따라가면 바깥으로 나갈 수 있습니다. 완전한 격리가 필요하면 OS 의 sandbox 를 함께 씁니다.</p>
+<h2 id="313-file-메서드"><a class="anchor" tabindex="-1" href="#313-file-메서드" aria-hidden="true">#</a>3.1.3. File 메서드</h2>
+<p><code>File</code> 은 일반적인 read / write 외에도 UTF-8 검증을 포함한 <code>read_to_str</code>, 디스크 동기화를 위한 <code>sync_all</code> / <code>sync_data</code>, 길이 조정을 위한 <code>set_len</code> 등을 갖추고 있습니다. 메타데이터와 권한을 조회하거나 변경하는 메서드도 제공되며, <code>seek</code> 와 <code>try_clone</code> 으로 fd 단위 조작도 가능합니다. Rust 1.77 (2024) 에서 안정화된 파일 잠금 API 와 메모리 매핑(mmap) 도 함께 제공됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">File</span> {
+    <span class="k">fn</span> read(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;   <span class="c">// buf[0..n] 을 채움, 0 = 끝</span>
+    <span class="k">fn</span> read_to_end(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> read_to_str(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;            <span class="c">// UTF-8 검증 포함</span>
+    <span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> write_all&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> close(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> flush(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">fn</span> sync_all(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                  <span class="c">// fsync (data + metadata)</span>
+    <span class="k">fn</span> sync_data(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);                 <span class="c">// fdatasync</span>
+    <span class="k">fn</span> set_len(<span class="k">self</span>, size: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>);        <span class="c">// truncate</span>
+
+    <span class="k">fn</span> metadata(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">fn</span> permissions(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Permissions</span>;
+    <span class="k">fn</span> set_permissions(<span class="k">self</span>, perm: <span class="t">Permissions</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="k">fn</span> seek(<span class="k">self</span>, pos: <span class="t">SeekFrom</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+    <span class="k">fn</span> try_clone(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;         <span class="c">// dup fd</span>
+
+    <span class="c">// 파일 잠금 (Rust 1.77 stabilized, 2024)</span>
+    <span class="k">fn</span> lock_exclusive(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);            <span class="c">// flock LOCK_EX / LockFileEx</span>
+    <span class="k">fn</span> lock_shared(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);               <span class="c">// flock LOCK_SH</span>
+    <span class="k">fn</span> try_lock_exclusive(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> unlock(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+
+    <span class="c">// 메모리 매핑 (mmap)</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> mmap(<span class="k">self</span>, len: <span class="t">usize</span>, offset: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Mmap</span>;
+}
+
+<span class="k">enum</span> <span class="t">SeekFrom</span> {
+    <span class="t">Start</span>(<span class="t">u64</span>),
+    <span class="t">End</span>(<span class="t">i64</span>),
+    <span class="t">Current</span>(<span class="t">i64</span>),
+}
+</code></pre>
+<p><code>File</code> 은 <a href="../200-core/213-marker">2.13 marker</a> 의 <code>Drop</code> 을 구현하므로 <code>using</code> 블록으로 묶으면 블록을 빠져나갈 때 close 됩니다. <code>using</code> 없이 연 파일은 자동으로 닫히지 않으므로 <code>close()</code> 를 직접 부릅니다. OS handle (<code>File</code>, <code>Dir</code>, socket, mmap, 자식의 pidfd) 은 값의 복사본 몇 개가 닫든 한 번만 해제됩니다.</p>
+<h3 id="mmap"><a class="anchor" tabindex="-1" href="#mmap" aria-hidden="true">#</a><code>Mmap</code></h3>
+<p><code>unsafe fn File::mmap(len, offset)</code> 는 <code>offset</code> (페이지 크기의 배수) 에서 <code>len</code> 바이트를 읽기 전용 공유 mapping 으로 매핑합니다. 파일의 다른 writer 가 mapping 아래의 바이트를 바꾸고, 파일을 자르면 읽기가 fault 나므로 <code>unsafe</code> 입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Mmap</span> { <span class="c">/* address, length */</span> }
+
+<span class="k">impl</span> <span class="t">Mmap</span> {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                         <span class="c">// 0 after unmap</span>
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">u8</span> | <span class="k">none</span>;           <span class="c">// none past the end</span>
+    <span class="k">fn</span> slice(<span class="k">self</span>, start: <span class="t">usize</span>, end: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// copy; clamped to the mapping</span>
+    <span class="k">fn</span> to_list(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;                  <span class="c">// copy of every byte</span>
+    <span class="k">fn</span> unmap(<span class="k">self</span>);
+}
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">Mmap</span> { ... }                         <span class="c">// unmaps</span>
+</code></pre>
+<p>mapping 은 <code>unmap</code> 이나 drop (<code>using</code> 을 빠져나갈 때) 에서 해제되며, 그 뒤의 읽기는 빈 mapping 을 봅니다.</p>
+<h2 id="314-편의-함수-dirroot-위"><a class="anchor" tabindex="-1" href="#314-편의-함수-dirroot-위" aria-hidden="true">#</a>3.1.4. 편의 함수 (Dir::root() 위)</h2>
+<p>매번 <code>Dir</code> 핸들을 들고 다니지 않아도 되도록, <code>Dir::root()</code> 위에서 동작하는 편의 함수가 마련됩니다. 단순한 읽기와 쓰기, 메타데이터 조회, 존재 여부 확인 같은 일상적인 작업을 한 줄로 처리할 수 있고, atomic 쓰기와 재귀 순회처럼 자주 필요한 패턴도 같은 위치에 함께 노출됩니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> read(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+<span class="k">fn</span> read_to_str(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+<span class="k">fn</span> write&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> write_atomic&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+                                          <span class="c">// tempfile + fsync + rename + fsync(parent)</span>
+
+<span class="k">fn</span> metadata(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+<span class="k">fn</span> exists(path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+<span class="k">fn</span> create_dir(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> create_dir_all(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> remove_file(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> remove_dir_all(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> rename(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">fn</span> copy(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+
+<span class="k">fn</span> walk(root: <span class="t">Path</span>) -&gt; <span class="t">Walk</span>;             <span class="c">// Iterator&lt;Item = Result&lt;DirEntry, IoError&gt;&gt; 구현</span>
+</code></pre>
+<h3 id="metadata"><a class="anchor" tabindex="-1" href="#metadata" aria-hidden="true">#</a><code>Metadata</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Metadata</span> {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">u64</span>;
+    <span class="k">fn</span> is_file(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_dir(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_symlink(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> permissions(<span class="k">self</span>) -&gt; <span class="t">Permissions</span>;
+    <span class="k">fn</span> modified(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SystemTime</span>;    <span class="c">// 마지막 수정 시각</span>
+    <span class="k">fn</span> accessed(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">SystemTime</span>;    <span class="c">// 마지막 접근 시각</span>
+    <span class="k">fn</span> mtime(<span class="k">self</span>) -&gt; <span class="t">i64</span>;                <span class="c">// Unix 초 (원시 값)</span>
+    <span class="k">fn</span> atime(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+    <span class="k">fn</span> ctime(<span class="k">self</span>) -&gt; <span class="t">i64</span>;
+}
+</code></pre>
+<p>시각은 <code>SystemTime</code> (<a href="303-time#333-systemtime---벽시계">3.3.3</a>) 으로 얻습니다. <code>mtime</code> / <code>atime</code> / <code>ctime</code> 은 OS 의 Unix 초를 그대로 돌려줍니다.</p>
+<h3 id="walk"><a class="anchor" tabindex="-1" href="#walk" aria-hidden="true">#</a><code>walk</code></h3>
+<p><code>walk</code> 는 깊이 우선으로 순회합니다. <code>root</code> 자신을 먼저 내고, 각 디렉토리 안의 항목은 이름 순으로 정렬해 냅니다. 원소는 <code>Result&lt;DirEntry, IoError&gt;</code> 이며, 읽을 수 없는 항목은 <code>Err</code> 로 나오고 순회는 계속됩니다.</p>
+<h3 id="write_atomic---posix-표준-패턴"><a class="anchor" tabindex="-1" href="#write_atomic---posix-표준-패턴" aria-hidden="true">#</a><code>write_atomic</code> - POSIX 표준 패턴</h3>
+<p><code>write_atomic</code> 은 임시 파일을 만들고 데이터를 기록한 뒤 fsync 와 rename, 그리고 부모 디렉토리의 fsync 까지 한 번에 처리하는 표준 패턴을 캡슐화합니다.</p>
+<pre><code class="language-rok"><span class="k">try</span> fs::write_atomic(<span class="s">"config.toml"</span>, new_config_bytes);
+<span class="c">// 내부 동작.</span>
+<span class="c">//   1. tempfile create (.config.toml.tmp.&lt;uuid&gt;)</span>
+<span class="c">//   2. write data</span>
+<span class="c">//   3. fsync(temp)</span>
+<span class="c">//   4. rename(temp, config.toml)   ← atomic</span>
+<span class="c">//   5. fsync(parent dir)</span>
+</code></pre>
+<blockquote>
+<p>이 패턴은 robust 한 앱이라면 어디에서나 필요하기에, Rust 에서는 <code>tempfile</code> crate, Go 에서는 <code>renameio</code> 가 std 의 빈자리를 채워 왔습니다. rok 은 같은 기능을 std 안에서 곧바로 제공합니다.</p>
+</blockquote>
+<h2 id="314a-비동기-파일-io-_async"><a class="anchor" tabindex="-1" href="#314a-비동기-파일-io-_async" aria-hidden="true">#</a>3.1.4a. 비동기 파일 I/O (<code>*_async</code>)</h2>
+<p>위의 함수와 메서드는 호출한 OS 스레드를 막습니다. task 안에서 기다리는 동안 worker 를 내주려면 같은 연산의 <code>*_async</code> 판을 <code>await</code> 합니다 (<a href="302-net#320-공통-규칙">3.2.0 net</a> 과 같은 이름 규칙). 보통 함수는 stackless 코루틴을 중단시킬 수 없으므로, sync 호출이 task 안에서 저절로 async 가 되지는 않습니다.</p>
+<pre><code class="language-rok"><span class="c">// 편의 함수 - 모두 async, exists_async 외에는 throws (IoError)</span>
+<span class="k">async</span> <span class="k">fn</span> open_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+<span class="k">async</span> <span class="k">fn</span> create_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+<span class="k">async</span> <span class="k">fn</span> open_with_async(path: <span class="t">Path</span>, opts: <span class="t">OpenOptions</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+<span class="k">async</span> <span class="k">fn</span> read_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+<span class="k">async</span> <span class="k">fn</span> read_to_str_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+<span class="k">async</span> <span class="k">fn</span> write_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> write_atomic_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(path: <span class="t">Path</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> metadata_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+<span class="k">async</span> <span class="k">fn</span> symlink_metadata_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+<span class="k">async</span> <span class="k">fn</span> exists_async(path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+<span class="k">async</span> <span class="k">fn</span> create_dir_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> create_dir_all_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> remove_file_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> remove_dir_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> remove_dir_all_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> rename_async(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> copy_async(from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+<span class="k">async</span> <span class="k">fn</span> symlink_async(target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> hardlink_async(target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+<span class="k">async</span> <span class="k">fn</span> read_dir_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">DirEntry</span>&gt;;
+                                          <span class="c">// 한 번에 모두 읽음 (eager), 항목 에러가 있으면 첫 에러를 throw</span>
+
+<span class="k">impl</span> <span class="t">File</span> {
+    <span class="k">async</span> <span class="k">fn</span> open_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> create_async(path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_async(<span class="k">self</span>, buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_to_end_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">async</span> <span class="k">fn</span> read_to_str_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">str</span>;
+    <span class="k">async</span> <span class="k">fn</span> write_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">async</span> <span class="k">fn</span> write_all_async&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, data: <span class="t">B</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> write_str_async(<span class="k">self</span>, s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> sync_all_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> sync_data_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> set_len_async(<span class="k">self</span>, size: <span class="t">u64</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> metadata_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">async</span> <span class="k">fn</span> lock_exclusive_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> lock_shared_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+</code></pre>
+<p><code>Dir</code> 도 모든 sync 메서드의 <code>*_async</code> 판을 가집니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Dir</span> {
+    <span class="k">async</span> <span class="k">fn</span> cwd_async() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> home_async() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> temp_async() <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> open_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> create_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> open_with_async(<span class="k">self</span>, path: <span class="t">Path</span>, opts: <span class="t">OpenOptions</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">File</span>;
+    <span class="k">async</span> <span class="k">fn</span> open_dir_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dir</span>;
+    <span class="k">async</span> <span class="k">fn</span> read_dir_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">ReadDirStream</span>;
+    <span class="k">async</span> <span class="k">fn</span> metadata_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">async</span> <span class="k">fn</span> symlink_metadata_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Metadata</span>;
+    <span class="k">async</span> <span class="k">fn</span> exists_async(<span class="k">self</span>, path: <span class="t">Path</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">async</span> <span class="k">fn</span> create_dir_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> create_dir_all_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> remove_file_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> remove_dir_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> remove_dir_all_async(<span class="k">self</span>, path: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> rename_async(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> copy_async(<span class="k">self</span>, from: <span class="t">Path</span>, to: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">u64</span>;
+    <span class="k">async</span> <span class="k">fn</span> symlink_async(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> hardlink_async(<span class="k">self</span>, target: <span class="t">Path</span>, link: <span class="t">Path</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+    <span class="k">async</span> <span class="k">fn</span> close_async(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">IoError</span>);
+}
+
+<span class="k">struct</span> <span class="t">ReadDirStream</span> { <span class="c">/* 디렉토리 핸들 + 읽어 둔 batch */</span> }
+<span class="k">impl</span> <span class="t">Stream</span> <span class="k">for</span> <span class="t">ReadDirStream</span> { <span class="k">type</span> <span class="t">Item</span> = <span class="t">Result</span>&lt;<span class="t">DirEntry</span>, <span class="t">IoError</span>&gt;; ... }
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">ReadDirStream</span> { ... }        <span class="c">// 닫음</span>
+</code></pre>
+<p><code>read_dir_async</code> 의 <code>ReadDirStream</code> 은 항목을 64 개씩 blocking pool 에서 읽어 <code>for await</code> 로 내주는 stream 입니다. 끝까지 읽거나 <code>using</code> 을 벗어나면 디렉토리를 닫습니다. 한 번에 모두 읽는 <code>fs::read_dir_async(path)</code> (<code>List&lt;DirEntry&gt;</code>) 와 달리 큰 디렉토리도 조금씩 읽습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> logs = <span class="k">try</span> <span class="k">await</span> <span class="t">Dir</span>::root().open_dir_async(<span class="s">"logs"</span>);
+<span class="k">using</span> entries = <span class="k">try</span> <span class="k">await</span> logs.read_dir_async() {
+    <span class="k">for</span> <span class="k">await</span> e <span class="k">in</span> entries {
+        <span class="k">let</span> entry = <span class="k">try</span> e.get();
+        ...
+    }
+}
+</code></pre>
+<p>덧붙여 쓰는 전용 함수는 없습니다. <code>open_with_async(path, OpenOptions::new().append(true))</code> 로 엽니다.</p>
+<p><strong>동작.</strong> 일반 파일에는 readiness 가 없으므로 (kqueue / epoll 에서 늘 준비됨), 각 <code>*_async</code> 호출은 같은 이름의 blocking 호출을 다른 OS 스레드에서 실행하고 (<a href="../200-core/218-task#2181-핵심-api"><code>task::spawn_blocking</code></a>), 그동안 task 를 중단합니다. 결과와 에러는 sync 호출과 똑같습니다.</p>
+<p><strong>취소.</strong> 기다리던 task 가 취소되어도 (<a href="../200-core/218-task#2184-협력적-취소---taskcancel">2.18.4</a>) 이미 시작된 호출은 백그라운드에서 끝까지 실행되고 그 결과만 버려집니다. 따라서 쓰기, 삭제, 이름 바꾸기 같은 부수 효과는 일어납니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> load(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Config</span> {
+    <span class="k">let</span> text = <span class="k">try</span> <span class="k">await</span> fs::read_to_str_async(path);
+    <span class="k">return</span> <span class="k">try</span> parse(text);
+}
+</code></pre>
+<h2 id="315-사용-예"><a class="anchor" tabindex="-1" href="#315-사용-예" aria-hidden="true">#</a>3.1.5. 사용 예</h2>
+<p>다음 예제는 단순 읽기에서 atomic 쓰기, sandbox 구성, 재귀 순회, 그리고 동시 프로세스를 위한 파일 잠금까지 일반적인 흐름을 차례로 보여 줍니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::fs::*;
+<span class="k">use</span> rok::std::path::<span class="t">Path</span>;
+
+<span class="c">// 단순 읽기</span>
+<span class="k">let</span> bytes = <span class="k">try</span> fs::read(<span class="s">"data.txt"</span>);
+<span class="k">let</span> text = <span class="k">try</span> fs::read_to_str(<span class="s">"config.toml"</span>);
+
+<span class="c">// 안전한 쓰기 (atomic)</span>
+<span class="k">try</span> fs::write_atomic(<span class="s">"output.json"</span>, json_bytes);
+
+<span class="c">// Dir capability - sandbox</span>
+<span class="k">let</span> data_dir = <span class="k">try</span> <span class="t">Dir</span>::root().open_dir(<span class="s">"data"</span>);
+<span class="k">let</span> f = <span class="k">try</span> data_dir.open(<span class="s">"a.txt"</span>);     <span class="c">// data/a.txt</span>
+<span class="k">let</span> g = <span class="k">try</span> data_dir.open(<span class="s">"../etc/passwd"</span>);   <span class="c">// IoError - .. 거부 (symlink 는 막지 못함)</span>
+
+<span class="c">// 재귀 순회</span>
+<span class="k">for</span> entry <span class="k">in</span> fs::walk(<span class="t">Path</span>::from(<span class="s">"src"</span>)) {
+    <span class="k">let</span> entry = <span class="k">try</span> entry.get();         <span class="c">// 원소는 Result - get() 으로 에러 흐름 복귀</span>
+    <span class="k">if</span> entry.path().extension() == <span class="s">"rok"</span> {
+        process(entry.path());
+    }
+}
+
+<span class="c">// File 잠금 (concurrent process)</span>
+<span class="k">using</span> f = <span class="k">try</span> fs::open_with(path, <span class="t">OpenOptions</span>::default().write(<span class="k">true</span>)) {
+    <span class="k">try</span> f.lock_exclusive();
+    <span class="c">// critical section</span>
+}     <span class="c">// ← unlock + close 자동</span>
+</code></pre>
+<h2 id="316-모듈-매핑--target-가용성"><a class="anchor" tabindex="-1" href="#316-모듈-매핑--target-가용성" aria-hidden="true">#</a>3.1.6. 모듈 매핑 / target 가용성</h2>
+<p>각 기능이 어떤 target 에서 어떻게 동작하는지는 다음 표와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>linux/macos/windows</th><th>wasi</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td><code>Dir</code>/<code>File</code> 기본</td><td>✓</td><td>✓</td><td>WASI 는 cap 기반 자연스러움</td></tr>
+<tr><td><code>write_atomic</code></td><td>✓</td><td>✓</td><td>항상 가능</td></tr>
+<tr><td><code>lock_exclusive</code></td><td>✓ (flock/LockFileEx)</td><td>✗</td><td>wasm32 에서 <code>Unsupported</code></td></tr>
+<tr><td><code>try_clone</code> (dup)</td><td>✓</td><td>✗</td><td>wasm32 에서 <code>Unsupported</code></td></tr>
+<tr><td><code>mmap</code></td><td>✓</td><td>✗</td><td>wasm32 에서 <code>Unsupported</code></td></tr>
+<tr><td><code>copy</code> reflink</td><td>✓ (btrfs/APFS/XFS)</td><td>✗</td><td>자동 fallback to copy</td></tr>
+<tr><td><code>pidfd</code> / pipe2</td><td>linux only</td><td>✗</td><td>feature-gated</td></tr>
+<tr><td><code>walk</code></td><td>✓</td><td>✓</td><td></td></tr>
+</tbody></table></div>
+<p>브라우저 (<code>wasm32-unknown-unknown</code>) 에서는 모든 fs 호출이 <code>Unsupported</code> 를 보고합니다: 함께 제공되는 JS host 는 <code>/</code> 를 pre-open 하고 모든 호출을 거절합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/301-fs.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>3. Std tier</a><a class="next" href="302-net"><small>Next</small>3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

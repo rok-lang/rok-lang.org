@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.8. 재내보내기 (pub use) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="use 에 가시성 키워드를 결합하면 가져온 항목을 현재 모듈에서 다시 외부로 노출하는 재내보내기가 됩니다. 문법은 다음과 같습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/508-re-export.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="5.8. 재내보내기 (pub use) - rok docs">
+<meta property="og:description" content="use 에 가시성 키워드를 결합하면 가져온 항목을 현재 모듈에서 다시 외부로 노출하는 재내보내기가 됩니다. 문법은 다음과 같습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/508-re-export.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/508-re-export.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/508-re-export.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">5. 변수 / 모듈 / 가시성 / 패키지 개요</a></p><ul class="pages"><li><a href="501-variable-declaration">5.1. 변수 선언</a></li><li><a href="502-const">5.2. const</a></li><li><a href="503-static">5.3. static</a></li><li><a href="504-modules">5.4. 모듈</a></li><li><a href="505-use">5.5. use (가져오기)</a></li><li><a href="506-visibility">5.6. 가시성</a></li><li><a href="507-paths">5.7. 경로</a></li><li class="cur"><a aria-current="page" href="508-re-export">5.8. 재내보내기 (pub use)</a><ul class="toc"><li><a href="#581-형태">5.8.1. 형태</a></li><li><a href="#582-의미">5.8.2. 의미</a></li><li><a href="#583-사용처">5.8.3. 사용처</a></li><li><a href="#584-가시성-단계의-결합">5.8.4. 가시성 단계의 결합</a></li><li><a href="#585-다중-재내보내기">5.8.5. 다중 재내보내기</a></li><li><a href="#586-glob-재내보내기">5.8.6. glob 재내보내기</a></li><li><a href="#587-별칭과-결합">5.8.7. 별칭과 결합</a></li><li><a href="#588-모듈-자체의-재내보내기">5.8.8. 모듈 자체의 재내보내기</a></li><li><a href="#589-prelude-패턴">5.8.9. prelude 패턴</a></li><li><a href="#5810-순환-재내보내기-없음">5.8.10. 순환 재내보내기 (없음)</a></li><li><a href="#5811-구현-측면">5.8.11. 구현 측면</a></li><li><a href="#5812-glob-재내보내기와-가시성">5.8.12. glob 재내보내기와 가시성</a></li><li><a href="#5813-정리">5.8.13. 정리</a></li></ul></li><li><a href="509-extern-block">5.9. extern 블록 (FFI 선언)</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="58-재내보내기-pub-use 58-re-exports-pub-use 581-형태 581-form 582-의미 582-meaning 583-사용처 583-uses facade-패턴 facade-pattern prelude-만들기 building-a-prelude 버전-호환 version-compatibility 584-가시성-단계의-결합 584-combining-visibility-levels 585-다중-재내보내기 585-multiple-re-exports 586-glob-재내보내기 586-glob-re-exports 587-별칭과-결합 587-combining-with-aliases 588-모듈-자체의-재내보내기 588-re-exporting-a-module-itself 589-prelude-패턴 589-the-prelude-pattern 5810-순환-재내보내기-없음 5810-circular-re-exports-none 5811-구현-측면 5811-implementation 5812-glob-재내보내기와-가시성 5812-glob-re-exports-and-visibility 5813-정리 5813-summary"><a href="../../../../spec/refs-lang/005-modules/508-re-export" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="58-재내보내기-pub-use"><a class="anchor" tabindex="-1" href="#58-재내보내기-pub-use" aria-hidden="true">#</a>5.8. 재내보내기 (<code>pub use</code>)</h1>
+<p><code>use</code> 에 가시성 키워드를 결합하면 가져온 항목을 현재 모듈에서 다시 외부로 노출하는 재내보내기가 됩니다. 문법은 다음과 같습니다.</p>
+<pre><code>re_export       ::= visibility &quot;use&quot; use_tree &quot;;&quot;
+</code></pre>
+<h2 id="581-형태"><a class="anchor" tabindex="-1" href="#581-형태" aria-hidden="true">#</a>5.8.1. 형태</h2>
+<p>다음과 같이 가시성 키워드와 <code>use</code>, 경로, 세미콜론을 결합하여 작성합니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">use</span> foo::bar;
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">use</span> <span class="k">pkg</span>::internal::helper;
+<span class="k">pub</span>(sub) <span class="k">use</span> sup::shared;
+</code></pre>
+<p><code>pub</code> 또는 다른 가시성 키워드를 <code>use</code>, 경로, 그리고 <code>;</code> 와 함께 쓰면 가져온 항목이 현재 모듈에서 해당 가시성으로 다시 노출됩니다.</p>
+<h2 id="582-의미"><a class="anchor" tabindex="-1" href="#582-의미" aria-hidden="true">#</a>5.8.2. 의미</h2>
+<pre><code class="language-rok"><span class="c">// pkg::deep::Item</span>
+<span class="k">mod</span> deep {
+    <span class="k">pub</span> <span class="k">struct</span> <span class="t">Item</span> { ... }
+}
+
+<span class="c">// 루트</span>
+<span class="k">pub</span> <span class="k">use</span> deep::<span class="t">Item</span>;             <span class="c">// Item 이 루트에서도 pub</span>
+</code></pre>
+<p>이렇게 하면 외부 패키지에서 두 가지 경로로 같은 항목에 접근할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> my_pkg::deep::<span class="t">Item</span>;          <span class="c">// 원래 경로 - OK</span>
+<span class="k">use</span> my_pkg::<span class="t">Item</span>;                <span class="c">// 재내보내기 경로 - OK</span>
+</code></pre>
+<p>같은 항목이 두 경로로 보이게 됩니다.</p>
+<h2 id="583-사용처"><a class="anchor" tabindex="-1" href="#583-사용처" aria-hidden="true">#</a>5.8.3. 사용처</h2>
+<h3 id="facade-패턴"><a class="anchor" tabindex="-1" href="#facade-패턴" aria-hidden="true">#</a>facade 패턴</h3>
+<p>내부 구조를 감추고 외부에는 평탄한 API 를 제공하고 싶을 때 활용합니다.</p>
+<pre><code class="language-rok"><span class="c">// pkg::core::geom::Point</span>
+<span class="k">mod</span> core {
+    <span class="k">pub</span> <span class="k">mod</span> geom {
+        <span class="k">pub</span> <span class="k">struct</span> <span class="t">Point</span> { ... }
+    }
+}
+
+<span class="c">// 루트 - 외부에 평탄하게</span>
+<span class="k">pub</span> <span class="k">use</span> core::geom::<span class="t">Point</span>;
+<span class="k">pub</span> <span class="k">use</span> core::geom::distance;
+</code></pre>
+<p>이 경우 외부 사용자는 <code>my_pkg::Point</code> 로 접근하면 되고, 내부 구조 (<code>core::geom::</code>) 는 알 필요가 없습니다.</p>
+<h3 id="prelude-만들기"><a class="anchor" tabindex="-1" href="#prelude-만들기" aria-hidden="true">#</a>prelude 만들기</h3>
+<p>자주 쓰는 항목을 한 곳에 모아두는 prelude 모듈도 같은 방식으로 만듭니다.</p>
+<pre><code class="language-rok"><span class="c">// pkg::prelude</span>
+<span class="k">pub</span> <span class="k">use</span> <span class="k">pkg</span>::types::{<span class="t">Point</span>, <span class="t">Circle</span>, <span class="t">Polygon</span>};
+<span class="k">pub</span> <span class="k">use</span> <span class="k">pkg</span>::ops::{distance, area};
+</code></pre>
+<p>사용자는 <code>use my_pkg::prelude::*;</code> 한 줄로 자주 쓰는 항목을 한꺼번에 도입할 수 있습니다.</p>
+<h3 id="버전-호환"><a class="anchor" tabindex="-1" href="#버전-호환" aria-hidden="true">#</a>버전 호환</h3>
+<p>내부 항목의 위치가 바뀌어도 재내보내기 경로를 유지하면 외부 사용자에게는 이전 경로가 계속 작동합니다.</p>
+<pre><code class="language-rok"><span class="c">// v1: pkg::Item</span>
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">Item</span> { ... }
+
+<span class="c">// v2: 위치 변경</span>
+<span class="k">pub</span> <span class="k">mod</span> core { <span class="k">pub</span> <span class="k">struct</span> <span class="t">Item</span> { ... } }
+<span class="k">pub</span> <span class="k">use</span> core::<span class="t">Item</span>;             <span class="c">// v1 의 경로 유지</span>
+</code></pre>
+<h2 id="584-가시성-단계의-결합"><a class="anchor" tabindex="-1" href="#584-가시성-단계의-결합" aria-hidden="true">#</a>5.8.4. 가시성 단계의 결합</h2>
+<p>가시성 키워드와 결합한 재내보내기는 다음 단계로 정리됩니다.</p>
+<pre><code>pub use         → 외부 패키지에 노출
+pub(pkg) use    → 패키지 내부에 노출
+pub(sub) use    → 하위 모듈에 노출
+use             → 모듈 비공개 (재내보내기 아님)
+</code></pre>
+<p>가시성의 순서는 비공개 &lt; <code>pub(sub)</code> &lt; <code>pub(pkg)</code> &lt; <code>pub</code> 입니다. 원본 항목의 가시성 ≥ 재내보내기 가시성이어야 하며, 원본보다 넓은 <code>pub use</code> 는 에러입니다.</p>
+<pre><code class="language-rok"><span class="k">mod</span> inner {
+    <span class="k">fn</span> private_fn() { ... }      <span class="c">// private</span>
+}
+
+<span class="k">pub</span> <span class="k">use</span> inner::private_fn;       <span class="c">// ERROR - private 을 pub 으로 못 노출</span>
+</code></pre>
+<p>다만 glob 재내보내기 (<code>pub use mod::*</code>, <code>pub use mod::**</code>) 는 동작이 다릅니다. 원본 가시성이 재내보내기 가시성보다 좁은 항목은 조용히 걸러지며 ERROR 가 아닙니다 (<a href="#5812-glob-재내보내기와-가시성">5.8.12 glob 재내보내기</a>).</p>
+<h2 id="585-다중-재내보내기"><a class="anchor" tabindex="-1" href="#585-다중-재내보내기" aria-hidden="true">#</a>5.8.5. 다중 재내보내기</h2>
+<p>여러 항목을 한 번에 재내보내거나 별칭과 함께 묶어 표현할 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">use</span> foo::{a, b, c};
+<span class="k">pub</span> <span class="k">use</span> foo::{
+    <span class="t">Point</span>,
+    <span class="t">Circle</span>,
+    distance <span class="k">as</span> dist,
+};
+</code></pre>
+<p><a href="505-use"><code>use</code></a> 의 다중 import 와 별칭 형태를 그대로 적용할 수 있습니다.</p>
+<h2 id="586-glob-재내보내기"><a class="anchor" tabindex="-1" href="#586-glob-재내보내기" aria-hidden="true">#</a>5.8.6. glob 재내보내기</h2>
+<p>전체 모듈이나 서브트리를 한꺼번에 재내보낼 때는 다음과 같이 작성합니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">use</span> foo::*;
+<span class="k">pub</span> <span class="k">use</span> foo::**;
+</code></pre>
+<p>이렇게 하면 모듈 전체나 그 아래 서브트리가 한 번에 외부로 노출됩니다.</p>
+<div class="callout warning"><p class="callout-title">경고</p>
+<p>같은 이름이 충돌하면 재내보내기 단계에서 에러가 납니다.</p>
+</div>
+<h2 id="587-별칭과-결합"><a class="anchor" tabindex="-1" href="#587-별칭과-결합" aria-hidden="true">#</a>5.8.7. 별칭과 결합</h2>
+<p>별칭을 결합하면 외부에 보이는 이름을 짧게 다듬을 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">use</span> foo::very_long_name <span class="k">as</span> short_name;
+</code></pre>
+<p>외부에서는 짧은 이름 (<code>short_name</code>) 으로만 보이며, 원래 이름 (<code>very_long_name</code>) 을 쓰려면 별도의 import 가 필요합니다.</p>
+<h2 id="588-모듈-자체의-재내보내기"><a class="anchor" tabindex="-1" href="#588-모듈-자체의-재내보내기" aria-hidden="true">#</a>5.8.8. 모듈 자체의 재내보내기</h2>
+<p>항목뿐만 아니라 모듈 자체를 재내보낼 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">use</span> foo::geom;               <span class="c">// 모듈 자체 재내보내기</span>
+</code></pre>
+<p>이 경우 외부 사용자는 <code>my_pkg::geom::Point</code> 로 접근할 수 있습니다. 재내보낸 모듈을 거치는 경로는 그 모듈을 거치는 것과 똑같이 해소됩니다.</p>
+<h2 id="589-prelude-패턴"><a class="anchor" tabindex="-1" href="#589-prelude-패턴" aria-hidden="true">#</a>5.8.9. <code>prelude</code> 패턴</h2>
+<p>라이브러리 작성자는 자주 쓰는 항목을 모은 <code>prelude</code> 모듈을 만들어 외부 노출 표면을 큐레이션하는 관습을 씁니다. 컴파일러가 자동으로 끌어오지는 않으며, 사용자가 명시적으로 가져와야 합니다.</p>
+<pre><code class="language-rok"><span class="c">// pkg::prelude</span>
+<span class="k">pub</span> <span class="k">use</span> <span class="k">pkg</span>::collections::{<span class="t">List</span>, <span class="t">Dict</span>, <span class="t">Set</span>};
+<span class="k">pub</span> <span class="k">use</span> <span class="k">pkg</span>::ops::{<span class="t">Add</span>, <span class="t">Sub</span>, <span class="t">Mul</span>};
+<span class="k">pub</span> <span class="k">use</span> <span class="k">pkg</span>::iter::<span class="t">Iterator</span>;
+</code></pre>
+<p>사용자 측에서는 다음과 같이 한 줄로 가져옵니다.</p>
+<pre><code class="language-rok"><span class="c">// 사용자 측</span>
+<span class="k">use</span> my_pkg::prelude::*;
+</code></pre>
+<p><code>prelude</code> 라는 이름에 컴파일러가 부여하는 특수 의미는 없으며, 일반 모듈로 취급됩니다.</p>
+<h2 id="5810-순환-재내보내기-없음"><a class="anchor" tabindex="-1" href="#5810-순환-재내보내기-없음" aria-hidden="true">#</a>5.8.10. 순환 재내보내기 (없음)</h2>
+<p>재내보내기가 서로를 가리키는 순환은 허용되지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">mod</span> a { <span class="k">pub</span> <span class="k">use</span> <span class="k">pkg</span>::b::<span class="t">Item</span>; }
+<span class="k">mod</span> b { <span class="k">pub</span> <span class="k">use</span> <span class="k">pkg</span>::a::<span class="t">Item</span>; }
+<span class="c">// ERROR - 순환 의존</span>
+</code></pre>
+<p>이러한 순환은 ERROR 이며, 컴파일러가 검출합니다.</p>
+<h2 id="5811-구현-측면"><a class="anchor" tabindex="-1" href="#5811-구현-측면" aria-hidden="true">#</a>5.8.11. 구현 측면</h2>
+<p>재내보내기는 이름 표에 항목으로 추가될 뿐입니다. 실제 코드와 메모리는 원본 항목 한 곳에만 존재하며, 별도의 wrapper 함수나 복사가 없으므로 비용이 0 입니다. 재내보내기 사슬은 길이와 관계없이 원본 항목으로 해소되며, 단계 제한은 없습니다.</p>
+<h2 id="5812-glob-재내보내기와-가시성"><a class="anchor" tabindex="-1" href="#5812-glob-재내보내기와-가시성" aria-hidden="true">#</a>5.8.12. glob 재내보내기와 가시성</h2>
+<p>glob 재내보내기는 원본 항목의 가시성에 따라 노출 여부가 달라집니다.</p>
+<pre><code class="language-rok"><span class="k">mod</span> source {
+    <span class="k">pub</span> <span class="k">fn</span> a() { ... }
+    <span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> b() { ... }
+}
+
+<span class="k">pub</span> <span class="k">use</span> source::*;               <span class="c">// a 는 외부에 노출, b 는 pub(pkg) 라 패키지 안에서만 보임</span>
+</code></pre>
+<p><code>pub use ...::*</code> 가 끌어오는 항목은 재내보내기 가시성이 호출자에 도달하는 동시에 원본 가시성이 재내보내기 가시성을 허락하는 항목뿐입니다. 즉, reach 가 좁은 항목은 재내보내기로 더 넓힐 수 없습니다 (<a href="#584-가시성-단계의-결합">5.8.4</a>).</p>
+<h2 id="5813-정리"><a class="anchor" tabindex="-1" href="#5813-정리" aria-hidden="true">#</a>5.8.13. 정리</h2>
+<p><code>pub use</code> 는 내부 구조와 외부 API 를 분리하는 핵심 도구입니다. 사용자는 공개 위치만 알면 되고, 라이브러리 작성자는 내부 위치를 자유롭게 재구성할 수 있습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/005-modules/508-re-export.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="507-paths"><small>Previous</small>5.7. 경로</a><a class="next" href="509-extern-block"><small>Next</small>5.9. extern 블록 (FFI 선언)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

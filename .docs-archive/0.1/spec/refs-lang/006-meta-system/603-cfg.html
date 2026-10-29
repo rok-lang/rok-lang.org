@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.3. #[cfg] conditional compilation - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The #[cfg(...)] attribute includes or excludes items from the build according to compile-time conditions. The grammar is:">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/603-cfg.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.3. #[cfg] conditional compilation - rok docs">
+<meta property="og:description" content="The #[cfg(...)] attribute includes or excludes items from the build according to compile-time conditions. The grammar is:">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/603-cfg.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/603-cfg.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/603-cfg.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">6. Meta-system overview</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. Attribute syntax</a></li><li><a href="602-built-in-attributes">6.2. Built-in attributes</a></li><li class="cur"><a aria-current="page" href="603-cfg">6.3. #[cfg] conditional compilation</a><ul class="toc"><li><a href="#631-basic-form">6.3.1. Basic form</a></li><li><a href="#632-predicate-kinds">6.3.2. Predicate kinds</a></li><li><a href="#633-attachment-positions">6.3.3. Attachment positions</a></li><li><a href="#634-cfg_attr-conditional-other-attributes">6.3.4. #[cfg_attr(...)] conditional other attributes</a></li><li><a href="#635-cfg-compile-time-bool-value">6.3.5. cfg!(...) compile-time bool value</a></li><li><a href="#636-where-parameters-come-from">6.3.6. Where parameters come from</a></li><li><a href="#637-when-it-is-evaluated">6.3.7. When it is evaluated</a></li><li><a href="#638-negated--conflicting-cfgs">6.3.8. Negated / conflicting cfgs</a></li><li><a href="#639-cfg-and-modulesfiles">6.3.9. cfg and modules/files</a></li><li><a href="#6310-macros-inside-cfg-none">6.3.10. Macros inside cfg (none)</a></li><li><a href="#6311-debugging-tools">6.3.11. Debugging tools</a></li></ul></li><li><a href="604-lang-magic">6.4. #[lang(...)] magic</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] magic</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] magic</a></li><li><a href="607-operator-magic">6.7. Operator magic</a></li><li><a href="608-meta-blocks">6.8. User-defined meta definitions</a></li><li><a href="609-template-tokens">6.9. Template tokens and expansion</a></li><li><a href="610-reflection">6.10. Reflection</a></li><li><a href="611-include">6.11. Compile-time file embedding</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="63-cfg-conditional-compilation 63-cfg-조건부-컴파일 631-basic-form 631-기본-형태 632-predicate-kinds 632-predicate-종류 key--value key--value plain-flags 단순-플래그 combinators 결합자 633-attachment-positions 633-부착-위치 634-cfg_attr-conditional-other-attributes 634-cfg_attr-조건부-다른-속성 635-cfg-compile-time-bool-value 635-cfg-컴파일-타임-bool-값 636-where-parameters-come-from 636-매개변수의-출처 target_-keys target_-키 the-feature-key feature-키 test--debug_assertions test--debug_assertions 637-when-it-is-evaluated 637-평가-시점 638-negated--conflicting-cfgs 638-부정충돌하는-cfg 639-cfg-and-modulesfiles 639-cfg-와-모듈파일 6310-macros-inside-cfg-none 6310-cfg-안에-매크로-없음 6311-debugging-tools 6311-디버깅-도구"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/006-meta-system/603-cfg" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="63-cfg-conditional-compilation"><a class="anchor" tabindex="-1" href="#63-cfg-conditional-compilation" aria-hidden="true">#</a>6.3. <code>#[cfg]</code> conditional compilation</h1>
+<p>The <code>#[cfg(...)]</code> attribute includes or excludes items from the build according to compile-time conditions. The grammar is:</p>
+<pre><code>cfg_predicate   ::= identifier                              // flag
+                  | identifier &quot;=&quot; string_lit               // key=value
+                  | &quot;all&quot; &quot;(&quot; pred_list &quot;)&quot;
+                  | &quot;any&quot; &quot;(&quot; pred_list &quot;)&quot;
+                  | &quot;not&quot; &quot;(&quot; cfg_predicate &quot;)&quot;
+pred_list       ::= cfg_predicate (&quot;,&quot; cfg_predicate)* &quot;,&quot;?
+cfg_attr        ::= &quot;#&quot; &quot;[&quot; &quot;cfg&quot; &quot;(&quot; cfg_predicate &quot;)&quot; &quot;]&quot;
+cfg_attr_attr   ::= &quot;#&quot; &quot;[&quot; &quot;cfg_attr&quot; &quot;(&quot; cfg_predicate (&quot;,&quot; attr_body)+ &quot;)&quot; &quot;]&quot;
+cfg_macro       ::= &quot;cfg&quot; &quot;!&quot; &quot;(&quot; cfg_predicate &quot;)&quot;
+</code></pre>
+<h2 id="631-basic-form"><a class="anchor" tabindex="-1" href="#631-basic-form" aria-hidden="true">#</a>6.3.1. Basic form</h2>
+<p>The simplest uses:</p>
+<pre><code class="language-rok"><span class="a">#[cfg(target_os = "linux")]</span>
+<span class="k">fn</span> linux_specific() { ... }
+
+<span class="a">#[cfg(target_arch = "x86_64")]</span>
+<span class="k">const</span> <span class="t">HAS_AVX</span>: <span class="t">bool</span> = <span class="k">true</span>;
+
+<span class="a">#[cfg(test)]</span>
+<span class="k">mod</span> tests { ... }
+</code></pre>
+<p><code>#[cfg(...)]</code> takes a predicate as its argument. If the condition evaluates to true, the item is included in compilation; if false, it is excluded. An excluded item behaves as if it had never been written, so it is invisible to name resolution of other code as well.</p>
+<h2 id="632-predicate-kinds"><a class="anchor" tabindex="-1" href="#632-predicate-kinds" aria-hidden="true">#</a>6.3.2. Predicate kinds</h2>
+<h3 id="key--value"><a class="anchor" tabindex="-1" href="#key--value" aria-hidden="true">#</a>key = value</h3>
+<p>A condition expressed by pairing a key with a value.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(target_os = "linux")]</span>
+<span class="a">#[cfg(target_arch = "x86_64")]</span>
+<span class="a">#[cfg(target_pointer_width = "64")]</span>
+<span class="a">#[cfg(feature = "gpu")]</span>
+</code></pre>
+<p>The standard keys are:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Key</th><th>Possible values</th></tr></thead>
+<tbody>
+<tr><td><code>target_arch</code></td><td><code>&quot;x86_64&quot;</code>, <code>&quot;aarch64&quot;</code>, <code>&quot;x86&quot;</code>, <code>&quot;arm&quot;</code>, <code>&quot;wasm32&quot;</code></td></tr>
+<tr><td><code>target_os</code></td><td><code>&quot;linux&quot;</code>, <code>&quot;macos&quot;</code>, <code>&quot;windows&quot;</code>, <code>&quot;wasi&quot;</code>, <code>&quot;none&quot;</code></td></tr>
+<tr><td><code>target_pointer_width</code></td><td><code>&quot;64&quot;</code>, <code>&quot;32&quot;</code></td></tr>
+<tr><td><code>target_endian</code></td><td><code>&quot;little&quot;</code>, <code>&quot;big&quot;</code></td></tr>
+<tr><td><code>target_family</code></td><td><code>&quot;unix&quot;</code>, <code>&quot;windows&quot;</code>, <code>&quot;wasm&quot;</code></td></tr>
+<tr><td><code>target_env</code></td><td><code>&quot;gnu&quot;</code>, <code>&quot;musl&quot;</code>, <code>&quot;msvc&quot;</code></td></tr>
+<tr><td><code>feature</code></td><td>User-defined. Set by the CLI or the package manager</td></tr>
+</tbody></table></div>
+<p><code>target_family</code> / <code>target_env</code> are absent when the target has none. Non-Tier-1 targets also give <code>target_arch</code> values <code>&quot;riscv64&quot;</code>, <code>&quot;riscv32&quot;</code>, <code>&quot;powerpc64&quot;</code>, <code>&quot;s390x&quot;</code>.</p>
+<p>All <code>target_*</code> keys follow the build's <code>--target</code> (<a href="../009-tools/901-rokc-cli#rokc-build-aot-build">9.1.2</a>). Without <code>--target</code>, the host target applies.</p>
+<h3 id="plain-flags"><a class="anchor" tabindex="-1" href="#plain-flags" aria-hidden="true">#</a>Plain flags</h3>
+<p>There is also a boolean flag form with only a key and no value.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(test)]</span>                 <span class="c">// only in test builds</span>
+<span class="a">#[cfg(debug_assertions)]</span>      <span class="c">// only in debug builds</span>
+</code></pre>
+<h3 id="combinators"><a class="anchor" tabindex="-1" href="#combinators" aria-hidden="true">#</a>Combinators</h3>
+<p>To combine several conditions, use combinators.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(all(target_os = "linux", target_arch = "x86_64"))]</span>
+<span class="a">#[cfg(any(target_os = "linux", target_os = "macos"))]</span>
+<span class="a">#[cfg(not(target_os = "windows"))]</span>
+</code></pre>
+<p>The meaning of each combinator:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Combinator</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>all(...)</code></td><td>Every argument is true</td></tr>
+<tr><td><code>any(...)</code></td><td>At least one is true</td></tr>
+<tr><td><code>not(...)</code></td><td>The argument is false</td></tr>
+</tbody></table></div>
+<p>Combinators may be nested freely.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(all(</span>
+    target_os = <span class="s">"linux"</span>,
+    <span class="k">any</span>(target_arch = <span class="s">"x86_64"</span>, target_arch = <span class="s">"aarch64"</span>),
+    not(feature = <span class="s">"minimal"</span>),
+))]
+<span class="k">fn</span> linux_native() { ... }
+</code></pre>
+<h2 id="633-attachment-positions"><a class="anchor" tabindex="-1" href="#633-attachment-positions" aria-hidden="true">#</a>6.3.3. Attachment positions</h2>
+<p><code>#[cfg]</code> applies to items, fields (named, tuple, union, variant and tuple-variant fields), enum variants, items of a trait, <code>impl</code> or <code>extern</code> block, statements, match arms, struct literal fields and function parameters. A cfg-false parameter is removed from the signature; calls pass the arguments of the remaining parameters. Closure parameters take no attributes.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(...)]</span> <span class="k">fn</span> f() { ... }
+<span class="a">#[cfg(...)]</span> <span class="k">struct</span> <span class="t">S</span> { ... }
+<span class="a">#[cfg(...)]</span> <span class="k">mod</span> m { ... }
+<span class="a">#[cfg(...)]</span> <span class="k">use</span> foo::bar;
+<span class="a">#[cfg(...)]</span> <span class="k">static</span> <span class="t">X</span>: <span class="t">i32</span> = <span class="n">0</span>;
+
+<span class="k">struct</span> <span class="t">Foo</span> {
+    <span class="a">#[cfg(target_pointer_width = "64")]</span>
+    big_field: <span class="t">u64</span>;                              <span class="c">// exists only on 64-bit</span>
+}
+
+<span class="k">fn</span> run(op: <span class="t">Op</span>) {
+    <span class="a">#[cfg(test)]</span> check();                        <span class="c">// statement</span>
+    <span class="k">match</span> op {
+        <span class="t">Op</span>::<span class="t">Add</span> =&gt; add(),
+        <span class="a">#[cfg(debug_assertions)]</span>
+        <span class="t">Op</span>::<span class="t">Trace</span> =&gt; trace(),                    <span class="c">// match arm</span>
+        _ =&gt; {},
+    }
+}
+</code></pre>
+<p>If the condition is false, the item is treated as nonexistent: it is removed right after parsing, before derives and other attributes see it (<a href="#637-when-it-is-evaluated">6.3.7</a>). The output of meta-block expansions is parsed with the build's cfg, so <code>#[cfg]</code> inside it applies the same way.</p>
+<h2 id="634-cfg_attr-conditional-other-attributes"><a class="anchor" tabindex="-1" href="#634-cfg_attr-conditional-other-attributes" aria-hidden="true">#</a>6.3.4. <code>#[cfg_attr(...)]</code> conditional other attributes</h2>
+<p><code>#[cfg_attr]</code> attaches another attribute conditionally.</p>
+<pre><code class="language-rok"><span class="a">#[cfg_attr(target_os = "windows", link("kernel32"))]</span>
+<span class="k">extern</span> <span class="s">"C"</span> { ... }
+
+<span class="a">#[cfg_attr(test, derive(Debug))]</span>
+<span class="k">struct</span> <span class="t">S</span> { ... }
+</code></pre>
+<p>The form is <code>cfg_attr(condition, attribute_to_apply)</code>; if the condition is true, the following attribute behaves as if attached directly. In the first example <code>#[link(&quot;kernel32&quot;)]</code> applies only in Windows builds; in the second, <code>#[derive(Debug)]</code> applies only in test builds.</p>
+<p>Several attributes can be applied at once.</p>
+<pre><code class="language-rok"><span class="a">#[cfg_attr(test, derive(Debug), allow(unused))]</span>
+<span class="k">struct</span> <span class="t">S</span> { ... }
+</code></pre>
+<h2 id="635-cfg-compile-time-bool-value"><a class="anchor" tabindex="-1" href="#635-cfg-compile-time-bool-value" aria-hidden="true">#</a>6.3.5. <code>cfg!(...)</code> compile-time bool value</h2>
+<p><code>cfg!(...)</code> appears in expression position and evaluates to a bool at compile time.</p>
+<pre><code class="language-rok"><span class="k">const</span> <span class="t">IS_LINUX</span>: <span class="t">bool</span> = cfg!(target_os = <span class="s">"linux"</span>);
+
+<span class="k">if</span> cfg!(feature = <span class="s">"gpu"</span>) {
+    use_gpu()
+} <span class="k">else</span> {
+    use_cpu()
+}
+</code></pre>
+<p>It takes the same predicate as <code>#[cfg]</code>, and the result is a <code>const</code> expression in the sense of <a href="../005-modules/502-const"><code>const</code></a>, so it can be used in other <code>const</code> positions as well. Note that <code>cfg!</code>, like <code>include_str!</code> / <code>include_bytes!</code> (<a href="611-include">6.11</a>), is a compiler built-in form, not a macro (the call-triggered meta definition, <a href="608-meta-blocks#6812-the-macro-form">6.8.12</a>): it is fixed in the compiler and cannot be redefined or shadowed, and its name is reserved.</p>
+<p>The difference between <code>#[cfg]</code> and <code>cfg!()</code>:</p>
+<ul>
+<li><code>#[cfg]</code>: includes or excludes an entire item from the build.
+</li>
+<li><code>cfg!()</code>: looks like a runtime branch but is actually a compile-time constant, so one branch is removed by dead-code elimination.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="c">// #[cfg] - only one of the two functions is compiled</span>
+<span class="a">#[cfg(feature = "gpu")]</span> <span class="k">fn</span> run() { use_gpu() }
+<span class="a">#[cfg(not(feature = "gpu"))]</span> <span class="k">fn</span> run() { use_cpu() }
+
+<span class="c">// cfg!() - branch within one function; the compiler removes one side</span>
+<span class="k">fn</span> run() {
+    <span class="k">if</span> cfg!(feature = <span class="s">"gpu"</span>) { use_gpu() } <span class="k">else</span> { use_cpu() }
+}
+</code></pre>
+<p>Choose between the two forms according to convenience and code structure.</p>
+<h2 id="636-where-parameters-come-from"><a class="anchor" tabindex="-1" href="#636-where-parameters-come-from" aria-hidden="true">#</a>6.3.6. Where parameters come from</h2>
+<h3 id="target_-keys"><a class="anchor" tabindex="-1" href="#target_-keys" aria-hidden="true">#</a>target_* keys</h3>
+<p>The <code>target_*</code> keys are set automatically according to the build's target platform. They have well-defined values for the 15 Tier 1 targets in <a href="../000-meta/006-platform-targets">platform targets</a>.</p>
+<h3 id="the-feature-key"><a class="anchor" tabindex="-1" href="#the-feature-key" aria-hidden="true">#</a>The <code>feature</code> key</h3>
+<p>The <code>feature</code> key is set by a CLI option or by the package manager and build tools.</p>
+<pre><code class="language-bash">rokc --cfg feature=gpu
+</code></pre>
+<p>The package manager <code>rok</code> sets it per package: each package is compiled with <code>feature = &quot;&lt;f&gt;&quot;</code> for exactly the features the build enables for it (<a href="../009-tools/910-rok-frontend#9104c-features">9.10.4c</a>). <code>rokc --cfg feature=&lt;f&gt;</code> sets a feature of the package being compiled only; a dependency's features are given with <code>--extern-feature &lt;name&gt;=&lt;f&gt;</code> (<a href="../009-tools/901-rokc-cli">9.1</a>), and the standard library has none.</p>
+<h3 id="test--debug_assertions"><a class="anchor" tabindex="-1" href="#test--debug_assertions" aria-hidden="true">#</a><code>test</code> / <code>debug_assertions</code></h3>
+<p>These two flags are determined by the build mode.</p>
+<ul>
+<li><code>test</code>: true when building with <code>rokc test</code> or an equivalent command.
+</li>
+<li><code>debug_assertions</code>: true at <code>-O0</code>.
+</li>
+</ul>
+<h2 id="637-when-it-is-evaluated"><a class="anchor" tabindex="-1" href="#637-when-it-is-evaluated" aria-hidden="true">#</a>6.3.7. When it is evaluated</h2>
+<p><code>#[cfg]</code> is evaluated right after parsing. Items with false conditions are removed from the AST immediately, and later passes (name resolution, type checking, code generation) see only the remaining AST.</p>
+<p>This precedes the meta-expansion pass (<a href="609-template-tokens">template tokens and expansion</a>), so user-defined derives and attributes attached to items whose cfg is false are not processed either.</p>
+<h2 id="638-negated--conflicting-cfgs"><a class="anchor" tabindex="-1" href="#638-negated--conflicting-cfgs" aria-hidden="true">#</a>6.3.8. Negated / conflicting cfgs</h2>
+<p>If conditions are true simultaneously in the same build and two definitions survive, the ordinary duplicate definition error occurs.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(target_os = "linux")]</span>
+<span class="k">fn</span> impl_a() { ... }
+
+<span class="a">#[cfg(target_os = "linux")]</span>    <span class="c">// same cfg + same name → conflict</span>
+<span class="k">fn</span> impl_a() { ... }            <span class="c">// ERROR - both definitions exist in the same build</span>
+</code></pre>
+<p>The following is fine, because the two cfgs are mutually exclusive and only one definition is active in any build.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(target_os = "linux")]</span>
+<span class="k">fn</span> impl_a() { ... }
+
+<span class="a">#[cfg(not(target_os = "linux"))]</span>
+<span class="k">fn</span> impl_a() { ... }            <span class="c">// OK - the two cfgs are mutually exclusive</span>
+</code></pre>
+<h2 id="639-cfg-and-modulesfiles"><a class="anchor" tabindex="-1" href="#639-cfg-and-modulesfiles" aria-hidden="true">#</a>6.3.9. cfg and modules/files</h2>
+<p>A cfg can be attached to a whole module.</p>
+<pre><code class="language-rok"><span class="a">#[cfg(target_os = "linux")]</span>
+<span class="k">mod</span> linux_only {
+    <span class="c">// this whole module exists only in Linux builds</span>
+}
+</code></pre>
+<p>The module's files and directories still exist on disk, but if the cfg is false they are not read, or are discarded immediately if read.</p>
+<h2 id="6310-macros-inside-cfg-none"><a class="anchor" tabindex="-1" href="#6310-macros-inside-cfg-none" aria-hidden="true">#</a>6.3.10. Macros inside cfg (none)</h2>
+<p>Arbitrary expressions or macro calls cannot appear inside a cfg predicate. Only the fixed key-value forms and combinators are allowed.</p>
+<pre><code>#[cfg(custom_macro!())]                // not adopted
+</code></pre>
+<h2 id="6311-debugging-tools"><a class="anchor" tabindex="-1" href="#6311-debugging-tools" aria-hidden="true">#</a>6.3.11. Debugging tools</h2>
+<p>A command such as <code>rokc --print cfg</code> prints the cfg values active in the current build (the exact command follows the compiler specification).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/006-meta-system/603-cfg.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="602-built-in-attributes"><small>Previous</small>6.2. Built-in attributes</a><a class="next" href="604-lang-magic"><small>Next</small>6.4. #[lang(...)] magic</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.6. JIT 엔진 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 절에서는 REPL 과 Jupyter 가 사용하는 JIT 실행 엔진을 정의합니다. 실행 엔진과 사용자 표면 에서 정한 JIT 엔진의 구현입니다. 셀 세션의 규칙은 9.7.0 이 정합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/906-jit-engine.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.6. JIT 엔진 - rok docs">
+<meta property="og:description" content="이 절에서는 REPL 과 Jupyter 가 사용하는 JIT 실행 엔진을 정의합니다. 실행 엔진과 사용자 표면 에서 정한 JIT 엔진의 구현입니다. 셀 세션의 규칙은 9.7.0 이 정합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/906-jit-engine.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/906-jit-engine.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/906-jit-engine.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">9. 실행 / 툴 개요</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI 인터페이스</a></li><li><a href="902-aot-pipeline">9.2. AOT 빌드 파이프라인</a></li><li><a href="903-package-archive">9.3. 패키지 아카이브 (.a) 포맷</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR 포맷</a></li><li><a href="905-symbol-mangling">9.5. 심볼 맹글링 스킴</a></li><li class="cur"><a aria-current="page" href="906-jit-engine">9.6. JIT 엔진</a><ul class="toc"><li><a href="#961-구조-rokc-와-jit-host">9.6.1. 구조: rokc 와 JIT host</a></li><li><a href="#962-코드-로드">9.6.2. 코드 로드</a></li><li><a href="#963-심볼과-재정의">9.6.3. 심볼과 재정의</a></li><li><a href="#964-라이브러리-코드의-재사용">9.6.4. 라이브러리 코드의 재사용</a></li><li><a href="#965-실행-흐름-repl-한-줄--jupyter-한-셀">9.6.5. 실행 흐름 (REPL 한 줄 / Jupyter 한 셀)</a></li><li><a href="#966-jit-와-aot-의-차이">9.6.6. JIT 와 AOT 의 차이</a></li><li><a href="#967-다음-셀-실행--상태--에러">9.6.7. 다음: 셀 실행 / 상태 / 에러</a></li></ul></li><li><a href="907-jit-cells">9.7. JIT 셀 실행 흐름과 상태 관리</a></li><li><a href="908-jupyter-integration">9.8. Jupyter 커널 통합</a></li><li><a href="909-debug-tools">9.9. 디버그 / 진단 도구</a></li><li><a href="910-rok-frontend">9.10. rok - 패키지 / 빌드 front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="96-jit-엔진 96-jit-engine 961-구조-rokc-와-jit-host 961-structure-rokc-and-the-jit-host 962-코드-로드 962-code-loading 963-심볼과-재정의 963-symbols-and-redefinition 964-라이브러리-코드의-재사용 964-reuse-of-library-code 965-실행-흐름-repl-한-줄--jupyter-한-셀 965-execution-flow-one-repl-line--one-jupyter-cell 966-jit-와-aot-의-차이 966-differences-between-jit-and-aot 967-다음-셀-실행--상태--에러 967-next-cell-execution--state--errors"><a href="../../../../spec/refs-lang/009-tools/906-jit-engine" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="96-jit-엔진"><a class="anchor" tabindex="-1" href="#96-jit-엔진" aria-hidden="true">#</a>9.6. JIT 엔진</h1>
+<p>이 절에서는 REPL 과 Jupyter 가 사용하는 JIT 실행 엔진을 정의합니다. <a href="../000-meta/001-execution-modes">실행 엔진과 사용자 표면</a> 에서 정한 JIT 엔진의 구현입니다. 셀 세션의 규칙은 <a href="907-jit-cells#970-셀-세션의-규칙">9.7.0</a> 이 정합니다.</p>
+<h2 id="961-구조-rokc-와-jit-host"><a class="anchor" tabindex="-1" href="#961-구조-rokc-와-jit-host" aria-hidden="true">#</a>9.6.1. 구조: rokc 와 JIT host</h2>
+<p>세션은 런타임을 담고 세션 동안 사는 별도의 <strong>host 프로세스</strong> 에서 실행됩니다. host 는 <code>rokc</code> 와 함께 미리 빌드되어 내장 lld 로 링크되며, libLLVM 이나 ORC 없이 셀 object 를 직접 로드합니다.</p>
+<pre><code>rokc (front end)                         JIT host (세션 동안 하나)
+  셀 → parse → HIR → MIR                     librokr.a 전체
+     → native backend                        런타임 초기화는 한 번
+     → 기계어 + relocation  ─────────────►   실행 가능 메모리에 로드, 심볼 해소
+                                             → 셀 진입 함수를 한 번 실행
+</code></pre>
+<ul>
+<li>셀은 <a href="902-aot-pipeline#9210-backend-선택">9.2.10</a> 의 backend 선택을 따릅니다. <code>-O0</code> 에서 셀은 host 가 매핑하고 링크하는 native object (<a href="902-aot-pipeline#9211-native-backend">9.2.11</a>) 이며 LLVM 을 쓰지 않습니다. <code>-O0</code> 보다 높거나 native backend 가 맡지 않는 코드 (<code>__mlir_op</code>, 그 밖의 대상) 는 내장 MLIR → LLVM 파이프라인으로 object 를 만들어 같은 실행 가능 메모리에 로드합니다.
+</li>
+<li>host 는 코드를 실행 가능 메모리에 놓고, relocation 을 런타임, libc, 앞 셀에 대해 해소한 뒤 셀의 진입 함수를 한 번 실행합니다.
+</li>
+<li>host 는 런타임 (<code>librokr.a</code>) 의 모든 심볼을 export 하며, 셀 코드는 런타임과 libc 심볼을 host 프로세스에서 찾습니다.
+</li>
+</ul>
+<h2 id="962-코드-로드"><a class="anchor" tabindex="-1" href="#962-코드-로드" aria-hidden="true">#</a>9.6.2. 코드 로드</h2>
+<p>셀은 object 파일입니다: <code>-O0</code> 에서는 native, 그보다 높으면 LLVM 이 컴파일한 것. 그 코드는 relocation 을 가진 위치 독립 코드입니다. host 는 세션에 하나의 심볼 테이블을 두며, 셀의 정의는 셀을 로드한 뒤 여기에 더해집니다. 해소할 수 없는 심볼은 그 이름을 밝히는 에러로 셀을 실패시킵니다 (<a href="907-jit-cells">9.7</a>).</p>
+<h2 id="963-심볼과-재정의"><a class="anchor" tabindex="-1" href="#963-심볼과-재정의" aria-hidden="true">#</a>9.6.3. 심볼과 재정의</h2>
+<p>한 세션은 심볼 테이블 하나를 씁니다. 모든 셀의 정의가 여기에 쌓입니다.</p>
+<ul>
+<li>이미 정의된 심볼을 셀이 다시 정의하면, host 는 그 정의의 이름을 <code>&lt;name&gt;.r&lt;cell&gt;</code> 로 바꿉니다. 이후 셀의 참조는 가장 새 이름에 링크됩니다.
+</li>
+<li>재정의는 다음 셀부터 효력이 있습니다 (<a href="907-jit-cells#970-셀-세션의-규칙">9.7.0</a> 규칙 3).
+</li>
+<li>재정의된 심볼에 의존하는 함수는 <code>rokc</code> 가 다시 컴파일합니다. 그래서 재정의 전에 컴파일된 코드라도 이후 셀이 다시 닿으면 새 정의를 씁니다 (재정의된 <code>f</code> 를 부르는 <code>g</code>).
+</li>
+<li>셀 코드와 옛 정의는 세션이 끝날 때까지 해제하지 않습니다.
+</li>
+</ul>
+<h2 id="964-라이브러리-코드의-재사용"><a class="anchor" tabindex="-1" href="#964-라이브러리-코드의-재사용" aria-hidden="true">#</a>9.6.4. 라이브러리 코드의 재사용</h2>
+<p>표준 라이브러리와 의존 패키지의 코드는 세션에 한 번만 컴파일합니다.</p>
+<ul>
+<li><code>rokc</code> 는 host 가 이미 로드한 함수와 그 MIR 을 기억합니다. 셀의 함수가 이미 로드된 것과 같으면 코드 대신 참조만 넘깁니다.
+</li>
+<li>MIR 이 같으면 뜻도 같도록 셀 사이의 이름을 고정합니다. 문자열 리터럴 global 은 내용 hash 로 이름을 짓고, GC type id 는 <a href="../008-abi/802-scan-table">ScanTable</a> 내용을 키로 세션 동안 고정합니다.
+</li>
+<li>이 셀이 새로 정의하는 것 (바뀐 함수, <code>static</code>, 바인딩 슬롯) 을 직접 또는 간접으로 부르는 함수는 다시 컴파일합니다.
+</li>
+<li>셀의 객체는 셀이 더하는 것만 담습니다: 새로 정의하는 함수와, 그 코드가 읽는 이전 셀의 static 에 대한 초기화 guard. 그 코드가 가리키는 심볼만 이름으로 부릅니다.
+</li>
+</ul>
+<h2 id="965-실행-흐름-repl-한-줄--jupyter-한-셀"><a class="anchor" tabindex="-1" href="#965-실행-흐름-repl-한-줄--jupyter-한-셀" aria-hidden="true">#</a>9.6.5. 실행 흐름 (REPL 한 줄 / Jupyter 한 셀)</h2>
+<pre><code>1. rokc: 입력 → parse → HIR (에러면 셀을 버림, 세션 상태 그대로)
+2. rokc: 셀 → MIR → native backend → 기계어
+         (이미 로드된 함수는 참조로, 재정의는 새 이름으로)
+3. host: 세션 스냅샷을 fork 한 프로세스에서 코드를 로드하고 셀을 한 번 실행
+4. 성공: 그 프로세스가 새 스냅샷이 됨. 값이 있으면 `타입: 값` 출력
+   실패 (panic, 종료, 시그널, 로드 실패): 이전 스냅샷이 이어받음 (9.7.0 규칙 5)
+</code></pre>
+<p>3 단계는 Unix 에서 fork 합니다. fork 가 없는 host (Windows) 는 셀 전에 세션의 메모리와 스레드를 저장하고 셀이 실패하면 되돌려 놓으며, 관찰되는 결과는 fork 한 스냅샷과 같습니다.</p>
+<p>셀 하나의 지연은 약 0.1 초이며, 대부분은 front end 가 차지합니다 (참고값).</p>
+<h2 id="966-jit-와-aot-의-차이"><a class="anchor" tabindex="-1" href="#966-jit-와-aot-의-차이" aria-hidden="true">#</a>9.6.6. JIT 와 AOT 의 차이</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>JIT (REPL / Jupyter)</th><th>AOT</th></tr></thead>
+<tbody>
+<tr><td>파이프라인</td><td>rok-mir 까지 같음</td><td>같음</td></tr>
+<tr><td>Backend</td><td>native, host 에 로드</td><td>native (<code>-O0</code>) 또는 MLIR → LLVM, 그 뒤 lld</td></tr>
+<tr><td>단위</td><td>셀 (라이브러리는 세션에 한 번)</td><td>패키지</td></tr>
+<tr><td>결과</td><td>host 메모리</td><td>실행 파일 / <code>.a</code></td></tr>
+</tbody></table></div>
+<p>두 엔진은 같은 단형화와 rok-mir 를 공유하고 두 backend 가 같은 ABI 를 따르므로 의미가 같습니다.</p>
+<h2 id="967-다음-셀-실행--상태--에러"><a class="anchor" tabindex="-1" href="#967-다음-셀-실행--상태--에러" aria-hidden="true">#</a>9.6.7. 다음: 셀 실행 / 상태 / 에러</h2>
+<p><a href="907-jit-cells">JIT 셀 실행 흐름과 상태 관리</a> 에서 셀별 동작 (top-level 변수, 재정의, 에러) 을 정의합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/009-tools/906-jit-engine.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="905-symbol-mangling"><small>Previous</small>9.5. 심볼 맹글링 스킴</a><a class="next" href="907-jit-cells"><small>Next</small>9.7. JIT 셀 실행 흐름과 상태 관리</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

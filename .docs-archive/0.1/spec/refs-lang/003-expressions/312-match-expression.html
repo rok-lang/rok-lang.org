@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.12. match expression - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="match is an expression that compares a value against several patterns and evaluates the first arm that matches.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/312-match-expression.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.12. match expression - rok docs">
+<meta property="og:description" content="match is an expression that compares a value against several patterns and evaluates the first arm that matches.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/312-match-expression.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/312-match-expression.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/312-match-expression.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li class="cur"><a aria-current="page" href="312-match-expression">3.12. match expression</a><ul class="toc"><li><a href="#3121-form">3.12.1. Form</a></li><li><a href="#3122-arm-bodies">3.12.2. Arm bodies</a></li><li><a href="#3123-matching-order">3.12.3. Matching order</a></li><li><a href="#3124-branch-result-type">3.12.4. Branch result type</a></li><li><a href="#3125-exhaustiveness-checking">3.12.5. Exhaustiveness checking</a></li><li><a href="#3126-unreachable-arms">3.12.6. Unreachable arms</a></li><li><a href="#3127-or-patterns">3.12.7. Or-Patterns</a></li><li><a href="#3128-guards">3.12.8. Guards</a></li><li><a href="#3129-narrowing-from-match-results">3.12.9. Narrowing from match results</a></li><li><a href="#31210-evaluation-order">3.12.10. Evaluation order</a></li><li><a href="#31211-result-of-the-match-expression-itself">3.12.11. Result of the match expression itself</a></li><li><a href="#31212-divergent-arms">3.12.12. Divergent arms</a></li></ul></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="312-match-expression 312-match-표현식 3121-form 3121-형태 3122-arm-bodies 3122-가지의-본체 3123-matching-order 3123-매칭-순서 3124-branch-result-type 3124-분기-결과-타입 3125-exhaustiveness-checking 3125-완전성-검사-exhaustiveness 3126-unreachable-arms 3126-도달-불가능-가지 3127-or-patterns 3127-or-패턴 3128-guards 3128-가드 3129-narrowing-from-match-results 3129-매칭-결과의-좁히기 31210-evaluation-order 31210-평가-순서 31211-result-of-the-match-expression-itself 31211-매칭-식-자체의-결과 31212-divergent-arms 31212-divergent-가지"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/312-match-expression" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="312-match-expression"><a class="anchor" tabindex="-1" href="#312-match-expression" aria-hidden="true">#</a>3.12. <code>match</code> expression</h1>
+<p><code>match</code> is an expression that compares a value against several patterns and evaluates the first arm that matches.</p>
+<h2 id="3121-form"><a class="anchor" tabindex="-1" href="#3121-form" aria-hidden="true">#</a>3.12.1. Form</h2>
+<pre><code>match_expr  ::= &quot;match&quot; expr &quot;{&quot; match_arm (&quot;,&quot; match_arm)* &quot;,&quot;? &quot;}&quot;
+match_arm   ::= pattern (&quot;if&quot; expr)? &quot;=&gt;&quot; expr
+</code></pre>
+<pre><code class="language-rok"><span class="k">match</span> expr {
+    pattern1 =&gt; expr1,
+    pattern2 =&gt; expr2,
+    ...
+    patternN =&gt; exprN,
+}
+</code></pre>
+<p>A <code>match</code> expression consists of the <code>match</code> keyword, a scrutinee, and a <code>{ ... }</code> body. A struct literal cannot appear at the top level of the scrutinee (<a href="310-if-expression#struct-literals-in-condition-position">3.10.3</a>). The body contains zero or more arms separated by commas; each arm consists of a pattern, the <code>=&gt;</code> token (<a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a>), and an expression. A trailing comma is allowed.</p>
+<h2 id="3122-arm-bodies"><a class="anchor" tabindex="-1" href="#3122-arm-bodies" aria-hidden="true">#</a>3.12.2. Arm bodies</h2>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="s">"one"</span>,
+    <span class="n">2</span> =&gt; <span class="s">"two"</span>,
+    _ =&gt; <span class="s">"other"</span>,
+}
+</code></pre>
+<p>A single expression follows <code>=&gt;</code>. If that expression is a <a href="309-block-expressions">block expression</a>, it can contain several statements.</p>
+<pre><code class="language-rok"><span class="k">match</span> v {                        <span class="c">// v: i32 | none</span>
+    n: <span class="t">i32</span> =&gt; {
+        <span class="k">let</span> x = n * <span class="n">2</span>;
+        x + <span class="n">1</span>
+    },
+    <span class="k">none</span> =&gt; <span class="n">0</span>,
+}
+</code></pre>
+<p>The value of the last expression of a block arm is the result of that arm.</p>
+<h2 id="3123-matching-order"><a class="anchor" tabindex="-1" href="#3123-matching-order" aria-hidden="true">#</a>3.12.3. Matching order</h2>
+<p>Arms are checked top to bottom, and the first matching arm is evaluated. The value of that arm's expression is the result of the whole <code>match</code> expression.</p>
+<h2 id="3124-branch-result-type"><a class="anchor" tabindex="-1" href="#3124-branch-result-type" aria-hidden="true">#</a>3.12.4. Branch result type</h2>
+<p>Per the branch result rules of the <a href="./">expressions overview</a>, if all arm result expressions have the same type, that type is the result type of the <code>match</code> expression. If arm types differ, the receiving side must have an explicit type; sum types are not inferred automatically. The type of the receiving slot follows the rules of <a href="../005-modules/501-variable-declaration">variable declaration</a>.</p>
+<pre><code class="language-rok"><span class="c">// no type on the slot → inferred from the expression's result type</span>
+<span class="k">let</span> x = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="s">"one"</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// expression result str, slot x: str</span>
+
+<span class="k">let</span> y = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="n">1i32</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// ERROR: arm type mismatch - type annotation required</span>
+
+<span class="c">// sum type on the slot → member check</span>
+<span class="k">let</span> w: <span class="t">i32</span> | <span class="t">str</span> = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="n">1i32</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// OK</span>
+
+<span class="c">// single type on the slot → the expression's result must be that type</span>
+<span class="k">let</span> z: <span class="t">i32</span> = <span class="k">match</span> v {
+    <span class="n">1</span> =&gt; <span class="n">1i32</span>,
+    _ =&gt; <span class="s">"other"</span>,
+};                      <span class="c">// ERROR: str arm does not fit i32</span>
+</code></pre>
+<h2 id="3125-exhaustiveness-checking"><a class="anchor" tabindex="-1" href="#3125-exhaustiveness-checking" aria-hidden="true">#</a>3.12.5. Exhaustiveness checking</h2>
+<p>The set of arm patterns must cover every value the scrutinee can have; otherwise it is a compile error.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">bool</span> = ...;
+<span class="k">match</span> x {
+    <span class="k">true</span> =&gt; <span class="n">1</span>,
+    <span class="c">// ERROR: false is missing</span>
+}
+</code></pre>
+<p>The rules are as follows. Covering every member of a closed sum type (<code>A | B</code>) is exhaustive. For an <code>enum</code>, covering every variant is exhaustive. <code>bool</code> is exhaustive when both <code>true</code> and <code>false</code> are covered. Literal and range patterns of integers, <code>char</code>, strings, and floating-point numbers are treated as open sets. Even if ranges cover every value of the type (<code>0..=255</code> for all of <code>u8</code>), this is not considered exhaustive, so a catch-all arm such as a wildcard (<code>_</code>) or identifier pattern (<code>x</code>) is required. The non-exhaustiveness error gives one missing value as an example (e.g. <code>false</code>).</p>
+<p>A match on the dynamic slot of an <a href="../002-types/202-any-slot"><code>any</code> slot</a> always requires a catch-all arm, because the compiler cannot know which type will arrive.</p>
+<h2 id="3126-unreachable-arms"><a class="anchor" tabindex="-1" href="#3126-unreachable-arms" aria-hidden="true">#</a>3.12.6. Unreachable arms</h2>
+<p>An arm that can never be reached in matching order is a compile error (not a warning). Literal / range patterns of integers and <code>char</code> are compared as intervals, so a range already covered by the intervals of earlier arms is also unreachable (<code>3..=5</code> after <code>0..=9</code>). Ranges do not establish exhaustiveness (3.12.5).</p>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    _ =&gt; <span class="n">0</span>,
+    <span class="n">1</span> =&gt; <span class="n">1</span>,         <span class="c">// ERROR: the _ above always matches</span>
+}
+</code></pre>
+<h2 id="3127-or-patterns"><a class="anchor" tabindex="-1" href="#3127-or-patterns" aria-hidden="true">#</a>3.12.7. Or-Patterns</h2>
+<p>An or-pattern (<code>|</code>) of <a href="311-patterns">patterns</a> groups several patterns sharing the same body.</p>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    <span class="n">1</span> | <span class="n">2</span> | <span class="n">3</span> =&gt; <span class="s">"small"</span>,
+    <span class="n">4</span> | <span class="n">5</span> | <span class="n">6</span> =&gt; <span class="s">"medium"</span>,
+    _         =&gt; <span class="s">"large"</span>,
+}
+</code></pre>
+<h2 id="3128-guards"><a class="anchor" tabindex="-1" href="#3128-guards" aria-hidden="true">#</a>3.12.8. Guards</h2>
+<p>A guard (<code>if condition</code>) of <a href="311-patterns">patterns</a> can be attached to an arm.</p>
+<pre><code class="language-rok"><span class="k">match</span> (x, y) {
+    (a, b) <span class="k">if</span> a == b =&gt; <span class="s">"equal"</span>,
+    (a, b) <span class="k">if</span> a &gt; b  =&gt; <span class="s">"first bigger"</span>,
+    _                =&gt; <span class="s">"second bigger"</span>,
+}
+</code></pre>
+<p>An arm with a guard is not counted as a catch-all in exhaustiveness checking, because the guard may be <code>false</code>. Guarded arms alone therefore do not guarantee exhaustiveness.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">bool</span> = ...;
+<span class="k">match</span> x {
+    a <span class="k">if</span> a == <span class="k">true</span>  =&gt; <span class="n">1</span>,
+    a <span class="k">if</span> a == <span class="k">false</span> =&gt; <span class="n">2</span>,
+    <span class="c">// ERROR: guarded arms alone do not guarantee exhaustiveness; _ required</span>
+}
+</code></pre>
+<h2 id="3129-narrowing-from-match-results"><a class="anchor" tabindex="-1" href="#3129-narrowing-from-match-results" aria-hidden="true">#</a>3.12.9. Narrowing from match results</h2>
+<p>Inside an arm matched by a type pattern or an <code>enum</code> pattern, the compiler narrows the type of the scrutinee.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> =&gt; use_int(n),       <span class="c">// in this arm n: i32, static dispatch possible</span>
+    s: <span class="t">str</span> =&gt; use_str(s),
+}
+</code></pre>
+<p>This narrowing works by the same mechanism as narrowing of the <a href="../002-types/202-any-slot"><code>any</code> slot</a> and <a href="../002-types/206-sum-types">sum types</a>.</p>
+<h2 id="31210-evaluation-order"><a class="anchor" tabindex="-1" href="#31210-evaluation-order" aria-hidden="true">#</a>3.12.10. Evaluation order</h2>
+<p><code>match</code> is evaluated in this order:</p>
+<ol>
+<li>Evaluate the scrutinee (once).
+</li>
+<li>Check the arms top to bottom.
+</li>
+<li>Evaluate the expression of the first matching arm.
+</li>
+</ol>
+<p>Any side effects of the scrutinee occur exactly once. The guard of a guarded arm is evaluated only when that arm is reached.</p>
+<h2 id="31211-result-of-the-match-expression-itself"><a class="anchor" tabindex="-1" href="#31211-result-of-the-match-expression-itself" aria-hidden="true">#</a>3.12.11. Result of the match expression itself</h2>
+<p>The result of the <code>match</code> expression itself follows the branch result rules above (if all arms have the same type, that type; otherwise the receiving side must have an explicit type).</p>
+<p>If the scrutinee is divergent (e.g. <code>match return 0 { ... }</code>), the <code>match</code> is also divergent.</p>
+<h2 id="31212-divergent-arms"><a class="anchor" tabindex="-1" href="#31212-divergent-arms" aria-hidden="true">#</a>3.12.12. Divergent arms</h2>
+<p>If an arm's expression is a divergent form of <a href="309-block-expressions">block expressions</a> (<code>return</code>, <code>break</code>, <code>throw</code>, etc.), that arm is treated as compatible with any type in the branch result type check.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">i32</span> = <span class="k">match</span> v {           <span class="c">// v: i32 | none</span>
+    n: <span class="t">i32</span>  =&gt; n,
+    <span class="k">none</span>    =&gt; <span class="k">return</span> <span class="n">0</span>,         <span class="c">// divergent, OK in an i32 position</span>
+};
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/312-match-expression.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="311-patterns"><small>Previous</small>3.11. Patterns</a><a class="next" href="313-loop-expressions"><small>Next</small>3.13. Loop expressions</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

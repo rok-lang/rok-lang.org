@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.17. channel - Message passing - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::channel module provides channel primitives for exchanging messages between tasks and threads. The design is inspired by Go's channels and Rust's ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/217-channel.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.17. channel - Message passing - rok docs">
+<meta property="og:description" content="The rok::core::channel module provides channel primitives for exchanging messages between tasks and threads. The design is inspired by Go's channels and Rust's ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/217-channel.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/217-channel.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/217-channel.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li class="cur"><a aria-current="page" href="217-channel">2.17. channel - Message passing</a><ul class="toc"><li><a href="#2171-basic-form">2.17.1. Basic form</a></li><li><a href="#2172-sendert--receivert">2.17.2. Sender&lt;T&gt; / Receiver&lt;T&gt;</a></li><li><a href="#2173-close-semantics">2.17.3. Close semantics</a></li><li><a href="#2174-multi-producer">2.17.4. Multi-producer</a></li><li><a href="#2175-for--stream-integration">2.17.5. for / Stream integration</a></li><li><a href="#2176-module-mapping">2.17.6. Module mapping</a></li></ul></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="217-channel---message-passing 217-channel---메시지-패싱 2171-basic-form 2171-기본-형태 example 사용-예 2172-sendert--receivert 2172-sendert--receivert 2173-close-semantics 2173-close-의미 2174-multi-producer 2174-multi-producer 2175-for--stream-integration 2175-for--stream-통합 2176-module-mapping 2176-모듈-매핑"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/217-channel" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="217-channel---message-passing"><a class="anchor" tabindex="-1" href="#217-channel---message-passing" aria-hidden="true">#</a>2.17. channel - Message passing</h1>
+<p>The <code>rok::core::channel</code> module provides channel primitives for exchanging messages between tasks and threads. The design is inspired by Go's channels and Rust's <code>mpsc::channel</code>.</p>
+<p>Because <code>use rok::core::**;</code> applies implicitly, names such as <code>channel</code>, <code>Sender</code> and <code>Receiver</code> are usable without any import, in short forms like <code>channel::&lt;T&gt;()</code> or <code>Sender&lt;T&gt;</code>. Where the origin should be visible, writing <code>use rok::core::channel::*;</code> explicitly is recommended.</p>
+<h2 id="2171-basic-form"><a class="anchor" tabindex="-1" href="#2171-basic-form" aria-hidden="true">#</a>2.17.1. Basic form</h2>
+<p>Channels are created by two functions.</p>
+<pre><code class="language-rok"><span class="k">fn</span> channel&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;() -&gt; (<span class="t">Sender</span>&lt;<span class="t">T</span>&gt;, <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt;);
+<span class="k">fn</span> channel_bounded&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(cap: <span class="t">usize</span>) -&gt; (<span class="t">Sender</span>&lt;<span class="t">T</span>&gt;, <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt;);
+</code></pre>
+<p><code>channel&lt;T&gt;()</code> creates an <strong>unbounded</strong> channel: its capacity is infinite, so in practice it accepts messages up to the memory limit. <code>channel_bounded&lt;T&gt;(cap)</code> creates a <strong>bounded</strong> channel whose capacity is fixed at <code>cap</code>; when the queue is full, the sender blocks. <code>channel_bounded(0)</code> is a rendezvous channel: <code>send</code> waits until a receiver takes the value. On this channel <code>try_send</code> throws <code>TrySendError::Full</code> if no receiver is waiting. Not only a thread blocked in <code>recv</code> but also a task suspended in <code>recv_async</code> / <code>for await</code> counts as a waiting receiver.</p>
+<h3 id="example"><a class="anchor" tabindex="-1" href="#example" aria-hidden="true">#</a>Example</h3>
+<p>The simplest usage:</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">i32</span>&gt;();
+
+task::spawn(<span class="k">async</span> {
+    <span class="k">try</span> tx.send(<span class="n">1</span>);
+    <span class="k">try</span> tx.send(<span class="n">2</span>);
+    <span class="k">try</span> tx.send(<span class="n">3</span>);
+});
+
+<span class="k">while</span> <span class="k">let</span> v: <span class="t">i32</span> = rx.recv() {
+    <span class="k">use</span>(v);                  <span class="c">//→ 1, 2, 3</span>
+}
+</code></pre>
+<h2 id="2172-sendert--receivert"><a class="anchor" tabindex="-1" href="#2172-sendert--receivert" aria-hidden="true">#</a>2.17.2. <code>Sender&lt;T&gt;</code> / <code>Receiver&lt;T&gt;</code></h2>
+<p>The two types forming the ends of a channel are defined as follows.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Sender</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+<span class="k">struct</span> <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Sender</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> send(<span class="k">self</span>, value: <span class="t">T</span>) <span class="k">throws</span> (<span class="t">SendError</span>&lt;<span class="t">T</span>&gt;);
+    <span class="k">fn</span> try_send(<span class="k">self</span>, value: <span class="t">T</span>) <span class="k">throws</span> (<span class="t">TrySendError</span>&lt;<span class="t">T</span>&gt;);
+    <span class="k">fn</span> send_async(<span class="k">self</span>, value: <span class="t">T</span>) -&gt; <span class="t">SendFuture</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// try await tx.send_async(v) - suspends only the task, throws (SendError&lt;T&gt;)</span>
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">Sender</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// multiple senders</span>
+    <span class="k">fn</span> close(<span class="k">self</span>);                          <span class="c">// closes this sender</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> recv(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;               <span class="c">// none = every sender closed</span>
+    <span class="k">fn</span> try_recv(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;           <span class="c">// none = empty or closed</span>
+    <span class="k">fn</span> recv_async(<span class="k">self</span>) -&gt; <span class="t">RecvFuture</span>&lt;<span class="t">T</span>&gt;;    <span class="c">// await rx.recv_async() - suspends only the task, Output = T | none</span>
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">ChannelIter</span>&lt;<span class="t">T</span>&gt;;         <span class="c">// for x in rx { ... }</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Stream</span> <span class="k">for</span> <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; {         <span class="c">// for await v in rx - suspends only the task</span>
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">T</span>;
+    ...
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">IntoIterator</span> <span class="k">for</span> <span class="t">Receiver</span>&lt;<span class="t">T</span>&gt; {   <span class="c">// for x in rx - ends when every sender is closed</span>
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">T</span>;
+    <span class="k">type</span> <span class="t">IntoIter</span> = <span class="t">ChannelIter</span>&lt;<span class="t">T</span>&gt;;
+}
+
+<span class="k">enum</span> <span class="t">SendError</span>&lt;<span class="t">T</span>&gt; { <span class="t">Closed</span>(<span class="t">T</span>) }
+<span class="k">enum</span> <span class="t">TrySendError</span>&lt;<span class="t">T</span>&gt; { <span class="t">Full</span>(<span class="t">T</span>), <span class="t">Closed</span>(<span class="t">T</span>) }
+<span class="c">// both implement Display, Debug and Error (the message names the case, not the value)</span>
+</code></pre>
+<p>If <code>T: Send</code>, then <code>Sender&lt;T&gt;</code> and <code>Receiver&lt;T&gt;</code> are also <code>Send</code> and can be moved to other tasks or threads (<a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>). <code>send</code>, <code>try_send</code> and <code>send_async</code> queue a copy of the value's collections (2.13.9): the receiver shares no collection with the sender.</p>
+<p><code>recv</code> and <code>send</code> (when a bounded channel is full, or until a rendezvous value is taken) block the thread. To suspend only the task in async code, use <code>await rx.recv_async()</code>, <code>for await v in rx</code>, or <code>try await tx.send_async(v)</code>. <code>send_async</code> suspends the task while a bounded channel is full, or on a rendezvous channel until a receiver takes the value. Like <code>send</code>, if this sender has already been <code>close()</code>d it throws <code>SendError::Closed</code> carrying the value. A cancelled <code>recv_async</code> does not take a value, and a cancelled <code>send_async</code> does not send its value (<a href="218-task#2184-cooperative-cancellation---taskcancel">2.18.4</a>). <code>Mutex::lock</code> / <code>lock_async</code> make the same distinction (<a href="216-sync">2.16</a>).</p>
+<h2 id="2173-close-semantics"><a class="anchor" tabindex="-1" href="#2173-close-semantics" aria-hidden="true">#</a>2.17.3. Close semantics</h2>
+<p>When a channel closes and how the signal is delivered: once every sender is <code>close()</code>d, the channel is closed. The receiver then gets the close signal as <code>recv()</code> returning <code>none</code>. rok has no automatic drop at scope exit (<a href="213-marker#2134-drop---cleanup-on-using-release">2.13.4</a>), so closing a sender is an explicit <code>close()</code>.</p>
+<p>Closing a channel with <code>close()</code>:</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">i32</span>&gt;();
+<span class="k">try</span> tx.send(<span class="n">1</span>);
+tx.close();            <span class="c">// explicit close</span>
+
+rx.recv();             <span class="c">//→ 1</span>
+rx.recv();             <span class="c">//→ none  (closed)</span>
+</code></pre>
+<h2 id="2174-multi-producer"><a class="anchor" tabindex="-1" href="#2174-multi-producer" aria-hidden="true">#</a>2.17.4. Multi-producer</h2>
+<p><code>Sender&lt;T&gt;</code> implements <code>Clone</code>, so multiple tasks can send messages to the same channel.</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">str</span>&gt;();
+<span class="k">let</span> tx2 = tx.clone();
+
+task::spawn(<span class="k">async</span> { <span class="k">try</span> tx.send(<span class="s">"hello"</span>); });
+task::spawn(<span class="k">async</span> { <span class="k">try</span> tx2.send(<span class="s">"world"</span>); });
+
+<span class="k">let</span> v1 = rx.recv();
+<span class="k">let</span> v2 = rx.recv();
+</code></pre>
+<p><code>Receiver&lt;T&gt;</code> does not implement Clone, so it acts as a single consumer. This is the mpsc - multi producer single consumer - model. If multiple consumers are needed, use a separate fan-out task that distributes the messages.</p>
+<h2 id="2175-for--stream-integration"><a class="anchor" tabindex="-1" href="#2175-for--stream-integration" aria-hidden="true">#</a>2.17.5. <code>for</code> / <code>Stream</code> integration</h2>
+<p><code>Receiver&lt;T&gt;</code> implements <code>IntoIterator&lt;Item = T&gt;</code>, so it can be used directly in a <code>for</code> statement.</p>
+<pre><code class="language-rok"><span class="k">for</span> v <span class="k">in</span> rx {
+    <span class="k">use</span>(v);                  <span class="c">// repeats until the channel is closed</span>
+}
+</code></pre>
+<p>It also implements the asynchronous iterator <code>Stream&lt;Item = T&gt;</code>, so <code>for await</code> works the same way.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> v <span class="k">in</span> rx {
+    <span class="k">await</span> handle(v);
+}
+</code></pre>
+<p>See <a href="207-iter">2.7 iter</a> and <a href="208-stream">2.8 stream</a> for details.</p>
+<h2 id="2176-module-mapping"><a class="anchor" tabindex="-1" href="#2176-module-mapping" aria-hidden="true">#</a>2.17.6. Module mapping</h2>
+<p>Where each type and function is implemented:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Module</th><th>Internal structure</th></tr></thead>
+<tbody>
+<tr><td><code>Sender&lt;T&gt;</code></td><td><code>rok::core::channel::sender</code></td><td>atomic ref count + queue</td></tr>
+<tr><td><code>Receiver&lt;T&gt;</code></td><td><code>rok::core::channel::receiver</code></td><td>queue + parking</td></tr>
+<tr><td><code>channel&lt;T&gt;()</code></td><td><code>rok::core::channel</code></td><td>Arc-like internal state</td></tr>
+</tbody></table></div>
+<p>For the internal queue, bounded channels use a ring buffer similar to Tokio mpsc, and unbounded channels use a segmented linked list. A bounded channel's queue is lock-free; an unbounded one's segment list may use a lock.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/217-channel.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="216-sync"><small>Previous</small>2.16. sync - Concurrency primitives</a><a class="next" href="218-task"><small>Next</small>2.18. task - M:N scheduler task API</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.3. Mutator TLS 슬롯 레이아웃 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="각 OS thread (= scheduler worker = mutator) 는 thread-local storage (TLS) 의 정해진 자리에 런타임 정보를 가지게 됩니다. 컴파일러가 emit 하는 코드와 런타임이 동일한 TLS 슬롯을 읽고 쓰기 때문에, 본 문서에서 각 슬롯의 of...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/803-tls-slots.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.3. Mutator TLS 슬롯 레이아웃 - rok docs">
+<meta property="og:description" content="각 OS thread (= scheduler worker = mutator) 는 thread-local storage (TLS) 의 정해진 자리에 런타임 정보를 가지게 됩니다. 컴파일러가 emit 하는 코드와 런타임이 동일한 TLS 슬롯을 읽고 쓰기 때문에, 본 문서에서 각 슬롯의 of...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/803-tls-slots.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/803-tls-slots.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/803-tls-slots.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">8. 런타임 ABI / MLIR lowering 개요</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. 객체 헤더 ABI</a></li><li><a href="802-scan-table">8.2. ScanTable 직렬화 포맷</a></li><li class="cur"><a aria-current="page" href="803-tls-slots">8.3. Mutator TLS 슬롯 레이아웃</a><ul class="toc"><li><a href="#831-tls-슬롯-구조">8.3.1. TLS 슬롯 구조</a></li><li><a href="#832-접근-메커니즘">8.3.2. 접근 메커니즘</a></li><li><a href="#833-슬롯별-의미">8.3.3. 슬롯별 의미</a></li><li><a href="#834-슬롯-폭과-정렬">8.3.4. 슬롯 폭과 정렬</a></li><li><a href="#835-32-bit-와-64-bit-의-차이">8.3.5. 32-bit 와 64-bit 의 차이</a></li><li><a href="#836-tls-슬롯의-초기화">8.3.6. TLS 슬롯의 초기화</a></li><li><a href="#837-tls-슬롯의-종료">8.3.7. TLS 슬롯의 종료</a></li><li><a href="#838-컴파일러-emit-의-형식">8.3.8. 컴파일러 emit 의 형식</a></li><li><a href="#839-안정성">8.3.9. 안정성</a></li></ul></li><li><a href="804-safepoint">8.4. Safepoint 프로토콜</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; 심볼</a></li><li><a href="806-calling-convention">8.6. Calling Convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR 다이얼렉트 사용</a></li><li><a href="808-lowering-types">8.8. Lowering: 데이터 타입과 표현식</a></li><li><a href="809-lowering-control">8.9. Lowering: 제어 흐름과 GC 통합</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: 코루틴과 제네릭</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="83-mutator-tls-슬롯-레이아웃 83-mutator-tls-slot-layout 831-tls-슬롯-구조 831-tls-slot-structure 832-접근-메커니즘 832-access-mechanism 833-슬롯별-의미 833-meaning-of-each-slot rok_tls_yield_flag-u8 rok_tls_yield_flag-u8 rok_tls_tlab_cursor-ptr rok_tls_tlab_cursor-ptr rok_tls_tlab_limit-ptr rok_tls_tlab_limit-ptr rok_tls_shadow_stack_top-ptr rok_tls_shadow_stack_top-ptr rok_tls_satb_cursor--rok_tls_satb_limit-ptr rok_tls_satb_cursor--rok_tls_satb_limit-ptr rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr rok_tls_mutator_state-u8 rok_tls_mutator_state-u8 rok_tls_worker_id-u64 rok_tls_worker_id-u64 834-슬롯-폭과-정렬 834-slot-width-and-alignment 835-32-bit-와-64-bit-의-차이 835-32-bit-vs-64-bit 836-tls-슬롯의-초기화 836-tls-slot-initialization 837-tls-슬롯의-종료 837-tls-slot-teardown 838-컴파일러-emit-의-형식 838-form-of-compiler-emission shadow-stack-머리 shadow-stack-head 839-안정성 839-stability"><a href="../../../../spec/refs-lang/008-abi/803-tls-slots" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="83-mutator-tls-슬롯-레이아웃"><a class="anchor" tabindex="-1" href="#83-mutator-tls-슬롯-레이아웃" aria-hidden="true">#</a>8.3. Mutator TLS 슬롯 레이아웃</h1>
+<p>각 OS thread (= scheduler worker = mutator) 는 thread-local storage (TLS) 의 정해진 자리에 런타임 정보를 가지게 됩니다. 컴파일러가 emit 하는 코드와 런타임이 동일한 TLS 슬롯을 읽고 쓰기 때문에, 본 문서에서 각 슬롯의 offset 과 타입을 정의합니다.</p>
+<h2 id="831-tls-슬롯-구조"><a class="anchor" tabindex="-1" href="#831-tls-슬롯-구조" aria-hidden="true">#</a>8.3.1. TLS 슬롯 구조</h2>
+<p>TLS 슬롯은 런타임이 정의하고 export 하는 하나의 <code>thread_local</code> 블록 <code>rok_tls</code> 이며, 각 슬롯은 그 안의 고정 offset 에 있습니다. 컴파일된 코드는 블록 주소에서 각 슬롯의 offset 으로 접근하며, rok 함수는 그 주소를 호출자에게서 받습니다 (8.3.8).</p>
+<p><code>p</code> 는 바이트 단위의 포인터 폭입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Offset</th><th>슬롯</th><th>타입</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td>0</td><td><code>rok_tls_shadow_stack_top</code></td><td>ptr</td><td>shadow stack 체인 머리</td></tr>
+<tr><td>p</td><td><code>rok_tls_tlab_cursor</code></td><td>ptr</td><td>TLAB 의 다음 할당 위치</td></tr>
+<tr><td>2p</td><td><code>rok_tls_tlab_limit</code></td><td>ptr</td><td>TLAB 의 끝</td></tr>
+<tr><td>3p</td><td><code>rok_tls_wb_log_cursor</code></td><td>ptr</td><td>write barrier log 의 위치</td></tr>
+<tr><td>4p</td><td><code>rok_tls_wb_log_limit</code></td><td>ptr</td><td>write barrier log 의 끝</td></tr>
+<tr><td>5p</td><td><code>rok_tls_satb_cursor</code></td><td>ptr</td><td>SATB buffer 의 위치 (동시 mark 중)</td></tr>
+<tr><td>6p</td><td><code>rok_tls_satb_limit</code></td><td>ptr</td><td>SATB buffer 의 끝</td></tr>
+<tr><td>7p</td><td><code>rok_tls_task_worker</code></td><td>ptr</td><td>이 스레드의 executor worker (GC 객체, 없으면 0)</td></tr>
+<tr><td>8p</td><td><code>rok_tls_stack_guard</code></td><td>[usize; 2]</td><td><code>[lo, hi)</code> - 이 범위의 fault 는 이 스레드의 스택 오버플로 (<code>[0, 0)</code> 이면 모름, <a href="805-extern-symbols#스택-오버플로">8.5.7</a>)</td></tr>
+<tr><td>10p</td><td><code>rok_tls_worker_id</code></td><td>u64</td><td>worker id</td></tr>
+<tr><td>10p+8</td><td><code>rok_tls_yield_flag</code></td><td>u8</td><td>safepoint 에서 <code>yield</code> 해야 하는지</td></tr>
+<tr><td>10p+9</td><td><code>rok_tls_mutator_state</code></td><td>u8</td><td>mutator 상태</td></tr>
+</tbody></table></div>
+<p><strong>ABI 계약</strong> 은 블록 심볼 <code>rok_tls</code> 와 각 슬롯의 offset, 타입, 의미입니다. 슬롯 이름은 가리키기 위한 것일 뿐 심볼이 아닙니다. 블록은 8 정렬이며 적어도 10p+10 바이트입니다. 마지막 ABI 슬롯 뒤에 구현이 정하는 슬롯이 올 수 있습니다.</p>
+<p><strong>impl-defined 슬롯</strong>: 런타임은 스케줄링, 통계, 프로파일링, 디버깅 등을 위한 thread-local 상태를 ABI 슬롯 뒤나 다른 곳에 더 둘 수 있습니다. 컴파일러와 외부 패키지는 이것을 참조해서는 안 됩니다.</p>
+<div class="callout note"><p class="callout-title">참고</p>
+<p>rok 의 런타임은 <code>task_lane</code> 을 10p+16, <code>static_inits</code> 를 11p+16, <code>held_locks</code> (이 스레드가 가진 lock. 세션 host 에서 사라진 스레드가 block 중에 가진 lock 은 해제됨) 를 12p+16 에 둡니다.</p>
+</div>
+<h2 id="832-접근-메커니즘"><a class="anchor" tabindex="-1" href="#832-접근-메커니즘" aria-hidden="true">#</a>8.3.2. 접근 메커니즘</h2>
+<p>각 OS 와 아키텍처는 TLS 접근에 대한 자체 메커니즘을 갖추고 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>플랫폼</th><th>메커니즘</th></tr></thead>
+<tbody>
+<tr><td>Linux x86_64</td><td><code>%fs:offset</code> 또는 <code>%gs:offset</code></td></tr>
+<tr><td>Linux aarch64</td><td><code>tpidr_el0</code></td></tr>
+<tr><td>macOS x86_64</td><td><code>%gs:offset</code></td></tr>
+<tr><td>Windows x86_64</td><td>TEB (Thread Environment Block) offset</td></tr>
+<tr><td><code>wasm32-wasi-threads</code></td><td><code>__tls_base</code> global + offset</td></tr>
+<tr><td>그 밖의 WASM (스레드 없음)</td><td>블록은 일반 global</td></tr>
+</tbody></table></div>
+<p>컴파일러는 타깃별로 적절한 명령어를 emit 하게 되며, LLVM 의 <code>__thread</code> 와 TLS 모델이 이를 자동으로 처리합니다.</p>
+<h2 id="833-슬롯별-의미"><a class="anchor" tabindex="-1" href="#833-슬롯별-의미" aria-hidden="true">#</a>8.3.3. 슬롯별 의미</h2>
+<h3 id="rok_tls_yield_flag-u8"><a class="anchor" tabindex="-1" href="#rok_tls_yield_flag-u8" aria-hidden="true">#</a><code>rok_tls_yield_flag</code> (u8)</h3>
+<p><a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> 가 safepoint 시점에 set 하는 플래그이며, mutator 는 poll 단계에서 이를 검사합니다. bit 0 은 런타임의 정지 요청이며 런타임이 올리고 내립니다. 그 밖의 bit 는 embedding host (예: REPL 의 인터럽트) 의 것이며 런타임은 건드리지 않습니다. poll 은 플래그가 0 이 아니면 언제나 <code>rok_runtime_yield</code> 를 호출합니다.</p>
+<p>자세한 메커니즘은 <a href="../007-runtime/704-barriers-and-roots">배리어와 루트</a> 의 Safepoint Polling 항목에서 정의합니다.</p>
+<h3 id="rok_tls_tlab_cursor-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_tlab_cursor-ptr" aria-hidden="true">#</a><code>rok_tls_tlab_cursor</code> (ptr)</h3>
+<p><a href="../007-runtime/702-allocation">할당</a> 의 <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> 에서 다음 할당이 일어날 위치를 가리킵니다.</p>
+<pre><code>allocate(size):
+    tmp = tlab_cursor
+    new_cursor = tmp + size
+    if new_cursor &gt; tlab_limit:
+        slow path
+    tlab_cursor = new_cursor
+    return tmp
+</code></pre>
+<p>이 네 개의 명령어가 TLAB fast path 를 구성하며, 컴파일러는 이를 인라인으로 emit 하게 됩니다.</p>
+<h3 id="rok_tls_tlab_limit-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_tlab_limit-ptr" aria-hidden="true">#</a><code>rok_tls_tlab_limit</code> (ptr)</h3>
+<p>TLAB 의 끝을 가리킵니다. cursor 가 이 값을 넘어서면 slow path 로 진입합니다.</p>
+<h3 id="rok_tls_shadow_stack_top-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_shadow_stack_top-ptr" aria-hidden="true">#</a><code>rok_tls_shadow_stack_top</code> (ptr)</h3>
+<p>shadow stack 체인 머리입니다. 자세한 내용은 8.3.8 에서 정의합니다.</p>
+<h3 id="rok_tls_satb_cursor--rok_tls_satb_limit-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_satb_cursor--rok_tls_satb_limit-ptr" aria-hidden="true">#</a><code>rok_tls_satb_cursor</code> / <code>rok_tls_satb_limit</code> (ptr)</h3>
+<p>동시 mark (<a href="../007-runtime/705-concurrent-collection">7.5</a>) 중 write barrier slow path 가 기록하는 SATB buffer 입니다. 가득 차면 수집기에 넘깁니다. mark 밖에서는 쓰지 않습니다.</p>
+<h3 id="rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr" aria-hidden="true">#</a><code>rok_tls_wb_log_cursor</code> / <code>rok_tls_wb_log_limit</code> (ptr)</h3>
+<p><a href="../007-runtime/704-barriers-and-roots">배리어와 루트 추적</a> 의 write barrier log buffer 에 대한 cursor 와 limit 입니다.</p>
+<pre><code>write_barrier(p, q):
+    if !needs_log: return
+    if wb_log_cursor &gt;= wb_log_limit: flush
+    *wb_log_cursor++ = p
+</code></pre>
+<p>대부분의 동작은 non-atomic 이며 thread-local 로 처리됩니다.</p>
+<p>두 슬롯은 스레드마다의 4 KiB log chunk 를 가리킵니다. 가득 찬 chunk 는 수집기가 비우는 lock-free stack 에 올립니다 (<a href="../007-runtime/704-barriers-and-roots#742-write-barrier-incremental-update">7.4.2</a>).</p>
+<h3 id="rok_tls_mutator_state-u8"><a class="anchor" tabindex="-1" href="#rok_tls_mutator_state-u8" aria-hidden="true">#</a><code>rok_tls_mutator_state</code> (u8)</h3>
+<p>mutator 의 현재 상태를 나타냅니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>값</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>RUNNING. 일반 실행</td></tr>
+<tr><td><code>1</code></td><td>GC_COOPERATING. GC 와 협력 중</td></tr>
+<tr><td><code>2</code></td><td>PARKED. sleep / wait 중</td></tr>
+<tr><td><code>3</code> ~</td><td>예약</td></tr>
+</tbody></table></div>
+<p>이 값은 GC 사이클의 동기화나 safepoint 협력에 사용됩니다.</p>
+<h3 id="rok_tls_worker_id-u64"><a class="anchor" tabindex="-1" href="#rok_tls_worker_id-u64" aria-hidden="true">#</a><code>rok_tls_worker_id</code> (u64)</h3>
+<p>해당 thread 의 worker id (스케줄러 내부에서 사용) 를 나타내며, <a href="../000-meta/007-glossary#work-stealing">work-stealing</a> 이나 통계 등에 활용됩니다.</p>
+<h2 id="834-슬롯-폭과-정렬"><a class="anchor" tabindex="-1" href="#834-슬롯-폭과-정렬" aria-hidden="true">#</a>8.3.4. 슬롯 폭과 정렬</h2>
+<p>각 슬롯은 자기 타입의 폭을 가지며, 그 폭에 맞춰 정렬된 offset 에 놓입니다.</p>
+<h2 id="835-32-bit-와-64-bit-의-차이"><a class="anchor" tabindex="-1" href="#835-32-bit-와-64-bit-의-차이" aria-hidden="true">#</a>8.3.5. 32-bit 와 64-bit 의 차이</h2>
+<p>포인터 슬롯은 p 바이트 (64-bit 에서 8, 32-bit 에서 4) 이므로, offset 은 표가 정한 대로 32-bit 와 64-bit 사이에 다릅니다.</p>
+<h2 id="836-tls-슬롯의-초기화"><a class="anchor" tabindex="-1" href="#836-tls-슬롯의-초기화" aria-hidden="true">#</a>8.3.6. TLS 슬롯의 초기화</h2>
+<p>worker 가 시작될 때 다음과 같이 초기화됩니다.</p>
+<pre><code>rok_thread_init():
+  rok_tls_yield_flag = 0
+  rok_tls_tlab_cursor = NULL          // slow path 가 첫 할당 시 채움
+  rok_tls_tlab_limit = NULL
+  rok_tls_shadow_stack_top = NULL     // 빈 shadow stack 체인 (8.3.8)
+  rok_tls_wb_log_cursor = wb_log_base
+  rok_tls_wb_log_limit = wb_log_base + LOG_SIZE
+  rok_tls_mutator_state = RUNNING
+  rok_tls_worker_id = (allocated)
+  rok_tls_task_worker = 0
+  rok_tls_stack_guard = [guard_lo, guard_hi)   // 스택 아래의 guard 범위
+</code></pre>
+<p><code>rok_thread_init</code> 은 스케줄러가 worker 시작 시 호출하며, 이 함수는 <a href="805-extern-symbols">extern 심볼</a> 의 일부에 해당합니다.</p>
+<h2 id="837-tls-슬롯의-종료"><a class="anchor" tabindex="-1" href="#837-tls-슬롯의-종료" aria-hidden="true">#</a>8.3.7. TLS 슬롯의 종료</h2>
+<p>worker 가 종료될 때는 다음 절차를 거칩니다.</p>
+<pre><code>rok_thread_shutdown():
+  // log flush
+  // shadow stack walk (마지막 mark 도 가능하면)
+  // worker_id 반환
+</code></pre>
+<h2 id="838-컴파일러-emit-의-형식"><a class="anchor" tabindex="-1" href="#838-컴파일러-emit-의-형식" aria-hidden="true">#</a>8.3.8. 컴파일러 emit 의 형식</h2>
+<p>블록은 런타임이 정의하고 export 하는 <code>thread_local</code> global 입니다. 컴파일러는 이를 외부 선언으로 참조하고, 블록 주소에서 슬롯을 offset 으로 load 합니다. rok 함수는 그 주소를 호출자에게서 숨은 마지막 인자로 받으므로 (8.6.6) rok 함수 사이의 호출은 TLS 를 읽지 않습니다. rok 바깥에서 들어오는 코드는 주소를 직접 한 번 얻어 (<code>llvm.threadlocal.address</code>) 넘겨 줍니다: C <code>main</code>, <code>extern &quot;C&quot;</code> 정의의 C 진입점, <code>#[export_name]</code> rok 함수, <code>any</code> dispatcher, lazy <code>static</code> 의 초기화 함수, 그리고 함수 값이 거치는 thunk (8.6.11) 입니다.</p>
+<pre><code class="language-mlir">; LLVM IR - 정의는 런타임, 컴파일러 산출물은 external 선언
+@rok_tls = external thread_local global [N x i8]
+
+%t = call ptr @llvm.threadlocal.address(ptr @rok_tls)   ; rok 로 들어오는 곳에서 한 번
+                                                         ; (rok 함수: 마지막 인자)
+
+; safepoint poll (yield_flag 는 10p+8)
+%flag_p = getelementptr i8, ptr %t, i64 88               ; p = 8 일 때 10p+8
+%flag = load i8, ptr %flag_p
+%check = icmp ne i8 %flag, 0
+br i1 %check, label %slow, label %cont
+</code></pre>
+<p>이후 LLVM 백엔드가 타깃별 TLS 명령어로 lower 해 주게 됩니다.</p>
+<p><code>rok_tls</code> 는 ELF 에서 initial-exec TLS 모델을 씁니다 (컴파일러가 접근 코드를 이 모델로 emit 하므로 링커의 relax 에 기대지 않음). 런타임은 항상 실행 파일에 정적으로 링크되므로 이 모델로 충분합니다. Mach-O 는 플랫폼의 TLV 디스크립터 방식을 씁니다. 툴체인이 TLS 모델을 고를 수 없는 구현은 general-dynamic 으로 대신해도 됩니다.</p>
+<h3 id="shadow-stack-머리"><a class="anchor" tabindex="-1" href="#shadow-stack-머리" aria-hidden="true">#</a>shadow stack 머리</h3>
+<p><code>rok_tls</code> 의 offset 0 슬롯 (<code>rok_tls_shadow_stack_top</code>) 은 <a href="../007-runtime/704-barriers-and-roots#741-루트-추적-컴파일러가-직접-emit-하는-shadow-stack">배리어와 루트 추적</a> 의 <a href="../000-meta/007-glossary#shadow-stack">shadow stack</a> 체인 머리, 즉 가장 안쪽 <code>ShadowFrame</code> 의 주소입니다 (없으면 null). 체인 머리는 이것 하나뿐입니다. 컴파일러가 emit 하는 코드가 함수를 지나는 각 경로의 첫 safepoint 앞에서 frame 을 link 하고, link 한 경로의 모든 <code>return</code> 직전에 unlink 합니다 (8.4.7).</p>
+<p>LLVM 의 <code>llvm.gcroot</code> 와 <code>llvm_gc_root_chain</code> 은 쓰지 않습니다. <code>llvm_gc_root_chain</code> 은 프로세스 전역 하나뿐이라 thread 별 체인을 표현할 수 없기 때문입니다.</p>
+<h2 id="839-안정성"><a class="anchor" tabindex="-1" href="#839-안정성" aria-hidden="true">#</a>8.3.9. 안정성</h2>
+<p>8.3.1 표의 offset, 타입, 의미가 <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 의 일부이며, 변경 시에는 <a href="./">개요</a> 의 안정성 정책을 따릅니다. offset 을 바꾸는 것은 major <code>break</code> 이며, 새 슬롯은 기존 슬롯 뒤의 offset 을 받으므로 minor compatible 변경입니다. 기존 슬롯의 타입, 의미를 바꾸는 것도 major <code>break</code> 입니다.</p>
+<p>impl-defined 슬롯은 ABI 의 일부가 아니므로 같은 major 안에서도 자유롭게 바뀔 수 있습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/008-abi/803-tls-slots.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="802-scan-table"><small>Previous</small>8.2. ScanTable 직렬화 포맷</a><a class="next" href="804-safepoint"><small>Next</small>8.4. Safepoint 프로토콜</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

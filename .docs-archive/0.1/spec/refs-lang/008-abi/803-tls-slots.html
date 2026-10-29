@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.3. Mutator TLS slot layout - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Each OS thread (= scheduler worker = mutator) holds runtime information at fixed locations in thread-local storage (TLS). Code emitted by the compiler and the r...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/803-tls-slots.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.3. Mutator TLS slot layout - rok docs">
+<meta property="og:description" content="Each OS thread (= scheduler worker = mutator) holds runtime information at fixed locations in thread-local storage (TLS). Code emitted by the compiler and the r...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/803-tls-slots.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/803-tls-slots.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/803-tls-slots.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li class="cur"><a aria-current="page" href="803-tls-slots">8.3. Mutator TLS slot layout</a><ul class="toc"><li><a href="#831-tls-slot-structure">8.3.1. TLS slot structure</a></li><li><a href="#832-access-mechanism">8.3.2. Access mechanism</a></li><li><a href="#833-meaning-of-each-slot">8.3.3. Meaning of each slot</a></li><li><a href="#834-slot-width-and-alignment">8.3.4. Slot width and alignment</a></li><li><a href="#835-32-bit-vs-64-bit">8.3.5. 32-bit vs. 64-bit</a></li><li><a href="#836-tls-slot-initialization">8.3.6. TLS slot initialization</a></li><li><a href="#837-tls-slot-teardown">8.3.7. TLS slot teardown</a></li><li><a href="#838-form-of-compiler-emission">8.3.8. Form of compiler emission</a></li><li><a href="#839-stability">8.3.9. Stability</a></li></ul></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="83-mutator-tls-slot-layout 83-mutator-tls-슬롯-레이아웃 831-tls-slot-structure 831-tls-슬롯-구조 832-access-mechanism 832-접근-메커니즘 833-meaning-of-each-slot 833-슬롯별-의미 rok_tls_yield_flag-u8 rok_tls_yield_flag-u8 rok_tls_tlab_cursor-ptr rok_tls_tlab_cursor-ptr rok_tls_tlab_limit-ptr rok_tls_tlab_limit-ptr rok_tls_shadow_stack_top-ptr rok_tls_shadow_stack_top-ptr rok_tls_satb_cursor--rok_tls_satb_limit-ptr rok_tls_satb_cursor--rok_tls_satb_limit-ptr rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr rok_tls_mutator_state-u8 rok_tls_mutator_state-u8 rok_tls_worker_id-u64 rok_tls_worker_id-u64 834-slot-width-and-alignment 834-슬롯-폭과-정렬 835-32-bit-vs-64-bit 835-32-bit-와-64-bit-의-차이 836-tls-slot-initialization 836-tls-슬롯의-초기화 837-tls-slot-teardown 837-tls-슬롯의-종료 838-form-of-compiler-emission 838-컴파일러-emit-의-형식 shadow-stack-head shadow-stack-머리 839-stability 839-안정성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/803-tls-slots" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="83-mutator-tls-slot-layout"><a class="anchor" tabindex="-1" href="#83-mutator-tls-slot-layout" aria-hidden="true">#</a>8.3. Mutator TLS slot layout</h1>
+<p>Each OS thread (= scheduler worker = mutator) holds runtime information at fixed locations in thread-local storage (TLS). Code emitted by the compiler and the runtime read and write the same TLS slots, so this document defines the offset and type of each slot.</p>
+<h2 id="831-tls-slot-structure"><a class="anchor" tabindex="-1" href="#831-tls-slot-structure" aria-hidden="true">#</a>8.3.1. TLS slot structure</h2>
+<p>The TLS slots are one <code>thread_local</code> block, <code>rok_tls</code>, defined and exported by the runtime; each slot is at a fixed offset in it. Compiled code reaches each slot at its offset from the block's address, which a rok function receives from its caller (8.3.8).</p>
+<p><code>p</code> is the pointer width in bytes.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Offset</th><th>Slot</th><th>Type</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>0</td><td><code>rok_tls_shadow_stack_top</code></td><td>ptr</td><td>Head of the shadow stack chain</td></tr>
+<tr><td>p</td><td><code>rok_tls_tlab_cursor</code></td><td>ptr</td><td>Next allocation position in the TLAB</td></tr>
+<tr><td>2p</td><td><code>rok_tls_tlab_limit</code></td><td>ptr</td><td>End of the TLAB</td></tr>
+<tr><td>3p</td><td><code>rok_tls_wb_log_cursor</code></td><td>ptr</td><td>Position in the write barrier log</td></tr>
+<tr><td>4p</td><td><code>rok_tls_wb_log_limit</code></td><td>ptr</td><td>End of the write barrier log</td></tr>
+<tr><td>5p</td><td><code>rok_tls_satb_cursor</code></td><td>ptr</td><td>Position in the SATB buffer (during concurrent mark)</td></tr>
+<tr><td>6p</td><td><code>rok_tls_satb_limit</code></td><td>ptr</td><td>End of the SATB buffer</td></tr>
+<tr><td>7p</td><td><code>rok_tls_task_worker</code></td><td>ptr</td><td>This thread's executor worker (GC object, 0 if none)</td></tr>
+<tr><td>8p</td><td><code>rok_tls_stack_guard</code></td><td>[usize; 2]</td><td><code>[lo, hi)</code> - a fault in this range is a stack overflow of this thread (<code>[0, 0)</code> means unknown, <a href="805-extern-symbols#stack-overflow">8.5.7</a>)</td></tr>
+<tr><td>10p</td><td><code>rok_tls_worker_id</code></td><td>u64</td><td>Worker id</td></tr>
+<tr><td>10p+8</td><td><code>rok_tls_yield_flag</code></td><td>u8</td><td>Whether to <code>yield</code> at a safepoint</td></tr>
+<tr><td>10p+9</td><td><code>rok_tls_mutator_state</code></td><td>u8</td><td>Mutator state</td></tr>
+</tbody></table></div>
+<p>The <strong>ABI contract</strong> is the block symbol <code>rok_tls</code> and each slot's offset, type and meaning. Slot names are for reference only; they are not symbols. The block is 8-aligned and at least 10p+10 bytes; implementation-defined slots may follow the last ABI slot.</p>
+<p><strong>Implementation-defined slots</strong>: the runtime may keep further thread-local state, after the ABI slots or elsewhere, for scheduling, statistics, profiling, debugging and so on. The compiler and external packages must not reference it.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>rok's runtime places <code>task_lane</code> at 10p+16, <code>static_inits</code> at 11p+16 and <code>held_locks</code> (the locks this thread holds; in a session host, locks a thread that is gone held while blocked are released) at 12p+16.</p>
+</div>
+<h2 id="832-access-mechanism"><a class="anchor" tabindex="-1" href="#832-access-mechanism" aria-hidden="true">#</a>8.3.2. Access mechanism</h2>
+<p>Each OS and architecture has its own TLS access mechanism.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Platform</th><th>Mechanism</th></tr></thead>
+<tbody>
+<tr><td>Linux x86_64</td><td><code>%fs:offset</code> or <code>%gs:offset</code></td></tr>
+<tr><td>Linux aarch64</td><td><code>tpidr_el0</code></td></tr>
+<tr><td>macOS x86_64</td><td><code>%gs:offset</code></td></tr>
+<tr><td>Windows x86_64</td><td>TEB (Thread Environment Block) offset</td></tr>
+<tr><td><code>wasm32-wasi-threads</code></td><td><code>__tls_base</code> global + offset</td></tr>
+<tr><td>other WASM (no threads)</td><td>the block is a plain global</td></tr>
+</tbody></table></div>
+<p>The compiler emits the appropriate instructions per target; LLVM's <code>__thread</code> and TLS models handle this automatically.</p>
+<h2 id="833-meaning-of-each-slot"><a class="anchor" tabindex="-1" href="#833-meaning-of-each-slot" aria-hidden="true">#</a>8.3.3. Meaning of each slot</h2>
+<h3 id="rok_tls_yield_flag-u8"><a class="anchor" tabindex="-1" href="#rok_tls_yield_flag-u8" aria-hidden="true">#</a><code>rok_tls_yield_flag</code> (u8)</h3>
+<p>A flag the <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> sets for a safepoint; mutators check it when polling. Bit 0 is the runtime's stop request, raised and cleared by the runtime; other bits belong to the embedding host (e.g. the REPL's interrupt) and are left alone by the runtime. A poll calls <code>rok_runtime_yield</code> whenever the flag is nonzero.</p>
+<p>The detailed mechanism is defined under Safepoint Polling in <a href="../007-runtime/704-barriers-and-roots">Barriers and roots</a>.</p>
+<h3 id="rok_tls_tlab_cursor-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_tlab_cursor-ptr" aria-hidden="true">#</a><code>rok_tls_tlab_cursor</code> (ptr)</h3>
+<p>Points to where the next allocation happens in the <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> of <a href="../007-runtime/702-allocation">Allocation</a>.</p>
+<pre><code>allocate(size):
+    tmp = tlab_cursor
+    new_cursor = tmp + size
+    if new_cursor &gt; tlab_limit:
+        slow path
+    tlab_cursor = new_cursor
+    return tmp
+</code></pre>
+<p>These four instructions form the TLAB fast path, which the compiler emits inline.</p>
+<h3 id="rok_tls_tlab_limit-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_tlab_limit-ptr" aria-hidden="true">#</a><code>rok_tls_tlab_limit</code> (ptr)</h3>
+<p>Points to the end of the TLAB. When the cursor passes this value, the slow path is entered.</p>
+<h3 id="rok_tls_shadow_stack_top-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_shadow_stack_top-ptr" aria-hidden="true">#</a><code>rok_tls_shadow_stack_top</code> (ptr)</h3>
+<p>Head of the shadow stack chain. Defined in detail in 8.3.8.</p>
+<h3 id="rok_tls_satb_cursor--rok_tls_satb_limit-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_satb_cursor--rok_tls_satb_limit-ptr" aria-hidden="true">#</a><code>rok_tls_satb_cursor</code> / <code>rok_tls_satb_limit</code> (ptr)</h3>
+<p>The SATB buffer recorded by the write barrier slow path during concurrent mark (<a href="../007-runtime/705-concurrent-collection">7.5</a>). When full, it is handed to the collector. Not used outside mark.</p>
+<h3 id="rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr"><a class="anchor" tabindex="-1" href="#rok_tls_wb_log_cursor--rok_tls_wb_log_limit-ptr" aria-hidden="true">#</a><code>rok_tls_wb_log_cursor</code> / <code>rok_tls_wb_log_limit</code> (ptr)</h3>
+<p>Cursor and limit of the write barrier log buffer from <a href="../007-runtime/704-barriers-and-roots">Barriers and root tracking</a>.</p>
+<pre><code>write_barrier(p, q):
+    if !needs_log: return
+    if wb_log_cursor &gt;= wb_log_limit: flush
+    *wb_log_cursor++ = p
+</code></pre>
+<p>Most operations are non-atomic and thread-local.</p>
+<p>The two slots point to a per-thread 4 KiB log chunk. A full chunk is pushed onto a lock-free stack that the collector drains (<a href="../007-runtime/704-barriers-and-roots#742-write-barrier-incremental-update">7.4.2</a>).</p>
+<h3 id="rok_tls_mutator_state-u8"><a class="anchor" tabindex="-1" href="#rok_tls_mutator_state-u8" aria-hidden="true">#</a><code>rok_tls_mutator_state</code> (u8)</h3>
+<p>The mutator's current state.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Value</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>RUNNING. Normal execution</td></tr>
+<tr><td><code>1</code></td><td>GC_COOPERATING. Cooperating with the GC</td></tr>
+<tr><td><code>2</code></td><td>PARKED. In sleep / wait</td></tr>
+<tr><td><code>3</code> ~</td><td>Reserved</td></tr>
+</tbody></table></div>
+<p>This value is used for GC cycle synchronization and safepoint cooperation.</p>
+<h3 id="rok_tls_worker_id-u64"><a class="anchor" tabindex="-1" href="#rok_tls_worker_id-u64" aria-hidden="true">#</a><code>rok_tls_worker_id</code> (u64)</h3>
+<p>The thread's worker id (used inside the scheduler), used for <a href="../000-meta/007-glossary#work-stealing">work-stealing</a>, statistics and the like.</p>
+<h2 id="834-slot-width-and-alignment"><a class="anchor" tabindex="-1" href="#834-slot-width-and-alignment" aria-hidden="true">#</a>8.3.4. Slot width and alignment</h2>
+<p>Each slot has the width of its type and lies at an offset aligned to it.</p>
+<h2 id="835-32-bit-vs-64-bit"><a class="anchor" tabindex="-1" href="#835-32-bit-vs-64-bit" aria-hidden="true">#</a>8.3.5. 32-bit vs. 64-bit</h2>
+<p>Pointer slots are p bytes (8 on 64-bit, 4 on 32-bit), so offsets differ between 32-bit and 64-bit as given by the table.</p>
+<h2 id="836-tls-slot-initialization"><a class="anchor" tabindex="-1" href="#836-tls-slot-initialization" aria-hidden="true">#</a>8.3.6. TLS slot initialization</h2>
+<p>When a worker starts, the slots are initialized as follows.</p>
+<pre><code>rok_thread_init():
+  rok_tls_yield_flag = 0
+  rok_tls_tlab_cursor = NULL          // filled by the slow path on first allocation
+  rok_tls_tlab_limit = NULL
+  rok_tls_shadow_stack_top = NULL     // empty shadow stack chain (8.3.8)
+  rok_tls_wb_log_cursor = wb_log_base
+  rok_tls_wb_log_limit = wb_log_base + LOG_SIZE
+  rok_tls_mutator_state = RUNNING
+  rok_tls_worker_id = (allocated)
+  rok_tls_task_worker = 0
+  rok_tls_stack_guard = [guard_lo, guard_hi)   // guard range below the stack
+</code></pre>
+<p>The scheduler calls <code>rok_thread_init</code> when a worker starts; this function is part of the <a href="805-extern-symbols">extern symbols</a>.</p>
+<h2 id="837-tls-slot-teardown"><a class="anchor" tabindex="-1" href="#837-tls-slot-teardown" aria-hidden="true">#</a>8.3.7. TLS slot teardown</h2>
+<p>When a worker exits, it goes through the following steps.</p>
+<pre><code>rok_thread_shutdown():
+  // log flush
+  // shadow stack walk (and a final mark, if possible)
+  // return worker_id
+</code></pre>
+<h2 id="838-form-of-compiler-emission"><a class="anchor" tabindex="-1" href="#838-form-of-compiler-emission" aria-hidden="true">#</a>8.3.8. Form of compiler emission</h2>
+<p>The block is a <code>thread_local</code> global defined and exported by the runtime. The compiler references it as an external declaration and loads slots at their offsets from the block's address. A rok function takes that address from its caller as a hidden last argument (8.6.6), so a call between rok functions reads no TLS. Code entered from outside rok takes the address itself, once (<code>llvm.threadlocal.address</code>) and passes it on: the C <code>main</code>, the C entry of an <code>extern &quot;C&quot;</code> definition, an <code>#[export_name]</code> rok function, the <code>any</code> dispatcher, a lazy <code>static</code>'s initializer, and the thunk a function value goes through (8.6.11).</p>
+<pre><code class="language-mlir">; LLVM IR - defined by the runtime; compiler output has an external declaration
+@rok_tls = external thread_local global [N x i8]
+
+%t = call ptr @llvm.threadlocal.address(ptr @rok_tls)   ; once, where code enters rok
+                                                         ; (a rok function: its last argument)
+
+; safepoint poll (yield_flag at 10p+8)
+%flag_p = getelementptr i8, ptr %t, i64 88               ; 10p+8 with p = 8
+%flag = load i8, ptr %flag_p
+%check = icmp ne i8 %flag, 0
+br i1 %check, label %slow, label %cont
+</code></pre>
+<p>The LLVM backend then lowers this to target-specific TLS instructions.</p>
+<p>On ELF, <code>rok_tls</code> uses the initial-exec TLS model (the compiler emits access code in this model and does not rely on linker relaxation). The runtime is always statically linked into the executable, so this model suffices. Mach-O uses the platform's TLV descriptor scheme. An implementation whose toolchain cannot choose a TLS model may use general-dynamic instead.</p>
+<h3 id="shadow-stack-head"><a class="anchor" tabindex="-1" href="#shadow-stack-head" aria-hidden="true">#</a>Shadow stack head</h3>
+<p>The slot at offset 0 of <code>rok_tls</code> (<code>rok_tls_shadow_stack_top</code>) is the head of the <a href="../000-meta/007-glossary#shadow-stack">shadow stack</a> chain from <a href="../007-runtime/704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">Barriers and root tracking</a>, i.e. the address of the innermost <code>ShadowFrame</code> (null if none). It is the only chain head. Code emitted by the compiler links the frame before the first safepoint of each path through the function, and unlinks it immediately before every <code>return</code> of a path that linked it (8.4.7).</p>
+<p>LLVM's <code>llvm.gcroot</code> and <code>llvm_gc_root_chain</code> are not used. <code>llvm_gc_root_chain</code> is a single process-global and cannot express per-thread chains.</p>
+<h2 id="839-stability"><a class="anchor" tabindex="-1" href="#839-stability" aria-hidden="true">#</a>8.3.9. Stability</h2>
+<p>The offsets, types and meanings in the 8.3.1 table are part of the <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a>; changes follow the stability policy in the <a href="./">overview</a>. Changing an offset is a major <code>break</code>; a new slot takes an offset after the existing ones, a minor compatible change. Changing the type or meaning of an existing slot is also a major <code>break</code>.</p>
+<p>Implementation-defined slots are not part of the ABI and may change freely even within the same major version.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/803-tls-slots.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="802-scan-table"><small>Previous</small>8.2. ScanTable serialization format</a><a class="next" href="804-safepoint"><small>Next</small>8.4. Safepoint protocol</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

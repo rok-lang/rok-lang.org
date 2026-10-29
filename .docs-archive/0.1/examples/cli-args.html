@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Command-line tool - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="mgrep, a small grep-like tool, parses its command-line arguments by hand into a struct and handles --help and bad arguments with throws.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/cli-args.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Command-line tool - rok docs">
+<meta property="og:description" content="mgrep, a small grep-like tool, parses its command-line arguments by hand into a struct and handles --help and bad arguments with throws.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/cli-args.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li class="cur"><a aria-current="page" href="cli-args">Command-line tool</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li><li><a href="#running-it">Running it</a></li></ul></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="command-line-tool"><a class="anchor" tabindex="-1" href="#command-line-tool" aria-hidden="true">#</a>Command-line tool</h1>
+<p><code>mgrep</code>, a small <code>grep</code>-like tool, parses its command-line arguments by hand into a struct and handles <code>--help</code> and bad arguments with <code>throws</code>.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// mgrep: print the lines of FILEs that contain PATTERN.</span>
+<span class="k">use</span> rok::std::env;
+<span class="k">use</span> rok::std::fs;
+<span class="k">use</span> rok::std::io::<span class="t">IoError</span>;
+
+<span class="k">const</span> <span class="t">USAGE</span>: <span class="t">str</span> = <span class="s">"usage: mgrep [-i] [-n] [-c] [-m NUM] PATTERN [FILE]...
+  -i, --ignore-case   match case-insensitively
+  -n, --line-number   prefix each line with its number
+  -c, --count         print only the number of matching lines
+  -m, --max NUM       stop after NUM matches
+  -h, --help          show this help"</span>;
+
+<span class="c">// Used when no FILE is given (the demo never reads stdin).</span>
+<span class="k">const</span> <span class="t">SAMPLE</span>: <span class="t">str</span> = <span class="s">"Roses are red,
+violets are blue.
+rok is fast,
+and so are you."</span>;
+
+<span class="k">enum</span> <span class="t">ArgError</span> {
+    <span class="t">Unknown</span>(<span class="t">str</span>),
+    <span class="t">MissingValue</span>(<span class="t">str</span>),
+    <span class="t">BadNumber</span>(<span class="t">str</span>),
+    <span class="t">NoPattern</span>,
+}
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">ArgError</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">try</span> f.write_str(<span class="k">match</span> <span class="k">self</span> {
+            <span class="t">ArgError</span>::<span class="t">Unknown</span>(a) =&gt; <span class="s">f"unknown option '{</span>a<span class="s">}'"</span>,
+            <span class="t">ArgError</span>::<span class="t">MissingValue</span>(a) =&gt; <span class="s">f"option '{</span>a<span class="s">}' needs a value"</span>,
+            <span class="t">ArgError</span>::<span class="t">BadNumber</span>(v) =&gt; <span class="s">f"'{</span>v<span class="s">}' is not a number"</span>,
+            <span class="t">ArgError</span>::<span class="t">NoPattern</span> =&gt; <span class="s">"missing PATTERN"</span>,
+        })
+    }
+}
+
+<span class="k">struct</span> <span class="t">Options</span> {
+    pattern: <span class="t">str</span>;
+    ignore_case: <span class="t">bool</span> = <span class="k">false</span>;
+    line_numbers: <span class="t">bool</span> = <span class="k">false</span>;
+    count_only: <span class="t">bool</span> = <span class="k">false</span>;
+    max: <span class="t">usize</span> | <span class="k">none</span> = <span class="k">none</span>;
+    files: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+    help: <span class="t">bool</span> = <span class="k">false</span>;
+}
+
+<span class="k">fn</span> parse_args(args: <span class="t">List</span>&lt;<span class="t">str</span>&gt;) <span class="k">throws</span> (<span class="t">ArgError</span>) -&gt; <span class="t">Options</span> {
+    <span class="k">let</span> opts = <span class="t">Options</span> { pattern: <span class="s">""</span> };
+    <span class="k">let</span> have_pattern = <span class="k">false</span>;
+    <span class="k">let</span> i: <span class="t">usize</span> = <span class="n">0</span>;
+    <span class="k">while</span> i &lt; args.len() {
+        <span class="k">let</span> a = args[i];
+        <span class="k">match</span> a {
+            <span class="s">"-h"</span> | <span class="s">"--help"</span> =&gt; { opts.help = <span class="k">true</span>; },
+            <span class="s">"-i"</span> | <span class="s">"--ignore-case"</span> =&gt; { opts.ignore_case = <span class="k">true</span>; },
+            <span class="s">"-n"</span> | <span class="s">"--line-number"</span> =&gt; { opts.line_numbers = <span class="k">true</span>; },
+            <span class="s">"-c"</span> | <span class="s">"--count"</span> =&gt; { opts.count_only = <span class="k">true</span>; },
+            <span class="s">"-m"</span> | <span class="s">"--max"</span> =&gt; {
+                i += <span class="n">1</span>;
+                <span class="k">if</span> i &gt;= args.len() { <span class="k">throw</span> <span class="t">ArgError</span>::<span class="t">MissingValue</span>(a); }
+                opts.max = <span class="k">try</span> args[i].parse::&lt;<span class="t">usize</span>&gt;() <span class="k">catch</span> _ { <span class="k">throw</span> <span class="t">ArgError</span>::<span class="t">BadNumber</span>(args[i]); };
+            },
+            _ =&gt; {
+                <span class="k">if</span> a.starts_with(<span class="s">"-"</span>) &amp;&amp; a.len() &gt; <span class="n">1</span> { <span class="k">throw</span> <span class="t">ArgError</span>::<span class="t">Unknown</span>(a); }
+                <span class="k">if</span> have_pattern { opts.files.push(a); } <span class="k">else</span> { opts.pattern = a; have_pattern = <span class="k">true</span>; }
+            },
+        }
+        i += <span class="n">1</span>;
+    }
+    <span class="k">if</span> !have_pattern &amp;&amp; !opts.help { <span class="k">throw</span> <span class="t">ArgError</span>::<span class="t">NoPattern</span>; }
+    opts
+}
+
+<span class="k">fn</span> search(opts: <span class="t">Options</span>, name: <span class="t">str</span>, text: <span class="t">str</span>) {
+    <span class="k">let</span> needle = <span class="k">if</span> opts.ignore_case { opts.pattern.to_lowercase() } <span class="k">else</span> { opts.pattern };
+    <span class="k">let</span> hits: <span class="t">usize</span> = <span class="n">0</span>;
+    <span class="k">let</span> n: <span class="t">usize</span> = <span class="n">0</span>;
+    <span class="k">for</span> line <span class="k">in</span> text.lines() {
+        n += <span class="n">1</span>;
+        <span class="k">let</span> hay = <span class="k">if</span> opts.ignore_case { line.to_lowercase() } <span class="k">else</span> { line };
+        <span class="k">if</span> !hay.contains(needle) { <span class="k">continue</span>; }
+        hits += <span class="n">1</span>;
+        <span class="k">if</span> !opts.count_only {
+            <span class="k">let</span> prefix = <span class="k">if</span> opts.files.len() &gt; <span class="n">1</span> { <span class="s">f"{</span>name<span class="s">}:"</span> } <span class="k">else</span> { <span class="s">""</span> };
+            <span class="k">if</span> opts.line_numbers { println(<span class="s">f"{</span>prefix<span class="s">}{</span>n<span class="s">}:{</span>line<span class="s">}"</span>); } <span class="k">else</span> { println(<span class="s">f"{</span>prefix<span class="s">}{</span>line<span class="s">}"</span>); }
+        }
+        <span class="k">if</span> hits == (opts.max ?? <span class="t">usize</span>::<span class="t">MAX</span>) { <span class="k">break</span>; }
+    }
+    <span class="k">if</span> opts.count_only { println(<span class="s">f"{</span>hits<span class="s">}"</span>); }
+}
+
+<span class="k">fn</span> run(args: <span class="t">List</span>&lt;<span class="t">str</span>&gt;) <span class="k">throws</span> (<span class="t">ArgError</span> | <span class="t">IoError</span>) {
+    <span class="k">let</span> opts = <span class="k">try</span> parse_args(args);
+    <span class="k">if</span> opts.help { println(<span class="t">USAGE</span>); <span class="k">return</span>; }
+    <span class="k">if</span> opts.files.is_empty() { search(opts, <span class="s">"-"</span>, <span class="t">SAMPLE</span>); <span class="k">return</span>; }
+    <span class="k">for</span> path <span class="k">in</span> opts.files {
+        search(opts, path, <span class="k">try</span> fs::read_to_str(path));
+    }
+}
+
+<span class="k">fn</span> main() -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> argv = env::args();
+    <span class="k">let</span> args: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">1</span>..argv.len() { args.push(argv[i]); }
+    <span class="c">// No arguments: demonstrate a few invocations on the built-in sample.</span>
+    <span class="k">let</span> runs: <span class="t">List</span>&lt;<span class="t">List</span>&lt;<span class="t">str</span>&gt;&gt; = <span class="k">if</span> args.is_empty() {
+        [[<span class="s">"--help"</span>], [<span class="s">"-n"</span>, <span class="s">"are"</span>], [<span class="s">"-i"</span>, <span class="s">"-c"</span>, <span class="s">"ROK"</span>], [<span class="s">"-m"</span>, <span class="s">"1"</span>, <span class="s">"are"</span>], [<span class="s">"-x"</span>, <span class="s">"are"</span>], [<span class="s">"--max"</span>]]
+    } <span class="k">else</span> {
+        [args]
+    };
+    <span class="k">let</span> status = <span class="n">0</span>;
+    <span class="k">for</span> r <span class="k">in</span> runs {
+        <span class="k">if</span> args.is_empty() {
+            <span class="k">let</span> line = <span class="t">StrBuf</span>::new();
+            line.push_str(<span class="s">"$ mgrep"</span>);
+            <span class="k">for</span> a <span class="k">in</span> r { line.push_str(<span class="s">f" {</span>a<span class="s">}"</span>); }
+            println(line.to_str());
+        }
+        <span class="k">try</span> run(r)
+        <span class="k">catch</span> e: <span class="t">ArgError</span> { println(<span class="s">f"mgrep: {</span>e<span class="s">}\n(try --help)"</span>); status = <span class="n">2</span>; }
+        <span class="k">catch</span> e: <span class="t">IoError</span> { println(<span class="s">f"mgrep: {</span>e<span class="s">}"</span>); status = <span class="n">1</span>; };
+    }
+    <span class="k">if</span> args.is_empty() { <span class="n">0</span> } <span class="k">else</span> { status }
+}
+</code></pre>
+<p>Run without arguments, it tries a few built-in sample invocations in turn.</p>
+<pre class="output"><code class="language-output">$ mgrep --help
+usage: mgrep [-i] [-n] [-c] [-m NUM] PATTERN [FILE]...
+  -i, --ignore-case   match case-insensitively
+  -n, --line-number   prefix each line with its number
+  -c, --count         print only the number of matching lines
+  -m, --max NUM       stop after NUM matches
+  -h, --help          show this help
+$ mgrep -n are
+1:Roses are red,
+2:violets are blue.
+4:and so are you.
+$ mgrep -i -c ROK
+1
+$ mgrep -m 1 are
+Roses are red,
+$ mgrep -x are
+mgrep: unknown option '-x'
+(try --help)
+$ mgrep --max
+mgrep: option '--max' needs a value
+(try --help)
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li><code>env::args()</code> is a <code>List&lt;str&gt;</code> with the program name at <code>[0]</code>, so only <code>1..argv.len()</code> is copied (<a href="../std/std/env#fn.args"><code>env::args</code></a>).
+</li>
+<li>The options live in an <code>Options</code> struct with field defaults. Fields that have a default can be left out, as in <code>Options { pattern: &quot;&quot; }</code> (<a href="../learn/06-structs-enums-traits">Structs, enums and traits</a>, <a href="../spec/refs-lang/002-types/203-struct#233-field-default-values">2.3.3 field defaults</a>).
+</li>
+<li>String literal patterns joined with <code>|</code>, as in <code>match a { &quot;-i&quot; | &quot;--ignore-case&quot; =&gt; ... }</code>, accept the short and long form at once. Assignment is a statement, not an expression, so those arm bodies are wrapped in a <code>{ ...; }</code> block (<a href="../learn/04-control-flow">Control flow</a>).
+</li>
+<li>Bad arguments are thrown as the <code>ArgError</code> enum. <code>run</code> declares <code>throws (ArgError | IoError)</code>, and <code>main</code> uses one <code>catch</code> per type to choose the exit code (2 or 1) (<a href="../learn/10-errors">Errors</a>, <a href="../spec/refs-lang/003-expressions/314-error-control-flow#3144-catch-postfix-handling-expression">3.14.4 <code>catch</code></a>).
+</li>
+<li>The number after <code>-m</code> is read with <code>parse::&lt;usize&gt;()</code>; on failure, <code>catch _ { throw ...; }</code> turns it into a friendlier error. <code>opts.max</code> is <code>usize | none</code>, so the comparison supplies a default with <code>?? usize::MAX</code>.
+</li>
+</ul>
+<h2 id="running-it"><a class="anchor" tabindex="-1" href="#running-it" aria-hidden="true">#</a>Running it</h2>
+<p>To search real files, build an executable and pass arguments.</p>
+<pre><code class="language-bash">rokc build mgrep.rok -o mgrep
+./mgrep -n -i rok notes.txt todo.txt
+./mgrep --count error app.log
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/cli-args.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="bigint-factorial"><small>Previous</small>Big integers and factorials</a><a class="next" href="csv-report"><small>Next</small>CSV report</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

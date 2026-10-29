@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.4. thread:: - OS 스레드 (1:1 모델) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::std::thread 모듈은 OS-level 스레드를 다루기 위한 진입점입니다. M:N 협력적 스케줄러 위에서 동작하는 task 와는 2.18 task 에서 정리한 대로 별도의 추상이며, 이 모듈은 native thread 를 직접 spawn 하는 경로를 제공합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/304-thread.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.4. thread:: - OS 스레드 (1:1 모델) - rok docs">
+<meta property="og:description" content="rok::std::thread 모듈은 OS-level 스레드를 다루기 위한 진입점입니다. M:N 협력적 스케줄러 위에서 동작하는 task 와는 2.18 task 에서 정리한 대로 별도의 추상이며, 이 모듈은 native thread 를 직접 spawn 하는 경로를 제공합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/304-thread.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/304-thread.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/304-thread.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - 파일 시스템</a></li><li><a href="302-net">3.2. net:: - 네트워크 (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - 시간</a></li><li class="cur"><a aria-current="page" href="304-thread">3.4. thread:: - OS 스레드 (1:1 모델)</a><ul class="toc"><li><a href="#341-언제-thread-vs-task">3.4.1. 언제 thread vs task</a></li><li><a href="#342-api">3.4.2. API</a></li><li><a href="#343-사용-예">3.4.3. 사용 예</a></li><li><a href="#344-thread-local-storage">3.4.4. thread-local storage</a></li><li><a href="#345-impl--target">3.4.5. impl / target</a></li></ul></li><li><a href="305-io">3.5. io:: - Reader / Writer / 표준 입출력</a></li><li><a href="306-env">3.6. env:: - 환경 변수 / args / 디렉토리</a></li><li><a href="307-process">3.7. process:: - 자식 프로세스</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python 식)</a></li><li><a href="309-rokon">3.9. rokon:: - ROKON 데이터 형식</a></li><li><a href="310-crypto">3.10. crypto:: - OS 난수 원천</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="34-thread---os-스레드-11-모델 34-thread---os-threads-11-model 341-언제-thread-vs-task 341-when-to-use-thread-vs-task 342-api 342-api panic-과-joinerror panics-and-joinerror 343-사용-예 343-examples 344-thread-local-storage 344-thread-local-storage 345-impl--target 345-impl--target"><a href="../../../../spec/refs-standard-libraries/300-std/304-thread" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="34-thread---os-스레드-11-모델"><a class="anchor" tabindex="-1" href="#34-thread---os-스레드-11-모델" aria-hidden="true">#</a>3.4. <code>thread::</code> - OS 스레드 (1:1 모델)</h1>
+<p><code>rok::std::thread</code> 모듈은 OS-level 스레드를 다루기 위한 진입점입니다. M:N 협력적 스케줄러 위에서 동작하는 task 와는 <a href="../200-core/218-task">2.18 task</a> 에서 정리한 대로 별도의 추상이며, 이 모듈은 native thread 를 직접 spawn 하는 경로를 제공합니다.</p>
+<h2 id="341-언제-thread-vs-task"><a class="anchor" tabindex="-1" href="#341-언제-thread-vs-task" aria-hidden="true">#</a>3.4.1. 언제 thread vs task</h2>
+<p>어떤 상황에서 어느 쪽을 골라야 하는지는 다음 표로 가늠할 수 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>자리</th><th>권장</th></tr></thead>
+<tbody>
+<tr><td>일반 동시성 / async I/O</td><td><code>task::spawn</code> (가벼움)</td></tr>
+<tr><td>CPU-bound 계산</td><td><code>task::spawn</code> 또는 <code>par::*</code> (work-stealing)</td></tr>
+<tr><td>Blocking C 라이브러리 호출</td><td><code>thread::spawn</code> (task scheduler block 회피)</td></tr>
+<tr><td>OS thread API 가 요구되는 자리</td><td><code>thread::spawn</code> (TLS, signal mask, etc.)</td></tr>
+<tr><td>임베디드 / no-task</td><td><code>thread::spawn</code></td></tr>
+</tbody></table></div>
+<p>요컨대 task 가 충분히 가볍고 표현력 있게 처리할 수 있는 영역에서는 task 가 우선이고, OS 자원을 직접 다뤄야 하는 자리에서만 thread 로 내려가는 편이 자연스럽습니다.</p>
+<h2 id="342-api"><a class="anchor" tabindex="-1" href="#342-api" aria-hidden="true">#</a>3.4.2. API</h2>
+<p>기본 타입과 함수 시그니처는 아래와 같습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Thread</span> { <span class="c">/* OS handle - 제네릭 아님 */</span> }
+<span class="k">struct</span> <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* join 결과 T */</span> }
+<span class="k">struct</span> <span class="t">ThreadId</span> { <span class="c">/* opaque */</span> }
+
+<span class="k">struct</span> <span class="t">JoinError</span> { code: <span class="t">i32</span>; }          <span class="c">// OS join 에러 번호 (errno), JOIN_LOST, 또는 JOIN_TAKEN</span>
+<span class="k">const</span> <span class="t">JOIN_LOST</span>: <span class="t">i32</span> = -<span class="n">1</span>;               <span class="c">// 실패한 REPL 셀과 함께 끝난 스레드</span>
+<span class="k">const</span> <span class="t">JOIN_TAKEN</span>: <span class="t">i32</span> = -<span class="n">2</span>;              <span class="c">// 이미 join 또는 detach 됨</span>
+<span class="c">// Display, Debug, Error 를 구현</span>
+
+<span class="k">fn</span> spawn&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(f: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Send</span>) -&gt; <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt;;
+
+<span class="k">struct</span> <span class="t">Builder</span> {
+    name: <span class="t">str</span> | <span class="k">none</span>;
+    stack_size: <span class="t">usize</span> | <span class="k">none</span>;
+}
+
+<span class="k">impl</span> <span class="t">Builder</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">Builder</span>;
+    <span class="k">fn</span> name(<span class="k">self</span>, name: <span class="t">str</span>) -&gt; <span class="t">Builder</span>;
+    <span class="k">fn</span> stack_size(<span class="k">self</span>, size: <span class="t">usize</span>) -&gt; <span class="t">Builder</span>;
+    <span class="k">fn</span> spawn&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Send</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt;;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> join(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">JoinError</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> detach(<span class="k">self</span>);                     <span class="c">// join 하지 않음 - 스레드는 끝까지 실행</span>
+    <span class="k">fn</span> thread(<span class="k">self</span>) -&gt; <span class="t">Thread</span>;
+}
+
+<span class="k">impl</span> <span class="t">Thread</span> {
+    <span class="k">fn</span> id(<span class="k">self</span>) -&gt; <span class="t">ThreadId</span>;
+    <span class="k">fn</span> name(<span class="k">self</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;        <span class="c">// Builder::name 으로 준 이름 (OS 스레드 이름으로도 설정), 없으면 none</span>
+    <span class="k">fn</span> unpark(<span class="k">self</span>);
+}
+
+<span class="c">// 현재 thread</span>
+<span class="k">fn</span> current() -&gt; <span class="t">Thread</span>;
+<span class="k">fn</span> yield_now();
+<span class="k">fn</span> sleep(dur: <span class="t">Duration</span>);
+<span class="k">fn</span> park();                                     <span class="c">// unpark 될 때까지 block (깨운 이유 없이 돌아올 수 있음)</span>
+<span class="k">fn</span> park_timeout(dur: <span class="t">Duration</span>);
+
+<span class="c">// thread-local storage</span>
+<span class="k">fn</span> local&lt;<span class="t">T</span>&gt;(init: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Sync</span>) -&gt; <span class="t">ThreadLocal</span>&lt;<span class="t">T</span>&gt;;     <span class="c">// 각 스레드에서 처음 쓸 때 init 호출</span>
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">ThreadLocal</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;                       <span class="c">// 현재 스레드의 값</span>
+    <span class="k">fn</span> set(<span class="k">self</span>, value: <span class="t">T</span>);
+    <span class="k">fn</span> with&lt;<span class="t">R</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">R</span>) -&gt; <span class="t">R</span>;
+}
+</code></pre>
+<p><code>Thread::unpark</code> 는 그 스레드의 park 토큰을 세우고 깨웁니다. 토큰은 한 번의 <code>park</code> 가 소비합니다.</p>
+<h3 id="panic-과-joinerror"><a class="anchor" tabindex="-1" href="#panic-과-joinerror" aria-hidden="true">#</a>panic 과 <code>JoinError</code></h3>
+<p>어느 스레드에서든 panic 이 나면 프로세스 전체가 종료 코드 101 로 끝납니다. 그래서 <code>join</code> 이 다른 스레드의 panic 을 받을 일은 없으며, <code>JoinError</code> 는 OS 수준의 join 실패, 또는 실패한 REPL 셀과 함께 끝난 스레드의 <code>JOIN_LOST</code> (<a href="../../refs-lang/009-tools/907-jit-cells#970-셀-세션의-규칙">refs-lang 9.7.0</a>) 를 나타내며, 후자는 &quot;thread join failed: the thread ended with a failed REPL cell&quot; 로 표시됩니다.</p>
+<p><code>JOIN_TAKEN</code> (-2): 그 handle 이나 그 복사본이 이미 join 되었거나 detach 되었습니다. 두 번째 <code>join</code> 은 그것을 던지고, 두 번째 <code>detach</code> 는 아무것도 하지 않습니다.</p>
+<h2 id="343-사용-예"><a class="anchor" tabindex="-1" href="#343-사용-예" aria-hidden="true">#</a>3.4.3. 사용 예</h2>
+<p>가장 간단한 spawn-join 패턴부터 builder, 다중 spawn 까지 차례로 살펴봅니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> h = thread::spawn(|| {
+    heavy_blocking_work()
+});
+<span class="k">let</span> result = <span class="k">try</span> h.join();
+
+<span class="c">// builder</span>
+<span class="k">let</span> h = <span class="k">try</span> thread::<span class="t">Builder</span>::new()
+    .name(<span class="s">"worker-1"</span>)
+    .stack_size(<span class="n">4</span> * <span class="n">1024</span> * <span class="n">1024</span>)
+    .spawn(|| { ... });
+
+<span class="c">// 다중</span>
+<span class="k">let</span> handles: <span class="t">List</span>&lt;<span class="t">JoinHandle</span>&lt;<span class="t">i64</span>&gt;&gt; = (<span class="n">0</span>..<span class="n">10</span>)
+    .map(|i| thread::spawn(|| { compute(i) }))
+    .collect();
+
+<span class="k">let</span> results: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = handles
+    .into_iter()
+    .map(|h| <span class="k">try</span>! h.join())
+    .collect();
+</code></pre>
+<h2 id="344-thread-local-storage"><a class="anchor" tabindex="-1" href="#344-thread-local-storage" aria-hidden="true">#</a>3.4.4. thread-local storage</h2>
+<p>각 스레드마다 독립된 저장소가 필요하다면 <code>thread::local</code> 을 활용합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> counter = thread::local(|| <span class="n">0</span>);
+
+<span class="k">try</span> thread::spawn(|| {
+    counter.set(counter.get() + <span class="n">1</span>);         <span class="c">// 이 스레드의 값만 바뀜</span>
+}).join();
+</code></pre>
+<h2 id="345-impl--target"><a class="anchor" tabindex="-1" href="#345-impl--target" aria-hidden="true">#</a>3.4.5. impl / target</h2>
+<p>플랫폼별 지원 현황은 다음과 같이 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>linux/macos/windows</th><th>wasm32-wasi / 브라우저</th><th>wasm32-wasi-threads</th></tr></thead>
+<tbody>
+<tr><td><code>spawn</code></td><td>✓</td><td><code>Unsupported</code> 를 throw</td><td>✓</td></tr>
+<tr><td><code>Builder</code></td><td>✓</td><td><code>Unsupported</code> 를 throw</td><td>✓</td></tr>
+<tr><td><code>local</code></td><td>✓</td><td>✓ (스레드 하나)</td><td>✓</td></tr>
+<tr><td><code>park</code>/<code>unpark</code></td><td>futex / WaitOnAddress</td><td>✓</td><td>✓</td></tr>
+</tbody></table></div>
+<p><code>wasm32-wasi</code> 와 브라우저에는 스레드가 하나이며 <code>thread::current().name()</code> 은 <code>none</code> 입니다. <code>wasm32-wasi-threads</code> 에서 <code>rok_cpu_count()</code> 와 사용 가능한 병렬도는 4 입니다. WASI 는 코어 수를 알려 줄 수 없기 때문입니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/300-std/304-thread.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="303-time"><small>Previous</small>3.3. time:: - 시간</a><a class="next" href="305-io"><small>Next</small>3.5. io:: - Reader / Writer / 표준 입출력</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

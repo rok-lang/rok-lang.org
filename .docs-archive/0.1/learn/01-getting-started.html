@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1. Getting Started - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="In this chapter you install the rok toolchain, create and run your first package, and try a single-file script and the REPL. By the end you can run the examples...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/01-getting-started.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1. Getting Started - rok docs">
+<meta property="og:description" content="In this chapter you install the rok toolchain, create and run your first package, and try a single-file script and the REPL. By the end you can run the examples...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/01-getting-started.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="01-getting-started">1. Getting Started</a><ul class="toc"><li><a href="#installation">Installation</a></li><li><a href="#your-first-package">Your first package</a></li><li><a href="#a-slightly-bigger-program">A slightly bigger program</a></li><li><a href="#single-file-scripts">Single-file scripts</a></li><li><a href="#repl">REPL</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="1-getting-started"><a class="anchor" tabindex="-1" href="#1-getting-started" aria-hidden="true">#</a>1. Getting Started</h1>
+<p>In this chapter you install the rok toolchain, create and run your first package, and try a single-file script and the REPL. By the end you can run the examples in the rest of the guide yourself.</p>
+<h2 id="installation"><a class="anchor" tabindex="-1" href="#installation" aria-hidden="true">#</a>Installation</h2>
+<h3 id="prerequisites"><a class="anchor" tabindex="-1" href="#prerequisites" aria-hidden="true">#</a>Prerequisites</h3>
+<p><code>rokc</code> is self-contained: LLVM, MLIR and the lld linker are built into it, so you do not install LLVM (<a href="../spec/refs-lang/009-tools/902-aot-pipeline#9218-embedded-toolchain">9.2.18</a>).</p>
+<ul>
+<li>macOS: the Xcode Command Line Tools (<code>xcode-select --install</code>), for the SDK that the final link needs.
+</li>
+<li>Linux: nothing. The toolchain and the programs it builds need glibc 2.34 or later (Ubuntu 22.04, Debian 12, RHEL 9 and newer).
+</li>
+<li>Windows: nothing.
+</li>
+</ul>
+<p>Release archives are built for macOS arm64, Linux x86_64 and arm64 (both glibc and static musl), and Windows x86_64. Other hosts, such as macOS x86_64 and Windows arm64, have no release archive yet; build rok from source.</p>
+<h3 id="install-script"><a class="anchor" tabindex="-1" href="#install-script" aria-hidden="true">#</a>Install script</h3>
+<p>The install script downloads the toolchain for your platform from the <a href="https://github.com/rok-lang/rok/releases">GitHub releases</a>, checks it against its SHA-256, and unpacks it into <code>~/.rok</code>.</p>
+<pre><code class="language-bash">curl -fsSL https://rok-lang.org/install.sh | sh
+</code></pre>
+<p>On Windows, run this in PowerShell. It installs into <code>%USERPROFILE%\.rok</code> and adds its <code>bin</code> to your user <code>PATH</code>.</p>
+<pre><code class="language-powershell">powershell -ExecutionPolicy Bypass -c &quot;irm https://rok-lang.org/install.ps1 | iex&quot;
+</code></pre>
+<p><code>install.sh --version &lt;v&gt;</code> and <code>install.ps1 -Version &lt;v&gt;</code> pick a release.</p>
+<p>You can change the install location with the <code>ROK_HOME</code> environment variable (default <code>~/.rok</code>). When the script finishes, you get the following layout.</p>
+<pre><code class="language-text">~/.rok/
+├── bin/                        # rok, rokc, rokls proxy
+└── toolchains/
+    └── 0.1.0-aarch64-apple-darwin/
+        ├── bin/{rok, rokc, rokls}
+        └── lib/                # runtime and standard library sources
+</code></pre>
+<p>The toolchain you just installed becomes the default. The three executables in <code>~/.rok/bin</code> are <strong>proxies</strong>: the real work is done by the executable of the same name in the active toolchain. This lets you install several toolchains side by side and pick one (the same approach as rustup). Add this directory to <code>PATH</code> (on Windows the installer already did).</p>
+<pre><code class="language-bash"># bash / zsh
+echo 'export PATH=&quot;$HOME/.rok/bin:$PATH&quot;' &gt;&gt; ~/.zshrc
+# fish
+fish_add_path ~/.rok/bin
+</code></pre>
+<p>Check the version in a new shell.</p>
+<pre><code class="language-bash">rok --version
+rok toolchain list
+</code></pre>
+<p>Three executables are installed.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Executable</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>rokc</code></td><td>The compiler. Build, run, test, format (<a href="../spec/refs-lang/009-tools/901-rokc-cli">9.1</a>)</td></tr>
+<tr><td><code>rok</code></td><td>Package / build front-end. <code>rok.rokon</code>, dependencies, environments, REPL, Jupyter (<a href="../spec/refs-lang/009-tools/910-rok-frontend">9.10</a>)</td></tr>
+<tr><td><code>rokls</code></td><td>Language server (LSP)</td></tr>
+</tbody></table></div>
+<h3 id="managing-toolchains"><a class="anchor" tabindex="-1" href="#managing-toolchains" aria-hidden="true">#</a>Managing toolchains</h3>
+<p><code>rok toolchain</code> manages installed toolchains. The active toolchain is chosen, in order, by <code>+version</code> on the command line (<code>rok +0.1 build</code>), the <code>ROK_TOOLCHAIN</code> environment variable, the <code>toolchain</code> field of the nearest <code>rok.rokon</code>, and finally the default.</p>
+<pre><code class="language-bash">rok toolchain list                     # installed toolchains
+rok toolchain default 0.1.0            # change the default
+rok toolchain install 0.2.0 --from rok-0.2.0-aarch64-apple-darwin.tar.gz
+rok toolchain update                   # download the latest release and make it the default
+</code></pre>
+<p><code>rok toolchain update 0.2.0</code> installs that version instead. The download is checked against its published SHA-256, and if anything fails the previous default stays in place. Older toolchains are kept. Do not confuse it with <code>rok update</code>, which moves the versions pinned in a package's <code>rok.lock</code> (<a href="11-modules-packages">chapter 11</a>).</p>
+<h3 id="building-from-source-optional"><a class="anchor" tabindex="-1" href="#building-from-source-optional" aria-hidden="true">#</a>Building from source (optional)</h3>
+<p>You can also build a toolchain archive yourself and install it with the same script. This needs a Rust toolchain (<code>rustup</code>).</p>
+<pre><code class="language-bash">git clone https://github.com/rok-lang/rok &amp;&amp; cd rok
+./dist.sh                                  # dist/rok-&lt;version&gt;-&lt;triple&gt;.tar.gz
+sh install.sh --archive dist/rok-*.tar.gz  # into ~/.rok
+</code></pre>
+<p>The first run also builds the pinned LLVM into <code>~/.cache/rok</code> (cmake and ninja, about an hour). On Linux, <code>./dist-linux.sh</code> (podman or docker) builds the same archive in a container so that it runs on glibc 2.34 and later; the release archives are built this way. The repository's README has the details.</p>
+<p>If you are working on the compiler, you can use the build output directly without installing. Without the pinned LLVM, this <code>rokc</code> compiles at <code>-O0</code> only.</p>
+<pre><code class="language-bash">cargo build --release
+export PATH=&quot;$PWD/target/release:$PATH&quot;
+</code></pre>
+<h2 id="your-first-package"><a class="anchor" tabindex="-1" href="#your-first-package" aria-hidden="true">#</a>Your first package</h2>
+<p><code>rok new</code> creates a package directory and initializes a git repository with a <code>.gitignore</code> that excludes <code>target/</code>. Package names use lowercase letters, digits, <code>-</code>, and <code>_</code>, and start with a letter. The name <code>rok</code> is taken by the standard library, so a package can't be called <code>rok</code>. In code, <code>-</code> becomes <code>_</code> (<code>rok new my-lib</code> is imported as <code>use my_lib::..</code>).</p>
+<pre><code class="language-bash">rok new hello
+cd hello
+</code></pre>
+<pre><code class="language-text">     Created executable package (hello)
+</code></pre>
+<p>There are two files. The manifest <code>rok.rokon</code> holds the package name, version, and dependencies.</p>
+<pre><code class="language-rokon"><span class="t">Package</span> { name: <span class="s">"hello"</span>, version: <span class="s">"0.1.0"</span>, deps: {} }
+</code></pre>
+<p>The source lives in <code>src/</code>; <code>src/main.rok</code> is a single line that prints a greeting.</p>
+<pre><code class="language-rok">println(<span class="s">"Hello, world!"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">Hello, world!
+</code></pre>
+<p><code>rok run</code> builds and runs it. The output goes to <code>target/debug/</code>.</p>
+<pre><code class="language-bash">rok run
+</code></pre>
+<pre><code class="language-text">   Compiling hello (.)
+    Finished in 1.55s
+     Running `./target/debug/hello`
+Hello, world!
+</code></pre>
+<p>The top-level statements in <code>src/main.rok</code> run from top to bottom and form the program. Function and type declarations can go anywhere between top-level statements. Other common commands are <code>rok build</code> (build only), <code>rok check</code> (type check only), <code>rok test</code>, and <code>rok fmt</code>.</p>
+<h2 id="a-slightly-bigger-program"><a class="anchor" tabindex="-1" href="#a-slightly-bigger-program" aria-hidden="true">#</a>A slightly bigger program</h2>
+<p>Change <code>src/main.rok</code> to the following and run <code>rok run</code> again.</p>
+<pre><code class="language-rok"><span class="k">let</span> names = [<span class="s">"ada"</span>, <span class="s">"grace"</span>, <span class="s">"linus"</span>];
+<span class="k">for</span> name <span class="k">in</span> names {
+    greet(name);
+}
+println(<span class="s">f"{</span>names.len()<span class="s">} people greeted"</span>);
+
+<span class="k">fn</span> greet(name: <span class="t">str</span>) {
+    println(<span class="s">f"Hello, {</span>name<span class="s">}!"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">Hello, ada!
+Hello, grace!
+Hello, linus!
+3 people greeted
+</code></pre>
+<p><code>f&quot;...&quot;</code> is an f-string: each expression inside <code>{}</code> is evaluated and inserted in place. <code>greet</code> is declared below its use, yet the call works, because declarations such as functions are visible regardless of order.</p>
+<p>Instead of top-level statements, you can use <code>fn main()</code> as the entry point. Use one or the other.</p>
+<pre><code class="language-rok"><span class="k">fn</span> main() {
+    <span class="k">let</span> total = add(<span class="n">2</span>, <span class="n">3</span>);
+    println(<span class="s">f"2 + 3 = {</span>total<span class="s">}"</span>);
+}
+
+<span class="k">fn</span> add(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    a + b
+}
+</code></pre>
+<pre class="output"><code class="language-output">2 + 3 = 5
+</code></pre>
+<h2 id="single-file-scripts"><a class="anchor" tabindex="-1" href="#single-file-scripts" aria-hidden="true">#</a>Single-file scripts</h2>
+<p>Quick experiments don't need a package. Give <code>rok run</code> a file path and it runs that file on its own.</p>
+<pre><code class="language-bash">echo 'println(&quot;hi&quot;);' &gt; hi.rok
+rok run hi.rok
+</code></pre>
+<pre><code class="language-text">   Compiling hi (.)
+    Finished in 1.52s
+     Running `/tmp/rokc-.../hi`
+hi
+</code></pre>
+<p>Scripts can use dependencies too: <code>rok add json hi.rok</code> writes them into a <code>//!</code> comment at the top of the file (see <a href="../spec/refs-lang/009-tools/910-rok-frontend#9107-inline-manifest-for-single-file-scripts">inline manifests</a> and <a href="11-modules-packages#single-file-scripts-and-environments">chapter 11</a>).</p>
+<h2 id="repl"><a class="anchor" tabindex="-1" href="#repl" aria-hidden="true">#</a>REPL</h2>
+<p>Running <code>rok</code> with no arguments opens the REPL. Enter an expression and it shows the value and type; a <code>let</code> just defines the name.</p>
+<pre><code class="language-text">$ rok
+&gt; let xs = [1, 2, 3];
+&gt; xs.len() * 2
+usize: 6
+&gt; :type xs
+List&lt;i32&gt;
+&gt; :quit
+</code></pre>
+<p><code>:type expr</code> reports the type of an expression without running it. Whenever you wonder about a type while reading this guide, check it in the REPL. Unlike regular source, the REPL lets you redeclare the same name with <code>let</code> (<a href="../spec/refs-lang/009-tools/907-jit-cells">JIT cells</a>).</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>Install into <code>~/.rok</code> with <code>curl -fsSL https://rok-lang.org/install.sh | sh</code> (<code>install.ps1</code> on Windows) and add <code>~/.rok/bin</code> to <code>PATH</code>.
+</li>
+<li><code>rok new name</code> creates <code>rok.rokon</code> and <code>src/main.rok</code>; <code>rok run</code> builds and runs.
+</li>
+<li>The top-level statements of <code>src/main.rok</code> are the program. You can also use <code>fn main()</code>.
+</li>
+<li><code>rok run file.rok</code> runs a script; <code>rok</code> alone starts the REPL.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li><a href="../spec/refs-lang/009-tools/902-aot-pipeline#9219-installation-layout">Install layout</a>, <a href="../spec/refs-lang/009-tools/910-rok-frontend#9106-toolchain">pinning the toolchain</a>
+</li>
+<li><a href="../spec/refs-lang/009-tools/910-rok-frontend"><code>rok</code> front-end</a>, <a href="../spec/refs-lang/009-tools/901-rokc-cli"><code>rokc</code> CLI</a>
+</li>
+<li><a href="../spec/refs-lang/004-functions/416-entry-point">Entry point</a>
+</li>
+<li><a href="../spec/refs-lang/009-tools/907-jit-cells">JIT cells and the REPL</a>
+</li>
+<li>Next chapter: <a href="02-values-and-types">2. Values and Types</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/01-getting-started.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>Learn rok</a><a class="next" href="02-values-and-types"><small>Next</small>2. Values and Types</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

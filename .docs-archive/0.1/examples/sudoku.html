@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sudoku solver - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Solve a sudoku with backtracking over a fixed-size array board, trying each candidate digit in every empty cell.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/sudoku.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Sudoku solver - rok docs">
+<meta property="og:description" content="Solve a sudoku with backtracking over a fixed-size array board, trying each candidate digit in every empty cell.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/sudoku.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li class="cur"><a aria-current="page" href="sudoku">Sudoku solver</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="sudoku-solver"><a class="anchor" tabindex="-1" href="#sudoku-solver" aria-hidden="true">#</a>Sudoku solver</h1>
+<p>Solve a sudoku with backtracking over a fixed-size array board, trying each candidate digit in every empty cell.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// A 9x9 board; 0 marks an empty cell.</span>
+<span class="k">struct</span> <span class="t">Board</span> {
+    cells: [[<span class="t">u8</span>; <span class="n">9</span>]; <span class="n">9</span>];
+}
+
+<span class="k">impl</span> <span class="t">Board</span> {
+    <span class="k">fn</span> parse(text: <span class="t">str</span>) -&gt; <span class="t">Board</span> {
+        <span class="k">let</span> cells = [[<span class="n">0u8</span>; <span class="n">9</span>]; <span class="n">9</span>];
+        <span class="k">let</span> i = <span class="n">0usize</span>;
+        <span class="k">for</span> c <span class="k">in</span> text.chars() {
+            <span class="k">if</span> c == <span class="s">'.'</span> || c.is_ascii_digit() {
+                cells[i / <span class="n">9</span>][i % <span class="n">9</span>] = <span class="k">if</span> c == <span class="s">'.'</span> { <span class="n">0u8</span> } <span class="k">else</span> { (c <span class="k">as</span> <span class="t">u32</span> - <span class="s">'0'</span> <span class="k">as</span> <span class="t">u32</span>) <span class="k">as</span> <span class="t">u8</span> };
+                i += <span class="n">1</span>;
+            }
+        }
+        <span class="t">Board</span> { cells: cells }
+    }
+
+    <span class="c">// Can digit `d` go at (r, c) without clashing in its row, column or box?</span>
+    <span class="k">fn</span> allowed(<span class="k">self</span>, r: <span class="t">usize</span>, c: <span class="t">usize</span>, d: <span class="t">u8</span>) -&gt; <span class="t">bool</span> {
+        <span class="k">for</span> k <span class="k">in</span> <span class="n">0</span>..<span class="n">9</span> {
+            <span class="k">if</span> <span class="k">self</span>.cells[r][k] == d || <span class="k">self</span>.cells[k][c] == d { <span class="k">return</span> <span class="k">false</span>; }
+        }
+        <span class="k">let</span> (br, bc) = (r / <span class="n">3</span> * <span class="n">3</span>, c / <span class="n">3</span> * <span class="n">3</span>);
+        <span class="k">for</span> i <span class="k">in</span> br..br + <span class="n">3</span> {
+            <span class="k">for</span> j <span class="k">in</span> bc..bc + <span class="n">3</span> {
+                <span class="k">if</span> <span class="k">self</span>.cells[i][j] == d { <span class="k">return</span> <span class="k">false</span>; }
+            }
+        }
+        <span class="k">true</span>
+    }
+
+    <span class="c">// Depth-first search; returns true once every cell is filled.</span>
+    <span class="k">fn</span> solve(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> steps: <span class="t">u64</span>) -&gt; <span class="t">bool</span> {
+        <span class="k">for</span> r <span class="k">in</span> <span class="n">0usize</span>..<span class="n">9</span> {
+            <span class="k">for</span> c <span class="k">in</span> <span class="n">0usize</span>..<span class="n">9</span> {
+                <span class="k">if</span> <span class="k">self</span>.cells[r][c] != <span class="n">0</span> { <span class="k">continue</span>; }
+                <span class="k">for</span> d <span class="k">in</span> <span class="n">1u8</span>..=<span class="n">9</span> {
+                    <span class="k">if</span> <span class="k">self</span>.allowed(r, c, d) {
+                        <span class="k">self</span>.cells[r][c] = d;
+                        steps += <span class="n">1</span>;
+                        <span class="k">if</span> <span class="k">self</span>.solve(<span class="k">ref</span> steps) { <span class="k">return</span> <span class="k">true</span>; }
+                        <span class="k">self</span>.cells[r][c] = <span class="n">0</span>;   <span class="c">// backtrack</span>
+                    }
+                }
+                <span class="k">return</span> <span class="k">false</span>;
+            }
+        }
+        <span class="k">true</span>
+    }
+}
+
+<span class="k">impl</span> <span class="t">Display</span> <span class="k">for</span> <span class="t">Board</span> {
+    <span class="k">fn</span> fmt(<span class="k">self</span>, <span class="k">ref</span> f: <span class="t">Formatter</span>) <span class="k">throws</span> (<span class="t">FmtError</span>) {
+        <span class="k">for</span> r <span class="k">in</span> <span class="n">0</span>..<span class="n">9</span> {
+            <span class="k">if</span> r &gt; <span class="n">0</span> &amp;&amp; r % <span class="n">3</span> == <span class="n">0</span> { <span class="k">try</span> f.write_str(<span class="s">"------+-------+------\n"</span>); }
+            <span class="k">for</span> c <span class="k">in</span> <span class="n">0</span>..<span class="n">9</span> {
+                <span class="k">if</span> c &gt; <span class="n">0</span> &amp;&amp; c % <span class="n">3</span> == <span class="n">0</span> { <span class="k">try</span> f.write_str(<span class="s">"| "</span>); }
+                <span class="k">let</span> v = <span class="k">self</span>.cells[r][c];
+                <span class="k">try</span> f.write_str(<span class="k">if</span> v == <span class="n">0</span> { <span class="s">". "</span> } <span class="k">else</span> { <span class="s">f"{</span>v<span class="s">} "</span> });
+            }
+            <span class="k">try</span> f.write_str(<span class="s">"\n"</span>);
+        }
+    }
+}
+
+<span class="k">let</span> board = <span class="t">Board</span>::parse(<span class="s">"
+    53..7.... 6..195... .98....6.
+    8...6...3 4..8.3..1 7...2...6
+    .6....28. ...419..5 ....8..79
+"</span>);
+println(<span class="s">f"puzzle:\n{</span>board<span class="s">}"</span>);
+
+<span class="k">let</span> steps = <span class="n">0u64</span>;
+<span class="k">if</span> board.solve(<span class="k">ref</span> steps) {
+    println(<span class="s">f"solved after {</span>steps<span class="s">} placements:\n{</span>board<span class="s">}"</span>);
+} <span class="k">else</span> {
+    println(<span class="s">"no solution"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">puzzle:
+5 3 . | . 7 . | . . . 
+6 . . | 1 9 5 | . . . 
+. 9 8 | . . . | . 6 . 
+------+-------+------
+8 . . | . 6 . | . . 3 
+4 . . | 8 . 3 | . . 1 
+7 . . | . 2 . | . . 6 
+------+-------+------
+. 6 . | . . . | 2 8 . 
+. . . | 4 1 9 | . . 5 
+. . . | . 8 . | . 7 9 
+
+solved after 4208 placements:
+5 3 4 | 6 7 8 | 9 1 2 
+6 7 2 | 1 9 5 | 3 4 8 
+1 9 8 | 3 4 2 | 5 6 7 
+------+-------+------
+8 5 9 | 7 6 1 | 4 2 3 
+4 2 6 | 8 5 3 | 7 9 1 
+7 1 3 | 9 2 4 | 8 5 6 
+------+-------+------
+9 6 1 | 5 3 7 | 2 8 4 
+2 8 7 | 4 1 9 | 6 3 5 
+3 4 5 | 2 8 6 | 1 7 9
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>The board is a fixed-size array <code>[[u8; 9]; 9]</code>. The size is part of the type, so <code>cells[r][c]</code> reads and writes directly with no separate allocation (<a href="../learn/02-values-and-types">Values and types</a>).
+</li>
+<li><code>solve</code> fixes the board in place through <code>ref self</code> and bumps the caller's counter through <code>ref steps</code>. The caller writes <code>ref</code> too, <code>board.solve(ref steps)</code>, so it is visible that the value changes (<a href="../spec/refs-lang/004-functions/407-ref-keyword">4.7 The <code>ref</code> keyword</a>, <a href="../learn/03-functions">Functions</a>).
+</li>
+<li>The heart of backtracking is three lines: place a digit (<code>self.cells[r][c] = d</code>), recursively try to solve the rest, and clear the cell again on failure. If all of 1-9 fail in the first empty cell, <code>false</code> returns and the level above tries another digit.
+</li>
+<li>The literal range <code>0..9</code> defaults to <code>i32</code>, so a loop variable passed as a <code>usize</code> argument gets its type from a suffix: <code>0usize..9</code> (<a href="../spec/refs-lang/001-lexical/106-numeric-literals">1.6 Numeric literals</a>).
+</li>
+<li>The puzzle string reader takes only digits and <code>.</code> and skips spaces and newlines, so the board can be laid out readably (<a href="../learn/09-strings">Strings</a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/sudoku.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="sealed-messages"><small>Previous</small>Sealed messages</a><a class="next" href="tcp-echo"><small>Next</small>TCP echo server</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

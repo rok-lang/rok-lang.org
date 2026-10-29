@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSV report - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Write a small sales CSV to a temporary file, read it back line by line, and print a per-region summary table with aligned columns.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/csv-report.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="CSV report - rok docs">
+<meta property="og:description" content="Write a small sales CSV to a temporary file, read it back line by line, and print a per-region summary table with aligned columns.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/csv-report.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li class="cur"><a aria-current="page" href="csv-report">CSV report</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="csv-report"><a class="anchor" tabindex="-1" href="#csv-report" aria-hidden="true">#</a>CSV report</h1>
+<p>Write a small sales CSV to a temporary file, read it back line by line, and print a per-region summary table with aligned columns.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// Write a small sales CSV, read it back line by line, and print a per-region report.</span>
+<span class="k">use</span> rok::std::env;
+<span class="k">use</span> rok::std::fs;
+<span class="k">use</span> rok::std::fs::<span class="t">File</span>;
+<span class="k">use</span> rok::std::io::{<span class="t">IoError</span>, <span class="t">BufReader</span>, <span class="t">BufWriter</span>, <span class="t">Reader</span>, <span class="t">Writer</span>};
+
+<span class="k">const</span> <span class="t">ROWS</span>: <span class="t">str</span> = <span class="s">"date,region,product,units,unit_price
+2026-01-03,north,widget,12,2.50
+2026-01-03,south,gadget,3,19.99
+2026-01-04,north,gadget,1,19.99
+2026-01-05,east,widget,40,2.25
+2026-01-05,south,widget,7,2.50
+2026-01-06,west,gizmo,two,7.00
+2026-01-07,east,gizmo,5,7.00
+2026-01-08,north,gizmo,2,7.50
+2026-01-09,east;widget,3,2.25"</span>;
+
+<span class="k">struct</span> <span class="t">Sale</span> {
+    region: <span class="t">str</span>;
+    units: <span class="t">i64</span>;
+    price: <span class="t">f64</span>;
+}
+
+<span class="k">struct</span> <span class="t">Group</span> {
+    orders: <span class="t">i64</span> = <span class="n">0</span>;
+    units: <span class="t">i64</span> = <span class="n">0</span>;
+    revenue: <span class="t">f64</span> = <span class="n">0.0</span>;
+}
+
+<span class="k">enum</span> <span class="t">RowError</span> {
+    <span class="t">Fields</span>(<span class="t">usize</span>),
+    <span class="t">Number</span>(<span class="t">str</span>),
+}
+
+<span class="k">fn</span> parse_row(line: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">RowError</span>) -&gt; <span class="t">Sale</span> {
+    <span class="k">let</span> f: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+    <span class="k">for</span> part <span class="k">in</span> line.split(<span class="s">","</span>) { f.push(part.trim()); }
+    <span class="k">if</span> f.len() != <span class="n">5</span> { <span class="k">throw</span> <span class="t">RowError</span>::<span class="t">Fields</span>(f.len()); }
+    <span class="k">let</span> units = <span class="k">try</span> f[<span class="n">3</span>].parse::&lt;<span class="t">i64</span>&gt;() <span class="k">catch</span> _ { <span class="k">throw</span> <span class="t">RowError</span>::<span class="t">Number</span>(f[<span class="n">3</span>]); };
+    <span class="k">let</span> price = <span class="k">try</span> f[<span class="n">4</span>].parse::&lt;<span class="t">f64</span>&gt;() <span class="k">catch</span> _ { <span class="k">throw</span> <span class="t">RowError</span>::<span class="t">Number</span>(f[<span class="n">4</span>]); };
+    <span class="t">Sale</span> { region: f[<span class="n">1</span>], units: units, price: price }
+}
+
+<span class="k">fn</span> write_csv(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> w = <span class="t">BufWriter</span>::new(<span class="k">try</span> <span class="t">File</span>::create(path));
+    <span class="k">for</span> line <span class="k">in</span> <span class="t">ROWS</span>.lines() {
+        <span class="k">try</span> w.write_fmt(<span class="s">f"{</span>line<span class="s">}\n"</span>);
+    }
+    <span class="k">try</span> w.flush();
+}
+
+<span class="k">fn</span> summarize(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Group</span>&gt; {
+    <span class="k">let</span> groups: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Group</span>&gt; = <span class="t">Dict</span>::new();
+    <span class="k">let</span> r = <span class="t">BufReader</span>::new(<span class="k">try</span> <span class="t">File</span>::open(path));
+    <span class="k">let</span> n: <span class="t">usize</span> = <span class="n">0</span>;
+    <span class="k">for</span> item <span class="k">in</span> r.lines() {
+        <span class="k">let</span> line = <span class="k">try</span> item.get();
+        n += <span class="n">1</span>;
+        <span class="k">if</span> n == <span class="n">1</span> || line.is_empty() { <span class="k">continue</span>; } <span class="c">// header</span>
+        <span class="k">let</span> sale = <span class="k">try</span> parse_row(line) <span class="k">catch</span> e: <span class="t">RowError</span> {
+            <span class="k">match</span> e {
+                <span class="t">RowError</span>::<span class="t">Fields</span>(k) =&gt; println(<span class="s">f"line {</span>n<span class="s">}: expected 5 fields, got {</span>k<span class="s">}, skipped"</span>),
+                <span class="t">RowError</span>::<span class="t">Number</span>(s) =&gt; println(<span class="s">f"line {</span>n<span class="s">}: bad number '{</span>s<span class="s">}', skipped"</span>),
+            }
+            <span class="k">continue</span>;
+        };
+        <span class="k">let</span> g = groups.get(sale.region) ?? <span class="t">Group</span> {};
+        g.orders += <span class="n">1</span>;
+        g.units += sale.units;
+        g.revenue += sale.units <span class="k">as</span> <span class="t">f64</span> * sale.price;
+        groups[sale.region] = g;
+    }
+    groups
+}
+
+<span class="k">fn</span> print_report(groups: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">Group</span>&gt;) {
+    <span class="k">let</span> regions: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = [];
+    <span class="k">for</span> k <span class="k">in</span> groups.keys() { regions.push(k); }
+    regions.sort();
+
+    println(<span class="s">f"{</span><span class="s">"region"</span><span class="s">:&lt;8</span><span class="s">}|{</span><span class="s">"orders"</span><span class="s">:&gt;7</span><span class="s">}|{</span><span class="s">"units"</span><span class="s">:&gt;6</span><span class="s">}|{</span><span class="s">"revenue"</span><span class="s">:&gt;9</span><span class="s">}|{</span><span class="s">"avg"</span><span class="s">:&gt;7</span><span class="s">}"</span>);
+    println(<span class="s">f"{</span><span class="s">""</span><span class="s">:-&lt;8</span><span class="s">}+{</span><span class="s">""</span><span class="s">:-&lt;7</span><span class="s">}+{</span><span class="s">""</span><span class="s">:-&lt;6</span><span class="s">}+{</span><span class="s">""</span><span class="s">:-&lt;9</span><span class="s">}+{</span><span class="s">""</span><span class="s">:-&lt;7</span><span class="s">}"</span>);
+    <span class="k">let</span> total = <span class="t">Group</span> {};
+    <span class="k">for</span> name <span class="k">in</span> regions {
+        <span class="k">let</span> g = groups[name];
+        <span class="k">let</span> avg = g.revenue / g.units <span class="k">as</span> <span class="t">f64</span>;
+        println(<span class="s">f"{</span>name<span class="s">:&lt;8</span><span class="s">}|{</span>g.orders<span class="s">:&gt;7</span><span class="s">}|{</span>g.units<span class="s">:&gt;6</span><span class="s">}|{</span>g.revenue<span class="s">:&gt;9.2</span><span class="s">}|{</span>avg<span class="s">:&gt;7.2</span><span class="s">}"</span>);
+        total.orders += g.orders;
+        total.units += g.units;
+        total.revenue += g.revenue;
+    }
+    println(<span class="s">f"{</span><span class="s">"total"</span><span class="s">:&lt;8</span><span class="s">}|{</span>total.orders<span class="s">:&gt;7</span><span class="s">}|{</span>total.units<span class="s">:&gt;6</span><span class="s">}|{</span>total.revenue<span class="s">:&gt;9.2</span><span class="s">}|{</span><span class="s">""</span><span class="s">:&gt;7</span><span class="s">}"</span>);
+}
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> path = (env::temp_dir() / <span class="s">"rok-sales-demo.csv"</span>).as_str();
+    <span class="k">try</span> write_csv(path);
+    <span class="k">let</span> groups = <span class="k">try</span> summarize(path) <span class="k">finally</span> { <span class="k">try</span>! fs::remove_file(path); };
+    print_report(groups);
+}
+</code></pre>
+<pre class="output"><code class="language-output">line 7: bad number 'two', skipped
+line 10: expected 5 fields, got 4, skipped
+region  | orders| units|  revenue|    avg
+--------+-------+------+---------+-------
+east    |      2|    45|   125.00|   2.78
+north   |      3|    15|    64.99|   4.33
+south   |      2|    10|    77.47|   7.75
+total   |      7|    70|   267.46|
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>The file is created under <code>env::temp_dir()</code> and removed in the <code>finally</code> of <code>main</code>, so no temporary file is left behind even if summarizing fails (<a href="../learn/13-io">Files and I/O</a>, <a href="../std/std/env#fn.temp_dir"><code>env::temp_dir</code></a>).
+</li>
+<li>Writing goes through a <code>BufWriter</code> and reading through a <code>BufReader</code>. Each item of <code>r.lines()</code> is a <code>Result&lt;str, IoError&gt;</code>, so <code>try item.get()</code> takes the line out and propagates read errors (<a href="../std/std/io#struct.BufReader"><code>BufReader</code></a>, <a href="../std/std/fs"><code>fs</code></a>).
+</li>
+<li><code>parse_row</code> throws a <code>RowError</code> for a malformed row; the caller prints a warning in its <code>catch</code> block and moves on with <code>continue</code>. One bad line does not sink the whole report (<a href="../learn/10-errors">Errors</a>).
+</li>
+<li>The totals are a <code>Dict&lt;str, Group&gt;</code>. <code>groups.get(region) ?? Group {}</code> fetches an entry or starts a new one, and <code>groups[region] = g</code> stores the updated value back. Every field of <code>Group</code> has a default, so <code>Group {}</code> alone starts at zero (<a href="../learn/08-collections-iterators">Collections and iterators</a>).
+</li>
+<li>Format specs line up the table: <code>{name:&lt;8}</code> left-aligns, <code>{g.revenue:&gt;9.2}</code> uses width 9 and two decimals, and <code>{&quot;&quot;:-&lt;8}</code> fills an empty string with <code>-</code> to draw the rule (<a href="../spec/refs-standard-libraries/200-core/210-fmt#2108-align--fill--width--precision">2.10.8 align and width</a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/csv-report.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="cli-args"><small>Previous</small>Command-line tool</a><a class="next" href="downloader"><small>Next</small>Concurrent downloader</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

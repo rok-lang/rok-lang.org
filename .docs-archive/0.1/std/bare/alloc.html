@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>rok::bare::alloc - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::alloc - raw allocation outside the GC (stdlib spec 1.4). Over the runtime's rok_alloc_raw / rok_realloc_raw / rok_free (system malloc); failure is a ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/std/bare/alloc.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="rok::bare::alloc - rok docs">
+<meta property="og:description" content="rok::bare::alloc - raw allocation outside the GC (stdlib spec 1.4). Over the runtime's rok_alloc_raw / rok_realloc_raw / rok_free (system malloc); failure is a ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/std/bare/alloc.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../style.css">
+<link rel="icon" href="../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../"><img src="../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../learn/">Learn</a><a href="../../examples/">Examples</a><a href="../../spec/refs-lang/">Reference</a><a href="../../spec/refs-standard-libraries/">Library</a><a href="../../std/" aria-current="page">API</a><a href="../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← Standard library API</a><ul class="pages"><li><a href="./">rok::bare</a></li><li class="cur"><a aria-current="page" href="alloc">alloc</a><ul class="toc"><li><a href="#struct">Structs</a></li><li><a href="#fn">Functions</a></li></ul></li><li><a href="ffi">ffi</a></li><li style="padding-left:12px"><a href="ffi/wit">wit</a></li><li><a href="gc">gc</a></li><li><a href="mem">mem</a></li><li><a href="mlir">mlir</a></li><li><a href="ptr">ptr</a></li><li><a href="volatile">volatile</a></li></ul></details></aside><main id="content">
+<article>
+<h1><code>rok::<a href="./">bare</a>::alloc</code></h1><p>rok::bare::alloc - raw allocation outside the GC (stdlib spec 1.4).
+Over the runtime's <code>rok_alloc_raw</code> / <code>rok_realloc_raw</code> / <code>rok_free</code>
+(system malloc); failure is a null <code>CPtr</code>, never an abort.</p>
+<p><code>Allocation&lt;T&gt;</code> frees its block when its <code>using</code> block ends.</p>
+<h2 id="struct">Structs</h2><section class="api-item" id="struct.LayoutError"><h3><a href="#struct.LayoutError">LayoutError</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">struct</span> <span class="t">LayoutError</span></code></pre><p>Why a <code>Layout</code> cannot be made.</p>
+<ul class="members"><li id="LayoutError.reason"><pre><code><span class="k">pub</span> reason: <span class="t">str</span></code></pre></li></ul></section><section class="api-item" id="struct.Layout"><h3><a href="#struct.Layout">Layout</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">struct</span> <span class="t">Layout</span></code></pre><p>Size and alignment of a raw block.</p>
+<ul class="members"><li id="Layout.new"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> new&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">Layout</span></code></pre><p>The layout of one <code>T</code>.</p>
+</li><li id="Layout.array"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> array&lt;<span class="t">T</span>&gt;(n: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">LayoutError</span>) -&gt; <span class="t">Layout</span></code></pre><p>The layout of <code>n</code> <code>T</code>s.</p>
+</li><li id="Layout.from_size_align"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> from_size_align(size: <span class="t">usize</span>, align: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">LayoutError</span>) -&gt; <span class="t">Layout</span></code></pre><p><code>align</code> must be a power of two.</p>
+</li><li id="Layout.size"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> size(<span class="k">self</span>) -&gt; <span class="t">usize</span></code></pre></li><li id="Layout.align"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> align(<span class="k">self</span>) -&gt; <span class="t">usize</span></code></pre></li></ul></section><section class="api-item" id="struct.Allocation"><h3><a href="#struct.Allocation">Allocation</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">struct</span> <span class="t">Allocation</span>&lt;<span class="t">T</span>&gt;</code></pre><p><code>n</code> <code>T</code>s outside the GC, freed when the <code>using</code> block holding it ends
+(spec 1.4.2). Copies share the block; use it only inside that block.</p>
+<ul class="members"><li id="Allocation.new"><pre><code><span class="k">pub</span> <span class="k">fn</span> new(n: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">LayoutError</span>) -&gt; <span class="t">Allocation</span>&lt;<span class="t">T</span>&gt;</code></pre><p>Room for <code>n</code> <code>T</code>s (zeroed); <code>LayoutError</code> when the size overflows
+or the system has no memory.</p>
+</li><li id="Allocation.as_ptr"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;</code></pre></li><li id="Allocation.as_many"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> as_many(<span class="k">self</span>) -&gt; <span class="t">ManyPtr</span>&lt;<span class="t">T</span>&gt;</code></pre></li><li id="Allocation.len"><pre><code><span class="k">pub</span> <span class="k">const</span> <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span></code></pre></li></ul><details class="impls"><summary>Trait implementations 1</summary><ul><li><code><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Drop</span> <span class="k">for</span> <span class="t">Allocation</span>&lt;<span class="t">T</span>&gt;</code></li></ul></details></section><h2 id="fn">Functions</h2><section class="api-item" id="fn.alloc"><h3><a href="#fn.alloc">alloc</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> alloc(layout: <span class="t">Layout</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;</code></pre></section><section class="api-item" id="fn.alloc_zeroed"><h3><a href="#fn.alloc_zeroed">alloc_zeroed</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> alloc_zeroed(layout: <span class="t">Layout</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;</code></pre></section><section class="api-item" id="fn.dealloc"><h3><a href="#fn.dealloc">dealloc</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> dealloc(ptr: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;, layout: <span class="t">Layout</span>)</code></pre></section><section class="api-item" id="fn.realloc"><h3><a href="#fn.realloc">realloc</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> realloc(ptr: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;, old_layout: <span class="t">Layout</span>, new_size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;</code></pre><p>On failure (null) <code>ptr</code> is still valid.</p>
+</section><section class="api-item" id="fn.alloc_one"><h3><a href="#fn.alloc_one">alloc_one</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> alloc_one&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;</code></pre></section><section class="api-item" id="fn.alloc_array"><h3><a href="#fn.alloc_array">alloc_array</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> alloc_array&lt;<span class="t">T</span>&gt;(n: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt;</code></pre></section><section class="api-item" id="fn.dealloc_one"><h3><a href="#fn.dealloc_one">dealloc_one</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> dealloc_one&lt;<span class="t">T</span>&gt;(ptr: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;)</code></pre></section><section class="api-item" id="fn.dealloc_array"><h3><a href="#fn.dealloc_array">dealloc_array</a></h3><pre class="sig"><code><span class="k">pub</span> <span class="k">unsafe</span> <span class="k">fn</span> dealloc_array&lt;<span class="t">T</span>&gt;(ptr: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, n: <span class="t">usize</span>)</code></pre></section></article>
+
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../search.js" defer></script>
+</body>
+</html>

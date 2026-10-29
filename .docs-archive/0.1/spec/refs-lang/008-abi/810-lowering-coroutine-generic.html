@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.10. Lowering: coroutines and generics - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines coroutine lowering for generators, async and streams, and monomorphization lowering for generics and const generics.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.10. Lowering: coroutines and generics - rok docs">
+<meta property="og:description" content="This section defines coroutine lowering for generators, async and streams, and monomorphization lowering for generics and const generics.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/810-lowering-coroutine-generic.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li class="cur"><a aria-current="page" href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a><ul class="toc"><li><a href="#8101-state-machines">8.10.1. State machines</a></li><li><a href="#8102-generator-yield-fn">8.10.2. Generator (yield fn)</a></li><li><a href="#8103-async-async-fn">8.10.3. Async (async fn)</a></li><li><a href="#8104-stream-async-yield-fn">8.10.4. Stream (async yield fn)</a></li><li><a href="#8105-frame-allocation">8.10.5. Frame allocation</a></li><li><a href="#8106-generic-monomorphization">8.10.6. Generic monomorphization</a></li><li><a href="#8107-const-generic-monomorphization">8.10.7. const generic monomorphization</a></li><li><a href="#8108-generic-trait-dispatch">8.10.8. Generic trait dispatch</a></li><li><a href="#8109-branch-dispatch-on-sum-types">8.10.9. Branch dispatch on sum types</a></li><li><a href="#81010-trait-bound-dispatch-of-trait-methods">8.10.10. Trait-bound dispatch of trait methods</a></li><li><a href="#81011-summary">8.10.11. Summary</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="810-lowering-coroutines-and-generics 810-lowering-코루틴과-제네릭 8101-state-machines 8101-상태-기계 8102-generator-yield-fn 8102-generator-yield-fn 8103-async-async-fn 8103-async-async-fn 8104-stream-async-yield-fn 8104-stream-async-yield-fn 8105-frame-allocation 8105-frame-할당 8106-generic-monomorphization 8106-제네릭-단형화 when-monomorphization-happens 단형화의-시점 symbol-naming 심볼-명명 8107-const-generic-monomorphization 8107-const-제네릭-단형화 8108-generic-trait-dispatch 8108-제네릭-트레잇-디스패치 8109-branch-dispatch-on-sum-types 8109-합-타입의-분기-디스패치 81010-trait-bound-dispatch-of-trait-methods 81010-트레잇-메서드의-trait-bound-dispatch 81011-summary 81011-정리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/810-lowering-coroutine-generic" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="810-lowering-coroutines-and-generics"><a class="anchor" tabindex="-1" href="#810-lowering-coroutines-and-generics" aria-hidden="true">#</a>8.10. Lowering: coroutines and generics</h1>
+<p>This section defines coroutine lowering for <a href="../004-functions/411-generators">generators</a>, <a href="../004-functions/412-async">async</a> and <a href="../004-functions/413-stream">streams</a>, and monomorphization lowering for <a href="../002-types/210-generics">generics</a> and <a href="../002-types/211-const-generics">const generics</a>.</p>
+<h2 id="8101-state-machines"><a class="anchor" tabindex="-1" href="#8101-state-machines" aria-hidden="true">#</a>8.10.1. State machines</h2>
+<p><a href="../007-runtime/708-coroutine">Coroutines</a> are lowered to compiler-built state machines. <code>llvm.coro.*</code> is not used.</p>
+<ol>
+<li>HIR: <code>yield</code> / <code>async</code> / <code>async yield</code> blocks are lifted into body functions, like closures. An expression that creates the frame remains in place of the block.
+</li>
+<li>MIR: the body function is turned into a resume function. Each suspend point gets a state number, and locals live across that point are moved into frame fields.
+</li>
+<li>The frame type is <code>(i32 state, locals..)</code> and has a ScanTable. Frames are created through the ordinary allocation path (<a href="809-lowering-control#899-gc-alloc-fast--slow-path">8.9.9</a>).
+</li>
+<li>The entry of the resume function branches (<code>switch</code>) on <code>state</code>.
+</li>
+</ol>
+<h2 id="8102-generator-yield-fn"><a class="anchor" tabindex="-1" href="#8102-generator-yield-fn" aria-hidden="true">#</a>8.10.2. Generator (<code>yield fn</code>)</h2>
+<pre><code class="language-rok"><span class="k">yield</span> <span class="k">fn</span> count_up_to(n: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> i = <span class="n">0</span>;
+    <span class="k">while</span> i &lt; n {
+        <span class="k">yield</span> i;
+        i = i + <span class="n">1</span>;
+    }
+}
+</code></pre>
+<p>The conceptual resume function (<code>next</code>) is:</p>
+<pre><code>next(frame) -&gt; i32 | none:
+    switch frame.state:
+      0: frame.i = 0; goto loop
+      1: frame.i = frame.i + 1; goto loop
+      2: return none
+    loop:
+      if frame.i &lt; frame.n:
+          frame.state = 1
+          return frame.i          // yield i
+      frame.state = 2
+      return none
+</code></pre>
+<p><code>count_up_to(n)</code> allocates the frame and returns a wrapper (<code>GenIter&lt;i32&gt;</code>) with <code>state = 0</code>.</p>
+<h2 id="8103-async-async-fn"><a class="anchor" tabindex="-1" href="#8103-async-async-fn" aria-hidden="true">#</a>8.10.3. Async (<code>async fn</code>)</h2>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch() -&gt; <span class="t">Data</span> {
+    <span class="k">let</span> r = <span class="k">await</span> op1();
+    process(r)
+}
+</code></pre>
+<pre><code>poll(frame, cx) -&gt; Poll&lt;Data&gt;:
+    switch frame.state:
+      0: frame.fut = op1(); frame.state = 1; goto await1
+      1: goto await1
+    await1:
+      match frame.fut.poll(cx):
+        Pending  =&gt; return Pending
+        Ready(r) =&gt; frame.state = 2; return Ready(process(r))
+</code></pre>
+<p><code>await</code> stores the target future in the frame and polls it. If Pending, it returns Pending, leaving the state in place, and the next poll continues from the same point.</p>
+<h2 id="8104-stream-async-yield-fn"><a class="anchor" tabindex="-1" href="#8104-stream-async-yield-fn" aria-hidden="true">#</a>8.10.4. Stream (<code>async yield fn</code>)</h2>
+<p><a href="../004-functions/413-stream">Streams</a> combine the two. The state numbers of a single frame count <code>yield</code> points and <code>await</code> points together. <code>poll_next</code> returns <code>Ready(value)</code> at a <code>yield</code>, <code>Pending</code> on a Pending <code>await</code>, and <code>Ready(none)</code> at the end.</p>
+<h2 id="8105-frame-allocation"><a class="anchor" tabindex="-1" href="#8105-frame-allocation" aria-hidden="true">#</a>8.10.5. Frame allocation</h2>
+<p>A frame is allocated on every coroutine call. There is no dedicated elision for a coroutine run to completion by its caller; a frame that never escapes may be removed like any allocation (<a href="../007-runtime/702-allocation#7212-allocation-elision">7.2.12</a>).</p>
+<h2 id="8106-generic-monomorphization"><a class="anchor" tabindex="-1" href="#8106-generic-monomorphization" aria-hidden="true">#</a>8.10.6. Generic monomorphization</h2>
+<p>Monomorphization of <a href="../002-types/210-generics">generics</a> generates a separate instance for each type tuple at call sites.</p>
+<pre><code class="language-rok"><span class="k">fn</span> id&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x }
+
+<span class="k">let</span> a = id(<span class="n">42i32</span>);     <span class="c">// id&lt;i32&gt;</span>
+<span class="k">let</span> b = id(<span class="n">3.14f64</span>);   <span class="c">// id&lt;f64&gt;</span>
+</code></pre>
+<p>After monomorphization, the MLIR looks like this.</p>
+<pre><code>func.func @id_i32(%x: i32) -&gt; i32 {
+  func.return %x : i32
+}
+
+func.func @id_f64(%x: f64) -&gt; f64 {
+  func.return %x : f64
+}
+
+func.func @main() {
+  %a = func.call @id_i32(%42) : (i32) -&gt; i32
+  %b = func.call @id_f64(%3.14) : (f64) -&gt; f64
+}
+</code></pre>
+<p>A separate function is created for each concrete type tuple.</p>
+<h3 id="when-monomorphization-happens"><a class="anchor" tabindex="-1" href="#when-monomorphization-happens" aria-hidden="true">#</a>When monomorphization happens</h3>
+<p>Monomorphization proceeds as follows.</p>
+<pre><code>rok-hir → specialize(hir, type_tuple) → rok-mir → MLIR
+</code></pre>
+<p>In <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> mode, all call sites are collected and then <a href="../000-meta/007-glossary#specialize">specialize</a> runs in bulk. In <a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> mode, specialize runs at the first call and the result is cached (see <a href="../000-meta/001-execution-modes">Execution engines and user surface</a>). Both modes share the same specialize mechanism.</p>
+<h3 id="symbol-naming"><a class="anchor" tabindex="-1" href="#symbol-naming" aria-hidden="true">#</a>Symbol naming</h3>
+<p>The symbol mangling rule used by the <a href="../000-meta/002-pipeline">compilation pipeline</a> is:</p>
+<pre><code>_Y&lt;pkg_hash_8&gt;_&lt;path&gt;_&lt;name&gt;_&lt;typehash_16&gt;
+</code></pre>
+<p>For example, <code>id&lt;i32&gt;</code> becomes something like <code>_Y3f8a1c2b_my_pkg_id_a7c91d8e44b2f190</code> (illustrative), and this symbol is the name of the <code>func.func @...</code>.</p>
+<h2 id="8107-const-generic-monomorphization"><a class="anchor" tabindex="-1" href="#8107-const-generic-monomorphization" aria-hidden="true">#</a>8.10.7. <code>const</code> generic monomorphization</h2>
+<p>An example of <a href="../002-types/211-const-generics">const generics</a>:</p>
+<pre><code class="language-rok"><span class="k">fn</span> dot&lt;<span class="t">T</span>: <span class="t">Num</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(a: [<span class="t">T</span>; <span class="t">N</span>], b: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> { ... }
+
+<span class="k">let</span> r = dot([<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>], [<span class="n">4.0</span>, <span class="n">5.0</span>, <span class="n">6.0</span>]);  <span class="c">// T=f64, N=3</span>
+</code></pre>
+<p>This is monomorphized to the following MLIR.</p>
+<pre><code>func.func @dot_f64_3(%a: !llvm.array&lt;3 x f64&gt;, %b: !llvm.array&lt;3 x f64&gt;) -&gt; f64 {
+  ; ... unrolled or an ordinary loop
+}
+</code></pre>
+<p>Because <code>const</code> N=3 is a compile-time constant, LLVM's unrolling and inlining can apply freely.</p>
+<h2 id="8108-generic-trait-dispatch"><a class="anchor" tabindex="-1" href="#8108-generic-trait-dispatch" aria-hidden="true">#</a>8.10.8. Generic trait dispatch</h2>
+<pre><code class="language-rok"><span class="k">fn</span> process&lt;<span class="t">T</span>: <span class="t">Describe</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">str</span> {
+    x.describe()
+}
+</code></pre>
+<p>The concrete type T is determined at the call site, so for <code>T = Point</code> the lowering is:</p>
+<pre><code>func.func @process_Point(%x: !Point_ptr) -&gt; !str_ptr {
+  ; call Point's Describe::describe directly
+  %r = func.call @Point_Describe_describe(%x) : (!Point_ptr) -&gt; !str_ptr
+  func.return %r
+}
+</code></pre>
+<p>There are no indirect calls through a vtable; everything is a direct function call. Combined with the <a href="../002-types/212-trait-as-type-banned">trait-as-type ban</a>, this model guarantees zero vtable cost.</p>
+<h2 id="8109-branch-dispatch-on-sum-types"><a class="anchor" tabindex="-1" href="#8109-branch-dispatch-on-sum-types" aria-hidden="true">#</a>8.10.9. Branch dispatch on sum types</h2>
+<p>Matching on <a href="../002-types/206-sum-types">sum types</a> is lowered to a <code>cf.switch</code>-based decision tree.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> =&gt; use_int(n),
+    s: <span class="t">str</span> =&gt; use_str(s),
+}
+</code></pre>
+<p>In MLIR:</p>
+<pre><code>%tag = llvm.extractvalue %v[0] : i32
+
+cf.switch %tag, [
+  default: ^trap,
+  TAG_I32: ^use_int,
+  TAG_STR: ^use_str
+]
+
+^use_int:
+  %n = llvm.extractvalue %v[1] : i64
+  %n_i32 = llvm.trunc %n : i64 to i32
+  func.call @use_int(%n_i32) : ...
+  cf.br ^end
+
+^use_str:
+  %s = llvm.extractvalue %v[1] : i64
+  %s_ptr = llvm.inttoptr %s : i64 to !llvm.ptr
+  func.call @use_str(%s_ptr) : ...
+  cf.br ^end
+
+^end:
+  ...
+</code></pre>
+<p>Tag checks and branches are all static code.</p>
+<h2 id="81010-trait-bound-dispatch-of-trait-methods"><a class="anchor" tabindex="-1" href="#81010-trait-bound-dispatch-of-trait-methods" aria-hidden="true">#</a>8.10.10. Trait-bound dispatch of trait methods</h2>
+<pre><code class="language-rok"><span class="k">fn</span> add_all&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>, <span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span> {
+    <span class="k">let</span> r: <span class="t">T</span> = ...;
+    <span class="k">for</span> x <span class="k">in</span> items {
+        r = r.add(x);
+    }
+    r
+}
+</code></pre>
+<p>After monomorphization, a separate function is created for each T at each call site. For <code>T = i32</code>, <code>r.add(x)</code> resolves to a direct call to i32's <code>Add::add</code>, which can also be inlined.</p>
+<h2 id="81011-summary"><a class="anchor" tabindex="-1" href="#81011-summary" aria-hidden="true">#</a>8.10.11. Summary</h2>
+<p>The compiler lowers coroutines itself into state machines (8.10.1); no <code>llvm.coro.*</code> intrinsics are used. Generic lowering generates separate code for each concrete type through monomorphization and uses no vtables.</p>
+<p>These two mechanisms are the most complex lowerings in this <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> block; the rest, <a href="808-lowering-types">Lowering: data types and expressions</a> and <a href="809-lowering-control">Lowering: control flow and GC integration</a>, are close to direct mappings onto standard dialects.</p>
+<p>This concludes chapter 8 (runtime ABI / MLIR lowering / codegen).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/810-lowering-coroutine-generic.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="809-lowering-control"><small>Previous</small>8.9. Lowering: control flow and GC integration</a><a class="next" href="../009-tools/"><small>Next</small>9. Execution / tools overview</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

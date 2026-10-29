@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.4. Barriers and root tracking - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This document defines the GC's mark starting points (roots) and the recording of old → young references (write barrier).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/704-barriers-and-roots.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.4. Barriers and root tracking - rok docs">
+<meta property="og:description" content="This document defines the GC's mark starting points (roots) and the recording of old → young references (write barrier).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/704-barriers-and-roots.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/704-barriers-and-roots.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/704-barriers-and-roots.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">7. Runtime overview</a></p><ul class="pages"><li><a href="701-object-layout">7.1. Object layout and memory spaces</a></li><li><a href="702-allocation">7.2. Allocation</a></li><li><a href="703-gc-algorithm">7.3. GC algorithm</a></li><li class="cur"><a aria-current="page" href="704-barriers-and-roots">7.4. Barriers and root tracking</a><ul class="toc"><li><a href="#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">7.4.1. Root tracking: a shadow stack emitted directly by the compiler</a></li><li><a href="#742-write-barrier-incremental-update">7.4.2. Write barrier: incremental update</a></li><li><a href="#743-safepoint-polling">7.4.3. Safepoint polling</a></li><li><a href="#744-walking-the-shadow-stack">7.4.4. Walking the shadow stack</a></li><li><a href="#745-key-tls-slots">7.4.5. Key TLS slots</a></li></ul></li><li><a href="705-concurrent-collection">7.5. Concurrent mark</a></li><li><a href="706-scheduler">7.6. Scheduler</a></li><li><a href="707-io-and-timer">7.7. I/O driver and timers</a></li><li><a href="708-coroutine">7.8. Coroutines</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="74-barriers-and-root-tracking 74-배리어와-루트-추적 741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler 741-루트-추적-컴파일러가-직접-emit-하는-shadow-stack choosing-a-shadow-stack shadow-stack-선택 structure-of-the-shadow-stack shadow-stack-의-구조 compiler-emit-rules 컴파일러의-emit-규칙 objects-pointed-to-by-roots-are-not-moved 루트가-가리키는-객체는-옮기지-않음 contract-with-the-collector 수집기와의-계약 coexistence-with-error-propagation 에러-전파와의-공존 742-write-barrier-incremental-update 742-write-barrier-incremental-update why-a-write-barrier-is-needed write-barrier-의-필요성 object-remembering object-remembering-방식 card-marking card-marking remembered-set remembered-set inline-cost 인라인-비용 compiler-emit 컴파일러의-emit 743-safepoint-polling 743-safepoint-polling 744-walking-the-shadow-stack 744-shadow-stack-의-walk 745-key-tls-slots 745-tls-의-핵심-슬롯"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/007-runtime/704-barriers-and-roots" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="74-barriers-and-root-tracking"><a class="anchor" tabindex="-1" href="#74-barriers-and-root-tracking" aria-hidden="true">#</a>7.4. Barriers and root tracking</h1>
+<p>This document defines the <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a>'s mark starting points (roots) and the recording of old → young references (write barrier).</p>
+<h2 id="741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler"><a class="anchor" tabindex="-1" href="#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler" aria-hidden="true">#</a>7.4.1. Root tracking: a shadow stack emitted directly by the compiler</h2>
+<h3 id="choosing-a-shadow-stack"><a class="anchor" tabindex="-1" href="#choosing-a-shadow-stack" aria-hidden="true">#</a>Choosing a shadow stack</h3>
+<p>The two most common root-tracking approaches are:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Approach</th><th>Advantage</th><th>Disadvantage</th></tr></thead>
+<tbody>
+<tr><td>LLVM statepoint</td><td>Precise stackmaps</td><td>Supports only x86_64 / aarch64 / ppc</td></tr>
+<tr><td>Shadow stack (direct emit)</td><td>Same code on every target</td><td>Extra stack memory and push/pop</td></tr>
+</tbody></table></div>
+<p>Tier 1 of <a href="../000-meta/006-platform-targets">Platform targets</a> includes 32-bit ARM (<code>armv7</code>), 32-bit x86 (<code>i686</code>) and WASM. LLVM statepoints do not support these, so the only approach applicable to all of Tier 1 is a <a href="../000-meta/007-glossary#shadow-stack">shadow stack</a>.</p>
+<p>LLVM's <code>gc &quot;shadow-stack&quot;</code> strategy (<code>llvm.gcroot</code>) is not used. Its chain head, <code>llvm_gc_root_chain</code>, is a single process-wide global, so a per-thread shadow stack is impossible with it.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>rok's root tracking is a shadow stack whose frame push / pop the compiler emits directly. The chain head is the slot at offset 0 of <code>rok_tls</code> (<code>rok_tls_shadow_stack_top</code>), one per thread (<a href="../008-abi/803-tls-slots#838-form-of-compiler-emission">8.3.8</a>). It works the same way on all Tier 1 targets (including 32-bit ARM / x86 / WASM).</p>
+</div>
+<h3 id="structure-of-the-shadow-stack"><a class="anchor" tabindex="-1" href="#structure-of-the-shadow-stack" aria-hidden="true">#</a>Structure of the shadow stack</h3>
+<p>Each OS thread has its own shadow stack: a linked list, via <code>prev</code>, of frames placed on each function's machine stack.</p>
+<pre><code>rok_tls_shadow_stack_top ──► frame N      (current function)
+                             ├── prev ──► frame N-1 (caller) ──► ... ──► null
+                             ├── count = 2
+                             ├── slots[0]  ──► &amp;word (local x)      ──► GC object
+                             └── slots[1]  ──► &amp;word (spill slot)   ──► GC object
+</code></pre>
+<pre><code>ShadowFrame {
+    prev:  ptr          // caller's frame (null if none)
+    count: usize        // number of slots (pointer width)
+    slots: [ptr; count] // addresses of words holding GC references
+}
+</code></pre>
+<p><code>slots</code> holds not GC reference values but <strong>addresses of words holding GC references</strong>. Such a word is a local variable's stack slot or a spill slot; words inside array elements or <code>struct</code> fields are pointed to the same way. So assigning to a variable needs no separate frame update.</p>
+<h3 id="compiler-emit-rules"><a class="anchor" tabindex="-1" href="#compiler-emit-rules" aria-hidden="true">#</a>Compiler emit rules</h3>
+<p>A function needs a frame only if it holds GC references and can reach a safepoint (<a href="../008-abi/804-safepoint#842-emission-sites">8.4.2</a>). Calls to functions that never return (panics) and to runtime functions that neither allocate nor block (<a href="../008-abi/805-extern-symbols#functions-that-are-not-safepoints">8.5.2</a>) do not count. For such functions, the compiler directly emits the following code:</p>
+<p>Only locals live across a safepoint need a root.</p>
+<ol>
+<li>On entry, zero the GC reference words.
+</li>
+<li>Reserve a <code>ShadowFrame</code> on the machine stack. Before the first safepoint on each path through the function, record the addresses of those words in <code>slots</code>, save the current <code>rok_tls_shadow_stack_top</code> in <code>prev</code>, then set the head to this frame (link). The link may come earlier, up to the function's entry; where paths join, either all of them have linked or none has. A path that reaches no safepoint need not link.
+</li>
+<li>Immediately before every <code>return</code> on a path that linked the frame, restore the head to <code>prev</code> (unlink). An error return is also an ordinary <code>return</code>, so it takes the same path. A panic terminates the process, so no unlink is needed.
+</li>
+<li>A local live across back-edge polls only (<a href="../008-abi/804-safepoint#848-loop-back-edge-poll">8.4.8</a>), and across no other safepoint, may instead be registered on the poll's slow path alone: in a second frame whose words the slow path writes (null where the local is dead) just before it links that frame and calls the runtime, and which it unlinks right after. Such a word is written nowhere else. A frame of rule 2 not yet linked on that path is linked and unlinked with it. This rests on one rule: a thread stops for a collection only at a safepoint the compiler counts (a call, an allocation, an entry poll) or at a back-edge poll. A runtime function that is not a safepoint (<a href="../008-abi/805-extern-symbols#functions-that-are-not-safepoints">8.5.2</a>) must therefore never wait for a stop: it neither allocates, nor blocks, nor polls.
+</li>
+</ol>
+<p>When a variable is no longer used (by liveness), the word its root slot points to may be cleared to null. This does not change meaning as long as that word is not read again, and keeps the frame from holding dead objects alive.</p>
+<p>When marking, the GC starts from every thread's chain head, walks the frames, and marks the value of the word each <code>slots[i]</code> points to as a root.</p>
+<h3 id="objects-pointed-to-by-roots-are-not-moved"><a class="anchor" tabindex="-1" href="#objects-pointed-to-by-roots-are-not-moved" aria-hidden="true">#</a>Objects pointed to by roots are not moved</h3>
+<p>Objects pointed to directly by roots (shadow stack, <code>static</code>s, registered thread roots) are not moved in that collection. So a GC pointer passed to a blocking runtime call or an <code>extern &quot;C&quot;</code> function stays in place <strong>as long as the argument is in the roots until the call ends</strong>. If C code keeps the pointer after the call ends, it must be pinned with <code>rok_gc_pin</code> (<a href="../008-abi/805-extern-symbols#851-gc-area">8.5.1</a>).</p>
+<p>A coroutine frame is a GC heap object (<a href="708-coroutine">7.8</a>), so the variables in it are tracked through the frame object's scan table, not the shadow stack.</p>
+<h3 id="contract-with-the-collector"><a class="anchor" tabindex="-1" href="#contract-with-the-collector" aria-hidden="true">#</a>Contract with the collector</h3>
+<p>Roots (the shadow stack of this section) and the write barrier (<a href="#742-write-barrier-incremental-update">7.4.2</a>) are emitted as specified here. The collector requires nothing else from compiler output.</p>
+<h3 id="coexistence-with-error-propagation"><a class="anchor" tabindex="-1" href="#coexistence-with-error-propagation" aria-hidden="true">#</a>Coexistence with error propagation</h3>
+<p>Errors of <a href="../003-expressions/314-error-control-flow">Error control flow</a> are delivered through the return value of a throwing function (<a href="../008-abi/806-calling-convention#865-return-of-throwing-functions-value-based-error-propagation">8.6.5</a>). When an error propagates, each frame still exits through the ordinary return path and pops its shadow stack entry, so the shadow stack always matches the actual call stack without any special adjustment for error handling.</p>
+<h2 id="742-write-barrier-incremental-update"><a class="anchor" tabindex="-1" href="#742-write-barrier-incremental-update" aria-hidden="true">#</a>7.4.2. Write barrier: incremental update</h2>
+<h3 id="why-a-write-barrier-is-needed"><a class="anchor" tabindex="-1" href="#why-a-write-barrier-is-needed" aria-hidden="true">#</a>Why a write barrier is needed</h3>
+<p>Minor collection does not enter old objects (<a href="703-gc-algorithm#732-sticky-mark-bit-generational-collection">7.3.2</a>). When an old object comes to point to a young object, the write barrier informs the collector. Otherwise that young object would be reclaimed.</p>
+<h3 id="object-remembering"><a class="anchor" tabindex="-1" href="#object-remembering" aria-hidden="true">#</a>Object-remembering</h3>
+<p>The barrier checks <strong>only the header of the destination object <code>p</code></strong>. A surviving (old) object has the <code>UNLOGGED</code> bit (<a href="../008-abi/801-object-header-abi#813-gc_flags-offset-4-u32">8.1.3</a>) set along with <code>STICKY</code>; on the first write to that object, the whole object is recorded in the remembered set.</p>
+<pre><code>*p = q;
+                                // ↓ barrier (may be before the store)
+if (p.gc_flags &amp; UNLOGGED) {
+    rok_gc_wb_slow(p);          // clear UNLOGGED and put p in the remembered set
+}
+</code></pre>
+<ul>
+<li>The header of the stored value <code>q</code> (<code>q.sticky</code> etc.) is <strong>not read</strong>. <code>q</code> may be an inline integer in an <code>any</code> slot or an interior pointer of a <code>str</code>, so reading it as an object header is unsafe.
+</li>
+<li>The barrier may be placed before the store.
+</li>
+<li>The slow path <code>rok_gc_wb_slow(obj)</code> clears <code>UNLOGGED</code> with an atomic <code>fetch_and</code>. During concurrent mark, it also records the object's current references in the SATB buffer (<a href="705-concurrent-collection#753-satb-barrier">7.5.3</a>). So even when several threads write concurrently, only one thread records the object. The slow path must not be a safepoint (a collection must not start inside it).
+</li>
+<li>A young GC treats objects in the remembered set as roots and marks the young objects they point to. After the collection, <code>UNLOGGED</code> is set again on the recorded objects.
+</li>
+</ul>
+<h3 id="card-marking"><a class="anchor" tabindex="-1" href="#card-marking" aria-hidden="true">#</a>Card marking</h3>
+<p>Old objects of 8 KiB or more are recorded per 512-byte <strong>card</strong> instead of as a whole object. Such objects have the <code>CARDED</code> bit (<a href="../008-abi/801-object-header-abi#813-gc_flags-offset-4-u32">8.1.3</a>) set instead of <code>UNLOGGED</code>.</p>
+<ul>
+<li>Such an object has a card table (1 byte per 512 B), allocated after the object. The pointer to that card table is in the word immediately before the header.
+</li>
+<li>The inline fast path checks <code>UNLOGGED | CARDED</code> in <code>p</code>'s header at once (one load, one branch).
+</li>
+<li>Order: if <code>UNLOGGED</code>, call the slow path first; then, if <code>CARDED</code>, mark the cards. During concurrent mark (<a href="705-concurrent-collection">7.5</a>), an old LOS object may have both bits.
+</li>
+<li>If <code>CARDED</code>, the barrier marks dirty, inline and without a call, the cards the written slot spans, i.e. from <code>(slot - p) &gt;&gt; 9</code> to <code>(slot + len - 1 - p) &gt;&gt; 9</code>. So the barrier takes the slot address and the size of the stored value (<code>len</code>).
+</li>
+<li>If <code>UNLOGGED</code>, it calls <code>rok_gc_wb_slow(p)</code> as above (unchanged).
+</li>
+<li>Minor collection scans only the dirty cards of <code>CARDED</code> objects and cleans those cards.
+</li>
+</ul>
+<p>Stores that need no barrier:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Store</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>Initializing a just-allocated object</td><td>No GC between allocation and store, so still young</td></tr>
+<tr><td>Writing to a <code>static</code></td><td>Statics are roots</td></tr>
+<tr><td>Raw <code>Ptr&lt;T&gt;</code> memory</td><td>Not tracked by the GC</td></tr>
+<tr><td>Atomics (non-reference values)</td><td>Not GC references</td></tr>
+</tbody></table></div>
+<h3 id="remembered-set"><a class="anchor" tabindex="-1" href="#remembered-set" aria-hidden="true">#</a>Remembered set</h3>
+<p>Each thread has a 4 KiB log chunk (TLS slots <code>rok_tls_wb_log_cursor</code> / <code>rok_tls_wb_log_limit</code>). Full chunks, and all chunks at collection or thread exit, are pushed onto a lock-free stack. The collector drains that stack and uses the recorded objects as roots.</p>
+<h3 id="inline-cost"><a class="anchor" tabindex="-1" href="#inline-cost" aria-hidden="true">#</a>Inline cost</h3>
+<p>The fast path is one load of <code>p</code>'s header and one branch (<code>UNLOGGED | CARDED</code>); usually both bits are clear (a young object or already recorded), so it passes straight through.</p>
+<h3 id="compiler-emit"><a class="anchor" tabindex="-1" href="#compiler-emit" aria-hidden="true">#</a>Compiler emit</h3>
+<p>The compiler emits the fast path inline; only the slow path calls a runtime function (<a href="../008-abi/805-extern-symbols">8.5</a>).</p>
+<pre><code>extern &quot;C&quot; {
+    fn rok_gc_wb_slow(obj: Ptr&lt;u8&gt;);   // clear UNLOGGED and add to the remembered set (slow path, not a safepoint)
+}
+</code></pre>
+<h2 id="743-safepoint-polling"><a class="anchor" tabindex="-1" href="#743-safepoint-polling" aria-hidden="true">#</a>7.4.3. Safepoint polling</h2>
+<p>A collection proceeds while all mutator threads are stopped at safepoints. The compiler emits a safepoint poll in every function and loop (8.4.2's exceptions aside) (<a href="../008-abi/804-safepoint">8.4</a>).</p>
+<pre><code>poll:
+    if tls.yield_flag {
+        call rok_runtime_yield()       // signal arrival at a GC-safe point
+    }
+</code></pre>
+<p><code>rok_tls_yield_flag</code> is normally 0. When the collector sets it, each thread stops at its next poll.</p>
+<h2 id="744-walking-the-shadow-stack"><a class="anchor" tabindex="-1" href="#744-walking-the-shadow-stack" aria-hidden="true">#</a>7.4.4. Walking the shadow stack</h2>
+<p>When the GC starts marking, it does the following:</p>
+<pre><code>for each thread T:
+    frame = T.rok_tls_shadow_stack_top
+    while frame != null:
+        for i in 0..frame.count:
+            ref = *frame.slots[i]          // slot is the address of a word
+            if ref != null:
+                mark(ref)
+        frame = frame.prev
+</code></pre>
+<p>It walks each thread's shadow stack and adds every live GC object variable to the mark queue.</p>
+<p>After that, the mark algorithm (<a href="703-gc-algorithm">GC algorithm</a>) starts from those objects and follows their children.</p>
+<h2 id="745-key-tls-slots"><a class="anchor" tabindex="-1" href="#745-key-tls-slots" aria-hidden="true">#</a>7.4.5. Key TLS slots</h2>
+<p>Each thread has the following TLS slots. Each slot is one <code>thread_local</code> global exported by the runtime.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Slot</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>rok_tls_yield_flag</code></td><td>Whether to <code>yield</code> at a safepoint</td></tr>
+<tr><td><code>rok_tls_tlab_cursor</code></td><td>Next allocation position in the <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a></td></tr>
+<tr><td><code>rok_tls_tlab_limit</code></td><td>End of the TLAB</td></tr>
+<tr><td><code>rok_tls_shadow_stack_top</code></td><td>Shadow stack chain head (innermost frame)</td></tr>
+<tr><td><code>rok_tls_wb_log_cursor</code></td><td>Position in the write barrier log</td></tr>
+<tr><td><code>rok_tls_mutator_state</code></td><td>Current mutator state (running / GC-cooperating)</td></tr>
+</tbody></table></div>
+<p>Detailed TLS slot definitions are in <a href="../008-abi/803-tls-slots">TLS slots</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/007-runtime/704-barriers-and-roots.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="703-gc-algorithm"><small>Previous</small>7.3. GC algorithm</a><a class="next" href="705-concurrent-collection"><small>Next</small>7.5. Concurrent mark</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

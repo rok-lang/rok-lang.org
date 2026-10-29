@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13. File and Network IO - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter covers how a program talks to the world outside it. Files and directories, paths, standard IO, environment variables, child processes, and TCP / UD...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/13-io.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="13. File and Network IO - rok docs">
+<meta property="og:description" content="This chapter covers how a program talks to the world outside it. Files and directories, paths, standard IO, environment variables, child processes, and TCP / UD...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/13-io.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li class="cur"><a aria-current="page" href="13-io">13. File and Network IO</a><ul class="toc"><li><a href="#reading-and-writing-files">Reading and writing files</a></li><li><a href="#file-and-openoptions">File and OpenOptions</a></li><li><a href="#directories-and-the-dir-capability">Directories and the Dir capability</a></li><li><a href="#paths-path">Paths: Path</a></li><li><a href="#standard-io-and-the-environment">Standard IO and the environment</a></li><li><a href="#child-processes">Child processes</a></li><li><a href="#tcp-and-udp">TCP and UDP</a></li><li><a href="#async-io-_async">Async IO: *_async</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="13-file-and-network-io"><a class="anchor" tabindex="-1" href="#13-file-and-network-io" aria-hidden="true">#</a>13. File and Network IO</h1>
+<p>This chapter covers how a program talks to the world outside it. Files and directories, paths, standard IO, environment variables, child processes, and TCP / UDP sockets all live in <code>rok::std</code>.</p>
+<p>IO can fail at any time, so almost every function is <code>throws (IoError)</code>. The <code>try</code> / <code>catch</code> from <a href="10-errors">chapter 10</a> is used throughout.</p>
+<h2 id="reading-and-writing-files"><a class="anchor" tabindex="-1" href="#reading-and-writing-files" aria-hidden="true">#</a>Reading and writing files</h2>
+<p>The simplest way is <code>fs::write</code> and <code>fs::read_to_str</code>. The functions open and close the file for you. The example creates a directory under <code>env::temp_dir()</code>, works in it, and removes it at the end.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::fs;
+<span class="k">use</span> rok::std::env;
+<span class="k">use</span> rok::std::io::<span class="t">IoError</span>;
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> dir = env::temp_dir() / <span class="s">f"rok_learn13_{</span>env::pid()<span class="s">}"</span>;
+    <span class="k">try</span> fs::create_dir_all(dir / <span class="s">"notes"</span> / <span class="s">"2026"</span>);
+
+    <span class="k">try</span> fs::write(dir / <span class="s">"hello.txt"</span>, <span class="s">"first line\nsecond line\n"</span>);
+    <span class="k">let</span> text = <span class="k">try</span> fs::read_to_str(dir / <span class="s">"hello.txt"</span>);
+    print(text);
+    println(<span class="s">f"{</span>text.lines().count()<span class="s">} lines"</span>);
+
+    <span class="k">try</span> fs::read_to_str(dir / <span class="s">"nope.txt"</span>) <span class="k">catch</span> e {
+        println(<span class="s">f"error kind: {</span>e.kind()<span class="s">:?</span><span class="s">}"</span>);
+        <span class="s">""</span>
+    };
+
+    <span class="k">try</span> fs::remove_dir_all(dir);
+    println(<span class="s">f"exists after cleanup: {</span>fs::exists(dir)<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">first line
+second line
+2 lines
+error kind: NotFound
+exists after cleanup: false
+</code></pre>
+<p>An <code>IoError</code> carries a <code>kind()</code> (<code>NotFound</code>, <code>PermissionDenied</code>, <code>TimedOut</code>, ...) and a human-readable message. To branch on the kind of error, compare <code>kind()</code>.</p>
+<p>Path arguments accept either a <code>str</code> or a <code>Path</code> (the <code>AsPath</code> trait), so you can pass <code>&quot;a.txt&quot;</code> and <code>dir / &quot;a.txt&quot;</code> alike.</p>
+<h2 id="file-and-openoptions"><a class="anchor" tabindex="-1" href="#file-and-openoptions" aria-hidden="true">#</a><code>File</code> and <code>OpenOptions</code></h2>
+<p>To write incrementally or read line by line, open a <code>File</code> directly. With a <code>using</code> block, the file is closed when the block exits. To choose how the file is opened, such as for appending, use <code>OpenOptions</code>.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::fs;
+<span class="k">use</span> rok::std::fs::{<span class="t">File</span>, <span class="t">OpenOptions</span>};
+<span class="k">use</span> rok::std::env;
+<span class="k">use</span> rok::std::io::{<span class="t">IoError</span>, <span class="t">Reader</span>};
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> log = env::temp_dir() / <span class="s">f"rok_learn13_log_{</span>env::pid()<span class="s">}.txt"</span>;
+
+    <span class="k">using</span> f = <span class="k">try</span> <span class="t">File</span>::create(log) {
+        <span class="k">try</span> f.write_str(<span class="s">"start\n"</span>);
+    }
+    <span class="k">using</span> f = <span class="k">try</span> <span class="t">File</span>::open_with(log, <span class="t">OpenOptions</span>::new().append(<span class="k">true</span>)) {
+        <span class="k">try</span> f.write_str(<span class="s">"more\n"</span>);
+    }
+    <span class="k">using</span> f = <span class="k">try</span> <span class="t">File</span>::open(log) {
+        <span class="k">for</span> line <span class="k">in</span> f.lines() {
+            println(<span class="s">f"&gt; {</span><span class="k">try</span> line.get()<span class="s">}"</span>);
+        }
+    }
+    <span class="k">try</span> fs::remove_file(log);
+}
+</code></pre>
+<pre class="output"><code class="language-output">&gt; start
+&gt; more
+</code></pre>
+<p><code>File::create</code> creates or truncates a file, and <code>File::open</code> opens it read-only. <code>lines()</code> is a method of the <code>Reader</code> trait, so it needs <code>use rok::std::io::Reader</code>. Each line may be a read error, so it arrives as a <code>Result</code>; unwrap it with <code>try line.get()</code>.</p>
+<h2 id="directories-and-the-dir-capability"><a class="anchor" tabindex="-1" href="#directories-and-the-dir-capability" aria-hidden="true">#</a>Directories and the <code>Dir</code> capability</h2>
+<p><code>fs::walk</code> traverses a directory depth-first, in name order. <code>fs::read_dir</code> lists only one level.</p>
+<p><code>Dir</code> is a little special: a <code>Dir</code> handle is a <strong>capability</strong>. <code>Dir::root()</code> is the default handle that works with ordinary paths, and a <code>Dir</code> opened from it with <code>open_dir</code> can only reach inside that directory. Attempts to escape with an absolute path or <code>..</code> are refused. This is a safety net when handling untrusted paths (user input, names inside an archive).</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::fs;
+<span class="k">use</span> rok::std::fs::<span class="t">Dir</span>;
+<span class="k">use</span> rok::std::env;
+<span class="k">use</span> rok::std::io::<span class="t">IoError</span>;
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> base = env::temp_dir() / <span class="s">f"rok_learn13_dir_{</span>env::pid()<span class="s">}"</span>;
+    <span class="k">try</span> fs::create_dir_all(base / <span class="s">"notes"</span> / <span class="s">"2026"</span>);
+    <span class="k">try</span> fs::write(base / <span class="s">"notes"</span> / <span class="s">"a.md"</span>, <span class="s">"# a"</span>);
+    <span class="k">try</span> fs::write(base / <span class="s">"notes"</span> / <span class="s">"2026"</span> / <span class="s">"b.md"</span>, <span class="s">"# b"</span>);
+
+    <span class="k">for</span> e <span class="k">in</span> fs::walk(base) {
+        <span class="k">let</span> e = <span class="k">try</span> e.get();
+        <span class="k">let</span> rel = <span class="k">try</span> e.path().strip_prefix(base) <span class="k">catch</span> _ { e.path() };
+        <span class="k">if</span> rel.as_str() != <span class="s">""</span> { println(<span class="s">f"{</span>rel<span class="s">} dir={</span>e.is_dir()<span class="s">}"</span>); }
+    }
+
+    <span class="k">let</span> d = <span class="k">try</span> <span class="t">Dir</span>::root().open_dir(base / <span class="s">"notes"</span>);
+    println(<span class="s">f"inside: {</span>d.exists(<span class="s">"a.md"</span>)<span class="s">}"</span>);
+    <span class="k">try</span> d.open(<span class="s">"../../escape.txt"</span>) <span class="k">catch</span> e { println(<span class="s">f"refused: {</span>e.kind()<span class="s">:?</span><span class="s">}"</span>); };
+    <span class="k">try</span> d.open(<span class="s">"/etc/hosts"</span>) <span class="k">catch</span> e { println(<span class="s">f"refused: {</span>e.kind()<span class="s">:?</span><span class="s">}"</span>); };
+    <span class="k">try</span> d.close();
+
+    <span class="k">try</span> fs::remove_dir_all(base);
+}
+</code></pre>
+<pre class="output"><code class="language-output">notes dir=true
+notes/2026 dir=true
+notes/2026/b.md dir=false
+notes/a.md dir=false
+inside: true
+refused: PermissionDenied
+refused: PermissionDenied
+</code></pre>
+<p><code>create_dir</code>, <code>remove_file</code>, <code>remove_dir</code>, <code>rename</code>, <code>copy</code>, and <code>metadata</code> are also available both as free functions and as <code>Dir</code> methods.</p>
+<h2 id="paths-path"><a class="anchor" tabindex="-1" href="#paths-path" aria-hidden="true">#</a>Paths: <code>Path</code></h2>
+<p><code>rok::std::path::Path</code> is a UTF-8 path. Like Python's <code>pathlib</code>, you join paths with the <code>/</code> operator. A path may have no parent or extension, so those methods return <code>T | none</code>.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::path::<span class="t">Path</span>;
+
+<span class="k">let</span> p = <span class="t">Path</span>::from(<span class="s">"/home/rok/src/main.rok"</span>);
+println(<span class="s">f"parent:    {</span>p.parent() ?? <span class="t">Path</span>::new()<span class="s">}"</span>);
+println(<span class="s">f"file name: {</span>p.file_name() ?? <span class="s">"-"</span><span class="s">}"</span>);
+println(<span class="s">f"stem:      {</span>p.file_stem() ?? <span class="s">"-"</span><span class="s">}"</span>);
+println(<span class="s">f"extension: {</span>p.extension() ?? <span class="s">"-"</span><span class="s">}"</span>);
+println(<span class="s">f"absolute:  {</span>p.is_absolute()<span class="s">}"</span>);
+
+<span class="k">let</span> q = <span class="t">Path</span>::from(<span class="s">"docs"</span>) / <span class="s">"guide"</span> / <span class="s">"intro.md"</span>;
+println(<span class="s">f"joined:    {</span>q<span class="s">}"</span>);
+println(<span class="s">f"swapped:   {</span>q.with_extension(<span class="s">"html"</span>)<span class="s">}"</span>);
+println(<span class="s">f"normal:    {</span><span class="t">Path</span>::from(<span class="s">"a/./b/../c"</span>).normalize()<span class="s">}"</span>);
+<span class="k">for</span> c <span class="k">in</span> q.components() { print(<span class="s">f"[{</span>c.as_str()<span class="s">}]"</span>); }
+println(<span class="s">""</span>);
+</code></pre>
+<pre class="output"><code class="language-output">parent:    /home/rok/src
+file name: main.rok
+stem:      main
+extension: rok
+absolute:  true
+joined:    docs/guide/intro.md
+swapped:   docs/guide/intro.html
+normal:    a/c
+[docs][guide][intro.md]
+</code></pre>
+<p><code>normalize</code> only cleans up the string; <code>canonicalize</code> asks the file system and resolves symbolic links too.</p>
+<h2 id="standard-io-and-the-environment"><a class="anchor" tabindex="-1" href="#standard-io-and-the-environment" aria-hidden="true">#</a>Standard IO and the environment</h2>
+<p><code>println</code> is convenient, but to write without a newline or to write to standard error, use <code>io::stdout()</code> / <code>io::stderr()</code>. <code>io::stdin().read_line()</code> returns the line including its trailing <code>\n</code>, and returns <code>&quot;&quot;</code> at end of input.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::io;
+<span class="k">use</span> rok::std::io::{<span class="t">IoError</span>, <span class="t">Reader</span>, <span class="t">Writer</span>};
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> out = io::stdout();
+    <span class="k">try</span> out.write_str(<span class="s">"Your name? "</span>);
+    <span class="k">try</span> out.flush();
+    <span class="k">let</span> line = <span class="k">try</span> io::stdin().read_line();
+    <span class="k">if</span> line == <span class="s">""</span> {
+        println(<span class="s">"(no input)"</span>);
+    } <span class="k">else</span> {
+        println(<span class="s">f"Hello, {</span>line.trim()<span class="s">}!"</span>);
+    }
+    <span class="k">try</span> io::stderr().write_str(<span class="s">"bye\n"</span>);
+}
+</code></pre>
+<p>Command-line arguments and environment variables live in <code>rok::std::env</code>. Element 0 of <code>env::args()</code> is the executable path. <code>env::var</code> throws <code>VarError</code> if the variable is not set.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::env;
+
+<span class="k">let</span> args = env::args();
+println(<span class="s">f"{</span>args.len()<span class="s">} arg(s)"</span>);
+
+env::set_var(<span class="s">"ROK_GREETING"</span>, <span class="s">"annyeong"</span>);
+println(<span class="k">try</span> env::var(<span class="s">"ROK_GREETING"</span>) <span class="k">catch</span> _ { <span class="s">"unset"</span> });
+env::remove_var(<span class="s">"ROK_GREETING"</span>);
+println(<span class="k">try</span> env::var(<span class="s">"ROK_GREETING"</span>) <span class="k">catch</span> e { <span class="s">f"error: {</span>e<span class="s">}"</span> });
+
+<span class="k">let</span> mine = env::vars().filter(|kv| kv.<span class="n">0</span>.starts_with(<span class="s">"ROK_GREETING"</span>)).count();
+println(<span class="s">f"matching vars: {</span>mine<span class="s">}"</span>);
+println(<span class="s">f"temp is absolute: {</span>env::temp_dir().is_absolute()<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">1 arg(s)
+annyeong
+error: environment variable not found
+matching vars: 0
+temp is absolute: true
+</code></pre>
+<h2 id="child-processes"><a class="anchor" tabindex="-1" href="#child-processes" aria-hidden="true">#</a>Child processes</h2>
+<p><code>process::Command</code> runs another program. Set arguments, environment, and working directory with builder methods, then run it with one of <code>output()</code> (waits for exit and collects stdout / stderr), <code>status()</code> (exit status only), or <code>spawn()</code> (returns a <code>Child</code> without waiting).</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::process::<span class="t">Command</span>;
+<span class="k">use</span> rok::std::io::<span class="t">IoError</span>;
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> out = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"echo"</span>).args([<span class="s">"hello"</span>, <span class="s">"from"</span>, <span class="s">"echo"</span>]).output();
+    print(<span class="k">try</span> <span class="t">str</span>::from_utf8(out.stdout) <span class="k">catch</span> _ { <span class="s">""</span> });
+    println(<span class="s">f"success: {</span>out.status.success()<span class="s">}"</span>);
+
+    <span class="k">let</span> st = <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"sh"</span>).args([<span class="s">"-c"</span>, <span class="s">"exit 3"</span>]).status();
+    println(<span class="s">f"code: {</span>st.code() ?? -<span class="n">1</span><span class="s">}"</span>);
+
+    <span class="k">try</span> <span class="t">Command</span>::new(<span class="s">"no-such-program"</span>).status() <span class="k">catch</span> e {
+        println(<span class="s">f"spawn failed: {</span>e.kind()<span class="s">:?</span><span class="s">}"</span>);
+    };
+}
+</code></pre>
+<pre class="output"><code class="language-output">hello from echo
+success: true
+code: 3
+spawn failed: NotFound
+</code></pre>
+<p><code>out.stdout</code> is bytes (<code>List&lt;u8&gt;</code>), so convert it to text with <code>str::from_utf8</code>. For a process killed by a signal, <code>code()</code> is <code>none</code>.</p>
+<h2 id="tcp-and-udp"><a class="anchor" tabindex="-1" href="#tcp-and-udp" aria-hidden="true">#</a>TCP and UDP</h2>
+<p>The <code>rok::std::net</code> API is blocking by default. The example below runs a server and a client in one program. Binding to port <code>0</code> lets the OS pick a free port, and <code>local_addr()</code> reports the actual address. The server accepts one connection on a thread and echoes the received text back in upper case.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net;
+<span class="k">use</span> rok::std::net::{<span class="t">TcpStream</span>, <span class="t">Shutdown</span>};
+<span class="k">use</span> rok::std::io::{<span class="t">IoError</span>, <span class="t">Reader</span>, <span class="t">Writer</span>};
+<span class="k">use</span> rok::std::thread;
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> listener = <span class="k">try</span> net::tcp_listen(<span class="s">"127.0.0.1:0"</span>);
+    <span class="k">let</span> addr = <span class="k">try</span> listener.local_addr();
+
+    <span class="k">let</span> server = thread::spawn(|| {
+        <span class="k">let</span> (conn, _) = <span class="k">try</span>! listener.accept();
+        <span class="k">let</span> msg = <span class="k">try</span>! conn.read_to_str();
+        <span class="k">try</span>! conn.write_str(msg.to_uppercase());
+        conn.close();
+        msg.len()
+    });
+
+    <span class="k">let</span> client = <span class="k">try</span> <span class="t">TcpStream</span>::connect(addr);
+    <span class="k">try</span> client.write_str(<span class="s">"hello, socket"</span>);
+    <span class="c">// Half-close: the server's read_to_str sees the end.</span>
+    <span class="k">try</span> client.shutdown(<span class="t">Shutdown</span>::<span class="t">Write</span>);
+    println(<span class="s">f"reply: {</span><span class="k">try</span> client.read_to_str()<span class="s">}"</span>);
+    client.close();
+    println(<span class="s">f"server read {</span><span class="k">try</span>! server.join()<span class="s">} bytes"</span>);
+    listener.close();
+}
+</code></pre>
+<pre class="output"><code class="language-output">reply: HELLO, SOCKET
+server read 13 bytes
+</code></pre>
+<p>UDP exchanges datagrams without a connection. <code>recv_from</code> returns the number of bytes received and the sender's address.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net;
+<span class="k">use</span> rok::std::io::{<span class="t">IoError</span>, byte_buf};
+
+<span class="k">fn</span> main() <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">let</span> a = <span class="k">try</span> net::udp_bind(<span class="s">"127.0.0.1:0"</span>);
+    <span class="k">let</span> b = <span class="k">try</span> net::udp_bind(<span class="s">"127.0.0.1:0"</span>);
+    <span class="k">try</span> b.send_to(<span class="s">"ping"</span>, <span class="k">try</span> a.local_addr());
+
+    <span class="k">let</span> buf = byte_buf(<span class="n">64</span>);
+    <span class="k">let</span> (n, from) = <span class="k">try</span> a.recv_from(buf);
+    println(<span class="s">f"got {</span>n<span class="s">} bytes: {</span><span class="k">try</span> <span class="t">str</span>::from_utf8(buf[<span class="n">0</span>:n]) <span class="k">catch</span> _ { <span class="s">"?"</span> }<span class="s">}"</span>);
+    println(<span class="s">f"from b: {</span>from == (<span class="k">try</span> b.local_addr())<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">got 4 bytes: ping
+from b: true
+</code></pre>
+<h2 id="async-io-_async"><a class="anchor" tabindex="-1" href="#async-io-_async" aria-hidden="true">#</a>Async IO: <code>*_async</code></h2>
+<p>Inside a task (see <a href="12-concurrency">chapter 12</a>), instead of a blocking call you <code>await</code> the version of the same name with an <code>_async</code> suffix. For sockets, only the task pauses while waiting, and the thread runs other tasks. Regular files have no OS support for async waiting, so the call runs on a separate thread while the task awaits the result. Errors are thrown exactly as in the synchronous version.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::fs;
+<span class="k">use</span> rok::std::net;
+<span class="k">use</span> rok::std::net::<span class="t">TcpStream</span>;
+<span class="k">use</span> rok::std::env;
+
+<span class="k">let</span> path = env::temp_dir() / <span class="s">f"rok_learn13_async_{</span>env::pid()<span class="s">}.txt"</span>;
+<span class="k">try</span>! <span class="k">await</span> fs::write_async(path, <span class="s">"written in a task"</span>);
+println(<span class="k">try</span>! <span class="k">await</span> fs::read_to_str_async(path));
+<span class="k">try</span>! <span class="k">await</span> fs::remove_file_async(path);
+
+<span class="k">let</span> l = <span class="k">try</span>! net::tcp_listen(<span class="s">"127.0.0.1:0"</span>);
+<span class="k">let</span> addr = <span class="k">try</span>! l.local_addr();
+<span class="k">let</span> server = task::spawn(<span class="k">async</span> {
+    <span class="k">let</span> (conn, _) = <span class="k">try</span>! <span class="k">await</span> l.accept_async();
+    <span class="k">let</span> got = <span class="k">try</span>! <span class="k">await</span> conn.read_to_end_async();
+    conn.close();
+    got.len()
+});
+<span class="k">let</span> c = <span class="k">try</span>! <span class="k">await</span> <span class="t">TcpStream</span>::connect_async(addr);
+<span class="k">try</span>! <span class="k">await</span> c.write_str_async(<span class="s">"twelve bytes"</span>);
+c.close();
+println(<span class="s">f"server got {</span><span class="k">await</span> server<span class="s">} bytes"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">written in a task
+server got 12 bytes
+</code></pre>
+<p>With thousands of connections, tasks are much lighter than a thread per connection. For a tool with only a few connections, the blocking API is simpler.</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>Whole files: <code>fs::read_to_str</code> / <code>fs::write</code>. Incrementally: <code>File</code> + <code>using</code>, with <code>OpenOptions</code> to choose the open mode.
+</li>
+<li><code>Dir</code> is a capability. Anything outside an opened <code>Dir</code> (absolute paths, <code>..</code>) is refused with <code>PermissionDenied</code>.
+</li>
+<li>Build paths with <code>Path</code> and the <code>/</code> operator; parts that may be missing come back as <code>T | none</code>.
+</li>
+<li>Use <code>io::stdin/stdout/stderr</code>, <code>env::args/var/temp_dir</code>, and <code>process::Command</code> to deal with the outside environment.
+</li>
+<li>TCP / UDP: <code>net::tcp_listen</code> / <code>TcpStream::connect</code> / <code>net::udp_bind</code>. With port <code>0</code>, the OS picks one.
+</li>
+<li>Inside a task, <code>await</code> the <code>*_async</code> versions.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Spec: <a href="../spec/refs-standard-libraries/300-std/301-fs">fs</a>, <a href="../spec/refs-standard-libraries/300-std/302-net">net</a>, <a href="../spec/refs-standard-libraries/300-std/305-io">io</a>, <a href="../spec/refs-standard-libraries/300-std/306-env">env</a>, <a href="../spec/refs-standard-libraries/300-std/307-process">process</a>, <a href="../spec/refs-standard-libraries/300-std/308-path">path</a>
+</li>
+<li>API: <a href="../std/std/fs">fs</a>, <a href="../std/std/net">net</a>, <a href="../std/std/io">io</a>, <a href="../std/std/env">env</a>, <a href="../std/std/process">process</a>, <a href="../std/std/path">path</a>
+</li>
+<li>Next chapter: <a href="14-ffi">14. FFI Basics</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/13-io.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="12-concurrency"><small>Previous</small>12. Concurrency</a><a class="next" href="14-ffi"><small>Next</small>14. FFI Basics</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

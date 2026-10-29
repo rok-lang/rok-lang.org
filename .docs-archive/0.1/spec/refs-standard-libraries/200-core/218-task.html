@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.18. task - M:N scheduler task API - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::task module provides a cooperative task API running on the M:N scheduler. Inspired by Rust Tokio and Go goroutines, tasks are implemented as stac...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/218-task.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.18. task - M:N scheduler task API - rok docs">
+<meta property="og:description" content="The rok::core::task module provides a cooperative task API running on the M:N scheduler. Inspired by Rust Tokio and Go goroutines, tasks are implemented as stac...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/218-task.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/218-task.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/218-task.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li class="cur"><a aria-current="page" href="218-task">2.18. task - M:N scheduler task API</a><ul class="toc"><li><a href="#2181-core-api">2.18.1. Core API</a></li><li><a href="#2182-taskt-type">2.18.2. Task&lt;T&gt; type</a></li><li><a href="#2183-scheduler-model---work-stealing">2.18.3. Scheduler model - work-stealing</a></li><li><a href="#2184-cooperative-cancellation---taskcancel">2.18.4. Cooperative cancellation - Task::cancel</a></li><li><a href="#2185-thread---11-os-threads">2.18.5. thread::* - 1:1 OS threads</a></li><li><a href="#2186-duration--instant">2.18.6. Duration / Instant</a></li><li><a href="#2187-module-mapping">2.18.7. Module mapping</a></li></ul></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="218-task---mn-scheduler-task-api 218-task---mn-스케줄러-task-api 2181-core-api 2181-핵심-api example 사용-예 spawn_blocking---blocking-work spawn_blocking---blocking-작업 send-check-for-spawn spawn-의-send-검사 select---the-first-future-to-finish select---먼저-끝나는-future taskid taskid 2182-taskt-type 2182-taskt-타입 intofuture-integration intofuture-통합 2183-scheduler-model---work-stealing 2183-스케줄러-모델---work-stealing 2184-cooperative-cancellation---taskcancel 2184-협력적-취소---taskcancel 2185-thread---11-os-threads 2185-thread---11-os-thread 2186-duration--instant 2186-duration--instant 2187-module-mapping 2187-모듈-매핑"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/218-task" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="218-task---mn-scheduler-task-api"><a class="anchor" tabindex="-1" href="#218-task---mn-scheduler-task-api" aria-hidden="true">#</a>2.18. task - M:N scheduler task API</h1>
+<p>The <code>rok::core::task</code> module provides a cooperative task API running on the M:N scheduler. Inspired by Rust Tokio and Go goroutines, tasks are implemented as <strong>stackless coroutines</strong> on a work-stealing scheduler.</p>
+<p>Because <code>use rok::core::**;</code> applies implicitly, <code>task::spawn</code>, <code>task::race</code>, <code>Task&lt;T&gt;</code> and the rest are usable without any import; the module prefix <code>task::</code> is still kept. Where code should be explicitly marked as asynchronous, <code>use rok::core::task::*;</code> is recommended, to make the asynchronous flow visibly separate.</p>
+<h2 id="2181-core-api"><a class="anchor" tabindex="-1" href="#2181-core-api" aria-hidden="true">#</a>2.18.1. Core API</h2>
+<p>The signatures of the core API:</p>
+<pre><code class="language-rok"><span class="k">fn</span> block_on&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(f: <span class="t">F</span>) -&gt; <span class="t">F</span>::<span class="t">Output</span>;              <span class="c">// sync entry point - attaches to the executor and runs f to completion</span>
+<span class="k">fn</span> spawn&lt;<span class="t">F</span>: <span class="t">Future</span> + <span class="t">Send</span>&gt;(f: <span class="t">F</span>) -&gt; <span class="t">Task</span>&lt;<span class="t">F</span>::<span class="t">Output</span>&gt; <span class="k">where</span> <span class="t">F</span>::<span class="t">Output</span>: <span class="t">Send</span>;
+<span class="k">fn</span> spawn_local&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(f: <span class="t">F</span>) -&gt; <span class="t">Task</span>&lt;<span class="t">F</span>::<span class="t">Output</span>&gt;;     <span class="c">// non-Send future - pinned to the current worker</span>
+<span class="k">fn</span> spawn_blocking&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(f: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Send</span>) -&gt; <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// blocking work on an OS thread outside the executor</span>
+<span class="k">fn</span> workers() -&gt; <span class="t">usize</span>;                                  <span class="c">// pool size inside the executor, 1 outside</span>
+<span class="k">fn</span> cpu_count() -&gt; <span class="t">usize</span>;                                <span class="c">// number of online CPUs - the pool size</span>
+<span class="k">async</span> <span class="k">fn</span> race&lt;<span class="t">T</span>&gt;(tasks: <span class="t">List</span>&lt;<span class="t">Task</span>&lt;<span class="t">T</span>&gt;&gt;) -&gt; <span class="t">T</span>;            <span class="c">// result of the first task to complete</span>
+<span class="k">fn</span> select&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(futs: <span class="t">List</span>&lt;<span class="t">F</span>&gt;) -&gt; <span class="t">SelectFuture</span>&lt;<span class="t">F</span>&gt;; <span class="c">// await - (index, result), does not spawn</span>
+<span class="k">fn</span> id() -&gt; <span class="t">TaskId</span>;                                      <span class="c">// id of the current task - panics outside a task</span>
+<span class="k">fn</span> try_id() -&gt; <span class="t">TaskId</span> | <span class="k">none</span>;
+<span class="k">async</span> <span class="k">fn</span> join&lt;<span class="t">T</span>&gt;(tasks: <span class="t">List</span>&lt;<span class="t">Task</span>&lt;<span class="t">T</span>&gt;&gt;) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;      <span class="c">// after all complete</span>
+<span class="k">async</span> <span class="k">fn</span> timeout&lt;<span class="t">T</span>&gt;(dur: <span class="t">Duration</span>, task: <span class="t">Task</span>&lt;<span class="t">T</span>&gt;) <span class="k">throws</span> (<span class="t">TimeoutError</span>) -&gt; <span class="t">T</span>;   <span class="c">// throws in try await</span>
+<span class="k">async</span> <span class="k">fn</span> sleep(dur: <span class="t">Duration</span>);
+<span class="k">async</span> <span class="k">fn</span> sleep_until(when: <span class="t">Instant</span>);
+<span class="k">async</span> <span class="k">fn</span> yield_now();                                   <span class="c">// await - yields once to other ready tasks</span>
+<span class="k">fn</span> registrations() -&gt; <span class="t">usize</span>;                            <span class="c">// diagnostic - parked wakers + pending timers of the running pool (implementation-defined)</span>
+<span class="k">fn</span> readable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;                       <span class="c">// await - until fd becomes readable (refs-lang 7.7.2)</span>
+<span class="k">fn</span> writable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;
+<span class="k">fn</span> wake_io(fd: <span class="t">i32</span>);                                   <span class="c">// wakes the readable / writable waiters of fd (used after close / shutdown; low-level)</span>
+</code></pre>
+<p><code>sleep</code> and <code>timeout</code> measure their duration from the first poll.</p>
+<h3 id="example"><a class="anchor" tabindex="-1" href="#example" aria-hidden="true">#</a>Example</h3>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::task::*;
+
+<span class="k">let</span> t = task::spawn(<span class="k">async</span> { compute_heavy() });
+<span class="k">let</span> result = <span class="k">await</span> t;
+
+<span class="k">let</span> results = <span class="k">await</span> task::join([
+    task::spawn(<span class="k">async</span> { fetch(<span class="s">"a"</span>) }),
+    task::spawn(<span class="k">async</span> { fetch(<span class="s">"b"</span>) }),
+    task::spawn(<span class="k">async</span> { fetch(<span class="s">"c"</span>) }),
+]);
+
+<span class="k">let</span> first = <span class="k">await</span> task::race([
+    task::spawn(<span class="k">async</span> { source_a() }),
+    task::spawn(<span class="k">async</span> { source_b() }),
+]);
+
+<span class="k">await</span> task::sleep(<span class="t">Duration</span>::ms(<span class="n">100</span>));
+<span class="k">await</span> task::yield_now();
+</code></pre>
+<p><code>spawn</code> takes a future, not a closure, so it is passed an <code>async</code> block or the result of an <code>async fn</code> call, as in <code>task::spawn(async { ... })</code>. A future that is not <code>Send</code> runs on the current thread through <code>spawn_local</code>. <code>join</code> / <code>race</code> / <code>timeout</code> are <code>await</code>ed to obtain their results.</p>
+<h3 id="spawn_blocking---blocking-work"><a class="anchor" tabindex="-1" href="#spawn_blocking---blocking-work" aria-hidden="true">#</a><code>spawn_blocking</code> - blocking work</h3>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* result slot */</span> }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Future</span> <span class="k">for</span> <span class="t">Blocking</span>&lt;<span class="t">T</span>&gt; { <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>; ... }
+</code></pre>
+<p><code>spawn_blocking(f)</code> runs <code>f</code> on an OS thread of the blocking pool rather than on an executor worker, and returns a future that completes with its result. It is used to wait inside a task on blocking syscalls that cannot be awaited by readiness (regular file I/O, etc., <a href="../300-std/301-fs#314a-asynchronous-file-io-_async">stdlib 3.1.4a</a>).</p>
+<ul>
+<li><code>f</code> starts <strong>immediately on the call</strong>, not at the first poll (if the pool is full, it is queued first).
+</li>
+<li>There is one blocking pool per process. It adds threads as needed (up to a limit) and ends threads that stay idle for a while. Jobs are processed in arrival order (FIFO). The limit is 512 threads; once reached, jobs queue up. A thread idle for 10 seconds ends. Each job is handed to one idle thread.
+</li>
+<li>Even if the <code>await</code>ing task is cancelled, <code>f</code> runs to completion; only its result is discarded.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="k">await</span> task::spawn_blocking(|| heavy_checksum(path));
+</code></pre>
+<h3 id="send-check-for-spawn"><a class="anchor" tabindex="-1" href="#send-check-for-spawn" aria-hidden="true">#</a><code>Send</code> check for <code>spawn</code></h3>
+<p><code>task::spawn</code> requires the result type to be <code>Send</code> as well (<code>where F::Output: Send</code>), and rejects a future whose <strong>frame</strong> is not <code>Send</code> (<a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>). This holds wherever the future came from: not only <code>async</code> blocks and <code>async fn</code> calls but also parameters, fields of structs / tuples / sums, results of helper functions, list elements, futures held by closures, and futures inside other coroutine frames are checked. A future's frame consists of:</p>
+<ul>
+<li>captured values;
+</li>
+<li>local variables and temporaries live across an <code>await</code>;
+</li>
+<li>other futures the frame holds (their frames too, recursively).
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> c = <span class="t">Cell</span>::new(<span class="n">0</span>);                      <span class="c">// Cell: !Send</span>
+task::spawn(<span class="k">async</span> { c.set(<span class="n">1</span>); });          <span class="c">// ERROR - !Send capture</span>
+task::spawn_local(<span class="k">async</span> { c.set(<span class="n">1</span>); });    <span class="c">// OK - pinned to the current worker</span>
+
+<span class="k">fn</span> make() -&gt; <span class="t">AsyncFuture</span>&lt;()&gt; { <span class="k">let</span> c = <span class="t">Cell</span>::new(<span class="n">0</span>); <span class="k">async</span> { c.set(<span class="n">1</span>); } }
+task::spawn(make());                       <span class="c">// ERROR - the frame of a future made by a helper is checked too</span>
+</code></pre>
+<p>The same check applies wherever a closure is sent to another thread: <code>thread::spawn</code>, <code>thread::Builder::spawn</code>, <code>par</code>'s <code>Scope::spawn</code>, and <code>task::spawn_blocking</code>. If the closure holds a future whose frame is not <code>Send</code>, it is the error <code>`X` would move a future to another thread: ...</code>.</p>
+<p>The check may approximate conservatively. An implementation may reject a future that is actually <code>Send</code>, but must never accept a future that passes a non-<code>Send</code> value to another thread. The check does not descend into:</p>
+<ul>
+<li>values whose type cannot hold a function value (they cannot hide a future's frame);
+</li>
+<li>values of types with an explicit <code>unsafe impl Send</code> (e.g. <code>Task&lt;T&gt;</code>); that type is responsible for safety.
+</li>
+</ul>
+<p><code>AsyncFuture&lt;T&gt;</code>, the result type of an <code>async fn</code>, is <code>Send</code> when <code>T: Send</code>; its throwing counterpart <code>TryAsyncFuture&lt;T, E&gt;</code> is <code>Send</code> when both <code>T</code> and <code>E</code> are <code>Send</code>. Captures and frames are examined separately by the check above. A frame whose captures are <code>Send</code> but not <code>Sync</code> (a list an <code>async fn</code> takes, a list or a future an <code>async</code> block captures) is accepted: <code>task::spawn</code> hands the future over like a channel send (<a href="213-marker#2139-send--sync---thread-boundary-markers">2.13.9</a>). The task gets a frame of its own holding copies of what the future captured, made in one hand-off, so what the captures shared (one list twice, a list and a future over it) they still share; using the future or what it captured after the spawn is a compile error (<code>E202</code>), as after a send. Only a future nothing has polled can be handed over: handing over one that has started (polled once by <code>select</code>, a user's <code>Future</code>, or by hand) or finished, or whose frame or a captured future's frame has a <code>[ref x]</code> capture, panics, and nothing is shared. A coroutine future sent through a channel, put in a <code>Mutex</code> or a <code>Frozen</code> is handed over the same way, a frame of its own each time. Each <code>await</code> of a task whose <code>Task</code> was handed on (<code>Frozen::get</code>, a channel, a lock, a <code>par</code> item) gets its own copy of the result; copies of a <code>Task</code> on one thread share it.</p>
+<h3 id="select---the-first-future-to-finish"><a class="anchor" tabindex="-1" href="#select---the-first-future-to-finish" aria-hidden="true">#</a><code>select</code> - the first future to finish</h3>
+<pre><code class="language-rok"><span class="k">fn</span> select&lt;<span class="t">F</span>: <span class="t">Future</span>&gt;(futs: <span class="t">List</span>&lt;<span class="t">F</span>&gt;) -&gt; <span class="t">SelectFuture</span>&lt;<span class="t">F</span>&gt;;   <span class="c">// Output = (usize, F::Output)</span>
+
+<span class="k">let</span> (i, v) = <span class="k">await</span> task::select([fetch_a(), fetch_b()]);
+</code></pre>
+<p>Unlike <code>race</code>, it does not spawn the futures; it runs them <strong>inside</strong> the waiting task.</p>
+<ul>
+<li>Futures are polled in list order; if two or more finish in the same poll, the lower index wins.
+</li>
+<li>When one finishes, all the others that have already started are cancelled. They are polled once more in the cancelled state so that <code>finally</code> / <code>using</code> run (2.18.4). A future never polled is never run.
+</li>
+<li>All wakeup registrations (timers, parking) made by the losing futures are released.
+</li>
+<li>If the waiting task is cancelled, the child futures are cancelled too.
+</li>
+<li>An empty list panics.
+</li>
+<li>The futures must have a single type. If the result types differ, wrap them: <code>async { Msg::A(await a) }</code>.
+</li>
+</ul>
+<p>A timeout can also be built from <code>select</code> and <code>sleep</code>.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Ev</span> { <span class="t">Line</span>(<span class="t">str</span>), <span class="t">Timeout</span> }
+
+<span class="k">let</span> (_, ev) = <span class="k">await</span> task::select([
+    <span class="k">async</span> { <span class="t">Ev</span>::<span class="t">Line</span>(<span class="k">await</span> read_line()) },
+    <span class="k">async</span> { <span class="k">await</span> task::sleep(<span class="t">Duration</span>::sec(<span class="n">5</span>)); <span class="t">Ev</span>::<span class="t">Timeout</span> },
+]);
+</code></pre>
+<h3 id="taskid"><a class="anchor" tabindex="-1" href="#taskid" aria-hidden="true">#</a><code>TaskId</code></h3>
+<p><code>task::id()</code> is the id of the running task; calling it outside a task panics (<code>try_id()</code> returns <code>none</code>). <code>Task::id()</code> is the id of that task. Ids come from a process-wide counter and are never reused.</p>
+<h2 id="2182-taskt-type"><a class="anchor" tabindex="-1" href="#2182-taskt-type" aria-hidden="true">#</a>2.18.2. <code>Task&lt;T&gt;</code> type</h2>
+<p>The <code>Task&lt;T&gt;</code> type is defined as follows.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Task</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// internal: coroutine frame on the GC heap + result slot</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Task</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> cancel(<span class="k">self</span>);                      <span class="c">// requests cancellation - ends at the next await (2.18.4)</span>
+    <span class="k">fn</span> is_cancelled(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_finished(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> join(<span class="k">self</span>) -&gt; <span class="t">Join</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// try await t.join() - CancellationError if cancelled without a result</span>
+    <span class="k">fn</span> id(<span class="k">self</span>) -&gt; <span class="t">TaskId</span>;
+}
+
+<span class="k">struct</span> <span class="t">TaskId</span> { <span class="c">/* u64 */</span> }
+<span class="k">impl</span> <span class="t">TaskId</span> {
+    <span class="k">fn</span> as_u64(<span class="k">self</span>) -&gt; <span class="t">u64</span>;
+}
+<span class="c">// TaskId: PartialEq / Eq / Hash / Display / Debug</span>
+
+<span class="k">struct</span> <span class="t">CancellationError</span> {}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Future</span> <span class="k">for</span> <span class="t">Task</span>&lt;<span class="t">T</span>&gt; {              <span class="c">// `await t` - suspend until completion</span>
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">T</span>;
+    ...
+}
+</code></pre>
+<h3 id="intofuture-integration"><a class="anchor" tabindex="-1" href="#intofuture-integration" aria-hidden="true">#</a><code>IntoFuture</code> integration</h3>
+<p><code>Task&lt;T&gt;</code> implements <code>Future&lt;Output = T&gt;</code>, so it can be awaited with <code>await t</code>, and it is covered by the <code>IntoFuture</code> blanket impl of <a href="220-future">2.20 future</a>, so it is awaited the same way as <code>Thread</code>. The authoritative definitions of the <code>IntoFuture</code> trait and the lang slot <code>future_trait</code> are in <a href="220-future">2.20 future</a>; this section follows them as is.</p>
+<h2 id="2183-scheduler-model---work-stealing"><a class="anchor" tabindex="-1" href="#2183-scheduler-model---work-stealing" aria-hidden="true">#</a>2.18.3. Scheduler model - work-stealing</h2>
+<p>A process has one executor. It starts on first use and consists of as many worker threads as there are CPUs (<code>cpu_count()</code>), a blocking lane, and an I/O driver. <code>block_on</code> attaches the calling thread to this executor as a guest worker and runs <code>f</code> to completion. Tasks still running when <code>block_on</code> returns keep running. <code>block_on</code> returns only after the <code>spawn_local</code> tasks pinned to its thread are done too; they cannot move to another thread. <code>par::*</code> and <code>spawn_blocking</code> use the same executor.</p>
+<p>A task created with <code>spawn</code> can run on any worker, so it must be <code>Future + Send</code> and its result must be <code>Send</code> too. A task from <code>spawn_local</code> is pinned to the worker that created it. A <code>spawn_local</code> from a task that a <code>block_on</code> thread polls but does not own (a <code>spawn</code> task it picked up while waiting) is pinned to a pool worker instead, so <code>block_on</code> waits only for the locals of its own tasks. All the locals one such poll spawns go to the same pool worker, and they start only once that poll has ended, as on the worker that would have run them.</p>
+<p>The scheduler skeleton is as follows.</p>
+<pre><code>Worker 0 ─┐      Worker 1 ─┐    ...    Worker N-1 ─┐
+ Local     │      Local     │            Local      │
+ deque     │      deque     │            deque      │
+ (Chase-Lev)      (Chase-Lev)            (Chase-Lev)│
+           └─ Global Injector Queue ──────┘
+           └─ I/O Driver (portable) ──────┘
+           └─ Timer (heap)  ───────────────┘
+           └─ Parked Worker Stack   ──────┘
+</code></pre>
+<p>Key properties of this structure: the local queue is a lock-free Chase-Lev deque, and both the owning worker and thieves take the oldest task first (so a task that keeps re-waking itself does not starve the others, <a href="../../refs-lang/007-runtime/706-scheduler#762-work-stealing-structure">refs-lang 7.6.2</a>). A busy worker processes expired timers every 32 tasks. For the I/O driver, one reactor thread per process waits on epoll / kqueue edge-triggered (io_uring / IOCP are future work, <a href="../../refs-lang/007-runtime/707-io-and-timer">refs-lang 7.7</a>); the timer structure is implementation-defined (binary heap or timing wheel, <a href="../../refs-lang/007-runtime/707-io-and-timer#774-timer-structure">refs-lang 7.7.4</a>).</p>
+<p>Note that the standard library's authority is limited to the API signatures; the algorithm bodies belong to the runtime and standard library body, outside the spec.</p>
+<h2 id="2184-cooperative-cancellation---taskcancel"><a class="anchor" tabindex="-1" href="#2184-cooperative-cancellation---taskcancel" aria-hidden="true">#</a>2.18.4. Cooperative cancellation - <code>Task::cancel</code></h2>
+<p>Cooperative cancellation is used as follows.</p>
+<pre><code class="language-rok"><span class="k">let</span> t = task::spawn(<span class="k">async</span> { long_running() });
+<span class="c">// ... other work ...</span>
+t.cancel();              <span class="c">// cooperative signal - the task ends at a cancellation point</span>
+</code></pre>
+<p><code>cancel()</code> <strong>requests</strong> cancellation. The rules (<a href="../../refs-lang/007-runtime/707-io-and-timer#779-cancellation">refs-lang 7.7.9</a>):</p>
+<ul>
+<li>Every <code>await</code> is a cancellation point. A cancelled task leaves its body at the next <code>await</code> as if by <code>return</code>, running the <code>finally</code> and <code>using</code> cleanups it passes, innermost first.
+</li>
+<li>Cancellation is not an error that can be <code>catch</code>ed inside the task. No <code>CancellationError</code> is thrown into the task.
+</li>
+<li>A blocking syscall is not a cancellation point. The task leaves at the next <code>await</code> after the call finishes.
+</li>
+<li>A task waiting in socket I/O (<code>*_async</code>), <code>readable</code> / <code>writable</code>, <code>sleep</code> / <code>timeout</code>, <code>lock_async</code>, or <code>recv_async</code> / <code>send_async</code> wakes when cancelled and leaves at the next <code>await</code>.
+</li>
+<li>When a task ends, all its wakeup registrations (I/O readiness, timers, parked waits) are released.
+</li>
+<li>If cancelled while waiting on <code>spawn_blocking</code> or the <code>fs::*_async</code> built on it, work already started runs to completion in the background and only the result is discarded. Side effects such as writes do happen. A result that finished in the meantime is dropped too: a cancelled poll returns <code>Pending</code>.
+</li>
+<li>A poll in which the awaited future handed over a value (a message, a lock guard) keeps that value. The cancellation check looks at &quot;whether the awaited coroutine left because of cancellation&quot;; the value stays and the task leaves at the next <code>await</code> (<a href="../../refs-lang/007-runtime/707-io-and-timer#779-cancellation">refs-lang 7.7.9</a>).
+</li>
+<li>A task cancelled after passing its last cancellation point finishes normally and has a result. <code>await t</code> / <code>join</code> return that result.
+</li>
+<li><code>CancellationError</code> is received by whoever waits on a task that ended without a result. Waiting on such a task with <code>try await t.join()</code> throws <code>CancellationError</code>; waiting with <code>await t</code> panics.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> t = task::spawn(<span class="k">async</span> {
+    <span class="k">using</span> log = open_log();                      <span class="c">// dropped here on cancellation</span>
+    <span class="k">loop</span> {
+        <span class="k">await</span> task::sleep(<span class="t">Duration</span>::sec(<span class="n">1</span>));     <span class="c">// cancellation point</span>
+        tick(log);
+    }
+});
+t.cancel();
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="k">try</span> <span class="k">await</span> t.join() <span class="k">catch</span> _: <span class="t">CancellationError</span> { fallback() };
+</code></pre>
+<h2 id="2185-thread---11-os-threads"><a class="anchor" tabindex="-1" href="#2185-thread---11-os-threads" aria-hidden="true">#</a>2.18.5. <code>thread::*</code> - 1:1 OS threads</h2>
+<p>The separate <code>thread</code> module spawns <strong>OS threads</strong> directly rather than using the M:N model.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> t = thread::spawn { os_level_work() };
+<span class="k">let</span> r = t.join();              <span class="c">// OS-level synchronous wait</span>
+</code></pre>
+<p>The two models compare as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>task::spawn</code></th><th><code>thread::spawn</code></th></tr></thead>
+<tbody>
+<tr><td>Model</td><td>M:N (user-space scheduler)</td><td>1:1 (OS thread)</td></tr>
+<tr><td>Cost</td><td>light (~1KB frame)</td><td>heavy (~MB stack)</td></tr>
+<tr><td>Cooperative cancellation</td><td>✓</td><td>✗ (needs OS-level kill)</td></tr>
+<tr><td>async integration</td><td>✓</td><td>△ (only the joiner awaits)</td></tr>
+<tr><td>Used for</td><td>general concurrency (default)</td><td>CPU-bound, blocking I/O</td></tr>
+</tbody></table></div>
+<p>Use <code>task::spawn</code> by default, and choose <code>thread::spawn</code> only when an OS thread is explicitly required.</p>
+<h2 id="2186-duration--instant"><a class="anchor" tabindex="-1" href="#2186-duration--instant" aria-hidden="true">#</a>2.18.6. <code>Duration</code> / <code>Instant</code></h2>
+<p><code>Duration</code> and <code>Instant</code>, for representing time, are defined as follows.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Duration</span> { <span class="c">/* i64 in ns */</span> }
+<span class="k">struct</span> <span class="t">Instant</span> { <span class="c">/* monotonic clock */</span> }
+
+<span class="k">impl</span> <span class="t">Duration</span> {
+    <span class="k">fn</span> ns(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> us(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> ms(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> sec(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> min(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+    <span class="k">fn</span> hours(n: <span class="t">i64</span>) -&gt; <span class="t">Duration</span>;
+}
+
+<span class="k">impl</span> <span class="t">Instant</span> {
+    <span class="k">fn</span> now() -&gt; <span class="t">Instant</span>;
+    <span class="k">fn</span> elapsed(<span class="k">self</span>) -&gt; <span class="t">Duration</span>;
+}
+</code></pre>
+<p>Calls such as <code>await task::sleep(Duration::ms(100))</code> or <code>await task::sleep_until(t)</code> are guaranteed accurate monotonic time. Both types live in <code>rok::core::task::time</code> (2.18.7), and <code>rok::std::time</code> re-exports them.</p>
+<h2 id="2187-module-mapping"><a class="anchor" tabindex="-1" href="#2187-module-mapping" aria-hidden="true">#</a>2.18.7. Module mapping</h2>
+<p>The module where each item lives:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>Module</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><code>task::spawn</code></td><td><code>rok::core::task</code> + scheduler runtime</td><td>scheduler push</td></tr>
+<tr><td><code>task::race</code></td><td><code>rok::core::task</code></td><td>first-completed selector</td></tr>
+<tr><td><code>task::join</code></td><td><code>rok::core::task</code></td><td>join all</td></tr>
+<tr><td><code>task::timeout</code></td><td><code>rok::core::task</code></td><td>race + timer</td></tr>
+<tr><td><code>Task&lt;T&gt;</code></td><td><code>rok::core::task</code></td><td>coroutine frame ref</td></tr>
+<tr><td><code>Duration</code>/<code>Instant</code></td><td><code>rok::core::task::time</code></td><td>i64 ns + monotonic clock</td></tr>
+<tr><td><code>Future</code> (lang slot)</td><td><code>rok::core::future</code></td><td>poll-based</td></tr>
+<tr><td><code>IntoFuture</code></td><td><code>rok::core::future</code></td><td>await entry point</td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/218-task.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="217-channel"><small>Previous</small>2.17. channel - Message passing</a><a class="next" href="219-par"><small>Next</small>2.19. par - Parallel processing API</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

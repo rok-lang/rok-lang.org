@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.9. rok::bare::mlir - direct access to MLIR dialects - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::bare::mlir module provides an escape hatch for calling dialect ops of the MLIR backend used by the rok compiler directly. It is the place for external ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/109-mlir.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.9. rok::bare::mlir - direct access to MLIR dialects - rok docs">
+<meta property="og:description" content="The rok::bare::mlir module provides an escape hatch for calling dialect ops of the MLIR backend used by the rok compiler directly. It is the place for external ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/109-mlir.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/109-mlir.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/109-mlir.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile memory access</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li class="cur"><a aria-current="page" href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a><ul class="toc"><li><a href="#191-motivation---why-mlir-is-needed-on-the-user-surface">1.9.1. Motivation - why MLIR is needed on the user surface</a></li><li><a href="#192-surface---__mlir_op-calls">1.9.2. Surface - __mlir_op calls</a></li><li><a href="#193-available-dialects">1.9.3. Available dialects</a></li><li><a href="#194-safety-responsibilities">1.9.4. Safety responsibilities</a></li><li><a href="#195-relationship-with-ordinary-user-code">1.9.5. Relationship with ordinary user code</a></li><li><a href="#196-comparison-with-other-languages">1.9.6. Comparison with other languages</a></li><li><a href="#197-permission--escape-hatch-policy">1.9.7. Permission / escape hatch policy</a></li></ul></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="19-rokbaremlir---direct-access-to-mlir-dialects 19-rokbaremlir---mlir-다이얼렉트-직접-접근 191-motivation---why-mlir-is-needed-on-the-user-surface 191-동기---왜-사용자-표면에-mlir-이-필요한가 192-surface---__mlir_op-calls 192-표면---__mlir_op-호출 attributes-attributes 속성-attributes mlir-type-representation mlir-타입-표현 ops-with-regions--blocks region--block-가진-op variadic-operand variadic-operand 193-available-dialects 193-사용-가능-다이얼렉트 194-safety-responsibilities 194-안전-책임 195-relationship-with-ordinary-user-code 195-일반-사용자-코드와의-관계 196-comparison-with-other-languages 196-다른-언어와의-비교 197-permission--escape-hatch-policy 197-권한--escape-hatch-정책"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/109-mlir" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="19-rokbaremlir---direct-access-to-mlir-dialects"><a class="anchor" tabindex="-1" href="#19-rokbaremlir---direct-access-to-mlir-dialects" aria-hidden="true">#</a>1.9. <code>rok::bare::mlir</code> - direct access to MLIR dialects</h1>
+<p>The <code>rok::bare::mlir</code> module provides an escape hatch for calling dialect ops of the MLIR backend used by the rok compiler directly. It is the place for external library authors to express, within rok, kernels for acceleration domains such as tensors / automatic differentiation / SIMD / GPU / quantization.</p>
+<p>Ordinary rok code does not see this module. The traits and collections of <a href="../200-core/">200-core/</a> are sufficient for rok's everyday abstractions; MLIR exposure is confined to library authors.</p>
+<h2 id="191-motivation---why-mlir-is-needed-on-the-user-surface"><a class="anchor" tabindex="-1" href="#191-motivation---why-mlir-is-needed-on-the-user-surface" aria-hidden="true">#</a>1.9.1. Motivation - why MLIR is needed on the user surface</h2>
+<p>Ordinary rok users need not know MLIR, since the standard library abstracts arithmetic, comparison, collections and concurrency sufficiently. The situation differs for library authors such as:</p>
+<ul>
+<li>Tensor libraries: composing kernels on the <code>linalg.generic</code> / <code>tensor.*</code> / <code>vector.*</code> / <code>gpu.*</code> dialects
+</li>
+<li>Automatic differentiation libraries: expressing source-to-source transformation results as MLIR op graphs
+</li>
+<li>SIMD libraries: making width / alignment / shuffle explicit with the <code>vector</code> dialect
+</li>
+<li>GPU backends: emitting device code with <code>gpu.launch_func</code> and <code>gpu.module</code>
+</li>
+<li>Quantization / sparse operations: expressing them in dedicated dialects and using standard passes
+</li>
+</ul>
+<p>These libraries cannot be built from the rok standard library alone because MLIR's multi-level abstraction is itself the source of performance. A single <code>linalg.generic</code> automatically unfolds into fusion of adjacent operations / elimination of temporary allocations / SIMD / GPU lowering; bypassing it leaves the performance gap with PyTorch / JAX / Mojo open.</p>
+<h2 id="192-surface---__mlir_op-calls"><a class="anchor" tabindex="-1" href="#192-surface---__mlir_op-calls" aria-hidden="true">#</a>1.9.2. Surface - <code>__mlir_op</code> calls</h2>
+<p>The basic form of an MLIR op call is:</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::mlir::{__mlir_op, __mlir_attr, __mlir_type};
+
+<span class="k">unsafe</span> {
+    <span class="k">let</span> r: <span class="t">i32</span> = __mlir_op::&lt;<span class="s">"arith.addi"</span>, <span class="t">i32</span>&gt;(a, b);
+    <span class="k">let</span> v: <span class="t">Tensor</span>&lt;<span class="t">f32</span>, (<span class="n">3</span>, <span class="n">4</span>)&gt; = __mlir_op::&lt;<span class="s">"linalg.generic"</span>, _&gt;(...);
+}
+</code></pre>
+<p>Calls are allowed only inside an <code>unsafe</code> block. The first generic argument is the dialect op name (<code>&quot;dialect.op&quot;</code>), followed by the result type <code>R</code>.</p>
+<ul>
+<li><code>R</code> is a rok type. <code>_</code> means the expected type; <code>()</code> means no result.
+</li>
+<li>The remaining arguments are operands. Attributes are given as <code>attributes = { &quot;k&quot;: __mlir_attr::&lt;&quot;text&quot;&gt; }</code>.
+</li>
+<li>The compiler emits the op in MLIR generic form (<code>&quot;dialect.op&quot;(%a, %b) {k = text} : (..) -&gt; R</code>). The op name, operands and attributes are verified by the MLIR embedded in <code>rokc</code> (<a href="../../refs-lang/000-meta/002-pipeline#024-backends">0.2.4</a>). A module using <code>__mlir_op</code> is compiled by the MLIR → LLVM backend at every optimization level (<a href="../../refs-lang/009-tools/902-aot-pipeline#9210-backend-selection">refs-lang 9.2.10</a>).
+</li>
+</ul>
+<h3 id="attributes-attributes"><a class="anchor" tabindex="-1" href="#attributes-attributes" aria-hidden="true">#</a>Attributes (<code>attributes</code>)</h3>
+<p>Many MLIR ops take compile-time attributes (predicate, axis index, alignment, etc.) besides SSA operands. They are passed with the <code>attributes</code> keyword argument.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> {
+    <span class="c">// predicate of arith.cmpi ("eq" / "ne" / "slt" / ...)</span>
+    <span class="k">let</span> eq: <span class="t">bool</span> = __mlir_op::&lt;<span class="s">"arith.cmpi"</span>, <span class="t">bool</span>&gt;(
+        a, b,
+        attributes = { <span class="s">"predicate"</span>: __mlir_attr::&lt;<span class="s">"#arith&lt;cmpi_predicate eq&gt;"</span>&gt; },
+    );
+
+    <span class="c">// alignment of memref.load</span>
+    <span class="k">let</span> v: <span class="t">i32</span> = __mlir_op::&lt;<span class="s">"memref.load"</span>, <span class="t">i32</span>&gt;(
+        buf, idx,
+        attributes = { <span class="s">"alignment"</span>: __mlir_attr::&lt;<span class="s">"4 : i64"</span>&gt; },
+    );
+}
+</code></pre>
+<p><code>__mlir_attr::&lt;&quot;...&quot;&gt;</code> is an attribute literal in MLIR's textual representation; the text is passed to MLIR verbatim. Writing it as an empty call, <code>__mlir_attr::&lt;&quot;...&quot;&gt;()</code>, is equivalent.</p>
+<h3 id="mlir-type-representation"><a class="anchor" tabindex="-1" href="#mlir-type-representation" aria-hidden="true">#</a>MLIR type representation</h3>
+<p>MLIR types that do not map directly to rok types (<code>index</code>, <code>!llvm.ptr</code>, <code>memref&lt;?xi32&gt;</code>, etc.) are written as <code>__mlir_type&lt;&quot;...&quot;&gt;</code> in type position (<code>__mlir_type::&lt;&quot;...&quot;&gt;</code> also works).</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> {
+    <span class="k">let</span> p = __mlir_op::&lt;<span class="s">"llvm.alloca"</span>, __mlir_type&lt;<span class="s">"!llvm.ptr"</span>&gt;&gt;(
+        size,
+        attributes = { <span class="s">"alignment"</span>: __mlir_attr::&lt;<span class="s">"8 : i64"</span>&gt; },
+    );
+}
+</code></pre>
+<p><code>__mlir_type&lt;&quot;..&quot;&gt;</code> can be used as the result type <code>R</code> of <code>__mlir_op</code>, as an operand, as a function parameter or return, and as the type of a <code>let</code>. Its values cannot be stored inside aggregates (structs, arrays, GC objects).</p>
+<h3 id="ops-with-regions--blocks"><a class="anchor" tabindex="-1" href="#ops-with-regions--blocks" aria-hidden="true">#</a>Ops with regions / blocks</h3>
+<p>Ops with region bodies, such as <code>scf.if</code>, <code>scf.for</code> and <code>linalg.generic</code>, receive their regions as closures in <code>regions = [..]</code>.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> {
+    <span class="c">// scf.if - two regions, then / else</span>
+    <span class="k">let</span> r: <span class="t">i32</span> = __mlir_op::&lt;<span class="s">"scf.if"</span>, <span class="t">i32</span>&gt;(
+        cond,
+        regions = [
+            || { __mlir_op::&lt;<span class="s">"scf.yield"</span>, ()&gt;(a); },
+            || { __mlir_op::&lt;<span class="s">"scf.yield"</span>, ()&gt;(b); },
+        ],
+    );
+
+    <span class="c">// scf.for - lb / ub / step are index values</span>
+    <span class="k">let</span> lb = __mlir_op::&lt;<span class="s">"arith.index_cast"</span>, __mlir_type&lt;<span class="s">"index"</span>&gt;&gt;(<span class="n">0i64</span>);
+    <span class="k">let</span> ub = __mlir_op::&lt;<span class="s">"arith.index_cast"</span>, __mlir_type&lt;<span class="s">"index"</span>&gt;&gt;(n);
+    <span class="k">let</span> step = __mlir_op::&lt;<span class="s">"arith.index_cast"</span>, __mlir_type&lt;<span class="s">"index"</span>&gt;&gt;(<span class="n">1i64</span>);
+    <span class="k">let</span> sum: <span class="t">i32</span> = __mlir_op::&lt;<span class="s">"scf.for"</span>, <span class="t">i32</span>&gt;(
+        lb, ub, step, init,
+        regions = [
+            |i: __mlir_type&lt;<span class="s">"index"</span>&gt;, acc: <span class="t">i32</span>| {
+                <span class="k">let</span> next = __mlir_op::&lt;<span class="s">"arith.addi"</span>, <span class="t">i32</span>&gt;(acc, x);
+                __mlir_op::&lt;<span class="s">"scf.yield"</span>, ()&gt;(next);
+            },
+        ],
+    );
+}
+</code></pre>
+<p>Rules:</p>
+<ul>
+<li>One closure is one region. The number of closures must equal the number of regions the op requires.
+</li>
+<li>The closure's parameters are the arguments of the entry block and must have their types written.
+</li>
+<li>The result of a region is the operands of its terminator (<code>scf.yield</code> etc.). The closure's last value and <code>-&gt; R</code> have no meaning.
+</li>
+<li>The body is straight-line code listing ops in order. Control flow is written with <code>scf</code> ops; <code>if</code> / <code>match</code> / loops / <code>return</code> / <code>break</code> / <code>continue</code> / panic are errors.
+</li>
+<li>Regions are emitted in generic form and may use outer values directly. Ops whose regions cannot see outer values (<code>gpu.func</code> etc.) are therefore not supported.
+</li>
+<li>Current limitations: one result per op, one block per region body.
+</li>
+</ul>
+<h3 id="variadic-operand"><a class="anchor" tabindex="-1" href="#variadic-operand" aria-hidden="true">#</a>Variadic operand</h3>
+<p>Ops taking variadic arguments, such as <code>vector.shuffle</code>, receive them through rok's spread syntax.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> {
+    <span class="k">let</span> masked: <span class="t">Vector</span>&lt;<span class="t">i32</span>, <span class="n">4</span>&gt; = __mlir_op::&lt;<span class="s">"vector.shuffle"</span>, _&gt;(
+        v1, v2,
+        attributes = { <span class="s">"mask"</span>: __mlir_attr::&lt;<span class="s">"[0, 2, 4, 6]"</span>&gt; },
+    );
+}
+</code></pre>
+<h2 id="193-available-dialects"><a class="anchor" tabindex="-1" href="#193-available-dialects" aria-hidden="true">#</a>1.9.3. Available dialects</h2>
+<p>All dialects the compiler understands, per <a href="../../refs-lang/008-abi/807-mlir-dialects">refs-lang 8.7</a>, are accessible.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Dialect</th><th>Main uses</th></tr></thead>
+<tbody>
+<tr><td><code>arith</code></td><td>Arithmetic / comparison (already used by the stdlib)</td></tr>
+<tr><td><code>math</code></td><td>sqrt / sin / cos / exp / log</td></tr>
+<tr><td><code>vector</code></td><td>SIMD width / alignment / shuffle</td></tr>
+<tr><td><code>linalg</code></td><td>element-wise / matmul / reduction</td></tr>
+<tr><td><code>tensor</code></td><td>shape / extract / insert / reshape</td></tr>
+<tr><td><code>memref</code></td><td>Buffer alloc / load / store</td></tr>
+<tr><td><code>scf</code></td><td>Structured control flow (lowered by <code>--convert-scf-to-cf</code> by default)</td></tr>
+<tr><td><code>cf</code></td><td>branch / switch</td></tr>
+<tr><td><code>gpu</code></td><td>GPU launch / kernel / shared memory</td></tr>
+<tr><td><code>affine</code></td><td>Loops amenable to affine analysis</td></tr>
+<tr><td><code>async</code></td><td>async fork / await (separate from the runtime)</td></tr>
+<tr><td><code>llvm</code></td><td>Low-level intrinsics, raw pointer interop</td></tr>
+</tbody></table></div>
+<p>Besides the 8 dialects used by the base stdlib (<code>arith</code> / <code>scf</code> / <code>cf</code> / <code>memref</code> / <code>index</code> / <code>math</code> / <code>func</code> / <code>llvm</code>), <code>linalg</code> / <code>tensor</code> / <code>vector</code> / <code>gpu</code> / <code>affine</code> / <code>async</code> are open to library authors.</p>
+<p>Only these dialects, plus <code>bufferization</code> / <code>ub</code> / <code>dlti</code> for lowering, are registered. Ops of other upstream dialects are unknown to <code>rokc</code>, the same as an unloaded plugin's (<a href="110-mlir-plugin#1107-build-isolation">1.10.7</a>).</p>
+<h2 id="194-safety-responsibilities"><a class="anchor" tabindex="-1" href="#194-safety-responsibilities" aria-hidden="true">#</a>1.9.4. Safety responsibilities</h2>
+<p>Users of <code>rok::bare::mlir</code> bear the following responsibilities.</p>
+<ul>
+<li><strong>Type agreement</strong>: the operand / result types of the MLIR op and the rok types must lower exactly.
+</li>
+<li><strong>Dialect availability</strong>: some dialects (notably <code>gpu</code>) can be lowered only in builds with the backend enabled.
+</li>
+<li><strong>Stability</strong>: MLIR dialect op names / signatures may change between LLVM versions; libraries using this module directly are advised to pin the LLVM version.
+</li>
+<li><strong>GC root</strong>: when exposing GC object data through <code>memref</code> / <code>llvm.ptr</code>, it must be pinned with <a href="106-gc-pin">1.6 <code>Pinned&lt;T&gt;</code></a>.
+</li>
+</ul>
+<p>Libraries for which these responsibilities are too burdensome should be written with the stdlib's safe abstractions alone. <code>rok::bare::mlir</code> is a tool reserved for areas where acceleration is essential.</p>
+<h2 id="195-relationship-with-ordinary-user-code"><a class="anchor" tabindex="-1" href="#195-relationship-with-ordinary-user-code" aria-hidden="true">#</a>1.9.5. Relationship with ordinary user code</h2>
+<pre><code class="language-rok"><span class="c">// ordinary user - does not see MLIR</span>
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">f32</span>&gt; = [<span class="n">1.0</span>, <span class="n">2.0</span>, <span class="n">3.0</span>];
+<span class="k">let</span> sum = xs.iter().sum();
+
+<span class="c">// inside a library - uses rok::bare::mlir</span>
+<span class="k">mod</span> tensor::ops {
+    <span class="k">pub</span> <span class="k">fn</span> matmul&lt;...&gt;(a: <span class="t">Tensor</span>&lt;<span class="t">f32</span>, (<span class="t">M</span>, <span class="t">K</span>)&gt;, b: <span class="t">Tensor</span>&lt;<span class="t">f32</span>, (<span class="t">K</span>, <span class="t">N</span>)&gt;) -&gt; <span class="t">Tensor</span>&lt;<span class="t">f32</span>, (<span class="t">M</span>, <span class="t">N</span>)&gt; {
+        <span class="k">unsafe</span> {
+            __mlir_op::&lt;<span class="s">"linalg.matmul"</span>, <span class="t">Tensor</span>&lt;<span class="t">f32</span>, (<span class="t">M</span>, <span class="t">N</span>)&gt;&gt;(a, b)
+        }
+    }
+}
+</code></pre>
+<p>The recommended pattern is for a library to put a safe surface over <code>rok::bare::mlir</code> and expose that to ordinary users. Users call only <code>tensor::matmul(a, b)</code>, and the internal MLIR calls are encapsulated as the library's responsibility.</p>
+<p>This is isomorphic to the pattern of encapsulating <a href="107-ffi">1.7 FFI</a>'s <code>extern &quot;C&quot;</code> inside a library, and is the consistent usage model of the <code>unsafe</code> tier.</p>
+<h2 id="196-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#196-comparison-with-other-languages" aria-hidden="true">#</a>1.9.6. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Language</th><th>MLIR / IR exposure on the user surface</th><th>Position</th></tr></thead>
+<tbody>
+<tr><td>Mojo</td><td><code>__mlir_op</code> directly (default)</td><td>Accessible to ordinary users too</td></tr>
+<tr><td>Swift</td><td><code>Builtin.X</code> (inside the stdlib)</td><td>Stdlib authors only</td></tr>
+<tr><td>Julia</td><td><code>llvmcall</code> (available to users)</td><td>Discouraged, external libraries only</td></tr>
+<tr><td>Rust</td><td>LLVM intrinsics (not available to users)</td><td>nightly + intrinsics crate</td></tr>
+<tr><td><strong>rok</strong></td><td><strong><code>rok::bare::mlir</code> (explicit unsafe)</strong></td><td><strong>Library authors only - ordinary users do not see it</strong></td></tr>
+</tbody></table></div>
+<p>rok's model is close to Swift and Julia. Unlike Mojo, it does not expose MLIR to ordinary users, and it enforces an explicit <code>unsafe</code> entry so that the code shows which territory the user is stepping into.</p>
+<h2 id="197-permission--escape-hatch-policy"><a class="anchor" tabindex="-1" href="#197-permission--escape-hatch-policy" aria-hidden="true">#</a>1.9.7. Permission / escape hatch policy</h2>
+<p><code>rok::bare::mlir</code> operates under the same policy as the user-code restrictions of the <a href="../000-meta/003-intrinsics">0.3 intrinsic mechanism</a>.</p>
+<ul>
+<li>User code may call <code>__mlir_op</code>, but only inside an <code>unsafe { ... }</code> block
+</li>
+<li>Attaching the <code>#[intrinsic(&quot;...&quot;)]</code> attribute remains restricted to the standard library
+</li>
+<li>Relationship between the two mechanisms: an intrinsic is <em>the compiler intercepting a stdlib method body</em>; <code>__mlir_op</code> is <em>the user expressing an MLIR op directly</em>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/109-mlir.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="108-wit"><small>Previous</small>1.8. WASM component model - ffi.wit</a><a class="next" href="110-mlir-plugin"><small>Next</small>1.10. rok::bare::mlir::plugin - registering user-defined dialects</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

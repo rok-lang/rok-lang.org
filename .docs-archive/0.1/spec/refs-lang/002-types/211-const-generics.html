@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.11. const generics - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="const generics take a value in a generic parameter position. Integers, booleans and short expressions determined at compile time serve as parameters.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/211-const-generics.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.11. const generics - rok docs">
+<meta property="og:description" content="const generics take a value in a generic parameter position. Integers, booleans and short expressions determined at compile time serve as parameters.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/211-const-generics.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/211-const-generics.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/211-const-generics.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">2. Type system overview</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. Sum types (A | B)</a></li><li><a href="207-niche-optimization">2.7. Niche optimization</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. Generics</a></li><li class="cur"><a aria-current="page" href="211-const-generics">2.11. const generics</a><ul class="toc"><li><a href="#2111-motivation">2.11.1. Motivation</a></li><li><a href="#2112-declaration-form">2.11.2. Declaration form</a></li><li><a href="#2113-allowed-types">2.11.3. Allowed types</a></li><li><a href="#2114-arguments-at-instantiation">2.11.4. Arguments at instantiation</a></li><li><a href="#2115-arithmetic-in-const-expressions">2.11.5. Arithmetic in const expressions</a></li><li><a href="#2116-parameter-inference">2.11.6. Parameter inference</a></li><li><a href="#2117-monomorphization">2.11.7. Monomorphization</a></li><li><a href="#2118-equality">2.11.8. Equality</a></li><li><a href="#2119-where-they-may-be-defined">2.11.9. Where they may be defined</a></li><li><a href="#21110-use-as-an-index">2.11.10. Use as an index</a></li></ul></li><li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="211-const-generics 211-const-제네릭 2111-motivation 2111-동기 2112-declaration-form 2112-선언-형태 2113-allowed-types 2113-허용-타입 2114-arguments-at-instantiation 2114-인스턴스화-시-인자 2115-arithmetic-in-const-expressions 2115-const-표현식의-산술 2116-parameter-inference 2116-매개변수-추론 repeat-literal-v-n 반복-리터럴-v-n 2117-monomorphization 2117-단형화 2118-equality 2118-동등성 2119-where-they-may-be-defined 2119-정의-가능-위치 21110-use-as-an-index 21110-인덱스로-사용"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/211-const-generics" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="211-const-generics"><a class="anchor" tabindex="-1" href="#211-const-generics" aria-hidden="true">#</a>2.11. <code>const</code> generics</h1>
+<p><code>const</code> generics take a value in a <a href="210-generics">generic</a> parameter position. Integers, booleans and short expressions determined at compile time serve as parameters.</p>
+<h2 id="2111-motivation"><a class="anchor" tabindex="-1" href="#2111-motivation" aria-hidden="true">#</a>2.11.1. Motivation</h2>
+<p>They carry values determined at compile time - array lengths, matrix dimensions, embedded memory pool sizes - as part of the type.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Matrix</span>&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">M</span>: <span class="t">usize</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; {
+    data: [<span class="t">T</span>; <span class="t">M</span> * <span class="t">N</span>];
+}
+
+<span class="k">fn</span> dot&lt;<span class="t">T</span>: <span class="t">Num</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(a: [<span class="t">T</span>; <span class="t">N</span>], b: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> { ... }
+</code></pre>
+<p>Since the array length becomes part of the type, length checks at call time cost nothing. The compiler can also apply length-dependent optimizations such as SIMD and unrolling, and operations where dimension compatibility matters, such as matrix multiplication, can be verified at compile time.</p>
+<h2 id="2112-declaration-form"><a class="anchor" tabindex="-1" href="#2112-declaration-form" aria-hidden="true">#</a>2.11.2. Declaration form</h2>
+<pre><code class="language-rok"><span class="k">const</span> <span class="t">ParamName</span> : <span class="t">Type</span>
+</code></pre>
+<p>The <code>const</code> keyword is followed by the parameter name, <code>:</code>, and the type. The type must be one of the allowed <code>const</code> types described below.</p>
+<p>Multiple parameters are separated by commas. Type parameters and <code>const</code> parameters may be mixed freely.</p>
+<pre><code class="language-rok"><span class="k">fn</span> replicate&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(value: <span class="t">T</span>) -&gt; [<span class="t">T</span>; <span class="t">N</span>] { ... }
+<span class="k">struct</span> <span class="t">Tagged</span>&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">TAG</span>: <span class="t">u32</span>&gt; { value: <span class="t">T</span>; }
+</code></pre>
+<h2 id="2113-allowed-types"><a class="anchor" tabindex="-1" href="#2113-allowed-types" aria-hidden="true">#</a>2.11.3. Allowed types</h2>
+<p>The type of a <code>const</code> parameter is one of the integer types (<code>i8</code> - <code>i64</code>, <code>u8</code> - <code>u64</code>, <code>usize</code>, <code>isize</code>), <code>bool</code>, or <code>char</code>.</p>
+<p>Floating-point types, sum types and user-defined structs cannot be <code>const</code> parameters. Floating-point types are excluded because of nondeterminism in their bit representation, and user-defined types because of consistency problems with equality comparison.</p>
+<h2 id="2114-arguments-at-instantiation"><a class="anchor" tabindex="-1" href="#2114-arguments-at-instantiation" aria-hidden="true">#</a>2.11.4. Arguments at instantiation</h2>
+<p>At a call or instantiation site, a <code>const</code> expression is passed for a <code>const</code> parameter.</p>
+<pre><code class="language-rok"><span class="k">let</span> m: <span class="t">Matrix</span>&lt;<span class="t">f64</span>, <span class="n">3</span>, <span class="n">4</span>&gt; = ...;
+<span class="k">let</span> v: [<span class="t">i32</span>; <span class="n">16</span>] = ...;
+<span class="k">let</span> arr = replicate::&lt;<span class="t">f64</span>, <span class="n">8</span>&gt;(<span class="n">0.0f64</span>);
+</code></pre>
+<p>The argument must be evaluable at compile time. Allowed are literals, <code>const</code> variables, <code>const</code> function calls, other <code>const</code> parameters, and simple arithmetic combinations of these. A runtime variable cannot be used as a <code>const</code> argument; doing so is a compile error.</p>
+<h2 id="2115-arithmetic-in-const-expressions"><a class="anchor" tabindex="-1" href="#2115-arithmetic-in-const-expressions" aria-hidden="true">#</a>2.11.5. Arithmetic in <code>const</code> expressions</h2>
+<p>Simple arithmetic between <code>const</code> parameters can be used inside types.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Matrix</span>&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">M</span>: <span class="t">usize</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt; {
+    data: [<span class="t">T</span>; <span class="t">M</span> * <span class="t">N</span>];
+}
+
+<span class="k">fn</span> flatten&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">M</span>: <span class="t">usize</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(
+    m: <span class="t">Matrix</span>&lt;<span class="t">T</span>, <span class="t">M</span>, <span class="t">N</span>&gt;
+) -&gt; [<span class="t">T</span>; <span class="t">M</span> * <span class="t">N</span>] { ... }
+</code></pre>
+<p>The allowed operators are <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>, and unary <code>-</code>. Comparisons and conditionals are not allowed in the current specification; only simple arithmetic. The type system does recognize that <code>M * N</code> and <code>N * M</code> are the same value (commutativity).</p>
+<p>More complex <code>const</code> expressions, such as conditionals or recursion, are covered by the <code>const</code> function specification.</p>
+<h2 id="2116-parameter-inference"><a class="anchor" tabindex="-1" href="#2116-parameter-inference" aria-hidden="true">#</a>2.11.6. Parameter inference</h2>
+<p>A <code>const</code> argument may be omitted if it can be inferred from argument types, struct field types, or the expected type (<code>let</code> annotation, parameter type, return type).</p>
+<pre><code class="language-rok"><span class="k">fn</span> replicate&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(value: <span class="t">T</span>) -&gt; [<span class="t">T</span>; <span class="t">N</span>] { ... }
+
+<span class="k">let</span> arr: [<span class="t">i32</span>; <span class="n">8</span>] = replicate(<span class="n">0i32</span>);     <span class="c">// N = 8 inferred</span>
+<span class="k">let</span> arr2 = replicate::&lt;<span class="t">i32</span>, <span class="n">8</span>&gt;(<span class="n">0i32</span>);    <span class="c">// explicit</span>
+</code></pre>
+<p>Inference priority and disambiguation are defined in the expression specification.</p>
+<h3 id="repeat-literal-v-n"><a class="anchor" tabindex="-1" href="#repeat-literal-v-n" aria-hidden="true">#</a>Repeat literal <code>[v; N]</code></h3>
+<p><code>[v; N]</code> is a <code>[T; N]</code> array repeating the value <code>v</code> <code>N</code> times. <code>N</code> is a <code>const</code> expression and may be a <code>const</code> parameter.</p>
+<pre><code class="language-rok"><span class="k">fn</span> zeros&lt;<span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;() -&gt; [<span class="t">f64</span>; <span class="t">N</span>] { [<span class="n">0.0</span>; <span class="t">N</span>] }
+<span class="k">let</span> z: [<span class="t">f64</span>; <span class="n">4</span>] = zeros();              <span class="c">// N = 4 - from the expected type</span>
+<span class="k">let</span> w = [<span class="n">1u8</span>; <span class="n">16</span>];                       <span class="c">// [u8; 16]</span>
+</code></pre>
+<h2 id="2117-monomorphization"><a class="anchor" tabindex="-1" href="#2117-monomorphization" aria-hidden="true">#</a>2.11.7. Monomorphization</h2>
+<p><code>const</code> generics work the same way as monomorphization of <a href="210-generics">generics</a>. A separate compilation result is produced for each combination of <code>const</code> arguments.</p>
+<pre><code class="language-rok"><span class="k">let</span> a = replicate(<span class="n">0i32</span>);    <span class="c">// N = ? - determined at inference time</span>
+</code></pre>
+<p>Calls with the same combination of <code>const</code> arguments share the result.</p>
+<h2 id="2118-equality"><a class="anchor" tabindex="-1" href="#2118-equality" aria-hidden="true">#</a>2.11.8. Equality</h2>
+<p>Two types whose <code>const</code> arguments have the same values are the same type.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: [<span class="t">i32</span>; <span class="n">4</span>] = ...;
+<span class="k">let</span> b: [<span class="t">i32</span>; <span class="n">2</span> + <span class="n">2</span>] = ...;
+<span class="c">// a and b have the same type</span>
+</code></pre>
+<p>This equality is possible because <code>const</code> expression evaluation is deterministic.</p>
+<h2 id="2119-where-they-may-be-defined"><a class="anchor" tabindex="-1" href="#2119-where-they-may-be-defined" aria-hidden="true">#</a>2.11.9. Where they may be defined</h2>
+<p><code>const</code> generics can be used with the same syntax in all of these positions: functions and methods; structs, <code>enum</code>s and <code>union</code>s; traits, <code>impl</code> blocks and type aliases.</p>
+<p>This uniformity matches ordinary generics in <a href="210-generics">Generics</a>, so there are no extra rules to memorize.</p>
+<h2 id="21110-use-as-an-index"><a class="anchor" tabindex="-1" href="#21110-use-as-an-index" aria-hidden="true">#</a>2.11.10. Use as an index</h2>
+<p>A <code>const</code> parameter can be used directly in value position, like a plain <code>const</code> variable.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(arr: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> {
+    arr[<span class="n">0</span>]
+}
+
+<span class="k">fn</span> middle&lt;<span class="t">T</span>, <span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(arr: [<span class="t">T</span>; <span class="t">N</span>]) -&gt; <span class="t">T</span> {
+    arr[<span class="t">N</span> / <span class="n">2</span>]
+}
+</code></pre>
+<p>The exact rules for use in value position are defined in the expression specification.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/211-const-generics.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="210-generics"><small>Previous</small>2.10. Generics</a><a class="next" href="212-trait-as-type-banned"><small>Next</small>2.12. Trait-as-type ban</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

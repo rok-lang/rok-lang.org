@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.7. JIT cell execution flow and state management - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines in detail how the JIT engine processes user input (cells).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/907-jit-cells.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.7. JIT cell execution flow and state management - rok docs">
+<meta property="og:description" content="This section defines in detail how the JIT engine processes user input (cells).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/907-jit-cells.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/907-jit-cells.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/907-jit-cells.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li class="cur"><a aria-current="page" href="907-jit-cells">9.7. JIT cell execution flow and state management</a><ul class="toc"><li><a href="#970-rules-of-the-cell-session">9.7.0. Rules of the cell session</a></li><li><a href="#971-kinds-of-cell">9.7.1. Kinds of cell</a></li><li><a href="#972-execution-flow-in-detail">9.7.2. Execution flow: in detail</a></li><li><a href="#973-top-level-variable-storage">9.7.3. Top-level variable storage</a></li><li><a href="#974-undo--cell-re-execution">9.7.4. Undo / cell re-execution</a></li><li><a href="#975-error-modes">9.7.5. Error modes</a></li><li><a href="#976-cache">9.7.6. Cache</a></li><li><a href="#977-visualization--output">9.7.7. Visualization / output</a></li><li><a href="#978-input-unit-repl-recognition">9.7.8. Input unit: REPL recognition</a></li><li><a href="#979-input-unit-jupyter-cell">9.7.9. Input unit: Jupyter cell</a></li><li><a href="#9710-loading-a-program-repl-path">9.7.10. Loading a program (repl &lt;path&gt;)</a></li><li><a href="#9711-next">9.7.11. Next</a></li></ul></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="97-jit-cell-execution-flow-and-state-management 97-jit-셀-실행-흐름과-상태-관리 970-rules-of-the-cell-session 970-셀-세션의-규칙 971-kinds-of-cell 971-cell-의-종류 972-execution-flow-in-detail 972-실행-흐름-자세히 973-top-level-variable-storage 973-top-level-변수-저장 storage-form 저장-형태 gc-root-registration gc-root-등록 redeclaration-of-the-same-name 같은-이름의-재선언 974-undo--cell-re-execution 974-undo--셀-재실행 re-executing-a-cell-in-jupyter jupyter-의-셀-재실행 meaning-of-undo undo-의-의미 975-error-modes 975-에러-모드 cell-compile-errors 셀-컴파일-에러 cell-runtime-errors 셀-런타임-에러 jit-failure jit-실패 locations 위치 976-cache 976-캐시 977-visualization--output 977-시각화--출력 repl-output repl-출력 jupyter-output jupyter-출력 978-input-unit-repl-recognition 978-입력-단위-repl-식별 979-input-unit-jupyter-cell 979-입력-단위-jupyter-셀 9710-loading-a-program-repl-path 9710-프로그램-로드-repl-path 9711-next 9711-다음"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/907-jit-cells" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="97-jit-cell-execution-flow-and-state-management"><a class="anchor" tabindex="-1" href="#97-jit-cell-execution-flow-and-state-management" aria-hidden="true">#</a>9.7. JIT cell execution flow and state management</h1>
+<p>This section defines in detail how the <a href="906-jit-engine">JIT engine</a> processes user input (cells).</p>
+<h2 id="970-rules-of-the-cell-session"><a class="anchor" tabindex="-1" href="#970-rules-of-the-cell-session" aria-hidden="true">#</a>9.7.0. Rules of the cell session</h2>
+<p>The cell session obeys the following rules. The implementation is the <a href="906-jit-engine">9.6 JIT engine</a>.</p>
+<ol>
+<li><strong>Run once.</strong> The code of each cell runs exactly once. Side effects of earlier cells (I/O, time, random numbers) are not repeated.
+</li>
+<li><strong>State persists.</strong> Top-level <code>let</code> bindings of a cell, the state of <code>static</code>s, and <code>any</code> values (including <code>any Tr</code>) carry over to later cells. Bindings may be assigned, and a new <code>let</code> of the same name shadows with a new binding (9.7.3).
+</li>
+<li><strong>Items persist and may be redefined.</strong> Items such as <code>fn</code> / <code>struct</code> / <code>impl</code> persist. If the same item is defined again, the new definition is used from the next cell. Even code compiled before the redefinition uses the new definition when a later cell reaches it again (a <code>g</code> calling a redefined <code>f</code> calls the new <code>f</code>). Redefining a <code>static</code> restarts its state. A binding whose type was redefined can no longer be used; an attempt to use it is reported with a note.
+</li>
+<li><strong>Identity of <code>any</code>.</strong> The type tag of <code>any</code> is the same across all cells of a session. An <code>any</code> value stored in an earlier cell can be extracted in a later cell with <code>is</code> / patterns.
+</li>
+<li><strong>Failed cells.</strong> A cell that panics, terminates the process or dies leaves no partial effect on the bindings. The session continues from the state before that cell. External effects that already happened (I/O etc.) are not undone. Threads from earlier cells: after a failed cell the session keeps only the threads that are back where they were (Windows) or none of them (fork hosts). The runtime restarts its own executor threads; joining a user thread that is gone reports it lost (<code>JoinError</code> code <code>JOIN_LOST</code>, <a href="../../refs-standard-libraries/300-std/304-thread">stdlib 3.4</a>). The session is saved at a quiet moment: no task is mid-poll and no blocking job is mid-run (the host waits for them before the cell; interrupting the wait cancels the cell), so tasks and jobs are never lost. Locks that a thread that is gone held while blocked are released.
+</li>
+<li><strong>Display.</strong> An expression cell prints its value as <code>type: value</code> (Debug); without <code>Debug</code>, only the type is printed (9.7.7).
+</li>
+</ol>
+<p>The following bindings and effects are not supported.</p>
+<ul>
+<li>Bindings of types that cannot be named at top level (closures, private types, etc.). They are rejected in the cell that creates them.
+</li>
+<li><code>exit()</code> inside a cell. That cell is treated as a failed cell (rule 5).
+</li>
+<li>Threads spawned by a failed cell. They do not survive it (rule 5).
+</li>
+</ul>
+<h2 id="971-kinds-of-cell"><a class="anchor" tabindex="-1" href="#971-kinds-of-cell" aria-hidden="true">#</a>9.7.1. Kinds of cell</h2>
+<p>A REPL line or a Jupyter cell is processed differently depending on its content.</p>
+<pre><code>1. expression                → evaluate + store last_value + print
+2. statement (let / call)    → execute (return value is unit)
+3. definition (fn / struct)  → add to the session's items
+4. import (use / mod)        → update the session's visible names
+5. meta / attribute          → handle as appropriate
+</code></pre>
+<p>All five follow the same cell processing flow; only the final output differs. An expression cell prints <code>type: value</code>; a <code>let</code> cell prints nothing. A divergent expression cell (<a href="../004-functions/403-return#437-divergent-functions">4.3.7</a>; <code>panic(..)</code>, <code>exit(..)</code>, <code>throw</code>) runs as a statement.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>In terms of language semantics, a sequence of cells is equivalent to appending top-level statements and items to the end of an implicit <code>main.rok</code> (<a href="../004-functions/416-entry-point#41610-relationship-to-jit--repl">4.16.10</a>). A cell's <code>let</code> is a local variable of the implicit <code>main</code>, so it is visible to statements of later cells but not inside the bodies of <code>fn</code>s declared in cells. The global storage of 9.7.3 below is an implementation technique for keeping local variables alive across cell boundaries and does not change this visibility rule. Same-name re-<code>let</code> at cell top level (9.7.3), cell re-execution (9.7.4) and automatic display of the last expression value (9.7.7) are session operations that exist only on the interactive surfaces.</p>
+</div>
+<h2 id="972-execution-flow-in-detail"><a class="anchor" tabindex="-1" href="#972-execution-flow-in-detail" aria-hidden="true">#</a>9.7.2. Execution flow: in detail</h2>
+<pre><code>1. parse → AST                      (error: display, discard cell)
+2. lower to HIR, type check         (error: display, discard cell)
+3. MIR → native machine code        (reuse / redefinition handling, 9.6.3 / 9.6.4)
+4. host: load in a process forked from the snapshot, run the cell entry function
+5. success: new snapshot, apply bindings and items to the session, print result
+   failure: continue from the previous snapshot, display error
+</code></pre>
+<p>Each step is transactional; on failure it rolls back to the previous state.</p>
+<h2 id="973-top-level-variable-storage"><a class="anchor" tabindex="-1" href="#973-top-level-variable-storage" aria-hidden="true">#</a>9.7.3. Top-level variable storage</h2>
+<p>Variables must be shared between REPL and Jupyter cells, so top-level variables must stay alive for as long as the session lasts.</p>
+<pre><code class="language-rok">[<span class="n">1</span>] <span class="k">let</span> x = <span class="n">42i32</span>;
+[<span class="n">2</span>] <span class="k">let</span> y = x + <span class="n">1</span>;       <span class="c">// uses the earlier x</span>
+</code></pre>
+<h3 id="storage-form"><a class="anchor" tabindex="-1" href="#storage-form" aria-hidden="true">#</a>Storage form</h3>
+<pre><code>untyped (let x = 42)        → global of {tag:u32, payload:i64}
+typed (let x: i32 = 42i32)  → global of that type
+heap payload                → register GC root
+                             (compiler-emitted shadow stack frame,
+                              linked into rokr shadow stack chain)
+</code></pre>
+<p>Each top-level variable is stored as a global in the host, and when a later cell references the same variable it is found through that global's address.</p>
+<h3 id="gc-root-registration"><a class="anchor" tabindex="-1" href="#gc-root-registration" aria-hidden="true">#</a>GC root registration</h3>
+<p>Top-level variables pointing to heap objects must be traced by the GC as roots, so they are linked into the <a href="../000-meta/007-glossary#shadow-stack">shadow stack</a> chain.</p>
+<p>See the shadow stack part of <a href="../007-runtime/704-barriers-and-roots">Barriers and root tracking</a> for the detailed mechanism.</p>
+<h3 id="redeclaration-of-the-same-name"><a class="anchor" tabindex="-1" href="#redeclaration-of-the-same-name" aria-hidden="true">#</a>Redeclaration of the same name</h3>
+<pre><code class="language-rok">[<span class="n">1</span>] <span class="k">let</span> x = <span class="n">1i32</span>;            <span class="c">// x: i32</span>
+[<span class="n">2</span>] <span class="k">let</span> x = <span class="s">"hi"</span>;            <span class="c">// redeclaration at cell top level - new binding (x: str)</span>
+</code></pre>
+<p>In <a href="../005-modules/501-variable-declaration#514-no-redeclaration-in-the-same-scope">Variable declaration</a>, redeclaration within the same scope is an ERROR. However, to support editing and re-running cells, the same name may be declared again with <code>let</code> at the top level of REPL and Jupyter cells. A redeclaration creates a new binding, whose type may differ from the previous binding. Later cells see the new binding. This exception applies only at cell top level, not to blocks inside a cell or to ordinary source files.</p>
+<p>The existing global is then overwritten: its memory is left in place and only the name slot is redirected to the new definition.</p>
+<p>This supports the common REPL pattern of redefining a variable.</p>
+<h2 id="974-undo--cell-re-execution"><a class="anchor" tabindex="-1" href="#974-undo--cell-re-execution" aria-hidden="true">#</a>9.7.4. Undo / cell re-execution</h2>
+<h3 id="re-executing-a-cell-in-jupyter"><a class="anchor" tabindex="-1" href="#re-executing-a-cell-in-jupyter" aria-hidden="true">#</a>Re-executing a cell in Jupyter</h3>
+<p>When a cell is edited and run again in Jupyter, it runs as a new cell. Items and bindings it redefines are used in their new form from later cells on (9.7.0 rules 2, 3). The effects of previously executed cells are not erased.</p>
+<h3 id="meaning-of-undo"><a class="anchor" tabindex="-1" href="#meaning-of-undo" aria-hidden="true">#</a>Meaning of undo</h3>
+<p>The REPL has no explicit undo; work proceeds by overwriting the last cell or adding new cells.</p>
+<p>In Jupyter as well, deleting or re-running a cell does not undo the effects of earlier cells. To return to the initial state, restart the session (<code>:reset</code> in the REPL).</p>
+<h2 id="975-error-modes"><a class="anchor" tabindex="-1" href="#975-error-modes" aria-hidden="true">#</a>9.7.5. Error modes</h2>
+<h3 id="cell-compile-errors"><a class="anchor" tabindex="-1" href="#cell-compile-errors" aria-hidden="true">#</a>Cell compile errors</h3>
+<pre><code>parse error / type error / semantic error.
+  - the cell is not added.
+  - the session's bindings and items are unchanged.
+  - reuse information for already compiled functions is kept.
+  - the error is shown to the user.
+</code></pre>
+<p>This step is fully transactional, so the state just before the error is preserved. If rokc itself panics (internal compiler error) while compiling a cell, <code>rokc lsp</code>, <code>rokc repl</code> and <code>rokc jupyter</code> survive it: the language server reports it as an error diagnostic of the analyzed buffer, the REPL / kernel fails that cell; both keep serving.</p>
+<h3 id="cell-runtime-errors"><a class="anchor" tabindex="-1" href="#cell-runtime-errors" aria-hidden="true">#</a>Cell runtime errors</h3>
+<pre><code>panic / uncaught throw / process exit / segfault during execution.
+  - the cell is not added - bindings and items stay as they were before the cell.
+  - the error is shown to the user.
+  - the next cell can proceed.
+</code></pre>
+<p>Bindings and items revert to the state before the cell (9.7.0 rule 5), but external effects that already happened (output, file writes, etc.) are not undone. A failed cell is not kept in the session, so the corrected cell can simply be entered again. Hosts without fork (Windows) save the session's memory and threads before the cell and put them back when it fails, with the same observable result as the forked snapshot.</p>
+<h3 id="jit-failure"><a class="anchor" tabindex="-1" href="#jit-failure" aria-hidden="true">#</a>JIT failure</h3>
+<p>If the host cannot load or link a cell's code (an unknown <code>extern</code> symbol, etc.), it is handled like a cell runtime error. The forked process that ran the cell ends and the previous snapshot takes over.</p>
+<h3 id="locations"><a class="anchor" tabindex="-1" href="#locations" aria-hidden="true">#</a>Locations</h3>
+<p>Diagnostics and panic locations in a cell name <code>&lt;repl&gt;:line:col</code>, counted over the cell's own text.</p>
+<h2 id="976-cache"><a class="anchor" tabindex="-1" href="#976-cache" aria-hidden="true">#</a>9.7.6. Cache</h2>
+<p>Within a session the host reuses functions it has already compiled (9.6.4). There is no disk cache across sessions.</p>
+<h2 id="977-visualization--output"><a class="anchor" tabindex="-1" href="#977-visualization--output" aria-hidden="true">#</a>9.7.7. Visualization / output</h2>
+<h3 id="repl-output"><a class="anchor" tabindex="-1" href="#repl-output" aria-hidden="true">#</a>REPL output</h3>
+<pre><code>&gt; 1 + 2
+i32: 3
+&gt; [1, 2, 3]
+List&lt;i32&gt;: [1, 2, 3]
+</code></pre>
+<p>The value and type of the last expression are printed automatically as <code>type: value</code>, with the value formatted by <code>Debug</code>. For a type that does not implement <code>Debug</code>, only the type is printed.</p>
+<pre><code>&gt; let xs = [1, 2, 3];
+&gt; xs
+List&lt;i32&gt;: [1, 2, 3]
+</code></pre>
+<h3 id="jupyter-output"><a class="anchor" tabindex="-1" href="#jupyter-output" aria-hidden="true">#</a>Jupyter output</h3>
+<p>The result of each cell is exposed through Jupyter's display protocol.</p>
+<ul>
+<li>Simple values are represented as strings.
+</li>
+<li>Collections are represented as tables or JSON.
+</li>
+<li>Images and graphs are exposed by libraries through hooks such as <code>Display::display_jupyter</code>.
+</li>
+</ul>
+<p>Jupyter integration details are defined in <a href="908-jupyter-integration">Jupyter integration</a>.</p>
+<h2 id="978-input-unit-repl-recognition"><a class="anchor" tabindex="-1" href="#978-input-unit-repl-recognition" aria-hidden="true">#</a>9.7.8. Input unit: REPL recognition</h2>
+<p>The REPL processes input in units of complete expressions or statements.</p>
+<pre><code>&gt; 1 + 2
+i32: 3
+&gt; let x =
+... 42i32;          (continued input)
+&gt; x
+i32: 42
+</code></pre>
+<p>If an expression or block is not closed, the <code>...</code> prompt is shown and input continues. When standard input ends inside an incomplete cell, the cell is not run, an error is reported, and <code>rokc repl</code> exits with 1. A cell that fails does not change the exit code.</p>
+<h2 id="979-input-unit-jupyter-cell"><a class="anchor" tabindex="-1" href="#979-input-unit-jupyter-cell" aria-hidden="true">#</a>9.7.9. Input unit: Jupyter cell</h2>
+<p>A Jupyter cell is a multi-line input processed all at once.</p>
+<pre><code>[Cell 1]:
+let x = 42i32;
+let y = x * 2i32;
+y                       # last expression = cell result
+</code></pre>
+<p>The last expression of the cell is the cell's result; everything else is treated as side effects (definitions or calls).</p>
+<h2 id="9710-loading-a-program-repl-path"><a class="anchor" tabindex="-1" href="#9710-loading-a-program-repl-path" aria-hidden="true">#</a>9.7.10. Loading a program (<code>repl &lt;path&gt;</code>)</h2>
+<p><code>rokc repl &lt;path&gt;</code> with a program path loads the program into a fresh session, then continues with the REPL on that session. With a library package path, the package is added as a dependency and <code>use &lt;name&gt;::*;</code> runs as the first cell (again after <code>:reset</code>); nothing else is loaded.</p>
+<ul>
+<li><strong>Checked first.</strong> The whole program is checked before anything runs. Errors are reported at the file's own locations; nothing runs and the session starts empty.
+</li>
+<li><strong>Items.</strong> Items and imports join the session.
+</li>
+<li><strong>Statements.</strong> Top-level statements run as cells. Each cell ends at a top-level <code>let</code> (or at the last statement).
+</li>
+<li><strong>Failure.</strong> On a panic, <code>exit()</code> or an escaping error, bindings from finished cells keep their values as of the end of their cell; assignments in the failed stretch are lost. The rest of the program does not run, and the session continues.
+</li>
+<li><strong>Unusable bindings.</strong> A binding later cells cannot use (private or unnameable type) is dropped if no later statement names it; otherwise the statements through its last use run as one cell.
+</li>
+<li><strong><code>fn main</code>.</strong> A program with <code>fn main</code> runs <code>main</code> as the entry; <code>main</code> then leaves the session, so its locals are not visible.
+</li>
+<li><strong>Locations.</strong> Diagnostics and panics use the file's own locations.
+</li>
+<li><strong>Input.</strong> The program's stdin is <code>/dev/null</code>.
+</li>
+</ul>
+<h2 id="9711-next"><a class="anchor" tabindex="-1" href="#9711-next" aria-hidden="true">#</a>9.7.11. Next</h2>
+<p><a href="908-jupyter-integration">Jupyter integration</a> defines the Jupyter kernel integration (local ZMQ and in-browser WASM).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/907-jit-cells.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="906-jit-engine"><small>Previous</small>9.6. JIT engine</a><a class="next" href="908-jupyter-integration"><small>Next</small>9.8. Jupyter kernel integration</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

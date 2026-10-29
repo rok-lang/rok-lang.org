@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.5. Extern &quot;C&quot; 심볼 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="librokr.a 가 노출하는 심볼 의 시그니처를 정의합니다. 컴파일러가 생성한 코드와 표준 라이브러리가 이 심볼을 부릅니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/805-extern-symbols.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.5. Extern &quot;C&quot; 심볼 - rok docs">
+<meta property="og:description" content="librokr.a 가 노출하는 심볼 의 시그니처를 정의합니다. 컴파일러가 생성한 코드와 표준 라이브러리가 이 심볼을 부릅니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/805-extern-symbols.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/805-extern-symbols.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/805-extern-symbols.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">8. 런타임 ABI / MLIR lowering 개요</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. 객체 헤더 ABI</a></li><li><a href="802-scan-table">8.2. ScanTable 직렬화 포맷</a></li><li><a href="803-tls-slots">8.3. Mutator TLS 슬롯 레이아웃</a></li><li><a href="804-safepoint">8.4. Safepoint 프로토콜</a></li><li class="cur"><a aria-current="page" href="805-extern-symbols">8.5. Extern &quot;C&quot; 심볼</a><ul class="toc"><li><a href="#850-thread-safety-분류">8.5.0. Thread-safety 분류</a></li><li><a href="#850a-rokfn---함수-값의-c-abi-형태">8.5.0a. RokFn - 함수 값의 C ABI 형태</a></li><li><a href="#851-gc-영역">8.5.1. GC 영역</a></li><li><a href="#852-runtime-영역">8.5.2. Runtime 영역</a></li><li><a href="#853-coroutine-영역">8.5.3. Coroutine 영역</a></li><li><a href="#854-scheduler-영역">8.5.4. Scheduler 영역</a></li><li><a href="#855-io--timer-영역">8.5.5. I/O / Timer 영역</a></li><li><a href="#856-에러-전달-심볼-없음">8.5.6. 에러 전달 (심볼 없음)</a></li><li><a href="#857-diagnostic-영역">8.5.7. Diagnostic 영역</a></li><li><a href="#858-심볼-명명-규약">8.5.8. 심볼 명명 규약</a></li><li><a href="#859-함수-시그니처의-호환성">8.5.9. 함수 시그니처의 호환성</a></li><li><a href="#8510-calling-convention">8.5.10. Calling convention</a></li><li><a href="#8511-사용-예-tlab-fast-path-의-slow-호출">8.5.11. 사용 예: TLAB fast path 의 slow 호출</a></li><li><a href="#8512-보조-심볼-부록-비규범">8.5.12. 보조 심볼 (부록, 비규범)</a></li></ul></li><li><a href="806-calling-convention">8.6. Calling Convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR 다이얼렉트 사용</a></li><li><a href="808-lowering-types">8.8. Lowering: 데이터 타입과 표현식</a></li><li><a href="809-lowering-control">8.9. Lowering: 제어 흐름과 GC 통합</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: 코루틴과 제네릭</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="85-extern-c-심볼 85-extern-c-symbols 850-thread-safety-분류 850-thread-safety-classes 850a-rokfn---함수-값의-c-abi-형태 850a-rokfn---c-abi-form-of-function-values 851-gc-영역 851-gc-area rok_gc_alloc_slow rok_gc_alloc_slow rok_alloc_raw--rok_realloc_raw rok_alloc_raw--rok_realloc_raw rok_gc_wb_slow rok_gc_wb_slow rok_gc_register_type rok_gc_register_type rok_gc_pin--rok_gc_unpin rok_gc_pin--rok_gc_unpin rok_gc_collect rok_gc_collect rok_gc_secret_new--rok_gc_secret_wipe rok_gc_secret_new--rok_gc_secret_wipe 852-runtime-영역 852-runtime-area rok_runtime_init rok_runtime_init rok_runtime_shutdown rok_runtime_shutdown rok_exit rok_exit 문자열-helper string-helpers rok_runtime_yield rok_runtime_yield rok_enter_native--rok_leave_native rok_enter_native--rok_leave_native rok_native_reenter--rok_native_resume rok_native_reenter--rok_native_resume rok_thread_init--rok_thread_shutdown rok_thread_init--rok_thread_shutdown 내부-심볼-무리 internal-symbol-families safepoint-가-아닌-함수 functions-that-are-not-safepoints 853-coroutine-영역 853-coroutine-area rok_coro_frame_alloc rok_coro_frame_alloc rok_coro_park--rok_coro_unpark rok_coro_park--rok_coro_unpark 854-scheduler-영역 854-scheduler-area rok_task_worker_--rok_time_now_ns rok_task_worker_--rok_time_now_ns rok_thread_spawn rok_thread_spawn rok_task_hooks_install--rok_task_key rok_task_hooks_install--rok_task_key rok_sync_wait--rok_sync_wake rok_sync_wait--rok_sync_wake rok_thread_join rok_thread_join rok_thread_detach--rok_cpu_count rok_thread_detach--rok_cpu_count rok_static_init_begin--rok_static_init_end rok_static_init_begin--rok_static_init_end rok_gc_add_root rok_gc_add_root rok_os_---os-helper-내부-변경-가능 rok_os_---os-helpers-internal-subject-to-change rok_deque_---work-stealing-deque rok_deque_---work-stealing-deque 855-io--timer-영역 855-io--timer-area rok_io_register--rok_timer_register rok_io_register--rok_timer_register rok_io_---reactor-내부-변경-가능 rok_io_---reactor-internal-subject-to-change rok_net_---소켓-helper-내부-변경-가능 rok_net_---socket-helpers-internal-subject-to-change 856-에러-전달-심볼-없음 856-error-propagation-no-symbols 857-diagnostic-영역 857-diagnostic-area rok_panic rok_panic rok_panic_str rok_panic_str rok_panic_at rok_panic_at rok_uncaught_error--rok_uncaught_error_at rok_uncaught_error--rok_uncaught_error_at rok_oom rok_oom 스택-오버플로 stack-overflow 858-심볼-명명-규약 858-symbol-naming-conventions 859-함수-시그니처의-호환성 859-compatibility-of-function-signatures 8510-calling-convention 8510-calling-convention 8511-사용-예-tlab-fast-path-의-slow-호출 8511-example-slow-call-from-the-tlab-fast-path 8512-보조-심볼-부록-비규범 8512-auxiliary-symbols-appendix-non-normative"><a href="../../../../spec/refs-lang/008-abi/805-extern-symbols" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="85-extern-c-심볼"><a class="anchor" tabindex="-1" href="#85-extern-c-심볼" aria-hidden="true">#</a>8.5. Extern &quot;C&quot; 심볼</h1>
+<p><code>librokr.a</code> 가 노출하는 <a href="../000-meta/007-glossary#extern-c-심볼">심볼</a> 의 시그니처를 정의합니다. 컴파일러가 생성한 코드와 표준 라이브러리가 이 심볼을 부릅니다.</p>
+<p>rok 쪽 선언은 런타임 ABI <code>extern &quot;rok&quot;</code> (<a href="../005-modules/509-extern-block#592-abi-명시">5.9.2</a>) 이며, toolchain 이 <code>rok::core::rt</code> 에 <code>pub(pkg)</code> 로 둡니다. 아래 블록의 <code>fn</code> 값은 <code>RokFn</code> (8.5.0a), 그 밖의 값은 C ABI 와 같습니다. <code>str</code> 은 <code>struct { const uint8_t *ptr; size_t len; }</code> 이며, <code>str</code> 을 받거나 돌려주는 런타임 함수는 <code>RokFn</code> 처럼 16 바이트 구조체에 대한 플랫폼 C ABI 를 따릅니다 (<a href="806-calling-convention#863-struct-인자--반환-small-struct-rule">8.6.3</a>): ABI 가 허용하면 레지스터로 값 전달하고, 레지스터와 스택에 나뉘지 않으며, Windows x64 에서는 참조로 넘깁니다. 프로그램은 런타임 심볼을 직접 선언할 수 있습니다 (<code>extern &quot;rok&quot;</code> / <code>extern &quot;C&quot;</code>). 그 선언은 여기서 정한 시그니처를 가져야 하며, 다르면 에러입니다.</p>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>모든 심볼은 <code>rok_</code> 접두사로 시작합니다. 이는 외부 라이브러리나 사용자 코드와의 심볼 충돌을 회피하기 위함입니다.</p>
+</div>
+<h2 id="850-thread-safety-분류"><a class="anchor" tabindex="-1" href="#850-thread-safety-분류" aria-hidden="true">#</a>8.5.0. Thread-safety 분류</h2>
+<p>각 심볼의 정의 옆에는 <strong>Thread-safety</strong> 표기가 따라붙습니다. 이는 컴파일러가 emit 한 코드와 런타임 사이의 contract 의 일부로, 어떤 호출 컨텍스트에서 안전하게 호출할 수 있는지를 명시합니다. 사용 가능한 분류는 다음 6 가지입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>분류</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>thread-safe</code></td><td>다중 thread 가 동시에 호출해도 안전 (런타임이 내부 동기화)</td></tr>
+<tr><td><code>caller-thread-only</code></td><td>호출자 thread 의 컨텍스트에 묶임 - 다른 thread 가 그 호출자를 대신할 수 없음</td></tr>
+<tr><td><code>process-init</code></td><td>프로세스 시작 시점, mt 진입 전 단 한 번</td></tr>
+<tr><td><code>process-shutdown</code></td><td>프로세스 종료 시점, mt 종료 후 단 한 번</td></tr>
+<tr><td><code>per-thread-init</code></td><td>각 worker thread 의 시작 시점에 그 thread 가 자기 자신에 대해 한 번</td></tr>
+<tr><td><code>per-thread-shutdown</code></td><td>각 worker thread 의 종료 시점에 그 thread 가 자기 자신에 대해 한 번</td></tr>
+</tbody></table></div>
+<p><code>caller-thread-only</code> 는 함수의 효과가 호출자의 TLS 슬롯이나 stack frame 에 결합되어 있어 다른 thread 에서 그 호출자를 대신할 수 없다는 뜻입니다. 함수 자체가 reentrant 하지 않다는 의미는 아니며, 다중 thread 가 각자 자기 호출자에 대해 동시에 호출하는 것은 허용됩니다.</p>
+<h2 id="850a-rokfn---함수-값의-c-abi-형태"><a class="anchor" tabindex="-1" href="#850a-rokfn---함수-값의-c-abi-형태" aria-hidden="true">#</a>8.5.0a. <code>RokFn</code> - 함수 값의 C ABI 형태</h2>
+<p>rok 함수 값 <code>{code, env}</code> (<a href="../004-functions/404-function-type#함수-값의-표현">4.4</a>) 를 런타임 심볼에 넘길 때의 C 표현입니다.</p>
+<pre><code class="language-c">typedef struct {
+    void *code;   // env 를 첫 인자로 받는 코드 포인터
+    void *env;    // 캡처 환경 (이름 있는 함수는 NULL)
+} RokFn;
+</code></pre>
+<p><code>RokFn</code> 은 C 구조체로 <strong>값 전달</strong> 됩니다. 실제 레지스터 배치는 타깃 C ABI 의 16 바이트 구조체 규칙을 따릅니다.</p>
+<h2 id="851-gc-영역"><a class="anchor" tabindex="-1" href="#851-gc-영역" aria-hidden="true">#</a>8.5.1. GC 영역</h2>
+<h3 id="rok_gc_alloc_slow"><a class="anchor" tabindex="-1" href="#rok_gc_alloc_slow" aria-hidden="true">#</a><code>rok_gc_alloc_slow</code></h3>
+<p><a href="../007-runtime/702-allocation">할당</a> 의 <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> slow path 에 해당합니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_alloc_slow(size: usize, align: usize, type_id: u32) -&gt; GcBuf&lt;u8&gt;;
+}
+</code></pre>
+<p>각 인자와 반환값의 의미는 다음과 같습니다.</p>
+<ul>
+<li><code>size</code>: 객체의 총 크기로, 16 바이트의 헤더에 페이로드를 더한 뒤 정렬한 값입니다.
+</li>
+<li><code>align</code>: 객체의 정렬 요구로, 보통 8 이며 <code>#[repr(align(N))]</code> 가 지정되면 더 커집니다.
+</li>
+<li><code>type_id</code>: 객체의 타입 ID 입니다.
+</li>
+<li>반환: 헤더 자리부터 시작하는 객체의 GC 참조 (<code>GcBuf&lt;u8&gt;</code>, 런타임 ABI 의 GC 포인터) 를 돌려주며, type_id 와 gc_flags 는 함수가 채워둡니다.
+</li>
+</ul>
+<p>null 을 반환하지 않습니다. 메모리 부족은 fatal (<code>rok_oom</code>) 이며, <code>isize::MAX</code> 를 넘는 요청은 fatal 에러 &quot;allocation too large&quot; (종료 코드 101) 입니다.</p>
+<h3 id="rok_alloc_raw--rok_realloc_raw"><a class="anchor" tabindex="-1" href="#rok_alloc_raw--rok_realloc_raw" aria-hidden="true">#</a><code>rok_alloc_raw</code> / <code>rok_realloc_raw</code></h3>
+<p>GC 밖의 raw 메모리를 할당합니다 (<a href="../../refs-standard-libraries/100-bare/104-alloc">stdlib 1.4 alloc</a>). <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_alloc_raw(size: usize, align: usize, zeroed: i32) -&gt; usize;
+    fn rok_realloc_raw(ptr: usize, old_size: usize, align: usize, new_size: usize) -&gt; usize;
+}
+</code></pre>
+<p><code>zeroed</code> 가 0 이 아니면 할당한 메모리를 0 으로 채웁니다. <code>rok_alloc_raw</code> 는 <code>size</code> 가 0 이거나 <code>align</code> 이 2 의 거듭제곱이 아니거나 할당에 실패하면 null (<code>0</code>) 을 반환하며, abort 하지 않습니다. <code>rok_realloc_raw</code> 도 실패 시 null 을 반환합니다. 실패 처리는 호출자 (<code>rok::bare::alloc</code>) 가 합니다.</p>
+<h3 id="rok_gc_wb_slow"><a class="anchor" tabindex="-1" href="#rok_gc_wb_slow" aria-hidden="true">#</a><code>rok_gc_wb_slow</code></h3>
+<p><a href="../007-runtime/704-barriers-and-roots">배리어와 루트 추적</a> 의 write barrier slow path 에 해당합니다. <strong>Thread-safety: <code>caller-thread-only</code></strong> (TLS 의 wb log buffer 에 기록).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_wb_slow(obj: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<p>인자 <code>obj</code> 는 변경된 슬롯이 속한 객체의 포인터이며, 별도의 반환값은 없습니다. 효과로는 remembered set 에 obj 를 추가하고, log 가 차면 flush 합니다.</p>
+<h3 id="rok_gc_register_type"><a class="anchor" tabindex="-1" href="#rok_gc_register_type" aria-hidden="true">#</a><code>rok_gc_register_type</code></h3>
+<p><a href="802-scan-table">ScanTable</a> 의 타입을 등록합니다. <strong>Thread-safety: <code>process-init</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_register_type(type_id: u32, scan_table: ConstPtr&lt;u8&gt;);
+}
+</code></pre>
+<p>호출 시점은 프로세스 시작 시점이며, mt 진입 전이므로 동기화 불필요.</p>
+<h3 id="rok_gc_pin--rok_gc_unpin"><a class="anchor" tabindex="-1" href="#rok_gc_pin--rok_gc_unpin" aria-hidden="true">#</a><code>rok_gc_pin</code> / <code>rok_gc_unpin</code></h3>
+<p><a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> 객체의 pinning 을 담당합니다 (<a href="../007-runtime/701-object-layout">객체 레이아웃과 메모리 공간</a>, <a href="../005-modules/509-extern-block"><code>extern</code> 블록 (FFI 선언)</a> 참조). <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_pin(obj: Ptr&lt;u8&gt;) -&gt; Ptr&lt;u8&gt;;       // 고정된 객체 (같은 주소) 반환
+    fn rok_gc_unpin(obj: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<p><code>extern &quot;C&quot;</code> 함수나 blocking 런타임 호출에 넘긴 GC 포인터는 호출이 끝날 때까지 인자가 루트에 있으므로 따로 pin 하지 않아도 옮겨지지 않습니다 (<a href="../007-runtime/704-barriers-and-roots#루트가-가리키는-객체는-옮기지-않음">7.4.1</a>). C 코드가 호출 뒤에도 포인터를 보관할 때만 pin 이 필요합니다. pin 은 객체에 <code>PINNED</code> 를 켜서 evacuation 대상에서 빼고 GC 가 살려 두게 하며, unpin 은 그것을 풉니다.</p>
+<h3 id="rok_gc_collect"><a class="anchor" tabindex="-1" href="#rok_gc_collect" aria-hidden="true">#</a><code>rok_gc_collect</code></h3>
+<p>명시적인 <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> 트리거이며, 드물게 사용됩니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_collect();
+}
+</code></pre>
+<p>full 수집을 하고, 수집이 끝난 뒤 돌아옵니다.</p>
+<h3 id="rok_gc_secret_new--rok_gc_secret_wipe"><a class="anchor" tabindex="-1" href="#rok_gc_secret_new--rok_gc_secret_wipe" aria-hidden="true">#</a><code>rok_gc_secret_new</code> / <code>rok_gc_secret_wipe</code></h3>
+<p><code>rok::core::crypto::Secret</code> (<a href="../../refs-standard-libraries/200-core/221-crypto#2215-보안-고려-사항">stdlib 2.21.5</a>) 의 비밀 저장소입니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_secret_new(len: usize) -&gt; GcBuf&lt;u8&gt;;
+    fn rok_gc_secret_wipe(obj: GcBuf&lt;u8&gt;);
+}
+</code></pre>
+<p><code>rok_gc_secret_new</code> 는 <code>WIPE</code> (<a href="801-object-header-abi#813-gc_flags-offset-4-u32">8.1.3</a>) 를 켠 type id 1 (참조 없음) 의 LOS 객체를 할당합니다. 0 으로 채운 payload 는 <code>len</code> 을 8 의 배수로 올린 바이트를 담습니다. 먼저 수집할 수 있으며, <code>isize::MAX</code> 를 넘는 요청은 fatal error &quot;allocation too large&quot; 입니다. <code>rok_gc_secret_wipe</code> 는 payload 전체를 volatile store 로 덮어쓰고 compiler fence 를 둡니다. 할당하지도 block 하지도 않으므로 safepoint 가 아닙니다 (<a href="804-safepoint">8.4</a>). 수집기는 객체를 해제하기 전에 같은 방식으로 payload 를 덮어씁니다.</p>
+<h2 id="852-runtime-영역"><a class="anchor" tabindex="-1" href="#852-runtime-영역" aria-hidden="true">#</a>8.5.2. Runtime 영역</h2>
+<h3 id="rok_runtime_init"><a class="anchor" tabindex="-1" href="#rok_runtime_init" aria-hidden="true">#</a><code>rok_runtime_init</code></h3>
+<p>런타임을 초기화합니다. <strong>Thread-safety: <code>process-init</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_runtime_init();
+}
+</code></pre>
+<p>호출 시점은 프로세스 시작 직후이자 <code>main()</code> 이전이며, 효과로는 worker 풀을 생성하고 GC 공간을 mmap 하며 I/O driver 를 초기화합니다. 컴파일러가 생성한 C-ABI <code>main</code> 은 이 호출 직후에 <code>rok.register_types</code> 를 호출합니다 (<a href="802-scan-table#8213-등록-시점">8.2.13</a>).</p>
+<p>런타임은 이 밖에 thread-local 블록 <code>rok_tls</code> 를 export 합니다 (<a href="803-tls-slots#838-컴파일러-emit-의-형식">8.3.8</a>).</p>
+<h3 id="rok_runtime_shutdown"><a class="anchor" tabindex="-1" href="#rok_runtime_shutdown" aria-hidden="true">#</a><code>rok_runtime_shutdown</code></h3>
+<p>런타임을 종료합니다. <strong>Thread-safety: <code>process-shutdown</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_runtime_shutdown();
+}
+</code></pre>
+<p><code>main()</code> 이 끝난 직후에 부릅니다. 다른 모든 rok 스레드는 지금 실행 중인 런타임 / C 코드를 마친 뒤 다음 safepoint 에서 영영 멈춥니다. 그 뒤 worker 풀을 끝내고 남은 자원을 정리합니다.</p>
+<h3 id="rok_exit"><a class="anchor" tabindex="-1" href="#rok_exit" aria-hidden="true">#</a><code>rok_exit</code></h3>
+<p>프로세스를 즉시 종료합니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_exit(code: i32) -&gt; !;
+}
+</code></pre>
+<p><a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env::exit</code></a> 가 이 심볼을 부릅니다. <code>finally</code> 와 <code>Drop</code> 은 실행하지 않습니다 (<a href="../004-functions/416-entry-point#4164-종료-코드와-미처리-예외">4.16.4</a>).</p>
+<h3 id="문자열-helper"><a class="anchor" tabindex="-1" href="#문자열-helper" aria-hidden="true">#</a>문자열 helper</h3>
+<p><code>FromStr</code> 과 <code>str::bytes</code> 를 뒷받침하는 내부 helper 입니다 (<a href="../../refs-standard-libraries/200-core/215-string">stdlib 2.15</a>). <strong>Thread-safety: <code>thread-safe</code></strong>. <code>str</code> 인자는 머리말의 구조체 형태입니다.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_str_eq(a: str, b: str) -&gt; i32;                            // 같으면 1, 아니면 0
+    fn rok_str_byte(s: str, i: usize) -&gt; u8;                         // i 번째 바이트 (경계 검사는 호출자)
+    fn rok_str_slice(s: str, start: usize, end: usize, at: str) -&gt; str;  // s[start:end]. 범위 / UTF-8 경계가 틀리면 at 위치로 panic
+    fn rok_str_parse_int(s: str, radix: u32, signed: i32, bits: u32, out: GcBuf&lt;i64&gt;) -&gt; i32;
+                                        // 0 ok, 1 빈 문자열, 2 잘못된 자릿수, 3 범위 밖; 값의 비트는 out[0]
+    fn rok_str_parse_float(s: str, out: GcBuf&lt;f64&gt;) -&gt; i32;           // 0 ok, 2 잘못됨, 3 범위 초과 (유한한 숫자가 타입 범위를 넘음); 값은 out[0]
+}
+</code></pre>
+<h3 id="rok_runtime_yield"><a class="anchor" tabindex="-1" href="#rok_runtime_yield" aria-hidden="true">#</a><code>rok_runtime_yield</code></h3>
+<p><a href="804-safepoint">Safepoint 프로토콜</a> 의 <code>yield</code> 함수, 즉 safepoint poll 의 slow path 입니다. <strong>Thread-safety: <code>caller-thread-only</code></strong> (호출자 mutator 가 자기 yield_flag 를 polling 한 결과로 호출).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_runtime_yield();
+}
+</code></pre>
+<h3 id="rok_enter_native--rok_leave_native"><a class="anchor" tabindex="-1" href="#rok_enter_native--rok_leave_native" aria-hidden="true">#</a><code>rok_enter_native</code> / <code>rok_leave_native</code></h3>
+<p>native bracket 의 slow path 입니다 (<a href="804-safepoint#8410-native-호출">8.4.10</a>). <strong>Thread-safety: <code>caller-thread-only</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_enter_native();                // C 로 들어감: 이 스레드는 PARKED
+    fn rok_leave_native();                // C 에서 돌아옴: 진행 중인 수집을 기다림
+}
+</code></pre>
+<p>컴파일러는 모든 <code>extern &quot;C&quot;</code> 호출 앞뒤에 fast path 를 inline 으로 냅니다. mutator 상태에 <code>PARKED</code> / <code>RUNNING</code> 을 seq_cst 로 쓰고 yield flag 를 봅니다. flag 가 켜져 있을 때만 이 함수를 부릅니다.</p>
+<h3 id="rok_native_reenter--rok_native_resume"><a class="anchor" tabindex="-1" href="#rok_native_reenter--rok_native_resume" aria-hidden="true">#</a><code>rok_native_reenter</code> / <code>rok_native_resume</code></h3>
+<p>모든 <code>extern &quot;C&quot; fn</code> 정의의 입구와 출구이며, C callback 이 mutator 로 돌게 합니다. <strong>Thread-safety: <code>caller-thread-only</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_native_reenter() -&gt; u32;       // 스레드가 PARKED (C 안) 였으면 native 를 떠남; 그랬는지 반환
+    fn rok_native_resume(parked: u32);    // reenter 가 떠났으면 다시 native 로
+}
+</code></pre>
+<h3 id="rok_thread_init--rok_thread_shutdown"><a class="anchor" tabindex="-1" href="#rok_thread_init--rok_thread_shutdown" aria-hidden="true">#</a><code>rok_thread_init</code> / <code>rok_thread_shutdown</code></h3>
+<p>worker thread 의 lifecycle 을 담당합니다. <strong>Thread-safety: <code>rok_thread_init</code> 은 <code>per-thread-init</code>, <code>rok_thread_shutdown</code> 은 <code>per-thread-shutdown</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_init();
+    fn rok_thread_shutdown();
+}
+</code></pre>
+<p>각 worker thread 의 시작 및 종료 시점에 호출되어, <a href="803-tls-slots">TLS 슬롯</a> 의 TLS 를 초기화하거나 정리합니다.</p>
+<h3 id="내부-심볼-무리"><a class="anchor" tabindex="-1" href="#내부-심볼-무리" aria-hidden="true">#</a>내부 심볼 무리</h3>
+<p>다음 무리는 참조 런타임의 내부 helper 이며 ABI 계약에 속하지 않습니다: <code>rok_fmt_*</code>, <code>rok_str_*</code> helper, <code>rok_char_*</code>, <code>rok_nat_*</code>, <code>rok_stdio_*</code>, <code>rok_time_*</code>, <code>rok_gc_stats_*</code>, <code>rok_buf_*</code>, <code>rok_cstr_len</code>.</p>
+<h3 id="safepoint-가-아닌-함수"><a class="anchor" tabindex="-1" href="#safepoint-가-아닌-함수" aria-hidden="true">#</a>safepoint 가 아닌 함수</h3>
+<p>rok 쪽에서는 <code>#[no_safepoint]</code> 가 붙은 <code>extern &quot;rok&quot;</code> 블록에 선언합니다 (<a href="../005-modules/509-extern-block#592-abi-명시">5.9.2</a>).</p>
+<p>다음 런타임 함수는 할당도 block 도 하지 않음이 보장되므로, 그 호출은 safepoint 가 아닙니다 (<a href="804-safepoint#842-emit-위치">8.4.2</a>, <a href="809-lowering-control#8912-shadow-stack-frame">8.9.12</a>): <code>rok_str_len</code>, <code>rok_str_byte</code>, <code>rok_str_cmp</code>, <code>rok_str_eq</code>, <code>rok_str_eq_at</code>, <code>rok_str_find</code>, <code>rok_str_rfind</code>, <code>rok_str_char_count</code>, <code>rok_str_hash</code>, <code>rok_str_bytes_buf</code>, <code>rok_buf_copy</code>, <code>rok_char_*</code> 속성 / 대소문자 함수, <code>rok_fmt_len</code>, <code>rok_f64_*</code>, <code>rok_f32_*</code>.</p>
+<h2 id="853-coroutine-영역"><a class="anchor" tabindex="-1" href="#853-coroutine-영역" aria-hidden="true">#</a>8.5.3. Coroutine 영역</h2>
+<h3 id="rok_coro_frame_alloc"><a class="anchor" tabindex="-1" href="#rok_coro_frame_alloc" aria-hidden="true">#</a><code>rok_coro_frame_alloc</code></h3>
+<p><a href="../007-runtime/708-coroutine">코루틴</a> 의 frame 을 할당합니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_coro_frame_alloc(size: usize, type_id: u32) -&gt; GcBuf&lt;u8&gt;;
+}
+</code></pre>
+<p><code>rok_gc_alloc_slow</code> 와 거의 동일하지만, frame 전용으로 별도 처리가 가능합니다.</p>
+<h3 id="rok_coro_park--rok_coro_unpark"><a class="anchor" tabindex="-1" href="#rok_coro_park--rok_coro_unpark" aria-hidden="true">#</a><code>rok_coro_park</code> / <code>rok_coro_unpark</code></h3>
+<p>컴파일러는 이 두 심볼을 emit 하지 않습니다 (<code>await</code> 는 <code>rok::core::task</code> 의 parking registry 를 씁니다). 런타임은 C 나 저수준 코드를 위해 제공합니다. <code>frame</code> (아무 GC 객체) 의 주소가 parking key 이며, <code>rok_coro_unpark(frame)</code> 은 그 key 에 park 한 waker 를 모두 깨웁니다. task executor 밖에서 부르면 abort 합니다.</p>
+<p><strong>Thread-safety: <code>rok_coro_park</code> 는 <code>caller-thread-only</code></strong> (호출자 코루틴 자신을 park), <strong><code>rok_coro_unpark</code> 는 <code>thread-safe</code></strong> (다른 thread 에서 호출 가능).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_coro_park(frame: Ptr&lt;u8&gt;, waker: Ptr&lt;u8&gt;);
+    fn rok_coro_unpark(frame: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<p><code>rok_coro_park</code> 는 코루틴을 일시 중단시키고 waker 를 등록합니다. <code>rok_coro_unpark</code> 는 코루틴을 재개시키며 task 큐에 push 합니다.</p>
+<p>여기서 <code>waker</code> 는 깨우는 함수와 컨텍스트의 묶음, 곧 런타임의 <code>Waker</code> 객체 (<a href="../../refs-standard-libraries/200-core/220-future">2.20.2</a>) 를 가리키는 <strong>불투명 포인터 (<code>Ptr&lt;u8&gt;</code>)</strong> 입니다. C ABI 경계에서는 <code>Waker</code> 의 내부 표현을 노출하지 않으므로, <a href="../007-runtime/708-coroutine">7.8.8</a> 을 비롯한 모든 자리에서 <code>waker</code> 인자의 타입은 <code>Ptr&lt;u8&gt;</code> 로 통일됩니다 (<code>rok_io_register</code>, <code>rok_timer_register</code> 도 같음). 포인터가 가리키는 객체의 정확한 레이아웃은 코루틴 구현이 결정합니다.</p>
+<h2 id="854-scheduler-영역"><a class="anchor" tabindex="-1" href="#854-scheduler-영역" aria-hidden="true">#</a>8.5.4. Scheduler 영역</h2>
+<p>task 런타임 (spawn, join, cancel, executor) 은 <code>rok::core::task</code> 의 rok 코드입니다 (<a href="../../refs-standard-libraries/200-core/218-task">stdlib 2.18</a>). 런타임은 아래의 executor 슬롯, 스레드, parking 심볼만 제공합니다.</p>
+<h3 id="rok_task_worker_--rok_time_now_ns"><a class="anchor" tabindex="-1" href="#rok_task_worker_--rok_time_now_ns" aria-hidden="true">#</a><code>rok_task_worker_*</code> / <code>rok_time_now_ns</code></h3>
+<p>현재 스레드의 executor worker (<a href="../../refs-standard-libraries/200-core/218-task">stdlib 2.18</a>) 를 TLS 슬롯 <code>rok_tls_task_worker</code> (<a href="803-tls-slots#831-tls-슬롯-구조">8.3.1</a>) 에 두고 꺼내는 함수와 시계입니다. <strong>Thread-safety: <code>caller-thread-only</code></strong> (<code>rok_time_now_ns</code> 는 <code>thread-safe</code>).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_task_worker_present() -&gt; i32;       // 이 스레드가 worker 이면 1
+    fn rok_task_worker_get() -&gt; usize;         // worker 객체 주소, 없으면 0
+    fn rok_task_worker_set(w: usize);          // 살아 있는 GC 객체 또는 0. 설치하는 동안 pin
+    fn rok_task_worker_clear();                // = rok_task_worker_set(0)
+    fn rok_time_now_ns() -&gt; i64;               // monotonic clock (ns)
+}
+</code></pre>
+<h3 id="rok_thread_spawn"><a class="anchor" tabindex="-1" href="#rok_thread_spawn" aria-hidden="true">#</a><code>rok_thread_spawn</code></h3>
+<p>1:1 OS thread 를 생성합니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_spawn(f: RokFn, stack_size: usize, id: u64) -&gt; usize;
+    fn rok_thread_new_id() -&gt; u64;
+    fn rok_thread_id() -&gt; u64;                        // 현재 스레드의 worker id
+    fn rok_thread_sleep_ns(ns: i64);
+    fn rok_thread_yield_now();
+}
+</code></pre>
+<p><code>rok_thread_spawn</code> 은 rok 클로저 <code>f</code> (아래 <code>RokFn</code>, 값 전달) 를 OS 스레드에서 실행합니다 (<code>stack_size</code> 0 은 기본값). <code>id</code> 는 <code>rok_thread_new_id</code> 로 받은 값이며 새 스레드의 <code>rok_tls_worker_id</code> 가 됩니다. 반환값은 join handle 이고, 생성에 실패하면 0 입니다. 스레드가 끝날 때까지 <code>env</code> 는 GC root 입니다.</p>
+<h3 id="rok_task_hooks_install--rok_task_key"><a class="anchor" tabindex="-1" href="#rok_task_hooks_install--rok_task_key" aria-hidden="true">#</a><code>rok_task_hooks_install</code> / <code>rok_task_key</code></h3>
+<p><code>rok::core::task</code> 의 executor 가 런타임에 hook 을 설치합니다. 런타임의 I/O driver, timer, <code>rok_coro_park</code> / <code>rok_coro_unpark</code> 는 이 hook 으로 task 를 깨우고 멈춥니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_task_hooks_install(
+        io: extern &quot;C&quot; fn(fd: i32, interest: u32, waker: Ptr&lt;u8&gt;),
+        timer: extern &quot;C&quot; fn(deadline_ns: u64, waker: Ptr&lt;u8&gt;),
+        park: extern &quot;C&quot; fn(key: Ptr&lt;u8&gt;, waker: Ptr&lt;u8&gt;),
+        unpark: extern &quot;C&quot; fn(key: Ptr&lt;u8&gt;),
+        restart: extern &quot;C&quot; fn(),               // 실패한 REPL 셀과 함께 사라진 executor 작업을 재시작
+    );                                          // 처음 설치한 것이 이김
+    unsafe fn rok_task_key(obj: Ptr&lt;u8&gt;) -&gt; usize;   // GC 객체 주소를 park 키로
+}
+</code></pre>
+<p><code>rok_task_key</code> 는 주소를 키로 쓰므로 그 객체에 <code>NOMOVE</code> (<a href="801-object-header-abi#813-gc_flags-offset-4-u32">8.1.3</a>) 를 켭니다. 그 객체는 이후 옮겨지지 않습니다. 호출 안에서만 쓰는 동일성 비교는 <code>buf_same</code> (<a href="../../refs-standard-libraries/200-core/209-collections">stdlib 2.9</a>) 을 쓰며 아무것도 고정하지 않습니다.</p>
+<h3 id="rok_sync_wait--rok_sync_wake"><a class="anchor" tabindex="-1" href="#rok_sync_wait--rok_sync_wake" aria-hidden="true">#</a><code>rok_sync_wait</code> / <code>rok_sync_wake</code></h3>
+<p>동기화 primitive (<code>Mutex</code>, <code>Condvar</code>, <code>Once</code>) 의 대기와 깨우기입니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_sync_wait(buf: Ptr&lt;u8&gt;, index: usize, expected: i32, timeout_ns: i64);   // GcBuf&lt;i32&gt; 원소가 expected 인 동안 대기. timeout_ns &lt; 0 이면 무한
+    fn rok_sync_wake(buf: Ptr&lt;u8&gt;, index: usize);                                    // 그 원소에서 대기 중인 스레드를 모두 깨움
+}
+</code></pre>
+<p><code>rok_sync_wait</code> 는 깨운 이유 없이 돌아올 수 있으므로 호출자가 조건을 다시 확인합니다. 대기하는 동안 그 스레드는 GC 에 대해 정지한 것으로 봅니다.</p>
+<h3 id="rok_thread_join"><a class="anchor" tabindex="-1" href="#rok_thread_join" aria-hidden="true">#</a><code>rok_thread_join</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_join(handle: usize) -&gt; i32;          // 0 이면 성공
+}
+</code></pre>
+<h3 id="rok_thread_detach--rok_cpu_count"><a class="anchor" tabindex="-1" href="#rok_thread_detach--rok_cpu_count" aria-hidden="true">#</a><code>rok_thread_detach</code> / <code>rok_cpu_count</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_thread_detach(handle: usize) -&gt; i32;   // 끝나면 OS 자원 반환, 더 이상 join 불가. 0 이면 성공
+    fn rok_cpu_count() -&gt; usize;                  // 온라인 CPU 수 (최소 1) - par 풀의 크기
+}
+</code></pre>
+<h3 id="rok_static_init_begin--rok_static_init_end"><a class="anchor" tabindex="-1" href="#rok_static_init_begin--rok_static_init_end" aria-hidden="true">#</a><code>rok_static_init_begin</code> / <code>rok_static_init_end</code></h3>
+<p><code>const</code> 가 아닌 초기값을 가진 <code>static</code> 의 지연 초기화 (<a href="../005-modules/503-static">5.3</a>) 를 뒷받침합니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_static_init_begin(state: Ptr&lt;u8&gt;, at: ConstPtr&lt;u8&gt;, at_len: usize) -&gt; i32;   // 1: 호출자가 초기화식 실행, 0: 이미 준비됨
+    fn rok_static_init_end(state: Ptr&lt;u8&gt;);            // 초기화 완료 공개
+}
+</code></pre>
+<p><code>state</code> 는 그 <code>static</code> 의 상태 바이트 (0 새로, 1 진행 중, 2 준비됨) 입니다. 다른 스레드가 초기화 중이면 <code>rok_static_init_begin</code> 은 끝날 때까지 기다리며, 그동안 GC 에 대해 정지한 것으로 봅니다. <code>at</code> / <code>at_len</code> 은 그 static 을 읽는 코드의 <code>path:line:col</code> 이며, 자기 static 을 읽는 초기화식은 그 자리에서 panic 합니다 (<a href="../004-functions/414-throws#41413-panic-과-fatal-에러">4.14.13</a>).</p>
+<h3 id="rok_gc_add_root"><a class="anchor" tabindex="-1" href="#rok_gc_add_root" aria-hidden="true">#</a><code>rok_gc_add_root</code></h3>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_gc_add_root(word: ConstPtr&lt;usize&gt;);   // static 의 참조 word 를 프로세스 끝까지 GC root 로 등록
+}
+</code></pre>
+<p>컴파일러가 만든 시작 코드가 GC 참조를 담는 모든 <code>static</code> 에 대해 호출합니다.</p>
+<h3 id="rok_os_---os-helper-내부-변경-가능"><a class="anchor" tabindex="-1" href="#rok_os_---os-helper-내부-변경-가능" aria-hidden="true">#</a><code>rok_os_*</code> - OS helper (내부, 변경 가능)</h3>
+<p>표준 라이브러리 <code>rok::std</code> (fs, io, env, process) 를 뒷받침하는 내부 심볼입니다. ABI 안정 대상이 아니며 바뀔 수 있으므로 사용자 코드는 직접 부르지 않습니다.</p>
+<pre><code>rok_os_strerror  rok_os_open      rok_os_close     rok_os_read      rok_os_read_all
+rok_os_write     rok_os_write_all rok_os_fsync     rok_os_ftruncate rok_os_lseek
+rok_os_dup       rok_os_fchmod    rok_os_flock     rok_os_copy_fd   rok_os_stat
+rok_os_mkdir     rok_os_unlink    rok_os_rename    rok_os_link      rok_os_opendir
+rok_os_readdir   rok_os_closedir  rok_os_getcwd    rok_os_chdir     rok_os_realpath
+rok_os_stdin_line rok_os_stdin_read rok_os_flush_stdout
+rok_os_argc      rok_os_arg       rok_os_env_at    rok_os_getenv    rok_os_setenv
+rok_os_spawn     rok_os_waitpid   rok_os_kill      rok_os_getpid    rok_os_getppid
+rok_os_abort
+</code></pre>
+<h3 id="rok_deque_---work-stealing-deque"><a class="anchor" tabindex="-1" href="#rok_deque_---work-stealing-deque" aria-hidden="true">#</a><code>rok_deque_*</code> - work-stealing deque</h3>
+<p>task 스케줄러 (<a href="../007-runtime/706-scheduler#762-work-stealing-구조">7.6.2</a>) 의 lock-free Chase-Lev deque 입니다. deque 와 그 ring 은 GC 객체이며 GC 가 추적합니다. 그래서 deque 안에만 있는 원소도 살아 있습니다. <strong>Thread-safety:</strong> <code>push</code> / <code>pop</code> 은 소유 thread 만, <code>steal</code> 과 <code>len</code> 은 어느 thread 든.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_deque_new() -&gt; GcBuf&lt;u8&gt;;                                 // 빈 deque (GC 객체)
+    unsafe fn rok_deque_push(d: Ptr&lt;u8&gt;, item: usize);               // 소유자: 끝에 넣음 (GC 참조)
+    unsafe fn rok_deque_pop(d: Ptr&lt;u8&gt;, out: Ptr&lt;u8&gt;, index: usize) -&gt; i32;    // 소유자: 가장 새 원소를 out[index] 에, 있으면 1
+    unsafe fn rok_deque_steal(d: Ptr&lt;u8&gt;, out: Ptr&lt;u8&gt;, index: usize) -&gt; i32;  // 가장 오래된 원소를 out[index] 에, 있으면 1
+    unsafe fn rok_deque_len(d: Ptr&lt;u8&gt;) -&gt; usize;                    // 원소 수 (경합 중의 근사값)
+}
+</code></pre>
+<p><code>out</code> 은 GC 참조를 담는 <code>GcBuf</code> 이며 <code>index</code> 자리에 결과를 씁니다. 이 함수들 안에는 safepoint 가 없습니다.</p>
+<h2 id="855-io--timer-영역"><a class="anchor" tabindex="-1" href="#855-io--timer-영역" aria-hidden="true">#</a>8.5.5. I/O / Timer 영역</h2>
+<h3 id="rok_io_register--rok_timer_register"><a class="anchor" tabindex="-1" href="#rok_io_register--rok_timer_register" aria-hidden="true">#</a><code>rok_io_register</code> / <code>rok_timer_register</code></h3>
+<p>C 나 저수준 코드가 task 를 fd 준비나 시각에 깨우도록 등록합니다. 내부적으로는 reactor (<a href="../007-runtime/707-io-and-timer">7.7</a>) 와 executor 의 timer 를 씁니다. task executor 밖에서 부르면 abort 합니다.</p>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_io_register(fd: i32, interest: u32, waker: Ptr&lt;u8&gt;);
+    fn rok_timer_register(deadline: u64, waker: Ptr&lt;u8&gt;);
+}
+</code></pre>
+<ul>
+<li><code>fd</code>: file descriptor 입니다.
+</li>
+<li><code>interest</code>: <code>1</code> = 읽기, <code>2</code> = 쓰기 (둘을 OR 할 수 있음).
+</li>
+<li><code>waker</code>: 원소 하나인 <code>GcBuf&lt;Waker&gt;</code> 입니다. 등록은 edge-triggered 이고 <strong>한 번만</strong> 깨웁니다 (가짜 깨움 가능). 이미 준비되어 있거나 감시할 수 없는 fd 면 곧바로 깨웁니다.
+</li>
+<li><code>deadline</code>: <code>rok_time_now_ns</code> 시계 기준의 절대 시각 (ns) 입니다. 그 시각에 닿으면 waker 를 한 번 깨웁니다.
+</li>
+</ul>
+<h3 id="rok_io_---reactor-내부-변경-가능"><a class="anchor" tabindex="-1" href="#rok_io_---reactor-내부-변경-가능" aria-hidden="true">#</a><code>rok_io_*</code> - reactor (내부, 변경 가능)</h3>
+<p><a href="../007-runtime/707-io-and-timer">I/O 드라이버</a> 의 reactor 를 이루는 내부 심볼입니다. ABI 안정 대상이 아니며 바뀔 수 있습니다. <strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_io_poller() -&gt; i32;                    // 프로세스의 kqueue / epoll fd (처음 부를 때 생성)
+    fn rok_io_watch(fd: i32) -&gt; i32;              // fd 를 읽기 / 쓰기 edge-triggered 로 등록 (다시 걸어도 무해), 0 또는 -errno
+    fn rok_io_poll(out: Ptr&lt;u8&gt;, max: usize) -&gt; i32;   // 변화가 올 때까지 막힘 (GC 에는 park), 사건 수 또는 -errno
+}
+</code></pre>
+<p><code>rok_io_poll</code> 은 사건을 <code>GcBuf&lt;i64&gt;</code> 인 <code>out</code> 에 <code>fd * 2 + 방향</code> (읽기 0, 쓰기 1) 으로 최대 <code>max</code> 개 씁니다.</p>
+<h3 id="rok_net_---소켓-helper-내부-변경-가능"><a class="anchor" tabindex="-1" href="#rok_net_---소켓-helper-내부-변경-가능" aria-hidden="true">#</a><code>rok_net_*</code> - 소켓 helper (내부, 변경 가능)</h3>
+<p>표준 라이브러리 <code>rok::std::net</code> (<a href="../../refs-standard-libraries/300-std/302-net">stdlib 3.2</a>) 을 뒷받침하는 내부 심볼입니다. ABI 안정 대상이 아니며 바뀔 수 있으므로 사용자 코드는 직접 부르지 않습니다. 소켓은 늘 non-blocking 으로 만들어지며, 실패는 <code>-errno</code> 로 돌려줍니다.</p>
+<pre><code>rok_net_socket     rok_net_bind       rok_net_listen     rok_net_connect
+rok_net_sock_error rok_net_accept     rok_net_addr       rok_net_send
+rok_net_send_to    rok_net_recv_from  rok_net_shutdown   rok_net_setopt
+rok_net_multicast_v4 rok_net_wait     rok_net_resolve    rok_net_gai_strerror
+</code></pre>
+<p><code>rok_net_wait</code> 는 blocking 호출이 준비를 기다리는 <code>poll(2)</code> 이며 (GC 에는 native 구간), <code>rok_net_resolve</code> 는 <code>getaddrinfo</code> 입니다.</p>
+<h2 id="856-에러-전달-심볼-없음"><a class="anchor" tabindex="-1" href="#856-에러-전달-심볼-없음" aria-hidden="true">#</a>8.5.6. 에러 전달 (심볼 없음)</h2>
+<p><a href="../003-expressions/314-error-control-flow">에러 제어 흐름</a> 의 <code>throw</code> / <code>try</code> / <code>catch</code> 에는 런타임 심볼이 없습니다. throwing 함수는 에러를 반환값의 일부로 돌려주고 (<a href="806-calling-convention#865-throwing-함수의-반환-값-기반-에러-전달">8.6.5</a>), 호출 지점이 그 값을 검사해 분기합니다 (<a href="809-lowering-control#896-try--catch--finally-값-기반-분기">8.9.6</a>). 따라서 에러를 던지거나 현재 에러를 꺼내기 위해 런타임을 호출하는 일은 없으며, 에러 처리를 위한 TLS 슬롯이나 jmp_buf 도 두지 않습니다.</p>
+<h2 id="857-diagnostic-영역"><a class="anchor" tabindex="-1" href="#857-diagnostic-영역" aria-hidden="true">#</a>8.5.7. Diagnostic 영역</h2>
+<p>아래 종료 코드 (<code>101</code> 등) 는 <code>wasm32-wasi</code> 에서 host 에 단순 실패로 전해집니다 (<a href="../004-functions/416-entry-point#4164-종료-코드와-미처리-예외">4.16.4</a>).</p>
+<h3 id="rok_panic"><a class="anchor" tabindex="-1" href="#rok_panic" aria-hidden="true">#</a><code>rok_panic</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong> (어떤 thread 에서든 호출 가능, 호출 즉시 프로세스 종료).</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_panic(msg: ConstPtr&lt;u8&gt;, msg_len: usize);   // 반환 안 함
+}
+</code></pre>
+<p>회복 불가능한 panic 으로, fatal 입니다. 이 함수는 반환하지 않으며, 메시지를 stderr 에 출력한 뒤 프로세스를 종료 코드 <code>101</code> 로 종료시킵니다. <code>catch</code> 나 <code>finally</code> 는 실행되지 않습니다.</p>
+<h3 id="rok_panic_str"><a class="anchor" tabindex="-1" href="#rok_panic_str" aria-hidden="true">#</a><code>rok_panic_str</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_panic_str(msg: str) -&gt; !;          // msg 는 (ptr, len)
+}
+</code></pre>
+<p><code>rok_panic</code> 과 같으며 메시지를 <code>str</code> 로 받습니다. 위치를 출력하지 않으며, 런타임 내부의 panic 만 씁니다.</p>
+<h3 id="rok_panic_at"><a class="anchor" tabindex="-1" href="#rok_panic_at" aria-hidden="true">#</a><code>rok_panic_at</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    #[track_caller]
+    fn rok_panic_at(msg: str) -&gt; !;
+}
+</code></pre>
+<p>선언이 <code>#[track_caller]</code> (<a href="../006-meta-system/602-built-in-attributes#6212-track_caller-호출-위치-전달">6.2.12</a>) 이므로, 심볼은 호출자의 위치를 숨은 마지막 <code>str</code> 인자 (<code>&quot;path:line:col&quot;</code>) 로 받습니다: <code>rok_panic_at(msg, at)</code>.</p>
+<p><a href="../004-functions/414-throws#41413-panic-과-fatal-에러">4.14.13</a> 의 형식으로 출력하고 종료 코드 <code>101</code> 로 끝냅니다. core 의 <code>panic</code> 과 컴파일러가 생성한 panic (경계 검사, overflow, 0 으로 나누기 등) 이 이 심볼을 부릅니다.</p>
+<h3 id="rok_uncaught_error--rok_uncaught_error_at"><a class="anchor" tabindex="-1" href="#rok_uncaught_error--rok_uncaught_error_at" aria-hidden="true">#</a><code>rok_uncaught_error</code> / <code>rok_uncaught_error_at</code></h3>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_uncaught_error(what: str) -&gt; !;              // 미처리 예외: what 을 stderr 에 출력하고 종료 코드 1
+    fn rok_uncaught_error_at(what: str, at: str) -&gt; !;  // 그 뒤에 &quot;  --&gt; &lt;at&gt;&quot; 줄
+}
+</code></pre>
+<p>진입점 밖으로 전파된 에러를 처리합니다 (<a href="../004-functions/416-entry-point#4164-종료-코드와-미처리-예외">4.16.4</a>). 선언은 core 에 있습니다.</p>
+<h3 id="rok_oom"><a class="anchor" tabindex="-1" href="#rok_oom" aria-hidden="true">#</a><code>rok_oom</code></h3>
+<p><strong>Thread-safety: <code>thread-safe</code></strong>.</p>
+<pre><code>extern &quot;rok&quot; {
+    fn rok_oom() -&gt; !;
+}
+</code></pre>
+<p><code>fatal error: out of memory</code> 를 stderr 에 출력하고 종료 코드 <code>101</code> 로 종료합니다. 런타임 안의 할당 실패와 core 의 <code>oom()</code> 이 모두 이 심볼을 거칩니다. 런타임은 rok 함수를 이름으로 부를 수 없으므로, 할당 실패 시 <code>oom_fn</code> 슬롯의 함수를 부르지 않고 이 심볼을 직접 씁니다.</p>
+<h3 id="스택-오버플로"><a class="anchor" tabindex="-1" href="#스택-오버플로" aria-hidden="true">#</a>스택 오버플로</h3>
+<p>스레드의 스택이 넘치면 런타임은 stdout 을 (가능하면) flush 하고 stderr 에 다음을 출력한 뒤 abort (SIGABRT) 합니다. panic 과 달리 unwind 나 <code>finally</code> 실행은 없습니다.</p>
+<pre><code>thread '&lt;name&gt;' has overflowed its stack
+</code></pre>
+<p><code>&lt;name&gt;</code> 은 <code>thread::Builder::name</code> 으로 준 스레드 이름입니다 (OS 스레드 이름으로도 설정됨, <a href="../007-runtime/#런타임-오류-스택-오버플로">7. 런타임</a>). main 스레드 (<code>rok_runtime_init</code>), <code>rok_thread_spawn</code> 스레드 (executor worker 포함, 깊은 <code>await</code> 사슬도), <code>rok_thread_init</code> 을 부른 C 스레드가 모두 대상입니다. 런타임은 각 스레드의 스택 아래 guard 범위를 TLS 슬롯 <code>rok_tls_stack_guard</code> (<a href="803-tls-slots#831-tls-슬롯-구조">8.3.1</a>) 에 기록하고 대체 신호 스택 (<code>sigaltstack</code>) 을 둡니다. 그 범위 안의 SIGSEGV / SIGBUS 만 스택 오버플로로 보고, 그 밖의 fault 는 기본 동작을 따릅니다. wasm 에서는 모듈이 trap 을 잡을 수 없으며 host 가 보고합니다 (함께 제공되는 JS host 는 위 메시지를 출력).</p>
+<h2 id="858-심볼-명명-규약"><a class="anchor" tabindex="-1" href="#858-심볼-명명-규약" aria-hidden="true">#</a>8.5.8. 심볼 명명 규약</h2>
+<p>심볼의 접두사별 영역은 다음 표와 같이 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Prefix</th><th>영역</th></tr></thead>
+<tbody>
+<tr><td><code>rok_gc_*</code></td><td>GC 관련</td></tr>
+<tr><td><code>rok_runtime_*</code></td><td>런타임 일반</td></tr>
+<tr><td><code>rok_thread_*</code></td><td>OS thread 관련</td></tr>
+<tr><td><code>rok_coro_*</code></td><td>코루틴 관련</td></tr>
+<tr><td><code>rok_task_*</code></td><td>task 관련</td></tr>
+<tr><td><code>rok_io_*</code></td><td>I/O</td></tr>
+<tr><td><code>rok_timer_*</code></td><td>타이머</td></tr>
+<tr><td><code>rok_panic</code></td><td>진단</td></tr>
+</tbody></table></div>
+<p>이러한 접두사 규약을 통해 외부 라이브러리나 사용자 코드와의 심볼 충돌을 피합니다. 8.5.1 - 8.5.7 의 표가 규범적인 런타임 심볼이며, 런타임은 구현이 정하는 <code>rok_*</code> 심볼 (예: <code>rok_fmt_*</code>, <code>rok_os_*</code>, <code>rok_stdio_*</code>, <code>rok_static_init_*</code>) 을 더 내보낼 수 있습니다.</p>
+<h2 id="859-함수-시그니처의-호환성"><a class="anchor" tabindex="-1" href="#859-함수-시그니처의-호환성" aria-hidden="true">#</a>8.5.9. 함수 시그니처의 호환성</h2>
+<p>각 함수의 시그니처는 <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 의 일부를 이룹니다. 변경 시의 정책은 다음과 같습니다.</p>
+<ul>
+<li>minor: 호환 가능한 변경만 허용되며, 인자 추가는 함수 wrapper 를 통해 처리합니다.
+</li>
+<li>major: 호환을 깨는 변경이 가능하며, 이때 ABI 버전 해시가 변환됩니다.
+</li>
+</ul>
+<p>자세한 사항은 <a href="./">개요</a> 의 안정성 정책을 참조합니다.</p>
+<h2 id="8510-calling-convention"><a class="anchor" tabindex="-1" href="#8510-calling-convention" aria-hidden="true">#</a>8.5.10. Calling convention</h2>
+<p>위 모든 함수의 calling convention 은 타깃 플랫폼의 C ABI 를 따릅니다. 예를 들어 System V x86_64, AAPCS aarch64, MS x64 Windows 등이 해당합니다.</p>
+<h2 id="8511-사용-예-tlab-fast-path-의-slow-호출"><a class="anchor" tabindex="-1" href="#8511-사용-예-tlab-fast-path-의-slow-호출" aria-hidden="true">#</a>8.5.11. 사용 예: TLAB fast path 의 slow 호출</h2>
+<pre><code class="language-mlir">; LLVM IR (fast path 실패 시)
+%t = call ptr @llvm.threadlocal.address(ptr @rok_tls)
+%cursor_p = getelementptr i8, ptr %t, i64 8          ; tlab_cursor at p
+%cursor = load i8*, i8** %cursor_p
+%new_cursor = getelementptr i8, i8* %cursor, i64 24
+%limit_p = getelementptr i8, ptr %t, i64 16          ; tlab_limit at 2p
+%limit = load i8*, i8** %limit_p
+%check = icmp ugt i8* %new_cursor, %limit
+br i1 %check, label %slow, label %fast
+
+slow:
+  %obj = call i8* @rok_gc_alloc_slow(i64 24, i64 8, i32 12345)
+  br label %cont
+
+fast:
+  store i8* %new_cursor, i8** %cursor_p
+  br label %cont
+
+cont:
+  %obj_phi = phi i8* [%obj_slow, %slow], [%cursor, %fast]
+  ; ... 계속
+</code></pre>
+<p>위 예시는 fast path 와 slow path 가 결합된 LLVM IR 구조를 보여줍니다.</p>
+<h2 id="8512-보조-심볼-부록-비규범"><a class="anchor" tabindex="-1" href="#8512-보조-심볼-부록-비규범" aria-hidden="true">#</a>8.5.12. 보조 심볼 (부록, 비규범)</h2>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>이 절은 <strong>비규범 (non-normative)</strong> 입니다. 아래 심볼은 참조 런타임 (<code>rokr</code>) 이 내보내는 보조 심볼입니다. ABI 본 표 (8.5.1 ~ 8.5.11) 의 일부가 아니며 안정성 약속이 없습니다. 런타임은 구현이 정하는 <code>rok_*</code> 심볼을 더 내보낼 수 있습니다 (8.5.8).</p>
+</div>
+<p>시그니처는 본문과 같은 표기 (<code>Ptr&lt;T&gt;</code> = 가변 raw 포인터, <code>ConstPtr&lt;T&gt;</code> = 읽기 전용 raw 포인터) 를 따릅니다. 문자열 인자는 NUL 종료 C 문자열입니다.</p>
+<pre><code>extern &quot;rok&quot; {
+    // 메모리
+    fn rok_free(ptr: Ptr&lt;u8&gt;);                             // null 무시
+    fn rok_load_i32(ptr: ConstPtr&lt;i32&gt;) -&gt; i32;
+    fn rok_load_i64(ptr: ConstPtr&lt;i64&gt;) -&gt; i64;
+    fn rok_load_f64(ptr: ConstPtr&lt;f64&gt;) -&gt; f64;
+    fn rok_store_i32(ptr: Ptr&lt;i32&gt;, val: i32);
+    fn rok_store_i64(ptr: Ptr&lt;i64&gt;, val: i64);
+    fn rok_store_f64(ptr: Ptr&lt;f64&gt;, val: f64);
+
+    // C 문자열
+    fn rok_str_len(s: ConstPtr&lt;u8&gt;) -&gt; usize;              // null → 0
+
+    // GC
+    fn rok_gc_collect_young();                             // minor 수집을 강제
+    fn rok_gc_weak_new(target: Ptr&lt;u8&gt;) -&gt; Ptr&lt;u8&gt;;       // target 을 가리키는 weak cell (type id 3)
+    fn rok_gc_weak_get(cell: Ptr&lt;u8&gt;) -&gt; Ptr&lt;u8&gt;;         // 대상, 해제되었으면 null
+
+    // 프로세스 종료
+    fn rok_set_exit_hook(hook: extern &quot;C&quot; fn(i32) | null);
+        // panic, 처리되지 않은 에러, exit, (Windows) stack overflow 가 프로세스를
+        // 끝내기 전에, 끝나는 스레드에서 종료 상태와 함께 호출; hook 이 반환하면
+        // 프로세스가 끝남
+
+    // REPL host (세션 저장 / 복원)
+    fn rok_session_hold(timeout_ns: i64) -&gt; i32;          // 조용한 순간에 world 를 멈춤: 실행 중인 poll / blocking job 이
+                                                           //   없고 lock 안에서 멈춘 스레드가 없을 때. 0: timeout_ns 안에
+                                                           //   못 함 (요청은 남음)
+    fn rok_session_unhold();                               // 대기 중이거나 얻은 hold 를 거둠
+    fn rok_session_resume();                               // hold 뒤에 world 를 재개
+    fn rok_session_enter();                                // poll / blocking job 둘레의 executor 스레드 gate
+    fn rok_session_leave();
+    fn rok_session_pass();
+    fn rok_lock_notes() -&gt; i32;                            // 세션 host 에서 1
+    fn rok_lock_note(word: GcBuf&lt;i32&gt;, kind: i32) -&gt; i32;  // kind: 0 Mutex, 1 read, 2 write, 3 실행 중인 Once; 1 = 기록함
+    fn rok_lock_drop(word: GcBuf&lt;i32&gt;);
+    fn rok_world_threads(out: Ptr&lt;u64&gt;, cap: usize) -&gt; usize;   // world 정지 중: 다른 mutator 의 OS id (Windows)
+    fn rok_session_restored(lost: ConstPtr&lt;u64&gt;, n: usize);     // 세션을 되돌림. n == SIZE_MAX: 다른 스레드는 모두 사라짐
+    fn rok_thread_lost(worker_id: u64) -&gt; i32;             // 실패한 셀 뒤에 그 스레드가 사라졌으면 1
+    fn rok_io_quiesce();                                   // Windows: 메모리를 되돌리기 전에 진행 중인 I/O 취소
+    fn rok_watch_writes();                                 // Windows: heap 을 write-watch. 런타임 초기화 전에 호출
+    static rok_page_epoch: u64;                            // Windows: watch 하는 page 가 쓰기 없이 바뀌거나
+                                                           //   watch 하는 block 이 해제되면 증가
+}
+</code></pre>
+<p>다음 규칙이 적용됩니다.</p>
+<ul>
+<li>사용자 코드와 표준 라이브러리는 이 심볼에 의존해서는 안 됩니다. 시그니처는 예고 없이 바뀌거나 제거될 수 있습니다.
+</li>
+<li><code>rok_</code> prefix 를 공유하지만 8.5.8 의 영역 표에는 포함되지 않습니다. 이름 충돌을 피하기 위해 사양의 규범 심볼은 위 이름을 재사용하지 않습니다.
+</li>
+<li><code>rok_panic</code> 은 이 부록에 속하지 않습니다. 시그니처는 <a href="#857-diagnostic-영역">8.5.7</a> 의 <code>rok_panic(msg: ConstPtr&lt;u8&gt;, msg_len: usize)</code> 가 권위이며, 구현이 이와 다른 시그니처를 내보내는 것은 부적합 (non-conformance) 입니다.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/008-abi/805-extern-symbols.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="804-safepoint"><small>Previous</small>8.4. Safepoint 프로토콜</a><a class="next" href="806-calling-convention"><small>Next</small>8.6. Calling Convention</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

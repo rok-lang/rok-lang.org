@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.6. 가시성 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="함수, 타입, 트레잇, 모듈, const, static 같은 각 항목에 가시성을 부여하면 외부 노출 범위를 조절할 수 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/506-visibility.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="5.6. 가시성 - rok docs">
+<meta property="og:description" content="함수, 타입, 트레잇, 모듈, const, static 같은 각 항목에 가시성을 부여하면 외부 노출 범위를 조절할 수 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/506-visibility.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/506-visibility.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/506-visibility.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">5. 변수 / 모듈 / 가시성 / 패키지 개요</a></p><ul class="pages"><li><a href="501-variable-declaration">5.1. 변수 선언</a></li><li><a href="502-const">5.2. const</a></li><li><a href="503-static">5.3. static</a></li><li><a href="504-modules">5.4. 모듈</a></li><li><a href="505-use">5.5. use (가져오기)</a></li><li class="cur"><a aria-current="page" href="506-visibility">5.6. 가시성</a><ul class="toc"><li><a href="#561-네-단계">5.6.1. 네 단계</a></li><li><a href="#562-기본-가시성-키워드-없음">5.6.2. 기본: 가시성 키워드 없음</a></li><li><a href="#563-pub-가장-넓은-공개">5.6.3. pub: 가장 넓은 공개</a></li><li><a href="#564-pubpkg-패키지-내부">5.6.4. pub(pkg): 패키지 내부</a></li><li><a href="#565-pubsub-하위-모듈">5.6.5. pub(sub): 하위 모듈</a></li><li><a href="#566-단계의-포함-관계">5.6.6. 단계의 포함 관계</a></li><li><a href="#567-glob-import-와-가시성">5.6.7. glob import 와 가시성</a></li><li><a href="#568-struct-필드의-가시성">5.6.8. struct 필드의 가시성</a></li><li><a href="#569-enum-변형의-가시성">5.6.9. enum 변형의 가시성</a></li><li><a href="#5610-impl-메서드의-가시성">5.6.10. impl 메서드의 가시성</a></li><li><a href="#5611-use-의-가시성">5.6.11. use 의 가시성</a></li><li><a href="#5612-가시성의-위치">5.6.12. 가시성의 위치</a></li><li><a href="#5613-가시성과-이름-해소">5.6.13. 가시성과 이름 해소</a></li></ul></li><li><a href="507-paths">5.7. 경로</a></li><li><a href="508-re-export">5.8. 재내보내기 (pub use)</a></li><li><a href="509-extern-block">5.9. extern 블록 (FFI 선언)</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="56-가시성 56-visibility 561-네-단계 561-four-levels 562-기본-가시성-키워드-없음 562-default-no-visibility-keyword 563-pub-가장-넓은-공개 563-pub-the-widest-exposure 564-pubpkg-패키지-내부 564-pubpkg-within-the-package 565-pubsub-하위-모듈 565-pubsub-submodules 566-단계의-포함-관계 566-inclusion-between-levels 567-glob-import-와-가시성 567-glob-imports-and-visibility 568-struct-필드의-가시성 568-visibility-of-struct-fields tuple-struct-의-필드 fields-of-tuple-structs 569-enum-변형의-가시성 569-visibility-of-enum-variants 5610-impl-메서드의-가시성 5610-visibility-of-impl-methods 5611-use-의-가시성 5611-visibility-of-use 5612-가시성의-위치 5612-position-of-visibility 5613-가시성과-이름-해소 5613-visibility-and-name-resolution"><a href="../../../../spec/refs-lang/005-modules/506-visibility" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="56-가시성"><a class="anchor" tabindex="-1" href="#56-가시성" aria-hidden="true">#</a>5.6. 가시성</h1>
+<p>함수, 타입, 트레잇, 모듈, <code>const</code>, <code>static</code> 같은 각 항목에 가시성을 부여하면 외부 노출 범위를 조절할 수 있습니다.</p>
+<pre><code>visibility      ::= &quot;pub&quot; (&quot;(&quot; reach &quot;)&quot;)?
+reach           ::= &quot;pkg&quot; | &quot;sub&quot;
+</code></pre>
+<h2 id="561-네-단계"><a class="anchor" tabindex="-1" href="#561-네-단계" aria-hidden="true">#</a>5.6.1. 네 단계</h2>
+<p>가시성은 다음과 같이 네 단계로 나뉩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>키워드</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td>(없음)</td><td>모듈 비공개. 같은 모듈 안에서만.</td></tr>
+<tr><td><code>pub(sub)</code></td><td>같은 모듈 트리의 하위 모듈에서만.</td></tr>
+<tr><td><code>pub(pkg)</code></td><td>같은 패키지 안에서만.</td></tr>
+<tr><td><code>pub</code></td><td>외부 패키지에서도.</td></tr>
+</tbody></table></div>
+<p>가장 좁은 범위가 기본값인 private 이고, 가장 넓은 범위가 <code>pub</code> 입니다.</p>
+<p><code>pkg</code> 와 <code>sub</code> 은 <code>pub(...)</code> 괄호 안에서만 한정자로 동작하는 컨텍스트 키워드여서, 그 외의 위치에서는 일반 식별자로 쓰입니다 (<a href="../001-lexical/105-keywords#가시성-한정자-pkg--sub">1.5.4 가시성 한정자</a> 참고).</p>
+<h2 id="562-기본-가시성-키워드-없음"><a class="anchor" tabindex="-1" href="#562-기본-가시성-키워드-없음" aria-hidden="true">#</a>5.6.2. 기본: 가시성 키워드 없음</h2>
+<p>가시성 키워드를 적지 않으면 그 항목은 모듈 비공개가 되어 같은 모듈 안에서만 보입니다.</p>
+<pre><code class="language-rok"><span class="k">mod</span> m {
+    <span class="k">fn</span> helper() -&gt; <span class="t">i32</span> { <span class="n">42i32</span> }   <span class="c">// 모듈 비공개 (기본)</span>
+    <span class="k">pub</span> <span class="k">fn</span> api() -&gt; <span class="t">i32</span> { helper() }
+}
+
+<span class="k">let</span> r = m::api();                   <span class="c">// OK</span>
+<span class="k">let</span> h = m::helper();                <span class="c">// ERROR - 모듈 비공개</span>
+</code></pre>
+<p>비공개 <code>mod</code> 는 그것을 선언한 부모 모듈과, 그 부모의 하위 모듈에서 보입니다.</p>
+<h2 id="563-pub-가장-넓은-공개"><a class="anchor" tabindex="-1" href="#563-pub-가장-넓은-공개" aria-hidden="true">#</a>5.6.3. <code>pub</code>: 가장 넓은 공개</h2>
+<p>가장 넓은 공개 범위를 원할 때는 <code>pub</code> 을 붙입니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">fn</span> calculate(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { ... }
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">Point</span> { <span class="k">pub</span> x: <span class="t">f64</span>; <span class="k">pub</span> y: <span class="t">f64</span>; }
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">Display</span> { ... }
+</code></pre>
+<p>이렇게 선언한 항목은 다른 패키지에서도 <code>use</code> 로 가져와 사용할 수 있습니다.</p>
+<h2 id="564-pubpkg-패키지-내부"><a class="anchor" tabindex="-1" href="#564-pubpkg-패키지-내부" aria-hidden="true">#</a>5.6.4. <code>pub(pkg)</code>: 패키지 내부</h2>
+<p><code>pub(pkg)</code> 는 패키지 내부 공개를 의미합니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> internal_helper() -&gt; <span class="t">i32</span> { ... }
+</code></pre>
+<p>같은 패키지 안의 어느 모듈에서나 가시화되지만, 외부 패키지에서는 보이지 않습니다. 의존 패키지와 <code>rok::</code> 의 각 tier 도 별개의 패키지입니다 (<a href="507-paths#5714-패키지-사이-경로">5.7.14</a>).</p>
+<p>이 단계는 패키지 내부 라이브러리 도구를 위한 것이라서, 공개 API 는 아니지만 모듈을 가로질러 공유해야 하는 함수와 타입에 사용합니다.</p>
+<h2 id="565-pubsub-하위-모듈"><a class="anchor" tabindex="-1" href="#565-pubsub-하위-모듈" aria-hidden="true">#</a>5.6.5. <code>pub(sub)</code>: 하위 모듈</h2>
+<p><code>pub(sub)</code> 는 모듈 트리의 한 가지 안에서만 공유하고 싶을 때 씁니다.</p>
+<pre><code class="language-rok"><span class="k">mod</span> parent {
+    <span class="k">pub</span>(sub) <span class="k">fn</span> shared_within_subtree() -&gt; <span class="t">i32</span> { ... }
+
+    <span class="k">pub</span> <span class="k">mod</span> child {
+        <span class="k">pub</span> <span class="k">fn</span> use_it() -&gt; <span class="t">i32</span> { sup::shared_within_subtree() }   <span class="c">// OK</span>
+    }
+}
+</code></pre>
+<p><code>parent</code> 와 <code>parent</code> 의 모든 자손 모듈에서만 가시화되고, 부모 모듈이나 형제 모듈에서는 보이지 않습니다.</p>
+<p>이 단계는 모듈 그룹 내부 도구를 위한 것이라서, 모듈 트리의 한 가지 안에서만 공유하는 용도로 사용합니다.</p>
+<h2 id="566-단계의-포함-관계"><a class="anchor" tabindex="-1" href="#566-단계의-포함-관계" aria-hidden="true">#</a>5.6.6. 단계의 포함 관계</h2>
+<p>가시성은 단조 증가 lattice 를 이룹니다.</p>
+<pre><code>pub  ⊇  pub(pkg)  ⊇  pub(sub)  ⊇  private
+</code></pre>
+<p><code>pub(sub)</code> 의 포함 관계는 관련 모듈, 즉 정의 모듈 자신과 그 자손 안에서만 의미가 있습니다.</p>
+<ul>
+<li><code>pub</code> 는 모든 호출자에게 보입니다.
+</li>
+<li><code>pub(pkg)</code> 는 같은 패키지 안에서만 보입니다.
+</li>
+<li><code>pub(sub)</code> 는 같은 모듈 트리 안에서만 보입니다.
+</li>
+<li>private 은 같은 모듈에서만 보입니다.
+</li>
+</ul>
+<h2 id="567-glob-import-와-가시성"><a class="anchor" tabindex="-1" href="#567-glob-import-와-가시성" aria-hidden="true">#</a>5.6.7. glob import 와 가시성</h2>
+<p>glob import (<code>*</code>, <code>**</code>, 암묵 <code>use rok::core::**</code> 포함) 가 가져오는 항목은 import 하는 모듈에서 가시한 항목뿐입니다. 즉 reach 가 그 모듈을 포함해야 끌려오며, 보이지 않는 항목은 이름을 가리거나 충돌을 일으키지도 않습니다. 별도의 per-item glob-block 표시는 두지 않으니, 외부 노출 표면을 좁히고 싶다면 별도의 <code>prelude</code> 모듈을 만들고 <code>pub use</code> 로 큐레이션하는 패턴을 쓰면 됩니다.</p>
+<h2 id="568-struct-필드의-가시성"><a class="anchor" tabindex="-1" href="#568-struct-필드의-가시성" aria-hidden="true">#</a>5.6.8. <code>struct</code> 필드의 가시성</h2>
+<p>각 필드에는 별도로 가시성을 부여할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Account</span> {
+    <span class="k">pub</span> id: <span class="t">i64</span>;                    <span class="c">// 외부 읽기 가능</span>
+    <span class="k">pub</span> balance: <span class="t">f64</span>;               <span class="c">// 외부 읽기 가능</span>
+        secret: <span class="t">str</span>;                <span class="c">// 모듈 비공개</span>
+}
+</code></pre>
+<p>이때 부여한 필드 가시성은 <code>struct</code> 자체의 가시성과는 별개로 동작합니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">struct</span> <span class="t">Counter</span> {                <span class="c">// struct 자체는 외부 가시</span>
+        count: <span class="t">i32</span> = <span class="n">0i32</span>;          <span class="c">// 필드는 모듈 비공개 (기본)</span>
+}
+
+<span class="k">let</span> c = <span class="t">Counter</span> { count: <span class="n">0i32</span> };    <span class="c">// ERROR - 필드 비공개라 외부에서 직접 만들 수 없음</span>
+<span class="k">let</span> c = <span class="t">Counter</span>::new();             <span class="c">// OK - 팩토리 메서드 (있다면)</span>
+</code></pre>
+<p>이는 타입은 외부에 노출하되 직접 인스턴스화는 막는 표준 패턴입니다 (newtype, opaque type).</p>
+<h3 id="tuple-struct-의-필드"><a class="anchor" tabindex="-1" href="#tuple-struct-의-필드" aria-hidden="true">#</a>tuple struct 의 필드</h3>
+<p>tuple struct 의 각 필드도 자기 가시성을 가지며, 기본은 비공개입니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">struct</span> <span class="t">S</span>(<span class="k">pub</span> <span class="t">i32</span>, <span class="t">i32</span>);         <span class="c">// 0 번은 pub, 1 번은 비공개</span>
+</code></pre>
+<ul>
+<li><code>S(a, b)</code> 로 만들려면 사용처에서 모든 필드가 보여야 합니다. 비공개 필드가 하나라도 있으면 그 가시성 범위 밖에서는 생성자 함수를 씁니다 (<code>NonZero::new</code>).
+</li>
+<li><code>x.N</code> 을 읽거나 대입하려면 N 번 필드가 보여야 합니다.
+</li>
+<li>패턴 <code>S(p0, p1, ..)</code> 에서 하위 패턴이 <code>_</code> 가 아닌 자리는 보여야 합니다. 이름 있는 필드의 struct 패턴도 같습니다 (건드리는 필드만 검사).
+</li>
+<li><code>pub</code> 바로 뒤의 <code>(</code> 는 가시성 제한 (<code>pub(pkg)</code> 등) 으로 읽습니다. 튜플 타입의 필드를 공개하려면 괄호를 한 번 더 씁니다: <code>struct S(pub ((i32, i32)));</code>.
+</li>
+</ul>
+<h2 id="569-enum-변형의-가시성"><a class="anchor" tabindex="-1" href="#569-enum-변형의-가시성" aria-hidden="true">#</a>5.6.9. <code>enum</code> 변형의 가시성</h2>
+<p>변형은 별도의 가시성을 갖지 않으며, <code>enum</code> 의 가시성을 그대로 따릅니다. 변형 앞에 가시성 키워드를 붙이면 컴파일 에러입니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">enum</span> <span class="t">Shape</span> {
+    <span class="t">Circle</span>(<span class="t">f64</span>),                    <span class="c">// pub - Shape 를 따름</span>
+    <span class="t">Square</span>(<span class="t">f64</span>),
+}
+
+<span class="k">pub</span> <span class="k">enum</span> <span class="t">Bad</span> {
+    <span class="k">pub</span> <span class="t">A</span>,                          <span class="c">// ERROR - 변형에는 가시성을 적지 않음</span>
+}
+</code></pre>
+<p>변형의 payload 필드에도 필드별 가시성이 없으며, <code>enum</code> 을 따릅니다. <code>struct</code> 필드와 달리 변형을 하나만 숨기면 외부의 <code>match</code> 가 완전성을 만족할 수 없으므로 이렇게 정합니다. 표준 라이브러리의 <code>pub enum Result&lt;T, E&gt; { Ok(T), Err(E) }</code> 도 이 규칙으로 <code>Ok</code> / <code>Err</code> 가 공개됩니다.</p>
+<h2 id="5610-impl-메서드의-가시성"><a class="anchor" tabindex="-1" href="#5610-impl-메서드의-가시성" aria-hidden="true">#</a>5.6.10. <code>impl</code> 메서드의 가시성</h2>
+<p><a href="../002-types/209-impl"><code>impl</code></a> 의 고유 <code>impl</code> 메서드는 기본적으로 모듈 비공개여서, 외부에 노출하려면 <code>pub</code> 으로 명시해야 합니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Account</span> {
+    <span class="k">pub</span> <span class="k">fn</span> balance(<span class="k">self</span>) -&gt; <span class="t">f64</span> { <span class="k">self</span>.amount }
+        <span class="k">fn</span> _internal_check(<span class="k">self</span>) { ... }
+}
+</code></pre>
+<p>트레잇 <code>impl</code> 의 메서드는 그 트레잇의 가시성을 따르기 때문에 별도로 표시할 수 없습니다.</p>
+<h2 id="5611-use-의-가시성"><a class="anchor" tabindex="-1" href="#5611-use-의-가시성" aria-hidden="true">#</a>5.6.11. <code>use</code> 의 가시성</h2>
+<p><a href="505-use"><code>use</code></a> 의 import 도 가시성을 가집니다.</p>
+<pre><code class="language-rok"><span class="k">use</span> foo::bar;                       <span class="c">// 모듈 비공개 (기본)</span>
+<span class="k">pub</span> <span class="k">use</span> foo::bar;                   <span class="c">// 재내보내기 - 외부에서도 보임</span>
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">use</span> foo::bar;              <span class="c">// 패키지 내부만</span>
+</code></pre>
+<p>재내보내기는 <a href="505-use"><code>use</code></a> 의 가시성 절과 결합해 외부 노출 표면을 결정합니다.</p>
+<h2 id="5612-가시성의-위치"><a class="anchor" tabindex="-1" href="#5612-가시성의-위치" aria-hidden="true">#</a>5.6.12. 가시성의 위치</h2>
+<p>가시성 키워드는 항목 선언의 첫 토큰으로 등장합니다.</p>
+<pre><code class="language-rok"><span class="k">pub</span> <span class="k">fn</span> f() { ... }
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> g() { ... }
+<span class="k">pub</span> <span class="k">struct</span> <span class="t">S</span> { ... }
+<span class="k">pub</span> <span class="k">mod</span> m { ... }
+<span class="k">pub</span> <span class="k">const</span> <span class="t">X</span>: <span class="t">i32</span> = <span class="n">0</span>;
+<span class="k">pub</span> <span class="k">static</span> <span class="t">Y</span>: <span class="t">i32</span> = <span class="n">0</span>;
+<span class="k">pub</span> <span class="k">use</span> foo::bar;
+<span class="k">pub</span> <span class="k">trait</span> <span class="t">T</span> { ... }
+</code></pre>
+<p><code>fn</code>, <code>struct</code>, <code>enum</code>, <code>union</code>, <code>trait</code>, <code>impl</code> (<code>impl</code> 자체에는 붙이지 않고 메서드별로 붙입니다), <code>mod</code>, <code>const</code>, <code>static</code>, <code>use</code>, <code>type</code> (별칭) 의 모든 선언 형태에 부착할 수 있습니다.</p>
+<h2 id="5613-가시성과-이름-해소"><a class="anchor" tabindex="-1" href="#5613-가시성과-이름-해소" aria-hidden="true">#</a>5.6.13. 가시성과 이름 해소</h2>
+<p><a href="505-use"><code>use</code></a> 와 결합해 한 항목이 현재 모듈에서 보이려면 다음 두 조건을 모두 만족해야 합니다.</p>
+<ol>
+<li>항목의 가시성이 현재 모듈에서 도달 가능해야 합니다. 경로의 모든 모듈 마디도 각자 보여야 합니다 (<code>a::b::f</code> 는 <code>a</code>, <code>b</code>, <code>f</code> 가 모두 보여야 함).
+</li>
+<li>항목이 직접 가시 (자식 모듈이나 <code>use</code> 로 가져온 이름) 해야 합니다.
+</li>
+</ol>
+<p>두 조건을 모두 만족하면 그 항목을 짧은 이름으로 쓸 수 있습니다.</p>
+<p>가시성이 부족한 항목은 컴파일러 진단이 보이지 않는 이유를 보고합니다.</p>
+<pre><code>ERROR: 'foo::secret' is not visible from this module.
+       It is declared as private - only visible within 'foo'.
+       To use it externally, add 'pub' or other visibility keyword.
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/005-modules/506-visibility.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="505-use"><small>Previous</small>5.5. use (가져오기)</a><a class="next" href="507-paths"><small>Next</small>5.7. 경로</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

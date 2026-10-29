@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.9. Lowering: control flow and GC integration - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section covers the lowering rules for if expressions, match, loops and error control flow, and also defines the rules for emitting GC alloc / barrier / saf...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/809-lowering-control.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.9. Lowering: control flow and GC integration - rok docs">
+<meta property="og:description" content="This section covers the lowering rules for if expressions, match, loops and error control flow, and also defines the rules for emitting GC alloc / barrier / saf...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/809-lowering-control.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/809-lowering-control.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/809-lowering-control.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li><a href="804-safepoint">8.4. Safepoint protocol</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li class="cur"><a aria-current="page" href="809-lowering-control">8.9. Lowering: control flow and GC integration</a><ul class="toc"><li><a href="#891-if-expressions">8.9.1. if expressions</a></li><li><a href="#892-if-let">8.9.2. if let</a></li><li><a href="#893-match-decision-tree">8.9.3. match decision tree</a></li><li><a href="#894-loop--while--for">8.9.4. loop / while / for</a></li><li><a href="#895-break--continue">8.9.5. break / continue</a></li><li><a href="#896-try--catch--finally-value-based-branching">8.9.6. try / catch / finally: value-based branching</a></li><li><a href="#897-throw">8.9.7. throw</a></li><li><a href="#898-finally">8.9.8. finally</a></li><li><a href="#899-gc-alloc-fast--slow-path">8.9.9. GC alloc: fast / slow path</a></li><li><a href="#8910-write-barrier">8.9.10. Write barrier</a></li><li><a href="#8911-safepoint-poll">8.9.11. Safepoint poll</a></li><li><a href="#8912-shadow-stack-frame">8.9.12. Shadow stack frame</a></li><li><a href="#8913-indexing">8.9.13. Indexing</a></li><li><a href="#8914-summary-what-the-hot-path-looks-like">8.9.14. Summary: what the hot path looks like</a></li></ul></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="89-lowering-control-flow-and-gc-integration 89-lowering-제어-흐름과-gc-통합 891-if-expressions 891-if-표현식 892-if-let 892-if-let 893-match-decision-tree 893-match-의-decision-tree 894-loop--while--for 894-loop--while--for loop loop while while for for 895-break--continue 895-break--continue 896-try--catch--finally-value-based-branching 896-try--catch--finally-값-기반-분기 897-throw 897-throw 898-finally 898-finally 899-gc-alloc-fast--slow-path 899-gc-alloc-fast--slow-path filling-the-header 헤더-채우기 8910-write-barrier 8910-write-barrier 8911-safepoint-poll 8911-safepoint-poll 8912-shadow-stack-frame 8912-shadow-stack-frame module-data-layout 모듈의-data-layout 8913-indexing 8913-indexing 8914-summary-what-the-hot-path-looks-like 8914-종합-hot-path-의-모습"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/809-lowering-control" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="89-lowering-control-flow-and-gc-integration"><a class="anchor" tabindex="-1" href="#89-lowering-control-flow-and-gc-integration" aria-hidden="true">#</a>8.9. Lowering: control flow and GC integration</h1>
+<p>This section covers the lowering rules for <a href="../003-expressions/310-if-expression"><code>if</code> expressions</a>, <a href="../003-expressions/312-match-expression"><code>match</code></a>, <a href="../003-expressions/313-loop-expressions">loops</a> and <a href="../003-expressions/314-error-control-flow">error control flow</a>, and also defines the rules for emitting <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> alloc / barrier / safepoint code.</p>
+<p>The generated MLIR / LLVM module carries the target triple and data layout of the build target (<code>--target</code>).</p>
+<h2 id="891-if-expressions"><a class="anchor" tabindex="-1" href="#891-if-expressions" aria-hidden="true">#</a>8.9.1. <code>if</code> expressions</h2>
+<pre><code class="language-rok"><span class="k">if</span> cond { x } <span class="k">else</span> { y }
+</code></pre>
+<p>This expression is lowered to MLIR using <code>scf.if</code> as follows.</p>
+<pre><code>%result = scf.if %cond -&gt; (i32) {
+  scf.yield %x : i32
+} else {
+  scf.yield %y : i32
+}
+</code></pre>
+<p>An <code>if</code> with no <code>else</code> branch and a unit value:</p>
+<pre><code class="language-rok"><span class="k">if</span> cond { do_thing(); }
+</code></pre>
+<p>lowers to the simpler form:</p>
+<pre><code>scf.if %cond {
+  func.call @do_thing()
+}
+</code></pre>
+<h2 id="892-if-let"><a class="anchor" tabindex="-1" href="#892-if-let" aria-hidden="true">#</a>8.9.2. <code>if let</code></h2>
+<p>Consider the <code>if let pattern = expr</code> form from <a href="../003-expressions/310-if-expression"><code>if</code> expressions</a>.</p>
+<pre><code class="language-rok"><span class="k">if</span> <span class="k">let</span> v: <span class="t">T</span> = compute() { <span class="k">use</span>(v) } <span class="k">else</span> { fallback() }
+</code></pre>
+<p>This expression is lowered to MLIR in decision tree form:</p>
+<pre><code>%opt = func.call @compute() : () -&gt; !sum_T_none
+%tag = llvm.extractvalue %opt[0] : i32
+%is_some = arith.cmpi &quot;ne&quot;, %tag, %TAG_NONE : i32
+
+scf.if %is_some {
+  %payload = llvm.extractvalue %opt[1] : !T
+  func.call @use(%payload)
+} else {
+  func.call @fallback()
+}
+</code></pre>
+<h2 id="893-match-decision-tree"><a class="anchor" tabindex="-1" href="#893-match-decision-tree" aria-hidden="true">#</a>8.9.3. <code>match</code> decision tree</h2>
+<p>The arms of a <a href="../003-expressions/312-match-expression"><code>match</code></a> are lowered to a decision tree.</p>
+<pre><code class="language-rok"><span class="k">match</span> v {
+    <span class="n">1</span> =&gt; a,
+    <span class="n">2</span> =&gt; b,
+    n <span class="k">if</span> n &gt; <span class="n">100</span> =&gt; c,
+    _ =&gt; d,
+}
+</code></pre>
+<p>This <code>match</code> expression becomes the following MLIR.</p>
+<pre><code>cf.switch %v : i32, [
+  default: ^check_guard,
+  1: ^arm_a,
+  2: ^arm_b
+]
+
+^check_guard:
+  %is_big = arith.cmpi &quot;sgt&quot;, %v, %100 : i32
+  cf.cond_br %is_big, ^arm_c, ^arm_d
+
+^arm_a: ; ... = a
+  cf.br ^end(%a)
+
+^arm_b: ; ... = b
+  cf.br ^end(%b)
+
+^arm_c: ; ... = c
+  cf.br ^end(%c)
+
+^arm_d: ; ... = d
+  cf.br ^end(%d)
+
+^end(%result: i32):
+  ; ...
+</code></pre>
+<p>For complex patterns such as tuples, <code>struct</code>s, <code>enum</code> variants and ranges, each destructuring step is lowered to internal switch / cmp operations.</p>
+<h2 id="894-loop--while--for"><a class="anchor" tabindex="-1" href="#894-loop--while--for" aria-hidden="true">#</a>8.9.4. <code>loop</code> / <code>while</code> / <code>for</code></h2>
+<h3 id="loop"><a class="anchor" tabindex="-1" href="#loop" aria-hidden="true">#</a><code>loop</code></h3>
+<p><code>loop</code> is used as follows.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = <span class="k">loop</span> { ...; <span class="k">if</span> cond { <span class="k">break</span> x; } }
+</code></pre>
+<p>It is lowered to MLIR using <code>scf.while</code> or expressed directly with <code>cf.br</code>.</p>
+<pre><code>%v = scf.while () : () -&gt; (i32) {
+  ; condition check (always true for loop)
+  scf.condition (%true) ()
+} do {
+  ; body
+  ; if cond { break x; } is handled separately (below)
+  scf.yield
+}
+</code></pre>
+<p><code>break value</code> is hard to express inside <code>scf.while</code>, so it is spelled out with <code>scf.execute_region</code> or <code>cf.br</code>.</p>
+<h3 id="while"><a class="anchor" tabindex="-1" href="#while" aria-hidden="true">#</a><code>while</code></h3>
+<p><code>while</code> is used as follows.</p>
+<pre><code class="language-rok"><span class="k">while</span> cond { body }
+</code></pre>
+<p>It is lowered to <code>scf.while</code>:</p>
+<pre><code>scf.while () : () -&gt; () {
+  ; condition
+  %c = ...
+  scf.condition (%c) ()
+} do {
+  ; body
+  scf.yield
+}
+</code></pre>
+<h3 id="for"><a class="anchor" tabindex="-1" href="#for" aria-hidden="true">#</a><code>for</code></h3>
+<p><code>for</code> is used as follows.</p>
+<pre><code class="language-rok"><span class="k">for</span> x <span class="k">in</span> xs { body }
+</code></pre>
+<p>The desugaring from <a href="../003-expressions/313-loop-expressions">Loop expressions</a> expands it to <code>let it = xs.into_iter(); loop { match it.next() { ... } }</code>, which then goes through the same lowering described above.</p>
+<h2 id="895-break--continue"><a class="anchor" tabindex="-1" href="#895-break--continue" aria-hidden="true">#</a>8.9.5. <code>break</code> / <code>continue</code></h2>
+<p><code>break</code> and <code>continue</code> inside a loop jump with <code>cf.br</code> to the start or end of the loop.</p>
+<p><code>scf.while</code> alone is awkward for this, so they are lowered to direct branches of the <code>cf</code> dialect.</p>
+<p>Labels (<code>'outer:</code>) likewise jump to the appropriate <a href="../000-meta/007-glossary#block">block</a>.</p>
+<h2 id="896-try--catch--finally-value-based-branching"><a class="anchor" tabindex="-1" href="#896-try--catch--finally-value-based-branching" aria-hidden="true">#</a>8.9.6. <code>try</code> / <code>catch</code> / <code>finally</code>: value-based branching</h2>
+<p>Errors from <a href="../003-expressions/314-error-control-flow">error control flow</a> are propagated through the <code>{ is_err, payload }</code> return value defined in <a href="806-calling-convention#865-return-of-throwing-functions-value-based-error-propagation">Calling convention</a>. <code>try</code> and <code>catch</code> are therefore both lowered to ordinary branches.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = <span class="k">try</span> f(x);              <span class="c">// f: fn(X) throws (E) -&gt; T</span>
+</code></pre>
+<p>A call marked with <code>try</code> checks <code>is_err</code> of the return value: on success it extracts the payload as <code>T</code>; on error it branches to the error path.</p>
+<pre><code>%r = func.call @f(%x) : (!X) -&gt; !Throws_T_E
+%is_err = llvm.extractvalue %r[0] : !Throws_T_E
+cf.cond_br %is_err, ^err, ^ok
+
+^ok:
+  %v = ; read payload as T
+  ...
+
+^err:
+  %e = ; read payload as E
+  ; if there is an enclosing catch, go to its dispatch block;
+  ; otherwise build the enclosing function's return value { 1, e } and return it
+  cf.br ^catch_dispatch(%e)
+</code></pre>
+<p>An expression with <code>catch</code> clauses has a single dispatch block where all error paths of the left-hand expression converge.</p>
+<pre><code class="language-rok"><span class="k">try</span> body <span class="k">catch</span> e: <span class="t">A</span> { handler_a } <span class="k">catch</span> _ { handler_any }
+</code></pre>
+<pre><code>^catch_dispatch(%e: !E):
+  ; test patterns in clause order (same scheme as the decision tree of 8.9.3)
+  cf.cond_br %is_a, ^handler_a(%e), ^handler_any(%e)
+
+^handler_a(%ea: !A):
+  ; handler_a
+  cf.br ^end(%result_a)
+
+^handler_any(%ex: !E):
+  ; handler_any
+  cf.br ^end(%result_any)
+
+^end(%result: ...):
+  ...
+</code></pre>
+<p>If no clause matches, the dispatch block passes the error to the dispatch block of the outer <code>catch</code>, or builds the enclosing function's error return value and returns it. Type pattern tests on errors of untyped <code>throws</code> (<code>any Error</code>) are lowered to tag comparisons of <a href="808-lowering-types"><code>any</code></a>.</p>
+<p><code>try?</code> produces <code>none</code> on the error path and goes to <code>^end</code>; <code>try!</code> calls <code>panic_fn</code> on the error path.</p>
+<h2 id="897-throw"><a class="anchor" tabindex="-1" href="#897-throw" aria-hidden="true">#</a>8.9.7. <code>throw</code></h2>
+<p><code>throw</code> is used as follows.</p>
+<pre><code class="language-rok"><span class="k">throw</span> err;
+</code></pre>
+<p><code>throw</code> is lowered to an unconditional branch to the error path. If the nearest <code>catch</code> is in the same function, it goes to that dispatch block; otherwise it builds the enclosing function's error return value and returns it.</p>
+<pre><code>; when a catch exists in the same function
+cf.br ^catch_dispatch(%err)
+
+; otherwise - error return from the function
+%r0 = llvm.mlir.undef : !Throws_T_E
+%r1 = llvm.insertvalue %true, %r0[0] : !Throws_T_E
+%r2 = ; store %err in the payload
+func.return %r2 : !Throws_T_E
+</code></pre>
+<p>The path returning an error out of the function is the same as an ordinary <code>return</code>, so epilogues such as the shadow stack pop run as usual. There is no runtime call.</p>
+<h2 id="898-finally"><a class="anchor" tabindex="-1" href="#898-finally" aria-hidden="true">#</a>8.9.8. <code>finally</code></h2>
+<p><code>finally</code> is used as follows.</p>
+<pre><code class="language-rok"><span class="k">try</span> { body } <span class="k">finally</span> { cleanup }
+</code></pre>
+<p>It is lowered so that every path leaving the left-hand expression passes through the cleanup block. Normal completion, completion after <code>catch</code> handling, propagation of an unhandled error, and each <code>return</code> / <code>break</code> / <code>continue</code> path branch to the cleanup block and then continue to their original destination. Error propagation is also an ordinary branch, so no separate unwind mechanism is needed.</p>
+<pre><code>^body_ok(%v):        cf.br ^cleanup(%k_ok, %v)
+^body_err(%e):       cf.br ^cleanup(%k_err, %e)
+^body_return(%rv):   cf.br ^cleanup(%k_ret, %rv)
+
+^cleanup(%kind, %val):
+  ; cleanup
+  ; depending on %kind, branch to ^end / error propagation / function return / loop destination
+</code></pre>
+<p>If a new error is thrown inside the cleanup block, it replaces the original path. A panic terminates the process, so it does not pass through the cleanup block.</p>
+<h2 id="899-gc-alloc-fast--slow-path"><a class="anchor" tabindex="-1" href="#899-gc-alloc-fast--slow-path" aria-hidden="true">#</a>8.9.9. GC alloc: fast / slow path</h2>
+<p>Consider <a href="../007-runtime/702-allocation">Allocation</a> together with this.</p>
+<pre><code class="language-rok"><span class="k">let</span> p = <span class="t">Point</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span> };
+</code></pre>
+<p>This is lowered to the following MLIR with the fast path inlined.</p>
+<pre><code>; fast path
+%t = llvm.mlir.addressof @rok_tls : !llvm.ptr
+%cursor_ptr = llvm.getelementptr %t[8] : (!llvm.ptr) -&gt; !llvm.ptr, i8    ; tlab_cursor at p
+%limit_ptr = llvm.getelementptr %t[16] : (!llvm.ptr) -&gt; !llvm.ptr, i8    ; tlab_limit at 2p
+
+%cursor = llvm.load %cursor_ptr : !llvm.ptr -&gt; !llvm.ptr
+%new_cursor = llvm.getelementptr %cursor[24] : !llvm.ptr
+%limit = llvm.load %limit_ptr : !llvm.ptr -&gt; !llvm.ptr
+
+%overflow = llvm.icmp &quot;ugt&quot; %new_cursor, %limit : !llvm.ptr
+cf.cond_br %overflow, ^slow, ^fast
+
+^fast:
+  llvm.store %new_cursor, %cursor_ptr : !llvm.ptr, !llvm.ptr
+  cf.br ^cont(%cursor)
+
+^slow:
+  %p_slow = func.call @rok_gc_alloc_slow(%24, %8, %TYPE_ID_POINT) : (i64, i64, i32) -&gt; !llvm.ptr
+  cf.br ^cont(%p_slow)
+
+^cont(%p: !llvm.ptr):
+  ; %p is the start of the object header - fill header, then fields
+  ; ...
+</code></pre>
+<p>In the fast path above, <code>%24</code> is the total object size, <code>%8</code> the alignment, and <code>%TYPE_ID_POINT</code> the type_id constant. The fast path bumps the TLAB pointer and then writes the header's <code>type_id</code> and <code>gc_word</code> (= size, <a href="801-object-header-abi#814-gc_word-offset-8-u64-or-ptr">8.1.4</a>) inline.</p>
+<p>The slow path calls <code>rok_gc_alloc_slow</code>.</p>
+<h3 id="filling-the-header"><a class="anchor" tabindex="-1" href="#filling-the-header" aria-hidden="true">#</a>Filling the header</h3>
+<p>The object header and fields are filled as follows.</p>
+<pre><code>; fill type_id
+%hdr_type_addr = llvm.getelementptr %p[0, 0] : ...
+llvm.store %TYPE_ID_POINT, %hdr_type_addr : i32
+
+; gc_flags initial value 0
+; ... (may be filled by the slow path)
+
+; gc_word = object size (8.1.4)
+%hdr_word_addr = llvm.getelementptr %p[0, 2] : ...
+llvm.store %24, %hdr_word_addr : i64
+
+; fill fields
+%x_addr = llvm.getelementptr %p[0, 3] : ...
+llvm.store %1.0, %x_addr : f64
+%y_addr = llvm.getelementptr %p[0, 4] : ...
+llvm.store %2.0, %y_addr : f64
+</code></pre>
+<h2 id="8910-write-barrier"><a class="anchor" tabindex="-1" href="#8910-write-barrier" aria-hidden="true">#</a>8.9.10. Write barrier</h2>
+<p>The object-remembering barrier from <a href="../007-runtime/704-barriers-and-roots#742-write-barrier-incremental-update">Barriers and root tracking</a>.</p>
+<pre><code class="language-rok">*p.field = q;       <span class="c">// write a GC pointer into a GC object</span>
+</code></pre>
+<p>This is lowered to the following MLIR.</p>
+<pre><code>; 1. write barrier - checks only the header of the destination p (may precede the store)
+%hdr_flags = llvm.load %p[1] : i32
+%unlogged = llvm.and %hdr_flags, %UNLOGGED_BIT : i32
+%need_log = arith.cmpi &quot;ne&quot;, %unlogged, %0 : i32
+cf.cond_br %need_log, ^log, ^store
+
+^log:
+  func.call @rok_gc_wb_slow(%p) : (!llvm.ptr) -&gt; ()   ; atomically clear UNLOGGED and add to the remembered set
+  cf.br ^store
+
+^store:
+  ; 2. ordinary store
+  %addr = llvm.getelementptr %p[0, 4] : ...
+  llvm.store %q, %addr : !llvm.ptr
+</code></pre>
+<ul>
+<li>The header of the stored value <code>q</code> is not read. <code>q</code> may be an inline integer of an <code>any</code> slot or an interior pointer of a <code>str</code>, so reading it as a header is unsafe.
+</li>
+<li>The fast path is one load and one branch. In practice it checks <code>UNLOGGED | CARDED</code> together. If <code>CARDED</code> (a large old object), it marks dirty, without a call, the 512 B cards spanned by the written slot (<code>(slot - p) &gt;&gt; 9</code> ..= <code>(slot + len - 1 - p) &gt;&gt; 9</code>) in the card table (whose pointer is the word immediately before the header); if <code>UNLOGGED</code>, it calls <code>rok_gc_wb_slow</code> as above. The barrier therefore uses the slot address and the size of the stored value (<a href="../007-runtime/704-barriers-and-roots#742-write-barrier-incremental-update">7.4.2</a>).
+</li>
+<li><code>rok_gc_wb_slow</code> is not a safepoint. No collection intervenes between the barrier and the store.
+</li>
+<li>No barrier is inserted for initialization of a just-allocated object, stores into a <code>static</code>, raw <code>Ptr&lt;T&gt;</code> memory, or non-reference atomics.
+</li>
+</ul>
+<h2 id="8911-safepoint-poll"><a class="anchor" tabindex="-1" href="#8911-safepoint-poll" aria-hidden="true">#</a>8.9.11. Safepoint poll</h2>
+<p>Consider also the <a href="804-safepoint">Safepoint protocol</a>.</p>
+<pre><code>; safepoint poll
+%t = llvm.mlir.addressof @rok_tls : !llvm.ptr
+%flag_ptr = llvm.getelementptr %t[88] : (!llvm.ptr) -&gt; !llvm.ptr, i8    ; yield_flag at 10p+8
+%flag = llvm.load %flag_ptr : !llvm.ptr -&gt; i8
+%need_yield = arith.cmpi &quot;ne&quot;, %flag, %0 : i8
+
+cf.cond_br %need_yield, ^slow, ^cont
+
+^slow:
+  func.call @rok_runtime_yield() : () -&gt; ()
+  cf.br ^cont
+
+^cont:
+  ; ... continue ...
+</code></pre>
+<p>The compiler emits this code at function entry (or before the first safepoint of each path, <a href="804-safepoint#847-safepoint-invariant">8.4.7</a>) and on loop back-edges.</p>
+<h2 id="8912-shadow-stack-frame"><a class="anchor" tabindex="-1" href="#8912-shadow-stack-frame" aria-hidden="true">#</a>8.9.12. Shadow stack frame</h2>
+<p>See also <a href="../007-runtime/704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">Barriers and root tracking</a>. The compiler does not use LLVM's <code>gc &quot;shadow-stack&quot;</code> strategy or <code>llvm.gcroot</code>; it emits the link / unlink of frames directly. LLVM's chain head <code>llvm_gc_root_chain</code> is a single process-global and cannot form per-thread chains.</p>
+<p>Example of a function with 2 GC reference words (<code>%x</code>, <code>%y</code>). Slots hold the address of each word, so a variable assignment is just an ordinary store into <code>%x</code>.</p>
+<pre><code>; entry: zero-initialize words, allocate and link the frame
+%x = llvm.alloca %c1 x !llvm.ptr : (i64) -&gt; !llvm.ptr
+%y = llvm.alloca %c1 x !llvm.ptr : (i64) -&gt; !llvm.ptr
+llvm.store %null, %x : !llvm.ptr, !llvm.ptr
+llvm.store %null, %y : !llvm.ptr, !llvm.ptr
+%frame = llvm.alloca %c1 x !llvm.struct&lt;(ptr, i64, array&lt;2 x ptr&gt;)&gt; : (i64) -&gt; !llvm.ptr
+%head_ptr = llvm.mlir.addressof @rok_tls : !llvm.ptr             ; shadow stack head at offset 0
+%head = llvm.load %head_ptr : !llvm.ptr -&gt; !llvm.ptr
+%prev_p = llvm.getelementptr %frame[0, 0] : (!llvm.ptr) -&gt; !llvm.ptr
+llvm.store %head, %prev_p : !llvm.ptr, !llvm.ptr
+%count_p = llvm.getelementptr %frame[0, 1] : (!llvm.ptr) -&gt; !llvm.ptr
+llvm.store %c2_i64, %count_p : i64, !llvm.ptr          ; count: usize
+%s0 = llvm.getelementptr %frame[0, 2, 0] : (!llvm.ptr) -&gt; !llvm.ptr
+llvm.store %x, %s0 : !llvm.ptr, !llvm.ptr          ; the address, not the value
+%s1 = llvm.getelementptr %frame[0, 2, 1] : (!llvm.ptr) -&gt; !llvm.ptr
+llvm.store %y, %s1 : !llvm.ptr, !llvm.ptr
+llvm.store %frame, %head_ptr : !llvm.ptr, !llvm.ptr
+
+; variable assignment - no frame update
+llvm.store %obj, %x : !llvm.ptr, !llvm.ptr
+
+; immediately before every return (including error returns): unlink
+%saved = llvm.load %prev_p : !llvm.ptr -&gt; !llvm.ptr
+llvm.store %saved, %head_ptr : !llvm.ptr, !llvm.ptr
+</code></pre>
+<p><code>@rok_tls</code> is the thread-local block of <a href="803-tls-slots#838-form-of-compiler-emission">8.3.8</a>; the shadow stack head is its slot at offset 0. An error return is also an ordinary <code>return</code> (<a href="#896-try--catch--finally-value-based-branching">8.9.6</a>), so it passes through the same unlink. The link may also come later than shown, before the first safepoint of each path (<a href="804-safepoint#847-safepoint-invariant">8.4.7</a>); then only the returns of paths that linked unlink. A function needs a frame only if it holds GC references and can reach a safepoint (<a href="804-safepoint#842-emission-sites">8.4.2</a>). Calls to functions that never return (panics) and to runtime functions that neither allocate nor block (<a href="805-extern-symbols#functions-that-are-not-safepoints">8.5.2</a>) do not count.</p>
+<h3 id="module-data-layout"><a class="anchor" tabindex="-1" href="#module-data-layout" aria-hidden="true">#</a>Module data layout</h3>
+<p>A module emitted by the compiler must set the <code>llvm.data_layout</code> attribute to match the target. Otherwise sizes obtained by folding <code>gep null[1]</code> (object sizes, frame sizes) may disagree with the target. On paths that do not set a data layout, sizes are computed as constants rather than with such folded <code>gep</code>s.</p>
+<h2 id="8913-indexing"><a class="anchor" tabindex="-1" href="#8913-indexing" aria-hidden="true">#</a>8.9.13. Indexing</h2>
+<p>Consider <code>arr[i]</code> from <a href="../003-expressions/306-indexing-and-slicing">Indexing and slicing</a>.</p>
+<pre><code class="language-rok">arr[<span class="n">5</span>]
+</code></pre>
+<p>This expression becomes a call to the standard library function <code>Index::index(arr, 5)</code> and is lowered like an ordinary function call.</p>
+<p>With the <code>Index</code> trait inlined, the result is:</p>
+<pre><code>%ptr = llvm.getelementptr %arr_data, %5 : ...
+%val = llvm.load %ptr : ...
+</code></pre>
+<p>This result falls out automatically from generic monomorphization and inlining.</p>
+<h2 id="8914-summary-what-the-hot-path-looks-like"><a class="anchor" tabindex="-1" href="#8914-summary-what-the-hot-path-looks-like" aria-hidden="true">#</a>8.9.14. Summary: what the hot path looks like</h2>
+<p>The LLVM IR cost of the typical hot path, a <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> alloc plus field writes, is:</p>
+<ul>
+<li>TLAB cursor check: load / add / icmp / cond_br (4 instructions)
+</li>
+<li>cursor update: store (1 instruction)
+</li>
+<li>header fill: store * 3 (type_id, gc_flags, gc_word)
+</li>
+<li>field fill: store * N (number of fields)
+</li>
+<li>write barrier (if needed): load / and / icmp / cond_br + (slow) call (4 ~ 6 instructions)
+</li>
+<li>safepoint poll (if needed): load / icmp / cond_br (3 instructions)
+</li>
+</ul>
+<p>Allocating and filling a small object takes roughly 10 ~ 20 instructions. LLVM optimizations (inlining, mem2reg, simplification) remove some of them.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/809-lowering-control.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="808-lowering-types"><small>Previous</small>8.8. Lowering: data types and expressions</a><a class="next" href="810-lowering-coroutine-generic"><small>Next</small>8.10. Lowering: coroutines and generics</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

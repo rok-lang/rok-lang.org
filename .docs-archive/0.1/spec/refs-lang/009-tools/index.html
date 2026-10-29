@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9. Execution / tools overview - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This block specifies the rok compiler rokc, the front-end rok, and the execution environments (REPL / Jupyter kernel). It covers how the two engines (JIT / AOT)...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9. Execution / tools overview - rok docs">
+<meta property="og:description" content="This block specifies the rok compiler rokc, the front-end rok, and the execution environments (REPL / Jupyter kernel). It covers how the two engines (JIT / AOT)...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/index.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a class="cur" href="./">9. Execution / tools overview</a></p><ul class="toc"><li><a href="#contents">Contents</a></li><li><a href="#tool-surface">Tool surface</a></li><li><a href="#implementation-of-the-two-engines">Implementation of the two engines</a></li><li><a href="#implementation-of-the-three-user-surfaces">Implementation of the three user surfaces</a></li><li><a href="#package-build-output">Package build output</a></li><li><a href="#rokhir-portable-ir-for-generic-functions">ROKHIR: portable IR for generic functions</a></li><li><a href="#single-dependency-librokra">Single dependency: librokr.a</a></li></ul><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="9-execution--tools-overview 9-실행--툴-개요 contents 목차 tool-surface 도구-표면 implementation-of-the-two-engines 두-엔진의-구현 implementation-of-the-three-user-surfaces 세-사용자-표면의-구현 package-build-output 패키지-빌드-산출물 rokhir-portable-ir-for-generic-functions rokhir-제네릭-함수의-휴대용-ir single-dependency-librokra 단일-의존성-librokra"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="9-execution--tools-overview"><a class="anchor" tabindex="-1" href="#9-execution--tools-overview" aria-hidden="true">#</a>9. Execution / tools overview</h1>
+<p>This block specifies the rok compiler <code>rokc</code>, the front-end <code>rok</code>, and the execution environments (REPL / Jupyter kernel). It covers how the two engines (<a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> / <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a>) and the three user surfaces (REPL / Jupyter / direct execution of AOT output) defined in <a href="../000-meta/001-execution-modes">Execution engines and user surfaces</a> are implemented.</p>
+<h2 id="contents"><a class="anchor" tabindex="-1" href="#contents" aria-hidden="true">#</a>Contents</h2>
+<ul>
+<li><a href="901-rokc-cli">9.1. <code>rokc</code> CLI interface</a>
+</li>
+<li><a href="902-aot-pipeline">9.2. AOT build pipeline</a>
+</li>
+<li><a href="903-package-archive">9.3. Package archive (.a) format</a>
+</li>
+<li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a>
+</li>
+<li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a>
+</li>
+<li><a href="906-jit-engine">9.6. JIT engine (RokJitSession)</a>
+</li>
+<li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a>
+</li>
+<li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a>
+</li>
+<li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a>
+</li>
+<li><a href="910-rok-frontend">9.10. <code>rok</code> - package / build front-end</a>
+</li>
+</ul>
+<h2 id="tool-surface"><a class="anchor" tabindex="-1" href="#tool-surface" aria-hidden="true">#</a>Tool surface</h2>
+<p>The tool surface is organized as follows.</p>
+<pre><code>rok  (front-end, cargo-like)
+  │   new / init, add / remove / update / deps (rok.rokon, rok.lock), env, toolchain
+  │   build / check / run / test / bench / emit / fmt / lint / doc / clean / repl / lsp / demangle
+  │        └── resolve deps, then call rokc ... --extern &lt;dep roots&gt;
+  ▼
+rokc  (compiler)
+  │
+  ├── build / run
+  │   ├── rokc build      : AOT compile - .rok source to .a / executable
+  │   ├── rokc run        : AOT compile then run immediately
+  │   ├── rokc test       : collect + build the #[test] harness (rok test runs it)
+  │   ├── rokc bench      : collect + build the #[bench] harness (rok bench runs it)
+  │   ├── rokc check      : type / diagnostics only (no native build)
+  │   └── rokc clean      : remove build artifacts
+  │
+  ├── tools
+  │   ├── rokc fmt        : formatter
+  │   ├── rokc lint       : linter
+  │   ├── rokc doc        : API documentation
+  │   └── rokc lsp        : LSP server (IDE integration)
+  │
+  ├── interactive
+  │   ├── rokc repl       : terminal REPL (each cell runs once)
+  │   └── rokc jupyter    : Jupyter kernel (REPL cell session + ZMQ)
+  │
+  ├── debug / diagnostic
+  │   ├── rokc demangle   : symbol demangle
+  │   ├── rokc rokhir-text  : ROKHIR interface text dump
+  │   └── rokc inspect    : package inspect
+  │
+  └── rokc version / help
+
+rokls  (= rok lsp, for editors)
+librokr.a  (runtime, rokr)
+</code></pre>
+<p>The toolchain consists of the compiler <code>rokc</code> (the counterpart of rustc), the cargo-style front-end <code>rok</code>, the editor LSP executable <code>rokls</code>, and the runtime <code>librokr.a</code>. <code>rok</code> owns the manifest <code>rok.rokon</code> / <code>rok.lock</code>, dependencies, environments and the toolchain pin; build and tool commands are delegated to <code>rokc</code> with the resolved dependency packages attached via <code>--extern</code> (<a href="910-rok-frontend">9.10</a>). There are no separate tools (<code>rok-fmt</code> etc.).</p>
+<h2 id="implementation-of-the-two-engines"><a class="anchor" tabindex="-1" href="#implementation-of-the-two-engines" aria-hidden="true">#</a>Implementation of the two engines</h2>
+<p>The two engines defined in <a href="../000-meta/001-execution-modes">Execution engines and user surfaces</a> are divided as follows.</p>
+<pre><code>JIT engine  ──  used by rokc repl / jupyter
+AOT engine  ──  used by rokc build / run / test
+</code></pre>
+<p>Both engines go through the same compile pipeline (rok-hir → rok-mir → standard MLIR) and diverge only after the last intermediate representation. See <a href="../000-meta/001-execution-modes">Execution engines and user surfaces</a> and <a href="../000-meta/002-pipeline">Compile pipeline</a> for details.</p>
+<h2 id="implementation-of-the-three-user-surfaces"><a class="anchor" tabindex="-1" href="#implementation-of-the-three-user-surfaces" aria-hidden="true">#</a>Implementation of the three user surfaces</h2>
+<p>The three user surfaces and the commands that implement them are:</p>
+<pre><code>surface              command
+────────             ──────
+REPL                 rokc repl
+Jupyter              rokc jupyter        (invoked by Jupyter, not directly)
+AOT direct exec      rokc build → run artifact
+</code></pre>
+<p>The implementation of each surface is covered in the following documents.</p>
+<h2 id="package-build-output"><a class="anchor" tabindex="-1" href="#package-build-output" aria-hidden="true">#</a>Package build output</h2>
+<p>A library package of a <a href="../000-meta/003-source-units">source unit</a> compiles to <code>libfoo.a</code> and the interface <code>foo.rokhir</code>.</p>
+<pre><code>foo/
+├── src/
+│   ├── lib.rok              &lt;- input
+│   └── ...
+       v rokc build
+foo/target/debug/
+├── libfoo.a                 &lt;- artifact (static archive)
+├── foo.rokhir                 &lt;- interface (ROKHIR)
+├── build/                   &lt;- intermediates (foo.o, ...)
+└── ...
+</code></pre>
+<p>The per-profile layout is defined in <a href="902-aot-pipeline#9215-output">9.2.15</a>, and the <a href="../000-meta/007-glossary#archive">archive</a> format in <a href="903-package-archive">Package archive</a>.</p>
+<h2 id="rokhir-portable-ir-for-generic-functions"><a class="anchor" tabindex="-1" href="#rokhir-portable-ir-for-generic-functions" aria-hidden="true">#</a>ROKHIR: portable IR for generic functions</h2>
+<p>Generic functions must be <a href="../000-meta/007-glossary#monomorphization">monomorphized</a> at the call site, so binary code alone is not enough. An interface file, ROKHIR, therefore sits next to the library. ROKHIR holds the package source with concrete function bodies stripped (because monomorphization takes the AST as input).</p>
+<p>The detailed format is defined in <a href="904-rokhir-bytecode">ROKHIR format</a>.</p>
+<h2 id="single-dependency-librokra"><a class="anchor" tabindex="-1" href="#single-dependency-librokra" aria-hidden="true">#</a>Single dependency: <code>librokr.a</code></h2>
+<p>Build output consists of the user package's <code>libfoo.a</code>, the runtime <code>librokr.a</code>, and the standard libraries <code>librok_*.a</code>. There are no further dependencies beyond external OS libraries.</p>
+<p>The detailed build flow is defined in <a href="902-aot-pipeline">AOT build pipeline</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/README.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../008-abi/810-lowering-coroutine-generic"><small>Previous</small>8.10. Lowering: coroutines and generics</a><a class="next" href="901-rokc-cli"><small>Next</small>9.1. rokc CLI interface</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

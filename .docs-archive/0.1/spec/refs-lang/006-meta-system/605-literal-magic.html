@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.5. #[literal(...)] magic - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The #[literal(...)] attribute registers a user-written syntax pattern as a literal that is dispatched to a library handler.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/605-literal-magic.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.5. #[literal(...)] magic - rok docs">
+<meta property="og:description" content="The #[literal(...)] attribute registers a user-written syntax pattern as a literal that is dispatched to a library handler.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/605-literal-magic.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/605-literal-magic.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/605-literal-magic.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">6. Meta-system overview</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. Attribute syntax</a></li><li><a href="602-built-in-attributes">6.2. Built-in attributes</a></li><li><a href="603-cfg">6.3. #[cfg] conditional compilation</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] magic</a></li><li class="cur"><a aria-current="page" href="605-literal-magic">6.5. #[literal(...)] magic</a><ul class="toc"><li><a href="#651-motivation">6.5.1. Motivation</a></li><li><a href="#652-form">6.5.2. Form</a></li><li><a href="#653-format-of-syntax-patterns">6.5.3. Format of syntax patterns</a></li><li><a href="#654-matching-and-dispatch">6.5.4. Matching and dispatch</a></li><li><a href="#655-multiple-handlers-ambiguity">6.5.5. Multiple handlers (ambiguity)</a></li><li><a href="#656-dict-and-set-ambiguity">6.5.6. Dict and Set ambiguity</a></li><li><a href="#657-user-defined-literals">6.5.7. User-defined literals</a></li><li><a href="#658-const-compatibility-of-literal-handlers">6.5.8. const compatibility of literal handlers</a></li><li><a href="#659-slices">6.5.9. Slices</a></li><li><a href="#6510-when-it-is-evaluated">6.5.10. When it is evaluated</a></li><li><a href="#6511-magic-and-the-standard-library">6.5.11. Magic and the standard library</a></li></ul></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] magic</a></li><li><a href="607-operator-magic">6.7. Operator magic</a></li><li><a href="608-meta-blocks">6.8. User-defined meta definitions</a></li><li><a href="609-template-tokens">6.9. Template tokens and expansion</a></li><li><a href="610-reflection">6.10. Reflection</a></li><li><a href="611-include">6.11. Compile-time file embedding</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="65-literal-magic 65-literal-매직 651-motivation 651-동기 652-form 652-형태 653-format-of-syntax-patterns 653-문법-패턴의-형식 654-matching-and-dispatch 654-매칭과-디스패치 655-multiple-handlers-ambiguity 655-다중-핸들러-모호성 656-dict-and-set-ambiguity 656-dict-와-set-의-모호성 657-user-defined-literals 657-사용자-정의-리터럴 658-const-compatibility-of-literal-handlers 658-리터럴-핸들러의-const-호환 659-slices 659-슬라이스 6510-when-it-is-evaluated 6510-평가-시점 6511-magic-and-the-standard-library 6511-매직과-표준-라이브러리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/006-meta-system/605-literal-magic" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="65-literal-magic"><a class="anchor" tabindex="-1" href="#65-literal-magic" aria-hidden="true">#</a>6.5. <code>#[literal(...)]</code> magic</h1>
+<p>The <code>#[literal(...)]</code> attribute registers a user-written syntax pattern as a literal that is dispatched to a library handler.</p>
+<h2 id="651-motivation"><a class="anchor" tabindex="-1" href="#651-motivation" aria-hidden="true">#</a>6.5.1. Motivation</h2>
+<p>Beyond the lexical literals from <a href="../001-lexical/106-numeric-literals">numeric literals</a> through <a href="../001-lexical/109-other-literals">boolean and sentinel literals</a> - numbers, strings, characters, booleans - rok registers compound literals such as collections, ranges, and slices in the standard library.</p>
+<pre><code>[1, 2, 3]                 → List&lt;T&gt; instance (fixed array if the expected type is [T; N] - compiler)
+{&quot;a&quot;: 1, &quot;b&quot;: 2}          → Dict&lt;K, V&gt;
+{1, 2, 3}                 → Set&lt;T&gt;
+(1, &quot;hi&quot;, true)            → Tuple (compiler)
+0..5                       → Range&lt;T&gt;
+0..=5                      → RangeInclusive&lt;T&gt;
+1:3                        → Slice&lt;T&gt; (compiler)
+2i                         → Complex&lt;T&gt;
+</code></pre>
+<p>The <code>(compiler)</code> marker denotes literals the compiler builds directly without a handler. Fixed arrays, tuples, and the slice <code>a[i:j]</code> inside an index are intrinsic to the language and cannot be registered (6.5.7, 6.5.9).</p>
+<p>The syntax of these literals consists of tokens from <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a> and forms from <a href="../002-types/201-type-expressions">type expressions</a>, but which library type is constructed is decided by the library.</p>
+<p>The <code>#[literal]</code> magic attaches that decision to a trait or function.</p>
+<p>The type of numeric literals is decided by the language, not by this magic (<a href="../001-lexical/106-numeric-literals#162-type-suffixes">1.6.2</a>, <a href="../001-lexical/106-numeric-literals#163-unsuffixed-literals">1.6.3</a>). For numbers, <code>#[literal]</code> handles only suffixes the language does not define, such as <code>2i</code>.</p>
+<h2 id="652-form"><a class="anchor" tabindex="-1" href="#652-form" aria-hidden="true">#</a>6.5.2. Form</h2>
+<p>The pattern is written <strong>directly as tokens</strong> inside the attribute parentheses, not as a string. Quotes are used only to wrap a single literal token within the pattern.</p>
+<pre><code>literal_attr    ::= &quot;#&quot; &quot;[&quot; &quot;literal&quot; &quot;(&quot; pattern (&quot;,&quot; &quot;priority&quot; &quot;=&quot; &quot;-&quot;? int_lit)? &quot;)&quot; &quot;]&quot;
+pattern         ::= pat_elem+
+pat_elem        ::= pat_atom pat_rep?
+pat_atom        ::= string_lit                          // a single literal token
+                  | &quot;expr&quot; | &quot;number&quot; | &quot;string&quot; | &quot;ident&quot;  // captures
+                  | &quot;{&quot; pattern &quot;}&quot; | &quot;(&quot; pattern &quot;)&quot;     // groups
+pat_rep         ::= (&quot;%&quot; string_lit)? (&quot;*&quot; | &quot;+&quot;)
+                  | &quot;?&quot;
+</code></pre>
+<pre><code class="language-rok"><span class="a">#[literal("[" {expr} % "," * "]")]</span>
+<span class="k">fn</span> list_literal&lt;<span class="t">T</span>&gt;(items: ...<span class="t">T</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }
+
+<span class="a">#[literal("{" {expr ":" expr} % "," * "}")]</span>
+<span class="k">fn</span> dict_literal&lt;<span class="t">K</span>: <span class="t">Hash</span>, <span class="t">V</span>&gt;(pairs: ...(<span class="t">K</span>, <span class="t">V</span>)) -&gt; <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; { ... }
+
+<span class="a">#[literal("{" {expr} % "," + "}")]</span>
+<span class="k">fn</span> set_literal&lt;<span class="t">T</span>: <span class="t">Hash</span>&gt;(items: ...<span class="t">T</span>) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt; { ... }
+
+<span class="a">#[literal(expr ".." expr)]</span>
+<span class="k">fn</span> range_literal&lt;<span class="t">T</span>&gt;(start: <span class="t">T</span>, end: <span class="t">T</span>) -&gt; <span class="t">Range</span>&lt;<span class="t">T</span>&gt; { ... }
+
+<span class="a">#[literal(expr "..=" expr)]</span>
+<span class="k">fn</span> range_inclusive_literal&lt;<span class="t">T</span>&gt;(start: <span class="t">T</span>, end: <span class="t">T</span>) -&gt; <span class="t">RangeInclusive</span>&lt;<span class="t">T</span>&gt; { ... }
+
+<span class="a">#[literal(number "i")]</span>
+<span class="k">fn</span> imaginary_literal(n: <span class="t">f64</span>) -&gt; <span class="t">Complex</span>&lt;<span class="t">f64</span>&gt; { ... }
+
+<span class="a">#[literal("m" "[" {{expr} % "," +} % ";" + "]", priority = 2)]</span>
+<span class="k">fn</span> matrix_literal&lt;<span class="k">const</span> <span class="t">C</span>: <span class="t">usize</span>&gt;(rows: ...[<span class="t">f64</span>; <span class="t">C</span>]) -&gt; <span class="t">Matrix</span> { ... }   <span class="c">// [f64; C] per row</span>
+</code></pre>
+<p>The basic form is <code>#[literal(pattern)]</code>, optionally followed by <code>, priority = N</code> (may be negative, default 0) (6.5.5). The handler is a function, and a literal matching the pattern becomes a call to that function.</p>
+<p>Scope of registration: registrations in the standard library are visible in every package; registrations in a user package are visible only within that package. The compiler collects registrations before parsing, so they apply regardless of where they are registered.</p>
+<h2 id="653-format-of-syntax-patterns"><a class="anchor" tabindex="-1" href="#653-format-of-syntax-patterns" aria-hidden="true">#</a>6.5.3. Format of syntax patterns</h2>
+<p>Syntax patterns form a small query language.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Token</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>&quot;string&quot;</code></td><td>Literal token (punctuation or keyword). Matched as is</td></tr>
+<tr><td><code>expr</code></td><td>Any expression</td></tr>
+<tr><td><code>number</code></td><td>Numeric literal</td></tr>
+<tr><td><code>string</code></td><td>String literal</td></tr>
+<tr><td><code>ident</code></td><td>Identifier</td></tr>
+<tr><td><code>{ ... }</code></td><td>Group</td></tr>
+<tr><td><code>( ... )</code></td><td>Group (same as <code>{ }</code>)</td></tr>
+<tr><td><code>% &quot;,&quot;</code></td><td>Separator (comma, etc.). Must be followed by <code>*</code> / <code>+</code></td></tr>
+<tr><td><code>+</code></td><td>One or more repetitions</td></tr>
+<tr><td><code>*</code></td><td>Zero or more repetitions</td></tr>
+<tr><td><code>?</code></td><td>Optional (zero or one)</td></tr>
+</tbody></table></div>
+<p>The example decomposes as follows.</p>
+<pre><code>&quot;[&quot; {expr} % &quot;,&quot; * &quot;]&quot;
+ │   │      │       │
+ │   │      │       └── close token
+ │   │      └── zero or more
+ │   ├── separated by comma
+ │   └── expr group
+ └── open token
+</code></pre>
+<blockquote>
+<p>The open token is the opening token, the close token is the closing token, the expr group is the group of <code>expr</code>, &quot;separated by comma&quot; means comma-separated, and &quot;zero or more&quot; means zero or more repetitions.</p>
+</blockquote>
+<p>This pattern matches every comma-separated list: <code>[]</code>, <code>[1]</code>, <code>[1, 2]</code>, <code>[1, 2, 3]</code>, etc. Separated repetition allows one trailing separator (<code>[1, 2,]</code>).</p>
+<p>The content of quotes must be a single token. Several tokens such as <code>&quot;ab cd&quot;</code> is an error; quote each token separately.</p>
+<h2 id="654-matching-and-dispatch"><a class="anchor" tabindex="-1" href="#654-matching-and-dispatch" aria-hidden="true">#</a>6.5.4. Matching and dispatch</h2>
+<p>When <code>[1, 2, 3]</code> appears in source, it is processed in these steps.</p>
+<ol>
+<li>The parser finds a matching pattern among the registered <code>#[literal]</code> patterns.
+</li>
+<li>On a match, the matched subexpressions are passed as arguments to the handler function.
+</li>
+<li>The handler function constructs and returns the value.
+</li>
+</ol>
+<pre><code class="language-rok">[<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]
+   ↓
+list_literal(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>)          <span class="c">// items: Slice&lt;i32&gt;</span>
+   ↓
+<span class="t">List</span>&lt;<span class="t">i32</span>&gt; instance
+</code></pre>
+<p>Captures become handler arguments in order.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Pattern part</th><th>Argument</th></tr></thead>
+<tbody>
+<tr><td>A single capture (<code>expr</code> etc.)</td><td>One value</td></tr>
+<tr><td>Captures inside a <code>?</code> group</td><td>A value or <code>none</code> per capture</td></tr>
+<tr><td><code>*</code> / <code>+</code> repetition</td><td>Elements in one argument. Each element is a value, a tuple if there are several captures, an array if repetition is nested</td></tr>
+<tr><td>Repetition in a variadic <code>...T</code> position</td><td>The elements become the variadic arguments (<a href="../004-functions/402-parameters#425-variadic-t">4.2.5</a>)</td></tr>
+</tbody></table></div>
+<p>The compiler checks that the handler signature matches the number of captures and the repetition positions.</p>
+<h2 id="655-multiple-handlers-ambiguity"><a class="anchor" tabindex="-1" href="#655-multiple-handlers-ambiguity" aria-hidden="true">#</a>6.5.5. Multiple handlers (ambiguity)</h2>
+<p>When several patterns match the same input, the <strong>longest match</strong> wins first (among user patterns). If match lengths are equal or the same pattern has several handlers, the following rules apply in order.</p>
+<ol>
+<li>Choose the handler whose return type equals the type of the receiving slot. If the receiving slot is <code>Set&lt;T&gt;</code>, the set handler is preferred.
+</li>
+<li>Among those remaining, choose the handler with the highest <code>priority</code>.
+</li>
+<li>If two or more still remain, it is an ambiguity error.
+</li>
+</ol>
+<p>The slot type also determines the type parameters of the chosen handler. In <code>let s: Set&lt;i64&gt; = {1, 2};</code>, the <code>T</code> of <code>set_literal</code> is <code>i64</code>.</p>
+<p>Registering the same pattern twice with the same <code>priority</code> and the same return type cannot be resolved by the rules above, so it is an error at registration, not at use.</p>
+<h2 id="656-dict-and-set-ambiguity"><a class="anchor" tabindex="-1" href="#656-dict-and-set-ambiguity" aria-hidden="true">#</a>6.5.6. Dict and Set ambiguity</h2>
+<pre><code>{ &quot;a&quot;: 1 }              // Dict (matches the `:` pattern)
+{ 1, 2 }                 // Set (values only)
+{ 1, }                   // Set (single element - trailing comma)
+{ 1 }                    // always a block
+{ stmt; stmt; expr }    // block ([block expression](../003-expressions/309-block-expressions.md))
+</code></pre>
+<p>Since <code>{ ... }</code> is also used as a <a href="../003-expressions/309-block-expressions">block expression</a>, the following rules distinguish them.</p>
+<ul>
+<li>If there are statements, as in <code>{ expr ; ... }</code>, it is a <a href="../000-meta/007-glossary#block">block</a>.
+</li>
+<li>If there is a <code>:</code>, as in <code>{ expr : expr , ... }</code>, it is a Dict.
+</li>
+<li>If there is at least one comma, as in <code>{ expr , ... }</code>, it is a Set. A single-element Set is written <code>{ expr , }</code>.
+</li>
+<li><code>{ expr }</code> is always a block, regardless of the type of the receiving slot.
+</li>
+</ul>
+<p>The set pattern <code>&quot;{&quot; {expr} % &quot;,&quot; + &quot;}&quot;</code> textually also matches <code>{e}</code>, but <code>{e}</code> is a block by the rules above and does not go to the handler. A single-element set is <code>{e,}</code>.</p>
+<p>The parser decides by looking at the contents. An explicit prefix for sets such as <code>s{1, 2}</code> is not introduced, for readability.</p>
+<h2 id="657-user-defined-literals"><a class="anchor" tabindex="-1" href="#657-user-defined-literals" aria-hidden="true">#</a>6.5.7. User-defined literals</h2>
+<p>Though rare, users can register their own literals.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Coord</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; }
+
+<span class="a">#[literal("(" expr "," expr ")" "@")]</span>
+<span class="k">fn</span> coord_literal(x: <span class="t">f64</span>, y: <span class="t">f64</span>) -&gt; <span class="t">Coord</span> { <span class="t">Coord</span> { x, y } }
+
+<span class="k">let</span> p = (<span class="n">3.14</span>, <span class="n">2.71</span>)@;        <span class="c">// → coord_literal(3.14, 2.71) → Coord</span>
+</code></pre>
+<p>Three kinds of patterns can be registered.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Pattern</th><th>Processing</th></tr></thead>
+<tbody>
+<tr><td>Built-in shapes (<code>[..]</code>, <code>{k: v}</code>, <code>{a, b}</code>, the six range forms)</td><td>The parser parses by the language rules and calls the handler registered for that shape</td></tr>
+<tr><td><code>number &quot;suffix&quot;</code></td><td>A numeric suffix the language lacks (<code>2i</code>, <a href="../001-lexical/106-numeric-literals#162-type-suffixes">1.6.2</a>)</td></tr>
+<tr><td>Any other pattern starting with a quoted token</td><td>Tried before built-in syntax at every expression start; longest match</td></tr>
+</tbody></table></div>
+<p>User patterns must start with a quoted token. Only the built-in range shapes (<code>expr &quot;..&quot; expr</code> etc.) may start with a capture. The following are errors:</p>
+<ul>
+<li>Registering the tuple shape <code>&quot;(&quot; expr &quot;,&quot; {expr} % &quot;,&quot; * &quot;)&quot;</code>. Tuples are intrinsic to the language.
+</li>
+<li>Registering the language's numeric suffixes (<code>i32</code>, <code>f64</code>, etc.).
+</li>
+</ul>
+<p>A pattern starting with an identifier token (<code>&quot;m&quot; &quot;[&quot;</code>) is tried before indexing of a variable of the same name (<code>m[i]</code>), so it hides that name.</p>
+<h2 id="658-const-compatibility-of-literal-handlers"><a class="anchor" tabindex="-1" href="#658-const-compatibility-of-literal-handlers" aria-hidden="true">#</a>6.5.8. <code>const</code> compatibility of literal handlers</h2>
+<pre><code class="language-rok"><span class="a">#[literal("[" {expr} % "," * "]")]</span>
+<span class="k">const</span> <span class="k">fn</span> list_literal&lt;<span class="t">T</span>&gt;(items: ...<span class="t">T</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }
+</code></pre>
+<ul>
+<li>A <code>const fn</code> handler is evaluated at compile time if all its arguments are constants (<a href="../005-modules/502-const#524-constant-expressions-and-the-evaluator">5.2.4</a>). A panic or <code>throw</code> inside it is a compile error at the literal's location.
+</li>
+<li>If the result uses the heap (<code>List</code> etc.), it is only checked at compile time and constructed at runtime (<a href="../005-modules/502-const#525-const-fn-functions-evaluable-at-compile-time">5.2.5</a>).
+</li>
+<li>If any argument is a runtime value, it is an ordinary call.
+</li>
+<li>A handler that is not a <code>const fn</code> is called at runtime.
+</li>
+</ul>
+<h2 id="659-slices"><a class="anchor" tabindex="-1" href="#659-slices" aria-hidden="true">#</a>6.5.9. Slices</h2>
+<p><code>a[i:j]</code> / <code>a[i:j:k]</code> inside an index is not a literal but the language's slicing syntax, and cannot be registered with <code>#[literal]</code>. Its meaning and trait mapping are defined by <a href="../003-expressions/306-indexing-and-slicing">indexing and slicing</a>.</p>
+<h2 id="6510-when-it-is-evaluated"><a class="anchor" tabindex="-1" href="#6510-when-it-is-evaluated" aria-hidden="true">#</a>6.5.10. When it is evaluated</h2>
+<p><code>#[literal]</code> mapping happens at compile time, in this order.</p>
+<ol>
+<li>The parser tokenizes the input.
+</li>
+<li>At each expression position of the input, the registered patterns are tried.
+</li>
+<li>When a matching pattern is found, the handler call is placed at that expression position.
+</li>
+<li>Subsequent passes, name resolution and type checking, then process the result.
+</li>
+</ol>
+<p>Which function call <code>[1, 2, 3]</code> becomes is thus determined unambiguously at compile time.</p>
+<h2 id="6511-magic-and-the-standard-library"><a class="anchor" tabindex="-1" href="#6511-magic-and-the-standard-library" aria-hidden="true">#</a>6.5.11. Magic and the standard library</h2>
+<p><code>#[literal]</code> is used almost exclusively by the standard library; rok's collection literals are its main registrations.</p>
+<p>Users may register literals in their own libraries, but must choose patterns carefully so they do not collide with basic tokens.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/006-meta-system/605-literal-magic.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="604-lang-magic"><small>Previous</small>6.4. #[lang(...)] magic</a><a class="next" href="606-keyword-magic"><small>Next</small>6.6. #[keyword(...)] magic</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.3. Package archive (.a) format - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The build output of a library package foo is two files (9.2.15).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/903-package-archive.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.3. Package archive (.a) format - rok docs">
+<meta property="og:description" content="The build output of a library package foo is two files (9.2.15).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/903-package-archive.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/903-package-archive.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/903-package-archive.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li class="cur"><a aria-current="page" href="903-package-archive">9.3. Package archive (.a) format</a><ul class="toc"><li><a href="#931-standard-ar-archive">9.3.1. Standard ar archive</a></li><li><a href="#932-the-objects">9.3.2. The objects</a></li><li><a href="#933-static-a-principle">9.3.3. Static .a principle</a></li><li><a href="#934-version-compatibility-check">9.3.4. Version compatibility check</a></li><li><a href="#935-symbol-exposure">9.3.5. Symbol exposure</a></li><li><a href="#936-standard-library">9.3.6. Standard library</a></li><li><a href="#937-linking">9.3.7. Linking</a></li><li><a href="#938-stability">9.3.8. Stability</a></li></ul></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="93-package-archive-a-format 93-패키지-아카이브-a-포맷 931-standard-ar-archive 931-표준-ar-archive 932-the-objects 932-object 933-static-a-principle 933-정적-a-원칙 934-version-compatibility-check 934-버전-호환-검사 935-symbol-exposure 935-심볼-노출 936-standard-library 936-표준-라이브러리 937-linking 937-링크 938-stability 938-안정성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/903-package-archive" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="93-package-archive-a-format"><a class="anchor" tabindex="-1" href="#93-package-archive-a-format" aria-hidden="true">#</a>9.3. Package archive (.a) format</h1>
+<p>The build output of a library package <code>foo</code> is two files (<a href="902-aot-pipeline#9215-output">9.2.15</a>).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>File</th><th>Contents</th></tr></thead>
+<tbody>
+<tr><td><code>libfoo.a</code></td><td>A standard <code>ar</code> archive holding the package's objects, one per codegen unit (<a href="902-aot-pipeline#9216-incremental-build">9.2.16</a>)</td></tr>
+<tr><td><code>foo.rokhir</code></td><td>The interface used downstream for monomorphization and name resolution (<a href="904-rokhir-bytecode">9.4</a>)</td></tr>
+</tbody></table></div>
+<p>The two files sit in the same directory. <code>--extern foo=libfoo.a</code> and <code>--extern foo=foo.rokhir</code> each locate the sibling (<a href="902-aot-pipeline#923-dependency-resolution">9.2.3</a>). Metadata such as version and producer is in the ROKHIR header (<a href="904-rokhir-bytecode">9.4</a>).</p>
+<h2 id="931-standard-ar-archive"><a class="anchor" tabindex="-1" href="#931-standard-ar-archive" aria-hidden="true">#</a>9.3.1. Standard ar archive</h2>
+<p><code>libfoo.a</code> is a standard Unix <code>ar</code> archive. <code>ar</code>, <code>ranlib</code>, <code>nm</code>, <code>lld</code> and <code>clang</code> handle it without conversion.</p>
+<pre><code>ar t libfoo.a
+part0.o
+part1.o
+...
+</code></pre>
+<h2 id="932-the-objects"><a class="anchor" tabindex="-1" href="#932-the-objects" aria-hidden="true">#</a>9.3.2. The objects</h2>
+<p>Each object is a standard ELF / Mach-O / COFF object produced by the <a href="902-aot-pipeline">AOT build pipeline</a> for one codegen unit. Together they contain only those of the package's <a href="../000-meta/007-glossary#concrete-fn--generic-fn">concrete fns</a> reachable from the package's roots (<a href="902-aot-pipeline#928-specialize-monomorphization">9.2.8</a>).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Section</th><th>Contents</th></tr></thead>
+<tbody>
+<tr><td><code>.text</code></td><td>Code of concrete <code>fn</code>s</td></tr>
+<tr><td><code>.rodata</code></td><td><code>const</code>, literals, <a href="../008-abi/802-scan-table">ScanTable</a></td></tr>
+<tr><td><code>.data</code></td><td>Initial values of <code>static</code>s</td></tr>
+<tr><td><code>.bss</code></td><td>Zero-initialized <code>static</code>s</td></tr>
+</tbody></table></div>
+<p>ScanTables are ordinary constant data; generated registration code registers them with the runtime via <code>rok_gc_register_type</code> at process start (<a href="../008-abi/802-scan-table#8213-registration-time">8.2.13</a>). There are no rok-specific sections.</p>
+<h2 id="933-static-a-principle"><a class="anchor" tabindex="-1" href="#933-static-a-principle" aria-hidden="true">#</a>9.3.3. Static .a principle</h2>
+<p>Every library output is a static <code>.a</code>. Dynamic libraries are not a standard rok output. Calling a dynamic library through <a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> is allowed.</p>
+<h2 id="934-version-compatibility-check"><a class="anchor" tabindex="-1" href="#934-version-compatibility-check" aria-hidden="true">#</a>9.3.4. Version compatibility check</h2>
+<p>When a dependency's ROKHIR is read, its <code>version</code> and producer (the <code>rokc</code> that produced that ROKHIR) are compared with the current <code>rokc</code>. If they differ, it is an error stating what to rebuild (<a href="904-rokhir-bytecode#949-reading-and-rejection">9.4.9</a>).</p>
+<h2 id="935-symbol-exposure"><a class="anchor" tabindex="-1" href="#935-symbol-exposure" aria-hidden="true">#</a>9.3.5. Symbol exposure</h2>
+<p>The symbols an archive exposes are the global symbols of its objects, following <a href="905-symbol-mangling">Symbol mangling</a>.</p>
+<pre><code>nm libfoo.a
+0000000000000000 T _Y3f8a1c2b_foo_geom_distance_a7c91d8e44b2f190
+0000000000000040 T _Y3f8a1c2b_foo_geom_Point_origin_b1234567...
+</code></pre>
+<h2 id="936-standard-library"><a class="anchor" tabindex="-1" href="#936-standard-library" aria-hidden="true">#</a>9.3.6. Standard library</h2>
+<p>The standard library (<code>rok::bare</code> / <code>core</code> / <code>std</code>) is not distributed as separate archives. It is compiled from source (<code>--bootstrap</code>) and reused from <code>rokc</code>'s cache while the toolchain, options and sources are unchanged (<a href="902-aot-pipeline#9219-installation-layout">9.2.19</a>).</p>
+<h2 id="937-linking"><a class="anchor" tabindex="-1" href="#937-linking" aria-hidden="true">#</a>9.3.7. Linking</h2>
+<pre><code>clang main.o libfoo.a librokr.a -o my_binary
+</code></pre>
+<p>The linker links only the needed symbols from the archive's objects. Functions exposed with <code>#[export_name]</code> can be called directly from C.</p>
+<pre><code class="language-c">extern uint32_t rok_compute(int32_t a, int32_t b);   // #[export_name(&quot;rok_compute&quot;)]
+int main(void) { return (int)rok_compute(1, 2); }
+</code></pre>
+<pre><code>clang main.c libfoo.a librokr.a -o my_binary
+</code></pre>
+<h2 id="938-stability"><a class="anchor" tabindex="-1" href="#938-stability" aria-hidden="true">#</a>9.3.8. Stability</h2>
+<p>The archive format follows the <a href="../008-abi/">ABI stability policy</a>; the ROKHIR format follows <a href="904-rokhir-bytecode">9.4</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/903-package-archive.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="902-aot-pipeline"><small>Previous</small>9.2. AOT build pipeline</a><a class="next" href="904-rokhir-bytecode"><small>Next</small>9.4. ROKHIR format</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

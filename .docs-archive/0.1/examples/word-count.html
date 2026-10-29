@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Word count - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Count the lines, words and characters of a text, then use a Dict and sorting to pick the five most frequent words.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/word-count.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Word count - rok docs">
+<meta property="og:description" content="Count the lines, words and characters of a text, then use a Dict and sorting to pick the five most frequent words.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/word-count.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li class="cur"><a aria-current="page" href="word-count">Word count</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<h1 id="word-count"><a class="anchor" tabindex="-1" href="#word-count" aria-hidden="true">#</a>Word count</h1>
+<p>Count the lines, words and characters of a text, then use a <code>Dict</code> and sorting to pick the five most frequent words.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// Count lines, words and chars, then list the most frequent words.</span>
+
+<span class="k">const</span> <span class="t">TEXT</span>: <span class="t">str</span> = <span class="s">"The quick brown fox jumps over the lazy dog.
+The dog sleeps; the fox does not.
+A fox, a dog, and the long summer day.
+
+Quick thinking wins the day!"</span>;
+
+<span class="k">struct</span> <span class="t">Stats</span> {
+    lines: <span class="t">usize</span>;
+    words: <span class="t">usize</span>;
+    chars: <span class="t">usize</span>;
+}
+
+<span class="k">fn</span> stats(text: <span class="t">str</span>) -&gt; <span class="t">Stats</span> {
+    <span class="k">let</span> s = <span class="t">Stats</span> { lines: <span class="n">0</span>, words: <span class="n">0</span>, chars: text.char_count() };
+    <span class="k">for</span> line <span class="k">in</span> text.lines() {
+        s.lines += <span class="n">1</span>;
+        s.words += line.split_whitespace().count();
+    }
+    s
+}
+
+<span class="c">// Lowercase a token and drop surrounding punctuation ("Dog," -&gt; "dog").</span>
+<span class="k">fn</span> normalize(token: <span class="t">str</span>) -&gt; <span class="t">str</span> {
+    <span class="k">let</span> sb = <span class="t">StrBuf</span>::new();
+    <span class="k">for</span> c <span class="k">in</span> token.chars() {
+        <span class="k">if</span> c.is_alphanumeric() || c == <span class="s">'\''</span> {
+            sb.push(c.to_lowercase());
+        }
+    }
+    sb.to_str()
+}
+
+<span class="k">fn</span> frequencies(text: <span class="t">str</span>) -&gt; <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; {
+    <span class="k">let</span> counts: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = <span class="t">Dict</span>::new();
+    <span class="k">for</span> token <span class="k">in</span> text.split_whitespace() {
+        <span class="k">let</span> w = normalize(token);
+        <span class="k">if</span> w.is_empty() { <span class="k">continue</span>; }
+        counts[w] = (counts.get(w) ?? <span class="n">0</span>) + <span class="n">1</span>;
+    }
+    counts
+}
+
+<span class="k">fn</span> top(counts: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt;, n: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;(<span class="t">str</span>, <span class="t">i32</span>)&gt; {
+    <span class="k">let</span> pairs: <span class="t">List</span>&lt;(<span class="t">str</span>, <span class="t">i32</span>)&gt; = [];
+    <span class="k">for</span> (w, c) <span class="k">in</span> counts.entries() {
+        pairs.push((w, c));
+    }
+    <span class="c">// Most frequent first; ties broken alphabetically so output is stable.</span>
+    pairs.sort_by(|a: (<span class="t">str</span>, <span class="t">i32</span>), b: (<span class="t">str</span>, <span class="t">i32</span>)| {
+        <span class="k">if</span> a.<span class="n">1</span> != b.<span class="n">1</span> { b.<span class="n">1</span>.cmp(a.<span class="n">1</span>) } <span class="k">else</span> { a.<span class="n">0</span>.cmp(b.<span class="n">0</span>) }
+    });
+    <span class="k">let</span> out: <span class="t">List</span>&lt;(<span class="t">str</span>, <span class="t">i32</span>)&gt; = [];
+    <span class="k">for</span> p <span class="k">in</span> pairs.iter().take(n) { out.push(p); }
+    out
+}
+
+<span class="k">fn</span> main() {
+    <span class="k">let</span> s = stats(<span class="t">TEXT</span>);
+    println(<span class="s">f"lines {</span>s.lines<span class="s">:&gt;4</span><span class="s">}"</span>);
+    println(<span class="s">f"words {</span>s.words<span class="s">:&gt;4</span><span class="s">}"</span>);
+    println(<span class="s">f"chars {</span>s.chars<span class="s">:&gt;4</span><span class="s">}"</span>);
+
+    <span class="k">let</span> counts = frequencies(<span class="t">TEXT</span>);
+    println(<span class="s">f"\n{</span>counts.len()<span class="s">} distinct words, top 5:"</span>);
+    <span class="k">let</span> rank = <span class="n">1</span>;
+    <span class="k">for</span> (w, c) <span class="k">in</span> top(counts, <span class="n">5</span>) {
+        <span class="k">let</span> bar = <span class="s">"#"</span>.repeat(c <span class="k">as</span> <span class="t">usize</span>);
+        println(<span class="s">f"{</span>rank<span class="s">}. {</span>w<span class="s">:&lt;6</span><span class="s">} {</span>c<span class="s">:&gt;2</span><span class="s">} {</span>bar<span class="s">}"</span>);
+        rank += <span class="n">1</span>;
+    }
+}
+</code></pre>
+<pre class="output"><code class="language-output">lines    5
+words   30
+chars  147
+
+18 distinct words, top 5:
+1. the     6 ######
+2. dog     3 ###
+3. fox     3 ###
+4. a       2 ##
+5. day     2 ##
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Iterators on <code>str</code> do the counting. <code>lines()</code> yields lines, <code>split_whitespace()</code> yields words, and <code>count()</code> counts them. The character count is <code>char_count()</code>, not the byte length <code>len()</code> (<a href="../learn/09-strings">Strings</a>, <a href="../std/core/str#impl.str"><code>str</code> methods</a>).
+</li>
+<li><code>normalize</code> builds the word in a <code>StrBuf</code> one character at a time, dropping punctuation and lowercasing, so <code>&quot;Dog,&quot;</code> and <code>&quot;dog.&quot;</code> count as the same word (<a href="../std/core/str#struct.StrBuf"><code>StrBuf</code></a>).
+</li>
+<li>The frequency table is a <code>Dict&lt;str, i32&gt;</code>. <code>counts.get(w)</code> returns <code>none</code> for a missing key, so <code>?? 0</code> supplies the default before <code>counts[w] = ...</code> writes the new count (<a href="../learn/08-collections-iterators">Collections and iterators</a>, <a href="../std/core/collections/dict#struct.Dict"><code>Dict</code></a>).
+</li>
+<li><code>Dict</code> iteration order is unspecified, so the pairs are copied into a list of <code>(word, count)</code> tuples and sorted with <code>sort_by</code>. Ties are broken alphabetically, so the output is always the same (<a href="../std/core/collections/list#List.sort_by"><code>List::sort_by</code></a>).
+</li>
+<li>The table is aligned with f-string format specs: <code>{w:&lt;6}</code> left-aligns, <code>{c:&gt;2}</code> right-aligns (<a href="../spec/refs-standard-libraries/200-core/210-fmt#2108-align--fill--width--precision">2.10.8 align and width</a>).
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/word-count.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="text-adventure"><small>Previous</small>Text adventure</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

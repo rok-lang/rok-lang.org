@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.7. The ref Keyword - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="ref is a keyword marking that &quot;changes in this position are reflected in the caller's (or outer) variable&quot;. For parameters and call arguments it is implemented ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/407-ref-keyword.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.7. The ref Keyword - rok docs">
+<meta property="og:description" content="ref is a keyword marking that &quot;changes in this position are reflected in the caller's (or outer) variable&quot;. For parameters and call arguments it is implemented ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/407-ref-keyword.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/407-ref-keyword.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/407-ref-keyword.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li class="cur"><a aria-current="page" href="407-ref-keyword">4.7. The ref Keyword</a><ul class="toc"><li><a href="#471-three-positions">4.7.1. Three positions</a></li><li><a href="#472-function-parameters">4.7.2. Function parameters</a></li><li><a href="#473-explicit-at-the-call-c-style">4.7.3. Explicit at the call (C# style)</a></li><li><a href="#474-closure-capture-lists">4.7.4. Closure capture lists</a></li><li><a href="#475-exception-for-method-receivers">4.7.5. Exception for method receivers</a></li><li><a href="#476-ref-and-types">4.7.6. ref and types</a></li><li><a href="#477-references-cannot-be-first-class-values">4.7.7. References cannot be first-class values</a></li><li><a href="#478-summary-pass-by-value-vs-pass-by-ref">4.7.8. Summary: pass by value vs pass by ref</a></li><li><a href="#479-structs-and-reference-handles">4.7.9. Structs and reference handles</a></li><li><a href="#4710-ref-on-two-bindings-at-once">4.7.10. ref on two bindings at once</a></li></ul></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="47-the-ref-keyword 47-ref-키워드 471-three-positions 471-세-등장-위치 472-function-parameters 472-함수-매개변수 meaning---copy-in--copy-out 의미---copy-in--copy-out 473-explicit-at-the-call-c-style 473-호출-시-명시-c-식 474-closure-capture-lists 474-클로저-캡처-리스트 475-exception-for-method-receivers 475-메서드-receiver-의-예외 meaning-of-ref-self---copy-in--copy-out ref-self-의-의미---copy-in--copy-out 476-ref-and-types 476-ref-의-타입-측면 477-references-cannot-be-first-class-values 477-참조-자체를-일급-값으로-취급할-수-없습니다 478-summary-pass-by-value-vs-pass-by-ref 478-값-pass-와-ref-pass-의-의미론-정리 479-structs-and-reference-handles 479-구조체와-참조-핸들 4710-ref-on-two-bindings-at-once 4710-두-바인딩에-대한-ref-동시-사용"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/407-ref-keyword" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="47-the-ref-keyword"><a class="anchor" tabindex="-1" href="#47-the-ref-keyword" aria-hidden="true">#</a>4.7. The <code>ref</code> Keyword</h1>
+<p><code>ref</code> is a keyword marking that &quot;changes in this position are reflected in the caller's (or outer) variable&quot;. For parameters and call arguments it is implemented as copy-in / copy-out; in capture lists, as a shared cell. It is not a first-class reference value.</p>
+<h2 id="471-three-positions"><a class="anchor" tabindex="-1" href="#471-three-positions" aria-hidden="true">#</a>4.7.1. Three positions</h2>
+<pre><code>1. function parameter:      fn f(ref x: i32) { x = ... }
+2. closure capture list:    [ref x] before |...| { ... }
+3. at the call:             f(ref x)
+</code></pre>
+<p>In all three positions it has the same meaning: changes are reflected in the outer variable.</p>
+<h2 id="472-function-parameters"><a class="anchor" tabindex="-1" href="#472-function-parameters" aria-hidden="true">#</a>4.7.2. Function parameters</h2>
+<pre><code class="language-rok"><span class="k">fn</span> increment(<span class="k">ref</span> n: <span class="t">i32</span>) {
+    n = n + <span class="n">1</span>;
+}
+
+<span class="k">fn</span> swap(<span class="k">ref</span> a: <span class="t">i32</span>, <span class="k">ref</span> b: <span class="t">i32</span>) {
+    <span class="k">let</span> t = a;
+    a = b;
+    b = t;
+}
+</code></pre>
+<p>With <code>ref</code> before a parameter name, reassigning that parameter in the body is reflected in the caller's variable. The parameter's type itself (<code>i32</code> above) is the same as usual.</p>
+<h3 id="meaning---copy-in--copy-out"><a class="anchor" tabindex="-1" href="#meaning---copy-in--copy-out" aria-hidden="true">#</a>Meaning - copy-in / copy-out</h3>
+<p>A <code>ref</code> parameter is copy-in / copy-out. At the call, the value at the caller's place (variable, field, element) is copied into the parameter; the callee works with that value; when the call ends, the parameter's final value is written back to the caller's place.</p>
+<ul>
+<li><strong>Write-back timing</strong>: write-back happens not only on normal return but also when the callee throws. Changes made before a <code>throw</code> are therefore visible to the caller.
+</li>
+<li><strong>Exclusivity</strong>: while the call is in progress, the same place must not be accessed through another path, and the compiler checks this. Passing the same place as <code>ref</code> twice, or passing it as <code>ref</code> in one argument and reading it in another, is a compile error. Distinct fields (<code>ref p.x</code>, <code>ref p.y</code>) do not overlap and are allowed.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">fn</span> bump_then_fail(<span class="k">ref</span> n: <span class="t">i32</span>) <span class="k">throws</span> {
+    n = n + <span class="n">1</span>;
+    <span class="k">throw</span> <span class="t">MyError</span> {};
+}
+<span class="k">let</span> a = <span class="n">1i32</span>;
+<span class="k">try</span> bump_then_fail(<span class="k">ref</span> a) <span class="k">catch</span> _ { };   <span class="c">// a = 2 - written back on throw too</span>
+swap(<span class="k">ref</span> a, <span class="k">ref</span> a);                       <span class="c">// ERROR - same place passed as ref twice</span>
+add(<span class="k">ref</span> a, a);                            <span class="c">// ERROR - place passed as ref read by another argument</span>
+swap(<span class="k">ref</span> p.x, <span class="k">ref</span> p.y);                   <span class="c">// OK - distinct fields</span>
+</code></pre>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>The caller must write <code>ref</code> at the call site; calling without it is a compile error. This makes visible which variables can change.</p>
+</div>
+<h2 id="473-explicit-at-the-call-c-style"><a class="anchor" tabindex="-1" href="#473-explicit-at-the-call-c-style" aria-hidden="true">#</a>4.7.3. Explicit at the call (C# style)</h2>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="n">5i32</span>;
+<span class="k">let</span> y = <span class="n">10i32</span>;
+increment(<span class="k">ref</span> x);                 <span class="c">// x = 6</span>
+swap(<span class="k">ref</span> x, <span class="k">ref</span> y);
+</code></pre>
+<p>Where, and only where, a function parameter is declared <code>ref</code>, the caller must also write <code>ref</code>. Omitting <code>ref</code>, or writing <code>ref</code> for a non-<code>ref</code> parameter, is a compile error. The same rule applies when calling a <code>ref self</code> method by path (<code>Counter::increment(ref c)</code>, 4.7.5).</p>
+<p>This rule makes visible at the call site which variables can change, with the same motivation as C#'s <code>ref</code> pattern.</p>
+<pre><code class="language-rok"><span class="k">fn</span> read(x: <span class="t">i32</span>) { ... }
+<span class="k">fn</span> write(<span class="k">ref</span> x: <span class="t">i32</span>) { ... }
+
+read(a);                          <span class="c">// plain - clearly a does not change</span>
+write(<span class="k">ref</span> a);                      <span class="c">// ref - clearly a may change</span>
+</code></pre>
+<h2 id="474-closure-capture-lists"><a class="anchor" tabindex="-1" href="#474-closure-capture-lists" aria-hidden="true">#</a>4.7.4. Closure capture lists</h2>
+<pre><code class="language-rok"><span class="k">let</span> count = <span class="n">0</span>;
+<span class="k">let</span> inc = [<span class="k">ref</span> count] || { count = count + <span class="n">1</span> };
+</code></pre>
+<p>Following the <code>ref</code> capture defined in <a href="406-capture-semantics">Capture Semantics</a>, <code>ref</code> variables in a capture list are held in a shared cell (boxing). The outer scope and the closure read and write the same cell, so the closure may outlive the variable's scope.</p>
+<h2 id="475-exception-for-method-receivers"><a class="anchor" tabindex="-1" href="#475-exception-for-method-receivers" aria-hidden="true">#</a>4.7.5. Exception for method receivers</h2>
+<p>Methods in <a href="../002-types/209-impl"><code>impl</code></a> may have a <code>ref self</code> parameter.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Counter</span> {
+    <span class="k">fn</span> increment(<span class="k">ref</span> <span class="k">self</span>) { <span class="k">self</span>.count = <span class="k">self</span>.count + <span class="n">1</span>; }
+}
+</code></pre>
+<p>In this case, <code>ref</code> is not required at the call site.</p>
+<pre><code class="language-rok"><span class="k">let</span> c = <span class="t">Counter</span> { count: <span class="n">0</span> };
+c.increment();                    <span class="c">// no 'ref' - handled automatically for method receivers</span>
+</code></pre>
+<p>This is a special rule for method receivers, unlike ordinary <code>ref</code> parameters. Method call syntax is itself a mechanism that <a href="../000-meta/007-glossary#dispatch">dispatches</a> the receiver automatically, so an extra marker would only be visual noise.</p>
+<pre><code class="language-rok"><span class="k">fn</span> external_inc(<span class="k">ref</span> c: <span class="t">Counter</span>) { ... }
+external_inc(<span class="k">ref</span> c);              <span class="c">// ordinary function calls require 'ref'</span>
+<span class="t">Counter</span>::increment(<span class="k">ref</span> c);        <span class="c">// calling a ref self method by path also requires ref</span>
+</code></pre>
+<h3 id="meaning-of-ref-self---copy-in--copy-out"><a class="anchor" tabindex="-1" href="#meaning-of-ref-self---copy-in--copy-out" aria-hidden="true">#</a>Meaning of <code>ref self</code> - copy-in / copy-out</h3>
+<p><code>ref self</code> behaves as copy-in / copy-out. At the call, the receiver's value is copied into <code>self</code>; when the call ends, the final value of <code>self</code> is written back to the receiver's place.</p>
+<ul>
+<li><strong>Exclusivity</strong>: while the call is in progress, the receiver variable must not be accessed through another path (another argument, a capturing closure, etc.). If the compiler can see this, it is a compile error (like Swift's exclusivity rule).
+</li>
+<li><strong>Temporary receivers</strong>: if the receiver is a temporary (<code>make().increment()</code>), the write-back result is discarded.
+</li>
+</ul>
+<pre><code class="language-rok">c.increment();                     <span class="c">// copies c in, writes back to c at the end</span>
+c.add_from(|| c.count);            <span class="c">// ERROR - c accessed through a closure during the call</span>
+</code></pre>
+<h2 id="476-ref-and-types"><a class="anchor" tabindex="-1" href="#476-ref-and-types" aria-hidden="true">#</a>4.7.6. <code>ref</code> and types</h2>
+<p><code>ref</code> is a modifier, not a type, and appears nowhere in <a href="../002-types/201-type-expressions">type expressions</a>.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="k">ref</span> <span class="t">i32</span> = ...;             <span class="c">// ERROR - ref is not a type</span>
+<span class="k">struct</span> <span class="t">S</span> { x: <span class="k">ref</span> <span class="t">i32</span>; }          <span class="c">// ERROR - same reason</span>
+<span class="t">List</span>&lt;<span class="k">ref</span> <span class="t">i32</span>&gt;                      <span class="c">// ERROR - same reason</span>
+</code></pre>
+<p><code>ref</code> may therefore appear only in:</p>
+<ul>
+<li>Parameter declarations of functions and methods.
+</li>
+<li>Closure capture lists.
+</li>
+<li>Call arguments of functions and methods.
+</li>
+</ul>
+<p>Since <code>ref</code> cannot be used in a return type, rok has no functions that return references (no forms like Rust's <code>deref_mut</code>). APIs that change an inner value exchange values, as in <code>set</code> / <code>update(f)</code>.</p>
+<h2 id="477-references-cannot-be-first-class-values"><a class="anchor" tabindex="-1" href="#477-references-cannot-be-first-class-values" aria-hidden="true">#</a>4.7.7. References cannot be first-class values</h2>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="k">ref</span> x;                    <span class="c">// ERROR - ref itself is not an expression</span>
+<span class="k">let</span> r: <span class="t">SomePointerType</span> = <span class="k">ref</span> x;   <span class="c">// ERROR</span>
+</code></pre>
+<p><code>ref</code> is not an expression that produces a value; it is only a modifier token attached to calls, parameters and capture lists.</p>
+<p>Coroutine functions (<code>yield fn</code>, <code>async fn</code>, <code>async yield fn</code>) cannot have <code>ref</code> parameters; doing so is a compile error. The body keeps running after the call returns, so there is no point at which to write back.</p>
+<p>For the same reason, a function with <code>ref</code> parameters cannot be used as a function value (<code>let f = increment;</code> is an error), and closures cannot have <code>ref</code> parameters. The function type <code>fn(..)</code> has no place to express <code>ref</code>.</p>
+<p>If a first-class reference is needed (e.g., <a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a>), use the raw pointer types of <a href="../002-types/201-type-expressions">type expressions</a> (<code>Ptr&lt;T&gt;</code> and <code>ConstPtr&lt;T&gt;</code>), which belong to the <code>unsafe</code> area of the <a href="../000-meta/005-standard-libraries-tiers">standard library tiers</a>.</p>
+<h2 id="478-summary-pass-by-value-vs-pass-by-ref"><a class="anchor" tabindex="-1" href="#478-summary-pass-by-value-vs-pass-by-ref" aria-hidden="true">#</a>4.7.8. Summary: pass by value vs pass by <code>ref</code></h2>
+<pre><code class="language-rok"><span class="k">fn</span> by_value(x: <span class="t">i32</span>) { x = <span class="n">10i32</span>; }
+<span class="k">fn</span> by_ref(<span class="k">ref</span> x: <span class="t">i32</span>) { x = <span class="n">10i32</span>; }
+
+<span class="k">let</span> a = <span class="n">5i32</span>;
+by_value(a);                      <span class="c">// a = 5 (unchanged)</span>
+by_ref(<span class="k">ref</span> a);                    <span class="c">// a = 10</span>
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Pass by value (default)</th><th>Pass by <code>ref</code> (<code>ref</code>)</th></tr></thead>
+<tbody>
+<tr><td>Effect of reassignment in the parameter</td><td>local only</td><td>caller's variable</td></tr>
+<tr><td>Explicit call token</td><td>none</td><td><code>ref</code> required</td></tr>
+<tr><td>Visual signal</td><td>ordinary call</td><td>marks possible change</td></tr>
+</tbody></table></div>
+<h2 id="479-structs-and-reference-handles"><a class="anchor" tabindex="-1" href="#479-structs-and-reference-handles" aria-hidden="true">#</a>4.7.9. Structs and reference handles</h2>
+<p>A <code>struct</code> is a value type: pass by value copies it, so a field write in the callee is local. To change the caller's struct, take it as <code>ref</code> (or <code>ref self</code>), or return the new value. A reference handle (<code>List</code>, <code>Dict</code>, ..., <a href="../../refs-standard-libraries/200-core/209-collections#reference-handles">stdlib 2.9</a>) is copied as a handle, so changes to its elements are visible to the caller.</p>
+<pre><code class="language-rok"><span class="k">fn</span> set_x(p: <span class="t">Point</span>) { p.x = <span class="n">10.0</span>; }          <span class="c">// local copy - the caller's p is unchanged</span>
+<span class="k">fn</span> set_x_ref(<span class="k">ref</span> p: <span class="t">Point</span>) { p.x = <span class="n">10.0</span>; }  <span class="c">// written back to the caller's p</span>
+<span class="k">fn</span> fill(xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;) { xs.push(<span class="n">1</span>); }      <span class="c">// same List - the caller sees it</span>
+<span class="k">fn</span> reset(<span class="k">ref</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt;) { xs = []; }    <span class="c">// the caller's variable holds a new List</span>
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Scenario</th><th>Keyword needed</th></tr></thead>
+<tbody>
+<tr><td>Change a field of the caller's struct</td><td><code>ref</code></td></tr>
+<tr><td>Change elements of a collection</td><td>ordinary pass by value - enough</td></tr>
+<tr><td>Make the caller's variable hold another value</td><td><code>ref</code></td></tr>
+</tbody></table></div>
+<h2 id="4710-ref-on-two-bindings-at-once"><a class="anchor" tabindex="-1" href="#4710-ref-on-two-bindings-at-once" aria-hidden="true">#</a>4.7.10. <code>ref</code> on two bindings at once</h2>
+<pre><code class="language-rok"><span class="k">fn</span> swap(<span class="k">ref</span> a: <span class="t">i32</span>, <span class="k">ref</span> b: <span class="t">i32</span>) {
+    <span class="k">let</span> t = a;
+    a = b;
+    b = t;
+}
+
+<span class="k">let</span> x = <span class="n">1i32</span>;
+<span class="k">let</span> y = <span class="n">2i32</span>;
+swap(<span class="k">ref</span> x, <span class="k">ref</span> y);               <span class="c">// x = 2, y = 1</span>
+</code></pre>
+<p>As shown, a single call may have multiple <code>ref</code> parameters.</p>
+<p>Passing the same place as two <code>ref</code>s at the call site is a compile error under the exclusivity rule of 4.7.2.</p>
+<pre><code class="language-rok">swap(<span class="k">ref</span> x, <span class="k">ref</span> x);               <span class="c">// ERROR - same place passed as ref twice</span>
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/407-ref-keyword.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="406-capture-semantics"><small>Previous</small>4.6. Capture semantics</a><a class="next" href="408-trailing-closure"><small>Next</small>4.8. Trailing closures</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

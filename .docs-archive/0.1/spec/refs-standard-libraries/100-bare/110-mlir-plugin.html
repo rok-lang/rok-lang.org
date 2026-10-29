@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.10. rok::bare::mlir::plugin - registering user-defined dialects - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::mlir::plugin defines the interface through which the rok compiler dynamically loads externally built MLIR dialects and adds them as call targets of _...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.10. rok::bare::mlir::plugin - registering user-defined dialects - rok docs">
+<meta property="og:description" content="rok::bare::mlir::plugin defines the interface through which the rok compiler dynamically loads externally built MLIR dialects and adds them as call targets of _...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/110-mlir-plugin.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer family - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast operations - explicitly named casts</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - uninitialized memory</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile memory access</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM component model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - direct access to MLIR dialects</a></li><li class="cur"><a aria-current="page" href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - registering user-defined dialects</a><ul class="toc"><li><a href="#1101-separation-of-areas---what-is-inside--outside-the-spec">1.10.1. Separation of areas - what is inside / outside the spec</a></li><li><a href="#1102-plugin-build-form">1.10.2. Plugin build form</a></li><li><a href="#1103-plugin-loading">1.10.3. Plugin loading</a></li><li><a href="#1104-calling-plugin-ops">1.10.4. Calling plugin ops</a></li><li><a href="#1105-safety-responsibilities">1.10.5. Safety responsibilities</a></li><li><a href="#1106-abi-version-policy">1.10.6. ABI version policy</a></li><li><a href="#1107-build-isolation">1.10.7. Build isolation</a></li><li><a href="#1108-comparison-with-other-languages">1.10.8. Comparison with other languages</a></li><li><a href="#1109-out-of-scope">1.10.9. Out of scope</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="110-rokbaremlirplugin---registering-user-defined-dialects 110-rokbaremlirplugin---사용자-정의-다이얼렉트-등록 1101-separation-of-areas---what-is-inside--outside-the-spec 1101-영역-분리---무엇이-spec-안--밖인가 1102-plugin-build-form 1102-plugin-빌드-형태 1103-plugin-loading 1103-plugin-로드 cli-options cli-옵션 package-manifest-declaration 패키지-매니페스트-선언 1104-calling-plugin-ops 1104-plugin-op-호출 1105-safety-responsibilities 1105-안전-책임 1106-abi-version-policy 1106-abi-버전-정책 1107-build-isolation 1107-빌드-격리 1108-comparison-with-other-languages 1108-다른-언어와의-비교 1109-out-of-scope 1109-범위-밖"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/100-bare/110-mlir-plugin" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="110-rokbaremlirplugin---registering-user-defined-dialects"><a class="anchor" tabindex="-1" href="#110-rokbaremlirplugin---registering-user-defined-dialects" aria-hidden="true">#</a>1.10. <code>rok::bare::mlir::plugin</code> - registering user-defined dialects</h1>
+<p><code>rok::bare::mlir::plugin</code> defines the interface through which the rok compiler dynamically loads externally built MLIR dialects and adds them as call targets of <a href="109-mlir"><code>__mlir_op</code></a>. It is for library authors who want to layer domain-specific compilers (cryptography, signal processing, formal verification, new accelerator ISAs, etc.) on top of rok.</p>
+<p>This section defines the <strong>registration mechanism and safety responsibilities</strong> of plugins. The definition of a dialect itself (the meaning and schema of its ops / types / attributes) belongs to MLIR (TableGen / IRDL) and is outside the scope of this specification.</p>
+<h2 id="1101-separation-of-areas---what-is-inside--outside-the-spec"><a class="anchor" tabindex="-1" href="#1101-separation-of-areas---what-is-inside--outside-the-spec" aria-hidden="true">#</a>1.10.1. Separation of areas - what is inside / outside the spec</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Responsibility</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Dialect definition (op schema, type system)</td><td><strong>Outside the spec</strong> - MLIR (TableGen <code>.td</code> / IRDL)</td></tr>
+<tr><td>Dialect build (<code>.so</code> / <code>.dylib</code> / <code>.dll</code>)</td><td><strong>Outside the spec</strong> - user build tools</td></tr>
+<tr><td>Interface by which the rok compiler loads / registers a plugin</td><td><strong>Inside the spec</strong> (this section)</td></tr>
+<tr><td>Calling loaded plugin ops with <code>__mlir_op</code></td><td><strong>Inside the spec</strong> (<a href="109-mlir">1.9</a>)</td></tr>
+<tr><td>Lowering / passes of plugin ops</td><td><strong>Outside the spec</strong> - the plugin's own responsibility</td></tr>
+</tbody></table></div>
+<p>This separation keeps rok independent of the evolution of MLIR's own dialect-definition DSLs (TableGen → IRDL → next-generation formats).</p>
+<h2 id="1102-plugin-build-form"><a class="anchor" tabindex="-1" href="#1102-plugin-build-form" aria-hidden="true">#</a>1.10.2. Plugin build form</h2>
+<p><code>rokc</code> embeds MLIR (<a href="../../refs-lang/000-meta/002-pipeline#024-backends">0.2.4</a>) and loads plugins into its own MLIR context. A plugin is a dynamic library following MLIR's standard plugin form.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Kind</th><th>Entry point (C ABI)</th></tr></thead>
+<tbody>
+<tr><td>Dialect</td><td><code>mlirGetDialectPluginInfo()</code></td></tr>
+<tr><td>Pass (optional)</td><td><code>mlirGetPassPluginInfo()</code></td></tr>
+</tbody></table></div>
+<p>The dialect plugin's namespace goes in the <code>NS</code> position of <code>__mlir_op::&lt;&quot;NS.op_name&quot;, ...&gt;</code>. A plugin must be built against the LLVM version embedded in <code>rokc</code>. The plugin uses <code>rokc</code>'s MLIR instead of carrying its own: its MLIR / LLVM symbols are left unresolved and bind at load time to the ones <code>rokc</code> exports. <code>rokc</code> exports the MLIR it links (the dialects of <a href="../../refs-lang/008-abi/807-mlir-dialects#871-dialects-used-by-ordinary-code-recap">refs-lang 8.7.1</a> and <a href="../../refs-lang/008-abi/807-mlir-dialects#875-library--acceleration-domain-dialects">8.7.5</a> and the infrastructure they use) and LLVM's support library; a plugin may build on those and must carry anything else (for example other upstream dialects) itself. A plugin linked against its own copy of MLIR registers into registries <code>rokc</code> does not see. On Windows <code>rokc.exe</code> exports these symbols through an import library shipped with the toolchain's MLIR plugin development files; a plugin DLL links against it, uses the same C runtime as <code>rokc</code> (the dynamic release CRT) and exports its entry points. A DLL cannot reach data <code>rokc.exe</code> exports except through <code>__declspec(dllimport)</code>; the plugin development headers arrange this for MLIR's explicit TypeIDs, and other such data is not available to plugins. Exact build flags are implementation-defined.</p>
+<h2 id="1103-plugin-loading"><a class="anchor" tabindex="-1" href="#1103-plugin-loading" aria-hidden="true">#</a>1.10.3. Plugin loading</h2>
+<p>There are two ways to specify a plugin. Either way, <code>rokc</code> loads it before lowering.</p>
+<h3 id="cli-options"><a class="anchor" tabindex="-1" href="#cli-options" aria-hidden="true">#</a>CLI options</h3>
+<pre><code class="language-bash">rokc build --load-mlir-plugin /path/to/libmydialect.so main.rok
+rokc build --load-mlir-plugin mydialect main.rok         # look up by name
+rokc build --load-mlir-pass-plugin mypasses --mlir-pass my-lower main.rok
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Option</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>--load-mlir-plugin &lt;path|name&gt;</code></td><td>loads a dialect plugin</td></tr>
+<tr><td><code>--load-mlir-pass-plugin &lt;path|name&gt;</code></td><td>loads a pass plugin</td></tr>
+<tr><td><code>--mlir-pass &lt;pass&gt;</code></td><td>runs <code>&lt;pass&gt;</code> before conversion to the LLVM dialect</td></tr>
+</tbody></table></div>
+<p>All may be repeated. A <code>name</code> that is not a path is looked up as the host's library file name (<code>lib&lt;name&gt;.dylib</code> or <code>lib&lt;name&gt;.so</code> on macOS, <code>lib&lt;name&gt;.so</code> on Linux, <code>&lt;name&gt;.dll</code> on Windows) in the directories of <code>ROK_MLIR_PLUGIN_PATH</code> (lookup details are implementation-defined). If a plugin fails to load, it is a build error. Plugin files are part of the incremental build fingerprint (<a href="../../refs-lang/009-tools/902-aot-pipeline#9216-incremental-build">refs-lang 9.2.16</a>), and <code>rok</code> passes these options to <code>rokc</code> unchanged.</p>
+<h3 id="package-manifest-declaration"><a class="anchor" tabindex="-1" href="#package-manifest-declaration" aria-hidden="true">#</a>Package manifest declaration</h3>
+<p>A plugin declared in the package manifest (<code>rok.rokon</code>, <a href="../../refs-lang/009-tools/910-rok-frontend">refs-lang 9.10</a>) is loaded automatically at build time. The manifest format is defined by <a href="../../refs-lang/009-tools/910-rok-frontend#9103-rokrokon--roklock">refs-lang 9.10.3</a>. The field for declaring plugins is not yet part of that format; once decided, it will be added to 9.10.3.</p>
+<h2 id="1104-calling-plugin-ops"><a class="anchor" tabindex="-1" href="#1104-calling-plugin-ops" aria-hidden="true">#</a>1.10.4. Calling plugin ops</h2>
+<p>Ops of a loaded plugin are called with the same syntax as upstream MLIR ops.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::bare::mlir::__mlir_op;
+
+<span class="k">unsafe</span> {
+    <span class="c">// assume the plugin namespace is "crypto"</span>
+    <span class="k">let</span> cipher: <span class="t">Vector</span>&lt;<span class="t">u8</span>, <span class="n">16</span>&gt; = __mlir_op::&lt;<span class="s">"crypto.aes_round"</span>, _&gt;(
+        plaintext, key,
+        attributes = { <span class="s">"round_index"</span>: __mlir_attr::&lt;<span class="s">"3 : i32"</span>&gt; },
+    );
+}
+</code></pre>
+<p>All call syntax of <a href="109-mlir">1.9 rok::bare::mlir</a> (attributes / regions / variadic) applies as is. The op name and signature are verified by the MLIR context that loaded the plugin.</p>
+<h2 id="1105-safety-responsibilities"><a class="anchor" tabindex="-1" href="#1105-safety-responsibilities" aria-hidden="true">#</a>1.10.5. Safety responsibilities</h2>
+<p>The responsibilities borne by plugin users (library authors + users of those libraries) are:</p>
+<ul>
+<li><strong>LLVM version match</strong>: the plugin must be built against the LLVM version embedded in <code>rokc</code> and bind to <code>rokc</code>'s exported MLIR / LLVM symbols (1.10.2); otherwise loading it fails.
+</li>
+<li><strong>Op semantic verification</strong>: MLIR checks op names and signatures. The semantics / side effects / GC safety of ops are the plugin author's responsibility.
+</li>
+<li><strong>GC root tracking</strong>: when a plugin op handles GC heap objects, the plugin's lowering must uphold root tracking that keeps those pointers in shadow stack frame slots (<a href="../../refs-lang/007-runtime/704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">refs-lang 7.4.1</a>); otherwise the objects may be reclaimed in a GC cycle.
+</li>
+<li><strong>Target availability</strong>: if a plugin supports only specific targets (GPU / FPGA / quantum hw), calling it in a build without that target enabled is an error at the lowering stage.
+</li>
+</ul>
+<h2 id="1106-abi-version-policy"><a class="anchor" tabindex="-1" href="#1106-abi-version-policy" aria-hidden="true">#</a>1.10.6. ABI version policy</h2>
+<p>The plugin ABI is not defined by rok; it follows MLIR's plugin API (<code>MLIR_PLUGIN_API_VERSION</code>). Compatibility is judged by MLIR, and plugins must be rebuilt when the embedded LLVM version changes. This matches the general principle that the <code>rok::bare</code> tier is not stable (<a href="../../refs-lang/000-meta/005-standard-libraries-tiers">0.5 Standard library tiers</a>).</p>
+<h2 id="1107-build-isolation"><a class="anchor" tabindex="-1" href="#1107-build-isolation" aria-hidden="true">#</a>1.10.7. Build isolation</h2>
+<p>Dialects registered as plugins are <strong>active only in that build</strong>. The surface semantics of rok code written by ordinary users do not depend on whether a plugin is present.</p>
+<pre><code class="language-rok"><span class="c">// built without the crypto plugin, this is a build error (MLIR does not know the op)</span>
+<span class="k">unsafe</span> {
+    __mlir_op::&lt;<span class="s">"crypto.aes_round"</span>, _&gt;(...)
+}
+</code></pre>
+<p><code>rokc</code> cannot know a plugin's namespace, so op names are checked by MLIR, and its diagnostic is reported as a build error.</p>
+<p>This isolation keeps plugin dialects from intruding on the semantics of the rok language itself. The meaning of ordinary user code is always determined by this specification alone.</p>
+<h2 id="1108-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#1108-comparison-with-other-languages" aria-hidden="true">#</a>1.10.8. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Language</th><th>Plugin dialect mechanism</th><th>Where</th></tr></thead>
+<tbody>
+<tr><td>Mojo</td><td>Integrated at compiler build time (external plugin loading not formalized)</td><td>Build</td></tr>
+<tr><td>MLIR C API</td><td><code>mlirContextLoadAllAvailableDialects</code> etc.</td><td>Library</td></tr>
+<tr><td>LLVM</td><td><code>-load=plugin.so</code> (legacy pass manager)</td><td>CLI</td></tr>
+<tr><td><strong>rok</strong></td><td><strong><code>--load-mlir-plugin ...</code> → loaded into <code>rokc</code>'s MLIR</strong></td><td>CLI</td></tr>
+</tbody></table></div>
+<p>rok defines no plugin ABI of its own and uses MLIR's plugin form as is.</p>
+<h2 id="1109-out-of-scope"><a class="anchor" tabindex="-1" href="#1109-out-of-scope" aria-hidden="true">#</a>1.10.9. Out of scope</h2>
+<p>The following are outside the scope of this specification.</p>
+<ul>
+<li>Defining dialects / ops inside rok source code (Mojo does not do this either)
+</li>
+<li>Loading two plugins with the same namespace together (conflict - rejected by MLIR)
+</li>
+<li>Adding dialects at runtime (execution time)
+</li>
+<li>Compatibility of plugins across LLVM versions (follows the MLIR plugin API)
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/100-bare/110-mlir-plugin.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="109-mlir"><small>Previous</small>1.9. rok::bare::mlir - direct access to MLIR dialects</a><a class="next" href="../200-core/"><small>Next</small>2. Rok tier</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

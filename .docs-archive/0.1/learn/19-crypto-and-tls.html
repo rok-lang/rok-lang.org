@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>19. Cryptography and TLS - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok ships its own cryptography. rok::core::crypto has the algorithms (hashes, HMAC and HKDF, authenticated encryption, key exchange, signatures), rok::std::cryp...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/19-crypto-and-tls.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="19. Cryptography and TLS - rok docs">
+<meta property="og:description" content="rok ships its own cryptography. rok::core::crypto has the algorithms (hashes, HMAC and HKDF, authenticated encryption, key exchange, signatures), rok::std::cryp...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/19-crypto-and-tls.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li><a href="07-generics">7. Generics</a></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li class="cur"><a aria-current="page" href="19-crypto-and-tls">19. Cryptography and TLS</a><ul class="toc"><li><a href="#hashes-and-macs">Hashes and MACs</a></li><li><a href="#encryption-and-signatures">Encryption and signatures</a></li><li><a href="#key-material-secret">Key material: Secret</a></li><li><a href="#tls-nettls">TLS: net::tls</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="19-cryptography-and-tls"><a class="anchor" tabindex="-1" href="#19-cryptography-and-tls" aria-hidden="true">#</a>19. Cryptography and TLS</h1>
+<p>rok ships its own cryptography. <code>rok::core::crypto</code> has the algorithms (hashes, HMAC and HKDF, authenticated encryption, key exchange, signatures), <code>rok::std::crypto::random</code> reads the operating system's secure random source, and <code>rok::std::net::tls</code> is a TLS 1.3 client and server built on the two. No OpenSSL or other system library is involved, so the same code behaves the same on every target.</p>
+<div class="callout warning"><p class="callout-title">Warning</p>
+<p>This code is new and has not been audited. It is tested against the published test vectors and written to run in constant time on secret data, but it has not had the independent review that cryptography needs before you trust it with real secrets. Use it to learn and to experiment, and keep an audited library for anything that matters for now.</p>
+</div>
+<h2 id="hashes-and-macs"><a class="anchor" tabindex="-1" href="#hashes-and-macs" aria-hidden="true">#</a>Hashes and MACs</h2>
+<p>The algorithms are items of <code>rok::core::crypto</code> (<code>HashAlgorithm</code>, <code>Hmac</code>, <code>Aead</code>, <code>X25519</code>, <code>Ed25519</code>, ...), each also in its submodule (<code>sha2</code>, <code>sha3</code>, <code>hmac</code>, <code>aead</code>, <code>x25519</code>, <code>ed25519</code>, <code>ecdsa</code>, <code>rsa</code>, <code>mlkem</code>). Every function that takes bytes accepts <code>List&lt;u8&gt;</code>, <code>Slice&lt;u8&gt;</code>, a <code>str</code> (its UTF-8 bytes) or a <code>Secret</code>, so byte strings and text can be passed directly. Results are <code>List&lt;u8&gt;</code>, except key material, which comes back as a <code>Secret</code> (below).</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::crypto::{<span class="t">HashAlgorithm</span>, <span class="t">Digest</span>, <span class="t">Hmac</span>};
+
+<span class="k">fn</span> hex(bytes: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">str</span> {
+    <span class="k">let</span> s = <span class="t">StrBuf</span>::new();
+    <span class="k">for</span> b <span class="k">in</span> bytes { s.push_str(<span class="s">f"{</span>b<span class="s">:02x</span><span class="s">}"</span>); }
+    s.to_str()
+}
+
+println(hex(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>.digest(<span class="s">"abc"</span>)));
+
+<span class="c">// The same hash, fed in pieces.</span>
+<span class="k">let</span> d = <span class="t">Digest</span>::new(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>);
+d.update(<span class="s">"a"</span>);
+d.update(<span class="s">b"bc"</span>);
+println(<span class="s">f"{</span>hex(d.finish()) == hex(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>.digest(<span class="s">"abc"</span>))<span class="s">}"</span>);
+
+<span class="k">let</span> tag = <span class="t">Hmac</span>::mac(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>, <span class="s">"secret key"</span>, <span class="s">"message"</span>);
+println(<span class="s">f"{</span>tag.len()<span class="s">} {</span><span class="t">Hmac</span>::verify(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>, <span class="s">"secret key"</span>, <span class="s">"message"</span>, tag)<span class="s">}"</span>);
+println(<span class="s">f"{</span><span class="t">Hmac</span>::verify(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>, <span class="s">"secret key"</span>, <span class="s">"massage"</span>, tag)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+true
+32 true
+false
+</code></pre>
+<p><code>Hmac::verify</code> compares in constant time. To compare two secrets yourself, use <code>crypto::constant_time_eq</code> rather than <code>==</code>, which stops at the first difference and so leaks how much matched. <code>Hkdf</code> derives keys from a shared secret, and <code>sha3</code> has SHA3-256 / 512 and SHAKE.</p>
+<h2 id="encryption-and-signatures"><a class="anchor" tabindex="-1" href="#encryption-and-signatures" aria-hidden="true">#</a>Encryption and signatures</h2>
+<p><code>Aead</code> encrypts and authenticates in one step (AES-128-GCM, AES-256-GCM or ChaCha20-Poly1305). <code>seal</code> returns the ciphertext with a 16-byte tag; <code>open</code> returns <code>none</code> when anything, the ciphertext, the tag or the associated data, was changed. Keys and nonces come from <code>random</code>: the algorithms take randomness as an argument and never fetch it themselves.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::crypto::{<span class="t">Aead</span>, <span class="t">AeadAlgorithm</span>, <span class="t">Ed25519</span>};
+<span class="k">use</span> rok::std::crypto::random;
+
+<span class="k">let</span> key = random::secret(<span class="n">32</span>);
+<span class="k">let</span> nonce = random::bytes(<span class="n">12</span>);           <span class="c">// never reuse a nonce with the same key</span>
+<span class="k">let</span> aead = <span class="k">try</span>! <span class="t">Aead</span>::new(<span class="t">AeadAlgorithm</span>::<span class="t">ChaCha20Poly1305</span>, key);
+<span class="k">let</span> sealed = <span class="k">try</span>! aead.seal(nonce, <span class="s">"v1"</span>, <span class="s">"meet at noon"</span>);
+println(<span class="s">f"{</span>sealed.len()<span class="s">} bytes sealed"</span>);  <span class="c">// 12 bytes of text + a 16-byte tag</span>
+
+<span class="k">if</span> <span class="k">let</span> plain: <span class="t">List</span>&lt;<span class="t">u8</span>&gt; = <span class="k">try</span>! aead.open(nonce, <span class="s">"v1"</span>, sealed) {
+    println(<span class="k">try</span>! <span class="t">str</span>::from_utf8(plain));
+}
+sealed[<span class="n">0</span>] = sealed[<span class="n">0</span>] ^ <span class="n">1u8</span>;              <span class="c">// tamper with one bit</span>
+println(<span class="s">f"tampered: {</span>(<span class="k">try</span>! aead.open(nonce, <span class="s">"v1"</span>, sealed)) <span class="k">is</span> <span class="k">none</span><span class="s">}"</span>);
+
+<span class="k">let</span> seed = random::secret(<span class="n">32</span>);           <span class="c">// the private key</span>
+<span class="k">let</span> public = <span class="k">try</span>! <span class="t">Ed25519</span>::public_key(seed);
+<span class="k">let</span> sig = <span class="k">try</span>! <span class="t">Ed25519</span>::sign(seed, <span class="s">"release 1.0"</span>);
+println(<span class="s">f"{</span><span class="t">Ed25519</span>::verify(public, <span class="s">"release 1.0"</span>, sig)<span class="s">} {</span><span class="t">Ed25519</span>::verify(public, <span class="s">"release 1.1"</span>, sig)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">28 bytes sealed
+meet at noon
+tampered: true
+true false
+</code></pre>
+<p><code>X25519</code> and <code>MlKem768</code> agree on shared keys (the classic and the post-quantum way), and <code>Ecdsa</code> (P-256 / P-384) and <code>RsaPublicKey</code> / <code>RsaPrivateKey</code> sign and verify for the certificates the web uses.</p>
+<h2 id="key-material-secret"><a class="anchor" tabindex="-1" href="#key-material-secret" aria-hidden="true">#</a>Key material: <code>Secret</code></h2>
+<p>A <code>Secret</code> holds bytes in <em>secret storage</em>: a buffer the collector never moves or copies and overwrites with zeros before it frees it. <code>Hkdf::extract</code> / <code>expand</code>, <code>X25519::shared_secret</code> and the ML-KEM key functions return one, and <code>random::secret(n)</code> draws random bytes straight into one. It prints as <code>Secret(n bytes)</code>, never its contents, and has no <code>==</code>: compare with <code>constant_time_eq</code>. <code>wipe()</code> zeroes it now, and a <code>using</code> binding wipes it at the end of the block. <code>Aead</code> keeps its expanded key in secret storage too, and <code>Aead::wipe</code> clears it.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::crypto::{<span class="t">Aead</span>, <span class="t">AeadAlgorithm</span>, <span class="t">HashAlgorithm</span>, <span class="t">Hkdf</span>, <span class="t">Secret</span>, <span class="t">X25519</span>, constant_time_eq};
+<span class="k">use</span> rok::std::crypto::random;
+
+<span class="k">let</span> a = random::secret(<span class="n">32</span>);
+<span class="k">let</span> b = random::secret(<span class="n">32</span>);
+<span class="k">let</span> ab = <span class="k">try</span>! <span class="t">X25519</span>::shared_secret(a, <span class="k">try</span>! <span class="t">X25519</span>::public_key(b)) ?? panic(<span class="s">"bad key"</span>);
+<span class="k">let</span> ba = <span class="k">try</span>! <span class="t">X25519</span>::shared_secret(b, <span class="k">try</span>! <span class="t">X25519</span>::public_key(a)) ?? panic(<span class="s">"bad key"</span>);
+println(<span class="s">f"{</span>ab<span class="s">:?</span><span class="s">} {</span>constant_time_eq(ab, ba)<span class="s">}"</span>);
+
+<span class="k">let</span> key = <span class="k">try</span>! <span class="t">Hkdf</span>::expand(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>, <span class="t">Hkdf</span>::extract(<span class="t">HashAlgorithm</span>::<span class="t">Sha256</span>, <span class="s">"salt"</span>, ab), <span class="s">"key"</span>, <span class="n">32</span>);
+<span class="k">let</span> aead = <span class="k">try</span>! <span class="t">Aead</span>::new(<span class="t">AeadAlgorithm</span>::<span class="t">ChaCha20Poly1305</span>, key);
+key.wipe();                               <span class="c">// zero it now, not at some later collection</span>
+println(<span class="s">f"{</span>key[<span class="n">0</span>]<span class="s">}"</span>);
+aead.wipe();                              <span class="c">// the cipher is done too</span>
+
+<span class="k">using</span> s = <span class="t">Secret</span>::new(<span class="s">"temporary"</span>) {
+    println(<span class="s">f"{</span>s.len()<span class="s">} bytes"</span>);
+}                                         <span class="c">// wiped here</span>
+</code></pre>
+<pre class="output"><code class="language-output">Secret(32 bytes) true
+0
+9 bytes
+</code></pre>
+<p>Copying a secret's bytes into an ordinary object (<code>as_bytes().to_list()</code>, a <code>str</code>, a formatted string) makes a copy the collector does not wipe. Secret storage is not locked in RAM either, so it can still reach swap or a core dump.</p>
+<h2 id="tls-nettls"><a class="anchor" tabindex="-1" href="#tls-nettls" aria-hidden="true">#</a>TLS: <code>net::tls</code></h2>
+<p><code>tls::Client::new(stream, server_name)</code> runs a TLS 1.3 handshake over an open <code>TcpStream</code>, checks the server's certificate chain against the OS trust store and its name, and returns a connection with the same <code>read</code> / <code>write_all</code> / <code>read_to_end</code> methods as the socket. With the default config the handshake offers the X25519MLKEM768 post-quantum hybrid. TLS 1.2 and older are refused.</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net::{tcp_connect, tls};
+
+<span class="k">let</span> conn = <span class="k">try</span> tls::<span class="t">Client</span>::new(<span class="k">try</span> tcp_connect(<span class="s">"example.com:443"</span>), <span class="s">"example.com"</span>);
+<span class="k">try</span> conn.write_all(<span class="s">b"GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n"</span>);
+<span class="k">let</span> resp = <span class="k">try</span> conn.read_to_end();
+<span class="k">try</span> conn.close_notify();
+println((<span class="k">try</span> <span class="t">str</span>::from_utf8(resp)).lines().next() ?? <span class="s">""</span>);   <span class="c">// HTTP/1.1 200 OK</span>
+</code></pre>
+<p>For real HTTP, use the <a href="18-features-and-stones#the-rok-stones"><code>http</code> stone</a>, which does this for you, with redirects, pooling and HTTP/2.</p>
+<p>A server needs a certificate chain and its private key, usually read from PEM files. The program below runs both sides on the loopback interface: a server task with a self-signed certificate, and a client that trusts exactly that certificate through <code>ClientConfig.root_certs</code>. Every call has an <code>_async</code> form for tasks (<a href="12-concurrency">chapter 12</a>).</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::net;
+<span class="k">use</span> rok::std::io::byte_buf;
+<span class="k">use</span> rok::std::net::{<span class="t">TcpStream</span>, tls};
+
+<span class="c">// A self-signed Ed25519 certificate for `localhost` and its key (a demo</span>
+<span class="c">// key: it is public, never use it for anything real).</span>
+<span class="k">const</span> <span class="t">CERT</span>: <span class="t">str</span> = <span class="s">"
+-----BEGIN CERTIFICATE-----
+MIIBVTCCAQegAwIBAgIUOw8IA2ogBBGsxE/m7hJPQIZPLzYwBQYDK2VwMBQxEjAQ
+BgNVBAMMCWxvY2FsaG9zdDAgFw0yNjEwMTYxNjEyMDRaGA8yMTI2MDkyMjE2MTIw
+NFowFDESMBAGA1UEAwwJbG9jYWxob3N0MCowBQYDK2VwAyEAguLEN9y6fnek02iG
+f4LullsxttwNkvHTYdhsjnFWsVajaTBnMB0GA1UdDgQWBBRUjvYk1Hhem6n+Hr1q
+HZm6wzG3mzAfBgNVHSMEGDAWgBRUjvYk1Hhem6n+Hr1qHZm6wzG3mzAPBgNVHRMB
+Af8EBTADAQH/MBQGA1UdEQQNMAuCCWxvY2FsaG9zdDAFBgMrZXADQQC2XwFaBIQ5
+C138MCqnpjXays5b9C4QnQ+tBky5VqKY1ffbKN9O4IIWBeQqED+shdRM5Y4HGYcH
++Zr3PLdVn7QD
+-----END CERTIFICATE-----
+"</span>;
+<span class="k">const</span> <span class="t">KEY</span>: <span class="t">str</span> = <span class="s">"
+-----BEGIN PRIVATE KEY-----
+MC4CAQAwBQYDK2VwBCIEIMa20cYLozv3/41l6/owqHiube5cG+rd7cF4nHPZ6qd3
+-----END PRIVATE KEY-----
+"</span>;
+
+<span class="k">let</span> chain = <span class="k">try</span>! tls::<span class="t">Certificate</span>::from_pem(<span class="t">CERT</span>);
+<span class="k">let</span> scfg = <span class="k">try</span>! tls::<span class="t">ServerConfig</span>::new(chain, <span class="k">try</span>! tls::<span class="t">PrivateKey</span>::from_pem(<span class="t">KEY</span>));
+<span class="k">let</span> l = <span class="k">try</span>! net::tcp_listen(<span class="s">"127.0.0.1:0"</span>);
+<span class="k">let</span> addr = <span class="k">try</span>! l.local_addr();
+<span class="k">let</span> server = task::spawn_local(<span class="k">async</span> {
+    <span class="k">let</span> (conn, _) = <span class="k">try</span>! <span class="k">await</span> l.accept_async();
+    <span class="k">let</span> s = <span class="k">try</span>! <span class="k">await</span> tls::<span class="t">Server</span>::new_async(conn, scfg);
+    <span class="k">let</span> buf = byte_buf(<span class="n">64</span>);
+    <span class="k">let</span> n = <span class="k">try</span>! <span class="k">await</span> s.read_async(buf);
+    <span class="k">try</span>! <span class="k">await</span> s.write_all_async(<span class="s">b"pong"</span>);
+    <span class="k">try</span>! <span class="k">await</span> s.close_notify_async();
+    <span class="s">f"server read {</span>n<span class="s">} bytes, SNI {</span>s.server_name() ?? <span class="s">"-"</span><span class="s">}"</span>
+});
+
+<span class="k">let</span> ccfg = tls::<span class="t">ClientConfig</span>::new();
+ccfg.root_certs = chain;               <span class="c">// trust only our certificate</span>
+<span class="k">let</span> tcp = <span class="k">try</span>! <span class="k">await</span> <span class="t">TcpStream</span>::connect_async(addr);
+<span class="k">let</span> c = <span class="k">try</span>! <span class="k">await</span> tls::<span class="t">Client</span>::with_config_async(tcp, <span class="s">"localhost"</span>, ccfg);
+<span class="k">try</span>! <span class="k">await</span> c.write_all_async(<span class="s">b"ping"</span>);
+<span class="k">let</span> reply = <span class="k">try</span>! <span class="k">await</span> c.read_to_end_async();
+println(<span class="k">try</span>! <span class="t">str</span>::from_utf8(reply));
+println(<span class="k">await</span> server);
+</code></pre>
+<pre class="output"><code class="language-output">pong
+server read 4 bytes, SNI localhost
+</code></pre>
+<p><code>tls::system_roots()</code> reads the OS trust store (<code>SSL_CERT_FILE</code> overrides it), <code>ClientConfig.alpn_protocols</code> negotiates protocols such as <code>h2</code>, and <code>negotiated_alpn()</code> / <code>peer_certificates()</code> tell you what was agreed. Client certificates, session resumption and revocation checks are not supported.</p>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li><code>rok::core::crypto</code> has SHA-2 / SHA-3, HMAC, HKDF, AEAD, X25519, ML-KEM, Ed25519, ECDSA and RSA. Byte arguments take <code>List&lt;u8&gt;</code>, <code>Slice&lt;u8&gt;</code> or <code>str</code>.
+</li>
+<li>Randomness comes only from <code>rok::std::crypto::random</code> (<code>bytes(n)</code>, <code>fill(buf)</code>, <code>secret(n)</code>) and is passed in.
+</li>
+<li>Keys come back as <code>Secret</code>, which is wiped by <code>wipe()</code>, by <code>using</code>, or when it is collected.
+</li>
+<li>Compare secrets with <code>constant_time_eq</code> or <code>Hmac::verify</code>, never <code>==</code>.
+</li>
+<li><code>tls::Client</code> / <code>tls::Server</code> wrap a <code>TcpStream</code> in TLS 1.3 and then read and write like it.
+</li>
+<li>The implementation is new and unaudited.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li>Standard library spec: <a href="../spec/refs-standard-libraries/200-core/221-crypto">2.21 <code>crypto</code></a>, <a href="../spec/refs-standard-libraries/300-std/310-crypto">3.10 <code>crypto::random</code></a>, <a href="../spec/refs-standard-libraries/300-std/302-net#325-tls-13---nettls">3.2.5 TLS 1.3</a>
+</li>
+<li>API: <a href="../std/core/crypto">rok::core::crypto</a>, <a href="../std/std/net/tls">rok::std::net::tls</a>
+</li>
+<li><a href="../examples/">Examples</a>
+</li>
+<li>Next chapter: <a href="20-cookbook">20. How Do I...</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/19-crypto-and-tls.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="18-features-and-stones"><small>Previous</small>18. Features and Stones</a><a class="next" href="20-cookbook"><small>Next</small>20. How Do I...</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

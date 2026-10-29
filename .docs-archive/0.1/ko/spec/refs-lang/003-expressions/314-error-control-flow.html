@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.14. 에러 제어 흐름 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="throw, try, catch, finally 는 에러를 발생시키고, 에러가 흐를 수 있는 지점을 표시하고, 받아 처리하는 제어 흐름입니다. 후위 ? 는 T | none 값의 none 을 호출자에게 조기 반환합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/314-error-control-flow.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.14. 에러 제어 흐름 - rok docs">
+<meta property="og:description" content="throw, try, catch, finally 는 에러를 발생시키고, 에러가 흐를 수 있는 지점을 표시하고, 받아 처리하는 제어 흐름입니다. 후위 ? 는 T | none 값의 none 을 호출자에게 조기 반환합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/314-error-control-flow.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/314-error-control-flow.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/314-error-control-flow.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li class="cur"><a aria-current="page" href="314-error-control-flow">3.14. 에러 제어 흐름</a><ul class="toc"><li><a href="#3141-throw-에러-발생">3.14.1. throw: 에러 발생</a></li><li><a href="#3142-try-호출-지점-표시">3.14.2. try: 호출 지점 표시</a></li><li><a href="#3143-try-와-try">3.14.3. try? 와 try!</a></li><li><a href="#3144-catch-후위-처리-식">3.14.4. catch: 후위 처리 식</a></li><li><a href="#3145-finally">3.14.5. finally</a></li><li><a href="#3146-식의-값과-타입">3.14.6. 식의 값과 타입</a></li><li><a href="#3147-던지는-값과-함수-시그니처">3.14.7. 던지는 값과 함수 시그니처</a></li><li><a href="#3148-panic-과-fatal-에러">3.14.8. panic 과 fatal 에러</a></li><li><a href="#3149-평가-순서">3.14.9. 평가 순서</a></li><li><a href="#31410--연산자---none-조기-반환">3.14.10. ? 연산자 - none 조기 반환</a></li></ul></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="314-에러-제어-흐름 314-error-control-flow 3141-throw-에러-발생 3141-throw-raising-an-error 3142-try-호출-지점-표시 3142-try-marking-call-sites 덮는-범위 coverage await-와-함께 with-await 3143-try-와-try 3143-try-and-try 3144-catch-후위-처리-식 3144-catch-postfix-handling-expression 블록-형태 block-form 패턴과-타입-매칭 pattern-and-type-matching 완전성 exhaustiveness 도달하지-않는-try-와-catch-경고 warnings-for-unreachable-try-and-catch 3145-finally 3145-finally 3146-식의-값과-타입 3146-value-and-type-of-the-expression 3147-던지는-값과-함수-시그니처 3147-thrown-values-and-function-signatures 3148-panic-과-fatal-에러 3148-panics-and-fatal-errors 3149-평가-순서 3149-evaluation-order 31410--연산자---none-조기-반환 31410-the--operator---early-return-of-none desugar-규칙 desugaring-rule 적용-범위 scope-of-application"><a href="../../../../spec/refs-lang/003-expressions/314-error-control-flow" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="314-에러-제어-흐름"><a class="anchor" tabindex="-1" href="#314-에러-제어-흐름" aria-hidden="true">#</a>3.14. 에러 제어 흐름</h1>
+<p><code>throw</code>, <code>try</code>, <code>catch</code>, <code>finally</code> 는 에러를 발생시키고, 에러가 흐를 수 있는 지점을 표시하고, 받아 처리하는 제어 흐름입니다. 후위 <code>?</code> 는 <code>T | none</code> 값의 <code>none</code> 을 호출자에게 조기 반환합니다.</p>
+<pre><code>throw_stmt     ::= &quot;throw&quot; expr &quot;;&quot;
+try_expr       ::= (&quot;try&quot; | &quot;try?&quot; | &quot;try!&quot;) expr
+catch_expr     ::= expr catch_clause+ finally_clause?
+                 | expr finally_clause
+catch_clause   ::= &quot;catch&quot; pattern? block            // struct 패턴도 됨: catch E { f, .. } { .. }
+finally_clause ::= &quot;finally&quot; block
+question_expr  ::= expr &quot;?&quot;
+</code></pre>
+<p><code>catch</code> 와 <code>finally</code> 는 식이나 블록 뒤의 후위 절 자리에서만 키워드인 문맥 키워드입니다 (<a href="../001-lexical/105-keywords#154-문맥-키워드">1.5.4</a>). 에러를 던질 수 있는 함수의 시그니처 (<code>throws</code>, <code>rethrows</code>) 는 <a href="../004-functions/414-throws"><code>throws</code> 시그니처</a> 에서 정의합니다. 본 문서는 식과 문장 수준의 제어 흐름을 다룹니다.</p>
+<h2 id="3141-throw-에러-발생"><a class="anchor" tabindex="-1" href="#3141-throw-에러-발생" aria-hidden="true">#</a>3.14.1. <code>throw</code>: 에러 발생</h2>
+<pre><code class="language-rok"><span class="k">throw</span> err;
+</code></pre>
+<p><code>throw</code> 키워드 뒤에 임의의 식이 따라오는 문장이며, 그 식의 결과 값이 에러 값으로 던져집니다. 던져진 에러는 그 문장을 둘러싼 가장 가까운 <code>catch</code> 식이 처리하고, 처리되지 않으면 둘러싼 함수의 에러 결과가 됩니다. 이때 둘러싼 함수의 <code>throws</code> 시그니처가 그 에러 타입을 받아야 합니다 (<a href="../004-functions/414-throws#4145-throws-와-본체의-일치">4.14.5</a>).</p>
+<p><code>throw</code> 문 뒤로는 흐름이 이어지지 않으므로, <code>throw</code> 문으로 끝나는 블록은 divergent 입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="k">if</span> cond { <span class="n">42i32</span> } <span class="k">else</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">"not allowed"</span> }; };
+<span class="c">// x: i32 (else 분기 divergent)</span>
+</code></pre>
+<h2 id="3142-try-호출-지점-표시"><a class="anchor" tabindex="-1" href="#3142-try-호출-지점-표시" aria-hidden="true">#</a>3.14.2. <code>try</code>: 호출 지점 표시</h2>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="k">try</span> parse(s);
+</code></pre>
+<p><code>try</code> 는 접두 식 연산자입니다. throwing 함수 (<code>throws</code> 시그니처를 가진 함수) 의 호출은 반드시 <code>try</code> 가 덮는 식 안에 있어야 하며, 그렇지 않으면 컴파일 에러가 발생합니다. 이 규칙 덕분에 에러가 흐를 수 있는 지점이 코드에 모두 드러납니다.</p>
+<p><code>try e</code> 의 값과 타입은 <code>e</code> 의 값과 타입 그대로입니다. <code>e</code> 안의 throwing 호출이 에러를 내면, 그 에러는 가장 가까운 <code>catch</code> 가 처리하며, <code>catch</code> 가 없거나 매칭되지 않으면 둘러싼 함수로 전파됩니다.</p>
+<h3 id="덮는-범위"><a class="anchor" tabindex="-1" href="#덮는-범위" aria-hidden="true">#</a>덮는 범위</h3>
+<p><code>try</code> 는 그 오른쪽 식 전체를 덮습니다. 하나의 <code>try</code> 로 여러 호출을 함께 표시할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">try</span> a(b());                 <span class="c">// a, b 모두 덮음</span>
+<span class="k">try</span> f().g().h();            <span class="c">// 체인 전체를 덮음</span>
+<span class="k">try</span> {                       <span class="c">// 블록도 식이므로 블록 안의 호출을 모두 덮음</span>
+    <span class="k">let</span> cfg = load(path);
+    apply(cfg);
+};
+</code></pre>
+<p><code>try</code> 의 피연산자는 오른쪽으로 식이 끝나는 곳까지 이어지며, <code>catch</code> / <code>finally</code> 절, 문장 종결자 <code>;</code>, 닫는 괄호, 콤마 앞에서 멈춥니다. 따라서 <code>try a + b()</code> 는 <code>try (a + b())</code> 이고, <code>try parse(s) catch _ { 0 }</code> 의 <code>catch</code> 는 <code>try parse(s)</code> 전체에 붙습니다. 정확한 결합 규칙은 <a href="302-precedence-and-associativity">우선순위와 결합성</a> 에서 정의합니다.</p>
+<p><code>try</code> 가 이항 연산자의 오른쪽 피연산자나 함수 인자 자리에 오면 그 피연산자만 덮습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> total = base + <span class="k">try</span> fetch_extra();
+log(<span class="k">try</span> describe(item));
+</code></pre>
+<h3 id="await-와-함께"><a class="anchor" tabindex="-1" href="#await-와-함께" aria-hidden="true">#</a><code>await</code> 와 함께</h3>
+<p><code>async</code> throwing 함수의 에러는 <code>await</code> 지점에서 전달되므로, <code>await</code> 식을 <code>try</code> 로 덮습니다 (<a href="../004-functions/414-throws#41410-throws-가-합-타입-시그니처에-미치는-영향">4.14.10</a>). 생성자의 에러도 같은 방식으로 <code>next</code> 지점에서 받습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> data = <span class="k">try</span> <span class="k">await</span> fetch(url);
+</code></pre>
+<h2 id="3143-try-와-try"><a class="anchor" tabindex="-1" href="#3143-try-와-try" aria-hidden="true">#</a>3.14.3. <code>try?</code> 와 <code>try!</code></h2>
+<p><code>try</code> 의 두 변형은 에러를 둘러싼 함수로 전파하지 않고 그 자리에서 다른 형태로 바꿉니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th><code>e: T</code> 일 때의 결과 타입</th><th>에러가 나면</th></tr></thead>
+<tbody>
+<tr><td><code>try e</code></td><td><code>T</code></td><td>가장 가까운 <code>catch</code> 또는 전파</td></tr>
+<tr><td><code>try? e</code></td><td><code>T | none</code></td><td>에러를 버리고 <code>none</code></td></tr>
+<tr><td><code>try! e</code></td><td><code>T</code></td><td>panic (3.14.8)</td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="k">let</span> port = (<span class="k">try</span>? env::var(<span class="s">"PORT"</span>)) ?? <span class="s">"8080"</span>;
+<span class="k">let</span> cfg = <span class="k">try</span>! load_builtin_config();      <span class="c">// 실패하면 프로그램 버그</span>
+</code></pre>
+<p><code>try?</code> / <code>try!</code> 의 <code>?</code> / <code>!</code> 는 <code>try</code> 바로 뒤에 붙어야 합니다. <code>try !x</code> 는 <code>try (!x)</code> 입니다. <code>try?</code> 와 <code>try!</code> 는 에러를 전파하지 않으므로, 둘러싼 함수가 <code>throws</code> 일 필요가 없습니다. 덮는 범위는 <code>try</code> 와 같습니다. <code>try?</code> 의 결과에 <code>??</code> 를 이어 쓰려면 위 예처럼 괄호로 범위를 닫습니다.</p>
+<h2 id="3144-catch-후위-처리-식"><a class="anchor" tabindex="-1" href="#3144-catch-후위-처리-식" aria-hidden="true">#</a>3.14.4. <code>catch</code>: 후위 처리 식</h2>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="k">try</span> parse(s) <span class="k">catch</span> e: <span class="t">ParseError</span> { <span class="n">0</span> } <span class="k">catch</span> _ { -<span class="n">1</span> };
+</code></pre>
+<p><code>catch</code> 절은 왼쪽 식에 붙는 후위 절입니다. 왼쪽 식을 평가하는 도중 에러가 나오면 <code>catch</code> 절을 위에서 아래로 검사하고, 처음 매칭되는 절의 블록을 평가합니다. 왼쪽 식이 정상적으로 끝나면 <code>catch</code> 블록은 실행되지 않습니다. 왼쪽 식에서 나오는 에러는 <code>try</code> 로 표시한 throwing 호출과 <code>throw</code> 문이 만든 것입니다.</p>
+<p>어느 절도 매칭되지 않으면 에러는 다시 전파되며, 이때 둘러싼 함수가 그 에러 타입을 <code>throws</code> 해야 합니다.</p>
+<h3 id="블록-형태"><a class="anchor" tabindex="-1" href="#블록-형태" aria-hidden="true">#</a>블록 형태</h3>
+<p><code>try</code> 가 블록을 덮고 <code>catch</code> / <code>finally</code> 가 그 식에 붙는 형태도 같은 규칙으로 해석됩니다.</p>
+<pre><code class="language-rok"><span class="k">try</span> {
+    body
+} <span class="k">catch</span> e {
+    handler
+}
+</code></pre>
+<h3 id="패턴과-타입-매칭"><a class="anchor" tabindex="-1" href="#패턴과-타입-매칭" aria-hidden="true">#</a>패턴과 타입 매칭</h3>
+<pre><code class="language-rok"><span class="k">try</span> fetch(url)
+<span class="k">catch</span> e: <span class="t">TimeoutError</span> { retry() }
+<span class="k">catch</span> <span class="t">HttpError</span> { code, msg } { fail(code, msg) }
+<span class="k">catch</span> e: <span class="k">any</span> <span class="t">Error</span> { log(<span class="s">f"{</span>e<span class="s">}"</span>); fallback() }
+</code></pre>
+<p><code>catch</code> 뒤에는 <a href="311-patterns">패턴</a> 의 모든 패턴 형태를 쓸 수 있습니다. <code>e: TimeoutError</code> 는 타입 검사 패턴이며, 매칭된 분기 안에서 <code>e</code> 는 그 타입으로 좁혀집니다. <code>catch e: A | B</code> 는 잡은 에러를 그 합 타입 (에러 합 타입의 부분) <code>A | B</code> 로 바인딩합니다. untyped <code>throws</code> 의 에러는 <a href="../002-types/202-any-slot"><code>any Error</code></a> 값이므로, 모든 에러를 한 이름으로 받으려면 <code>catch e: any Error</code> 또는 <code>catch e</code> 를 씁니다. 트레잇 이름을 그대로 쓴 <code>catch e: Error</code> 는 <a href="../002-types/212-trait-as-type-banned">트레잇-as-타입 금지</a> 에 따라 컴파일 에러입니다.</p>
+<p>패턴을 생략한 <code>catch { ... }</code> 는 <code>catch _ { ... }</code> 와 같습니다.</p>
+<h3 id="완전성"><a class="anchor" tabindex="-1" href="#완전성" aria-hidden="true">#</a>완전성</h3>
+<p>왼쪽 식이 던질 수 있는 에러 타입을 모두 덮는 <code>catch</code> 절이 있으면, 그 <code>catch</code> 식은 더 이상 에러를 던지지 않는 식이 됩니다. typed <code>throws (A | B)</code> 의 호출이라면 <code>A</code> 와 <code>B</code> 를 모두 덮으면 되고, untyped <code>throws</code> 라면 <code>catch e</code>, <code>catch _</code>, <code>catch e: any Error</code> 처럼 모든 값을 받는 절이 있어야 합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> parse_or_zero(s: <span class="t">str</span>) -&gt; <span class="t">i32</span> {          <span class="c">// non-throwing</span>
+    <span class="k">try</span> parse(s) <span class="k">catch</span> _ { <span class="n">0</span> }             <span class="c">// 모든 에러를 덮음</span>
+}
+</code></pre>
+<h3 id="도달하지-않는-try-와-catch-경고"><a class="anchor" tabindex="-1" href="#도달하지-않는-try-와-catch-경고" aria-hidden="true">#</a>도달하지 않는 <code>try</code> 와 <code>catch</code> 경고</h3>
+<p>다음 경우 컴파일러는 경고를 냅니다.</p>
+<ul>
+<li>throwing 호출을 하나도 덮지 않는 <code>try</code>
+</li>
+<li>어떤 에러도 도달하지 않는 <code>catch</code> 절이나 분기
+</li>
+</ul>
+<p>경고가 나는 절도 타입 검사는 그대로 받습니다.</p>
+<h2 id="3145-finally"><a class="anchor" tabindex="-1" href="#3145-finally" aria-hidden="true">#</a>3.14.5. <code>finally</code></h2>
+<pre><code class="language-rok"><span class="k">try</span> {
+    body
+} <span class="k">finally</span> {
+    cleanup
+}
+</code></pre>
+<p>또는 다음과 같이 <code>catch</code> 와 함께 쓸 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">try</span> {
+    body
+} <span class="k">catch</span> e: <span class="t">IOError</span> {
+    handler
+} <span class="k">finally</span> {
+    cleanup
+}
+</code></pre>
+<p><code>finally</code> 블록은 왼쪽 식을 벗어나는 모든 경우에 실행됩니다. 정상 종료, <code>catch</code> 처리, 처리되지 않은 에러의 전파, 그리고 <code>return</code> / <code>break</code> / <code>continue</code> 로 빠져나가는 경우가 모두 포함됩니다. 그래서 자원 해제, 락 해제, 임시 상태 복원 같은 작업에 활용하기 좋습니다. <code>catch</code> 블록이 새 에러를 던지거나 <code>finally</code> 블록 안에서 에러가 던져지면, 새 에러가 우선합니다.</p>
+<p>panic 과 fatal 에러 (3.14.8) 는 프로세스를 종료하므로 <code>finally</code> 를 실행하지 않습니다.</p>
+<h2 id="3146-식의-값과-타입"><a class="anchor" tabindex="-1" href="#3146-식의-값과-타입" aria-hidden="true">#</a>3.14.6. 식의 값과 타입</h2>
+<p><code>try</code>, <code>catch</code>, <code>finally</code> 는 모두 식입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="k">try</span> parse(input) <span class="k">catch</span> _ { default };
+</code></pre>
+<p><code>catch</code> 식의 값은 왼쪽 식이 정상 종료하면 그 값이고, 에러를 잡으면 해당 핸들러 블록의 값입니다. 왼쪽 식과 모든 핸들러 블록의 타입은 같아야 하며 (<a href="./">표현식 개요</a> 의 분기 결과 규칙), 핸들러 블록이 <code>throw</code> 나 <code>return</code> 으로 끝나 divergent 이면 그 블록은 타입 검사에서 빠집니다. <code>finally</code> 블록은 값을 만들지 않으며, 식의 결과에도 영향을 주지 않습니다.</p>
+<h2 id="3147-던지는-값과-함수-시그니처"><a class="anchor" tabindex="-1" href="#3147-던지는-값과-함수-시그니처" aria-hidden="true">#</a>3.14.7. 던지는 값과 함수 시그니처</h2>
+<p><code>throw err</code> 의 <code>err</code> 는 임의의 식입니다. typed <code>throws (E)</code> 함수에서는 <code>E</code> 의 항에 해당하는 값을 던질 수 있고, untyped <code>throws</code> 함수는 <code>throws (any Error)</code> 의 축약이므로 표준 라이브러리의 <code>Error</code> 트레잇을 구현하는 값을 던질 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> { ... }              <span class="c">// untyped, any Error</span>
+<span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TypeError</span>) -&gt; <span class="t">i32</span> { ... }  <span class="c">// 단일 타입</span>
+<span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">A</span> | <span class="t">B</span> | <span class="t">C</span>) -&gt; <span class="t">i32</span> { ... }  <span class="c">// 합 타입</span>
+</code></pre>
+<p>시그니처에 <code>throws</code> 가 없는 함수 밖으로는 에러가 나갈 수 없습니다. <code>throws (T)</code> 의 <code>T</code> 가 합 타입인 경우, 그 함수가 던질 수 있는 에러의 닫힌 집합이 되며, 호출자가 <code>catch</code> 를 작성하고 완전성을 검사하는 데 쓰입니다.</p>
+<p>자세한 함수 시그니처와 <code>throws</code> 의 의미는 <a href="../004-functions/414-throws"><code>throws</code> 시그니처</a> 에서 정의합니다.</p>
+<h2 id="3148-panic-과-fatal-에러"><a class="anchor" tabindex="-1" href="#3148-panic-과-fatal-에러" aria-hidden="true">#</a>3.14.8. panic 과 fatal 에러</h2>
+<p><code>throws</code> 의 에러와 달리, 다음은 값으로 전달되지 않으며 <code>catch</code> 로 잡을 수 없습니다.</p>
+<ul>
+<li>panic. 표준 라이브러리의 <code>panic_fn</code> 호출, <code>try!</code> 의 실패, 0 으로 나누기, 정수 overflow, 경계 검사 실패 등이 여기에 속합니다.
+</li>
+<li>Fatal. <code>StackOverflowError</code>, <code>OutOfMemoryError</code>, <code>InternalError</code> 처럼 계속 실행할 수 없는 상태입니다.
+</li>
+</ul>
+<p>두 경우 모두 런타임은 메시지를 표준 에러 (stderr) 에 출력하고 프로세스를 종료 코드 <code>101</code> 로 종료합니다. 어느 상황이 panic 이나 fatal 에 해당하는지의 정확한 목록은 표준 라이브러리에서 정의합니다.</p>
+<p>실패한 <code>try!</code> 는 <code>try!</code> 의 위치에서 panic 합니다. 메시지는 <code>main</code> 밖으로 나간 에러와 같은 방식으로 에러를 보여 주고 (<a href="../004-functions/416-entry-point">4.16.4</a>: <code>Display</code>, 없으면 <code>Debug</code>, 없으면 타입 이름), 이어서 그 에러가 발생한 위치를 보여 줍니다.</p>
+<pre><code class="language-text">thread 'main' panicked at src/main.rok:12:13:
+try! failed: no such key `port`
+  raised at src/main.rok:12:18
+</code></pre>
+<h2 id="3149-평가-순서"><a class="anchor" tabindex="-1" href="#3149-평가-순서" aria-hidden="true">#</a>3.14.9. 평가 순서</h2>
+<p><code>catch</code> 식과 <code>finally</code> 의 평가는 다음 순서로 이루어집니다.</p>
+<ol>
+<li>왼쪽 식을 평가합니다.
+</li>
+<li>왼쪽 식에서 에러가 나오면 매칭하는 <code>catch</code> 절을 찾아 그 블록을 평가합니다.
+</li>
+<li><code>finally</code> 블록이 있으면 왼쪽 식을 어떻게 벗어나든 평가합니다.
+</li>
+<li>매칭하는 <code>catch</code> 절이 없으면 <code>finally</code> 를 실행한 뒤 에러를 바깥으로 전파합니다.
+</li>
+</ol>
+<p><code>throw</code> 문이 평가될 때는 그 식의 평가가 먼저 끝난 뒤에 에러가 던져집니다.</p>
+<h2 id="31410--연산자---none-조기-반환"><a class="anchor" tabindex="-1" href="#31410--연산자---none-조기-반환" aria-hidden="true">#</a>3.14.10. <code>?</code> 연산자 - <code>none</code> 조기 반환</h2>
+<p><code>?</code> 는 <code>T | none</code> 값을 풀어서 쓰고, <code>none</code> 이면 둘러싼 함수에서 곧바로 <code>none</code> 을 반환하는 후위 단항 연산자입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first_word_len(text: <span class="t">str</span> | <span class="k">none</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span> {
+    <span class="k">let</span> t = text?;                      <span class="c">// none → 즉시 return none</span>
+    <span class="k">let</span> w = t.split(<span class="s">" "</span>).next()?;
+    w.len()
+}
+</code></pre>
+<p><code>e?</code> 에서 <code>e: T | none</code> 이면 식의 값은 <code>T</code> 입니다. <code>e</code> 가 <code>none</code> 이면 둘러싼 함수가 <code>return none</code> 합니다. 따라서 둘러싼 함수의 반환 타입이 <code>none</code> 항을 포함해야 하며 (<code>_ | none</code>), 그렇지 않으면 컴파일 에러가 발생합니다. 후위 위치라 메서드 체인의 자연스러운 끝에 둘 수 있습니다.</p>
+<h3 id="desugar-규칙"><a class="anchor" tabindex="-1" href="#desugar-규칙" aria-hidden="true">#</a>desugar 규칙</h3>
+<p><code>?</code> 는 트레잇을 거치지 않고 컴파일러가 직접 풀어 씁니다.</p>
+<pre><code>expr?
+</code></pre>
+<p>위 식은 다음 형태로 풀어집니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> expr {
+    <span class="k">none</span> =&gt; <span class="k">return</span> <span class="k">none</span>,
+    v =&gt; v,
+}
+</code></pre>
+<h3 id="적용-범위"><a class="anchor" tabindex="-1" href="#적용-범위" aria-hidden="true">#</a>적용 범위</h3>
+<p><code>?</code> 는 <code>T | none</code> 전용입니다. 에러를 전파하는 수단이 아니며, 표준 라이브러리의 <code>Result</code> 값이나 throwing 호출에는 쓸 수 없습니다. 에러 전파는 <code>throws</code> 시그니처와 <code>try</code> 로 표시합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> load() -&gt; <span class="t">Result</span>&lt;<span class="t">Config</span>, <span class="t">IOError</span>&gt; {
+    <span class="k">let</span> raw = read_result(path)?;     <span class="c">// ERROR - `?` 는 `T | none` 전용입니다.</span>
+                                      <span class="c">//   에러 전파는 `throws` 와 `try` 를 쓰세요.</span>
+    ...
+}
+</code></pre>
+<p>closure 본체 안의 <code>?</code> 는 closure 의 반환 타입에 대해 동작하며, 외부 함수의 반환 타입과는 무관합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> lens = users.map(|u| -&gt; <span class="t">usize</span> | <span class="k">none</span> { <span class="k">let</span> nick = u.nickname?; nick.len() });
+</code></pre>
+<p><code>none</code> 을 대체값으로 메우거나 멤버 접근을 통과시키는 연산은 <a href="308-optional-chaining-and-coalescing">옵셔널 체이닝과 합체</a> 의 <code>?.</code> 와 <code>??</code> 를 사용합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/314-error-control-flow.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="313-loop-expressions"><small>Previous</small>3.13. 루프 표현식</a><a class="next" href="315-destructuring"><small>Next</small>3.15. 분해 대입 (destructuring)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

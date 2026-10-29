@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.8. stream - async iterator - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::stream 모듈은 async 단계 진행 트레잇 Stream (원소 타입은 associated type Item) 을 정의합니다. 2.7 iter 의 Iterator 가 sync 인 반면, Stream 은 async 이며, 각 next() 호출이 await 가능 하다...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/208-stream.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.8. stream - async iterator - rok docs">
+<meta property="og:description" content="rok::core::stream 모듈은 async 단계 진행 트레잇 Stream (원소 타입은 associated type Item) 을 정의합니다. 2.7 iter 의 Iterator 가 sync 인 반면, Stream 은 async 이며, 각 next() 호출이 await 가능 하다...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/208-stream.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/208-stream.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/208-stream.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li class="cur"><a aria-current="page" href="208-stream">2.8. stream - async iterator</a><ul class="toc"><li><a href="#281-stream---async-단계-진행">2.8.1. Stream - async 단계 진행</a></li><li><a href="#282-for-await-desugar">2.8.2. for await desugar</a></li><li><a href="#283-intostream---async-iterable">2.8.3. IntoStream - async iterable</a></li><li><a href="#284-async-yield---stream-생성">2.8.4. async yield - Stream 생성</a></li><li><a href="#285-stream-어댑터">2.8.5. Stream 어댑터</a></li><li><a href="#286-fromstreamt---collect-의-dispatch">2.8.6. FromStream&lt;T&gt; - collect 의 dispatch</a></li><li><a href="#287-channel--stream">2.8.7. Channel ↔ Stream</a></li><li><a href="#288-merge--zip-등">2.8.8. merge / zip 등</a></li><li><a href="#288a-asyncstreamt--tryasyncstreamt-e---비동기-스트림의-값">2.8.8a. AsyncStream&lt;T&gt; / TryAsyncStream&lt;T, E&gt; - 비동기 스트림의 값</a></li><li><a href="#289-모듈-매핑">2.8.9. 모듈 매핑</a></li><li><a href="#2810-stream-lang-slot-여부">2.8.10. Stream lang slot 여부</a></li></ul></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="28-stream---async-iterator 28-stream---async-iterator 281-stream---async-단계-진행 281-stream---async-stepping 282-for-await-desugar 282-for-await-desugaring 283-intostream---async-iterable 283-intostream---async-iterable 284-async-yield---stream-생성 284-async-yield---creating-a-stream 285-stream-어댑터 285-stream-adapters 286-fromstreamt---collect-의-dispatch 286-fromstreamt---dispatch-of-collect 287-channel--stream 287-channel--stream 288-merge--zip-등 288-merge--zip-etc 288a-asyncstreamt--tryasyncstreamt-e---비동기-스트림의-값 288a-asyncstreamt--tryasyncstreamt-e---the-value-of-an-async-stream 289-모듈-매핑 289-module-mapping 2810-stream-lang-slot-여부 2810-whether-stream-has-a-lang-slot"><a href="../../../../spec/refs-standard-libraries/200-core/208-stream" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="28-stream---async-iterator"><a class="anchor" tabindex="-1" href="#28-stream---async-iterator" aria-hidden="true">#</a>2.8. stream - async iterator</h1>
+<p><code>rok::core::stream</code> 모듈은 async 단계 진행 트레잇 <code>Stream</code> (원소 타입은 associated type <code>Item</code>) 을 정의합니다. <a href="207-iter">2.7 iter</a> 의 <code>Iterator</code> 가 <strong>sync</strong> 인 반면, <code>Stream</code> 은 <strong>async</strong> 이며, 각 <code>next()</code> 호출이 <strong>await 가능</strong> 하다는 점에서 차이가 납니다.</p>
+<p>또한 이 모듈은 <code>for await x in stream</code> 의 desugar 권위를 가지며, 해당 구문은 이 장에서 정의하는 트레잇으로 dispatch 됩니다.</p>
+<h2 id="281-stream---async-단계-진행"><a class="anchor" tabindex="-1" href="#281-stream---async-단계-진행" aria-hidden="true">#</a>2.8.1. <code>Stream</code> - async 단계 진행</h2>
+<p>먼저 트레잇 정의는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Stream</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">Item</span> | <span class="k">none</span>&gt;;
+}
+</code></pre>
+<p>이는 <code>Iterator::next</code> 의 async 버전에 해당하며, 반환값의 의미는 다음과 같이 해석됩니다. <code>Poll::Ready(v)</code> (<code>v: Item</code>) 는 다음 원소 <code>v</code> 가 준비되었음을 뜻하고, <code>Poll::Ready(none)</code> 은 stream 의 끝을 의미하며, <code>Poll::Pending</code> 은 아직 값이 준비되지 않았음을 나타내어 Waker 가 깨우면 다시 poll 하게 됩니다.</p>
+<p>요컨대 <code>Iterator</code> 의 <code>next() -&gt; T | none</code> 과 의미는 같지만, <strong>await 가능</strong> 하다는 점이 결정적인 차이입니다.</p>
+<h2 id="282-for-await-desugar"><a class="anchor" tabindex="-1" href="#282-for-await-desugar" aria-hidden="true">#</a>2.8.2. <code>for await</code> desugar</h2>
+<p>다음과 같은 구문이 있을 때를 살펴봅니다.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> x <span class="k">in</span> stream { body }
+</code></pre>
+<p>이는 개념적으로 다음과 같이 desugar 됩니다.</p>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    <span class="k">match</span> <span class="k">await</span> stream.poll_next(<span class="k">ref</span> <span class="t">CURRENT_CONTEXT</span>) {
+        v: <span class="t">Item</span> =&gt; { <span class="k">let</span> x = v; body; }
+        <span class="k">none</span>    =&gt; <span class="k">break</span>,
+    }
+}
+</code></pre>
+<p>이 구조는 <a href="207-iter">2.7.2 for desugar</a> 의 sync 버전과 동형이며, 단지 <code>await</code> 만 추가된 형태입니다.</p>
+<h2 id="283-intostream---async-iterable"><a class="anchor" tabindex="-1" href="#283-intostream---async-iterable" aria-hidden="true">#</a>2.8.3. <code>IntoStream</code> - async iterable</h2>
+<p>이어서 async iterable 을 표현하는 트레잇을 살펴봅니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">IntoStream</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">type</span> <span class="t">IntoStream</span>: <span class="t">Stream</span>&lt;<span class="t">Item</span> = <span class="t">Item</span>&gt;;
+
+    <span class="k">fn</span> into_stream(<span class="k">self</span>) -&gt; <span class="t">IntoStream</span>;
+}
+
+<span class="c">// 모든 stream 은 자기 자신의 IntoStream (IntoIterator 처럼, 2.7)</span>
+<span class="k">impl</span>&lt;<span class="t">S</span>: <span class="t">Stream</span>&gt; <span class="t">IntoStream</span> <span class="k">for</span> <span class="t">S</span> {
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">S</span>::<span class="t">Item</span>;
+    <span class="k">type</span> <span class="t">IntoStream</span> = <span class="t">S</span>;
+    <span class="k">fn</span> into_stream(<span class="k">self</span>) -&gt; <span class="t">S</span> { <span class="k">self</span> }
+}
+</code></pre>
+<p><code>for await</code> 의 시작 자리에서는 <code>IntoStream::into_stream</code> 을 호출한 뒤 <code>Stream::poll_next</code> 를 반복합니다. 구체적인 변환 형태는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> event <span class="k">in</span> event_source { ... }
+<span class="c">// = let __s = event_source.into_stream();</span>
+<span class="c">//   loop {</span>
+<span class="c">//       match await __s.poll_next(ref CTX) {</span>
+<span class="c">//           e: Item =&gt; { let event = e; body; }</span>
+<span class="c">//           none    =&gt; break,</span>
+<span class="c">//       }</span>
+<span class="c">//   }</span>
+</code></pre>
+<h2 id="284-async-yield---stream-생성"><a class="anchor" tabindex="-1" href="#284-async-yield---stream-생성" aria-hidden="true">#</a>2.8.4. <code>async yield</code> - Stream 생성</h2>
+<p>Stream 을 직접 생성하는 가장 자연스러운 방법은 <code>async yield</code> 함수를 작성하는 것입니다.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> ticks(interval: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> {
+    <span class="k">loop</span> {
+        <span class="k">await</span> task::sleep(interval);
+        <span class="k">yield</span> <span class="t">Instant</span>::now();
+    }
+}
+</code></pre>
+<p><code>-&gt; Instant</code> 는 원소 타입이며, 호출 결과는 <code>AsyncStream&lt;Instant&gt;</code> (<code>Stream&lt;Item = Instant&gt;</code> 구현) 입니다 (<a href="../../refs-lang/004-functions/401-function-declaration#코루틴-함수의-결과-타입">refs-lang 4.1.11</a>). 컴파일러는 이 함수를 상태 기계로 바꿉니다 (<a href="../../refs-lang/007-runtime/708-coroutine">refs-lang 7.8</a>). 이때 <code>yield</code> 자리는 <strong>suspend point</strong> 이며, <code>await</code> 자리 역시 <strong>suspend point</strong> 가 됩니다.</p>
+<p>자세한 syntax 권위는 <a href="../../refs-lang/004-functions/413-stream">refs-lang 4.13 stream (<code>async yield</code>)</a> 을 따릅니다.</p>
+<h2 id="285-stream-어댑터"><a class="anchor" tabindex="-1" href="#285-stream-어댑터" aria-hidden="true">#</a>2.8.5. Stream 어댑터</h2>
+<p><code>Iterator</code> 와 비슷하게 다양한 어댑터가 <code>Stream</code> 트레잇의 기본 메서드로 제공됩니다. 그래서 <code>Stream</code> 을 구현한 모든 타입 (<code>AsyncStream&lt;T&gt;</code>, <code>Receiver&lt;T&gt;</code>, 사용자 타입) 이 같은 어댑터를 가집니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Stream</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">Item</span> | <span class="k">none</span>&gt;;
+
+    <span class="c">// 기본 메서드</span>
+    <span class="k">fn</span> map&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">Item</span>) -&gt; <span class="t">U</span>) -&gt; <span class="t">Map</span>&lt;<span class="k">Self</span>, <span class="t">U</span>&gt;;
+    <span class="k">fn</span> filter(<span class="k">self</span>, pred: <span class="k">fn</span>(<span class="t">Item</span>) -&gt; <span class="t">bool</span>) -&gt; <span class="t">Filter</span>&lt;<span class="k">Self</span>&gt;;
+    <span class="k">fn</span> take(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">Take</span>&lt;<span class="k">Self</span>&gt;;
+    <span class="k">fn</span> skip(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">Skip</span>&lt;<span class="k">Self</span>&gt;;
+
+    <span class="k">async</span> <span class="k">fn</span> collect&lt;<span class="t">C</span>: <span class="t">FromStream</span>&lt;<span class="t">Item</span>&gt; = <span class="t">List</span>&lt;<span class="t">Item</span>&gt;&gt;(<span class="k">self</span>) -&gt; <span class="t">C</span>;   <span class="c">// 슬롯이 정하지 않으면 List&lt;Item&gt;</span>
+    <span class="k">async</span> <span class="k">fn</span> for_each(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">Item</span>));
+
+    <span class="c">// async-specific</span>
+    <span class="k">fn</span> buffer_unordered(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">BufferUnordered</span>&lt;<span class="k">Self</span>&gt; <span class="k">where</span> <span class="t">Item</span>: <span class="t">Future</span>;
+    <span class="k">fn</span> buffered(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">Buffered</span>&lt;<span class="k">Self</span>&gt; <span class="k">where</span> <span class="t">Item</span>: <span class="t">Future</span>;
+    <span class="k">fn</span> throttle(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">Throttle</span>&lt;<span class="k">Self</span>&gt;;
+}
+</code></pre>
+<p>반환 타입은 <a href="207-iter">2.7 iter</a> 의 어댑터처럼 이름 있는 구체 struct 이며, <code>rok::core::stream</code> 모듈에 있습니다 (<code>stream::Map&lt;S, U&gt;</code>, <code>stream::Filter&lt;S&gt;</code>, ...). <code>Map&lt;Self, U&gt;</code> 는 <code>Stream&lt;Item = U&gt;</code> 를, 나머지는 <code>Stream&lt;Item = Item&gt;</code> 을 구현합니다.</p>
+<div class="callout note"><p class="callout-title">참고</p>
+<p><code>stream::Map</code> / <code>Filter</code> / <code>Take</code> / <code>Skip</code> / <code>Zip</code> 은 <code>iter::Map</code> 등과 이름이 같습니다. 묵시 <code>use rok::core::**;</code> 아래에서 맨 이름 <code>Map</code> 은 모호하므로 (<a href="../../refs-lang/005-modules/505-use">refs-lang 5.5.6</a>) 타입을 적어야 할 때는 <code>stream::Map</code> 처럼 경로를 쓰거나 명시 <code>use</code> 로 가져옵니다.</p>
+</div>
+<p>이 가운데 <code>buffer_unordered(n)</code> 와 <code>buffered(n)</code> 는 N개의 future 를 동시에 처리하는 concurrency control 수단으로 동작합니다.</p>
+<h2 id="286-fromstreamt---collect-의-dispatch"><a class="anchor" tabindex="-1" href="#286-fromstreamt---collect-의-dispatch" aria-hidden="true">#</a>2.8.6. <code>FromStream&lt;T&gt;</code> - <code>collect</code> 의 dispatch</h2>
+<p><code>collect</code> 의 dispatch 를 담당하는 트레잇은 <code>FromStream&lt;T&gt;</code> 입니다. <a href="207-iter">2.7 iter</a> 의 <code>FromIterator&lt;T&gt;</code> 에 대응하는 async 버전이며, 트레잇 시그니처도 같은 형태를 따르되 <code>from_stream</code> 이 await 가능한 형태로 동작합니다.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">FromStream</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">async</span> <span class="k">fn</span> from_stream&lt;<span class="t">S</span>: <span class="t">IntoStream</span>&lt;<span class="t">Item</span> = <span class="t">T</span>&gt;&gt;(stream: <span class="t">S</span>) -&gt; <span class="k">Self</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">FromStream</span>&lt;<span class="t">T</span>&gt; <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Hash</span>&gt; <span class="t">FromStream</span>&lt;<span class="t">T</span>&gt; <span class="k">for</span> <span class="t">Set</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span>, <span class="t">V</span>&gt; <span class="t">FromStream</span>&lt;(<span class="t">K</span>, <span class="t">V</span>)&gt; <span class="k">for</span> <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; { ... }
+</code></pre>
+<p><code>collect</code> 의 대상은 받는 슬롯이 정하며, 정하지 않으면 <code>List&lt;Item&gt;</code> 입니다.</p>
+<p><code>Stream::collect</code> 가 호출되면 대상 컬렉션의 <code>from_stream</code> 이 호출되며, stream 의 모든 원소가 await 후 누적되어 컬렉션을 만듭니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = <span class="k">await</span> (<span class="n">0</span>..).take(<span class="n">5</span>).map(|x| <span class="k">async</span> { x * <span class="n">2</span> }).buffered(<span class="n">3</span>).collect();
+<span class="c">//   = await List::from_stream(...)</span>
+</code></pre>
+<p><code>List</code>, <code>Dict</code>, <code>Set</code> 은 <code>FromIterator</code> 와 <code>FromStream</code> 을 함께 구현하여 sync / async 양쪽에서 같은 패턴을 따릅니다.</p>
+<h2 id="287-channel--stream"><a class="anchor" tabindex="-1" href="#287-channel--stream" aria-hidden="true">#</a>2.8.7. <code>Channel</code> ↔ <code>Stream</code></h2>
+<p><code>Receiver&lt;T&gt;</code> (channel) 는 <code>Stream&lt;Item = T&gt;</code> 를 구현하므로, 채널 수신을 그대로 stream 처럼 다룰 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">Event</span>&gt;();
+task::spawn(<span class="k">async</span> { tx.send(event1); tx.send(event2); });
+
+<span class="k">for</span> <span class="k">await</span> event <span class="k">in</span> rx {
+    handle(event);
+}
+</code></pre>
+<p>즉, <a href="217-channel">2.17 channel</a> 의 receiver 는 <strong>자동 stream</strong> 으로 취급되어 <code>for await</code> 와 호환됩니다.</p>
+<h2 id="288-merge--zip-등"><a class="anchor" tabindex="-1" href="#288-merge--zip-등" aria-hidden="true">#</a>2.8.8. <code>merge</code> / <code>zip</code> 등</h2>
+<p>여러 stream 을 결합하는 combinator 도 제공됩니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> merge&lt;<span class="t">S1</span>: <span class="t">Stream</span>, <span class="t">S2</span>: <span class="t">Stream</span>&gt;(a: <span class="t">S1</span>, b: <span class="t">S2</span>) -&gt; <span class="t">Merge</span>&lt;<span class="t">S1</span>, <span class="t">S2</span>&gt;;    <span class="c">// Stream&lt;Item = S1::Item | S2::Item&gt;</span>
+<span class="k">fn</span> zip&lt;<span class="t">S1</span>: <span class="t">Stream</span>, <span class="t">S2</span>: <span class="t">Stream</span>&gt;(a: <span class="t">S1</span>, b: <span class="t">S2</span>) -&gt; <span class="t">Zip</span>&lt;<span class="t">S1</span>, <span class="t">S2</span>&gt;;        <span class="c">// Stream&lt;Item = (S1::Item, S2::Item)&gt;</span>
+<span class="k">fn</span> select&lt;<span class="t">S1</span>: <span class="t">Stream</span>, <span class="t">S2</span>: <span class="t">Stream</span>&gt;(a: <span class="t">S1</span>, b: <span class="t">S2</span>) -&gt; <span class="t">Select</span>&lt;<span class="t">S1</span>, <span class="t">S2</span>&gt;;  <span class="c">// Stream&lt;Item = S1::Item | S2::Item&gt;, 먼저 준비된 쪽</span>
+</code></pre>
+<p>각 함수의 의미를 정리하면, <code>merge</code> 는 두 stream 의 union 을 만들고, <code>zip</code> 은 두 stream 을 pair 로 묶으며, <code>select</code> 는 race 식으로 먼저 준비되는 쪽을 취합니다.</p>
+<div class="callout note"><p class="callout-title">참고</p>
+<p><code>select</code> 는 <code>task::select</code> 와 이름이 같습니다. 묵시 <code>use rok::core::**;</code> 아래에서 맨 이름은 모호하므로 (<a href="../../refs-lang/005-modules/505-use#556-glob--재귀-glob-의-충돌">refs-lang 5.5.6</a>), <code>stream::select</code> 로 적거나 import 합니다.</p>
+</div>
+<h2 id="288a-asyncstreamt--tryasyncstreamt-e---비동기-스트림의-값"><a class="anchor" tabindex="-1" href="#288a-asyncstreamt--tryasyncstreamt-e---비동기-스트림의-값" aria-hidden="true">#</a>2.8.8a. <code>AsyncStream&lt;T&gt;</code> / <code>TryAsyncStream&lt;T, E&gt;</code> - 비동기 스트림의 값</h2>
+<p><code>async yield fn</code> 호출과 <code>async yield { .. }</code> 블록의 값입니다 (<a href="../../refs-lang/004-functions/401-function-declaration#코루틴-함수의-결과-타입">refs-lang 4.1.11</a>).</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">AsyncStream</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* 비공개 */</span> }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Stream</span> <span class="k">for</span> <span class="t">AsyncStream</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">T</span>;
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span> | <span class="k">none</span>&gt;;
+}
+
+<span class="k">struct</span> <span class="t">TryAsyncStream</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; { <span class="c">/* 비공개 */</span> }    <span class="c">// async yield fn .. throws (E)</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; <span class="t">TryAsyncStream</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; {
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span> | <span class="k">none</span>&gt;;
+}
+</code></pre>
+<p><code>AsyncStream&lt;T&gt;</code> 의 어댑터 (<code>map</code>, <code>filter</code>, <code>collect</code> 등) 는 <code>Stream</code> 의 기본 메서드입니다 (2.8.5). <code>TryAsyncStream</code> 은 <code>poll_next</code> 가 던지므로 <code>Stream</code> 을 구현하지 않으며 <code>try for await</code> 로 소비합니다. 비공개 필드는 사양으로 정하지 않습니다. 복사본은 같은 코루틴 frame 을 공유하므로 진행 위치도 공유합니다.</p>
+<h2 id="289-모듈-매핑"><a class="anchor" tabindex="-1" href="#289-모듈-매핑" aria-hidden="true">#</a>2.8.9. 모듈 매핑</h2>
+<p>각 항목이 자리 잡는 모듈은 다음 표에 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>모듈</th><th>형태</th></tr></thead>
+<tbody>
+<tr><td><code>Stream</code></td><td><code>rok::core::stream::stream</code></td><td>poll-based</td></tr>
+<tr><td><code>IntoStream</code></td><td><code>rok::core::stream::into_stream</code></td><td></td></tr>
+<tr><td><code>Receiver&lt;T&gt;</code></td><td><code>rok::core::channel::receiver</code></td><td><code>Stream&lt;Item = T&gt;</code> 구현</td></tr>
+<tr><td><code>Stream::map</code>/<code>filter</code>/<code>take</code></td><td><code>rok::core::stream::adapter</code></td><td>adapter struct (<code>Stream</code> 구현)</td></tr>
+<tr><td><code>merge</code>/<code>zip</code>/<code>select</code></td><td><code>rok::core::stream::combinator</code></td><td><code>Merge</code>/<code>Zip</code>/<code>Select</code> struct</td></tr>
+</tbody></table></div>
+<h2 id="2810-stream-lang-slot-여부"><a class="anchor" tabindex="-1" href="#2810-stream-lang-slot-여부" aria-hidden="true">#</a>2.8.10. <code>Stream</code> lang slot 여부</h2>
+<p>이 장에서는 <code>Stream::poll_next</code> 에 <code>#[lang(...)]</code> 을 부착하지 않으며, <code>Stream</code> 은 일반 트레잇으로 둡니다.</p>
+<p>그 이유는 다음과 같습니다. 우선 <code>for await</code> desugar 가 <strong>직접</strong> <code>Stream::poll_next</code> 를 호출하는 형태로 컴파일러에 hard-coded 되어 있어, lang slot 을 따로 두지 않고도 인식이 가능합니다. 또한 lang slot 은 다중 dispatch 진입점에 필요한 메커니즘인데, Stream 의 자리는 단일하므로 굳이 필요하지 않습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/208-stream.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="207-iter"><small>Previous</small>2.7. iter - 반복 트레잇</a><a class="next" href="209-collections"><small>Next</small>2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

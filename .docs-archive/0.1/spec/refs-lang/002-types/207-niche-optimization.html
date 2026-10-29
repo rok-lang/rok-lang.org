@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.7. Niche optimization - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A niche is a bit pattern that never occurs among a type's valid bit patterns. Storing a sum type's tag in such bit patterns removes the need for a separate tag ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/207-niche-optimization.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.7. Niche optimization - rok docs">
+<meta property="og:description" content="A niche is a bit pattern that never occurs among a type's valid bit patterns. Storing a sum type's tag in such bit patterns removes the need for a separate tag ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/207-niche-optimization.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/207-niche-optimization.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/207-niche-optimization.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">2. Type system overview</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. Sum types (A | B)</a></li><li class="cur"><a aria-current="page" href="207-niche-optimization">2.7. Niche optimization</a><ul class="toc"><li><a href="#271-motivation">2.7.1. Motivation</a></li><li><a href="#272-automatic-niches">2.7.2. Automatic niches</a></li><li><a href="#273-no-automatic-niche">2.7.3. No automatic niche</a></li><li><a href="#274-opt-in-niches-niche">2.7.4. Opt-in niches: #[niche(..)]</a></li><li><a href="#275-where-it-may-be-attached">2.7.5. Where it may be attached</a></li><li><a href="#276-standard-library-wrappers">2.7.6. Standard library wrappers</a></li></ul></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. Generics</a></li><li><a href="211-const-generics">2.11. const generics</a></li><li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="27-niche-optimization 27-niche-최적화 271-motivation 271-동기 272-automatic-niches 272-자동-niche 273-no-automatic-niche 273-자동-없음 274-opt-in-niches-niche 274-opt-in-niche-niche 275-where-it-may-be-attached 275-부착-가능한-위치 276-standard-library-wrappers 276-표준-라이브러리-wrapper"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/207-niche-optimization" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="27-niche-optimization"><a class="anchor" tabindex="-1" href="#27-niche-optimization" aria-hidden="true">#</a>2.7. Niche optimization</h1>
+<p>A niche is a bit pattern that never occurs among a type's valid bit patterns. Storing a sum type's tag in such bit patterns removes the need for a separate tag slot, producing a sum type with zero memory overhead.</p>
+<p>This optimization works because the memory representation of <a href="206-sum-types">sum types</a> is left to the compiler.</p>
+<h2 id="271-motivation"><a class="anchor" tabindex="-1" href="#271-motivation" aria-hidden="true">#</a>2.7.1. Motivation</h2>
+<pre><code class="language-rok"><span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>      <span class="c">// 64-bit pointer + none</span>
+</code></pre>
+<p>This type must be representable in 8 bytes rather than 16 (pointer 8 + tag 1 + padding 7). The pointer's <code>null</code> bit pattern (0x0000_0000_0000_0000) never occurs in a valid pointer, so that position can be used for <code>none</code>.</p>
+<p>This saving is central to memory efficiency in scientific and data code (inspired by Julia's isbits <code>union</code>).</p>
+<h2 id="272-automatic-niches"><a class="anchor" tabindex="-1" href="#272-automatic-niches" aria-hidden="true">#</a>2.7.2. Automatic niches</h2>
+<p>The bits of <code>none</code> are implementation-defined. A sum <code>T | none</code> consisting of one term plus <code>none</code> has the size of <code>T</code> if <code>T</code> has a niche, and <code>none</code> is represented by that niche value. Zero-filled storage reads as <code>none</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Niche value</th></tr></thead>
+<tbody>
+<tr><td><code>bool</code></td><td><code>2</code></td></tr>
+<tr><td><code>char</code> (compiler primitive)</td><td>surrogate <code>0xD800</code></td></tr>
+<tr><td>Field-less <code>enum</code>, <code>enum</code> with no GC references in payloads</td><td>first unused tag</td></tr>
+<tr><td><code>extern &quot;C&quot; fn(..) -&gt; R</code></td><td>null</td></tr>
+<tr><td><code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code> / <code>ManyPtr&lt;T&gt;</code></td><td>null (<code>#[niche(0)]</code>)</td></tr>
+<tr><td>Multi-field <code>struct</code> / tuple</td><td>niche of the first field that has one</td></tr>
+</tbody></table></div>
+<ul>
+<li>An <code>enum</code> whose payloads hold GC references has no niche.
+</li>
+<li>When the niche value is 0 (null pointer, <code>extern &quot;C&quot; fn</code>, <code>NonZero</code>), the term's bits are unchanged, so such a <code>T | none</code> passes across the C ABI as-is as a nullable value (<a href="../005-modules/509-extern-block#nullable-c-function-pointers-extern-c-fn---r--none">5.9.4</a>).
+</li>
+<li>A sum with two or more terms besides <code>none</code> has a tag.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; | <span class="k">none</span>           <span class="c">// 8 bytes, null is none</span>
+<span class="t">bool</span> | <span class="k">none</span>              <span class="c">// 1 byte</span>
+</code></pre>
+<h2 id="273-no-automatic-niche"><a class="anchor" tabindex="-1" href="#273-no-automatic-niche" aria-hidden="true">#</a>2.7.3. No automatic niche</h2>
+<p>Integers (<code>i8</code> .. <code>i64</code>, <code>u8</code> .. <code>u64</code>, <code>usize</code>, <code>isize</code>) and floating-point types (<code>f32</code>, <code>f64</code>) have no niche, since every bit pattern is valid. When a niche is needed, use a wrapper (2.7.6) or <code>#[niche]</code> (2.7.4).</p>
+<h2 id="274-opt-in-niches-niche"><a class="anchor" tabindex="-1" href="#274-opt-in-niches-niche" aria-hidden="true">#</a>2.7.4. Opt-in niches: <code>#[niche(..)]</code></h2>
+<pre><code>niche_attr ::= &quot;#&quot; &quot;[&quot; &quot;niche&quot; &quot;(&quot; niche_arg (&quot;,&quot; niche_arg)* &quot;,&quot;? &quot;)&quot; &quot;]&quot;
+niche_arg  ::= int_lit | &quot;-&quot; int_lit | const_path | range
+range      ::= niche_val &quot;..=&quot; niche_val | &quot;..&quot; niche_val | niche_val &quot;..&quot;
+const_path ::= &quot;MIN&quot; | &quot;MAX&quot; | &quot;NAN&quot; | &quot;INFINITY&quot; | &quot;NEG_INFINITY&quot; | type &quot;::&quot; const_name
+</code></pre>
+<pre><code class="language-rok"><span class="a">#[niche(0)]</span>
+<span class="k">struct</span> <span class="t">UserId</span>(<span class="t">u64</span>);
+
+<span class="a">#[niche(i32::MIN..=-1)]</span>
+<span class="k">struct</span> <span class="t">NonNegative</span>(<span class="t">i32</span>);
+
+<span class="a">#[niche(NAN, INFINITY, NEG_INFINITY)]</span>
+<span class="k">struct</span> <span class="t">Real</span> { value: <span class="t">f64</span>; }
+</code></pre>
+<ul>
+<li>Arguments are integers, <code>MIN</code> / <code>MAX</code> (<code>T::MIN</code>), <code>NAN</code> / <code>INFINITY</code> / <code>NEG_INFINITY</code> (<code>F::NAN</code>), ranges <code>a..=b</code> / <code>..b</code> / <code>a..</code>, and several of these. They are read against the instantiated field type.
+</li>
+<li>The listed values are a promise that they are not valid values of that type. The compiler does not check this; if such a value occurs, sum type discrimination goes wrong.
+</li>
+</ul>
+<h2 id="275-where-it-may-be-attached"><a class="anchor" tabindex="-1" href="#275-where-it-may-be-attached" aria-hidden="true">#</a>2.7.5. Where it may be attached</h2>
+<p><code>#[niche(..)]</code> is attached to a single-field <code>struct</code> (a tuple newtype or one named field). Attaching it to an <code>enum</code>, a <code>union</code>, or a multi-field <code>struct</code> is an error.</p>
+<h2 id="276-standard-library-wrappers"><a class="anchor" tabindex="-1" href="#276-standard-library-wrappers" aria-hidden="true">#</a>2.7.6. Standard library wrappers</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Name</th><th>Excluded values</th><th>Definition</th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt;</code></td><td>0 (integer T only)</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#222-nonzerot---zero-forbidden">stdlib 2.2.2</a></td></tr>
+<tr><td><code>NonNan&lt;F&gt;</code></td><td>NaN</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#223-nonnanf---nan-forbidden">stdlib 2.2.3</a></td></tr>
+<tr><td><code>Finite&lt;F&gt;</code></td><td>NaN, ±∞</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#224-finitef---nan-and--forbidden">stdlib 2.2.4</a></td></tr>
+<tr><td><code>Positive&lt;T&gt;</code></td><td>Negatives (0 included). Unsigned <code>T</code> has no niche (<code>Positive&lt;u32&gt; | none</code> is 8 bytes)</td><td><a href="../../refs-standard-libraries/200-core/202-non-zero#225-positivet---negative-values-forbidden">stdlib 2.2.5</a></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/207-niche-optimization.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="206-sum-types"><small>Previous</small>2.6. Sum types (A | B)</a><a class="next" href="208-trait"><small>Next</small>2.8. trait</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

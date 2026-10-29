@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.8. Trailing closures - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="When the last argument of a function or method call is a closure, the closure may be moved outside the parentheses. This form is called a trailing closure.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/408-trailing-closure.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.8. Trailing closures - rok docs">
+<meta property="og:description" content="When the last argument of a function or method call is a closure, the closure may be moved outside the parentheses. This form is called a trailing closure.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/408-trailing-closure.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/408-trailing-closure.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/408-trailing-closure.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li class="cur"><a aria-current="page" href="408-trailing-closure">4.8. Trailing closures</a><ul class="toc"><li><a href="#481-form">4.8.1. Form</a></li><li><a href="#482-free-choice-with-explicit-parentheses">4.8.2. Free choice with explicit parentheses</a></li><li><a href="#483-when-the-closure-is-not-the-last-argument">4.8.3. When the closure is not the last argument</a></li><li><a href="#484-calls-with-zero-arguments">4.8.4. Calls with zero arguments</a></li><li><a href="#485-nesting">4.8.5. Nesting</a></li><li><a href="#486-resolving-parser-ambiguity">4.8.6. Resolving parser ambiguity</a></li><li><a href="#487-a-lone--ordinary-block-vs-0-arg-closure">4.8.7. A lone {}: ordinary block vs 0-Arg closure</a></li><li><a href="#488-closures-in-statement-like-positions-such-as-par-for">4.8.8. Closures in statement-like positions such as par for</a></li><li><a href="#489-combining-with-named-arguments">4.8.9. Combining with named arguments</a></li><li><a href="#4810-summary">4.8.10. Summary</a></li></ul></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="48-trailing-closures 48-트레일링-클로저 481-form 481-형태 zero-parameter-shorthand--body- 0-매개변수-단축--body- one-or-more-parameters 1-매개변수 rules-for-the-parenthesis-free-form 괄호-없는-형태의-규칙 482-free-choice-with-explicit-parentheses 482-명시-괄호와의-자유-선택 483-when-the-closure-is-not-the-last-argument 483-함수-호출의-마지막-인자가-아닌-경우 484-calls-with-zero-arguments 484-인자-0-개-호출 485-nesting 485-중첩 486-resolving-parser-ambiguity 486-파서-모호성-처리 487-a-lone--ordinary-block-vs-0-arg-closure 487--단독의-일반-블록과-0-arg-클로저 488-closures-in-statement-like-positions-such-as-par-for 488-par-for-같은-문-자리의-클로저 489-combining-with-named-arguments 489-이름-있는-인자와의-결합 4810-summary 4810-정리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/408-trailing-closure" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="48-trailing-closures"><a class="anchor" tabindex="-1" href="#48-trailing-closures" aria-hidden="true">#</a>4.8. Trailing closures</h1>
+<p>When the last argument of a function or method call is a closure, the closure may be moved outside the parentheses. This form is called a trailing closure.</p>
+<h2 id="481-form"><a class="anchor" tabindex="-1" href="#481-form" aria-hidden="true">#</a>4.8.1. Form</h2>
+<p>The grammar of trailing closures is:</p>
+<pre><code>trailing_call   ::= primary &quot;(&quot; arg_list? &quot;)&quot; trailing_closure
+                  | primary trailing_closure                    // 0-arg call
+trailing_closure ::= (&quot;|&quot; closure_params? &quot;|&quot; (&quot;-&gt;&quot; type)?)? block
+</code></pre>
+<pre><code class="language-rok">function(args) |params| { body }
+function(args) { body }            <span class="c">// zero-parameter shorthand</span>
+</code></pre>
+<p>The closure directly follows the call parentheses, and the body is a block from <a href="../003-expressions/309-block-expressions">block expressions</a>.</p>
+<h3 id="zero-parameter-shorthand--body-"><a class="anchor" tabindex="-1" href="#zero-parameter-shorthand--body-" aria-hidden="true">#</a>Zero-Parameter shorthand: <code>{ body }</code></h3>
+<p>A closure without parameters may be shortened from <code>|| { body }</code> to <code>{ body }</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> h = thread::spawn { heavy_work() };
+<span class="c">// == thread::spawn(|| { heavy_work() })</span>
+
+with_lock(mutex) { critical_section() };
+</code></pre>
+<p>This shorthand has meaning only for a <code>{ ... }</code> directly after a function call. A <code>{ ... }</code> anywhere else is an ordinary block expression from <a href="../003-expressions/309-block-expressions">block expressions</a>.</p>
+<h3 id="one-or-more-parameters"><a class="anchor" tabindex="-1" href="#one-or-more-parameters" aria-hidden="true">#</a>One or more parameters</h3>
+<p>With one or more parameters, write:</p>
+<pre><code class="language-rok"><span class="k">let</span> doubled = xs.map |x| { x * <span class="n">2</span> };
+<span class="k">let</span> pos = xs.filter |x| { x &gt; <span class="n">0</span> };
+<span class="k">let</span> opened = with_file(path) |f| {
+    <span class="k">let</span> data = f.read();
+    process(data)
+};
+pairs.for_each |k, v| { print(k, v) };
+</code></pre>
+<p>The pipes (<code>|...|</code>) go outside the parentheses, directly before the body. The body is always a block: always <code>|x| { body }</code>, never a one-line <code>|x| body</code>.</p>
+<p>Trailing closures use block bodies by default for readability and consistency.</p>
+<h3 id="rules-for-the-parenthesis-free-form"><a class="anchor" tabindex="-1" href="#rules-for-the-parenthesis-free-form" aria-hidden="true">#</a>Rules for the parenthesis-free form</h3>
+<p>Attaching a closure without call parentheses, as in <code>xs.map |x| { .. }</code>, is a trailing closure only under these conditions:</p>
+<ul>
+<li>It is immediately preceded by a path (<code>thread::spawn</code>, <code>f</code>) or a member name (<code>.map</code>).
+</li>
+<li>It is followed by <code>|params|</code>, an optional <code>-&gt; R</code>, and <code>{</code>. Without this shape, <code>|</code> is bitwise OR.
+</li>
+<li><code>||</code> is always logical OR. A closure without parameters uses the <code>{ body }</code> shorthand.
+</li>
+<li>Inside the head (condition and scrutinee) of <code>if</code> / <code>while</code> / <code>match</code>, parenthesis-free trailing closures and the <code>{ body }</code> shorthand are disabled; a <code>{</code> there opens the body block. If a closure is needed in the head, use parentheses (<code>if xs.any(|x| { x &gt; 0 }) { .. }</code>).
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> ys = xs.map |x| -&gt; <span class="t">i64</span> { x <span class="k">as</span> <span class="t">i64</span> * <span class="n">2</span> };   <span class="c">// explicit return type</span>
+<span class="k">let</span> z = a | b;                                  <span class="c">// bitwise OR - not followed by the `|params| {` shape</span>
+<span class="k">if</span> ok || retry { .. }                           <span class="c">// logical OR</span>
+</code></pre>
+<h2 id="482-free-choice-with-explicit-parentheses"><a class="anchor" tabindex="-1" href="#482-free-choice-with-explicit-parentheses" aria-hidden="true">#</a>4.8.2. Free choice with explicit parentheses</h2>
+<p>Trailing closures are permitted, not required.</p>
+<pre><code class="language-rok">xs.map(|x| x * <span class="n">2</span>);                <span class="c">// explicit parentheses - OK</span>
+xs.map |x| { x * <span class="n">2</span> };              <span class="c">// trailing - OK</span>
+</code></pre>
+<p>Teams and users may choose freely according to their style.</p>
+<h2 id="483-when-the-closure-is-not-the-last-argument"><a class="anchor" tabindex="-1" href="#483-when-the-closure-is-not-the-last-argument" aria-hidden="true">#</a>4.8.3. When the closure is not the last argument</h2>
+<p>A trailing closure can fill only the last argument position. If the closure is a middle argument, explicit parentheses must be used.</p>
+<pre><code class="language-rok"><span class="k">fn</span> process(input: <span class="t">str</span>, transform: <span class="k">fn</span>(<span class="t">str</span>) -&gt; <span class="t">str</span>, output: <span class="t">str</span>) -&gt; <span class="t">str</span> { ... }
+
+process(<span class="s">"in"</span>, |s| { s.to_upper() }, <span class="s">"out"</span>);           <span class="c">// explicit parentheses (middle argument)</span>
+process(<span class="s">"in"</span>, <span class="s">"out"</span>) |s| { s.to_upper() };            <span class="c">// ERROR - trailing only in the last position</span>
+</code></pre>
+<h2 id="484-calls-with-zero-arguments"><a class="anchor" tabindex="-1" href="#484-calls-with-zero-arguments" aria-hidden="true">#</a>4.8.4. Calls with zero arguments</h2>
+<p>When the call has no other arguments, the empty parentheses may also be omitted.</p>
+<pre><code class="language-rok">thread::spawn { heavy() };        <span class="c">// same as thread::spawn() { heavy() }</span>
+                                   <span class="c">// == thread::spawn(|| { heavy() })</span>
+</code></pre>
+<p>When the only parameter is a closure, as with <code>thread::spawn</code>, this is the most natural call form.</p>
+<h2 id="485-nesting"><a class="anchor" tabindex="-1" href="#485-nesting" aria-hidden="true">#</a>4.8.5. Nesting</h2>
+<p>Trailing closures may be nested freely.</p>
+<pre><code class="language-rok">par::scope |s| {
+    s.spawn { f() };
+    s.spawn { g() };
+};
+</code></pre>
+<p>The same shorthand rule (<code>{ body }</code> ↔ <code>|| { body }</code>) applies to inner closures.</p>
+<h2 id="486-resolving-parser-ambiguity"><a class="anchor" tabindex="-1" href="#486-resolving-parser-ambiguity" aria-hidden="true">#</a>4.8.6. Resolving parser ambiguity</h2>
+<p>Trailing closures introduce an ambiguity where some code could be read as either a block expression or a trailing closure. The following rules resolve it.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Position</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>{ ... }</code> after a control keyword (<code>if</code>, <code>else</code>, <code>for</code>, <code>while</code>, <code>loop</code>, <code>match</code>)</td><td>control body</td></tr>
+<tr><td><code>{ ... }</code> directly after a function call</td><td>trailing closure (0-arg)</td></tr>
+<tr><td><code>|params| { ... }</code> directly after a function call</td><td>trailing closure (1+ arg)</td></tr>
+<tr><td><code>{ ... }</code> in an ordinary expression position such as <code>x = { ... };</code></td><td>block expression (evaluated immediately) - a 0-arg closure needs explicit <code>|| { ... }</code></td></tr>
+<tr><td><code>|...| { ... }</code> inside an expression</td><td>ordinary closure expression</td></tr>
+</tbody></table></div>
+<p>In short: a <code>{ ... }</code> or <code>|...| { ... }</code> directly after a function call (<code>(args)</code>), with or without whitespace, is a trailing closure.</p>
+<h2 id="487-a-lone--ordinary-block-vs-0-arg-closure"><a class="anchor" tabindex="-1" href="#487-a-lone--ordinary-block-vs-0-arg-closure" aria-hidden="true">#</a>4.8.7. A lone <code>{}</code>: ordinary block vs 0-Arg closure</h2>
+<pre><code class="language-rok"><span class="k">let</span> x = { <span class="n">42</span> };                   <span class="c">// block expression (value 42)</span>
+<span class="k">let</span> f = { <span class="n">42</span> };                   <span class="c">// ??</span>
+</code></pre>
+<p>These two lines have the same form; which meaning takes precedence?</p>
+<p>The rule: a <code>{ body }</code> appearing alone in expression position is a block expression.</p>
+<p>If a 0-arg closure is intended, write <code>|| { body }</code> explicitly.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = || { <span class="n">42</span> };                <span class="c">// explicit 0-arg closure</span>
+<span class="k">let</span> r = f();                       <span class="c">// call</span>
+</code></pre>
+<p>That is, only a <code>{ body }</code> directly after a function call is recognized as a trailing closure.</p>
+<h2 id="488-closures-in-statement-like-positions-such-as-par-for"><a class="anchor" tabindex="-1" href="#488-closures-in-statement-like-positions-such-as-par-for" aria-hidden="true">#</a>4.8.8. Closures in statement-like positions such as par <code>for</code></h2>
+<p>For parallel loops, transactions, context managers and the like, trailing closures produce DSL-friendly forms that read like keywords.</p>
+<pre><code class="language-rok">par::for_each(xs) |x| { ... }     <span class="c">// looks like par for</span>
+with_lock(mutex) { ... }           <span class="c">// looks like a with-statement</span>
+retry(<span class="n">3</span>) { ... }                   <span class="c">// looks like a retry keyword</span>
+</code></pre>
+<p>This is consistent with the principle of minimizing reserved keywords in <a href="../001-lexical/105-keywords">keywords</a>. Combining library functions with trailing closures yields patterns that read like control flow.</p>
+<h2 id="489-combining-with-named-arguments"><a class="anchor" tabindex="-1" href="#489-combining-with-named-arguments" aria-hidden="true">#</a>4.8.9. Combining with named arguments</h2>
+<pre><code class="language-rok"><span class="k">fn</span> run(name: <span class="t">str</span> = <span class="s">"task"</span>, body: <span class="k">fn</span>() -&gt; ()) { ... }
+
+run(<span class="s">"compute"</span>) { ... };           <span class="c">// positional + trailing OK</span>
+run(name: <span class="s">"compute"</span>) { ... };     <span class="c">// named + trailing OK</span>
+</code></pre>
+<p>Positional arguments, named arguments and trailing closures may be combined freely.</p>
+<h2 id="4810-summary"><a class="anchor" tabindex="-1" href="#4810-summary" aria-hidden="true">#</a>4.8.10. Summary</h2>
+<p>Trailing closures allow DSL-like expressions at the specification level without additional keywords. The key point is that users can build patterns that look like language keywords directly as libraries.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/408-trailing-closure.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="407-ref-keyword"><small>Previous</small>4.7. The ref Keyword</a><a class="next" href="409-method"><small>Next</small>4.9. Methods</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

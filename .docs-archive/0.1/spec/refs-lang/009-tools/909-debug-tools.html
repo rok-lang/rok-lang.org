@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.9. Debug / diagnostic tools - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines the debug / diagnostic tools provided by rokc and their integration with external tools.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/909-debug-tools.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.9. Debug / diagnostic tools - rok docs">
+<meta property="og:description" content="This section defines the debug / diagnostic tools provided by rokc and their integration with external tools.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/909-debug-tools.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/909-debug-tools.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/909-debug-tools.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li class="cur"><a aria-current="page" href="909-debug-tools">9.9. Debug / diagnostic tools</a><ul class="toc"><li><a href="#991-intermediate-output---emit">9.9.1. Intermediate output: --emit</a></li><li><a href="#992-rokhir-inspection">9.9.2. ROKHIR inspection</a></li><li><a href="#993-symbol-demangle">9.9.3. Symbol demangle</a></li><li><a href="#994-diagnostics--error-messages">9.9.4. Diagnostics / error messages</a></li><li><a href="#995-logging--progress-display">9.9.5. Logging / progress display</a></li><li><a href="#996-debugger-integration-gdb--lldb">9.9.6. Debugger integration: gdb / lldb</a></li><li><a href="#997-profiler-integration">9.9.7. Profiler integration</a></li><li><a href="#998-memory--gc-tools">9.9.8. Memory / GC tools</a></li><li><a href="#999-repl--jupyter-debugging">9.9.9. REPL / Jupyter debugging</a></li><li><a href="#9910-meta-block-debugging">9.9.10. Meta block debugging</a></li><li><a href="#9911-benchmarks">9.9.11. Benchmarks</a></li><li><a href="#9912-ci--test-integration">9.9.12. CI / test integration</a></li><li><a href="#9913-lsp-server">9.9.13. LSP server</a></li><li><a href="#9914-package-inspection">9.9.14. Package inspection</a></li><li><a href="#9915-summary">9.9.15. Summary</a></li></ul></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="99-debug--diagnostic-tools 99-디버그--진단-도구 991-intermediate-output---emit 991-중간-산출물-출력---emit 992-rokhir-inspection 992-rokhir-검사 993-symbol-demangle 993-심볼-demangle 994-diagnostics--error-messages 994-진단--에러-메시지 standard-format 표준-형식 json-format-tool-integration json-형식-도구-통합 diagnostic-categories 진단-카테고리 995-logging--progress-display 995-로그--진행-표시 standard-output 표준-출력 --verbose---v --verbose---v rok_time_passes rok_time_passes -vv-very-verbose -vv-매우-자세히 996-debugger-integration-gdb--lldb 996-디버거-통합-gdb--lldb dwarf-debug-information dwarf-디버그-정보 using-gdb--lldb gdb--lldb-사용 formatters formatter macos--windows-debuggers macos--windows-디버거 997-profiler-integration 997-profiler-통합 perf-linux perf-linux profile-guided-optimization profile-guided-optimization tracy--chrome-trace-optional tracy--chrome-trace-선택 998-memory--gc-tools 998-메모리--gc-도구 999-repl--jupyter-debugging 999-repl--jupyter-디버그 9910-meta-block-debugging 9910-메타-블록-디버그 9911-benchmarks 9911-벤치마크 9912-ci--test-integration 9912-ci--테스트-통합 ci-mode ci-모드 exit-codes 종료-코드 9913-lsp-server 9913-lsp-서버 9914-package-inspection 9914-패키지-검사 9915-summary 9915-정리"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/909-debug-tools" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="99-debug--diagnostic-tools"><a class="anchor" tabindex="-1" href="#99-debug--diagnostic-tools" aria-hidden="true">#</a>9.9. Debug / diagnostic tools</h1>
+<p>This section defines the debug / diagnostic tools provided by <code>rokc</code> and their integration with external tools.</p>
+<h2 id="991-intermediate-output---emit"><a class="anchor" tabindex="-1" href="#991-intermediate-output---emit" aria-hidden="true">#</a>9.9.1. Intermediate output: <code>--emit</code></h2>
+<p>The per-step results of the <a href="902-aot-pipeline">AOT build pipeline</a> can be dumped.</p>
+<pre><code>rokc build --emit=ast           # full AST after meta expansion and desugaring, as rok source
+rokc build --emit=hir          # rok-hir text output
+rokc build --emit=mir           # rok-mir text output
+rokc build --emit=mlir          # standard MLIR text
+rokc build --emit=llvmir        # LLVM IR
+rokc build --emit=asm           # assembly
+rokc build --emit=obj           # object file
+rokc build --emit=expanded      # meta expansion result (9.9.10)
+</code></pre>
+<p><code>mlir</code> and <code>llvmir</code> come from the MLIR → LLVM backend at any optimization level; <code>asm</code> and <code>obj</code> come from the backend the level selects (<a href="902-aot-pipeline#9210-backend-selection">9.2.10</a>).</p>
+<p>The output is written to the following locations.</p>
+<pre><code>target/debug/build/foo.ast.rok
+target/debug/build/foo.hir
+target/debug/build/foo.mir
+target/debug/build/foo.mlir
+target/debug/build/foo.ll
+target/debug/build/foo.s
+target/debug/build/foo.o
+target/debug/build/foo.expanded.rok
+</code></pre>
+<p>To select several steps at once, separate them with commas, as in <code>--emit=mlir,llvmir,asm</code>. With a single kind, <code>-o &lt;path&gt;</code> changes the location. With <code>--emit</code>, no executable or archive is produced.</p>
+<h2 id="992-rokhir-inspection"><a class="anchor" tabindex="-1" href="#992-rokhir-inspection" aria-hidden="true">#</a>9.9.2. ROKHIR inspection</h2>
+<pre><code>rokc rokhir-text path/to/foo.rokhir      # or libfoo.a - reads the sibling foo.rokhir
+</code></pre>
+<p>This command prints the <a href="904-rokhir-bytecode">ROKHIR</a> of a prebuilt library in human-readable form. After the version, producer and meta, each interface file follows as <code>--- &lt;path&gt;</code> and its text (source with concrete function bodies cut down to <code>;</code>).</p>
+<pre><code>rokhir 6
+producer: rokc 0.1.0 (1f2a40-17f3a9c2e1b0c4d8)
+package: geom (hash: 3f8a1c2b)
+source: /home/me/geom
+gc types: 4096..4160
+features: tls
+
+--- lib.rok
+pub struct Point { pub x: f64; pub y: f64; }
+pub fn distance(p1: Point, p2: Point) -&gt; f64;
+pub fn id&lt;T&gt;(x: T) -&gt; T { x }
+</code></pre>
+<p>This output is useful for verifying the correctness and compatibility of <a href="../000-meta/007-glossary#rokhir-rok-hir-bytecode">ROKHIR</a>.</p>
+<h2 id="993-symbol-demangle"><a class="anchor" tabindex="-1" href="#993-symbol-demangle" aria-hidden="true">#</a>9.9.3. Symbol demangle</h2>
+<pre><code>rokc demangle &lt;symbol&gt;
+rokc demangle _Y3f8a1c2b_geom_distance_a7c91d8e44b2f190
+</code></pre>
+<p>This command prints a mangled symbol of <a href="905-symbol-mangling">Symbol mangling</a> in its original form. Given several symbols, the blocks are separated by blank lines. Mangling does not keep the root <code>rok::</code>, so if the first path segment is <code>core</code> / <code>std</code> / <code>bare</code>, <code>rok::</code> is prepended to show it as a standard library path.</p>
+<pre><code>package:  3f8a1c2b
+path:     geom
+name:     distance
+generics: a7c91d8e44b2f190 (type tuple hash)
+</code></pre>
+<h2 id="994-diagnostics--error-messages"><a class="anchor" tabindex="-1" href="#994-diagnostics--error-messages" aria-hidden="true">#</a>9.9.4. Diagnostics / error messages</h2>
+<h3 id="standard-format"><a class="anchor" tabindex="-1" href="#standard-format" aria-hidden="true">#</a>Standard format</h3>
+<p>Diagnostic messages are printed in the following standard format.</p>
+<pre><code>error[E100]: cannot find value `count` in this scope
+  --&gt; src/main.rok:5:13
+   |
+ 2 |     let counter = 0;
+   |         ------- similar name defined here
+...
+ 5 |     let x = count + 1;
+   |             ^^^^^ not found in this scope
+   |
+   = help: did you mean `counter`?
+</code></pre>
+<p>This format uses the file + line + column diagnostic units of <a href="../001-lexical/101-source-files">Source files</a>.</p>
+<p>The header is <code>&lt;severity&gt;[&lt;code&gt;]: &lt;message&gt;</code> and <code>--&gt; path:line:col</code> gives the primary location. The primary span is underlined with <code>^</code>, secondary spans with <code>-</code>; a secondary span in another file is introduced by <code>::: path:line:col</code>. Trailing <code>= note:</code> lines add context and <code>= help:</code> lines suggest a fix. For a name not found that an item elsewhere has, the help gives the <code>use</code> lines that bring it in (up to three: the package's own items first, then the standard library's, then the dependencies'), or the missing <code>pub</code> when the package's only such item is hidden (<code>add `use geo::Point;` </code>; <code>`geo::secret` has that name, but it is private to module `geo`: add `pub` to it</code>).</p>
+<h3 id="json-format-tool-integration"><a class="anchor" tabindex="-1" href="#json-format-tool-integration" aria-hidden="true">#</a>JSON format (tool integration)</h3>
+<p>For tool integration, output can also be produced as JSON.</p>
+<pre><code>rokc build --message-format=json
+</code></pre>
+<p>Each diagnostic is one line of JSON object on stdout (the human format goes to stderr).</p>
+<pre><code class="language-json">{&quot;type&quot;:&quot;error&quot;,&quot;code&quot;:&quot;E200&quot;,&quot;kind&quot;:&quot;type&quot;,&quot;message&quot;:&quot;...&quot;,&quot;spans&quot;:[{&quot;file_name&quot;:&quot;src/main.rok&quot;,&quot;line_start&quot;:5,&quot;col_start&quot;:10,&quot;byte_start&quot;:71,&quot;byte_end&quot;:76,&quot;is_primary&quot;:true,&quot;label&quot;:&quot;...&quot;}],&quot;notes&quot;:[&quot;...&quot;]}
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>type</code></td><td><code>error</code> / <code>fatal</code> / <code>warning</code> / <code>note</code></td></tr>
+<tr><td><code>code</code></td><td>Code of the error kind (table below)</td></tr>
+<tr><td><code>kind</code></td><td>Name of the error kind</td></tr>
+<tr><td><code>message</code></td><td>Message</td></tr>
+<tr><td><code>spans</code></td><td>List of locations. The first element is the primary location (<code>is_primary: true</code>); the rest are secondary</td></tr>
+<tr><td><code>notes</code></td><td>List of note strings; a help entry starts with <code>help: </code></td></tr>
+</tbody></table></div>
+<p>A span has <code>file_name</code>, <code>line_start</code>, <code>col_start</code>, <code>byte_start</code>, <code>byte_end</code>, <code>is_primary</code> and <code>label</code>. A diagnostic that knows only the file and no position has just <code>{&quot;file_name&quot;: .., &quot;is_primary&quot;: true}</code>.</p>
+<p>This format lets IDEs and CI systems read diagnostics mechanically.</p>
+<h3 id="diagnostic-categories"><a class="anchor" tabindex="-1" href="#diagnostic-categories" aria-hidden="true">#</a>Diagnostic categories</h3>
+<p>Diagnostic codes are classified by area as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Code prefix</th><th>Area</th></tr></thead>
+<tbody>
+<tr><td><code>E001</code> ~ <code>E099</code></td><td>Lexical / syntax</td></tr>
+<tr><td><code>E100</code> ~ <code>E199</code></td><td>Name resolution / visibility</td></tr>
+<tr><td><code>E200</code> ~ <code>E299</code></td><td>Type system</td></tr>
+<tr><td><code>E300</code> ~ <code>E399</code></td><td>Meta / magic</td></tr>
+<tr><td><code>E400</code> ~ <code>E499</code></td><td>Build / link</td></tr>
+<tr><td><code>E500</code> ~</td><td>Additional categories</td></tr>
+</tbody></table></div>
+<p>There is one code per error kind. Diagnostics of the same kind have the same code.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Code</th><th><code>kind</code></th><th>Kind</th></tr></thead>
+<tbody>
+<tr><td><code>E001</code></td><td><code>lexical</code></td><td>Lexical</td></tr>
+<tr><td><code>E002</code></td><td><code>parse</code></td><td>Syntax</td></tr>
+<tr><td><code>E100</code></td><td><code>resolve</code></td><td>Name resolution</td></tr>
+<tr><td><code>E101</code></td><td><code>visibility</code></td><td>Visibility</td></tr>
+<tr><td><code>E102</code></td><td><code>module</code></td><td>Module / file</td></tr>
+<tr><td><code>E200</code></td><td><code>type</code></td><td>Type</td></tr>
+<tr><td><code>E201</code></td><td><code>pattern</code></td><td>Pattern / exhaustiveness</td></tr>
+<tr><td><code>E202</code></td><td><code>handoff</code></td><td>Use after hand-off (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---thread-boundary-markers">stdlib 2.13.9</a>)</td></tr>
+<tr><td><code>E300</code></td><td><code>meta</code></td><td>Meta block / attribute / keyword magic</td></tr>
+<tr><td><code>E400</code></td><td><code>lowering</code></td><td>HIR / MIR lowering</td></tr>
+<tr><td><code>E401</code></td><td><code>codegen</code></td><td>Code generation</td></tr>
+<tr><td><code>E402</code></td><td><code>linkage</code></td><td>External tool / link</td></tr>
+<tr><td><code>E500</code></td><td><code>unsupported</code></td><td>Syntax the compiler does not handle</td></tr>
+<tr><td><code>E501</code></td><td><code>internal</code></td><td>Compiler internal</td></tr>
+<tr><td><code>E502</code></td><td><code>other</code></td><td>Other</td></tr>
+<tr><td><code>E503</code></td><td><code>lint</code></td><td>lint (<a href="../006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">6.2.9</a>, <code>rokc lint</code>)</td></tr>
+</tbody></table></div>
+<p>This specification guarantees the per-area code prefixes. When individual codes are introduced, they are subdivided within the same area.</p>
+<h2 id="995-logging--progress-display"><a class="anchor" tabindex="-1" href="#995-logging--progress-display" aria-hidden="true">#</a>9.9.5. Logging / progress display</h2>
+<h3 id="standard-output"><a class="anchor" tabindex="-1" href="#standard-output" aria-hidden="true">#</a>Standard output</h3>
+<p>Default build output looks like this.</p>
+<pre><code>   Compiling foo (path/to/foo)
+    Building target/debug/libfoo.a
+    Finished in 1.23s
+</code></pre>
+<p>Progress lines go to stderr; the list of verbs is in <a href="901-rokc-cli#918-output-format">9.1.8</a>.</p>
+<h3 id="--verbose---v"><a class="anchor" tabindex="-1" href="#--verbose---v" aria-hidden="true">#</a><code>--verbose</code> / <code>-v</code></h3>
+<p>Verbose mode also shows per-stage timing.</p>
+<pre><code>   Compiling foo (path/to/foo)
+   Stage: front end (134ms)
+    Building target/debug/foo
+   Stage: codegen + link (812ms)
+    Finished in 0.95s
+</code></pre>
+<p>Showing the time of each stage is useful for diagnosing build bottlenecks. The stages are <code>front end</code> and <code>codegen + link</code> (<code>emit &lt;ext&gt;</code> with <code>--emit</code>).</p>
+<h3 id="rok_time_passes"><a class="anchor" tabindex="-1" href="#rok_time_passes" aria-hidden="true">#</a><code>ROK_TIME_PASSES</code></h3>
+<p><code>ROK_TIME_PASSES=1</code> prints the wall time of each compiler pass on stderr.</p>
+<h3 id="-vv-very-verbose"><a class="anchor" tabindex="-1" href="#-vv-very-verbose" aria-hidden="true">#</a><code>-vv</code> (very verbose)</h3>
+<p>In addition to <code>-v</code>, prints a <code>Reading &lt;file&gt;</code> line for each file processed and a <code>Specialized &lt;path&gt;(sig)</code> line for each (item, type) pair <a href="../000-meta/007-glossary#specialize">specialized</a>.</p>
+<h2 id="996-debugger-integration-gdb--lldb"><a class="anchor" tabindex="-1" href="#996-debugger-integration-gdb--lldb" aria-hidden="true">#</a>9.9.6. Debugger integration: gdb / lldb</h2>
+<h3 id="dwarf-debug-information"><a class="anchor" tabindex="-1" href="#dwarf-debug-information" aria-hidden="true">#</a>DWARF debug information</h3>
+<p>A <code>debug</code> profile build, and a <code>release</code> build with <code>-g</code> (<a href="902-aot-pipeline#9215-output">9.2.15</a>), emits DWARF debug information with the following properties. For Windows targets it emits CodeView in a PDB instead, carrying the same information.</p>
+<ul>
+<li>A function's <code>DW_AT_name</code> is its rok path (<code>geom::distance</code>); no linkage name (mangled symbol) is emitted, because debuggers do not understand <code>_Y</code> mangling.
+</li>
+<li>Line numbers refer to lines of the original .rok file.
+</li>
+<li>Local variables appear with their original names and types. Besides primitive types (integers, floating-point, <code>bool</code>, <code>char</code>), DWARF types are emitted for structs (field names), tuples, <code>str</code>, <code>any</code>, sum types and arrays. A sum type or enum is a DWARF variant part: an artificial discriminant member, and one <code>DW_TAG_variant</code> per variant (dataless variants included) with <code>DW_AT_discr_value</code>, each holding a struct named <code>&lt;Sum&gt;::&lt;Variant&gt;</code>. Both back ends write the same form, and compile units use <code>DW_LANG_Rust</code> so debuggers read variant parts (there is no DWARF language code for rok). A <code>GcBuf&lt;T&gt;</code> reference is described as a pointer to its object (header, then the <code>T</code> elements). An <code>any</code> value is a variant part over the types stored into it, with the stored tag as the discriminant. The discriminant is an artificial <code>i32</code> (the stored tag; a <code>throws</code> carrier's <code>bool</code> tag is a byte). A function value (a <code>fn</code> type or a closure) is a structure named for its type (<code>fn(i32) -&gt; i32</code>) with members <code>code</code>, a pointer to a <code>DW_TAG_subroutine_type</code> (the environment, then the parameters), and <code>env</code>, its environment (a pointer to the environment object when the closure's type is known), so a debugger shows the target function. A variable captured by reference shows as its value. Functions the compiler makes (the C <code>main</code>, static initializer guards) have subprograms too. Compiler-generated locals (names beginning <code>#</code> or <code>__</code>) are omitted.
+</li>
+<li>A lexical block scope is emitted for each block, so shadowed names are visible only inside their block.
+</li>
+<li>Locals with stack slots are placed in a single <code>llvm.alloca</code> in both debug and release, so <code>-g</code> attaches debug info to the same slot regardless of optimization level.
+</li>
+</ul>
+<h3 id="using-gdb--lldb"><a class="anchor" tabindex="-1" href="#using-gdb--lldb" aria-hidden="true">#</a>Using gdb / lldb</h3>
+<p>Standard gdb and lldb commands work on rok code as is.</p>
+<pre><code>gdb ./target/debug/my_binary
+(gdb) break main
+(gdb) run
+(gdb) print x
+$1 = (i32) 42          # primitive-type variables only
+(gdb) bt
+#0  main at src/main.rok:5
+...
+</code></pre>
+<h3 id="formatters"><a class="anchor" tabindex="-1" href="#formatters" aria-hidden="true">#</a>Formatters</h3>
+<p>gdb shows only the active variant of a sum, an enum or an <code>any</code> from the DWARF alone. lldb has no plugin for the unit's language and lists every variant; the toolchain ships lldb formatters, <code>lib/rok/lldb/rok_lldb.py</code>, that show the active variant only (its name as the summary, its fields as the children; a boxed <code>any</code> payload through its box). <code>rokc --print lldbinit</code> (<a href="901-rokc-cli#rokc---print-lldbinit-lldb-formatters">9.1.4</a>) prints the lldb command that loads them:</p>
+<pre><code>lldb -O &quot;$(rokc --print lldbinit)&quot; ./target/debug/my_binary
+rokc --print lldbinit &gt;&gt; ~/.lldbinit
+</code></pre>
+<h3 id="macos--windows-debuggers"><a class="anchor" tabindex="-1" href="#macos--windows-debuggers" aria-hidden="true">#</a>macOS / Windows debuggers</h3>
+<p>Each platform's native debugger handles rok binaries.</p>
+<ul>
+<li>On macOS, use lldb or the Xcode debugger.
+</li>
+<li>On Windows, use the Visual Studio debugger or WinDbg (PDB debug information).
+</li>
+</ul>
+<h2 id="997-profiler-integration"><a class="anchor" tabindex="-1" href="#997-profiler-integration" aria-hidden="true">#</a>9.9.7. Profiler integration</h2>
+<h3 id="perf-linux"><a class="anchor" tabindex="-1" href="#perf-linux" aria-hidden="true">#</a>perf (Linux)</h3>
+<p>CPU profiling can be done with <code>perf</code>.</p>
+<pre><code>perf record ./target/release/my_binary
+perf report
+</code></pre>
+<p>rok functions are shown by their demangled names.</p>
+<h3 id="profile-guided-optimization"><a class="anchor" tabindex="-1" href="#profile-guided-optimization" aria-hidden="true">#</a>Profile-guided optimization</h3>
+<p>Profile-guided optimization (<a href="901-rokc-cli#rokc-build-aot-build">9.1.2</a>) takes three steps:</p>
+<pre><code>rokc build --release -C profile-generate=prof    # 1. instrumented build
+./target/release/my_binary &lt;representative input&gt; # 2. run; writes prof/default_*.profraw
+rokc profdata merge -o app.profdata prof          # 3. merge, then
+rokc build --release -C profile-use=app.profdata  #    rebuild with the profile
+</code></pre>
+<p>An optional context-sensitive stage builds with <code>-C profile-use=app.profdata -C cs-profile-generate=cs</code>, runs again, and merges <code>cs</code> with <code>app.profdata</code> into the final profile. <code>wasm32-wasi</code> is supported; <code>wasm32-unknown-unknown</code> is not.</p>
+<h3 id="tracy--chrome-trace-optional"><a class="anchor" tabindex="-1" href="#tracy--chrome-trace-optional" aria-hidden="true">#</a>Tracy / Chrome trace (optional)</h3>
+<p>Through the standard library's tracing surface, traces compatible with <code>tracy</code> or Chrome's <code>chrome://tracing</code> can be produced. The choice of a specific library is outside the scope of this specification and is covered by a separate library spec.</p>
+<h2 id="998-memory--gc-tools"><a class="anchor" tabindex="-1" href="#998-memory--gc-tools" aria-hidden="true">#</a>9.9.8. Memory / GC tools</h2>
+<p>The runtime reads the following environment variables.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Variable</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>ROK_GC_LOG=1</code></td><td>Prints the kind (minor / full), pause time, mark count and sweep result of each collection to stderr. A concurrent full collection logs its start pause (a minor collection) and its finish pause separately; the sweep result is the live bytes before -&gt; after</td></tr>
+<tr><td><code>ROK_GC_STATS=1</code></td><td>At exit, prints collection counts (minor / full), pause time and collector CPU time to stderr. The second line gives block count / resident size / evacuation count / bytes moved</td></tr>
+<tr><td><code>ROK_GC_CONCURRENT=auto|always|off</code></td><td>Concurrent marking for full collections. <code>auto</code> applies when old objects are 32 MiB or more (<a href="../007-runtime/705-concurrent-collection">7.5</a>)</td></tr>
+<tr><td><code>ROK_GC_EVAC=always</code></td><td>For testing. Evacuation on every full collection (<a href="../007-runtime/703-gc-algorithm#731-immix-mark-region">7.3.1</a>)</td></tr>
+<tr><td><code>ROK_GC_STRESS=N</code></td><td>For testing. Collects every N allocations (every 8th of those is full)</td></tr>
+<tr><td><code>ROK_HEAP_DUMP=on_oom</code></td><td>On OOM, prints to stderr the totals, the top 32 types by bytes and the 32 largest large objects. Best effort: it allocates nothing and takes no lock. Format is runtime-defined</td></tr>
+<tr><td><code>ROK_WORKERS=&lt;n&gt;</code></td><td>Number of executor workers N (default: the online CPUs) (<a href="../007-runtime/706-scheduler#768-thread-per-core-option">7.6.8</a>)</td></tr>
+<tr><td><code>ROK_THREAD_PER_CORE=1</code></td><td>Thread-per-core: tasks pinned to their worker, no stealing (7.6.8)</td></tr>
+<tr><td><code>ROK_DYNAMIC_WORKERS=1</code></td><td>Idle workers park and are taken back when every active worker is busy (<a href="../007-runtime/707-io-and-timer#778-dynamic-adjustment-of-worker-count">7.7.8</a>)</td></tr>
+</tbody></table></div>
+<p>An unset or empty variable has its default. A value outside those listed prints one warning line on stderr naming the variable, the value and the accepted values, and the variable has its default.</p>
+<h2 id="999-repl--jupyter-debugging"><a class="anchor" tabindex="-1" href="#999-repl--jupyter-debugging" aria-hidden="true">#</a>9.9.9. REPL / Jupyter debugging</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aid</th><th>Effect</th></tr></thead>
+<tbody>
+<tr><td><code>:type &lt;expr&gt;</code></td><td>Prints the type of the expression (without running it)</td></tr>
+<tr><td><code>:reset</code></td><td>Resets the session to its initial state (the <code>use</code> of a library path is inserted again)</td></tr>
+<tr><td><code>:add &lt;dep&gt; ..</code></td><td>Adds dependencies (<code>rok install</code> into the current environment, or <code>rok add</code> in a package's session) and attaches them to the session (<a href="910-rok-frontend#9105-environments">9.10.5</a>)</td></tr>
+<tr><td><code>:help</code>, <code>:quit</code></td><td>Help, quit</td></tr>
+<tr><td><code>ROK_REPL_TIME=1</code></td><td>Per cell, per-stage timing and the number of newly compiled functions / functions reused from earlier cells (<a href="906-jit-engine#964-reuse-of-library-code">9.6.4</a>)</td></tr>
+</tbody></table></div>
+<p>To see a cell's MLIR / LLVM IR, put the same code in <code>main.rok</code> and use <code>rokc build --emit=mlir,llvmir</code> (9.9.1).</p>
+<h2 id="9910-meta-block-debugging"><a class="anchor" tabindex="-1" href="#9910-meta-block-debugging" aria-hidden="true">#</a>9.9.10. Meta block debugging</h2>
+<p>You can check what code the derives / attributes of <a href="../006-meta-system/608-meta-blocks">user-defined meta blocks</a> generate.</p>
+<pre><code>rokc build --emit=expanded      # → target/&lt;profile&gt;/build/&lt;name&gt;.expanded.rok
+</code></pre>
+<p>This option prints the result of <a href="../006-meta-system/609-template-tokens">meta expansion</a> of the user package as source text. Each expansion's generated source follows a comment like the one below; when generated code is expanded again, that result follows the outer expansion.</p>
+<pre><code>// expanded from this #[derive(MyHash)] (src/geom.rok:12:1)
+impl MyHash for Point { ... }
+</code></pre>
+<p>To see the full AST after all meta expansion and desugaring as rok source, use <code>--emit=ast</code> (<code>&lt;name&gt;.ast.rok</code>).</p>
+<h2 id="9911-benchmarks"><a class="anchor" tabindex="-1" href="#9911-benchmarks" aria-hidden="true">#</a>9.9.11. Benchmarks</h2>
+<p>Microbenchmarks are run with the following command.</p>
+<pre><code>rok bench
+</code></pre>
+<p><code>rokc bench</code> builds the benchmark harness and <code>rok bench</code> (<a href="910-rok-frontend">9.10</a>) runs it (<a href="901-rokc-cli#rokc-bench-benchmarks">9.1.2</a>), measuring the functions marked <code>#[bench]</code> one at a time in an <code>-O2</code> build. Each takes a <code>Bench</code> handle and times a closure through <code>b.iter</code>, so setup outside the closure is not measured. The measurement is:</p>
+<ol>
+<li><strong>Clock.</strong> A monotonic nanosecond clock. Its fixed overhead is amortized by timing <code>iters</code> calls per sample, never a single call.
+</li>
+<li><strong>Calibration.</strong> Unless <code>--iters</code> is given, <code>iters</code> is raised until one sample takes about 100 ms, so clock quantization and overhead are negligible.
+</li>
+<li><strong>Warm-up.</strong> Calls are run for about one sample's worth of time and discarded, to settle caches, branch predictors and paging.
+</li>
+<li><strong>Sampling.</strong> <code>--samples</code> samples (default 100) are taken; each records the total time of <code>iters</code> calls, and the per-call time is that total divided by <code>iters</code>.
+</li>
+<li><strong>Statistics.</strong> Mean, median, standard deviation, median absolute deviation (MAD), min and max are computed. Samples outside the Tukey fences (1.5 IQR mild, 3 IQR severe) are reported as outliers but kept out of the summary figure. The reported figure is the <strong>median (+/- MAD)</strong>, which is robust to an occasional slow sample.
+</li>
+<li><strong>GC awareness.</strong> The runtime's collection counter is read around each sample; a sample during which a collection ran is classed as an outlier and counted separately, so GC pauses do not distort the median.
+</li>
+</ol>
+<p><code>black_box(x)</code> is an identity the optimizer cannot see through; apply it to the inputs and result of the timed closure so the work is neither hoisted out nor folded away. <code>b.bytes(n)</code> / <code>b.items(n)</code> turn the per-call time into a throughput (<code>MiB/s</code>, <code>Melem/s</code>).</p>
+<p>Terminal output is aligned and in human units; non-terminal output is a stable one-line-per-bench machine form for regression tools. <code>--iters</code> / <code>--samples</code> adjust the sampling.</p>
+<h2 id="9912-ci--test-integration"><a class="anchor" tabindex="-1" href="#9912-ci--test-integration" aria-hidden="true">#</a>9.9.12. CI / test integration</h2>
+<h3 id="ci-mode"><a class="anchor" tabindex="-1" href="#ci-mode" aria-hidden="true">#</a>CI mode</h3>
+<p>In CI environments, machine-readable output is recommended.</p>
+<pre><code>rokc build --message-format=json --no-color &gt; build.log
+</code></pre>
+<p>This output is suitable for CI systems to parse.</p>
+<h3 id="exit-codes"><a class="anchor" tabindex="-1" href="#exit-codes" aria-hidden="true">#</a>Exit codes</h3>
+<p>The exit codes of the <a href="901-rokc-cli"><code>rokc</code> CLI interface</a> are defined as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Code</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>0</code></td><td>Success</td></tr>
+<tr><td><code>1</code></td><td>User code error</td></tr>
+<tr><td><code>2</code></td><td>CLI error</td></tr>
+<tr><td><code>101</code></td><td>rokc internal panic</td></tr>
+</tbody></table></div>
+<p><code>rokc test</code> builds the harness; it does not run the tests. <code>rok test</code> runs them and exits with <code>1</code> if any fails. Each test runs in a separate process, so a test's panic (<code>101</code>) does not become the runner's <code>101</code>.</p>
+<p>CI can apply different handling per code (retry, notification, etc.).</p>
+<h2 id="9913-lsp-server"><a class="anchor" tabindex="-1" href="#9913-lsp-server" aria-hidden="true">#</a>9.9.13. LSP server</h2>
+<p><code>rokc</code> provides an LSP (Language Server Protocol) mode. The same server is also provided as the standalone binary <code>rokls</code> (= <code>rok lsp</code>). It communicates over stdio and provides diagnostics, hover (including members), go-to-definition (returning the range of the defining name), references, rename, document symbols, member / path completion and formatting. References and rename are buffer-local.</p>
+<pre><code>rokc lsp
+rokls
+</code></pre>
+<p>In this mode, LSP clients such as VS Code, Vim and Emacs receive completion, hover, go-to-definition, diagnostics and so on. Internally it uses the incremental results of <code>rokc check</code>.</p>
+<p>The detailed LSP specification is outside this specification (the LSP standard + rokc implementation decisions) and is defined separately.</p>
+<h2 id="9914-package-inspection"><a class="anchor" tabindex="-1" href="#9914-package-inspection" aria-hidden="true">#</a>9.9.14. Package inspection</h2>
+<p>Information about a prebuilt library package can be viewed at once.</p>
+<pre><code>rokc inspect path/to/libfoo.a        # or foo.rokhir - the sibling file is read too
+</code></pre>
+<p>This command shows information from the ROKHIR (<a href="904-rokhir-bytecode">9.4</a>) and the <a href="../000-meta/007-glossary#archive">archive</a> as follows.</p>
+<pre><code>Package: foo
+Hash: 3f8a1c2b
+rokc version: 0.1.0
+ROKHIR version: 1
+GC type ids: 4096..4160
+
+Exports:
+  pub fn distance(p1: Point, p2: Point) -&gt; f64
+  pub struct Point
+  ...
+
+Generic items (ROKHIR):
+  pub fn id&lt;T&gt;(x: T) -&gt; T
+  ...
+
+Concrete .o files:
+  foo.o (15 KB)
+</code></pre>
+<p><code>rokc rokhir-text &lt;file&gt;</code> prints the ROKHIR's version, producer, meta and all interface files (9.9.2).</p>
+<p>This gives an at-a-glance view of what the package exposes externally.</p>
+<h2 id="9915-summary"><a class="anchor" tabindex="-1" href="#9915-summary" aria-hidden="true">#</a>9.9.15. Summary</h2>
+<p>The tools above form the core of rok's development and debugging experience. Integration with standard tools (gdb, perf, jupyter) combined with rok-specific tools (<code>rokc demangle</code>, <code>rokc rokhir-text</code>, etc.) provides a rich diagnostic environment.</p>
+<p>This concludes chapter 9 (execution and tools) and completes the overall picture of this specification.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/909-debug-tools.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="908-jupyter-integration"><small>Previous</small>9.8. Jupyter kernel integration</a><a class="next" href="910-rok-frontend"><small>Next</small>9.10. rok - package / build front-end</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

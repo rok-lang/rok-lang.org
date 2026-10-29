@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank transfers - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Several threads move money between accounts guarded by Mutex, collect statistics in Atomic counters, and finally check that the total never changed.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/bank-mutex.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Bank transfers - rok docs">
+<meta property="og:description" content="Several threads move money between accounts guarded by Mutex, collect statistics in Atomic counters, and finally check that the total never changed.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/bank-mutex.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="bank-mutex">Bank transfers</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li></ul></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li><a href="par-map">Parallel map / reduce</a></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="bank-transfers"><a class="anchor" tabindex="-1" href="#bank-transfers" aria-hidden="true">#</a>Bank transfers</h1>
+<p>Several threads move money between accounts guarded by <code>Mutex</code>, collect statistics in <code>Atomic</code> counters, and finally check that the total never changed.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// Threads move money between accounts; locks keep the total constant.</span>
+<span class="k">use</span> rok::std::thread;
+
+<span class="k">const</span> <span class="t">ACCOUNTS</span>: <span class="t">usize</span> = <span class="n">5</span>;
+<span class="k">const</span> <span class="t">THREADS</span>: <span class="t">i32</span> = <span class="n">4</span>;
+<span class="k">const</span> <span class="t">TRANSFERS</span>: <span class="t">i32</span> = <span class="n">20000</span>;
+<span class="k">const</span> <span class="t">START</span>: <span class="t">i64</span> = <span class="n">1000</span>;
+
+<span class="c">// A tiny deterministic pseudo-random generator (one per thread).</span>
+<span class="k">struct</span> <span class="t">Rng</span> { state: <span class="t">u64</span>; }
+
+<span class="k">impl</span> <span class="t">Rng</span> {
+    <span class="k">fn</span> next(<span class="k">ref</span> <span class="k">self</span>, bound: <span class="t">u64</span>) -&gt; <span class="t">u64</span> {
+        <span class="k">self</span>.state = <span class="k">self</span>.state.wrapping_mul(<span class="n">6364136223846793005u64</span>).wrapping_add(<span class="n">1442695040888963407u64</span>);
+        (<span class="k">self</span>.state &gt;&gt; <span class="n">33u64</span>) % bound
+    }
+}
+
+<span class="k">struct</span> <span class="t">Bank</span> {
+    <span class="c">// A fixed array, not a List: a List is a shared mutable handle and is</span>
+    <span class="c">// not `Sync`, so threads may not share one. The array's elements are</span>
+    <span class="c">// `Mutex` handles, which are.</span>
+    accounts: [<span class="t">Mutex</span>&lt;<span class="t">i64</span>&gt;; <span class="n">5</span>];
+    moved: <span class="t">Atomic</span>&lt;<span class="t">i64</span>&gt;;
+    rejected: <span class="t">Atomic</span>&lt;<span class="t">i64</span>&gt;;
+}
+
+<span class="k">impl</span> <span class="t">Bank</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">Bank</span> {
+        <span class="k">let</span> accounts: [<span class="t">Mutex</span>&lt;<span class="t">i64</span>&gt;; <span class="n">5</span>] = [
+            <span class="t">Mutex</span>::new(<span class="t">START</span>), <span class="t">Mutex</span>::new(<span class="t">START</span>), <span class="t">Mutex</span>::new(<span class="t">START</span>), <span class="t">Mutex</span>::new(<span class="t">START</span>),
+            <span class="t">Mutex</span>::new(<span class="t">START</span>),
+        ];
+        <span class="t">Bank</span> { accounts: accounts, moved: <span class="t">Atomic</span>::new(<span class="n">0i64</span>), rejected: <span class="t">Atomic</span>::new(<span class="n">0i64</span>) }
+    }
+
+    <span class="c">// Lock both accounts, always the lower index first, so two opposite</span>
+    <span class="c">// transfers can never wait for each other forever.</span>
+    <span class="k">fn</span> transfer(<span class="k">self</span>, from: <span class="t">usize</span>, to: <span class="t">usize</span>, amount: <span class="t">i64</span>) {
+        <span class="k">if</span> from == to { <span class="k">return</span>; }
+        <span class="k">let</span> first = <span class="k">if</span> from &lt; to { from } <span class="k">else</span> { to };
+        <span class="k">let</span> second = <span class="k">if</span> from &lt; to { to } <span class="k">else</span> { from };
+        <span class="k">using</span> a = <span class="k">self</span>.accounts[first].lock() {
+            <span class="k">using</span> b = <span class="k">self</span>.accounts[second].lock() {
+                <span class="k">let</span> (src, dst) = <span class="k">if</span> from == first { (a, b) } <span class="k">else</span> { (b, a) };
+                <span class="k">if</span> src.get() &lt; amount {
+                    <span class="k">self</span>.rejected.fetch_add(<span class="n">1i64</span>);
+                } <span class="k">else</span> {
+                    src.set(src.get() - amount);
+                    dst.set(dst.get() + amount);
+                    <span class="k">self</span>.moved.fetch_add(amount);
+                }
+            }
+        }
+    }
+
+    <span class="c">// Sum of all balances (called while no transfers are running).</span>
+    <span class="k">fn</span> total(<span class="k">self</span>) -&gt; <span class="t">i64</span> {
+        <span class="k">let</span> sum: <span class="t">i64</span> = <span class="n">0</span>;
+        <span class="k">for</span> m <span class="k">in</span> <span class="k">self</span>.accounts {
+            <span class="k">using</span> g = m.lock() { sum += g.get(); }
+        }
+        sum
+    }
+}
+
+<span class="k">fn</span> main() {
+    <span class="k">let</span> bank = <span class="t">Bank</span>::new();
+    <span class="k">let</span> before = bank.total();
+
+    <span class="k">let</span> handles: <span class="t">List</span>&lt;thread::<span class="t">JoinHandle</span>&lt;<span class="t">i32</span>&gt;&gt; = [];
+    <span class="k">for</span> t <span class="k">in</span> <span class="n">0</span>..<span class="t">THREADS</span> {
+        handles.push(thread::spawn(|| {
+            <span class="k">let</span> rng = <span class="t">Rng</span> { state: t <span class="k">as</span> <span class="t">u64</span> + <span class="n">1u64</span> };
+            <span class="k">for</span> _ <span class="k">in</span> <span class="n">0</span>..<span class="t">TRANSFERS</span> {
+                <span class="k">let</span> from = rng.next(<span class="t">ACCOUNTS</span> <span class="k">as</span> <span class="t">u64</span>) <span class="k">as</span> <span class="t">usize</span>;
+                <span class="k">let</span> to = rng.next(<span class="t">ACCOUNTS</span> <span class="k">as</span> <span class="t">u64</span>) <span class="k">as</span> <span class="t">usize</span>;
+                bank.transfer(from, to, rng.next(<span class="n">300u64</span>) <span class="k">as</span> <span class="t">i64</span> + <span class="n">1</span>);
+            }
+            <span class="t">TRANSFERS</span>
+        }));
+    }
+    <span class="k">let</span> attempted = <span class="n">0</span>;
+    <span class="k">for</span> h <span class="k">in</span> handles { attempted += <span class="k">try</span>! h.join(); }
+
+    <span class="k">let</span> after = bank.total();
+    println(<span class="s">f"{</span><span class="t">THREADS</span><span class="s">} threads attempted {</span>attempted<span class="s">} transfers"</span>);
+    println(<span class="s">f"money moved: {</span>bank.moved.load() &gt; <span class="n">0</span><span class="s">}, some rejected for lack of funds: {</span>bank.rejected.load() &gt; <span class="n">0</span><span class="s">}"</span>);
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="t">ACCOUNTS</span> {
+        <span class="k">using</span> g = bank.accounts[i].lock() {
+            <span class="k">let</span> ok = <span class="k">if</span> g.get() &gt;= <span class="n">0</span> { <span class="s">"ok"</span> } <span class="k">else</span> { <span class="s">"NEGATIVE"</span> };
+            println(<span class="s">f"account {</span>i<span class="s">}: balance {</span>ok<span class="s">}"</span>);
+        }
+    }
+    println(<span class="s">f"total before {</span>before<span class="s">}, after {</span>after<span class="s">}, invariant holds: {</span>before == after<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">4 threads attempted 80000 transfers
+money moved: true, some rejected for lack of funds: true
+account 0: balance ok
+account 1: balance ok
+account 2: balance ok
+account 3: balance ok
+account 4: balance ok
+total before 5000, after 5000, invariant holds: true
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li>Each account is its own <code>Mutex&lt;i64&gt;</code>, kept in a fixed array. A <code>List</code> would not compile here: lists are shared mutable handles and are not <code>Sync</code>, so a thread closure may not capture one (<a href="../spec/refs-lang/004-functions/406-capture-semantics">4.6.9</a>). The lock is taken with <code>using g = m.lock() { ... }</code> and released when the block ends; the guarded value is read and written with <code>get()</code> / <code>set()</code> (<a href="../learn/12-concurrency">Concurrency</a>, <a href="../spec/refs-lang/003-expressions/317-using-expression">3.17 <code>using</code></a>, <a href="../std/core/sync#struct.Mutex"><code>Mutex</code></a>).
+</li>
+<li>A transfer must lock both accounts. If two threads ran A→B and B→A at the same time and locked in opposite order, they could wait for each other forever, so the lower-numbered account is always locked first.
+</li>
+<li>Independent counters, such as the amount moved and the number of rejections, are counted without a lock using <code>fetch_add</code> on <code>Atomic&lt;i64&gt;</code> (<a href="../std/core/sync#struct.Atomic"><code>Atomic</code></a>, <a href="../spec/refs-standard-libraries/200-core/216-sync">2.16 sync</a>).
+</li>
+<li>Each thread uses a tiny pseudo-random generator with its own seed; <code>wrapping_mul</code> / <code>wrapping_add</code> keep multiplication overflow from panicking.
+</li>
+<li>The balance of each account depends on how the threads interleave, but if transfers are atomic the total is always the same. The output contains only facts that do not depend on that order.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/bank-mutex.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>Examples</a><a class="next" href="bigint-factorial"><small>Next</small>Big integers and factorials</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

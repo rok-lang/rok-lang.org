@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.5. union - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="union 은 여러 필드가 같은 메모리를 공유하는 비태그 컨테이너입니다. 한 시점에 어느 필드의 값이 의미 있는지를 언어가 추적하지 않으며, 그 책임은 사용자에게 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/205-union.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.5. union - rok docs">
+<meta property="og:description" content="union 은 여러 필드가 같은 메모리를 공유하는 비태그 컨테이너입니다. 한 시점에 어느 필드의 값이 의미 있는지를 언어가 추적하지 않으며, 그 책임은 사용자에게 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/205-union.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/205-union.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/205-union.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li class="cur"><a aria-current="page" href="205-union">2.5. union</a><ul class="toc"><li><a href="#251-기본-형태">2.5.1. 기본 형태</a></li><li><a href="#252-의미론">2.5.2. 의미론</a></li><li><a href="#253-안전성의-위치">2.5.3. 안전성의 위치</a></li><li><a href="#254-기본-레이아웃은-컴파일러-자유">2.5.4. 기본 레이아웃은 컴파일러 자유</a></li><li><a href="#255-union-vs-reprc-union-차이">2.5.5. union vs #[repr(C)] union 차이</a></li><li><a href="#256-가시성--중복-정의">2.5.6. 가시성 / 중복 정의</a></li><li><a href="#257-union-과-합-타입의-차이">2.5.7. union 과 합 타입의 차이</a></li></ul></li><li><a href="206-sum-types">2.6. 합 타입 (A | B)</a></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. 제네릭</a></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="25-union 25-union 251-기본-형태 251-basic-form 제네릭-union generic-unions 252-의미론 252-semantics 253-안전성의-위치 253-where-safety-lies 254-기본-레이아웃은-컴파일러-자유 254-default-layout-is-left-to-the-compiler 255-union-vs-reprc-union-차이 255-union-vs-reprc-union 256-가시성--중복-정의 256-visibility--duplicate-definitions 257-union-과-합-타입의-차이 257-union-vs-sum-types"><a href="../../../../spec/refs-lang/002-types/205-union" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="25-union"><a class="anchor" tabindex="-1" href="#25-union" aria-hidden="true">#</a>2.5. <code>union</code></h1>
+<p><code>union</code> 은 여러 필드가 같은 메모리를 공유하는 비태그 컨테이너입니다. 한 시점에 어느 필드의 값이 의미 있는지를 언어가 추적하지 않으며, 그 책임은 사용자에게 있습니다.</p>
+<pre><code>union_decl      ::= &quot;union&quot; identifier generics? where_clause? &quot;{&quot; named_field_list? &quot;}&quot;
+</code></pre>
+<h2 id="251-기본-형태"><a class="anchor" tabindex="-1" href="#251-기본-형태" aria-hidden="true">#</a>2.5.1. 기본 형태</h2>
+<p>가장 단순한 형태의 <code>union</code> 은 다음과 같이 선언합니다.</p>
+<pre><code class="language-rok"><span class="k">union</span> <span class="t">EpollData</span> {
+    ptr: <span class="t">usize</span>;
+    fd: <span class="t">i32</span>;
+    val: <span class="t">u64</span>;
+}
+</code></pre>
+<p>본체와 필드 문법은 <a href="203-struct"><code>struct</code></a> 의 named <code>struct</code> 와 동일합니다. 다만 키워드가 <code>union</code> 이라는 점, 그리고 모든 필드가 같은 메모리 위치를 공유한다는 의미론에서 차이가 납니다.</p>
+<h3 id="제네릭-union"><a class="anchor" tabindex="-1" href="#제네릭-union" aria-hidden="true">#</a>제네릭 union</h3>
+<p><code>union</code> 은 <code>struct</code> 처럼 bound, <code>where</code> 절, 기본값을 가진 타입 매개변수 (<a href="210-generics">2.10</a>) 를 가질 수 있습니다. 각 인스턴스는 자기 레이아웃을 가진 별개의 타입이며, 그 크기와 정렬은 그 인자에 대한 필드 타입을 따릅니다.</p>
+<pre><code class="language-rok"><span class="k">union</span> <span class="t">Bits</span>&lt;<span class="t">T</span>&gt; { v: <span class="t">T</span>; raw: <span class="t">u64</span>; }
+<span class="k">union</span> <span class="t">Small</span>&lt;<span class="t">T</span> = <span class="t">u16</span>&gt; { v: <span class="t">T</span>; raw: <span class="t">u8</span>; }
+
+<span class="k">let</span> a = <span class="t">Bits</span>::&lt;<span class="t">f64</span>&gt; { raw: <span class="n">0x3FF0000000000000u64</span> };
+<span class="k">let</span> b = <span class="t">Bits</span> { v: <span class="n">7i32</span> };              <span class="c">// 준 필드에서 추론한 Bits&lt;i32&gt;</span>
+<span class="k">let</span> x = <span class="k">unsafe</span> { a.v };                <span class="c">// 1.0 (the bits of 1.0f64)</span>
+</code></pre>
+<p>union 리터럴의 인자는 주어진 필드 하나에서 추론합니다. bound 는 인스턴스마다 검사하며, 진단은 인스턴스를 이름으로 부릅니다 (<code>reading field `v` of union `Bits&lt;i32&gt;` needs an `unsafe` block</code>). <code>union</code> 은 적어도 필드 하나를 선언합니다.</p>
+<h2 id="252-의미론"><a class="anchor" tabindex="-1" href="#252-의미론" aria-hidden="true">#</a>2.5.2. 의미론</h2>
+<p>다음 예시를 통해 <code>union</code> 의 동작 방식을 살펴보겠습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="t">EpollData</span> { fd: <span class="n">5i32</span> };
+x.fd = <span class="n">7i32</span>;                    <span class="c">// 쓰기 - 안전</span>
+<span class="k">let</span> y = <span class="k">unsafe</span> { x.val };       <span class="c">// 읽기 - unsafe 필요. x 의 비트 패턴을 u64 로 재해석</span>
+</code></pre>
+<p>한 인스턴스를 어떤 필드로 생성하면 그 필드의 비트가 메모리에 쓰입니다. 이후 다른 필드로 읽으면 같은 메모리의 비트를 그 필드 타입으로 재해석합니다. 필드 쓰기는 안전하지만, 필드 읽기는 <a href="../004-functions/415-unsafe#4152-unsafe------블록-표현식"><code>unsafe</code></a> 안에서만 할 수 있습니다. 읽은 비트가 그 타입의 유효한 값인지 (예: <code>bool</code>, <code>char</code>, 포인터) 언어가 보장하지 않기 때문입니다.</p>
+<h2 id="253-안전성의-위치"><a class="anchor" tabindex="-1" href="#253-안전성의-위치" aria-hidden="true">#</a>2.5.3. 안전성의 위치</h2>
+<p><code>union</code> 의 비트 재해석은 언어가 정의한 동작이지만, 그 결과의 의미는 프로그램 도메인의 책임입니다. 예를 들어 <code>f32</code> 필드에 <code>1.0</code> 을 쓰고 <code>i32</code> 필드로 읽으면 <code>1065353216</code> (<code>0x3F800000</code>) 이 되고, 반대로 <code>i32</code> 비트를 <code>f32</code> 로 읽으면 IEEE 754 의 비트 표현에 따른 실수값이 되며, 이 값이 도메인적으로 의미 있는지는 언어가 검증하지 않습니다.</p>
+<p>이 모델은 C 의 <code>union</code> 과 다릅니다. C 에서는 read-from-different-member 가 미정의 동작이지만, rok 에서는 비트 재해석으로 정의됩니다. 다만 결과가 유효한 값이라는 보장이 없으므로 읽기는 <code>unsafe</code> 로 표시합니다.</p>
+<h2 id="254-기본-레이아웃은-컴파일러-자유"><a class="anchor" tabindex="-1" href="#254-기본-레이아웃은-컴파일러-자유" aria-hidden="true">#</a>2.5.4. 기본 레이아웃은 컴파일러 자유</h2>
+<p>기본 <code>union</code> 레이아웃은 컴파일러 자유입니다. 가장 큰 필드의 크기와 정렬만 만족하면 되며, 필드 정렬과 패딩의 정확한 결정은 컴파일러가 담당합니다.</p>
+<p>만약 C <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> 호환 <code>union</code> 이 필요하다면 <code>#[repr(C)]</code> 을 부착하면 됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[repr(C)]</span>
+<span class="k">union</span> <span class="t">CUnion</span> {
+    a: <span class="t">i32</span>;
+    b: <span class="t">f32</span>;
+}
+</code></pre>
+<p><code>#[repr(C)]</code> 가 부착된 <code>union</code> 은 C 의 <code>union</code> 과 비트 수준에서 호환되며, <a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> 인터페이스에서 사용합니다. 정확한 의미는 <a href="../006-meta-system/602-built-in-attributes">내장 속성</a> 에서 정의합니다.</p>
+<h2 id="255-union-vs-reprc-union-차이"><a class="anchor" tabindex="-1" href="#255-union-vs-reprc-union-차이" aria-hidden="true">#</a>2.5.5. <code>union</code> vs <code>#[repr(C)] union</code> 차이</h2>
+<p>두 형태의 차이는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>사용처</th><th>레이아웃</th><th>비트 호환</th></tr></thead>
+<tbody>
+<tr><td><code>union T { ... }</code></td><td>일반 코드</td><td>컴파일러 자유</td><td>rok 내부에서만 보장</td></tr>
+<tr><td><code>#[repr(C)] union T { ... }</code></td><td>FFI</td><td>C ABI 동일</td><td>C 코드와 호환</td></tr>
+</tbody></table></div>
+<h2 id="256-가시성--중복-정의"><a class="anchor" tabindex="-1" href="#256-가시성--중복-정의" aria-hidden="true">#</a>2.5.6. 가시성 / 중복 정의</h2>
+<p><a href="203-struct"><code>struct</code></a> 와 같은 규칙을 따릅니다.</p>
+<div class="callout warning"><p class="callout-title">경고</p>
+<p><code>union</code> 필드 읽기는 비트 재해석이며 <code>unsafe</code> 안에서만 할 수 있습니다 (쓰기는 안전). 읽은 비트가 그 타입의 유효한 값인지, 도메인적으로 의미 있는지는 작성자의 책임입니다.</p>
+</div>
+<h2 id="257-union-과-합-타입의-차이"><a class="anchor" tabindex="-1" href="#257-union-과-합-타입의-차이" aria-hidden="true">#</a>2.5.7. <code>union</code> 과 합 타입의 차이</h2>
+<p><code>union</code> 과 합 타입은 겉보기에 비슷해 보일 수 있으나, 실제로는 전혀 다른 도구입니다.</p>
+<pre><code class="language-rok"><span class="k">union</span>  <span class="t">Foo</span> { a: <span class="t">i32</span>; b: <span class="t">f32</span>; }    <span class="c">// 같은 메모리, 태그 없음</span>
+<span class="k">type</span>   <span class="t">Bar</span> = <span class="t">i32</span> | <span class="t">f32</span>;            <span class="c">// 별개 메모리, 태그 있음</span>
+</code></pre>
+<p>각 측면에서의 차이는 다음 표에 정리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>union</code></th><th>합 타입 (<code>A | B</code>)</th></tr></thead>
+<tbody>
+<tr><td>어느 필드가 활성인지 추적</td><td>하지 않습니다</td><td>태그로 추적</td></tr>
+<tr><td>필드 사이 변환</td><td>비트 재해석</td><td>변형 변경 (값 재구성)</td></tr>
+<tr><td>메모리 사용</td><td>가장 큰 필드 크기</td><td>태그 + 가장 큰 변형 크기</td></tr>
+<tr><td>필드 읽기</td><td><code>unsafe</code> 필요 (비트 재해석)</td><td>패턴 / <code>is</code> 로 안전하게</td></tr>
+</tbody></table></div>
+<p>이처럼 두 도구의 용도는 완전히 다릅니다. <code>union</code> 은 비트 수준의 다른 해석을 제공하는 도구이고, 합 타입은 값 수준의 다른 종류를 표현하는 도구입니다. 따라서 둘을 혼동하지 않도록 주의해야 합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/205-union.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="204-enum"><small>Previous</small>2.4. enum</a><a class="next" href="206-sum-types"><small>Next</small>2.6. 합 타입 (A | B)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

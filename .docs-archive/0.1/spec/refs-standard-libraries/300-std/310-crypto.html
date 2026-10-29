@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.10. crypto:: - the OS random source - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Bytes come from the operating system's cryptographically secure generator, read on every call (no user-space pool, so a forked process or a restored snapshot do...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/310-crypto.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.10. crypto:: - the OS random source - rok docs">
+<meta property="og:description" content="Bytes come from the operating system's cryptographically secure generator, read on every call (no user-space pool, so a forked process or a restored snapshot do...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/310-crypto.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/310-crypto.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/310-crypto.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - file system</a></li><li><a href="302-net">3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - time</a></li><li><a href="304-thread">3.4. thread:: - OS threads (1:1 model)</a></li><li><a href="305-io">3.5. io:: - Reader / Writer / standard I/O</a></li><li><a href="306-env">3.6. env:: - environment variables / args / directories</a></li><li><a href="307-process">3.7. process:: - child processes</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python-style)</a></li><li><a href="309-rokon">3.9. rokon:: - the ROKON data format</a></li><li class="cur"><a aria-current="page" href="310-crypto">3.10. crypto:: - the OS random source</a><ul class="toc"><li><a href="#3101-random">3.10.1. random</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="310-crypto---the-os-random-source 310-crypto---os-난수-원천 3101-random 3101-random"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/300-std/310-crypto" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="310-crypto---the-os-random-source"><a class="anchor" tabindex="-1" href="#310-crypto---the-os-random-source" aria-hidden="true">#</a>3.10. <code>crypto::</code> - the OS random source</h1>
+<h2 id="3101-random"><a class="anchor" tabindex="-1" href="#3101-random" aria-hidden="true">#</a>3.10.1. <code>random</code></h2>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::crypto::random;
+
+<span class="k">mod</span> random {
+    <span class="k">fn</span> fill(buf: <span class="t">List</span>&lt;<span class="t">u8</span>&gt;);          <span class="c">// overwrite every byte with random bytes</span>
+    <span class="k">fn</span> bytes(n: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> secret(n: <span class="t">usize</span>) -&gt; <span class="t">Secret</span>;   <span class="c">// n random bytes in secret storage (keys, seeds): no other copy</span>
+}
+</code></pre>
+<p>Bytes come from the operating system's cryptographically secure generator, read on every call (no user-space pool, so a forked process or a restored snapshot does not repeat output that <code>random</code> buffered):</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Target</th><th>Source</th></tr></thead>
+<tbody>
+<tr><td>Linux (gnu, musl; x86-64, AArch64, i686, ARMv7)</td><td><code>getrandom(2)</code> with no flags: blocks until the kernel pool is initialized, then never blocks</td></tr>
+<tr><td>macOS</td><td><code>getentropy(2)</code>, at most 256 bytes per call</td></tr>
+<tr><td>Windows</td><td><code>BCryptGenRandom</code> with <code>BCRYPT_USE_SYSTEM_PREFERRED_RNG</code></td></tr>
+<tr><td>wasm32-wasi, wasm32-wasi-threads</td><td>WASI <code>random_get</code> (the host's CSPRNG)</td></tr>
+<tr><td>wasm32-unknown-unknown</td><td>the JavaScript host's <code>crypto.getRandomValues</code> (through the <code>random_get</code> import the host provides)</td></tr>
+</tbody></table></div>
+<p>An interrupted call is retried. A failing source cannot be recovered from: <code>fill</code> and <code>bytes</code> panic rather than return predictable bytes. The algorithms are <code>rok::core::crypto</code> (2.21), which take their random inputs (keys, seeds, nonces, salts) as arguments; <code>net::tls</code> (3.2.5) draws all of its from here.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/300-std/310-crypto.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="309-rokon"><small>Previous</small>3.9. rokon:: - the ROKON data format</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

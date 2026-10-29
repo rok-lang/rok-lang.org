@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.4. thread:: - OS threads (1:1 model) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::std::thread module is the entry point for OS-level threads. As set out in 2.18 task, it is a separate abstraction from tasks, which run on the M:N coop...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/304-thread.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.4. thread:: - OS threads (1:1 model) - rok docs">
+<meta property="og:description" content="The rok::std::thread module is the entry point for OS-level threads. As set out in 2.18 task, it is a separate abstraction from tasks, which run on the M:N coop...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/304-thread.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/300-std/304-thread.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/300-std/304-thread.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">3. Std tier</a></p><ul class="pages"><li><a href="301-fs">3.1. fs:: - file system</a></li><li><a href="302-net">3.2. net:: - networking (TCP / UDP / Unix + TLS 1.3)</a></li><li><a href="303-time">3.3. time:: - time</a></li><li class="cur"><a aria-current="page" href="304-thread">3.4. thread:: - OS threads (1:1 model)</a><ul class="toc"><li><a href="#341-when-to-use-thread-vs-task">3.4.1. When to use thread vs. task</a></li><li><a href="#342-api">3.4.2. API</a></li><li><a href="#343-examples">3.4.3. Examples</a></li><li><a href="#344-thread-local-storage">3.4.4. Thread-local storage</a></li><li><a href="#345-impl--target">3.4.5. impl / target</a></li></ul></li><li><a href="305-io">3.5. io:: - Reader / Writer / standard I/O</a></li><li><a href="306-env">3.6. env:: - environment variables / args / directories</a></li><li><a href="307-process">3.7. process:: - child processes</a></li><li><a href="308-path">3.8. path:: - UTF-8 Path (Python-style)</a></li><li><a href="309-rokon">3.9. rokon:: - the ROKON data format</a></li><li><a href="310-crypto">3.10. crypto:: - the OS random source</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="34-thread---os-threads-11-model 34-thread---os-스레드-11-모델 341-when-to-use-thread-vs-task 341-언제-thread-vs-task 342-api 342-api panics-and-joinerror panic-과-joinerror 343-examples 343-사용-예 344-thread-local-storage 344-thread-local-storage 345-impl--target 345-impl--target"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/300-std/304-thread" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="34-thread---os-threads-11-model"><a class="anchor" tabindex="-1" href="#34-thread---os-threads-11-model" aria-hidden="true">#</a>3.4. <code>thread::</code> - OS threads (1:1 model)</h1>
+<p>The <code>rok::std::thread</code> module is the entry point for OS-level threads. As set out in <a href="../200-core/218-task">2.18 task</a>, it is a separate abstraction from tasks, which run on the M:N cooperative scheduler; this module provides the path for spawning native threads directly.</p>
+<h2 id="341-when-to-use-thread-vs-task"><a class="anchor" tabindex="-1" href="#341-when-to-use-thread-vs-task" aria-hidden="true">#</a>3.4.1. When to use thread vs. task</h2>
+<p>The following table indicates which to choose in which situation.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Situation</th><th>Recommendation</th></tr></thead>
+<tbody>
+<tr><td>General concurrency / async I/O</td><td><code>task::spawn</code> (lightweight)</td></tr>
+<tr><td>CPU-bound computation</td><td><code>task::spawn</code> or <code>par::*</code> (work-stealing)</td></tr>
+<tr><td>Blocking C library calls</td><td><code>thread::spawn</code> (avoids blocking the task scheduler)</td></tr>
+<tr><td>Where an OS thread API is required</td><td><code>thread::spawn</code> (TLS, signal mask, etc.)</td></tr>
+<tr><td>Embedded / no-task</td><td><code>thread::spawn</code></td></tr>
+</tbody></table></div>
+<p>In short, tasks come first wherever they are light and expressive enough, and dropping down to threads is for places that must deal with OS resources directly.</p>
+<h2 id="342-api"><a class="anchor" tabindex="-1" href="#342-api" aria-hidden="true">#</a>3.4.2. API</h2>
+<p>The basic types and function signatures are as follows.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Thread</span> { <span class="c">/* OS handle - not generic */</span> }
+<span class="k">struct</span> <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* join result T */</span> }
+<span class="k">struct</span> <span class="t">ThreadId</span> { <span class="c">/* opaque */</span> }
+
+<span class="k">struct</span> <span class="t">JoinError</span> { code: <span class="t">i32</span>; }          <span class="c">// OS join error number (errno), JOIN_LOST or JOIN_TAKEN</span>
+<span class="k">const</span> <span class="t">JOIN_LOST</span>: <span class="t">i32</span> = -<span class="n">1</span>;               <span class="c">// the thread ended with a failed REPL cell</span>
+<span class="k">const</span> <span class="t">JOIN_TAKEN</span>: <span class="t">i32</span> = -<span class="n">2</span>;              <span class="c">// already joined or detached</span>
+<span class="c">// implements Display, Debug and Error</span>
+
+<span class="k">fn</span> spawn&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(f: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Send</span>) -&gt; <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt;;
+
+<span class="k">struct</span> <span class="t">Builder</span> {
+    name: <span class="t">str</span> | <span class="k">none</span>;
+    stack_size: <span class="t">usize</span> | <span class="k">none</span>;
+}
+
+<span class="k">impl</span> <span class="t">Builder</span> {
+    <span class="k">fn</span> new() -&gt; <span class="t">Builder</span>;
+    <span class="k">fn</span> name(<span class="k">self</span>, name: <span class="t">str</span>) -&gt; <span class="t">Builder</span>;
+    <span class="k">fn</span> stack_size(<span class="k">self</span>, size: <span class="t">usize</span>) -&gt; <span class="t">Builder</span>;
+    <span class="k">fn</span> spawn&lt;<span class="t">T</span>: <span class="t">Send</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Send</span>) <span class="k">throws</span> (<span class="t">IoError</span>) -&gt; <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt;;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">JoinHandle</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> join(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">JoinError</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> detach(<span class="k">self</span>);                     <span class="c">// does not join - the thread runs to completion</span>
+    <span class="k">fn</span> thread(<span class="k">self</span>) -&gt; <span class="t">Thread</span>;
+}
+
+<span class="k">impl</span> <span class="t">Thread</span> {
+    <span class="k">fn</span> id(<span class="k">self</span>) -&gt; <span class="t">ThreadId</span>;
+    <span class="k">fn</span> name(<span class="k">self</span>) -&gt; <span class="t">str</span> | <span class="k">none</span>;        <span class="c">// name given with Builder::name (also set as the OS thread name), none if absent</span>
+    <span class="k">fn</span> unpark(<span class="k">self</span>);
+}
+
+<span class="c">// current thread</span>
+<span class="k">fn</span> current() -&gt; <span class="t">Thread</span>;
+<span class="k">fn</span> yield_now();
+<span class="k">fn</span> sleep(dur: <span class="t">Duration</span>);
+<span class="k">fn</span> park();                                     <span class="c">// blocks until unparked (may return without a reason)</span>
+<span class="k">fn</span> park_timeout(dur: <span class="t">Duration</span>);
+
+<span class="c">// thread-local storage</span>
+<span class="k">fn</span> local&lt;<span class="t">T</span>&gt;(init: <span class="k">fn</span>() -&gt; <span class="t">T</span> + <span class="t">Sync</span>) -&gt; <span class="t">ThreadLocal</span>&lt;<span class="t">T</span>&gt;;     <span class="c">// init is called on first use in each thread</span>
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">ThreadLocal</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;                       <span class="c">// value of the current thread</span>
+    <span class="k">fn</span> set(<span class="k">self</span>, value: <span class="t">T</span>);
+    <span class="k">fn</span> with&lt;<span class="t">R</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">R</span>) -&gt; <span class="t">R</span>;
+}
+</code></pre>
+<p><code>Thread::unpark</code> sets that thread's park token and wakes it. A token is consumed by one <code>park</code>.</p>
+<h3 id="panics-and-joinerror"><a class="anchor" tabindex="-1" href="#panics-and-joinerror" aria-hidden="true">#</a>Panics and <code>JoinError</code></h3>
+<p>A panic in any thread terminates the whole process with exit code 101. <code>join</code> therefore never receives another thread's panic, and <code>JoinError</code> represents OS-level join failures, or <code>JOIN_LOST</code> for a thread that ended with a failed REPL cell (<a href="../../refs-lang/009-tools/907-jit-cells#970-rules-of-the-cell-session">refs-lang 9.7.0</a>), displayed as &quot;thread join failed: the thread ended with a failed REPL cell&quot;.</p>
+<p><code>JOIN_TAKEN</code> (-2): the handle, or a copy of it, was already joined or detached. A second <code>join</code> throws it; a second <code>detach</code> does nothing.</p>
+<h2 id="343-examples"><a class="anchor" tabindex="-1" href="#343-examples" aria-hidden="true">#</a>3.4.3. Examples</h2>
+<p>From the simplest spawn-join pattern to builders and multiple spawns:</p>
+<pre><code class="language-rok"><span class="k">use</span> rok::std::thread;
+
+<span class="k">let</span> h = thread::spawn(|| {
+    heavy_blocking_work()
+});
+<span class="k">let</span> result = <span class="k">try</span> h.join();
+
+<span class="c">// builder</span>
+<span class="k">let</span> h = <span class="k">try</span> thread::<span class="t">Builder</span>::new()
+    .name(<span class="s">"worker-1"</span>)
+    .stack_size(<span class="n">4</span> * <span class="n">1024</span> * <span class="n">1024</span>)
+    .spawn(|| { ... });
+
+<span class="c">// multiple</span>
+<span class="k">let</span> handles: <span class="t">List</span>&lt;<span class="t">JoinHandle</span>&lt;<span class="t">i64</span>&gt;&gt; = (<span class="n">0</span>..<span class="n">10</span>)
+    .map(|i| thread::spawn(|| { compute(i) }))
+    .collect();
+
+<span class="k">let</span> results: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = handles
+    .into_iter()
+    .map(|h| <span class="k">try</span>! h.join())
+    .collect();
+</code></pre>
+<h2 id="344-thread-local-storage"><a class="anchor" tabindex="-1" href="#344-thread-local-storage" aria-hidden="true">#</a>3.4.4. Thread-local storage</h2>
+<p>When each thread needs its own independent storage, use <code>thread::local</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> counter = thread::local(|| <span class="n">0</span>);
+
+<span class="k">try</span> thread::spawn(|| {
+    counter.set(counter.get() + <span class="n">1</span>);         <span class="c">// only this thread's value changes</span>
+}).join();
+</code></pre>
+<h2 id="345-impl--target"><a class="anchor" tabindex="-1" href="#345-impl--target" aria-hidden="true">#</a>3.4.5. impl / target</h2>
+<p>Per-platform support:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>linux/macos/windows</th><th>wasm32-wasi / browser</th><th>wasm32-wasi-threads</th></tr></thead>
+<tbody>
+<tr><td><code>spawn</code></td><td>✓</td><td>throws <code>Unsupported</code></td><td>✓</td></tr>
+<tr><td><code>Builder</code></td><td>✓</td><td>throws <code>Unsupported</code></td><td>✓</td></tr>
+<tr><td><code>local</code></td><td>✓</td><td>✓ (one thread)</td><td>✓</td></tr>
+<tr><td><code>park</code>/<code>unpark</code></td><td>futex / WaitOnAddress</td><td>✓</td><td>✓</td></tr>
+</tbody></table></div>
+<p>On <code>wasm32-wasi</code> and in the browser there is one thread: <code>thread::current().name()</code> is <code>none</code>. On <code>wasm32-wasi-threads</code>, <code>rok_cpu_count()</code> and the available parallelism are 4, since WASI cannot report a core count.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/300-std/304-thread.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="303-time"><small>Previous</small>3.3. time:: - time</a><a class="next" href="305-io"><small>Next</small>3.5. io:: - Reader / Writer / standard I/O</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

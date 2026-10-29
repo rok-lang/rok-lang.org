@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5. Variables / modules / visibility / packages overview - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This part covers rok's name space. Its goal is to define where variables are visible, how modules are grouped, how visibility levels work, and where the boundar...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="5. Variables / modules / visibility / packages overview - rok docs">
+<meta property="og:description" content="This part covers rok's name space. Its goal is to define where variables are visible, how modules are grouped, how visibility levels work, and where the boundar...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/005-modules/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/005-modules/index.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a class="cur" href="./">5. Variables / modules / visibility / packages overview</a></p><ul class="toc"><li><a href="#contents">Contents</a></li><li><a href="#the-four-levels-of-the-name-space">The four levels of the name space</a></li><li><a href="#packages-the-largest-unit">Packages: the largest unit</a></li><li><a href="#modules-grouping-units-within-a-package">Modules: grouping units within a package</a></li><li><a href="#items-named-definitions-within-a-module">Items: named definitions within a module</a></li><li><a href="#local-variables-variables-within-functions--blocks">Local variables: variables within functions / blocks</a></li><li><a href="#visibility-exposing-items">Visibility: exposing items</a></li><li><a href="#name-resolution-rules">Name resolution rules</a></li></ul><ul class="pages"><li><a href="501-variable-declaration">5.1. Variable declarations</a></li><li><a href="502-const">5.2. const</a></li><li><a href="503-static">5.3. static</a></li><li><a href="504-modules">5.4. Modules</a></li><li><a href="505-use">5.5. use (imports)</a></li><li><a href="506-visibility">5.6. Visibility</a></li><li><a href="507-paths">5.7. Paths</a></li><li><a href="508-re-export">5.8. Re-exports (pub use)</a></li><li><a href="509-extern-block">5.9. extern blocks (FFI declarations)</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="5-variables--modules--visibility--packages-overview 5-변수--모듈--가시성--패키지-개요 contents 목차 the-four-levels-of-the-name-space 명명-공간의-네-단계 packages-the-largest-unit 패키지-가장-큰-단위 modules-grouping-units-within-a-package 모듈-패키지-안의-묶음-단위 items-named-definitions-within-a-module 항목-모듈-안의-명명된-정의 local-variables-variables-within-functions--blocks 지역-변수-함수--블록-안의-변수 visibility-exposing-items 가시성-항목의-외부-노출 name-resolution-rules 이름-해소-규칙"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/005-modules/" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="5-variables--modules--visibility--packages-overview"><a class="anchor" tabindex="-1" href="#5-variables--modules--visibility--packages-overview" aria-hidden="true">#</a>5. Variables / modules / visibility / packages overview</h1>
+<p>This part covers rok's name space. Its goal is to define where variables are visible, how modules are grouped, how visibility levels work, and where the boundaries between packages lie.</p>
+<h2 id="contents"><a class="anchor" tabindex="-1" href="#contents" aria-hidden="true">#</a>Contents</h2>
+<ul>
+<li><a href="501-variable-declaration">5.1. Variable declarations</a>
+</li>
+<li><a href="502-const">5.2. <code>const</code></a>
+</li>
+<li><a href="503-static">5.3. <code>static</code></a>
+</li>
+<li><a href="504-modules">5.4. Modules</a>
+</li>
+<li><a href="505-use">5.5. <code>use</code> (imports)</a>
+</li>
+<li><a href="506-visibility">5.6. Visibility</a>
+</li>
+<li><a href="507-paths">5.7. Paths</a>
+</li>
+<li><a href="508-re-export">5.8. Re-exports (<code>pub use</code>)</a>
+</li>
+<li><a href="509-extern-block">5.9. <code>extern</code> blocks (FFI declarations)</a>
+</li>
+</ul>
+<h2 id="the-four-levels-of-the-name-space"><a class="anchor" tabindex="-1" href="#the-four-levels-of-the-name-space" aria-hidden="true">#</a>The four levels of the name space</h2>
+<p>The name space has four levels:</p>
+<pre><code>package
+  └── module
+        └── item
+              └── local variable
+</code></pre>
+<p>Containment runs top to bottom. A package has many modules, a module has many items (functions, types, traits, <code>const</code>, <code>static</code>), and an item (in particular a function body) has many local variables.</p>
+<p>The boundary rules for each level are defined in the following documents.</p>
+<h2 id="packages-the-largest-unit"><a class="anchor" tabindex="-1" href="#packages-the-largest-unit" aria-hidden="true">#</a>Packages: the largest unit</h2>
+<p>The package defined in <a href="../000-meta/003-source-units">source units</a> is the outermost level of the name space. Each package is identified by a content-based hash.</p>
+<p>All items in the same package belong to the same code-authority domain. This is why the orphan rule of <a href="../002-types/209-impl"><code>impl</code></a> applies per package.</p>
+<h2 id="modules-grouping-units-within-a-package"><a class="anchor" tabindex="-1" href="#modules-grouping-units-within-a-package" aria-hidden="true">#</a>Modules: grouping units within a package</h2>
+<p>A package has many modules. Each module is either a single file (<code>foo.rok</code>) or a body file plus a folder of the same name (<code>foo.rok</code> + <code>foo/</code>). This is the same model as Rust 2018+. The detailed rules are defined in <a href="504-modules">modules</a>.</p>
+<pre><code>my_pkg/
+└── src/
+    ├── lib.rok                  &lt;- root module body
+    ├── geom.rok                 &lt;- geom module    (single-file: geom.rok)
+    ├── parsing.rok              &lt;- parsing module body
+    └── parsing/                 &lt;- parsing's submodules
+        ├── lexer.rok                parsing::lexer
+        └── parser.rok               parsing::parser
+</code></pre>
+<h2 id="items-named-definitions-within-a-module"><a class="anchor" tabindex="-1" href="#items-named-definitions-within-a-module" aria-hidden="true">#</a>Items: named definitions within a module</h2>
+<p>Each module has items: functions, types, traits, <code>impl</code> blocks, <code>const</code>, <code>static</code>, and other module declarations.</p>
+<p>Every definition of a <a href="../004-functions/401-function-declaration">function declaration</a>, <a href="../002-types/203-struct"><code>struct</code></a>, <a href="../002-types/204-enum"><code>enum</code></a>, <a href="../002-types/208-trait"><code>trait</code></a> and <a href="../002-types/209-impl"><code>impl</code></a> is an item within a module.</p>
+<h2 id="local-variables-variables-within-functions--blocks"><a class="anchor" tabindex="-1" href="#local-variables-variables-within-functions--blocks" aria-hidden="true">#</a>Local variables: variables within functions / blocks</h2>
+<p>Within functions, blocks and other expressions, local variables are declared with the <code>let</code> keyword (<a href="../001-lexical/105-keywords">keywords</a>).</p>
+<pre><code class="language-rok"><span class="k">fn</span> area(r: <span class="t">f64</span>) -&gt; <span class="t">f64</span> {
+    <span class="k">let</span> pi = <span class="n">3.14159f64</span>;          <span class="c">// local variable</span>
+    pi * r * r
+}
+</code></pre>
+<p>The visibility scope of a local variable is determined per block of a <a href="../003-expressions/309-block-expressions">block expression</a>. The detailed rules are defined in <a href="501-variable-declaration">variable declarations</a>.</p>
+<h2 id="visibility-exposing-items"><a class="anchor" tabindex="-1" href="#visibility-exposing-items" aria-hidden="true">#</a>Visibility: exposing items</h2>
+<p>Each item has a visibility. The visibility level (<a href="506-visibility">visibility</a>) determines how far the item is visible.</p>
+<pre><code>private (default)    within the same module only
+pub(sub)             within submodules only
+pub(pkg)             within the same package only
+pub                  also from external packages
+</code></pre>
+<h2 id="name-resolution-rules"><a class="anchor" tabindex="-1" href="#name-resolution-rules" aria-hidden="true">#</a>Name resolution rules</h2>
+<p>Determining which item a name in the code refers to is called name resolution.</p>
+<p>It considers the following. First, items locally visible in the current module are candidates. Second, external items imported with <code>use</code> (<a href="505-use"><code>use</code></a>) are also candidates. Third, the automatically imported <code>rok::**</code> (<a href="../000-meta/005-standard-libraries-tiers">standard library tiers</a>) is consulted as well. Finally, a visibility check is performed, and only visible items remain as candidates.</p>
+<p>Name resolution happens at compile time. Method dispatch on dynamic slots happens at runtime, but resolving the name itself is always completed at compile time.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/005-modules/README.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../004-functions/416-entry-point"><small>Previous</small>4.16. Entry point</a><a class="next" href="501-variable-declaration"><small>Next</small>5.1. Variable declarations</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

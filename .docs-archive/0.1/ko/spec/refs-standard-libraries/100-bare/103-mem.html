@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::mem 모듈은 미초기화 메모리를 안전하게 다루기 위한 wrapper 와 그에 따르는 ops 를 정의합니다. 일반적인 T 가 항상 초기화되어 있다고 보장되는 반면, MaybeUninit&lt;T&gt; 는 초기화 여부를 type 차원에서 명시적으로 표현합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/103-mem.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리 - rok docs">
+<meta property="og:description" content="rok::bare::mem 모듈은 미초기화 메모리를 안전하게 다루기 위한 wrapper 와 그에 따르는 ops 를 정의합니다. 일반적인 T 가 항상 초기화되어 있다고 보장되는 반면, MaybeUninit&lt;T&gt; 는 초기화 여부를 type 차원에서 명시적으로 표현합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/103-mem.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/103-mem.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/103-mem.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li class="cur"><a aria-current="page" href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a><ul class="toc"><li><a href="#131-동기---미초기화-read-는-ub">1.3.1. 동기 - 미초기화 read 는 UB</a></li><li><a href="#132-maybeuninitt">1.3.2. MaybeUninit&lt;T&gt;</a></li><li><a href="#133-pod-트레잇">1.3.3. Pod 트레잇</a></li><li><a href="#134-raw-mem-ops---read--write">1.3.4. raw mem ops - read / write</a></li><li><a href="#135-transmute_unchecked---escape-hatch">1.3.5. transmute_unchecked - escape hatch</a></li><li><a href="#136-align--size-util">1.3.6. align / size util</a></li><li><a href="#137-intrinsic-매핑">1.3.7. intrinsic 매핑</a></li><li><a href="#138-다른-언어와의-비교">1.3.8. 다른 언어와의 비교</a></li></ul></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li><a href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="13-maybeuninitt---미초기화-메모리 13-maybeuninitt---uninitialized-memory 131-동기---미초기화-read-는-ub 131-motivation---reading-uninitialized-memory-is-ub 132-maybeuninitt 132-maybeuninitt 사용-예---초기화-단계-분리 example---separating-the-initialization-step write-후-사용 using-after-write 133-pod-트레잇 133-the-pod-trait pod-가-보장하는-것 what-pod-guarantees 134-raw-mem-ops---read--write 134-raw-mem-ops---read--write 135-transmute_unchecked---escape-hatch 135-transmute_unchecked---escape-hatch 136-align--size-util 136-align--size-util 137-intrinsic-매핑 137-intrinsic-mapping 138-다른-언어와의-비교 138-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/100-bare/103-mem" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="13-maybeuninitt---미초기화-메모리"><a class="anchor" tabindex="-1" href="#13-maybeuninitt---미초기화-메모리" aria-hidden="true">#</a>1.3. <code>MaybeUninit&lt;T&gt;</code> - 미초기화 메모리</h1>
+<p><code>rok::bare::mem</code> 모듈은 미초기화 메모리를 안전하게 다루기 위한 wrapper 와 그에 따르는 ops 를 정의합니다. 일반적인 <code>T</code> 가 항상 초기화되어 있다고 보장되는 반면, <code>MaybeUninit&lt;T&gt;</code> 는 초기화 여부를 type 차원에서 명시적으로 표현합니다.</p>
+<h2 id="131-동기---미초기화-read-는-ub"><a class="anchor" tabindex="-1" href="#131-동기---미초기화-read-는-ub" aria-hidden="true">#</a>1.3.1. 동기 - 미초기화 read 는 UB</h2>
+<p>LLVM 의 <code>freeze</code> 의미론 (2022 년 명확화) 에 따라, 미초기화 메모리에 대한 read 는 정수형이라 하더라도 UB 입니다. 단순히 &quot;garbage 값&quot; 이 흘러나오는 수준이 아니라, 컴파일러가 그 값에 대해 임의의 가정을 깔고 코드를 변형할 수 있다는 뜻입니다.</p>
+<pre><code class="language-c">// C
+int x;            // uninit
+if (x == 0) { ... }   // 컴파일러가 x 의 값 임의 추정 - true / false 양쪽 dead-code 가능
+</code></pre>
+<p>따라서 T 자체로는 미초기화 상태를 표현할 수 없으며, 이를 위한 별도의 wrapper 가 필요해집니다.</p>
+<h2 id="132-maybeuninitt"><a class="anchor" tabindex="-1" href="#132-maybeuninitt" aria-hidden="true">#</a>1.3.2. <code>MaybeUninit&lt;T&gt;</code></h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* T 와 같은 size + align, 단 미초기화 가능 */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> uninit() -&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt;;          <span class="c">// 미초기화 슬롯</span>
+    <span class="k">fn</span> zeroed() -&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt;;          <span class="c">// 0 으로 채움</span>
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">MaybeUninit</span>&lt;<span class="t">T</span>&gt;;     <span class="c">// 초기화된 슬롯</span>
+
+    <span class="k">fn</span> write(<span class="k">ref</span> <span class="k">self</span>, value: <span class="t">T</span>);           <span class="c">// value 쓰기</span>
+
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> as_mut_ptr(<span class="k">ref</span> <span class="k">self</span>) -&gt; <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">unsafe</span> <span class="k">fn</span> assume_init(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+    <span class="c">// SAFETY: write / 외부 mechanism 으로 초기화 보장됐을 때만</span>
+
+}
+</code></pre>
+<p><code>as_ptr</code> / <code>as_mut_ptr</code> 의 receiver 는 place 여야 합니다: 포인터는 사본이 아니라 그 변수를 가리킵니다. <code>uninit()</code> 은 <code>zeroed()</code> 로 구현될 수 있습니다.</p>
+<h3 id="사용-예---초기화-단계-분리"><a class="anchor" tabindex="-1" href="#사용-예---초기화-단계-분리" aria-hidden="true">#</a>사용 예 - 초기화 단계 분리</h3>
+<p>다음은 FFI 가 buffer 를 채워주기를 기다렸다가 값을 꺼내는 전형적인 패턴입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> buf: <span class="t">MaybeUninit</span>&lt;[<span class="t">u8</span>; <span class="n">1024</span>]&gt; = <span class="t">MaybeUninit</span>::uninit();
+<span class="k">let</span> p: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; = buf.as_mut_ptr().cast::&lt;<span class="t">u8</span>&gt;();
+
+<span class="k">unsafe</span> {
+    read_from_kernel(p, <span class="n">1024</span>);              <span class="c">// FFI 가 buf 채움</span>
+    <span class="k">let</span> initialized: [<span class="t">u8</span>; <span class="n">1024</span>] = buf.assume_init();
+}
+</code></pre>
+<h3 id="write-후-사용"><a class="anchor" tabindex="-1" href="#write-후-사용" aria-hidden="true">#</a><code>write</code> 후 사용</h3>
+<p><code>write</code> 는 값을 기록할 뿐 참조를 돌려주지 않습니다 (rok 에는 <code>ref</code> 반환이 없음). 기록한 뒤에는 <code>assume_init</code> 으로 값을 꺼냅니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> slot: <span class="t">MaybeUninit</span>&lt;<span class="t">Big</span>&gt; = <span class="t">MaybeUninit</span>::uninit();
+slot.write(big_value());
+<span class="k">let</span> v: <span class="t">Big</span> = <span class="k">unsafe</span> { slot.assume_init() };
+process(v);
+</code></pre>
+<h2 id="133-pod-트레잇"><a class="anchor" tabindex="-1" href="#133-pod-트레잇" aria-hidden="true">#</a>1.3.3. <code>Pod</code> 트레잇</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Pod</span> { <span class="c">/* marker */</span> }
+</code></pre>
+<p>Plain Old Data 의 약자로, 모든 bit pattern 이 valid 한 type 을 가리킵니다. <a href="102-cast#125-reinterpreta-pod-b-pod---bit-cast-안전">1.2 cast</a> 의 <code>reinterpret</code> 가 바로 이 marker 를 요구합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>자동 impl</th><th>적용 안 됨</th></tr></thead>
+<tbody>
+<tr><td>모든 정수 (i*, u*)</td><td><code>Ptr&lt;T&gt;</code> (provenance)</td></tr>
+<tr><td>모든 부동소수 (f*)</td><td>사용자 struct (#[derive(Pod)] 명시)</td></tr>
+<tr><td><code>[T; N]</code> (T:Pod)</td><td>enum (variant tag - niche)</td></tr>
+<tr><td><code>(T, U, ...)</code> (모두 Pod)</td><td></td></tr>
+<tr><td><code>c_char</code></td><td></td></tr>
+<tr><td><code>bool</code>, <code>char</code> (bit invalid 자동 niche 처리)</td><td></td></tr>
+</tbody></table></div>
+<h3 id="pod-가-보장하는-것"><a class="anchor" tabindex="-1" href="#pod-가-보장하는-것" aria-hidden="true">#</a><code>Pod</code> 가 보장하는 것</h3>
+<p><code>Pod</code> 는 다음 세 가지를 한꺼번에 보장합니다.</p>
+<ol>
+<li>모든 bit pattern read 가 안전하다 - uninit 노출이 없습니다.
+</li>
+<li><strong>layout 결정론적</strong>: <code>#[repr(C)]</code> 또는 <code>#[repr(transparent)]</code> 가 강제됩니다.
+</li>
+<li><strong>no Drop</strong>: <code>Drop</code> 이 구현돼 있으면 <code>Pod</code> 는 자동으로 거부됩니다.
+</li>
+</ol>
+<pre><code class="language-rok"><span class="a">#[derive(Pod)]</span>
+<span class="a">#[repr(C)]</span>
+<span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f32</span>; y: <span class="t">f32</span>; z: <span class="t">f32</span>; }
+<span class="c">// → reinterpret OK, ffi 안전, etc.</span>
+</code></pre>
+<h2 id="134-raw-mem-ops---read--write"><a class="anchor" tabindex="-1" href="#134-raw-mem-ops---read--write" aria-hidden="true">#</a>1.3.4. raw mem ops - read / write</h2>
+<p>저수준 메모리 조작용 free function 들은 다음과 같이 갖춰져 있습니다.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> <span class="k">fn</span> read&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> write&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>);
+<span class="k">unsafe</span> <span class="k">fn</span> read_volatile&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span>;
+<span class="k">unsafe</span> <span class="k">fn</span> write_volatile&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>);
+
+<span class="k">unsafe</span> <span class="k">fn</span> copy&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;, dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, count: <span class="t">usize</span>);
+                                               <span class="c">// memmove (overlap OK)</span>
+<span class="k">unsafe</span> <span class="k">fn</span> copy_nonoverlapping&lt;<span class="t">T</span>&gt;(src: <span class="t">ConstPtr</span>&lt;<span class="t">T</span>&gt;, dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, count: <span class="t">usize</span>);
+                                               <span class="c">// memcpy (overlap UB - 더 빠름)</span>
+
+<span class="k">unsafe</span> <span class="k">fn</span> write_bytes&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">u8</span>, count: <span class="t">usize</span>);
+                                               <span class="c">// memset (모든 byte = value)</span>
+
+<span class="k">unsafe</span> <span class="k">fn</span> swap&lt;<span class="t">T</span>&gt;(a: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, b: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;);
+<span class="k">unsafe</span> <span class="k">fn</span> replace&lt;<span class="t">T</span>&gt;(dst: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;, value: <span class="t">T</span>) -&gt; <span class="t">T</span>;     <span class="c">// 기존 read + write</span>
+<span class="k">unsafe</span> <span class="k">fn</span> drop_in_place&lt;<span class="t">T</span>&gt;(p: <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt;);               <span class="c">// drop glue 실행 (메모리 free X)</span>
+</code></pre>
+<p>이들 대부분은 <code>Ptr&lt;T&gt;</code> 의 메서드 형태로도 노출돼 있으며 (1.1.2), 본 module 의 free function 은 그에 대한 <strong>ergonomic 대안</strong>으로 자리합니다.</p>
+<p><code>drop_in_place</code> 는 drop glue 를 실행합니다: 그 타입 자신의 <code>drop</code>, 그 다음 필드들의 <code>drop</code> 을 선언 역순으로 (<a href="../200-core/213-marker#2134-drop---using-해제-시-정리">2.13.4</a>).</p>
+<h2 id="135-transmute_unchecked---escape-hatch"><a class="anchor" tabindex="-1" href="#135-transmute_unchecked---escape-hatch" aria-hidden="true">#</a>1.3.5. <code>transmute_unchecked</code> - escape hatch</h2>
+<p><a href="102-cast#126-transmute_uncheckeda-b---escape-hatch">1.2 cast</a> 와 동일한 동작을 가지며, 본 module 에서도 alias 형태로 함께 노출됩니다.</p>
+<pre><code class="language-rok"><span class="k">unsafe</span> <span class="k">fn</span> transmute_unchecked&lt;<span class="t">A</span>, <span class="t">B</span>&gt;(a: <span class="t">A</span>) -&gt; <span class="t">B</span>;        <span class="c">// size check 없음</span>
+</code></pre>
+<h2 id="136-align--size-util"><a class="anchor" tabindex="-1" href="#136-align--size-util" aria-hidden="true">#</a>1.3.6. align / size util</h2>
+<pre><code class="language-rok"><span class="k">fn</span> align_of&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">usize</span>;                  <span class="c">// T::align()</span>
+<span class="k">fn</span> size_of&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">usize</span>;                   <span class="c">// T::size()</span>
+<span class="k">fn</span> align_of_val&lt;<span class="t">T</span>&gt;(val: <span class="t">T</span>) -&gt; <span class="t">usize</span>;
+<span class="k">fn</span> size_of_val&lt;<span class="t">T</span>&gt;(val: <span class="t">T</span>) -&gt; <span class="t">usize</span>;         <span class="c">// 값으로 받음 - unsized 타입 없음, size_of::&lt;T&gt;() 와 같음</span>
+
+<span class="k">fn</span> min_align_of&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">usize</span>;              <span class="c">// align_of 와 같음 - Rust 호환</span>
+</code></pre>
+<p>이들은 <strong>unsafe 가 아닙니다</strong>. 사실상 <code>Reflect</code> 트레잇 (<a href="../200-core/212-reflect">2.12 reflect</a>) 의 free function 형태이며, 편의를 위해 <code>rok::bare::mem</code> module 에도 함께 노출돼 있습니다.</p>
+<h2 id="137-intrinsic-매핑"><a class="anchor" tabindex="-1" href="#137-intrinsic-매핑" aria-hidden="true">#</a>1.3.7. intrinsic 매핑</h2>
+<p>각 항목과 컴파일러 intrinsic 의 대응 관계는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>intrinsic</th></tr></thead>
+<tbody>
+<tr><td><code>MaybeUninit&lt;T&gt;</code></td><td><code>rok.mem.assume_init</code> (no-op)</td></tr>
+<tr><td><code>Pod</code></td><td>(marker - derive 자동)</td></tr>
+<tr><td><code>read</code> / <code>write</code></td><td><code>rok.mem.read.T</code></td></tr>
+<tr><td><code>copy</code> / <code>copy_nonoverlapping</code></td><td><code>rok.mem.memcpy</code> / <code>memmove</code></td></tr>
+<tr><td><code>write_bytes</code></td><td><code>rok.mem.memset</code></td></tr>
+</tbody></table></div>
+<h2 id="138-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#138-다른-언어와의-비교" aria-hidden="true">#</a>1.3.8. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>C</th><th>Rust</th><th>Zig</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>미초기화 표현</td><td><code>T x;</code> (silent)</td><td><code>MaybeUninit&lt;T&gt;</code></td><td><code>undefined</code></td><td><code>MaybeUninit&lt;T&gt;</code></td></tr>
+<tr><td><code>Pod</code> / 안전 transmute</td><td><strong>없음</strong></td><td><code>bytemuck::Pod</code> (lib)</td><td><code>@bitCast</code></td><td><code>Pod</code> + <code>reinterpret</code></td></tr>
+<tr><td>미초기화 read UB</td><td><strong>허용</strong></td><td><strong>UB</strong></td><td><strong>UB</strong></td><td><strong>UB</strong></td></tr>
+<tr><td>memcpy / memmove</td><td><code>memcpy</code></td><td><code>ptr::copy*</code></td><td><code>@memcpy</code></td><td><code>rok::bare::mem::copy*</code></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/103-mem.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="102-cast"><small>Previous</small>1.2. cast 연산 - 명시 named cast</a><a class="next" href="104-alloc"><small>Next</small>1.4. raw allocation - alloc / dealloc / realloc</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

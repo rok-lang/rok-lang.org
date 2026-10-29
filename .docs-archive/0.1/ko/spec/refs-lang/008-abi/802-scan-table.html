@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.2. ScanTable 직렬화 포맷 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="GC 의 mark 단계에서는 각 객체의 자식 포인터들을 따라가야 하므로, 어떤 offset 에 자식 포인터가 있는지를 알려주는 자료가 필요합니다. 이 자료를 ScanTable 이라고 부르며, 본 문서에서는 그 직렬화 포맷을 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/802-scan-table.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.2. ScanTable 직렬화 포맷 - rok docs">
+<meta property="og:description" content="GC 의 mark 단계에서는 각 객체의 자식 포인터들을 따라가야 하므로, 어떤 offset 에 자식 포인터가 있는지를 알려주는 자료가 필요합니다. 이 자료를 ScanTable 이라고 부르며, 본 문서에서는 그 직렬화 포맷을 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/802-scan-table.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/802-scan-table.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/802-scan-table.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">8. 런타임 ABI / MLIR lowering 개요</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. 객체 헤더 ABI</a></li><li class="cur"><a aria-current="page" href="802-scan-table">8.2. ScanTable 직렬화 포맷</a><ul class="toc"><li><a href="#821-목적">8.2.1. 목적</a></li><li><a href="#822-등록-호출">8.2.2. 등록 호출</a></li><li><a href="#823-직렬화-포맷">8.2.3. 직렬화 포맷</a></li><li><a href="#824-인코딩-예-struct-point--x-f64-y-f64-">8.2.4. 인코딩 예: struct Point { x: f64; y: f64; }</a></li><li><a href="#825-인코딩-예-struct-pair--a-listi32-b-listf64-">8.2.5. 인코딩 예: struct Pair { a: List&lt;i32&gt;; b: List&lt;f64&gt;; }</a></li><li><a href="#826-인코딩-예-enum-변형">8.2.6. 인코딩 예: enum 변형</a></li><li><a href="#827-any-슬롯">8.2.7. ANY 슬롯</a></li><li><a href="#828-weak_ref">8.2.8. WEAK_REF</a></li><li><a href="#829-interior_ref">8.2.9. INTERIOR_REF</a></li><li><a href="#8210-직렬화의-endianness">8.2.10. 직렬화의 endianness</a></li><li><a href="#8211-변경-호환">8.2.11. 변경 호환</a></li><li><a href="#8212-런타임-예약-type-id">8.2.12. 런타임 예약 type id</a></li><li><a href="#8213-등록-시점">8.2.13. 등록 시점</a></li></ul></li><li><a href="803-tls-slots">8.3. Mutator TLS 슬롯 레이아웃</a></li><li><a href="804-safepoint">8.4. Safepoint 프로토콜</a></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; 심볼</a></li><li><a href="806-calling-convention">8.6. Calling Convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR 다이얼렉트 사용</a></li><li><a href="808-lowering-types">8.8. Lowering: 데이터 타입과 표현식</a></li><li><a href="809-lowering-control">8.9. Lowering: 제어 흐름과 GC 통합</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: 코루틴과 제네릭</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="82-scantable-직렬화-포맷 82-scantable-serialization-format 821-목적 821-purpose 822-등록-호출 822-registration-call 823-직렬화-포맷 823-serialization-format header header entry entry field_kind-종류 field_kind-values 824-인코딩-예-struct-point--x-f64-y-f64- 824-encoding-example-struct-point--x-f64-y-f64- 825-인코딩-예-struct-pair--a-listi32-b-listf64- 825-encoding-example-struct-pair--a-listi32-b-listf64- 826-인코딩-예-enum-변형 826-encoding-example-enum-variants 827-any-슬롯 827-any-slots 828-weak_ref 828-weak_ref 829-interior_ref 829-interior_ref 8210-직렬화의-endianness 8210-endianness-of-the-serialization 8211-변경-호환 8211-compatibility-of-changes 8212-런타임-예약-type-id 8212-runtime-reserved-type-ids 8213-등록-시점 8213-registration-time"><a href="../../../../spec/refs-lang/008-abi/802-scan-table" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="82-scantable-직렬화-포맷"><a class="anchor" tabindex="-1" href="#82-scantable-직렬화-포맷" aria-hidden="true">#</a>8.2. ScanTable 직렬화 포맷</h1>
+<p><a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> 의 mark 단계에서는 각 객체의 자식 포인터들을 따라가야 하므로, 어떤 offset 에 자식 포인터가 있는지를 알려주는 자료가 필요합니다. 이 자료를 ScanTable 이라고 부르며, 본 문서에서는 그 직렬화 포맷을 정의합니다.</p>
+<h2 id="821-목적"><a class="anchor" tabindex="-1" href="#821-목적" aria-hidden="true">#</a>8.2.1. 목적</h2>
+<p>GC 의 mark 루프는 다음과 같이 동작합니다.</p>
+<pre><code>GC mark loop:
+  for each live object O:
+    type_id = O.type_id
+    scan_table = lookup(type_id)
+    for each (offset, kind) in scan_table:
+      child = *(O + offset)
+      mark(child)
+</code></pre>
+<p>여기서 <code>lookup(type_id)</code> 는 컴파일러가 <a href="801-object-header-abi">객체 헤더 ABI</a> 의 <code>rok_gc_register_type</code> 을 통해 프로세스 시작 시점에 등록해 둔 결과를 사용합니다.</p>
+<p>stack (shadow stack) 과 <code>static</code> 루트도 같은 byte offset 기반 walk 로 훑습니다. 루트 슬롯 하나는 ScanTable 의 entry 하나처럼 다루며, <code>any</code> 루트는 그 payload word 까지 덮습니다.</p>
+<h2 id="822-등록-호출"><a class="anchor" tabindex="-1" href="#822-등록-호출" aria-hidden="true">#</a>8.2.2. 등록 호출</h2>
+<p>등록은 다음 외부 함수를 호출하여 이루어집니다.</p>
+<pre><code>extern &quot;C&quot; {
+    fn rok_gc_register_type(type_id: u32, scan_table: ConstPtr&lt;u8&gt;);
+}
+</code></pre>
+<ul>
+<li><code>type_id</code>: 등록할 타입의 ID 입니다.
+</li>
+<li><code>scan_table</code>: 직렬화된 ScanTable 의 시작 포인터입니다.
+</li>
+</ul>
+<p>ScanTable 의 메모리는 컴파일러가 .rodata 에 emit 하므로, 프로세스 수명 동안 유효합니다. 런타임은 이 영역을 읽기만 합니다.</p>
+<h2 id="823-직렬화-포맷"><a class="anchor" tabindex="-1" href="#823-직렬화-포맷" aria-hidden="true">#</a>8.2.3. 직렬화 포맷</h2>
+<p>ScanTable 은 8 바이트짜리 헤더 뒤에 entry 배열이 이어지는 구조를 가집니다.</p>
+<pre><code>ScanTable Header (8 bytes, 4-byte aligned):
+  offset  0:  total_size       u32         // 객체의 총 크기 (16 + payload)
+  offset  4:  version          u16  = 1
+  offset  6:  num_entries      u16         // 자식 포인터 entry 수
+
+Entry array (8 bytes each):
+  offset  8 + 8*i + 0:  field_offset  u32  // 객체 내 offset
+  offset  8 + 8*i + 4:  field_kind    u32  // 자식 포인터 종류
+</code></pre>
+<p>전체 크기는 8 + 8 × num_entries 가 되며, 모든 필드는 자연 정렬을 따릅니다.</p>
+<h3 id="header"><a class="anchor" tabindex="-1" href="#header" aria-hidden="true">#</a>Header</h3>
+<p>헤더의 각 필드는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>타입</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>version</code></td><td>u16</td><td>포맷 버전 (bit 0 ~ 14, 현재 = 1). bit 15 = 배열 table</td></tr>
+<tr><td><code>total_size</code></td><td>u32</td><td>객체의 총 크기 (16 바이트 헤더 + 정렬된 payload)</td></tr>
+<tr><td><code>num_entries</code></td><td>u16</td><td>자식 포인터 entry 의 개수</td></tr>
+</tbody></table></div>
+<p><code>version</code> 의 bit 15 가 1 이면 <strong>배열 table</strong> 입니다. 이때 <code>total_size</code> 는 원소 stride, entry 의 <code>field_offset</code> 은 원소 시작 기준이며, 이 entry 들이 payload 전체에 원소마다 반복 적용됩니다. 컴파일러는 GC 버퍼에 원소 table 을 이 형태로 씁니다.</p>
+<h3 id="entry"><a class="anchor" tabindex="-1" href="#entry" aria-hidden="true">#</a>Entry</h3>
+<p>각 entry 는 객체 안의 한 자식 포인터 슬롯을 가리킵니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>필드</th><th>타입</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>field_offset</code></td><td>u32</td><td>그 슬롯의 offset (객체 시작부터)</td></tr>
+<tr><td><code>field_kind</code></td><td>u32</td><td>슬롯의 종류</td></tr>
+</tbody></table></div>
+<h3 id="field_kind-종류"><a class="anchor" tabindex="-1" href="#field_kind-종류" aria-hidden="true">#</a><code>field_kind</code> 종류</h3>
+<p><code>field_kind</code> 가 가질 수 있는 값과 그 의미는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>값</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td>0</td><td><code>STRONG_REF</code>: 일반 GC 객체 포인터 (mark 따라감)</td></tr>
+<tr><td>1</td><td><code>WEAK_REF</code>: 약한 참조 (mark 안 따라감, GC 수집 시 정리)</td></tr>
+<tr><td>2</td><td><code>INTERIOR_REF</code>: 객체 내부를 가리킴 (forwarding 시 보정)</td></tr>
+<tr><td>3</td><td><code>ANY_SLOT</code>: <code>tag + payload</code> 형태의 동적 슬롯. tag 검사 후 mark</td></tr>
+<tr><td>4</td><td><code>SUM_PAYLOAD</code>: 합 타입의 tag 와 변형별 참조 (8.2.6). bit 8..31 은 descriptor 위치</td></tr>
+<tr><td>5</td><td><code>AMBIGUOUS_WORD</code>: 참조일 수도 아닐 수도 있는 word. 가리키는 객체를 살리되 옮기지 않음 (type id <code>2</code> buffer, untagged <code>union</code>)</td></tr>
+<tr><td>6 ~</td><td>예약 / 추가 종류</td></tr>
+</tbody></table></div>
+<p>각 종류가 실제로 어떻게 mark 되는지는 GC 구현이 처리할 사항이며, 본 사양에서는 어떤 종류가 있는지와 인코딩만 정의합니다.</p>
+<h2 id="824-인코딩-예-struct-point--x-f64-y-f64-"><a class="anchor" tabindex="-1" href="#824-인코딩-예-struct-point--x-f64-y-f64-" aria-hidden="true">#</a>8.2.4. 인코딩 예: <code>struct Point { x: f64; y: f64; }</code></h2>
+<p>이 구조체는 자식 포인터를 가지지 않습니다 (모든 필드가 원시 부동소수점 타입이기 때문입니다).</p>
+<pre><code>ScanTable {
+  version      = 1
+  total_size   = 32        // 16 헤더 + 8 + 8
+  num_entries  = 0
+}
+</code></pre>
+<p>따라서 ScanTable 의 크기는 헤더만 있는 8 바이트입니다.</p>
+<h2 id="825-인코딩-예-struct-pair--a-listi32-b-listf64-"><a class="anchor" tabindex="-1" href="#825-인코딩-예-struct-pair--a-listi32-b-listf64-" aria-hidden="true">#</a>8.2.5. 인코딩 예: <code>struct Pair { a: List&lt;i32&gt;; b: List&lt;f64&gt;; }</code></h2>
+<p>이 경우에는 두 개의 자식 포인터를 가집니다.</p>
+<pre><code>ScanTable {
+  version      = 1
+  total_size   = 32        // 16 헤더 + 8 (List ptr) + 8
+  num_entries  = 2
+
+  entry[0]: field_offset = 16, field_kind = STRONG_REF (0)
+  entry[1]: field_offset = 24, field_kind = STRONG_REF (0)
+}
+</code></pre>
+<p>전체 크기는 8 + 16 = 24 바이트가 됩니다.</p>
+<h2 id="826-인코딩-예-enum-변형"><a class="anchor" tabindex="-1" href="#826-인코딩-예-enum-변형" aria-hidden="true">#</a>8.2.6. 인코딩 예: <code>enum</code> 변형</h2>
+<pre><code>enum Result {
+    Ok(i32),
+    Err(str),
+    Pending,
+}
+</code></pre>
+<p>이 타입의 객체는 Tag (4 바이트), 패딩 (4 바이트), 그리고 가장 큰 변형의 payload (8 바이트, str 포인터) 로 구성되어 총 32 바이트가 됩니다.</p>
+<p>변형마다 참조의 자리가 다르므로 <code>SUM_PAYLOAD</code> entry 하나와 그 descriptor 를 씁니다.</p>
+<ul>
+<li>entry 의 <code>field_offset</code> 은 tag (u32) 의 offset 입니다.
+</li>
+<li><code>field_kind</code> 의 하위 byte 는 <code>4</code>, bit 8..31 은 descriptor 의 위치 (table 시작부터 u32 word 단위) 입니다.
+</li>
+<li>descriptor 는 <code>n</code> 다음에, 참조를 가진 변형마다 <code>{tag, num_entries, entries_index}</code> 를 둡니다.
+</li>
+<li>변형의 entry 는 <code>{tag 로부터의 offset, field_kind}</code> 입니다. 중첩된 합은 다시 <code>SUM_PAYLOAD</code> 로 씁니다.
+</li>
+<li>descriptor 에 없는 tag 의 변형에는 참조가 없습니다.
+</li>
+</ul>
+<pre><code>ScanTable {
+  version = 1, total_size = 40, num_entries = 1
+  entry[0]: field_offset = 16, field_kind = 4 | (desc &lt;&lt; 8)    // tag 는 offset 16
+  desc:     n = 1
+            { tag = 1 (Err), num_entries = 1, entries_index = e }
+  e:        { offset = 8, field_kind = STRONG_REF }             // Err 의 str ptr
+}
+</code></pre>
+<p>enum / 합 타입 payload 의 참조는 정밀합니다. 그래서 payload 로 닿은 객체도 evacuation 으로 옮겨질 수 있습니다. <code>AMBIGUOUS_WORD</code> 는 type id <code>2</code> buffer 와, tag 가 없어 해석할 수 없는 사용자 <code>union</code> 의 저장소에만 씁니다.</p>
+<h2 id="827-any-슬롯"><a class="anchor" tabindex="-1" href="#827-any-슬롯" aria-hidden="true">#</a>8.2.7. ANY 슬롯</h2>
+<p><code>any</code> 슬롯 (<a href="../002-types/202-any-slot"><code>any</code> 슬롯</a>) 은 <code>tag + payload</code> 형태로 어떤 타입이든 담을 수 있습니다.</p>
+<pre><code>ANY 슬롯 레이아웃.
+  offset  0:            tag       u32
+  offset  ptr 정렬:     payload   usize (포인터 폭 이하 숫자·bool·char 는 직접, 그 밖은 box ptr)
+</code></pre>
+<p>이에 대응하는 ScanTable entry 는 다음과 같이 구성됩니다.</p>
+<pre><code>field_offset = (그 슬롯의 offset)
+field_kind = ANY_SLOT (3)
+</code></pre>
+<p>payload 가 box 참조인지는 tag 에 실립니다.</p>
+<ul>
+<li>tag 의 <strong>bit 31</strong> 이 1 이면 payload 는 box 참조이고, 0 이면 값 자체입니다.
+</li>
+<li>tag 로 타입을 비교할 때는 bit 31 을 뺀 값으로 비교합니다.
+</li>
+</ul>
+<p>그래서 GC 는 별도의 표 없이 payload 를 정밀하게 scan 하고, 옮긴 box 의 주소를 고쳐 쓸 수 있습니다. 분리 컴파일한 패키지 사이에서도 표를 합칠 필요가 없습니다.</p>
+<h2 id="828-weak_ref"><a class="anchor" tabindex="-1" href="#828-weak_ref" aria-hidden="true">#</a>8.2.8. WEAK_REF</h2>
+<p>약한 참조는 객체를 살아있게 만드는 효과를 가지지 않습니다.</p>
+<ul>
+<li>mark 단계에서는 weak <code>ref</code> 를 따라가지 않습니다.
+</li>
+<li>sweep 후에는 weak <code>ref</code> 가 가리키던 객체가 수집되었다면, weak <code>ref</code> 슬롯을 0 으로 클리어합니다.
+</li>
+</ul>
+<p>이 메커니즘은 캐시나 옵저버 패턴 등에 유용하며, 그 라이브러리 인터페이스는 <code>Weak&lt;T&gt;</code> 입니다 (<a href="../../refs-standard-libraries/100-bare/106-gc-pin#169-weakt---약한-참조">stdlib 1.6.9</a>).</p>
+<h2 id="829-interior_ref"><a class="anchor" tabindex="-1" href="#829-interior_ref" aria-hidden="true">#</a>8.2.9. INTERIOR_REF</h2>
+<p>INTERIOR_REF 는 객체 내부의 (시작이 아닌) 위치를 가리킵니다.</p>
+<ul>
+<li>슬라이스나 부분 view 등에서 발생합니다.
+</li>
+<li>forwarding 시에는 옛 객체와 새 객체의 상대 offset 으로 보정합니다.
+</li>
+</ul>
+<p>자세한 처리 방식은 GC 구현이 결정합니다.</p>
+<h2 id="8210-직렬화의-endianness"><a class="anchor" tabindex="-1" href="#8210-직렬화의-endianness" aria-hidden="true">#</a>8.2.10. 직렬화의 endianness</h2>
+<p>모든 필드는 little-endian 입니다. rok 은 little-endian 타깃을 우선하며 (<a href="../000-meta/006-platform-targets">플랫폼 타깃</a> 의 모든 Tier 1 타깃이 little-endian 입니다), 이에 따라 직렬화 포맷도 동일하게 정합니다.</p>
+<p>big-endian 타깃 지원이 추가되는 시점에는 직렬화 endianness 를 little 로 고정할지 아니면 호스트 endianness 를 따를지를 그때 결정합니다.</p>
+<h2 id="8211-변경-호환"><a class="anchor" tabindex="-1" href="#8211-변경-호환" aria-hidden="true">#</a>8.2.11. 변경 호환</h2>
+<p>ScanTable 포맷의 호환성은 version 필드가 다룹니다.</p>
+<ul>
+<li>같은 major version 안에서는 version 필드만으로 호환을 처리합니다.
+</li>
+<li>다른 major version 사이에서는 별도의 .a 가 필요합니다.
+</li>
+</ul>
+<h2 id="8212-런타임-예약-type-id"><a class="anchor" tabindex="-1" href="#8212-런타임-예약-type-id" aria-hidden="true">#</a>8.2.12. 런타임 예약 type id</h2>
+<p>다음 세 type id 는 런타임이 직접 정의하며, 컴파일러는 ScanTable 을 등록하지 않습니다 (<a href="801-object-header-abi#812-type_id-offset-0-u32-little-endian">8.1.2</a>).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>type id</th><th>의미</th><th>scan</th></tr></thead>
+<tbody>
+<tr><td><code>1</code></td><td>GC 문자열</td><td>payload 는 바이트이며 scan 하지 않음</td></tr>
+<tr><td><code>2</code></td><td>word-traced buffer</td><td>payload 의 모든 word 를 모호한 word (<code>AMBIGUOUS_WORD</code>) 로 scan</td></tr>
+<tr><td><code>3</code></td><td>weak cell (<code>Weak&lt;T&gt;</code>)</td><td><code>WEAK_REF</code> word 하나 (8.2.8); <code>rok_gc_weak_new</code> 로 만듦</td></tr>
+</tbody></table></div>
+<p>id <code>1</code> 과 <code>2</code> 는 type id <code>1</code> 또는 <code>2</code> 로 <code>rok_gc_alloc_slow</code> 를 불러 할당합니다 (<a href="805-extern-symbols#851-gc-영역">8.5.1</a>). 표준 라이브러리의 <a href="../../refs-standard-libraries/200-core/209-collections#2912-gcbuft---raw-gc-buffer"><code>GcBuf&lt;T&gt;</code></a> 가 이 위에 놓입니다.</p>
+<h2 id="8213-등록-시점"><a class="anchor" tabindex="-1" href="#8213-등록-시점" aria-hidden="true">#</a>8.2.13. 등록 시점</h2>
+<p>등록은 프로세스가 시작되는 시점에 일괄적으로 수행됩니다.</p>
+<pre><code>process_start:
+  for each registered type:
+    rok_gc_register_type(type_id, &amp;scan_table)
+  ↓
+  user main()
+</code></pre>
+<p>컴파일러는 모든 등록 호출을 모은 함수 <code>rok.register_types</code> 를 emit 합니다. 컴파일러가 생성하는 C-ABI <code>main</code> 은 <code>rok_runtime_init</code> 직후에 이 함수를 호출하고, 그다음 사용자 진입점으로 들어갑니다.</p>
+<pre><code>main(argc, argv):                // 컴파일러 생성, C ABI
+  rok_runtime_init()
+  rok.register_types()           // rok_gc_register_type 호출 모음
+  → 사용자 진입점 (4.16)
+</code></pre>
+<p>GC 객체 할당의 slow path 는 <code>rok_gc_alloc_slow(size, align, type_id)</code> 이며 (<a href="../007-runtime/702-allocation#723-slow-path-rok_gc_alloc_slow">7.2.3</a>), 컴파일러가 부여하는 type id 는 <code>0x10000</code> 부터 시작합니다 (<a href="801-object-header-abi#812-type_id-offset-0-u32-little-endian">8.1.2</a>).</p>
+<p>표의 바이트는 프로그램에 한 번만 있습니다: 각 패키지의 <code>rok.register_types</code> 는 표의 내용으로 이름 붙인 숨은 정의를 가리키며, 여러 패키지가 같은 레이아웃을 각자의 id 로 등록해도 링크는 그 정의를 한 번만 남깁니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/008-abi/802-scan-table.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="801-object-header-abi"><small>Previous</small>8.1. 객체 헤더 ABI</a><a class="next" href="803-tls-slots"><small>Next</small>8.3. Mutator TLS 슬롯 레이아웃</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

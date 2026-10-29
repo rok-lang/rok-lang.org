@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.5. Closures - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A closure is a function value without a name that appears in expression position. It can capture variables from the outer environment, which makes it convenient...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/405-closure.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.5. Closures - rok docs">
+<meta property="og:description" content="A closure is a function value without a name that appears in expression position. It can capture variables from the outer environment, which makes it convenient...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/405-closure.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/405-closure.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/405-closure.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li class="cur"><a aria-current="page" href="405-closure">4.5. Closures</a><ul class="toc"><li><a href="#451-form">4.5.1. Form</a></li><li><a href="#452-parameter-types">4.5.2. Parameter types</a></li><li><a href="#453-inferred-or-explicit-return-type">4.5.3. Inferred or explicit return type</a></li><li><a href="#454-captures">4.5.4. Captures</a></li><li><a href="#455-closures-vs-functions">4.5.5. Closures vs functions</a></li><li><a href="#456-using-closure-values">4.5.6. Using closure values</a></li><li><a href="#457-calls">4.5.7. Calls</a></li><li><a href="#458-immediate-invocation-iife">4.5.8. Immediate invocation: IIFE</a></li><li><a href="#459-readability-single-expression-vs-block">4.5.9. Readability: single expression vs block</a></li><li><a href="#4510-trailing-closures">4.5.10. Trailing closures</a></li><li><a href="#4511-special-variants-async-and-yield-modifiers">4.5.11. Special variants: async and yield modifiers</a></li><li><a href="#4512-zero-argument-closure-shorthand--body-">4.5.12. Zero-Argument closure shorthand: { body }</a></li></ul></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li><a href="414-throws">4.14. throws signatures</a></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="45-closures 45-클로저 451-form 451-형태 single-expression-body 단일-식-본체 block-body 블록-본체 zero-parameter-form 0-매개변수-형태 452-parameter-types 452-매개변수의-타입 453-inferred-or-explicit-return-type 453-반환-타입의-추론--명시 454-captures 454-캡처 455-closures-vs-functions 455-클로저-vs-함수 456-using-closure-values 456-클로저-값의-사용 457-calls 457-호출 458-immediate-invocation-iife 458-즉시-호출-iife 459-readability-single-expression-vs-block 459-단일-식-vs-블록의-가독성 4510-trailing-closures 4510-트레일링-클로저 4511-special-variants-async-and-yield-modifiers 4511-특수-변형-async-와-yield-수식어 4512-zero-argument-closure-shorthand--body- 4512-0-arg-클로저의-단축--body-"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/405-closure" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="45-closures"><a class="anchor" tabindex="-1" href="#45-closures" aria-hidden="true">#</a>4.5. Closures</h1>
+<p>A closure is a function value without a name that appears in expression position. It can capture variables from the outer environment, which makes it convenient for small functions that depend on surrounding state.</p>
+<h2 id="451-form"><a class="anchor" tabindex="-1" href="#451-form" aria-hidden="true">#</a>4.5.1. Form</h2>
+<pre><code>closure_expr   ::= capture_list? closure_params return_type? closure_body
+closure_params ::= &quot;||&quot;
+                 | &quot;|&quot; closure_param_list &quot;|&quot;
+closure_param_list ::= closure_param (&quot;,&quot; closure_param)* &quot;,&quot;?
+closure_param ::= identifier (&quot;:&quot; type_expr)?
+closure_body   ::= expr | block
+capture_list   ::= &quot;[&quot; capture_item (&quot;,&quot; capture_item)* &quot;]&quot;
+</code></pre>
+<p>The zero-parameter form <code>||</code> is a single token (see <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a>) and is not split into two <code>|</code>.</p>
+<pre><code class="language-rok">|params| body
+</code></pre>
+<p>Parameters are enclosed by left and right <code>|</code> tokens (<a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a>). The body is an expression or a block.</p>
+<h3 id="single-expression-body"><a class="anchor" tabindex="-1" href="#single-expression-body" aria-hidden="true">#</a>Single-Expression body</h3>
+<pre><code class="language-rok">|x| x + <span class="n">1</span>
+|x: <span class="t">i32</span>| x * <span class="n">2</span>
+|a, b| a + b
+</code></pre>
+<p>A single expression follows <code>|...|</code> directly, and its value is the closure's return value.</p>
+<h3 id="block-body"><a class="anchor" tabindex="-1" href="#block-body" aria-hidden="true">#</a>Block body</h3>
+<pre><code class="language-rok">|x: <span class="t">i32</span>| -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> y = x * <span class="n">2</span>;
+    y + <span class="n">1</span>
+}
+</code></pre>
+<p>With a block body, the return type may be given with <code>-&gt;</code> (if omitted, it is inferred).</p>
+<h3 id="zero-parameter-form"><a class="anchor" tabindex="-1" href="#zero-parameter-form" aria-hidden="true">#</a>Zero-Parameter form</h3>
+<pre><code class="language-rok">|| body
+|| { body }
+</code></pre>
+<p>With no parameters, use <code>||</code> (two consecutive pipes). For tokenization, <code>||</code> is defined as one token in the fixed token table of <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a>.</p>
+<h2 id="452-parameter-types"><a class="anchor" tabindex="-1" href="#452-parameter-types" aria-hidden="true">#</a>4.5.2. Parameter types</h2>
+<p>Parameter types may be written or omitted.</p>
+<pre><code class="language-rok">|x: <span class="t">i32</span>| x * <span class="n">2</span>                    <span class="c">// explicit</span>
+|x| x * <span class="n">2</span>                          <span class="c">// inferred</span>
+</code></pre>
+<p>Inference is determined by the context in which the closure is used, for example the function type of the argument position it is passed to or the type of a variable declaration. Without context, subsequent calls determine the parameter type (<code>x: i32</code> in <code>let f = |x| x * 2; f(4);</code>, <a href="../002-types/210-generics#type-argument-inference">2.10.2</a>).</p>
+<pre><code class="language-rok"><span class="k">let</span> f: <span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span> = |x| x * <span class="n">2</span>;   <span class="c">// x: i32 inferred from context</span>
+list.map(|x| x * <span class="n">2</span>);                  <span class="c">// inferred from map's signature</span>
+</code></pre>
+<h2 id="453-inferred-or-explicit-return-type"><a class="anchor" tabindex="-1" href="#453-inferred-or-explicit-return-type" aria-hidden="true">#</a>4.5.3. Inferred or explicit return type</h2>
+<pre><code class="language-rok">|x| x * <span class="n">2</span>                          <span class="c">// inferred</span>
+|x: <span class="t">i32</span>| -&gt; <span class="t">i32</span> { x * <span class="n">2</span> }          <span class="c">// explicit - only with a block body</span>
+</code></pre>
+<p>An explicit return type (<code>-&gt; type</code>) is used only with a block body. A single-expression body always relies on inference.</p>
+<h2 id="454-captures"><a class="anchor" tabindex="-1" href="#454-captures" aria-hidden="true">#</a>4.5.4. Captures</h2>
+<p>A closure can capture variables from outer scopes.</p>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="n">10</span>;
+<span class="k">let</span> f = |x| x + n;                <span class="c">// captures n</span>
+f(<span class="n">5</span>);                              <span class="c">// 15</span>
+</code></pre>
+<p>Capture semantics (value capture by default, with capture lists like <code>[ref x]</code>) are defined in detail in <a href="406-capture-semantics">Capture Semantics</a>.</p>
+<h2 id="455-closures-vs-functions"><a class="anchor" tabindex="-1" href="#455-closures-vs-functions" aria-hidden="true">#</a>4.5.5. Closures vs functions</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>fn</code> named function</th><th><code>| ... |</code> closure</th></tr></thead>
+<tbody>
+<tr><td>Name</td><td>yes</td><td>no</td></tr>
+<tr><td>Definition position</td><td>module or <code>impl</code></td><td>any expression position</td></tr>
+<tr><td>Captures outer variables</td><td>no</td><td>yes</td></tr>
+<tr><td>Call</td><td><code>name(...)</code></td><td><code>value(...)</code></td></tr>
+<tr><td>Type</td><td><code>fn(...) -&gt; ...</code></td><td>same</td></tr>
+</tbody></table></div>
+<p>Both are expressed with the same function type and are interface-compatible, so either fits the same position.</p>
+<h2 id="456-using-closure-values"><a class="anchor" tabindex="-1" href="#456-using-closure-values" aria-hidden="true">#</a>4.5.6. Using closure values</h2>
+<pre><code class="language-rok"><span class="c">// assigned to a variable</span>
+<span class="k">let</span> f = |x| x * <span class="n">2</span>;
+
+<span class="c">// function argument</span>
+list.map(|x| x * <span class="n">2</span>);
+
+<span class="c">// function return</span>
+<span class="k">fn</span> make_adder(n: <span class="t">i32</span>) -&gt; <span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    |x| x + n
+}
+
+<span class="c">// collection</span>
+<span class="k">let</span> handlers: <span class="t">List</span>&lt;<span class="k">fn</span>(<span class="t">i32</span>) -&gt; <span class="t">i32</span>&gt; = [|x| x + <span class="n">1</span>, |x| x - <span class="n">1</span>, |x| x * <span class="n">2</span>];
+</code></pre>
+<h2 id="457-calls"><a class="anchor" tabindex="-1" href="#457-calls" aria-hidden="true">#</a>4.5.7. Calls</h2>
+<pre><code class="language-rok"><span class="k">let</span> f = |x| x * <span class="n">2</span>;
+<span class="k">let</span> r = f(<span class="n">5</span>);                     <span class="c">// same form as an ordinary function call</span>
+</code></pre>
+<p>A closure is called as <code>f(args)</code>. On a call, the captured environment and the arguments are used together to evaluate the body.</p>
+<h2 id="458-immediate-invocation-iife"><a class="anchor" tabindex="-1" href="#458-immediate-invocation-iife" aria-hidden="true">#</a>4.5.8. Immediate invocation: IIFE</h2>
+<p>A closure may be called immediately after it is defined.</p>
+<pre><code class="language-rok"><span class="k">let</span> r = (|x: <span class="t">i32</span>| -&gt; <span class="t">i32</span> { x * <span class="n">2</span> })(<span class="n">5</span>);     <span class="c">// 10</span>
+</code></pre>
+<p>This is uncommon, but it is one way to express a local scope with immediate evaluation. In most cases an ordinary block from <a href="../003-expressions/309-block-expressions">block expressions</a> is more natural.</p>
+<h2 id="459-readability-single-expression-vs-block"><a class="anchor" tabindex="-1" href="#459-readability-single-expression-vs-block" aria-hidden="true">#</a>4.5.9. Readability: single expression vs block</h2>
+<pre><code class="language-rok">list.map(|x| x * <span class="n">2</span>)               <span class="c">// single expression - short and clear</span>
+list.map(|x| { <span class="k">let</span> y = x * <span class="n">2</span>; y + <span class="n">1</span> })   <span class="c">// block - multi-step processing</span>
+</code></pre>
+<p>Choose the form that suits the body's length. The specification fully supports both forms.</p>
+<h2 id="4510-trailing-closures"><a class="anchor" tabindex="-1" href="#4510-trailing-closures" aria-hidden="true">#</a>4.5.10. Trailing closures</h2>
+<p>When the last argument of a function call is a closure, it may be moved outside the parentheses for readability. Details are defined in <a href="408-trailing-closure">Trailing Closures</a>.</p>
+<h2 id="4511-special-variants-async-and-yield-modifiers"><a class="anchor" tabindex="-1" href="#4511-special-variants-async-and-yield-modifiers" aria-hidden="true">#</a>4.5.11. Special variants: <code>async</code> and <code>yield</code> modifiers</h2>
+<p>Adding the <code>async</code> or <code>yield</code> modifier to a closure creates an asynchronous or generator closure.</p>
+<pre><code class="language-rok"><span class="k">async</span> || { ... }                  <span class="c">// closure returning a Future</span>
+<span class="k">yield</span> || { ... }                  <span class="c">// closure returning an Iterator</span>
+<span class="k">async</span> <span class="k">yield</span> || { ... }            <span class="c">// closure returning a Stream</span>
+</code></pre>
+<p>The detailed rules are defined in <a href="411-generators">Generators</a>, <a href="412-async">Async</a> and <a href="413-stream">Streams</a>.</p>
+<h2 id="4512-zero-argument-closure-shorthand--body-"><a class="anchor" tabindex="-1" href="#4512-zero-argument-closure-shorthand--body-" aria-hidden="true">#</a>4.5.12. Zero-Argument closure shorthand: <code>{ body }</code></h2>
+<p>In certain contexts, <code>{ body }</code> is recognized as a zero-parameter closure shorthand. This shorthand is often used together with trailing closures.</p>
+<pre><code class="language-rok">thread::spawn { heavy_work() }    <span class="c">// == thread::spawn(|| { heavy_work() })</span>
+</code></pre>
+<p>The exact rules of this shorthand are defined in <a href="408-trailing-closure">Trailing Closures</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/405-closure.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="404-function-type"><small>Previous</small>4.4. Function types</a><a class="next" href="406-capture-semantics"><small>Next</small>4.6. Capture semantics</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

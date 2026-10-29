@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.5. union - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="union is an untagged container whose fields share the same memory. The language does not track which field's value is meaningful at any moment; that is the user...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/205-union.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.5. union - rok docs">
+<meta property="og:description" content="union is an untagged container whose fields share the same memory. The language does not track which field's value is meaningful at any moment; that is the user...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/205-union.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/205-union.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/205-union.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">2. Type system overview</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li class="cur"><a aria-current="page" href="205-union">2.5. union</a><ul class="toc"><li><a href="#251-basic-form">2.5.1. Basic form</a></li><li><a href="#252-semantics">2.5.2. Semantics</a></li><li><a href="#253-where-safety-lies">2.5.3. Where safety lies</a></li><li><a href="#254-default-layout-is-left-to-the-compiler">2.5.4. Default layout is left to the compiler</a></li><li><a href="#255-union-vs-reprc-union">2.5.5. union vs #[repr(C)] union</a></li><li><a href="#256-visibility--duplicate-definitions">2.5.6. Visibility / duplicate definitions</a></li><li><a href="#257-union-vs-sum-types">2.5.7. union vs sum types</a></li></ul></li><li><a href="206-sum-types">2.6. Sum types (A | B)</a></li><li><a href="207-niche-optimization">2.7. Niche optimization</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. Generics</a></li><li><a href="211-const-generics">2.11. const generics</a></li><li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="25-union 25-union 251-basic-form 251-기본-형태 generic-unions 제네릭-union 252-semantics 252-의미론 253-where-safety-lies 253-안전성의-위치 254-default-layout-is-left-to-the-compiler 254-기본-레이아웃은-컴파일러-자유 255-union-vs-reprc-union 255-union-vs-reprc-union-차이 256-visibility--duplicate-definitions 256-가시성--중복-정의 257-union-vs-sum-types 257-union-과-합-타입의-차이"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/205-union" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="25-union"><a class="anchor" tabindex="-1" href="#25-union" aria-hidden="true">#</a>2.5. <code>union</code></h1>
+<p><code>union</code> is an untagged container whose fields share the same memory. The language does not track which field's value is meaningful at any moment; that is the user's responsibility.</p>
+<pre><code>union_decl      ::= &quot;union&quot; identifier generics? where_clause? &quot;{&quot; named_field_list? &quot;}&quot;
+</code></pre>
+<h2 id="251-basic-form"><a class="anchor" tabindex="-1" href="#251-basic-form" aria-hidden="true">#</a>2.5.1. Basic form</h2>
+<p>The simplest <code>union</code> is declared as:</p>
+<pre><code class="language-rok"><span class="k">union</span> <span class="t">EpollData</span> {
+    ptr: <span class="t">usize</span>;
+    fd: <span class="t">i32</span>;
+    val: <span class="t">u64</span>;
+}
+</code></pre>
+<p>The body and field syntax are the same as the named <code>struct</code> of <a href="203-struct"><code>struct</code></a>. The differences are the keyword <code>union</code> and the semantics: all fields share the same memory location.</p>
+<h3 id="generic-unions"><a class="anchor" tabindex="-1" href="#generic-unions" aria-hidden="true">#</a>Generic unions</h3>
+<p>A <code>union</code> may have type parameters (<a href="210-generics">2.10</a>), with bounds, a <code>where</code> clause and defaults as for a <code>struct</code>. Each instance is its own type with its own layout: its size and alignment follow its field types for those arguments.</p>
+<pre><code class="language-rok"><span class="k">union</span> <span class="t">Bits</span>&lt;<span class="t">T</span>&gt; { v: <span class="t">T</span>; raw: <span class="t">u64</span>; }
+<span class="k">union</span> <span class="t">Small</span>&lt;<span class="t">T</span> = <span class="t">u16</span>&gt; { v: <span class="t">T</span>; raw: <span class="t">u8</span>; }
+
+<span class="k">let</span> a = <span class="t">Bits</span>::&lt;<span class="t">f64</span>&gt; { raw: <span class="n">0x3FF0000000000000u64</span> };
+<span class="k">let</span> b = <span class="t">Bits</span> { v: <span class="n">7i32</span> };              <span class="c">// Bits&lt;i32&gt;, inferred from the field given</span>
+<span class="k">let</span> x = <span class="k">unsafe</span> { a.v };                <span class="c">// 1.0 (the bits of 1.0f64)</span>
+</code></pre>
+<p>In a union literal the arguments are inferred from the one field given. Bounds are checked per instance, and diagnostics name the instance (<code>reading field `v` of union `Bits&lt;i32&gt;` needs an `unsafe` block</code>). A <code>union</code> declares at least one field.</p>
+<h2 id="252-semantics"><a class="anchor" tabindex="-1" href="#252-semantics" aria-hidden="true">#</a>2.5.2. Semantics</h2>
+<p>The following example shows how a <code>union</code> behaves.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="t">EpollData</span> { fd: <span class="n">5i32</span> };
+x.fd = <span class="n">7i32</span>;                    <span class="c">// write - safe</span>
+<span class="k">let</span> y = <span class="k">unsafe</span> { x.val };       <span class="c">// read - requires unsafe; reinterprets x's bit pattern as u64</span>
+</code></pre>
+<p>Creating an instance with some field writes that field's bits to memory. Reading it later through another field reinterprets the same memory bits as that field's type. Writing a field is safe, but reading a field is allowed only inside <a href="../004-functions/415-unsafe#4152-unsafe------block-expression"><code>unsafe</code></a>, because the language does not guarantee that the bits read are a valid value of that type (e.g. <code>bool</code>, <code>char</code>, pointers).</p>
+<h2 id="253-where-safety-lies"><a class="anchor" tabindex="-1" href="#253-where-safety-lies" aria-hidden="true">#</a>2.5.3. Where safety lies</h2>
+<p>Bit reinterpretation by a <code>union</code> is behavior defined by the language, but the meaning of the result is the program domain's responsibility. For example, writing <code>1.0</code> to an <code>f32</code> field and reading the <code>i32</code> field gives <code>1065353216</code> (<code>0x3F800000</code>); conversely, reading <code>i32</code> bits as <code>f32</code> gives the real value given by the IEEE 754 bit representation. The language does not check whether that value is meaningful for the domain.</p>
+<p>This model differs from C's <code>union</code>. In C, reading from a different member is undefined behavior; in rok it is defined as bit reinterpretation. Since the result is not guaranteed to be a valid value, reads are marked <code>unsafe</code>.</p>
+<h2 id="254-default-layout-is-left-to-the-compiler"><a class="anchor" tabindex="-1" href="#254-default-layout-is-left-to-the-compiler" aria-hidden="true">#</a>2.5.4. Default layout is left to the compiler</h2>
+<p>The default <code>union</code> layout is left to the compiler. It need only satisfy the size and alignment of the largest field; the exact field alignment and padding are decided by the compiler.</p>
+<p>If a C <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a>-compatible <code>union</code> is needed, attach <code>#[repr(C)]</code>.</p>
+<pre><code class="language-rok"><span class="a">#[repr(C)]</span>
+<span class="k">union</span> <span class="t">CUnion</span> {
+    a: <span class="t">i32</span>;
+    b: <span class="t">f32</span>;
+}
+</code></pre>
+<p>A <code>union</code> with <code>#[repr(C)]</code> is bit-compatible with C's <code>union</code> and is used in <a href="../000-meta/007-glossary#ffi-foreign-function-interface">FFI</a> interfaces. The exact meaning is defined in <a href="../006-meta-system/602-built-in-attributes">Built-in attributes</a>.</p>
+<h2 id="255-union-vs-reprc-union"><a class="anchor" tabindex="-1" href="#255-union-vs-reprc-union" aria-hidden="true">#</a>2.5.5. <code>union</code> vs <code>#[repr(C)] union</code></h2>
+<p>The two forms differ as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Used in</th><th>Layout</th><th>Bit compatibility</th></tr></thead>
+<tbody>
+<tr><td><code>union T { ... }</code></td><td>Ordinary code</td><td>Left to compiler</td><td>Guaranteed only within rok</td></tr>
+<tr><td><code>#[repr(C)] union T { ... }</code></td><td>FFI</td><td>Same as C ABI</td><td>Compatible with C code</td></tr>
+</tbody></table></div>
+<h2 id="256-visibility--duplicate-definitions"><a class="anchor" tabindex="-1" href="#256-visibility--duplicate-definitions" aria-hidden="true">#</a>2.5.6. Visibility / duplicate definitions</h2>
+<p>The same rules as <a href="203-struct"><code>struct</code></a> apply.</p>
+<div class="callout warning"><p class="callout-title">Warning</p>
+<p>Reading a <code>union</code> field is a bit reinterpretation and is allowed only inside <code>unsafe</code> (writing is safe). Whether the bits read are a valid value of that type, and whether it is meaningful for the domain, is the author's responsibility.</p>
+</div>
+<h2 id="257-union-vs-sum-types"><a class="anchor" tabindex="-1" href="#257-union-vs-sum-types" aria-hidden="true">#</a>2.5.7. <code>union</code> vs sum types</h2>
+<p><code>union</code> and sum types may look similar, but they are entirely different tools.</p>
+<pre><code class="language-rok"><span class="k">union</span>  <span class="t">Foo</span> { a: <span class="t">i32</span>; b: <span class="t">f32</span>; }    <span class="c">// same memory, no tag</span>
+<span class="k">type</span>   <span class="t">Bar</span> = <span class="t">i32</span> | <span class="t">f32</span>;            <span class="c">// separate memory, tagged</span>
+</code></pre>
+<p>The differences in each aspect:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th><code>union</code></th><th>Sum type (<code>A | B</code>)</th></tr></thead>
+<tbody>
+<tr><td>Tracks which field is active</td><td>No</td><td>Tracked by tag</td></tr>
+<tr><td>Conversion between fields</td><td>Bit reinterpretation</td><td>Variant change (value rebuilt)</td></tr>
+<tr><td>Memory use</td><td>Size of the largest field</td><td>Tag + size of the largest variant</td></tr>
+<tr><td>Reading a field</td><td>Requires <code>unsafe</code> (bit reinterpretation)</td><td>Safe, via patterns / <code>is</code></td></tr>
+</tbody></table></div>
+<p>The two serve completely different purposes: <code>union</code> provides different interpretations at the bit level, and a sum type expresses different kinds at the value level. They must not be confused.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/205-union.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="204-enum"><small>Previous</small>2.4. enum</a><a class="next" href="206-sum-types"><small>Next</small>2.6. Sum types (A | B)</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.12. reflect - Reflect / Inspect - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::reflect 모듈은 런타임 타입 정보와 필드 introspection 의 권위 시그니처를 제공합니다. 자세한 의미는 refs-lang 6.10 reflection 이 권위를 가지며, 이 장에서는 표준 라이브러리 측 트레잇 형태만 정리합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/212-reflect.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.12. reflect - Reflect / Inspect - rok docs">
+<meta property="og:description" content="rok::core::reflect 모듈은 런타임 타입 정보와 필드 introspection 의 권위 시그니처를 제공합니다. 자세한 의미는 refs-lang 6.10 reflection 이 권위를 가지며, 이 장에서는 표준 라이브러리 측 트레잇 형태만 정리합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/212-reflect.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/212-reflect.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/212-reflect.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li class="cur"><a aria-current="page" href="212-reflect">2.12. reflect - Reflect / Inspect</a><ul class="toc"><li><a href="#2121-두-단계-트레잇">2.12.1. 두 단계 트레잇</a></li><li><a href="#2122-reflect---정적--인스턴스-모두">2.12.2. Reflect - 정적 + 인스턴스 모두</a></li><li><a href="#2123-inspect---opt-in-필드--메서드">2.12.3. Inspect - opt-in 필드 / 메서드</a></li><li><a href="#2124-repl-출력">2.12.4. REPL 출력</a></li><li><a href="#2125-모듈-매핑">2.12.5. 모듈 매핑</a></li><li><a href="#2126-다른-언어와의-비교">2.12.6. 다른 언어와의 비교</a></li></ul></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="212-reflect---reflect--inspect 212-reflect---reflect--inspect 2121-두-단계-트레잇 2121-two-level-traits 2122-reflect---정적--인스턴스-모두 2122-reflect---both-static-and-instance 정적-vs-인스턴스-차이 static-vs-instance 글로벌-함수-없음 no-global-functions 2123-inspect---opt-in-필드--메서드 2123-inspect---opt-in-fields--methods derive-예 derive-example 메타-블록-활용 using-meta-blocks 동적-dispatch-가-필요한-자리 where-dynamic-dispatch-is-needed 2124-repl-출력 2124-repl-output 2125-모듈-매핑 2125-module-mapping 2126-다른-언어와의-비교 2126-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/200-core/212-reflect" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="212-reflect---reflect--inspect"><a class="anchor" tabindex="-1" href="#212-reflect---reflect--inspect" aria-hidden="true">#</a>2.12. reflect - <code>Reflect</code> / <code>Inspect</code></h1>
+<p><code>rok::core::reflect</code> 모듈은 런타임 타입 정보와 <strong>필드 introspection</strong> 의 권위 시그니처를 제공합니다. 자세한 의미는 <a href="../../refs-lang/006-meta-system/610-reflection">refs-lang 6.10 reflection</a> 이 권위를 가지며, 이 장에서는 표준 라이브러리 측 트레잇 형태만 정리합니다.</p>
+<h2 id="2121-두-단계-트레잇"><a class="anchor" tabindex="-1" href="#2121-두-단계-트레잇" aria-hidden="true">#</a>2.12.1. 두 단계 트레잇</h2>
+<p>reflection 은 두 단계 트레잇으로 분리됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>트레잇</th><th>자동 구현 / opt-in</th><th>제공 항목</th><th>사용 자리</th></tr></thead>
+<tbody>
+<tr><td><code>Reflect</code></td><td><strong>자동</strong> (모든 타입)</td><td>type_name / size / align</td><td>묵시 <code>rok::**</code> 으로 사용 가능 (드물게 사용)</td></tr>
+<tr><td><code>Inspect</code></td><td>opt-in (<code>#[derive(Inspect)]</code>)</td><td>field_names / get_field / methods</td><td>묵시 <code>rok::**</code> 으로 trait 사용 가능, derive 명시</td></tr>
+</tbody></table></div>
+<p>자동과 opt-in 으로 분리한 이유는 바이너리 크기를 통제하기 위함입니다. 모든 struct 가 field reflection 메타데이터를 포함하면 binary 가 커지므로, opt-in 방식을 통해 필요한 타입에만 메타데이터를 생성하도록 하였습니다.</p>
+<h2 id="2122-reflect---정적--인스턴스-모두"><a class="anchor" tabindex="-1" href="#2122-reflect---정적--인스턴스-모두" aria-hidden="true">#</a>2.12.2. <code>Reflect</code> - 정적 + 인스턴스 모두</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Reflect</span> {
+    <span class="k">fn</span> type_name() -&gt; <span class="t">str</span>;        <span class="c">// 정적 - T::type_name()</span>
+    <span class="k">fn</span> size() -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> align() -&gt; <span class="t">usize</span>;
+
+    <span class="k">fn</span> type_name_of(<span class="k">self</span>) -&gt; <span class="t">str</span>; <span class="c">// 인스턴스 - x.type_name_of() (any / sum 도 OK)</span>
+    <span class="k">fn</span> size_of(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+}
+</code></pre>
+<p>이 트레잇은 모든 타입에 자동으로 구현되며, 컴파일러가 type info 를 binary 에 자동으로 부착합니다.</p>
+<p><code>Reflect</code> 는 컴파일러가 모든 타입에 제공하며, 소스에 impl 이 없습니다.</p>
+<ul>
+<li>손으로 쓴 <code>impl Reflect for T</code> 는 에러입니다. <code>T: Reflect</code> 바운드는 늘 성립합니다.
+</li>
+<li>타입이 자기 <code>size()</code> / <code>type_name()</code> 같은 같은 이름의 메서드를 가지면 그 메서드가 리플렉션 메서드를 가립니다.
+</li>
+<li>이름 (<code>type_name</code>) 에는 모듈 경로가 붙지 않습니다 (<code>List&lt;i64&gt;</code>, <code>Config</code>). 합 타입의 정적 이름은 정규 순서 (<a href="../../refs-lang/002-types/206-sum-types#264-집합-의미론">2.6.4</a>) 로 적습니다 (<code>f64 | i32</code>, <code>none</code> 은 마지막). <code>type_name_of(self)</code> 같은 인스턴스 형태는 런타임에 들어 있는 항 (합) 이나 <code>any</code> 의 내용을 보고합니다.
+</li>
+<li><code>rok::core::reflect::cast&lt;T&gt;(value: any) -&gt; T | none</code> 은 <code>set_field</code> 와 같은 규칙으로 <code>any</code> 를 <code>T</code> 로 꺼냅니다. <code>rok::core::reflect::methods_of&lt;T&gt;() -&gt; List&lt;MethodInfo&gt;</code> 는 <code>T</code> 의 고유 메서드 목록입니다.
+</li>
+</ul>
+<h3 id="정적-vs-인스턴스-차이"><a class="anchor" tabindex="-1" href="#정적-vs-인스턴스-차이" aria-hidden="true">#</a>정적 vs 인스턴스 차이</h3>
+<pre><code class="language-rok"><span class="t">i32</span>::type_name();          <span class="c">//→ "i32"           (정적 - 컴파일 타임 결정)</span>
+<span class="t">i32</span>::size();               <span class="c">//→ 4</span>
+<span class="t">i32</span>::align();              <span class="c">//→ 4</span>
+
+<span class="k">let</span> x: <span class="t">i32</span> = <span class="n">42</span>;
+x.type_name_of();          <span class="c">//→ "i32"           (인스턴스 - 보통 정적과 같음)</span>
+
+<span class="k">let</span> y: <span class="t">i32</span> | <span class="t">f64</span> = <span class="n">42i32</span>;
+y.type_name_of();          <span class="c">//→ "i32"           (런타임 dispatch - sum tag 검사)</span>
+
+<span class="k">let</span> z: <span class="k">any</span> = <span class="s">"hello"</span>;
+z.type_name_of();          <span class="c">//→ "str"           (런타임 - any slot dispatch)</span>
+</code></pre>
+<p><code>type_name_of</code> 는 런타임 dispatch 이므로, sum type 이나 any 의 경우 현재 들어 있는 변형의 이름을 반환합니다.</p>
+<h3 id="글로벌-함수-없음"><a class="anchor" tabindex="-1" href="#글로벌-함수-없음" aria-hidden="true">#</a>글로벌 함수 없음</h3>
+<pre><code class="language-rok">typeof(x);                 <span class="c">// ERROR - 글로벌 typeof 없음</span>
+sizeof(<span class="t">T</span>);                 <span class="c">// ERROR - 글로벌 sizeof 없음</span>
+</code></pre>
+<p>대신 메서드로 일관되게 통일됩니다.</p>
+<pre><code class="language-rok">x.type_name_of()           <span class="c">// 인스턴스</span>
+<span class="t">T</span>::type_name()             <span class="c">// 정적</span>
+<span class="t">T</span>::size()
+<span class="t">T</span>::align()
+</code></pre>
+<p>이는 <a href="../../refs-lang/003-expressions/305-member-access-and-method-call">refs-lang 3.5 멤버 접근과 메서드 호출</a> 의 일부로, 모든 introspection 이 메서드 형태로 통합됩니다.</p>
+<h2 id="2123-inspect---opt-in-필드--메서드"><a class="anchor" tabindex="-1" href="#2123-inspect---opt-in-필드--메서드" aria-hidden="true">#</a>2.12.3. <code>Inspect</code> - opt-in 필드 / 메서드</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Inspect</span>: <span class="t">Reflect</span> {
+    <span class="k">fn</span> field_names() -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt;;
+    <span class="k">fn</span> get_field(<span class="k">self</span>, name: <span class="t">str</span>) -&gt; <span class="k">any</span> | <span class="k">none</span>;            <span class="c">// 비공개 필드도</span>
+    <span class="k">fn</span> set_field(<span class="k">ref</span> <span class="k">self</span>, name: <span class="t">str</span>, value: <span class="k">any</span>) -&gt; <span class="t">bool</span>;  <span class="c">// 성공 여부</span>
+    <span class="k">fn</span> methods() -&gt; <span class="t">List</span>&lt;<span class="t">MethodInfo</span>&gt;;
+}
+
+<span class="k">struct</span> <span class="t">MethodInfo</span> {
+    name: <span class="t">str</span>;
+    arity: <span class="t">usize</span>;              <span class="c">// self 를 뺀 인자 수</span>
+    is_static: <span class="t">bool</span>;           <span class="c">// self 를 받지 않는 메서드</span>
+    arg_types: <span class="t">List</span>&lt;<span class="t">str</span>&gt;;      <span class="c">// self 를 뺀 인자 타입 이름</span>
+    return_type: <span class="t">str</span>;
+}
+</code></pre>
+<ul>
+<li><code>get_field</code> 는 그 필드의 값을 <code>any</code> 로 돌려주며, 없는 이름이면 <code>none</code> 입니다. 비공개 필드도 꺼낼 수 있습니다.
+</li>
+<li><code>set_field</code> 는 값이 그 필드의 타입과 <strong>정확히 같을 때</strong>, 또는 정수가 다른 정수 타입이어도 <strong>손실 없이 들어갈 때</strong> (<code>u.set_field(&quot;id&quot;, 42)</code> 가 <code>u64</code> 필드에) 대입하고 <code>true</code> 를 돌려줍니다. 그 밖에는 대입하지 않고 <code>false</code> 입니다. 다른 변환 (예: <code>i32</code> → <code>f64</code>) 은 없습니다.
+</li>
+<li><code>methods()</code> 는 그 타입의 <strong>고유 메서드만</strong> (트레잇 메서드 제외) 이름순으로 돌려줍니다. 제네릭 <code>impl</code> 의 메서드는 타입을 적힌 그대로 (<code>T</code>) 보여 줍니다.
+</li>
+<li><code>enum</code> 에 derive 하면 필드는 없고 (<code>field_names()</code> 는 빈 목록, <code>get_field</code> 는 <code>none</code>, <code>set_field</code> 는 <code>false</code>), <code>methods()</code> 만 의미가 있습니다.
+</li>
+</ul>
+<h3 id="derive-예"><a class="anchor" tabindex="-1" href="#derive-예" aria-hidden="true">#</a>derive 예</h3>
+<pre><code class="language-rok"><span class="a">#[derive(Inspect)]</span>
+<span class="k">struct</span> <span class="t">User</span> {
+    id: <span class="t">u64</span>;
+    name: <span class="t">str</span>;
+    email: <span class="t">str</span>;
+}
+
+<span class="k">let</span> u = <span class="t">User</span> { id: <span class="n">1</span>, name: <span class="s">"Alice"</span>, email: <span class="s">"a@b"</span> };
+
+<span class="t">User</span>::field_names();       <span class="c">//→ ["id", "name", "email"]</span>
+u.get_field(<span class="s">"name"</span>);       <span class="c">//→ any("Alice")</span>
+u.set_field(<span class="s">"id"</span>, <span class="n">42</span>);     <span class="c">//→ true</span>
+u.id;                      <span class="c">//→ 42</span>
+</code></pre>
+<h3 id="메타-블록-활용"><a class="anchor" tabindex="-1" href="#메타-블록-활용" aria-hidden="true">#</a>메타 블록 활용</h3>
+<p><code>#[derive(Inspect)]</code> 의 구현은 <code>rok::core::reflect</code> 의 메타 블록입니다 (<a href="../../refs-lang/006-meta-system/608-meta-blocks">refs-lang 6.8</a>, <a href="../../refs-lang/006-meta-system/609-template-tokens">6.9</a>). 요약하면 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(Inspect)]</span>
+<span class="k">pub</span> @derive {
+    <span class="k">impl</span> rok::core::reflect::<span class="t">Inspect</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> field_names() -&gt; <span class="t">List</span>&lt;<span class="t">str</span>&gt; {
+            <span class="k">let</span> names: <span class="t">List</span>&lt;<span class="t">str</span>&gt; = <span class="t">List</span>::new();
+            @if_struct {
+                @for_fields { names.push(@field.name.as_str()); }
+            }
+            <span class="k">return</span> names;
+        }
+
+        <span class="k">fn</span> get_field(<span class="k">self</span>, name: <span class="t">str</span>) -&gt; <span class="k">any</span> | <span class="k">none</span> {
+            @if_struct {
+                @for_fields {
+                    <span class="k">if</span> name == @field.name.as_str() { <span class="k">return</span> <span class="k">self</span>.@field; }
+                }
+            }
+            <span class="k">return</span> <span class="k">none</span>;
+        }
+
+        <span class="k">fn</span> set_field(<span class="k">ref</span> <span class="k">self</span>, name: <span class="t">str</span>, value: <span class="k">any</span>) -&gt; <span class="t">bool</span> {
+            @if_struct {
+                @for_fields {
+                    <span class="k">if</span> name == @field.name.as_str() {
+                        <span class="k">match</span> rok::core::reflect::cast::&lt;@field.<span class="k">type</span>&gt;(value) {
+                            v: @field.<span class="k">type</span> =&gt; { <span class="k">self</span>.@field = v; <span class="k">return</span> <span class="k">true</span>; },
+                            <span class="k">none</span> =&gt; { <span class="k">return</span> <span class="k">false</span>; },
+                        }
+                    }
+                }
+            }
+            <span class="k">return</span> <span class="k">false</span>;
+        }
+
+        <span class="k">fn</span> methods() -&gt; <span class="t">List</span>&lt;rok::core::reflect::<span class="t">MethodInfo</span>&gt; {
+            <span class="k">return</span> rok::core::reflect::methods_of::&lt;@<span class="k">Self</span>&gt;();
+        }
+    }
+}
+</code></pre>
+<p>자세한 메타 블록 내용은 <a href="../../refs-lang/006-meta-system/608-meta-blocks">refs-lang 6.8 메타 블록</a> 을 참고합니다.</p>
+<h3 id="동적-dispatch-가-필요한-자리"><a class="anchor" tabindex="-1" href="#동적-dispatch-가-필요한-자리" aria-hidden="true">#</a>동적 dispatch 가 필요한 자리</h3>
+<p><code>Inspect</code> 는 config 객체, serializer, debugger 등 필드 이름으로 접근이 필요한 도메인에서 사용됩니다. 일반 코드에서는 <code>Reflect</code> 만으로 충분합니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> dump_struct&lt;<span class="t">T</span>: <span class="t">Inspect</span>&gt;(x: <span class="t">T</span>) {
+    <span class="k">for</span> name <span class="k">in</span> <span class="t">T</span>::field_names() {
+        <span class="k">if</span> <span class="k">let</span> v: <span class="k">any</span> = x.get_field(name) {
+            println(<span class="s">f"{</span>name<span class="s">} = {</span>v.type_name_of()<span class="s">}: {</span>v<span class="s">:?</span><span class="s">}"</span>);
+        }
+    }
+}
+</code></pre>
+<h2 id="2124-repl-출력"><a class="anchor" tabindex="-1" href="#2124-repl-출력" aria-hidden="true">#</a>2.12.4. REPL 출력</h2>
+<p>REPL 의 마지막 식 자동 출력은 이 장의 <code>Reflect::type_name_of</code> 와 <a href="210-fmt">2.10 fmt</a> 의 <code>Debug</code> 가 합성되어 작동합니다 (<a href="../../refs-lang/006-meta-system/610-reflection#6103-repl--jupyter-자동-출력">refs-lang 6.10.3</a>).</p>
+<pre><code>&gt; let x = 42i32;
+&gt; x
+i32: 42
+
+&gt; [1, 2, 3]
+List&lt;i32&gt;: [1, 2, 3]
+
+&gt; User { id: 1, name: &quot;Alice&quot; }
+User: User { id: 1, name: &quot;Alice&quot; }
+</code></pre>
+<p>표시 형태는 <code>{type_name_of}: {Debug}</code> 입니다. <code>Debug</code> 가 없는 타입이면 타입 이름만 출력합니다.</p>
+<h2 id="2125-모듈-매핑"><a class="anchor" tabindex="-1" href="#2125-모듈-매핑" aria-hidden="true">#</a>2.12.5. 모듈 매핑</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>위치</th><th>메커니즘</th></tr></thead>
+<tbody>
+<tr><td><code>Reflect</code> 자동</td><td>컴파일러 + <code>rok::core::reflect</code></td><td>type info table - binary 부착</td></tr>
+<tr><td><code>Inspect</code> derive</td><td><code>rok::core::reflect</code> + 메타 블록 <code>#[impl_derive]</code></td><td>template token 기반 코드 생성</td></tr>
+<tr><td><code>MethodInfo</code></td><td><code>rok::core::reflect</code></td><td>단순 struct</td></tr>
+<tr><td><code>any</code> 타입</td><td>컴파일러 내장</td><td>type tag + payload</td></tr>
+</tbody></table></div>
+<h2 id="2126-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#2126-다른-언어와의-비교" aria-hidden="true">#</a>2.12.6. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>Java</th><th>Python</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>타입 이름</td><td><code>std::any::type_name::&lt;T&gt;()</code></td><td><code>getClass()</code></td><td><code>type(x).__name__</code></td><td><code>x.type_name_of()</code> 메서드</td></tr>
+<tr><td>필드 introspection</td><td><strong>없음</strong> (lib <code>bincode</code> 등)</td><td>Reflection API</td><td><code>vars(x)</code> <code>getattr</code></td><td><code>x.get_field(name)</code> (opt-in)</td></tr>
+<tr><td>런타임 dispatch</td><td><code>dyn Trait</code> (vtable)</td><td>자동</td><td>자동</td><td>sum type tag + <code>any</code> / <code>any Trait</code> (opt-in)</td></tr>
+<tr><td>자동 구현</td><td><strong>없음</strong></td><td>모든 객체</td><td>모든 객체</td><td><code>Reflect</code> 자동, <code>Inspect</code> opt-in</td></tr>
+<tr><td>메모리 비용</td><td>0</td><td>모든 클래스 메타</td><td>모든 객체 dict</td><td><code>Reflect</code> 만 자동 (opt-in 분리)</td></tr>
+</tbody></table></div>
+<p>rok 의 가장 큰 차이점은 두 가지입니다. 첫째, 두 단계로 분리되어 있어 가벼운 <code>Reflect</code> 는 자동으로 제공되고 무거운 <code>Inspect</code> 는 opt-in 으로 제공됩니다. 이는 Java 나 Python 의 전부 자동 모델보다 메모리 효율이 좋고, Rust 의 전부 수동 모델보다 ergonomic 합니다. 둘째, 메서드 일관성을 유지하여 <code>typeof(x)</code> 같은 글로벌 함수가 <strong>없으며</strong>, 모든 introspection 이 메서드 형태로 제공됩니다.</p>
+<p>자세한 reflection 의미는 <a href="../../refs-lang/006-meta-system/610-reflection">refs-lang 6.10</a> 이 권위입니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/212-reflect.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="211-conversion"><small>Previous</small>2.11. 변환 트레잇</a><a class="next" href="213-marker"><small>Next</small>2.13. marker - Clone / Copy / Drop</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

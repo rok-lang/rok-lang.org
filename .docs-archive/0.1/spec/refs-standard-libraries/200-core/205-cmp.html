@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.5. Comparison traits - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::cmp module is the trait family that defines comparison between values. Not only the ==, !=, &lt;, &gt;, &lt;=, &gt;= operators but also hashing, sorting and ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/205-cmp.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.5. Comparison traits - rok docs">
+<meta property="og:description" content="The rok::core::cmp module is the trait family that defines comparison between values. Not only the ==, !=, &lt;, &gt;, &lt;=, &gt;= operators but also hashing, sorting and ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/205-cmp.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/205-cmp.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/205-cmp.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li class="cur"><a aria-current="page" href="205-cmp">2.5. Comparison traits</a><ul class="toc"><li><a href="#251-the-4-trait-hierarchy---why-partial-is-needed">2.5.1. The 4-trait hierarchy - why partial is needed</a></li><li><a href="#252-partialeq---partial-equality--">2.5.2. PartialEq - partial equality (==, !=)</a></li><li><a href="#253-eq---total-equality">2.5.3. Eq - total equality</a></li><li><a href="#254-partialord---partial-order----">2.5.4. PartialOrd - partial order (&lt;, &gt;, &lt;=, &gt;=)</a></li><li><a href="#255-ord---total-order">2.5.5. Ord - total order</a></li><li><a href="#256-hash---hashing-eq-consistency-promise">2.5.6. Hash - hashing (Eq consistency promise)</a></li><li><a href="#257-implementation-matrix">2.5.7. Implementation matrix</a></li><li><a href="#258-broadcast-comparison-traits">2.5.8. Broadcast comparison traits</a></li><li><a href="#259-deriveeq-ord-hash-">2.5.9. #[derive(Eq, Ord, Hash, ...)]</a></li><li><a href="#2510-pattern-matching-and-cmp">2.5.10. Pattern matching and cmp</a></li></ul></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="25-comparison-traits 25-비교-트레잇 251-the-4-trait-hierarchy---why-partial-is-needed 251-4-트레잇-위계---partial-이-필요한-이유 252-partialeq---partial-equality-- 252-partialeq---부분-동등성-- default-ne default-ne examples 사용-예 253-eq---total-equality 253-eq---완전-동등성 254-partialord---partial-order---- 254-partialord---부분-순서---- the-ordering-type ordering-타입 comparison-chaining-rejected 비교-체이닝-거부 255-ord---total-order 255-ord---완전-순서 min--max--clamp min--max--clamp 256-hash---hashing-eq-consistency-promise 256-hash---해시-eq-일관성-약속 examples-1 사용-예-1 user-defined 사용자-정의 collisions 충돌-collision 257-implementation-matrix 257-구현-매트릭스 258-broadcast-comparison-traits 258-broadcast-비교-트레잇 259-deriveeq-ord-hash- 259-deriveeq-ord-hash- 2510-pattern-matching-and-cmp 2510-패턴-매칭과-cmp"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/205-cmp" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="25-comparison-traits"><a class="anchor" tabindex="-1" href="#25-comparison-traits" aria-hidden="true">#</a>2.5. Comparison traits</h1>
+<p>The <code>rok::core::cmp</code> module is the trait family that defines comparison between values. Not only the <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code> operators but also hashing, sorting and pattern matching dispatch through the traits of this chapter.</p>
+<p>rok splits comparison into a 4-trait hierarchy (<code>PartialEq</code> / <code>Eq</code> / <code>PartialOrd</code> / <code>Ord</code>) plus a separate <code>Hash</code> trait. The split satisfies two practical requirements at once: NaN handling for IEEE 754 floating-point, and guaranteed hash consistency.</p>
+<h2 id="251-the-4-trait-hierarchy---why-partial-is-needed"><a class="anchor" tabindex="-1" href="#251-the-4-trait-hierarchy---why-partial-is-needed" aria-hidden="true">#</a>2.5.1. The 4-trait hierarchy - why partial is needed</h2>
+<p>The hierarchy can be described from two viewpoints at once.</p>
+<p><strong>Set viewpoint</strong> - <code>A ⊃ B</code> means &quot;the set of types satisfying A contains the set of types satisfying B&quot;. A is more general; B is more specific.</p>
+<pre><code>PartialEq  ⊃  Eq           // set of PartialEq types ⊇ set of Eq types
+PartialOrd ⊃  Ord          //  (every Eq is PartialEq, but not vice versa)
+PartialEq  ⊃  PartialOrd
+</code></pre>
+<p><strong>Implication viewpoint (supertrait)</strong> - <code>B ⇒ A</code> means &quot;implementing B automatically requires A&quot;; in rok code it is written <code>trait B: A</code>. <strong>A is then a supertrait of B</strong>.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Eq</span>: <span class="t">PartialEq</span> { ... }                    <span class="c">// PartialEq is a supertrait of Eq</span>
+<span class="k">trait</span> <span class="t">PartialOrd</span>: <span class="t">PartialEq</span> { ... }            <span class="c">// PartialEq is a supertrait of PartialOrd</span>
+<span class="k">trait</span> <span class="t">Ord</span>: <span class="t">PartialOrd</span> + <span class="t">Eq</span> { ... }             <span class="c">// PartialOrd and Eq are supertraits of Ord</span>
+</code></pre>
+<p>The two viewpoints express exactly the same fact from different angles. If <code>B ⇒ A</code>, every type that is B is also A, so <code>A ⊃ B</code> follows. In the set viewpoint, the supertrait is &quot;the larger side&quot;.</p>
+<p>The <code>Hash</code> trait sits on a line separate from the hierarchy above.</p>
+<pre><code>Eq ⊃ Hash         // only some Eq types are Hash - Hash promises consistency with Eq
+</code></pre>
+<p>Partial is split out because of NaN in IEEE 754 floating point.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">f64</span> = <span class="n">0.0</span> / <span class="n">0.0</span>;       <span class="c">// NaN</span>
+<span class="k">let</span> b: <span class="t">f64</span> = <span class="n">0.0</span> / <span class="n">0.0</span>;       <span class="c">// NaN</span>
+a == b;                       <span class="c">//→ false (NaN != NaN by IEEE 754)</span>
+a &lt; b;                        <span class="c">//→ false</span>
+a &gt; b;                        <span class="c">//→ false</span>
+a &lt;= b;                       <span class="c">//→ false</span>
+</code></pre>
+<p>NaN is not equal even to itself. This violates reflexivity: <code>a == a</code> is not guaranteed. Trait implementations therefore split by type: <code>f32</code> and <code>f64</code> implement only <strong><code>PartialEq</code>, <code>PartialOrd</code></strong>, while <code>i32</code>, <code>bool</code>, <code>str</code> and the like implement up to <strong><code>Eq</code>, <code>Ord</code></strong> and satisfy a total order.</p>
+<p>This split keeps Hash's consistency promise and the total ordering guarantee safe in <code>Hash</code>, <code>HashMap</code>, <code>BTreeMap</code> and sort algorithms.</p>
+<h2 id="252-partialeq---partial-equality--"><a class="anchor" tabindex="-1" href="#252-partialeq---partial-equality--" aria-hidden="true">#</a>2.5.2. <code>PartialEq</code> - partial equality (<code>==</code>, <code>!=</code>)</h2>
+<p>Partial equality is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("eq_trait")]</span>
+<span class="k">trait</span> <span class="t">PartialEq</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("==")]</span>
+    <span class="a">#[infix("≡")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> eq(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("!=")]</span>
+    <span class="a">#[infix("≠")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> ne(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span> {
+        !<span class="k">self</span>.eq(rhs)                <span class="c">// default impl</span>
+    }
+}
+</code></pre>
+<p>The <strong>promises</strong> of PartialEq are symmetry - <code>a == b</code> and <code>b == a</code> are equivalent - and transitivity - if <code>a == b</code> and <code>b == c</code> hold, <code>a == c</code> holds. Reflexivity (<code>a == a</code>) is not guaranteed, because of IEEE 754 NaN.</p>
+<h3 id="default-ne"><a class="anchor" tabindex="-1" href="#default-ne" aria-hidden="true">#</a>Default <code>ne</code></h3>
+<p><code>ne</code> is implemented by default as <code>!self.eq(rhs)</code>. A user may implement it separately, e.g. for performance.</p>
+<h3 id="examples"><a class="anchor" tabindex="-1" href="#examples" aria-hidden="true">#</a>Examples</h3>
+<pre><code class="language-rok"><span class="k">let</span> r1 = <span class="n">5i32</span> == <span class="n">5i32</span>;     <span class="c">//→ true</span>
+<span class="k">let</span> r2 = <span class="s">"hi"</span> != <span class="s">"hello"</span>;  <span class="c">//→ true</span>
+
+<span class="k">let</span> nan: <span class="t">f64</span> = <span class="t">f64</span>::<span class="t">NAN</span>;
+<span class="k">let</span> r3 = nan == nan;       <span class="c">//→ false  (PartialEq is partial)</span>
+</code></pre>
+<h2 id="253-eq---total-equality"><a class="anchor" tabindex="-1" href="#253-eq---total-equality" aria-hidden="true">#</a>2.5.3. <code>Eq</code> - total equality</h2>
+<p>Total equality is defined as a marker trait.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Eq</span>: <span class="t">PartialEq</span>&lt;<span class="k">Self</span>&gt; {
+    <span class="c">// marker trait - no additional methods</span>
+}
+</code></pre>
+<p><code>Eq</code> is a <strong>marker trait</strong>: it adds no methods, only the <strong>reflexivity</strong> promise.</p>
+<p>The <strong>promise</strong> Eq adds is reflexivity: <code>a == a</code> is always true. <code>HashMap</code> keys, <code>BTreeMap</code> keys and sort algorithms work correctly only with this promise.</p>
+<p>The <strong>impl policy</strong> is as follows. All integer / boolean / character / string types - <code>i32</code>, <code>i64</code>, <code>u8</code>..<code>u64</code>, <code>bool</code>, <code>char</code>, <code>c_char</code>, <code>str</code>, etc. - implement <code>Eq</code>. Floating-point types and sum types containing them - <code>f32</code>, <code>f64</code>, <code>f64 | none</code>, etc. - do not implement <code>Eq</code>. <code>#[derive(Eq)]</code> on a user struct or enum is possible only when every field is <code>Eq</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">42</span>;
+n == n;       <span class="c">//→ true (guaranteed by Eq)</span>
+</code></pre>
+<h2 id="254-partialord---partial-order----"><a class="anchor" tabindex="-1" href="#254-partialord---partial-order----" aria-hidden="true">#</a>2.5.4. <code>PartialOrd</code> - partial order (<code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>)</h2>
+<p>The partial order trait defines the comparison operators.</p>
+<pre><code class="language-rok"><span class="a">#[lang("cmp_trait")]</span>
+<span class="k">trait</span> <span class="t">PartialOrd</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt;: <span class="t">PartialEq</span>&lt;<span class="t">Rhs</span>&gt; {
+    <span class="a">#[infix("&lt;")]</span>
+    <span class="k">fn</span> lt(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("&gt;")]</span>
+    <span class="k">fn</span> gt(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("&lt;=")]</span>
+    <span class="a">#[infix("≤")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> le(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="a">#[infix("&gt;=")]</span>
+    <span class="a">#[infix("≥")]</span>    <span class="c">// Unicode alias</span>
+    <span class="k">fn</span> ge(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> partial_cmp(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Ordering</span> | <span class="k">none</span> {
+        <span class="c">// default impl - combination of lt/gt/eq</span>
+        <span class="k">if</span> <span class="k">self</span>.eq(rhs) { <span class="t">Ordering</span>::<span class="t">Equal</span> }
+        <span class="k">else</span> <span class="k">if</span> <span class="k">self</span>.lt(rhs) { <span class="t">Ordering</span>::<span class="t">Less</span> }
+        <span class="k">else</span> <span class="k">if</span> <span class="k">self</span>.gt(rhs) { <span class="t">Ordering</span>::<span class="t">Greater</span> }
+        <span class="k">else</span> { <span class="k">none</span> }                     <span class="c">// NaN vs NaN etc. - incomparable</span>
+    }
+}
+</code></pre>
+<p>The <strong>promises</strong> of this trait: antisymmetry - if <code>a &lt; b</code> then <code>!(b &lt; a)</code> - and transitivity - for defined comparisons, if <code>a &lt; b</code> and <code>b &lt; c</code> then <code>a &lt; c</code>. Trichotomy holds only partially: the order between two values is not always defined, and incomparable values such as NaN exist.</p>
+<p><code>partial_cmp</code> is a provided method (with a default implementation) and returns <code>Ordering | none</code>. It is <code>none</code> when the values are incomparable (NaN, etc.).</p>
+<h3 id="the-ordering-type"><a class="anchor" tabindex="-1" href="#the-ordering-type" aria-hidden="true">#</a>The <code>Ordering</code> type</h3>
+<p>The result of a 3-way comparison is represented by this enum.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Ordering</span> {
+    <span class="t">Less</span>,
+    <span class="t">Equal</span>,
+    <span class="t">Greater</span>,
+}
+</code></pre>
+<p><code>Ord::cmp</code> returns <code>Ordering</code> directly. <code>Ordering</code> implements <code>Debug</code> (<code>Less</code> / <code>Equal</code> / <code>Greater</code>).</p>
+<h3 id="comparison-chaining-rejected"><a class="anchor" tabindex="-1" href="#comparison-chaining-rejected" aria-hidden="true">#</a>Comparison chaining rejected</h3>
+<p>As defined by <a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2.5</a>, chains of non-associative traits are rejected.</p>
+<pre><code class="language-rok">a &lt; b &lt; c;        <span class="c">// compile error - non-associative (none) trait chain rejected</span>
+</code></pre>
+<p>Use an explicit AND instead.</p>
+<pre><code class="language-rok">a &lt; b &amp;&amp; b &lt; c;   <span class="c">// explicit AND</span>
+</code></pre>
+<h2 id="255-ord---total-order"><a class="anchor" tabindex="-1" href="#255-ord---total-order" aria-hidden="true">#</a>2.5.5. <code>Ord</code> - total order</h2>
+<p>The total order trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("ord_trait")]</span>
+<span class="k">trait</span> <span class="t">Ord</span>: <span class="t">Eq</span> + <span class="t">PartialOrd</span>&lt;<span class="k">Self</span>&gt; {
+    <span class="k">fn</span> cmp(<span class="k">self</span>, rhs: <span class="k">Self</span>) -&gt; <span class="t">Ordering</span>;
+
+    <span class="c">// default - two values with Ord are always comparable</span>
+    <span class="k">fn</span> min(<span class="k">self</span>, rhs: <span class="k">Self</span>) -&gt; <span class="k">Self</span> {
+        <span class="k">if</span> <span class="k">self</span>.le(rhs) { <span class="k">self</span> } <span class="k">else</span> { rhs }
+    }
+
+    <span class="k">fn</span> max(<span class="k">self</span>, rhs: <span class="k">Self</span>) -&gt; <span class="k">Self</span> {
+        <span class="k">if</span> <span class="k">self</span>.ge(rhs) { <span class="k">self</span> } <span class="k">else</span> { rhs }
+    }
+
+    <span class="k">fn</span> clamp(<span class="k">self</span>, low: <span class="k">Self</span>, high: <span class="k">Self</span>) -&gt; <span class="k">Self</span> {
+        <span class="k">if</span> <span class="k">self</span>.lt(low) { low }
+        <span class="k">else</span> <span class="k">if</span> <span class="k">self</span>.gt(high) { high }
+        <span class="k">else</span> { <span class="k">self</span> }
+    }
+}
+</code></pre>
+<p>The <strong>promise</strong> Ord adds is totality: the order between any two values is defined as one of <code>Less</code>, <code>Equal</code>, <code>Greater</code>. <code>partial_cmp</code> therefore never returns <code>none</code>; it always returns an <code>Ordering</code> value.</p>
+<p>Sort algorithms work correctly only with this guarantee.</p>
+<p><strong>Impl policy</strong>: <code>i32</code>, <code>i64</code>, <code>u*</code>, <code>bool</code>, <code>char</code>, <code>c_char</code>, <code>str</code> implement <code>Ord</code>. <code>f32</code> and <code>f64</code> do not, because NaN makes some values incomparable.</p>
+<h3 id="min--max--clamp"><a class="anchor" tabindex="-1" href="#min--max--clamp" aria-hidden="true">#</a><code>min</code> / <code>max</code> / <code>clamp</code></h3>
+<p>Three default methods are provided, usable without the impl implementing them.</p>
+<pre><code class="language-rok"><span class="k">let</span> r = <span class="n">3i32</span>.min(<span class="n">7i32</span>);              <span class="c">//→ 3</span>
+<span class="k">let</span> m = <span class="n">5</span>.max(<span class="n">10</span>);                   <span class="c">//→ 10</span>
+<span class="k">let</span> c = <span class="n">100</span>.clamp(<span class="n">0</span>, <span class="n">50</span>);            <span class="c">//→ 50</span>
+<span class="k">let</span> nan_safe = <span class="n">1.0f64</span>.clamp(<span class="n">0.0</span>, <span class="n">10.0</span>);  <span class="c">// ERROR - Ord is not defined for f64</span>
+                                          <span class="c">// (use a separate method for NaN-safe clamp)</span>
+</code></pre>
+<h2 id="256-hash---hashing-eq-consistency-promise"><a class="anchor" tabindex="-1" href="#256-hash---hashing-eq-consistency-promise" aria-hidden="true">#</a>2.5.6. <code>Hash</code> - hashing (Eq consistency promise)</h2>
+<p>The hash trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="a">#[lang("hash_trait")]</span>
+<span class="k">trait</span> <span class="t">Hash</span>: <span class="t">Eq</span> {
+    <span class="k">fn</span> hash(<span class="k">self</span>) -&gt; <span class="t">u64</span>;
+}
+</code></pre>
+<p>The <strong>core promise</strong> is:</p>
+<blockquote>
+<p><code>a == b</code> ⇒ <code>a.hash() == b.hash()</code></p>
+</blockquote>
+<p>This promise underpins the correctness of every algorithm in <code>HashMap&lt;K, V&gt;</code> and <code>HashSet&lt;K&gt;</code>.</p>
+<p>Since <code>Hash: Eq</code>, a type that does not implement Eq cannot implement Hash either. <code>f64</code> does not implement <code>Eq</code>, so it cannot implement <code>Hash</code>.</p>
+<h3 id="examples-1"><a class="anchor" tabindex="-1" href="#examples-1" aria-hidden="true">#</a>Examples</h3>
+<pre><code class="language-rok"><span class="k">use</span> rok::core::cmp::<span class="t">Hash</span>;
+
+<span class="k">let</span> h1 = <span class="s">"hello"</span>.hash();
+<span class="k">let</span> h2 = <span class="s">"hello"</span>.hash();
+h1 == h2;            <span class="c">//→ true (Hash consistency)</span>
+
+<span class="k">let</span> h3 = <span class="n">42i32</span>.hash();
+</code></pre>
+<h3 id="user-defined"><a class="anchor" tabindex="-1" href="#user-defined" aria-hidden="true">#</a>User-defined</h3>
+<pre><code class="language-rok"><span class="a">#[derive(PartialEq, Eq, Hash)]</span>
+<span class="k">struct</span> <span class="t">UserId</span> { id: <span class="t">u64</span>; }
+
+<span class="c">// automatic derive - possible because every field (id: u64) is Eq+Hash</span>
+</code></pre>
+<h3 id="collisions"><a class="anchor" tabindex="-1" href="#collisions" aria-hidden="true">#</a>Collisions</h3>
+<p>Two different values of the same type may return the same hash; that is, <code>a.hash() == b.hash()</code> is allowed even when <code>a != b</code>. This is not a bug: collisions are unavoidable in a 64-bit hash space. Data structures such as HashMap handle collisions.</p>
+<h2 id="257-implementation-matrix"><a class="anchor" tabindex="-1" href="#257-implementation-matrix" aria-hidden="true">#</a>2.5.7. Implementation matrix</h2>
+<p>Trait implementations per type are summarized below.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>PartialEq</th><th>Eq</th><th>PartialOrd</th><th>Ord</th><th>Hash</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td><code>rok.eq.OP</code>, <code>rok.lt.OP</code>, ...</td></tr>
+<tr><td><code>f32</code>, <code>f64</code></td><td>✓</td><td>✗</td><td>✓</td><td>✗</td><td>✗</td><td><code>rok.eq.f64</code>, <code>rok.lt.f64</code></td></tr>
+<tr><td><code>bool</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td><code>rok.eq.bool</code>, <code>rok.lt.bool</code></td></tr>
+<tr><td><code>char</code>, <code>c_char</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td><code>rok.eq.char</code>, ...</td></tr>
+<tr><td><code>str</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic</td></tr>
+<tr><td><code>Tuple&lt;...&gt;</code></td><td>✓ (when every part is PartialEq)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic, 1-12 elements</td></tr>
+<tr><td><code>[T; N]</code></td><td>✓ (T:PartialEq)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic</td></tr>
+<tr><td><code>List&lt;T&gt;</code></td><td>✓ (when T:PartialEq)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>lexicographic</td></tr>
+<tr><td><code>Dict&lt;K,V&gt;</code></td><td>✓ (K,V:PartialEq)</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>order-independent comparison / hash</td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td>✓ (T:PartialEq)</td><td>✓</td><td>✗</td><td>✗</td><td>✓</td><td>order-independent comparison / hash</td></tr>
+<tr><td><code>Range&lt;T&gt;</code></td><td>✓ (T:PartialEq)</td><td>...</td><td>...</td><td>...</td><td>...</td><td>start/end comparison</td></tr>
+<tr><td>Sum <code>A | B</code></td><td>✓ (when every member implements it)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>member order → payload</td></tr>
+</tbody></table></div>
+<p><code>Dict</code> and <code>Set</code> are unordered containers, so they have no <code>PartialOrd</code> / <code>Ord</code>. They implement <code>PartialEq</code> / <code>Eq</code> / <code>Hash</code> when their elements (keys and values) implement those traits, and compare and hash independently of iteration order (<a href="209-collections">2.9</a>).</p>
+<p><code>List</code> compares lexicographically: elements are compared from the front, the first differing element decides the order, and if one is a prefix of the other, the shorter one is smaller.</p>
+<p>Two values of a sum type are compared first by <strong>member (variant) order</strong>, and, if they are the same member, by their <strong>payload</strong> using that member type's <code>Ord</code>. Member order is the canonical order of the sum type (<a href="../../refs-lang/002-types/206-sum-types#264-set-semantics">refs-lang 2.6.4</a>), independent of the written order. <code>none</code> is always last, so in <code>T | none</code>, <code>none</code> is greater than any <code>T</code> value. <code>min</code> / <code>max</code> / <code>clamp</code> follow the same order.</p>
+<h2 id="258-broadcast-comparison-traits"><a class="anchor" tabindex="-1" href="#258-broadcast-comparison-traits" aria-hidden="true">#</a>2.5.8. Broadcast comparison traits</h2>
+<p>Of the 19 broadcast traits of <a href="206-broadcast">2.6 broadcast</a>, the 6 comparison traits are defined as follows.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">DotEq</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".==")]</span> <span class="k">fn</span> dot_eq(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotNe</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".!=")]</span> <span class="k">fn</span> dot_ne(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotLt</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&lt;")]</span> <span class="k">fn</span> dot_lt(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotGt</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&gt;")]</span> <span class="k">fn</span> dot_gt(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotLe</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&lt;=")]</span> <span class="k">fn</span> dot_le(...) -&gt; <span class="t">Output</span>; }
+<span class="k">trait</span> <span class="t">DotGe</span>&lt;<span class="t">Rhs</span>&gt;  { <span class="a">#[infix(".&gt;=")]</span> <span class="k">fn</span> dot_ge(...) -&gt; <span class="t">Output</span>; }
+</code></pre>
+<p>Each trait handles element-wise comparison of containers such as List or Vec3; the result type (<code>Output</code>) is usually <code>List&lt;bool&gt;</code> or <code>[bool; N]</code>.</p>
+<p>See <a href="206-broadcast">2.6 broadcast</a> for the full broadcast semantics.</p>
+<h2 id="259-deriveeq-ord-hash-"><a class="anchor" tabindex="-1" href="#259-deriveeq-ord-hash-" aria-hidden="true">#</a>2.5.9. <code>#[derive(Eq, Ord, Hash, ...)]</code></h2>
+<p><a href="../../refs-lang/006-meta-system/602-built-in-attributes">refs-lang 6.2 <code>#[derive]</code></a> defines the derive mechanism. All five cmp traits can be derived.</p>
+<pre><code class="language-rok"><span class="a">#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]</span>
+<span class="k">struct</span> <span class="t">Version</span> { major: <span class="t">u32</span>; minor: <span class="t">u32</span>; patch: <span class="t">u32</span>; }
+</code></pre>
+<p>Derive behavior per trait: <code>PartialEq</code> and <code>Eq</code> are defined as the AND of equality of all fields. <code>PartialOrd</code> and <code>Ord</code> compare lexicographically in field declaration order. <code>Hash</code> combines the hashes of all fields; the combining function is not specified.</p>
+<p>The requirement is that every field (recursively) implements the same trait, and <code>Eq</code> / <code>Ord</code> also require their supertraits (<code>PartialEq</code> / <code>PartialOrd</code>, <code>Eq</code>) to be derived or implemented. If even one field does not implement <code>Eq</code>, <code>#[derive(Eq)]</code> is a compile error.</p>
+<h2 id="2510-pattern-matching-and-cmp"><a class="anchor" tabindex="-1" href="#2510-pattern-matching-and-cmp" aria-hidden="true">#</a>2.5.10. Pattern matching and cmp</h2>
+<p>Literal patterns in <code>match</code> arms use <code>PartialEq::eq</code>.</p>
+<pre><code class="language-rok"><span class="k">match</span> x {
+    <span class="n">0</span> =&gt; <span class="s">"zero"</span>,
+    <span class="n">1</span> =&gt; <span class="s">"one"</span>,
+    _ =&gt; <span class="s">"other"</span>,
+}
+<span class="c">// → 0.eq(x) → compare, 1.eq(x) → compare, ...</span>
+</code></pre>
+<p>Range patterns (<code>0..=10 =&gt;</code>) use <code>PartialOrd::le</code> and <code>ge</code>.</p>
+<p>See <a href="../../refs-lang/003-expressions/311-patterns">refs-lang 3.11 Patterns</a> for the full pattern semantics.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/205-cmp.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="204-ops-assign"><small>Previous</small>2.4. Compound assignment traits</a><a class="next" href="206-broadcast"><small>Next</small>2.6. Broadcast - element-wise operators</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

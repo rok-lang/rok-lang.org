@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.3. 브로드캐스트 연산자 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="구두점과 연산자 토큰 에서 정의된 점-접두 연산자 (.+, .*, .== 등) 는 원소별 연산 (broadcast) 을 위한 별개의 토큰입니다. 일반 연산자와 동일한 메커니즘, 즉 트레잇 메서드 호출로의 desugar 를 통해 동작하지만, 매핑되는 트레잇은 별도로 분리됩니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.3. 브로드캐스트 연산자 - rok docs">
+<meta property="og:description" content="구두점과 연산자 토큰 에서 정의된 점-접두 연산자 (.+, .*, .== 등) 는 원소별 연산 (broadcast) 을 위한 별개의 토큰입니다. 일반 연산자와 동일한 메커니즘, 즉 트레잇 메서드 호출로의 desugar 를 통해 동작하지만, 매핑되는 트레잇은 별도로 분리됩니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. 연산자 디스패치</a></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li class="cur"><a aria-current="page" href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a><ul class="toc"><li><a href="#331-desugar-패턴">3.3.1. desugar 패턴</a></li><li><a href="#332-우선순위와-결합성">3.3.2. 우선순위와 결합성</a></li><li><a href="#333-함수와-메서드-브로드캐스트">3.3.3. 함수와 메서드 브로드캐스트</a></li><li><a href="#334-자동-루프-융합">3.3.4. 자동 루프 융합</a></li><li><a href="#335-일반-연산자와의-의미-차이">3.3.5. 일반 연산자와의 의미 차이</a></li><li><a href="#336-사용자-정의-트레잇-구현">3.3.6. 사용자 정의 트레잇 구현</a></li></ul></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="33-브로드캐스트-연산자 33-broadcast-operators 331-desugar-패턴 331-desugaring-pattern 332-우선순위와-결합성 332-precedence-and-associativity 333-함수와-메서드-브로드캐스트 333-function-and-method-broadcast 334-자동-루프-융합 334-automatic-loop-fusion 335-일반-연산자와의-의미-차이 335-semantic-difference-from-ordinary-operators 336-사용자-정의-트레잇-구현 336-user-defined-trait-implementations"><a href="../../../../spec/refs-lang/003-expressions/303-broadcast-operators" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="33-브로드캐스트-연산자"><a class="anchor" tabindex="-1" href="#33-브로드캐스트-연산자" aria-hidden="true">#</a>3.3. 브로드캐스트 연산자</h1>
+<p><a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a> 에서 정의된 점-접두 연산자 (<code>.+</code>, <code>.*</code>, <code>.==</code> 등) 는 원소별 연산 (broadcast) 을 위한 별개의 토큰입니다. 일반 연산자와 동일한 메커니즘, 즉 트레잇 메서드 호출로의 desugar 를 통해 동작하지만, 매핑되는 트레잇은 별도로 분리됩니다.</p>
+<h2 id="331-desugar-패턴"><a class="anchor" tabindex="-1" href="#331-desugar-패턴" aria-hidden="true">#</a>3.3.1. desugar 패턴</h2>
+<p>점-접두 연산자는 다음과 같은 형태로 desugar 됩니다.</p>
+<pre><code>a .+ b      →   &lt;typeof(a) as DotAdd&lt;typeof(b)&gt;&gt;::dot_add(a, b)
+a .* b      →   &lt;typeof(a) as DotMul&lt;typeof(b)&gt;&gt;::dot_mul(a, b)
+a .== b     →   &lt;typeof(a) as DotEq&lt;typeof(b)&gt;&gt;::dot_eq(a, b)
+</code></pre>
+<p>이는 <a href="301-operator-dispatch">연산자 디스패치</a> 에서 다룬 일반 매핑과 같은 형태이며, 대상 트레잇만 다를 뿐입니다. 점-접두 연산자에는 <strong>Dot</strong> 으로 시작하는 별개의 트레잇 패밀리가 매핑되는데, 그 대응 관계는 다음 표와 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>점-접두 토큰</th><th>점 없는 형태</th><th>점-접두 트레잇</th></tr></thead>
+<tbody>
+<tr><td><code>.+</code></td><td><code>+</code> ↔ <code>Add</code></td><td><code>DotAdd</code></td></tr>
+<tr><td><code>.-</code></td><td><code>-</code> ↔ <code>Sub</code></td><td><code>DotSub</code></td></tr>
+<tr><td><code>.*</code></td><td><code>*</code> ↔ <code>Mul</code></td><td><code>DotMul</code></td></tr>
+<tr><td><code>./</code></td><td><code>/</code> ↔ <code>Div</code></td><td><code>DotDiv</code></td></tr>
+<tr><td><code>.%</code></td><td><code>%</code> ↔ <code>Rem</code></td><td><code>DotRem</code></td></tr>
+<tr><td><code>.%%</code></td><td><code>%%</code> ↔ <code>Modulo</code></td><td><code>DotModulo</code></td></tr>
+<tr><td><code>.==</code></td><td><code>==</code> ↔ <code>Eq</code></td><td><code>DotEq</code></td></tr>
+<tr><td><code>.!=</code></td><td><code>!=</code> ↔ <code>Ne</code></td><td><code>DotNe</code></td></tr>
+<tr><td><code>.&lt;</code></td><td><code>&lt;</code> ↔ (<code>Cmp::lt</code>)</td><td><code>DotLt</code></td></tr>
+<tr><td><code>.&gt;</code></td><td><code>&gt;</code></td><td><code>DotGt</code></td></tr>
+<tr><td><code>.&lt;=</code></td><td><code>&lt;=</code></td><td><code>DotLe</code></td></tr>
+<tr><td><code>.&gt;=</code></td><td><code>&gt;=</code></td><td><code>DotGe</code></td></tr>
+<tr><td><code>.&amp;&amp;</code></td><td><code>&amp;&amp;</code> (short-circ)</td><td><code>DotLogicalAnd</code></td></tr>
+<tr><td><code>.||</code></td><td><code>||</code> (short-circ)</td><td><code>DotLogicalOr</code></td></tr>
+<tr><td><code>.&amp;</code></td><td><code>&amp;</code></td><td><code>DotBitAnd</code></td></tr>
+<tr><td><code>.|</code></td><td><code>|</code></td><td><code>DotBitOr</code></td></tr>
+<tr><td><code>.^</code></td><td><code>^</code></td><td><code>DotBitXor</code></td></tr>
+<tr><td><code>.&lt;&lt;</code></td><td><code>&lt;&lt;</code></td><td><code>DotShl</code></td></tr>
+<tr><td><code>.&gt;&gt;</code></td><td><code>&gt;&gt;</code></td><td><code>DotShr</code></td></tr>
+</tbody></table></div>
+<p>위 트레잇의 정확한 시그니처와 어떤 타입에 어떤 구현이 등록되는지는 표준 라이브러리의 영역에서 정의됩니다. 본 문서는 언어가 점-접두 토큰을 별개의 트레잇 패밀리로 desugar한다는 사실까지를 책임집니다.</p>
+<div class="callout important"><p class="callout-title">중요</p>
+<p><strong>점-접두 논리 연산자의 short-circuit 부재</strong>: <code>.&amp;&amp;</code>, <code>.||</code> 는 점 없는 형태와 달리 short-circuit 평가를 하지 <strong>않습니다</strong>. broadcast 가 fused loop 으로 lower 되는 특성상 양쪽 인자가 모두 평가되며, 의미적으로는 bool 컨테이너에 대한 element-wise 논리 결합과 동일합니다. 부수효과가 있는 함수 호출을 한쪽 인자에 두면 항상 실행되니 주의가 필요합니다.</p>
+</div>
+<h2 id="332-우선순위와-결합성"><a class="anchor" tabindex="-1" href="#332-우선순위와-결합성" aria-hidden="true">#</a>3.3.2. 우선순위와 결합성</h2>
+<p>점-접두 연산자의 우선순위와 결합성은 그에 대응하는 점 없는 연산자와 동일하게 적용됩니다.</p>
+<pre><code>a .+ b .* c     →   a .+ (b .* c)              // .* 가 .+ 보다 강함 (* &gt; + 와 동일)
+a .+ b .+ c     →   (a .+ b) .+ c              // 좌결합
+</code></pre>
+<h2 id="333-함수와-메서드-브로드캐스트"><a class="anchor" tabindex="-1" href="#333-함수와-메서드-브로드캐스트" aria-hidden="true">#</a>3.3.3. 함수와 메서드 브로드캐스트</h2>
+<p>함수나 메서드 뒤에 <code>.</code> 을 붙여 모든 원소에 그 함수나 메서드를 적용하는 표기 또한 지원됩니다.</p>
+<pre><code class="language-rok">sin.(x)            <span class="c">// x 의 각 원소에 sin 적용</span>
+<span class="t">f64</span>::sqrt.(arr)    <span class="c">// 메서드 형태도 가능</span>
+g.(a, b)           <span class="c">// 여러 인자</span>
+</code></pre>
+<p>이 형태는 일반 함수 또는 메서드 호출의 결과를 모든 원소에 매핑한 새로운 컬렉션을 반환합니다. desugar 과정에서는 표준 라이브러리의 <code>Iterator::map</code> 호출 (또는 동등한 트레잇) 로 변환됩니다.</p>
+<pre><code>f.(x)        →   x.map(f)
+g.(a, b)     →   a.zip(b).map(|(x, y)| g(x, y))
+</code></pre>
+<p>함수와 메서드의 브로드캐스트는 별개의 트레잇을 두지 않고 반복자 변환의 sugar 로 처리되는데, 이 점이 이항 점-접두 연산자와 다른 부분입니다.</p>
+<h2 id="334-자동-루프-융합"><a class="anchor" tabindex="-1" href="#334-자동-루프-융합" aria-hidden="true">#</a>3.3.4. 자동 루프 융합</h2>
+<p>연속된 점-접두 표현식은 컴파일러가 단일 커널로 융합할 수 있습니다.</p>
+<pre><code>sin.(a) .+ cos.(b) .* 2.0f64
+</code></pre>
+<p>위 표현은 가능한 경우 중간 배열을 만들지 않고 한 번의 순회만으로 결과를 만들어냅니다.</p>
+<p>이러한 융합은 <a href="../000-meta/002-pipeline">컴파일 파이프라인</a> 의 MLIR 단계에서 인접한 점-접두 체인을 하나의 linalg 연산으로 인식함으로써 가능해집니다. SIMD 나 GPU 또한 같은 메커니즘을 통해 활용할 수 있습니다.</p>
+<p>다만 융합 가능 여부는 컴파일러의 분석에 달려 있으며, 사양 차원에서 항상 보장하지는 않습니다. 대부분의 경우 융합된다는 실용 수준의 약속에 해당합니다.</p>
+<h2 id="335-일반-연산자와의-의미-차이"><a class="anchor" tabindex="-1" href="#335-일반-연산자와의-의미-차이" aria-hidden="true">#</a>3.3.5. 일반 연산자와의 의미 차이</h2>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>점-접두 연산자가 별개의 트레잇으로 분리된 이유는, 같은 자료에 대해 수학적으로 다른 의미를 둘 수 있기 때문입니다.</p>
+</div>
+<pre><code>m * n           // 행렬 곱 (Mul 구현, 사용자 정의)
+m .* n          // 원소별 곱 (Hadamard product, DotMul)
+</code></pre>
+<p>NumPy 의 <code>*</code> 가 암묵적으로 원소별 연산이 되면서 발생했던 혼동을 피하기 위해, rok 은 항상 두 의미를 시각적으로 분리해 둡니다.</p>
+<p>이러한 분리는 <a href="../000-meta/004-language-vs-standard-libraries">언어와 표준 라이브러리의 경계</a> 에서 제시된 &quot;구문은 언어, 의미는 라이브러리&quot;라는 원칙을 직접 적용한 결과입니다. 서로 다른 두 의미에 서로 다른 두 구문이 매핑되는 것입니다.</p>
+<h2 id="336-사용자-정의-트레잇-구현"><a class="anchor" tabindex="-1" href="#336-사용자-정의-트레잇-구현" aria-hidden="true">#</a>3.3.6. 사용자 정의 트레잇 구현</h2>
+<p>사용자가 자신의 타입에 점-접두 연산을 부여하고 싶다면, 일반 연산자와 같은 방식으로 <strong>Dot</strong> 트레잇 패밀리를 구현하면 됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">DotAdd</span> <span class="k">for</span> <span class="t">MyVector</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">MyVector</span>;
+    <span class="k">fn</span> dot_add(<span class="k">self</span>, rhs: <span class="t">MyVector</span>) -&gt; <span class="t">MyVector</span> { ... }
+}
+</code></pre>
+<p>별도의 새로운 트레잇이나 매크로 없이도 같은 패턴만으로 점-접두 연산이 지원됩니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/303-broadcast-operators.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="302-precedence-and-associativity"><small>Previous</small>3.2. 우선순위와 결합성</a><a class="next" href="304-assignment"><small>Next</small>3.4. 대입과 복합 대입</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

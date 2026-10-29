@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.10. Generics - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Generics are the mechanism for giving type parameters to functions, types, traits and impl blocks. A separate compilation result is produced for each tuple of c...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/210-generics.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.10. Generics - rok docs">
+<meta property="og:description" content="Generics are the mechanism for giving type parameters to functions, types, traits and impl blocks. A separate compilation result is produced for each tuple of c...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/210-generics.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/210-generics.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/210-generics.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">2. Type system overview</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. Sum types (A | B)</a></li><li><a href="207-niche-optimization">2.7. Niche optimization</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li class="cur"><a aria-current="page" href="210-generics">2.10. Generics</a><ul class="toc"><li><a href="#2101-where-parameters-are-declared">2.10.1. Where parameters are declared</a></li><li><a href="#2102-kinds-of-parameters">2.10.2. Kinds of parameters</a></li><li><a href="#2103-trait-bounds">2.10.3. Trait bounds</a></li><li><a href="#2104-where-clauses">2.10.4. where clauses</a></li><li><a href="#2105-defaults">2.10.5. Defaults</a></li><li><a href="#2106-monomorphization">2.10.6. Monomorphization</a></li><li><a href="#2107-combination-with-gradual-typing">2.10.7. Combination with gradual typing</a></li><li><a href="#2108-consistency-of-generic-parameters">2.10.8. Consistency of generic parameters</a></li><li><a href="#2109-body-checking">2.10.9. Body checking</a></li><li><a href="#21010-generics-vs-trait-as-type">2.10.10. Generics vs trait-as-type</a></li></ul></li><li><a href="211-const-generics">2.11. const generics</a></li><li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="210-generics 210-제네릭 2101-where-parameters-are-declared 2101-매개변수-선언-위치 2102-kinds-of-parameters 2102-매개변수의-종류 type-parameters 타입-매개변수 const-parameters const-매개변수 type-argument-inference 타입-인자-추론 2103-trait-bounds 2103-트레잇-바운드 2104-where-clauses 2104-where-절 2105-defaults 2105-기본값-default argument-counts 인자-개수 2106-monomorphization 2106-단형화-monomorphization monomorphization-cache-model 단형화의-캐시-모델 2107-combination-with-gradual-typing 2107-점진과의-결합 2108-consistency-of-generic-parameters 2108-제네릭의-종류-일관성 2109-body-checking 2109-본체-검사 21010-generics-vs-trait-as-type 21010-제네릭과-트레잇-as-타입의-차이"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/210-generics" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="210-generics"><a class="anchor" tabindex="-1" href="#210-generics" aria-hidden="true">#</a>2.10. Generics</h1>
+<p>Generics are the mechanism for giving type parameters to functions, types, traits and <code>impl</code> blocks. A separate compilation result is produced for each tuple of concrete types at a call or instantiation site; this process is called monomorphization.</p>
+<pre><code>generics        ::= &quot;&lt;&quot; generic_param (&quot;,&quot; generic_param)* &quot;,&quot;? &quot;&gt;&quot;
+generic_param   ::= type_param | const_param
+type_param      ::= identifier (&quot;:&quot; type_bounds)? (&quot;=&quot; type_expr)?
+const_param     ::= &quot;const&quot; identifier &quot;:&quot; type_expr (&quot;=&quot; const_expr)?
+type_bounds     ::= type_expr (&quot;+&quot; type_expr)*
+where_clause    ::= &quot;where&quot; where_pred (&quot;,&quot; where_pred)* &quot;,&quot;?
+where_pred      ::= type_expr &quot;:&quot; type_bounds
+</code></pre>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><code>where</code> is a contextual keyword, a keyword only after a function signature, an <code>impl</code> header, or a <code>struct</code> / <code>enum</code> / <code>union</code> / type alias header (<a href="../001-lexical/105-keywords#154-contextual-keywords">1.5.4</a>).</p>
+</div>
+<h2 id="2101-where-parameters-are-declared"><a class="anchor" tabindex="-1" href="#2101-where-parameters-are-declared" aria-hidden="true">#</a>2.10.1. Where parameters are declared</h2>
+<p>Generic parameters appear in these positions:</p>
+<pre><code class="language-rok"><span class="k">fn</span> id&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x }                       <span class="c">// function</span>
+<span class="k">struct</span> <span class="t">Pair</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; { first: <span class="t">A</span>; second: <span class="t">B</span>; }      <span class="c">// struct</span>
+<span class="k">enum</span> <span class="t">Result</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; { <span class="t">Ok</span>(<span class="t">T</span>), <span class="t">Err</span>(<span class="t">E</span>) }              <span class="c">// enum</span>
+<span class="k">union</span> <span class="t">Bits</span>&lt;<span class="t">T</span>&gt; { v: <span class="t">T</span>; raw: <span class="t">u64</span>; }               <span class="c">// union</span>
+<span class="k">trait</span> <span class="t">Convert</span>&lt;<span class="t">Target</span>&gt; { ... }                    <span class="c">// trait</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }                          <span class="c">// impl</span>
+<span class="k">type</span> <span class="t">Maybe</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> | <span class="k">none</span>;                        <span class="c">// type alias</span>
+</code></pre>
+<p>The parameter declaration form is the same in every position: parameter names listed in <code>&lt;...&gt;</code> after the name, separated by commas.</p>
+<h2 id="2102-kinds-of-parameters"><a class="anchor" tabindex="-1" href="#2102-kinds-of-parameters" aria-hidden="true">#</a>2.10.2. Kinds of parameters</h2>
+<h3 id="type-parameters"><a class="anchor" tabindex="-1" href="#type-parameters" aria-hidden="true">#</a>Type parameters</h3>
+<pre><code class="language-rok"><span class="k">fn</span> first&lt;<span class="t">T</span>&gt;(pair: (<span class="t">T</span>, <span class="t">T</span>)) -&gt; <span class="t">T</span> { pair.<span class="n">0</span> }
+</code></pre>
+<p>Parameter names follow the <a href="../001-lexical/104-identifiers">identifier</a> form. By convention, single uppercase letters such as <code>T</code>, <code>U</code>, <code>K</code>, <code>V</code> or short PascalCase names are used, but this is not enforced.</p>
+<h3 id="const-parameters"><a class="anchor" tabindex="-1" href="#const-parameters" aria-hidden="true">#</a><code>const</code> parameters</h3>
+<p>These take a value as a parameter. The exact rules are defined separately in <a href="211-const-generics"><code>const</code> generics</a>.</p>
+<h3 id="type-argument-inference"><a class="anchor" tabindex="-1" href="#type-argument-inference" aria-hidden="true">#</a>Type argument inference</h3>
+<p>If type arguments are not written at the call site, the compiler infers them. Besides argument types, the expected type (the type annotation of a <code>let</code>, the parameter type at an argument position, the return type at a return position) is also used for inference.</p>
+<pre><code class="language-rok"><span class="k">fn</span> empty&lt;<span class="t">T</span>&gt;() -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; { [] }
+
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = empty();        <span class="c">// T = i32 - from the let's type annotation</span>
+takes_strs(empty());                <span class="c">// T = str - from the parameter type List&lt;str&gt;</span>
+</code></pre>
+<p>A <code>let</code> without an expected type is inferred from later uses. In an unannotated <code>let x = f();</code>, if the generic return type of <code>f</code> is not determined by the call alone, later uses determine it. Signatures are always explicit.</p>
+<ul>
+<li><strong>Scope</strong>: the variable's scope, i.e. the rest of the block, including closures and async bodies within it.
+</li>
+<li><strong>Uses that fix the type</strong>: uses that pass the value to a position whose type is fixed: function / method arguments, assignment, annotated <code>let</code>, struct fields, <code>return</code>. Operators, f-string holes, patterns and field reads do not fix the type.
+</li>
+<li><strong>Mutual fixing</strong>: several open <code>let</code>s may fix each other (<code>let a = List::new(); let b = List::new(); a.push(b); b.push(1);</code> → <code>b: List&lt;i32&gt;</code>, <code>a: List&lt;List&lt;i32&gt;&gt;</code>).
+</li>
+<li><strong>Default types of literals</strong>: <code>i32</code> / <code>f64</code> yield to a later concrete use of the same kind (integer / real). In <code>ys.push(1); sum_i64(ys)</code>, <code>ys</code> is <code>List&lt;i64&gt;</code>.
+</li>
+<li><strong>Conflicts</strong>: two different uses do not form a sum type; it is an error (<code>xs.push(none); xs.push(1)</code>, same as the branch rule of <a href="../005-modules/501-variable-declaration#517-type-annotations-and-type-inference">5.1.7</a>). <code>let v = none;</code> alone is still an error.
+</li>
+<li>Closure parameters (<a href="../004-functions/405-closure">4.5.2</a>) and method path values (<a href="../003-expressions/305-member-access-and-method-call#method-path-values">3.5.3</a>) without context are likewise fixed by later calls (<code>let f = |x| x * 2; f(4)</code>, <code>let f = Box::get; f(b)</code>).
+</li>
+</ul>
+<p>Diagnostics:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Case</th><th>Location</th><th>Example message</th></tr></thead>
+<tbody>
+<tr><td>Never determined</td><td>That <code>let</code></td><td><code>type annotations needed: cannot infer the type of `d` (`Dict&lt;_, _&gt;`)</code></td></tr>
+<tr><td>Conflict</td><td>The use site, with the site that fixed the type as a secondary label</td><td><code>conflicting uses of `c` (`List&lt;_&gt;`): `str` here, but `i32` fixed at 8:5</code></td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="k">let</span> xs = empty();                   <span class="c">// still List&lt;?&gt;</span>
+takes_ints(xs);                     <span class="c">// T = i32 here - parameter List&lt;i32&gt;</span>
+<span class="k">let</span> zs = <span class="t">List</span>::new();
+zs.push(<span class="n">1</span>);                         <span class="c">// zs: List&lt;i32&gt; - from a later method argument</span>
+<span class="k">let</span> ys = empty();                   <span class="c">// ERROR - type annotations needed (no concrete use)</span>
+</code></pre>
+<p>Static trait methods with no arguments determine <code>Self</code> the same way. A call on a type parameter, <code>T::zero()</code>, and a trait-path call, <code>Tr::m()</code>, take <code>Self</code> from the expected type.</p>
+<pre><code class="language-rok"><span class="k">let</span> z: <span class="t">i32</span> = <span class="t">Zero</span>::zero();          <span class="c">// Self = i32 - rok::core::num::Zero</span>
+<span class="k">fn</span> sum&lt;<span class="t">T</span>: <span class="t">Zero</span> + <span class="t">Add</span>&lt;<span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(xs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span> {
+    <span class="k">let</span> acc: <span class="t">T</span> = <span class="t">T</span>::zero();          <span class="c">// Self = T</span>
+    ...
+}
+</code></pre>
+<p>A variant constructor of a generic <code>enum</code> determines its instance from its arguments first, then from the type parameters' defaults, then from the <code>let</code> inference variable it is bound to; otherwise it is an error, <code>type annotations needed</code>.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Pair</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; { <span class="t">One</span>(<span class="t">A</span>), <span class="t">Two</span>(<span class="t">A</span>, <span class="t">B</span>) }
+<span class="k">let</span> p = <span class="t">Pair</span>::<span class="t">Two</span>(<span class="n">1</span>, <span class="s">"a"</span>);          <span class="c">// Pair&lt;i32, str&gt; - from the arguments</span>
+</code></pre>
+<h2 id="2103-trait-bounds"><a class="anchor" tabindex="-1" href="#2103-trait-bounds" aria-hidden="true">#</a>2.10.3. Trait bounds</h2>
+<p>Bounds state the traits a parameter must satisfy.</p>
+<pre><code class="language-rok"><span class="k">fn</span> add_all&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>&gt;&gt;(items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span> { ... }
+<span class="k">fn</span> print_all&lt;<span class="t">T</span>: <span class="t">Display</span>&gt;(items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) { ... }
+<span class="k">fn</span> sort_all&lt;<span class="t">T</span>: <span class="t">Ord</span> + <span class="t">Clone</span>&gt;(<span class="k">ref</span> items: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) { ... }
+</code></pre>
+<p>A single bound is written as <code>Param: Trait</code>; multiple bounds are joined with <code>+</code>. Without bounds, only what every type supports applies to the parameter: moving, <code>Reflect</code>, storage into <code>any</code>, sums with <code>none</code>, and <code>is</code> (2.10.9).</p>
+<p>A trait named in a bound, a <code>where</code> clause, an <code>impl</code>, a supertrait list or <code>any Tr</code> resolves like any other name: a trait of another module needs a <code>use</code> or a path (<a href="../005-modules/505-use">5.5</a>). Otherwise it is a cannot-find error naming where it was written: <code>cannot find trait `Shape` (named in a bound)</code>, <code>(named in an impl)</code> or <code>(named as a supertrait)</code>, with the <code>use</code> to add.</p>
+<h2 id="2104-where-clauses"><a class="anchor" tabindex="-1" href="#2104-where-clauses" aria-hidden="true">#</a>2.10.4. where clauses</h2>
+<p>When bounds get long, it is better to move them into a <code>where</code> clause.</p>
+<pre><code class="language-rok"><span class="k">fn</span> complex&lt;<span class="t">T</span>, <span class="t">U</span>, <span class="t">V</span>&gt;(a: <span class="t">T</span>, b: <span class="t">U</span>) -&gt; <span class="t">V</span>
+<span class="k">where</span>
+    <span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">U</span>, <span class="t">Output</span> = <span class="t">V</span>&gt;,
+    <span class="t">V</span>: <span class="t">Display</span> + <span class="t">Clone</span>,
+{
+    ...
+}
+</code></pre>
+<p>The <code>where</code> keyword goes between the parameter declarations and the body, followed by comma-separated bounds. Constraints on associated types can also be written here (e.g. <code>T::Output: Foo</code>).</p>
+<p>A type alias's <code>where</code> clause (<a href="206-sum-types#269-combining-with-type-aliases">2.6.9</a>) holds at each use of the alias; a type parameter meets it through the bounds in scope at that use.</p>
+<h2 id="2105-defaults"><a class="anchor" tabindex="-1" href="#2105-defaults" aria-hidden="true">#</a>2.10.5. Defaults</h2>
+<p>Type parameters can have default values.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Add</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Rhs</span>) -&gt; <span class="t">Output</span>;
+}
+</code></pre>
+<p>If the parameter is omitted at a call or instantiation, the default is used. A parameter without a default cannot follow one with a default; defaults must be trailing.</p>
+<h3 id="argument-counts"><a class="anchor" tabindex="-1" href="#argument-counts" aria-hidden="true">#</a>Argument counts</h3>
+<p>A generic <code>struct</code>, <code>union</code>, <code>enum</code> or type alias takes at most as many arguments as it has parameters, and at least as many as its parameters without defaults. Anything else is an error naming the declaration:</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">P</span>&lt;<span class="t">T</span>, <span class="t">U</span>&gt; { a: <span class="t">T</span>; b: <span class="t">U</span>; }
+<span class="k">struct</span> <span class="t">D</span>&lt;<span class="t">T</span>, <span class="t">U</span> = <span class="t">i32</span>&gt; { a: <span class="t">T</span>; b: <span class="t">U</span>; }
+
+<span class="k">let</span> p: <span class="t">P</span>&lt;<span class="t">i64</span>&gt; = <span class="t">P</span> { a: <span class="n">1</span>, b: <span class="n">2</span> };          <span class="c">// ERROR - `P` takes 2 generic arguments but 1 was given</span>
+                                           <span class="c">//   help: `P` is declared `P&lt;T, U&gt;`; add one for `U`</span>
+<span class="k">let</span> d: <span class="t">D</span>&lt;<span class="t">i32</span>, <span class="t">i32</span>, <span class="t">i32</span>&gt; = <span class="t">D</span> { a: <span class="n">1</span>, b: <span class="n">2</span> }; <span class="c">// ERROR - `D` takes 1 to 2 generic arguments but 3 were given</span>
+<span class="k">let</span> e: <span class="t">D</span>&lt;<span class="t">i32</span>&gt; = <span class="t">D</span> { a: <span class="n">1</span>, b: <span class="n">2</span> };          <span class="c">// OK - `U` is `i32`</span>
+</code></pre>
+<p>A function or method may be given fewer explicit arguments than it has parameters (<code>f::&lt;i32&gt;(..)</code>); the rest are inferred. Giving more is the same error, and so is giving a trait bound more arguments than the trait has (<code>`Tr` takes at most 1 generic argument but 2 were given</code>). Arguments written on an enum's path name its instance: <code>E::&lt;i64&gt;::A(1)</code> is an <code>E&lt;i64&gt;</code>.</p>
+<p>A generic type written without arguments where a type is expected (<code>x: S</code> for <code>struct S&lt;T&gt;</code>) is an error when a parameter has no default (a type whose parameters all have defaults may be written bare): <code>`S` needs generic arguments</code>, help <code>`S` is declared `S&lt;T&gt;`; write it with them, e.g. `S&lt;i32&gt;`</code>.</p>
+<h2 id="2106-monomorphization"><a class="anchor" tabindex="-1" href="#2106-monomorphization" aria-hidden="true">#</a>2.10.6. Monomorphization</h2>
+<p>Generic calls and instantiations produce a separate compilation result for each tuple of concrete types.</p>
+<pre><code class="language-rok"><span class="k">fn</span> id&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x }
+
+<span class="k">let</span> a = id(<span class="n">42i32</span>);          <span class="c">// id&lt;i32&gt; is generated - an i32 → i32 function</span>
+<span class="k">let</span> b = id(<span class="n">3.14f64</span>);        <span class="c">// id&lt;f64&gt; is generated - an f64 → f64 function</span>
+<span class="k">let</span> c = id(<span class="s">"hello"</span>);         <span class="c">// id&lt;str&gt; is generated</span>
+</code></pre>
+<p>Calls with the same type tuple share the same result, so it is compiled only once. The result performs the same as a direct call, with no indirect call cost. The cost is compile time and binary size, mostly offset by MLIR and LLVM dead-code elimination.</p>
+<h3 id="monomorphization-cache-model"><a class="anchor" tabindex="-1" href="#monomorphization-cache-model" aria-hidden="true">#</a>Monomorphization cache model</h3>
+<p>An <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> build collects call sites and <a href="../000-meta/007-glossary#specialize">specializes</a> them all at once. In <a href="../000-meta/007-glossary#jit-just-in-time">JIT</a> mode, specialization happens for a type tuple on its first call, and the result is cached. Both modes share the same specialization machinery, which is part of the common pipeline of <a href="../000-meta/001-execution-modes">Execution engines and the user surface</a>.</p>
+<h2 id="2107-combination-with-gradual-typing"><a class="anchor" tabindex="-1" href="#2107-combination-with-gradual-typing" aria-hidden="true">#</a>2.10.7. Combination with gradual typing</h2>
+<p>The gradualness of function parameters described in <a href="202-any-slot">The <code>any</code> slot</a> is handled as follows.</p>
+<pre><code class="language-rok"><span class="k">fn</span> compute(x, y) { ... }
+</code></pre>
+<p>This code is turned into an implicit generic, <code>fn compute&lt;T, U&gt;(x: T, y: U)</code>. No bounds are synthesized (<a href="../004-functions/402-parameters#422-omitting-the-type">4.2.2</a>): each instance is monomorphized at its call site and its body checked there, and an error also points at the call.</p>
+<p>If an explicit <code>any</code> is written on a parameter, it is not monomorphized but becomes a runtime dynamic slot. This difference is the core of gradual mode.</p>
+<h2 id="2108-consistency-of-generic-parameters"><a class="anchor" tabindex="-1" href="#2108-consistency-of-generic-parameters" aria-hidden="true">#</a>2.10.8. Consistency of generic parameters</h2>
+<p>A generic parameter denotes only one type within a call. It may denote different types in different calls, but its type cannot change within the same call.</p>
+<pre><code class="language-rok"><span class="k">fn</span> pair&lt;<span class="t">T</span>&gt;(a: <span class="t">T</span>, b: <span class="t">T</span>) -&gt; (<span class="t">T</span>, <span class="t">T</span>) { (a, b) }
+
+<span class="k">let</span> p = pair(<span class="n">1i32</span>, <span class="n">2i32</span>);     <span class="c">// OK - T = i32 for both arguments</span>
+<span class="k">let</span> q = pair(<span class="n">1i32</span>, <span class="n">3.14f64</span>);  <span class="c">// ERROR - ambiguous whether T is i32 or f64</span>
+</code></pre>
+<p>Multiple parameters (<code>pair&lt;A, B&gt;</code>) are each inferred independently.</p>
+<h2 id="2109-body-checking"><a class="anchor" tabindex="-1" href="#2109-body-checking" aria-hidden="true">#</a>2.10.9. Body checking</h2>
+<p>The body of a generic function may only use behavior known through its bounds.</p>
+<pre><code class="language-rok"><span class="k">fn</span> double&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> {
+    x + x       <span class="c">// ERROR - T has no Add bound</span>
+}
+
+<span class="k">fn</span> double&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>, <span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> {
+    x + x       <span class="c">// OK</span>
+}
+</code></pre>
+<p>Because of this rule, generic bodies are checked independently of call sites, so the body is guaranteed to compile whatever concrete type a call passes. The rule extends as follows.</p>
+<ul>
+<li>Trait default method bodies are generic bodies: <code>Self</code> is opaque and bounded by the trait, and trait parameters are opaque.
+</li>
+<li>Every type, bound or not, supports moving, <code>Reflect</code> (<a href="../006-meta-system/610-reflection#6101-reflect---automatically-implemented-trait">6.10.1</a>), storage into <code>any</code>, sums with <code>none</code>, and <code>is</code>.
+</li>
+<li>A function with any implicit parameter (<a href="../004-functions/402-parameters#422-omitting-the-type">4.2.2</a>) is exempt as a whole.
+</li>
+<li>Const parameters are checked with their values unknown; types are equal when their const expressions are equal as values (<a href="211-const-generics#2115-arithmetic-in-const-expressions">2.11.5</a>).
+</li>
+<li>A <code>where</code> clause on a non-parameter type is assumed in the body.
+</li>
+<li>An instance of a body that fails its check adds no errors of its own.
+</li>
+<li>A type test (<code>is</code>, a type pattern) on a value whose type involves a type parameter is checked as refutable and decided per instance.
+</li>
+</ul>
+<h2 id="21010-generics-vs-trait-as-type"><a class="anchor" tabindex="-1" href="#21010-generics-vs-trait-as-type" aria-hidden="true">#</a>2.10.10. Generics vs trait-as-type</h2>
+<p>Generics are compile-time polymorphism, called directly through monomorphization.</p>
+<p>Trait-as-type is runtime polymorphism using vtable dispatch, which rok forbids in the <a href="./">Type system overview</a>.</p>
+<p>So whenever polymorphism is needed, use generics (this document) or sum types (<a href="206-sum-types">Sum types</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/210-generics.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="209-impl"><small>Previous</small>2.9. impl</a><a class="next" href="211-const-generics"><small>Next</small>2.11. const generics</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.13. marker - Clone / Copy / Drop - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Duplicating values and cleaning up resources that are no longer needed are unavoidable concerns in any language. The rok::core::marker module expresses these tw...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/213-marker.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.13. marker - Clone / Copy / Drop - rok docs">
+<meta property="og:description" content="Duplicating values and cleaning up resources that are no longer needed are unavoidable concerns in any language. The rok::core::marker module expresses these tw...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/213-marker.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/213-marker.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/213-marker.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li class="cur"><a aria-current="page" href="213-marker">2.13. marker - Clone / Copy / Drop</a><ul class="toc"><li><a href="#2131-memory-model---clonedrop-in-a-language-with-a-gc">2.13.1. Memory model - Clone/Drop in a language with a GC</a></li><li><a href="#2132-clone---deep-copy">2.13.2. Clone - deep copy</a></li><li><a href="#2133-copy---marker">2.13.3. Copy - marker</a></li><li><a href="#2134-drop---cleanup-on-using-release">2.13.4. Drop - cleanup on using release</a></li><li><a href="#2135-lang-slot-mapping">2.13.5. lang slot mapping</a></li><li><a href="#2136-trait-implementation-matrix">2.13.6. Trait implementation matrix</a></li><li><a href="#2137-comparison-with-other-languages">2.13.7. Comparison with other languages</a></li><li><a href="#2138-nonesentinel---the-type-of-the-none-literal">2.13.8. NoneSentinel - the type of the none literal</a></li><li><a href="#2139-send--sync---thread-boundary-markers">2.13.9. Send / Sync - thread-boundary markers</a></li><li><a href="#21310-default---default-values">2.13.10. Default - default values</a></li><li><a href="#21311-derivable-traits">2.13.11. Derivable traits</a></li></ul></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="213-marker---clone--copy--drop 213-marker---clone--copy--drop 2131-memory-model---clonedrop-in-a-language-with-a-gc 2131-메모리-모델---gc-가-있는-언어의-clonedrop 2132-clone---deep-copy 2132-clone---깊은-복제 meaning-of-clone clone-의-의미 no-automatic-calls---clone_trait-lang-slot 자동-호출-없음---clone_trait-lang-slot default-bodies default-본문 derive derive 2133-copy---marker 2133-copy---marker impl-policy impl-정책 2134-drop---cleanup-on-using-release 2134-drop---using-해제-시-정리 when-called---only-for-using-bindings 호출-시점---using-바인딩에서만 relation-to-the-gc gc-와의-관계 drop-implementation-example drop-구현-예 restrictions-on-drop drop-의-제약 derive-policy derive-정책 2135-lang-slot-mapping 2135-lang-slot-매핑 2136-trait-implementation-matrix 2136-트레잇-구현-매트릭스 2137-comparison-with-other-languages 2137-다른-언어와의-비교 2138-nonesentinel---the-type-of-the-none-literal 2138-nonesentinel---none-리터럴의-타입 2139-send--sync---thread-boundary-markers 2139-send--sync---스레드-경계-marker 21310-default---default-values 21310-default---기본값 21311-derivable-traits 21311-derive-가능한-트레잇"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/213-marker" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="213-marker---clone--copy--drop"><a class="anchor" tabindex="-1" href="#213-marker---clone--copy--drop" aria-hidden="true">#</a>2.13. marker - <code>Clone</code> / <code>Copy</code> / <code>Drop</code></h1>
+<p>Duplicating values and cleaning up resources that are no longer needed are unavoidable concerns in any language. The <code>rok::core::marker</code> module expresses these two concerns with three traits. <code>Clone</code> defines how to make an independent copy of a value; <code>Copy</code> is a marker stating that a plain bit copy suffices for a type; and <code>Drop</code> defines cleanup code that must run when a value leaves scope. The module also holds <code>NoneSentinel</code>, the zero-sized marker type of the <code>none</code> literal (2.13.8).</p>
+<p>rok's use of a GC directly affects the meaning of these traits. The GC is responsible for reclaiming memory, so <code>Drop</code> is not tied to memory deallocation. <code>Drop</code> is limited to finalization work that cleans up resources living outside the language, such as file handles and sockets. This places rok's marker traits apart from both Rust and Java/Python.</p>
+<h2 id="2131-memory-model---clonedrop-in-a-language-with-a-gc"><a class="anchor" tabindex="-1" href="#2131-memory-model---clonedrop-in-a-language-with-a-gc" aria-hidden="true">#</a>2.13.1. Memory model - Clone/Drop in a language with a GC</h2>
+<p>In rok's runtime, the <a href="../../refs-lang/007-runtime/703-gc-algorithm">Immix + Sticky Mark-Bit Generational GC</a> manages the lifetime of heap objects automatically. The user does not decide when an object disappears from memory. Cleanup of external resources, however, must happen deterministically, so rok's <code>Drop</code> operates as a mechanism separate from the GC. Compared with Rust:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust (no GC)</th><th>rok (GC)</th></tr></thead>
+<tbody>
+<tr><td>Memory reclamation</td><td><code>Drop</code> is responsible</td><td>GC automatically - <code>Drop</code> <strong>does not</strong></td></tr>
+<tr><td>Meaning of <code>Drop::drop</code></td><td>release resource + free memory</td><td><strong>external resource cleanup only</strong> (file handle, socket, ...)</td></tr>
+<tr><td>When called</td><td>deterministic (scope exit)</td><td><strong>only on leaving a <code>using</code> block</strong> (unrelated to GC collection)</td></tr>
+<tr><td>Effect if omitted</td><td>resource leak + memory leak</td><td>resource leak only (the GC eventually reclaims memory)</td></tr>
+</tbody></table></div>
+<div class="callout note"><p class="callout-title">Note</p>
+<p>Ordinary bindings have no automatic drop at scope exit. <code>Drop::drop</code> is called only for bindings bound with <code>using</code> (<a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 <code>using</code></a>). The GC does not guarantee finalization of other objects and never calls <code>drop</code>.</p>
+</div>
+<p>Because memory reclamation and resource cleanup are separate, ordinary objects need not care about <code>Drop</code> - the GC reclaims them - and only types that handle external resources implement <code>Drop</code> to obtain a deterministic cleanup point.</p>
+<h2 id="2132-clone---deep-copy"><a class="anchor" tabindex="-1" href="#2132-clone---deep-copy" aria-hidden="true">#</a>2.13.2. <code>Clone</code> - deep copy</h2>
+<p><code>Clone::clone</code> is the method called when an independent copy of a value is needed. Its signature is simple:</p>
+<pre><code class="language-rok"><span class="a">#[lang("clone_trait")]</span>
+<span class="k">trait</span> <span class="t">Clone</span> {
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<p><code>clone</code> performs a deep copy. Even if the value holds references internally, the data they point to is copied too, so the two sides can be modified independently afterwards. Shared data that the GC guarantees to be immutable may still be shared as is.</p>
+<h3 id="meaning-of-clone"><a class="anchor" tabindex="-1" href="#meaning-of-clone" aria-hidden="true">#</a>Meaning of <code>Clone</code></h3>
+<p>The following example shows <code>Clone</code> in its most direct form.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> b = a.clone();           <span class="c">// new List, with a new internal buffer</span>
+b.push(<span class="n">4</span>);                   <span class="c">// a is unaffected</span>
+a;                           <span class="c">//→ [1, 2, 3]</span>
+b;                           <span class="c">//→ [1, 2, 3, 4]</span>
+</code></pre>
+<p>&quot;Deep&quot; here means precisely this: <code>Clone</code> preserves logical equality while guaranteeing mutation independence between the values. Two properties follow. Immediately after <code>let b = a.clone();</code>, <code>a == b</code> holds if <code>PartialEq</code> is defined. After that, no change to <code>a</code> is reflected in <code>b</code>, and vice versa.</p>
+<h3 id="no-automatic-calls---clone_trait-lang-slot"><a class="anchor" tabindex="-1" href="#no-automatic-calls---clone_trait-lang-slot" aria-hidden="true">#</a>No automatic calls - <code>clone_trait</code> lang slot</h3>
+<p>In some languages, writing <code>let y = x;</code> makes the compiler call <code>clone</code> automatically. rok chooses the explicit side here.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> ys = xs;          <span class="c">// GC heap object → reference shared (no clone)</span>
+</code></pre>
+<p><code>let y = x;</code> shares the reference for a GC heap object and performs a bit copy for a <code>Copy</code> type. <code>Clone::clone</code> is therefore never dispatched automatically; it runs only when the user calls it explicitly. For this reason <code>Clone</code> is registered not as a method slot but as the trait slot <code>clone_trait</code>, and the compiler looks this slot up only in the <code>#[derive(Clone)]</code> expansion.</p>
+<h3 id="default-bodies"><a class="anchor" tabindex="-1" href="#default-bodies" aria-hidden="true">#</a>Default bodies</h3>
+<p>The <code>clone</code> of a primitive type amounts to a bit copy, so it maps directly to an intrinsic; the <code>clone</code> of a collection allocates a new internal buffer and clones the elements recursively.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Clone</span> <span class="k">for</span> <span class="t">i32</span> {
+    <span class="a">#[intrinsic("rok.clone.copy")]</span>    <span class="c">// bitwise copy</span>
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">i32</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Clone</span>&gt; <span class="t">Clone</span> <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> clone(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+        <span class="k">let</span> r: <span class="t">List</span>&lt;<span class="t">T</span>&gt; = [];
+        <span class="k">for</span> x <span class="k">in</span> <span class="k">self</span> {
+            r.push(x.clone());
+        }
+        r
+    }
+}
+</code></pre>
+<p>Cloning a GC object always allocates a new buffer and clones the elements recursively.</p>
+<h3 id="derive"><a class="anchor" tabindex="-1" href="#derive" aria-hidden="true">#</a><code>#[derive(...)]</code></h3>
+<p>For most user-defined structs whose fields are all <code>Clone</code>, there is no reason to write the body by hand. <code>#[derive(Clone)]</code> does it instead.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Clone)]</span>
+<span class="k">struct</span> <span class="t">Config</span> {
+    name: <span class="t">str</span>;
+    timeout: <span class="t">u32</span>;
+    retries: <span class="t">u32</span>;
+}
+
+<span class="k">let</span> c1 = <span class="t">Config</span> { name: <span class="s">"default"</span>, timeout: <span class="n">30</span>, retries: <span class="n">3</span> };
+<span class="k">let</span> c2 = c1.clone();         <span class="c">// every field cloned recursively</span>
+</code></pre>
+<p>The derived body calls <code>Clone::clone</code> on every field and returns the results in the same structure. Every field must therefore implement <code>Clone</code>, recursively.</p>
+<h2 id="2133-copy---marker"><a class="anchor" tabindex="-1" href="#2133-copy---marker" aria-hidden="true">#</a>2.13.3. <code>Copy</code> - marker</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Copy</span>: <span class="t">Clone</span> {
+    <span class="c">// marker - no methods</span>
+}
+</code></pre>
+<p>In rok every value is copied by value. For collections and GC objects the handle is copied and points to the same object; primitive values, <code>str</code> (an immutable <code>(ptr, len)</code>), structs, enums and tuples are copied themselves (<a href="../../refs-lang/002-types/203-struct#238-value-semantics">refs-lang 2.3.8</a>). <code>Copy</code> is therefore <strong>only a marker</strong> and does not change the meaning of assignment or argument passing. <code>Copy</code> is used only in generic bounds (<code>T: Copy</code>) to select types for which &quot;a bit copy is an independent copy&quot;.</p>
+<h3 id="impl-policy"><a class="anchor" tabindex="-1" href="#impl-policy" aria-hidden="true">#</a>impl policy</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th><code>Clone</code></th><th><code>Copy</code></th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code>, <code>f*</code></td><td>✓</td><td>✓</td><td>primitive numbers</td></tr>
+<tr><td><code>bool</code>, <code>char</code>, <code>c_char</code></td><td>✓</td><td>✓</td><td></td></tr>
+<tr><td><code>str</code></td><td>✓</td><td>✓</td><td>immutable <code>(ptr, len)</code> value</td></tr>
+<tr><td><code>int</code>, <code>float</code></td><td>✓</td><td>✓</td><td>immutable value - a heap BigInt is only shared</td></tr>
+<tr><td><code>List&lt;T&gt;</code>, <code>Dict&lt;K,V&gt;</code>, <code>Set&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✗</td><td>copying the handle shares - not an independent copy</td></tr>
+<tr><td>tuples</td><td>✓ (all)</td><td>✓ (if all Copy)</td><td>per component</td></tr>
+<tr><td><code>Range&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✓ (T:Copy)</td><td>when both start/end are Copy</td></tr>
+<tr><td>user struct / enum</td><td>derive</td><td>derive</td><td>when every field implements the same trait</td></tr>
+</tbody></table></div>
+<p>A type that implements <code>Drop</code> cannot be <code>Copy</code>.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Clone, Copy)]</span>
+<span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; z: <span class="t">f64</span>; }
+</code></pre>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>Deriving <code>Copy</code> is allowed only when <code>Clone</code> is implemented as well, and only when every field is <code>Copy</code>.</p>
+</div>
+<h2 id="2134-drop---cleanup-on-using-release"><a class="anchor" tabindex="-1" href="#2134-drop---cleanup-on-using-release" aria-hidden="true">#</a>2.13.4. <code>Drop</code> - cleanup on <code>using</code> release</h2>
+<p>A file that was opened must be closed; a mutex that was locked must be unlocked. Such external resource cleanup cannot be left to the GC. Holding a resource until an unpredictable sweep could exhaust file descriptors or leave other code stalled on a lock that was never released. The <code>Drop</code> trait and the <code>using</code> expression solve this.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Drop</span> {
+    <span class="a">#[lang("drop_method")]</span>
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>);
+}
+</code></pre>
+<h3 id="when-called---only-for-using-bindings"><a class="anchor" tabindex="-1" href="#when-called---only-for-using-bindings" aria-hidden="true">#</a>When called - only for <code>using</code> bindings</h3>
+<p>rok is a GC language, so <code>drop</code> is not called automatically when an ordinary binding leaves scope. <code>drop</code> is called only for bindings bound with <code>using</code>, on leaving the block (<a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 <code>using</code></a>).</p>
+<ul>
+<li>It is called on normal completion, <code>return</code>, <code>break</code> and error propagation alike.
+</li>
+<li>Multiple bindings are dropped in reverse declaration order (LIFO).
+</li>
+<li>A panic ends the process, so <code>drop</code> is not called.
+</li>
+<li>Drop glue: after the value's own <code>drop</code>, fields that have <code>Drop</code> are cleaned up recursively in reverse declaration order. The same applies to tuple elements and to the payload currently held by an enum / sum type.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">fn</span> process(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">IoError</span>) {
+    <span class="k">using</span> lock = <span class="t">MUTEX</span>.lock(), file = <span class="k">try</span> <span class="t">File</span>::open(path) {
+        do_work(file);
+    }   <span class="c">// ← on normal exit or error: file.drop() then lock.drop()</span>
+}
+
+{
+    <span class="k">let</span> f = <span class="k">try</span>! <span class="t">File</span>::open(<span class="s">"data.txt"</span>);
+}   <span class="c">// ← no automatic drop - the GC reclaims f but File::drop is not called</span>
+</code></pre>
+<p>Binding a type that does not implement <code>Drop</code> with <code>using</code> is a compile error stating that <code>Drop</code> is required.</p>
+<h3 id="relation-to-the-gc"><a class="anchor" tabindex="-1" href="#relation-to-the-gc" aria-hidden="true">#</a>Relation to the GC</h3>
+<p>The GC never calls <code>drop</code>, and there are no finalizers. A resource that needs cleanup must be bound with <code>using</code> or closed directly with a method such as <code>close()</code>; the <code>unclosed_resource</code> lint warns otherwise (<a href="../../refs-lang/006-meta-system/602-built-in-attributes#629-allow--deny--warn-lint-control">refs-lang 6.2.9</a>).</p>
+<h3 id="drop-implementation-example"><a class="anchor" tabindex="-1" href="#drop-implementation-example" aria-hidden="true">#</a><code>Drop</code> implementation example</h3>
+<p>The most typical implementation is a wrapper around an OS resource.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">File</span> {
+    handle: <span class="t">i32</span>;
+}
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">File</span> {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        rok::bare::close_fd(<span class="k">self</span>.handle);     <span class="c">// OS file descriptor close</span>
+    }
+}
+</code></pre>
+<h3 id="restrictions-on-drop"><a class="anchor" tabindex="-1" href="#restrictions-on-drop" aria-hidden="true">#</a>Restrictions on <code>Drop</code></h3>
+<p><code>Drop</code> comes with several restrictions. First, a type that implements <code>Drop</code> cannot be <code>Copy</code>: multiplying copies freely by bit copy while guaranteeing deterministic cleanup is a contradiction.</p>
+<pre><code class="language-rok"><span class="a">#[derive(Copy)]</span>              <span class="c">// ERROR - conflicts with Drop</span>
+<span class="k">struct</span> <span class="t">File</span> { handle: <span class="t">i32</span>; }
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">File</span> { ... }
+</code></pre>
+<p>Second, calling <code>drop</code> directly is a compile error. Correctness is guaranteed only if it is called exactly once, at <code>using</code> release.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = <span class="t">File</span>::open(path);
+f.drop();                    <span class="c">// ERROR - calling Drop::drop directly is forbidden</span>
+</code></pre>
+<p>To close a resource early, expose a separate method such as <code>File::close()</code>.</p>
+<p>The only exception is unsafe code inside <code>rok::bare</code>. For example, <code>unsafe fn drop_in_place</code> (<a href="../100-bare/103-mem">1.3 mem</a>) is a function for manual memory management. It runs the drop glue: the type's own <code>drop</code>, then its fields' in reverse declaration order, as above.</p>
+<p>Also, <code>drop</code> has no <code>throws</code> signature, so its body cannot throw an error. A panic inside <code>drop</code> ends the process like any other panic.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">X</span> {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        <span class="k">if</span> some_cond { <span class="k">throw</span> <span class="s">"oops"</span> }    <span class="c">// ERROR - drop is not throws</span>
+    }
+}
+</code></pre>
+<h3 id="derive-policy"><a class="anchor" tabindex="-1" href="#derive-policy" aria-hidden="true">#</a>derive policy</h3>
+<p>Unlike <code>Clone</code>, <code>Drop</code> cannot be derived. After the <code>drop</code> of a value bound with <code>using</code> finishes, the compiler calls <code>drop</code> on that struct's <code>Drop</code> fields in reverse declaration order. A user-written <code>Drop</code> body therefore handles only &quot;what needs cleaning up beyond the fields&quot;.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Container</span> {
+    a: <span class="t">File</span>;
+    b: <span class="t">Socket</span>;
+}
+<span class="c">// when Container is bound with using, release does b.drop() → a.drop()</span>
+<span class="c">// (because the fields themselves implement Drop)</span>
+
+<span class="k">impl</span> <span class="t">Drop</span> <span class="k">for</span> <span class="t">Container</span> {
+    <span class="k">fn</span> drop(<span class="k">ref</span> <span class="k">self</span>) {
+        log(<span class="s">"Container released"</span>);
+        <span class="c">// field drops are called automatically by the compiler _after this method returns_</span>
+    }
+}
+</code></pre>
+<h2 id="2135-lang-slot-mapping"><a class="anchor" tabindex="-1" href="#2135-lang-slot-mapping" aria-hidden="true">#</a>2.13.5. lang slot mapping</h2>
+<p>This module connects to the compiler through five lang slots. The automatic call points follow the policies described above.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>slot</th><th>Attached to</th><th>Automatic call point</th></tr></thead>
+<tbody>
+<tr><td><code>clone_trait</code></td><td><code>Clone</code> trait</td><td>none - used in the <code>#[derive(Clone)]</code> expansion</td></tr>
+<tr><td><code>drop_method</code></td><td><code>Drop::drop</code> method</td><td>release of a <code>using</code> binding (and drop glue)</td></tr>
+<tr><td><code>none_type</code></td><td><code>NoneSentinel</code> type (2.13.8)</td><td>lowering of the <code>none</code> literal</td></tr>
+<tr><td><code>send_trait</code></td><td><code>Send</code> trait (2.13.9)</td><td>implemented automatically, thread-boundary checks</td></tr>
+<tr><td><code>sync_trait</code></td><td><code>Sync</code> trait (2.13.9)</td><td>implemented automatically, thread-boundary checks</td></tr>
+</tbody></table></div>
+<p>For details see sections 0.4.2 / 0.4.3 / 0.4.5 of the <a href="../000-meta/004-lang-slot-table">0.4 lang slot table</a>.</p>
+<h2 id="2136-trait-implementation-matrix"><a class="anchor" tabindex="-1" href="#2136-trait-implementation-matrix" aria-hidden="true">#</a>2.13.6. Trait implementation matrix</h2>
+<p>How the main standard library types relate to the three traits:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Clone</th><th>Copy</th><th>Drop</th><th>Behavior</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code>, <code>f*</code></td><td>✓</td><td>✓</td><td>✗</td><td><code>rok.clone.copy</code> (bitwise)</td></tr>
+<tr><td><code>bool</code>, <code>char</code>, <code>c_char</code></td><td>✓</td><td>✓</td><td>✗</td><td>bitwise</td></tr>
+<tr><td><code>str</code></td><td>✓</td><td>✓</td><td>✗</td><td>copies the immutable <code>(ptr, len)</code> value</td></tr>
+<tr><td><code>List&lt;T&gt;</code>, <code>Dict&lt;K,V&gt;</code>, <code>Set&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✗</td><td>✗</td><td>recursive clone</td></tr>
+<tr><td>tuples</td><td>✓ (all)</td><td>✓ (all Copy)</td><td>✗</td><td>per component</td></tr>
+<tr><td><code>Range&lt;T&gt;</code></td><td>✓ (T:Clone)</td><td>✓ (T:Copy)</td><td>✗</td><td>derived automatically</td></tr>
+<tr><td><code>File</code></td><td>✗</td><td>✗</td><td>✓</td><td><code>rok::bare::close_fd</code></td></tr>
+<tr><td><code>MutexGuard&lt;T&gt;</code></td><td>✗</td><td>✗</td><td>✓ (on <code>using</code> release)</td><td><code>rok::bare::unlock</code></td></tr>
+<tr><td><code>Channel::Sender&lt;T&gt;</code></td><td>✓</td><td>✗</td><td>✗ (closed with <code>close()</code>)</td><td>(same as above)</td></tr>
+</tbody></table></div>
+<p>The principle behind the table is simple. Every primitive and internal GC type implements <code>Clone</code>, and only those for which a bit copy is semantically correct are <code>Copy</code>. The collections are <code>Clone</code> but not <code>Copy</code>, because a bit copy of a handle does not preserve the meaning of a deep copy. <code>str</code> is <code>Copy</code>: it is immutable, so copying its <code>(ptr, len)</code> is an independent copy. <code>Drop</code> is implemented only by wrappers around external resources such as <code>File</code>, <code>Socket</code> and <code>MutexGuard</code>. These types usually do not implement <code>Clone</code>, to prevent duplicate ownership of the resource.</p>
+<h2 id="2137-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#2137-comparison-with-other-languages" aria-hidden="true">#</a>2.13.7. Comparison with other languages</h2>
+<p>Comparing rok's model with existing languages makes the design intent clearer.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>Java/Python (GC)</th><th>rok (GC + Drop)</th></tr></thead>
+<tbody>
+<tr><td>Memory reclamation</td><td><code>Drop</code> is responsible</td><td>GC</td><td>GC</td></tr>
+<tr><td>Deterministic finalize</td><td><code>Drop</code> (compiler-guaranteed)</td><td><strong>none</strong> (finalizers nondeterministic)</td><td><code>Drop</code> (scope-bound)</td></tr>
+<tr><td>Meaning of Copy</td><td>bitwise + <code>!Drop</code> enforced</td><td><strong>none</strong> (every object is a ref)</td><td>bitwise + <code>!Drop</code> enforced</td></tr>
+<tr><td>Meaning of Clone</td><td>deep copy</td><td><code>clone()</code> (Object.clone)</td><td>deep copy</td></tr>
+<tr><td>derive</td><td><code>#[derive(Clone, Copy)]</code></td><td><code>Cloneable</code> interface</td><td><code>#[derive(Clone, Copy)]</code></td></tr>
+</tbody></table></div>
+<p>What sets rok apart is the coexistence of a GC with a deterministic <code>Drop</code>. Because the GC handles memory reclamation, <code>Drop</code> does not mean memory deallocation, so ordinary objects never need to implement <code>Drop</code>. Only types that need external resource cleanup implement <code>Drop</code>, and users bind them with <code>using</code>.</p>
+<p>This model avoids both the nondeterminism of Java/Python finalizers and the costs Rust incurs from having no GC.</p>
+<h2 id="2138-nonesentinel---the-type-of-the-none-literal"><a class="anchor" tabindex="-1" href="#2138-nonesentinel---the-type-of-the-none-literal" aria-hidden="true">#</a>2.13.8. <code>NoneSentinel</code> - the type of the <code>none</code> literal</h2>
+<p>The <code>none</code> literal of <a href="../../refs-lang/001-lexical/109-other-literals">refs-lang 1.9.2</a> lowers to <code>NoneSentinel</code>, a zero-sized type with a single value. This type is defined in <code>rok::core::marker</code> and attached to the <code>none_type</code> lang slot.</p>
+<pre><code class="language-rok"><span class="a">#[lang("none_type")]</span>
+<span class="a">#[derive(Clone, Copy, PartialEq, Eq, Hash)]</span>
+<span class="k">struct</span> <span class="t">NoneSentinel</span>;
+</code></pre>
+<p>Users rarely write this name directly. In sum type notation such as <code>T | none</code> (<a href="../../refs-lang/002-types/206-sum-types">refs-lang 2.6</a>), the <code>none</code> position is the <code>NoneSentinel</code> variant; both the <code>none</code> literal and the <code>none</code> type notation resolve to this same type through the slot.</p>
+<h2 id="2139-send--sync---thread-boundary-markers"><a class="anchor" tabindex="-1" href="#2139-send--sync---thread-boundary-markers" aria-hidden="true">#</a>2.13.9. <code>Send</code> / <code>Sync</code> - thread-boundary markers</h2>
+<pre><code class="language-rok"><span class="a">#[lang("send_trait")]</span>
+<span class="k">trait</span> <span class="t">Send</span> { }      <span class="c">// safe to move to another thread</span>
+
+<span class="a">#[lang("sync_trait")]</span>
+<span class="k">trait</span> <span class="t">Sync</span> { }      <span class="c">// safe to read from multiple threads through shared references</span>
+</code></pre>
+<p>Both traits are <strong>automatic marker traits</strong> with no methods; the compiler implements them structurally.</p>
+<ul>
+<li><p>Primitive numbers, <code>bool</code>, <code>char</code>, <code>c_char</code>, <code>str</code> and <code>none</code> are <code>Send + Sync</code>.</p>
+</li>
+<li><p>A <code>struct</code>, <code>enum</code>, <code>union</code>, tuple, array or sum type is <code>Send</code> if all its fields (components) are <code>Send</code>, and <code>Sync</code> if all are <code>Sync</code>. <code>Send</code> for a generic container follows <code>T</code> by the same rule.</p>
+</li>
+<li><p>Collections (<code>List</code>, <code>Dict</code>, <code>Set</code>, <code>StrBuf</code>, <code>Deque</code>, <code>BinaryHeap</code>, <code>OrderedDict</code>, <code>OrderedSet</code>, <code>Slice</code>) are <code>Send</code> and <code>!Sync</code>: they share a mutable handle. Across threads they are shared through <code>Mutex</code> / <code>RwLock</code> / channels.</p>
+</li>
+<li><p>rok has no move semantics. Handing a value over (<code>Mutex::new(xs)</code>, <code>RwLock::new(xs)</code>, <code>tx.send(xs)</code> / <code>try_send</code> / <code>send_async</code>, <code>Handoff::new(xs)</code>) leaves the sender's handle pointing at the object the new owner now shares with other threads. A handle taken out of a guard (<code>get</code>), given to it (<code>set</code>) or reached by <code>update</code>'s closure still points at the guarded object after the guard's <code>using</code> block ends. Using such a value afterwards, on any path, is a compile error (<code>E202</code>, <a href="../../refs-lang/009-tools/909-debug-tools#994-diagnostics--error-messages">refs-lang 9.9.4</a>). The value is followed through:</p>
+<ul>
+<li>copies (<code>let ys = xs</code>, a struct field or tuple element, a field assignment);
+</li>
+<li>the fields it is passed by (<code>Mutex::new(s.items)</code>);
+</li>
+<li>the objects that hold it (<code>all.push(xs)</code>, a closure that captures it), both ways: handing over <code>xs</code> leaves <code>all</code> unusable too;
+</li>
+<li>the elements of a collection. What is stored into a collection and what is read out of it (<code>xs[i]</code>, <code>get</code>, iteration, a slice of it) are one value, so handing over either leaves the other unusable (<code>let x = xs[0]; tx.send(xs); x.len()</code>, <code>tx.send(xs[0]); xs[1].len()</code>). Only <code>len</code>, <code>is_empty</code>, <code>capacity</code>, <code>clear</code>, <code>truncate</code>, <code>reserve</code>, <code>shrink_to_fit</code>, <code>push</code> and <code>insert</code> (and <code>Deque</code>'s <code>push_back</code> / <code>push_front</code>) stay allowed on a collection whose elements were handed over; <code>clear</code> empties it, so it is fully usable again. A collection copied from another (<code>extend</code>, <code>+=</code>, <code>collect</code>, <code>par::filter</code>) shares the source's elements. An element taken out with <code>pop</code> or <code>remove</code> (<code>List</code>, <code>Deque</code>, <code>Dict</code>, <code>OrderedDict</code>, <code>BinaryHeap</code>) has left the collection: handing it over leaves the collection usable, unless the collection may hold that object twice - one value stored twice, two stored values that share an object, or elements of one collection stored into another in a loop (elements are not told apart by position);
+</li>
+<li>the arguments of a direct call that hands something over: passing one object through two arguments, when the callee hands it over through one and uses it through the other (<code>f(tx, a, a)</code>, <code>h.go(tx, h.items)</code> where <code>go</code> uses <code>self.items</code>, a list it pops from and sends plus one of its elements), is a compile error. Two elements of one collection are taken to be distinct (<code>f(tx, rows[0], rows[1])</code> is accepted);
+</li>
+<li>a <code>ref</code> parameter. When the callee hands a part of it over and then gives that part a new value on every path that hands it over (<code>self.buf = []</code> after <code>tx.send(self.buf)</code>), the caller's variable gets the new value back and stays usable; other handles to the old value do not. A by-value parameter is a copy: giving its field a new value does not reach the caller, which still holds what was handed over;
+</li>
+<li>calls. A function that hands a parameter over, returns it or a part of it, stores it into another parameter's object or a <code>ref</code> parameter, captures it into the closure it returns, or returns what a guard parameter holds, does so for its caller too, also across a prebuilt library (<a href="../../refs-lang/009-tools/904-rokhir-bytecode#947-body">refs-lang 9.4.7</a>).
+</li>
+</ul>
+<p>A call through a function value is taken to reach every function used as a value with its parameter types. Conditions are followed where they test a value the compiler knows on each path: a <code>bool</code> or a sum or enum variant set by a constant or copied (<code>let sent = false; if c { tx.send(xs); sent = true; } if !sent { xs.len() }</code>), and how a call ended. A function that hands a parameter over only when it returns without an error, or a value other than <code>none</code> / <code>false</code>, does not hand it over on its caller's <code>catch</code>, <code>try?</code>, <code>??</code>, <code>else</code> or <code>if</code> path for the other outcome; the same holds for the <code>catch</code> of <code>try await</code> on an <code>async fn</code>. Other conditions are not followed: a value handed over on one path is gone where that path joins others.</p>
+<p>To keep using a value, hand over a <code>clone()</code> (an independent value), or give the variable or field a new value first (for a struct copy, only that field); a <code>set</code> releases what an earlier <code>get</code> returned. Uses of <code>Sync</code> values, reading a value's tag (<code>x is none</code>, <code>match x</code>), and uses inside <code>unsafe</code> (<a href="../../refs-lang/004-functions/415-unsafe#4152-unsafe------block-expression">refs-lang 4.15.2</a>) are exempt. A <code>Handoff</code> protocol ends inside the function that makes it: its callers do not see that hand-off. Captures of a spawned closure need no check: they must be <code>Send + Sync</code>. <code>task::spawn</code> hands its future over: the task's frame gets copies of what the future captured, and the future and what it captured are gone for the spawner, as after a send (<a href="218-task#2181-core-api">2.18.1</a>).</p>
+<p>Also compile errors: handing over a value read out of a <code>Sync</code> object that is not itself <code>Sync</code> (a field of a user's <code>unsafe impl Sync</code> type, a <code>thread::local</code>'s value), which other code reaches without the hand-off - hand over a <code>clone()</code>; values a channel's <code>recv</code>, a task's result or a lock's guard give out are the receiver's and are not covered by this rule; handing over what a guard's <code>get</code> returned while the guard still holds it (until <code>set</code> gives the lock a new value); returning it from inside the <code>using</code> block, yielding it there (<code>yield g.get()</code> in a generator), making it the block's own value (<code>let x = using g = m.lock() { g.get() }</code>, <code>f(using g = m.lock() { g.get() })</code>), or giving it to a coroutine made inside the block and run after it (an <code>async fn</code>'s future, a generator: <code>fut = grow(g.get()[0])</code>): the block's end releases the lock before the value is used. A guard is good only inside its <code>using</code> block: a copy of it (pushed into a collection, captured by a closure, stored by a callee, bound by a second <code>using</code>, held by a coroutine: an <code>async fn</code>'s or generator's argument, an <code>async</code> block's capture) used after that block ends is a compile error; guards are <code>!Sync</code> (<a href="216-sync#2163-mutext---exclusive-lock">2.16.3</a>). <code>par::for_each</code>, <code>par::map</code> and <code>par::filter</code> give each item to a worker, so two items must not reach one collection that is not <code>Sync</code>. Each call checks this at run time (<a href="219-par#2191-core-api">2.19.1</a>): if two items reach one collection, the items run one at a time on the calling thread, with a warning once per call site. Slices only read, so items may share a list through slices of it, as long as no item holds the list itself.</p>
+<p>What remains outside these rules: code inside <code>unsafe</code>; a call through a function value or a closure, which skips the argument check above; and a generator that yields one object more than once, collected into a collection whose elements are then handed out one by one - such a collection is not seen as holding the object twice.</p>
+<p>At run time every hand-off also copies, so on the routes above leave out (and in code inside <code>unsafe</code>) no collection the handed value reaches by value ends up shared between the sender and the new owner (the exceptions are listed below). <code>Mutex::new</code>, <code>RwLock::new</code>, a guard's <code>set</code> and <code>update</code>, <code>send</code> / <code>try_send</code> / <code>send_async</code>, and the result of a task, a thread or a <code>par</code> scope job (and a <code>try_scope</code> error) give the new owner a copy of every collection the value reaches: through the parts of structs, tuples, arrays, enums and sums and through the elements of collections, to any depth, with a work list rather than stack per level. A collection reached more than once is copied once, so the copy keeps the value's sharing and its cycles. Copied are <code>List</code>, <code>Dict</code>, <code>Deque</code>, <code>StrBuf</code>, <code>Slice</code> and the collections built on them, and <code>GcPtr</code> (<a href="../100-bare/106-gc-pin">1.6.3</a>). A coroutine future (<code>AsyncFuture</code>, <code>TryAsyncFuture</code>) gets a frame of its own, holding copies of what it captured made in the same copy; one that has started or finished, or whose frame (or a captured future's) has a <code>[ref x]</code> capture, cannot be handed over, and the hand-off panics (<a href="218-task#2181-core-api">2.18.1</a>). A <code>Task</code> is not copied, but once it is handed over each <code>await</code> of it gets its own copy of the result (<a href="218-task#2182-taskt-type">2.18.2</a>). A list and every view of its buffer keep sharing one copied buffer; a view of a <code>str</code>'s bytes copies only those bytes (they cannot change). <code>update</code> keeps what the guard already holds: only what the closure brings in is copied. The sender's handles are left as they were: one the rules above missed names an object no other thread uses. A send that throws carries back an equal value (the caller's or its copy). The copy takes time and memory in proportion to what it copies; a run of plain values (no GC reference) is one memory copy. <code>rok::core::marker::hand_over(x)</code> returns the same copy. Left shared: <code>Sync</code> parts, values of types with an <code>unsafe impl Send</code> (they manage their own sharing: tasks, files, sockets), and generators and streams (not <code>Send</code>: they are never handed over). <code>Handoff::new</code> and <code>Mutex::new_unshared</code> (2.16.3) do not copy. A handle taken out of a guard (<code>get</code>, <code>update</code>'s closure argument) is not copied at run time: the rules above follow it, and the guard itself, out of the <code>using</code> block through every copy, a <code>return</code>, a <code>yield</code>, the block's value and the frames of coroutines made inside it.</p>
+</li>
+<li><p>The following are excluded: <code>Cell&lt;T&gt;</code>, raw pointers (<code>Ptr&lt;T&gt;</code>, <code>ConstPtr&lt;T&gt;</code>, <code>CPtr&lt;T&gt;</code>), bare <code>any</code> and <code>any Tr</code> whose bound lacks <code>Send</code> / <code>Sync</code> (an <code>any Tr</code> is <code>Send</code> only when its bound has both <code>Send</code> and <code>Sync</code>: copies of an <code>any</code> share its box, as a closure's captures are shared, so no collection may sit inside one that crosses threads), function types without a bound, and closures with a <code>[ref]</code> capture (<a href="../../refs-lang/004-functions/406-capture-semantics#469-additional-constraints-in-parallel-and-concurrent-contexts">refs-lang 4.6.9</a>). Other exceptions are specified in each type's chapter.</p>
+</li>
+<li><p>A function type has these traits only when the bound is written, as in <code>fn(..) -&gt; R + Send</code> (<a href="../../refs-lang/004-functions/404-function-type#send--sync-bounds">refs-lang 4.4</a>).</p>
+</li>
+</ul>
+<p>Types for which the automatic implementation is wrong declare it directly. A type that holds a raw pointer internally but wraps it thread-safely opts in with <code>unsafe impl</code> (safety is the author's responsibility); a type that is structurally auto-implemented but not thread-safe opts out with <code>impl !Send</code>. The exclusion of <code>Cell&lt;T&gt;</code> is declared this way.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Handle</span> { raw: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt;; }
+<span class="k">unsafe</span> <span class="k">impl</span> <span class="t">Send</span> <span class="k">for</span> <span class="t">Handle</span> { }
+<span class="k">unsafe</span> <span class="k">impl</span> <span class="t">Sync</span> <span class="k">for</span> <span class="t">Handle</span> { }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">Cell</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">Ptr</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Send</span> <span class="k">for</span> <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; { }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; !<span class="t">Sync</span> <span class="k">for</span> <span class="t">CPtr</span>&lt;<span class="t">T</span>&gt; { }
+</code></pre>
+<p>APIs that pass values to threads or tasks (<code>thread::spawn</code>, <code>task::spawn</code>, <code>par::*</code>, <code>channel</code>) constrain their arguments with these two traits. The policy for synchronization primitives follows <a href="216-sync">2.16 sync</a>.</p>
+<h2 id="21310-default---default-values"><a class="anchor" tabindex="-1" href="#21310-default---default-values" aria-hidden="true">#</a>2.13.10. <code>Default</code> - default values</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Default</span> {
+    <span class="k">fn</span> default() -&gt; <span class="k">Self</span>;
+}
+</code></pre>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th><code>default()</code></th></tr></thead>
+<tbody>
+<tr><td>integers, <code>int</code></td><td><code>0</code></td></tr>
+<tr><td>floating-point, <code>float</code></td><td><code>0.0</code></td></tr>
+<tr><td><code>bool</code></td><td><code>false</code></td></tr>
+<tr><td><code>char</code></td><td><code>'\0'</code></td></tr>
+<tr><td><code>str</code></td><td><code>&quot;&quot;</code></td></tr>
+<tr><td>collections such as <code>List</code>, <code>Dict</code>, <code>Set</code></td><td>empty collection</td></tr>
+<tr><td><code>T | none</code></td><td><code>none</code></td></tr>
+</tbody></table></div>
+<p><code>Default</code> can be derived; it builds the value from every field's <code>default()</code>.</p>
+<h2 id="21311-derivable-traits"><a class="anchor" tabindex="-1" href="#21311-derivable-traits" aria-hidden="true">#</a>2.13.11. Derivable traits</h2>
+<p>The built-in traits that <code>#[derive(...)]</code> (<a href="../../refs-lang/006-meta-system/602-built-in-attributes#621-derive-automatic-trait-implementation">refs-lang 6.2.1</a>) can produce are only these:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Generated implementation</th><th>Requirement</th></tr></thead>
+<tbody>
+<tr><td><code>Clone</code></td><td>per-field <code>clone</code></td><td>every field <code>Clone</code></td></tr>
+<tr><td><code>Copy</code></td><td>marker</td><td><code>Clone</code> also derived/implemented, not <code>Drop</code></td></tr>
+<tr><td><code>Debug</code></td><td>field names and values in <code>f&quot;{x:?}&quot;</code> form</td><td>every field <code>Debug</code></td></tr>
+<tr><td><code>Default</code></td><td>per-field <code>default()</code></td><td>every field <code>Default</code></td></tr>
+<tr><td><code>PartialEq</code></td><td>AND of per-field <code>==</code></td><td>every field <code>PartialEq</code></td></tr>
+<tr><td><code>Eq</code></td><td>marker</td><td><code>PartialEq</code> also derived/implemented</td></tr>
+<tr><td><code>PartialOrd</code></td><td>lexicographic comparison in field declaration order</td><td>every field <code>PartialOrd</code>, <code>PartialEq</code></td></tr>
+<tr><td><code>Ord</code></td><td>lexicographic comparison in field declaration order</td><td><code>Eq</code>, <code>PartialOrd</code> also derived/implemented</td></tr>
+<tr><td><code>Hash</code></td><td>combination of per-field hashes (combining function unspecified)</td><td>every field <code>Hash</code></td></tr>
+</tbody></table></div>
+<ul>
+<li><code>Display</code> cannot be derived (<a href="210-fmt">2.10</a>).
+</li>
+<li>Deriving <code>Eq</code> / <code>Ord</code> without its supertrait is a compile error.
+</li>
+<li>Applying <code>#[derive]</code> to a <code>union</code> is a compile error.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/213-marker.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="212-reflect"><small>Previous</small>2.12. reflect - Reflect / Inspect</a><a class="next" href="214-error"><small>Next</small>2.14. error - Error traits / types</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

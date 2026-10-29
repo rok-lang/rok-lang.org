@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.3. Broadcast operators - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The dot-prefixed operators defined in punctuation and operator tokens (.+, .*, .==, etc.) are distinct tokens for element-wise operations (broadcast). They work...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.3. Broadcast operators - rok docs">
+<meta property="og:description" content="The dot-prefixed operators defined in punctuation and operator tokens (.+, .*, .==, etc.) are distinct tokens for element-wise operations (broadcast). They work...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/303-broadcast-operators.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li class="cur"><a aria-current="page" href="303-broadcast-operators">3.3. Broadcast operators</a><ul class="toc"><li><a href="#331-desugaring-pattern">3.3.1. Desugaring pattern</a></li><li><a href="#332-precedence-and-associativity">3.3.2. Precedence and associativity</a></li><li><a href="#333-function-and-method-broadcast">3.3.3. Function and method broadcast</a></li><li><a href="#334-automatic-loop-fusion">3.3.4. Automatic loop fusion</a></li><li><a href="#335-semantic-difference-from-ordinary-operators">3.3.5. Semantic difference from ordinary operators</a></li><li><a href="#336-user-defined-trait-implementations">3.3.6. User-Defined trait implementations</a></li></ul></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li><a href="314-error-control-flow">3.14. Error control flow</a></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="33-broadcast-operators 33-브로드캐스트-연산자 331-desugaring-pattern 331-desugar-패턴 332-precedence-and-associativity 332-우선순위와-결합성 333-function-and-method-broadcast 333-함수와-메서드-브로드캐스트 334-automatic-loop-fusion 334-자동-루프-융합 335-semantic-difference-from-ordinary-operators 335-일반-연산자와의-의미-차이 336-user-defined-trait-implementations 336-사용자-정의-트레잇-구현"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/303-broadcast-operators" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="33-broadcast-operators"><a class="anchor" tabindex="-1" href="#33-broadcast-operators" aria-hidden="true">#</a>3.3. Broadcast operators</h1>
+<p>The dot-prefixed operators defined in <a href="../001-lexical/110-punctuation-and-operator-tokens">punctuation and operator tokens</a> (<code>.+</code>, <code>.*</code>, <code>.==</code>, etc.) are distinct tokens for element-wise operations (broadcast). They work through the same mechanism as ordinary operators - desugaring to trait method calls - but map to a separate set of traits.</p>
+<h2 id="331-desugaring-pattern"><a class="anchor" tabindex="-1" href="#331-desugaring-pattern" aria-hidden="true">#</a>3.3.1. Desugaring pattern</h2>
+<p>Dot-prefixed operators desugar as follows.</p>
+<pre><code>a .+ b      →   &lt;typeof(a) as DotAdd&lt;typeof(b)&gt;&gt;::dot_add(a, b)
+a .* b      →   &lt;typeof(a) as DotMul&lt;typeof(b)&gt;&gt;::dot_mul(a, b)
+a .== b     →   &lt;typeof(a) as DotEq&lt;typeof(b)&gt;&gt;::dot_eq(a, b)
+</code></pre>
+<p>This is the same form as the ordinary mapping in <a href="301-operator-dispatch">operator dispatch</a>; only the target trait differs. Dot-prefixed operators map to a separate trait family whose names start with <strong>Dot</strong>, as shown below.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Dot-prefixed token</th><th>Undotted form</th><th>Dot-prefixed trait</th></tr></thead>
+<tbody>
+<tr><td><code>.+</code></td><td><code>+</code> ↔ <code>Add</code></td><td><code>DotAdd</code></td></tr>
+<tr><td><code>.-</code></td><td><code>-</code> ↔ <code>Sub</code></td><td><code>DotSub</code></td></tr>
+<tr><td><code>.*</code></td><td><code>*</code> ↔ <code>Mul</code></td><td><code>DotMul</code></td></tr>
+<tr><td><code>./</code></td><td><code>/</code> ↔ <code>Div</code></td><td><code>DotDiv</code></td></tr>
+<tr><td><code>.%</code></td><td><code>%</code> ↔ <code>Rem</code></td><td><code>DotRem</code></td></tr>
+<tr><td><code>.%%</code></td><td><code>%%</code> ↔ <code>Modulo</code></td><td><code>DotModulo</code></td></tr>
+<tr><td><code>.==</code></td><td><code>==</code> ↔ <code>Eq</code></td><td><code>DotEq</code></td></tr>
+<tr><td><code>.!=</code></td><td><code>!=</code> ↔ <code>Ne</code></td><td><code>DotNe</code></td></tr>
+<tr><td><code>.&lt;</code></td><td><code>&lt;</code> ↔ (<code>Cmp::lt</code>)</td><td><code>DotLt</code></td></tr>
+<tr><td><code>.&gt;</code></td><td><code>&gt;</code></td><td><code>DotGt</code></td></tr>
+<tr><td><code>.&lt;=</code></td><td><code>&lt;=</code></td><td><code>DotLe</code></td></tr>
+<tr><td><code>.&gt;=</code></td><td><code>&gt;=</code></td><td><code>DotGe</code></td></tr>
+<tr><td><code>.&amp;&amp;</code></td><td><code>&amp;&amp;</code> (short-circ)</td><td><code>DotLogicalAnd</code></td></tr>
+<tr><td><code>.||</code></td><td><code>||</code> (short-circ)</td><td><code>DotLogicalOr</code></td></tr>
+<tr><td><code>.&amp;</code></td><td><code>&amp;</code></td><td><code>DotBitAnd</code></td></tr>
+<tr><td><code>.|</code></td><td><code>|</code></td><td><code>DotBitOr</code></td></tr>
+<tr><td><code>.^</code></td><td><code>^</code></td><td><code>DotBitXor</code></td></tr>
+<tr><td><code>.&lt;&lt;</code></td><td><code>&lt;&lt;</code></td><td><code>DotShl</code></td></tr>
+<tr><td><code>.&gt;&gt;</code></td><td><code>&gt;&gt;</code></td><td><code>DotShr</code></td></tr>
+</tbody></table></div>
+<p>The exact signatures of these traits and which types implement them are defined by the standard library. This document is responsible only for the fact that the language desugars dot-prefixed tokens to a separate trait family.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p><strong>No short-circuiting for dot-prefixed logical operators</strong>: unlike their undotted forms, <code>.&amp;&amp;</code> and <code>.||</code> do <strong>not</strong> short-circuit. Because a broadcast lowers to a fused loop, both operands are always evaluated; semantically it is an element-wise logical combination over a bool container. A function call with side effects placed in either operand always runs.</p>
+</div>
+<h2 id="332-precedence-and-associativity"><a class="anchor" tabindex="-1" href="#332-precedence-and-associativity" aria-hidden="true">#</a>3.3.2. Precedence and associativity</h2>
+<p>Dot-prefixed operators have the same precedence and associativity as their undotted counterparts.</p>
+<pre><code>a .+ b .* c     →   a .+ (b .* c)              // .* binds tighter than .+ (same as * &gt; +)
+a .+ b .+ c     →   (a .+ b) .+ c              // left-associative
+</code></pre>
+<h2 id="333-function-and-method-broadcast"><a class="anchor" tabindex="-1" href="#333-function-and-method-broadcast" aria-hidden="true">#</a>3.3.3. Function and method broadcast</h2>
+<p>Appending <code>.</code> to a function or method applies it to every element.</p>
+<pre><code class="language-rok">sin.(x)            <span class="c">// apply sin to each element of x</span>
+<span class="t">f64</span>::sqrt.(arr)    <span class="c">// method form also allowed</span>
+g.(a, b)           <span class="c">// multiple arguments</span>
+</code></pre>
+<p>This form returns a new collection mapping the result of the ordinary function or method call over every element. It desugars to a call to the standard library's <code>Iterator::map</code> (or an equivalent trait).</p>
+<pre><code>f.(x)        →   x.map(f)
+g.(a, b)     →   a.zip(b).map(|(x, y)| g(x, y))
+</code></pre>
+<p>Function and method broadcast has no trait of its own; it is sugar over iterator transformation. This is where it differs from the binary dot-prefixed operators.</p>
+<h2 id="334-automatic-loop-fusion"><a class="anchor" tabindex="-1" href="#334-automatic-loop-fusion" aria-hidden="true">#</a>3.3.4. Automatic loop fusion</h2>
+<p>The compiler may fuse consecutive dot-prefixed expressions into a single kernel.</p>
+<pre><code>sin.(a) .+ cos.(b) .* 2.0f64
+</code></pre>
+<p>Where possible, this produces the result in a single pass without creating intermediate arrays.</p>
+<p>Fusion is made possible by the MLIR stage of the <a href="../000-meta/002-pipeline">compilation pipeline</a> recognizing an adjacent dot-prefixed chain as a single linalg operation. SIMD and GPU can be used through the same mechanism.</p>
+<p>Whether fusion happens depends on compiler analysis and is not guaranteed by the specification. It is a practical promise that fusion happens in most cases.</p>
+<h2 id="335-semantic-difference-from-ordinary-operators"><a class="anchor" tabindex="-1" href="#335-semantic-difference-from-ordinary-operators" aria-hidden="true">#</a>3.3.5. Semantic difference from ordinary operators</h2>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>Dot-prefixed operators are separate traits because the same data can carry mathematically different meanings.</p>
+</div>
+<pre><code>m * n           // matrix product (Mul impl, user-defined)
+m .* n          // element-wise product (Hadamard product, DotMul)
+</code></pre>
+<p>To avoid the confusion caused by NumPy's <code>*</code> implicitly being element-wise, rok always keeps the two meanings visually separate.</p>
+<p>This separation applies directly the principle &quot;syntax belongs to the language, meaning to the library&quot; from <a href="../000-meta/004-language-vs-standard-libraries">the boundary between the language and the standard libraries</a>: two different meanings map to two different syntaxes.</p>
+<h2 id="336-user-defined-trait-implementations"><a class="anchor" tabindex="-1" href="#336-user-defined-trait-implementations" aria-hidden="true">#</a>3.3.6. User-Defined trait implementations</h2>
+<p>To give a type dot-prefixed operations, implement the <strong>Dot</strong> trait family the same way as for ordinary operators.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">DotAdd</span> <span class="k">for</span> <span class="t">MyVector</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">MyVector</span>;
+    <span class="k">fn</span> dot_add(<span class="k">self</span>, rhs: <span class="t">MyVector</span>) -&gt; <span class="t">MyVector</span> { ... }
+}
+</code></pre>
+<p>Dot-prefixed operations are supported through this same pattern, with no additional traits or macros.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/303-broadcast-operators.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="302-precedence-and-associativity"><small>Previous</small>3.2. Precedence and associativity</a><a class="next" href="304-assignment"><small>Next</small>3.4. Assignment and compound assignment</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

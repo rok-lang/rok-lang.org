@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.5. Standard library tiers - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The standard libraries are divided into three package tiers under the virtual namespace rok::*. They are distinguished by the environments in which they are ava...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/005-standard-libraries-tiers.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.5. Standard library tiers - rok docs">
+<meta property="og:description" content="The standard libraries are divided into three package tiers under the virtual namespace rok::*. They are distinguished by the environments in which they are ava...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/005-standard-libraries-tiers.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/005-standard-libraries-tiers.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/005-standard-libraries-tiers.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">0. Introduction</a></p><ul class="pages"><li><a href="001-execution-modes">0.1. Execution engines and user surfaces</a></li><li><a href="002-pipeline">0.2. Compilation pipeline</a></li><li><a href="003-source-units">0.3. Source units</a></li><li><a href="004-language-vs-standard-libraries">0.4. Boundary between the language and the standard libraries</a></li><li class="cur"><a aria-current="page" href="005-standard-libraries-tiers">0.5. Standard library tiers</a><ul class="toc"><li><a href="#051-three-tiers">0.5.1. Three tiers</a></li><li><a href="#052-responsibilities-of-each-tier">0.5.2. Responsibilities of each tier</a></li><li><a href="#053-visibility-conventions">0.5.3. Visibility conventions</a></li><li><a href="#054-distribution-form-and-linking-mechanism">0.5.4. Distribution form and linking mechanism</a></li><li><a href="#055-why-three-tiers">0.5.5. Why three tiers</a></li></ul></li><li><a href="006-platform-targets">0.6. Platform targets</a></li><li><a href="007-glossary">0.7. Glossary</a></li><li><a href="008-notation">0.8. Notation</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="05-standard-library-tiers 05-표준-라이브러리-계층 051-three-tiers 051-세-계층 052-responsibilities-of-each-tier 052-각-계층의-책임 rokbare rokbare rokcore-foundation rokcore-foundation rokstd rokstd 053-visibility-conventions 053-가시-규약 054-distribution-form-and-linking-mechanism 054-제공-형태와-링크-메커니즘 055-why-three-tiers 055-세-계층으로-나눈-이유"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/000-meta/005-standard-libraries-tiers" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="05-standard-library-tiers"><a class="anchor" tabindex="-1" href="#05-standard-library-tiers" aria-hidden="true">#</a>0.5. Standard library tiers</h1>
+<p>The standard libraries are divided into three package tiers under the virtual namespace <code>rok::*</code>. They are distinguished by the environments in which they are available and by the risk of the behavior they expose.</p>
+<h2 id="051-three-tiers"><a class="anchor" tabindex="-1" href="#051-three-tiers" aria-hidden="true">#</a>0.5.1. Three tiers</h2>
+<p>The overall structure is as follows.</p>
+<pre><code>  rok::bare   ←   no safety guarantees. Raw memory, FFI, transmutable bit casts, direct MLIR access.
+     ↑
+  rok::core   ←   safe foundation available on every target. Uses rok::bare internally.
+     ↑
+  rok::std   ←   target-dependent tier. File system, network, OS threads, etc.
+</code></pre>
+<p>The arrows show the direction of dependency. <code>rok::core</code> may use <code>rok::bare</code> in its internal implementation, and <code>rok::std</code> may use both <code>rok::core</code> and <code>rok::bare</code>. Dependencies in the opposite direction are forbidden.</p>
+<p>All three tiers live under the virtual namespace <code>rok::</code> (<a href="../005-modules/507-paths#574-rok-the-standard-library-virtual-namespace">5.7.4 rok::</a>). <code>rok</code> itself is a path-root contextual keyword (<a href="../001-lexical/105-keywords">1.5.4</a>) and does not collide with user identifiers.</p>
+<h2 id="052-responsibilities-of-each-tier"><a class="anchor" tabindex="-1" href="#052-responsibilities-of-each-tier" aria-hidden="true">#</a>0.5.2. Responsibilities of each tier</h2>
+<h3 id="rokbare"><a class="anchor" tabindex="-1" href="#rokbare" aria-hidden="true">#</a><code>rok::bare</code></h3>
+<p><code>rok::bare</code> is the low-level, dangerous area. Behavior whose safety the compiler cannot guarantee gathers here; representative items include raw pointer forms (the raw pointer abstraction) and arbitrary bit casts (<code>transmute</code>-like). Pinning, volatile memory access, and the primitives of C <a href="007-glossary#abi-application-binary-interface">ABI</a>-compatible memory allocation are also part of <code>rok::bare</code>. Direct calls into MLIR dialects (<code>rok::bare::mlir</code>) and registration of user-defined dialect plugins (<code>rok::bare::mlir::plugin</code>) also live in this tier and serve as the channel through which external tensor / SIMD / GPU libraries reach the acceleration domain.</p>
+<p>The caller of a function in this tier is responsible for safety, and the path itself makes that fact clear.</p>
+<h3 id="rokcore-foundation"><a class="anchor" tabindex="-1" href="#rokcore-foundation" aria-hidden="true">#</a><code>rok::core</code> (foundation)</h3>
+<p><code>rok::core</code> is the most frequently used safe library; every module of the foundation lives here (e.g. <code>rok::core::vec</code>, <code>rok::core::iter</code>, <code>rok::core::ops</code>). It must be available identically on every build target this specification guarantees. Its contents are very broad: numeric, character and string types and their methods, and collections (lists, maps, sets, tuples). It has the trait definitions for arithmetic, comparison, logical and bitwise operators, and also provides iterators, streams and futures. Concurrency primitives (atomic, mutex, channel) and the API surface for tasks and parallel execution also belong to this tier. Finally, it covers formatting, display, debug, reflection and inspection.</p>
+<p>Acceleration domains such as tensors / automatic differentiation / SIMD / GPU are not part of <code>rok::core</code>; external libraries implement them directly on top of <code>rok::bare::mlir</code>. The standard libraries are responsible only for the surface semantics of ordinary code and leave the acceleration domain to decisions at the library layer.</p>
+<p>The items of <code>rok::core</code> are made visible by the compiler implicitly applying <code>use rok::core::**;</code> at the start of every rok source. That is, <code>rok::core::vec::Vec</code> can be written simply as <code>Vec</code>. There is no separate prelude module; the implicit recursive glob itself plays that role.</p>
+<p>Items of <code>rok::core</code> are <code>pub</code> by default. The surface exposed to external packages is exactly the automatically visible surface, so no separate step is needed.</p>
+<h3 id="rokstd"><a class="anchor" tabindex="-1" href="#rokstd" aria-hidden="true">#</a><code>rok::std</code></h3>
+<p><code>rok::std</code> is the area that is meaningful only in particular environments (mainly on top of an OS). It contains the file system and networking, time and clocks, standard I/O, environment variables, processes, and direct control of OS threads.</p>
+<p>Functions of <code>rok::std</code> may not exist on some targets. In environments where some areas are meaningless (for example, a notebook kernel running inside a browser), the corresponding modules are not built.</p>
+<h2 id="053-visibility-conventions"><a class="anchor" tabindex="-1" href="#053-visibility-conventions" aria-hidden="true">#</a>0.5.3. Visibility conventions</h2>
+<p>The visibility rules are as follows.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Area</th><th>Implicit import</th><th>Explicit import required</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>rok::core::**</code></td><td>✓ automatic</td><td>✗ not required</td><td><code>use rok::core::**;</code> applied automatically</td></tr>
+<tr><td><code>rok::bare::**</code></td><td>✗</td><td>✓ required</td><td>Makes the danger signal visible in code</td></tr>
+<tr><td><code>rok::std::**</code></td><td>✗</td><td>✓ required</td><td>Makes target dependency visible in code</td></tr>
+<tr><td>User packages</td><td>✗</td><td>✓ required</td><td>Items of other packages</td></tr>
+</tbody></table></div>
+<p>The concrete syntax for &quot;bringing in&quot; (<code>use</code>, <code>import</code>, etc.) is defined in the module system specification.</p>
+<h2 id="054-distribution-form-and-linking-mechanism"><a class="anchor" tabindex="-1" href="#054-distribution-form-and-linking-mechanism" aria-hidden="true">#</a>0.5.4. Distribution form and linking mechanism</h2>
+<p>The three tiers are provided as prebuilt static archives distributed with the compiler.</p>
+<pre><code>librok_bare.a       (-NL bare)
+librok_core.a       (-NL core)
+librok_std.a       (-NL std)
+</code></pre>
+<p>Each archive has its own package ABI, and the compiler links it automatically at build time through the <code>-NL &lt;name&gt;</code> mechanism. This path is separate from the ordinary dependencies of user packages, so a user package that happens to have the same name (e.g. <code>mod bare</code>, <code>mod std</code>) does not collide.</p>
+<p>Like the compiler itself, the three archives follow the zero-dependency principle. Building a user package links only the tiers it needs, and the resulting artifact requires no additional external libraries.</p>
+<h2 id="055-why-three-tiers"><a class="anchor" tabindex="-1" href="#055-why-three-tiers" aria-hidden="true">#</a>0.5.5. Why three tiers</h2>
+<p>With only two tiers (safe, dangerous), &quot;safe anywhere&quot; could not be distinguished from &quot;safe only when an OS is present&quot;, and the split would break down in environments lacking some OS features (browser notebooks, etc.). Conversely, four or more tiers increase the rules users must memorize and diminish the value of module boundaries.</p>
+<p>Three tiers is a split well proven in practice, and the simplest one that is still meaningful.</p>
+<p>Grouping them all under the virtual namespace <code>rok::</code> further lowers the learning cost. Users need only remember the one-line rule &quot;the standard libraries are all under <code>rok::</code>&quot;, and learn the division of responsibility among <code>bare</code> / <code>core</code> / <code>std</code> gradually.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/000-meta/005-standard-libraries-tiers.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="004-language-vs-standard-libraries"><small>Previous</small>0.4. Boundary between the language and the standard libraries</a><a class="next" href="006-platform-targets"><small>Next</small>0.6. Platform targets</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

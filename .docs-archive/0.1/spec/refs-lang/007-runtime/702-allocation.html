@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.2. Allocation - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This document covers how the objects defined in Object layout are placed in memory. The allocation algorithm is defined in two stages: a fast path and a slow pa...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/702-allocation.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.2. Allocation - rok docs">
+<meta property="og:description" content="This document covers how the objects defined in Object layout are placed in memory. The allocation algorithm is defined in two stages: a fast path and a slow pa...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/702-allocation.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/702-allocation.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/702-allocation.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">7. Runtime overview</a></p><ul class="pages"><li><a href="701-object-layout">7.1. Object layout and memory spaces</a></li><li class="cur"><a aria-current="page" href="702-allocation">7.2. Allocation</a><ul class="toc"><li><a href="#721-tlab-thread-local-allocation-buffer">7.2.1. TLAB (Thread-Local Allocation Buffer)</a></li><li><a href="#722-fast-path-4-inline-instructions">7.2.2. Fast path: 4 inline instructions</a></li><li><a href="#723-slow-path-rok_gc_alloc_slow">7.2.3. Slow path: rok_gc_alloc_slow</a></li><li><a href="#724-object-header-initialization">7.2.4. Object header initialization</a></li><li><a href="#725-alignment">7.2.5. Alignment</a></li><li><a href="#726-tlab">7.2.6. TLAB</a></li><li><a href="#727-tlabs-and-work-stealing">7.2.7. TLABs and work-stealing</a></li><li><a href="#728-gc-trigger">7.2.8. GC trigger</a></li><li><a href="#729-los-allocation-of-large-objects">7.2.9. LOS allocation of large objects</a></li><li><a href="#7210-pinned-objects">7.2.10. Pinned objects</a></li><li><a href="#7211-allocation-time-vs-heap-usage">7.2.11. Allocation time vs heap usage</a></li><li><a href="#7212-allocation-elision">7.2.12. Allocation elision</a></li></ul></li><li><a href="703-gc-algorithm">7.3. GC algorithm</a></li><li><a href="704-barriers-and-roots">7.4. Barriers and root tracking</a></li><li><a href="705-concurrent-collection">7.5. Concurrent mark</a></li><li><a href="706-scheduler">7.6. Scheduler</a></li><li><a href="707-io-and-timer">7.7. I/O driver and timers</a></li><li><a href="708-coroutine">7.8. Coroutines</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="72-allocation 72-할당 721-tlab-thread-local-allocation-buffer 721-tlab-thread-local-allocation-buffer 722-fast-path-4-inline-instructions 722-fast-path-인라인-4-명령어 723-slow-path-rok_gc_alloc_slow 723-slow-path-rok_gc_alloc_slow 724-object-header-initialization 724-객체-헤더-초기화 725-alignment 725-정렬 726-tlab 726-tlab 727-tlabs-and-work-stealing 727-tlab-와-work-stealing-의-관계 728-gc-trigger 728-gc-trigger 729-los-allocation-of-large-objects 729-큰-객체의-los-할당 7210-pinned-objects 7210-고정된-객체 7211-allocation-time-vs-heap-usage 7211-할당-시간-vs-heap-사용량 7212-allocation-elision 7212-할당-생략"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/007-runtime/702-allocation" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="72-allocation"><a class="anchor" tabindex="-1" href="#72-allocation" aria-hidden="true">#</a>7.2. Allocation</h1>
+<p>This document covers how the objects defined in <a href="701-object-layout">Object layout</a> are placed in memory. The allocation algorithm is defined in two stages: a fast path and a slow path.</p>
+<h2 id="721-tlab-thread-local-allocation-buffer"><a class="anchor" tabindex="-1" href="#721-tlab-thread-local-allocation-buffer" aria-hidden="true">#</a>7.2.1. TLAB (Thread-Local Allocation Buffer)</h2>
+<p>Each scheduler worker (= OS thread) has its own TLAB. A TLAB consists of one <a href="../000-meta/007-glossary#block">block</a> (or part of one) obtained from the <a href="../000-meta/007-glossary#immix">Immix</a> space, and allocates quickly by bump pointer.</p>
+<pre><code>TLAB structure:
+  cursor : ptr      // next allocation position
+  limit  : ptr      // end of the TLAB
+  block  : ptr      // start (for reuse)
+</code></pre>
+<p>While cursor is below limit, there is enough space. If cursor plus size exceeds limit, the <a href="../000-meta/007-glossary#tlab-thread-local-allocation-buffer">TLAB</a> is exhausted and allocation falls to the slow path.</p>
+<h2 id="722-fast-path-4-inline-instructions"><a class="anchor" tabindex="-1" href="#722-fast-path-4-inline-instructions" aria-hidden="true">#</a>7.2.2. Fast path: 4 inline instructions</h2>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>Most allocations are handled by inline code. They finish in 4-5 machine instructions, with zero synchronization cost.</p>
+</div>
+<pre><code>1. tmp = cursor
+2. new_cursor = tmp + size
+3. if new_cursor &gt; limit → goto slow
+4. cursor = new_cursor
+   (return tmp)
+</code></pre>
+<p>This path completes in 4-5 machine instructions. The branch is almost always <code>false</code>, following the fast path, and since the TLAB itself is thread-local, synchronization cost is zero.</p>
+<p>The fast path is inline code the compiler generates directly in LLVM IR; the runtime does not expose it as a function call.</p>
+<h2 id="723-slow-path-rok_gc_alloc_slow"><a class="anchor" tabindex="-1" href="#723-slow-path-rok_gc_alloc_slow" aria-hidden="true">#</a>7.2.3. Slow path: <code>rok_gc_alloc_slow</code></h2>
+<p>Used when the TLAB is exhausted or the object is large (<a href="../000-meta/007-glossary#los-large-object-space">LOS</a>).</p>
+<pre><code>extern &quot;C&quot; {
+    fn rok_gc_alloc_slow(size: usize, align: usize, type_id: u32) -&gt; Ptr&lt;u8&gt;;
+}
+</code></pre>
+<p>This is an <code>extern &quot;C&quot;</code> function provided by the runtime; the compiler calls it when the fast path fails.</p>
+<p>The slow path does the following:</p>
+<ol>
+<li>If the object is 8 KiB or more, or its alignment is greater than 8 bytes, allocate it in the LOS (7.2.9).
+</li>
+<li>An object larger than one line that does not fit in the remaining TLAB is allocated in its own line range.
+</li>
+<li>Otherwise, refill the TLAB. If needed, run a <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> collection first (7.2.8).
+</li>
+<li>Initialize the header's <code>type_id</code> and <code>gc_flags</code>.
+</li>
+</ol>
+<h2 id="724-object-header-initialization"><a class="anchor" tabindex="-1" href="#724-object-header-initialization" aria-hidden="true">#</a>7.2.4. Object header initialization</h2>
+<p>The object header is initialized in the slow path; on the fast path too, the compiler fills in the header inline before use.</p>
+<pre><code>*(ptr + 0) = type_id
+*(ptr + 4) = 0u32          // initial gc_flags
+*(ptr + 8) = size          // gc_word - total object size (8.1.4)
+</code></pre>
+<p>The payload is already zero, and user code fills it with field values. The collector may keep its own bookkeeping before the header or in a side table.</p>
+<h2 id="725-alignment"><a class="anchor" tabindex="-1" href="#725-alignment" aria-hidden="true">#</a>7.2.5. Alignment</h2>
+<p>Every allocation is guaranteed 8-byte alignment. The TLAB cursor is kept at a multiple of 8 bytes, and object sizes are rounded up to a multiple of 8 bytes. Objects requiring larger alignment (<code>#[repr(align(N))]</code>) are handled on the slow path.</p>
+<h2 id="726-tlab"><a class="anchor" tabindex="-1" href="#726-tlab" aria-hidden="true">#</a>7.2.6. TLAB</h2>
+<p>A TLAB is a contiguous range of free lines within an Immix block. On refill, the range is zeroed before being handed out, so the fast path receives zero-filled memory.</p>
+<h2 id="727-tlabs-and-work-stealing"><a class="anchor" tabindex="-1" href="#727-tlabs-and-work-stealing" aria-hidden="true">#</a>7.2.7. TLABs and work-stealing</h2>
+<p>The work-stealing mechanism of the <a href="706-scheduler">scheduler</a> lets one worker steal another worker's task.</p>
+<p>A stolen task allocates from the stealing worker's TLAB, independent of the original worker's TLAB.</p>
+<p>This model works because each TLAB is bound thread-locally to its OS thread.</p>
+<h2 id="728-gc-trigger"><a class="anchor" tabindex="-1" href="#728-gc-trigger" aria-hidden="true">#</a>7.2.8. GC trigger</h2>
+<p>The slow path starts a collection in these cases. The conditions and the choice between minor and full follow <a href="703-gc-algorithm#732-sticky-mark-bit-generational-collection">7.3.2</a>.</p>
+<ul>
+<li>When a new TLAB or block cannot be handed out.
+</li>
+<li>When the amount allocated since the last collection exceeds the next cycle's budget.
+</li>
+</ul>
+<p><code>rok_gc_collect</code> explicitly performs a full collection.</p>
+<h2 id="729-los-allocation-of-large-objects"><a class="anchor" tabindex="-1" href="#729-los-allocation-of-large-objects" aria-hidden="true">#</a>7.2.9. LOS allocation of large objects</h2>
+<p>Objects of 8 KiB or more, or requiring alignment greater than 8 bytes, bypass the TLAB and are allocated individually in the LOS. Placing a large object in a TLAB wastes the remaining space, and since LOS objects are not moved, bump allocation gives no benefit.</p>
+<h2 id="7210-pinned-objects"><a class="anchor" tabindex="-1" href="#7210-pinned-objects" aria-hidden="true">#</a>7.2.10. Pinned objects</h2>
+<p>During an <code>extern &quot;C&quot;</code> call that receives a GC pointer, no separate pinning is needed (<a href="704-barriers-and-roots#objects-pointed-to-by-roots-are-not-moved">7.4.1</a>). If C keeps the pointer after the call, pin it with <code>rok_gc_pin</code>. Pinning only sets the <code>PINNED</code> bit; it does not copy the object. <code>rok_gc_unpin</code> releases it.</p>
+<h2 id="7211-allocation-time-vs-heap-usage"><a class="anchor" tabindex="-1" href="#7211-allocation-time-vs-heap-usage" aria-hidden="true">#</a>7.2.11. Allocation time vs heap usage</h2>
+<p>The fast path is constant time (~4 instructions). The average allocation cost is determined by the fast path.</p>
+<h2 id="7212-allocation-elision"><a class="anchor" tabindex="-1" href="#7212-allocation-elision" aria-hidden="true">#</a>7.2.12. Allocation elision</h2>
+<p>The optimizer may remove an allocation whose object never escapes and is never read past its stores; such an allocation is no safepoint and is not counted by the collector's statistics. An allocation whose size cannot be represented (<code>len * size + header</code> overflowing) always reaches the runtime's &quot;allocation too large&quot;.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/007-runtime/702-allocation.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="701-object-layout"><small>Previous</small>7.1. Object layout and memory spaces</a><a class="next" href="703-gc-algorithm"><small>Next</small>7.3. GC algorithm</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

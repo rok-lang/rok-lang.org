@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.1. 연산자 디스패치 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 장에서는 구두점과 연산자 토큰 에 정의된 연산자 토큰이 트레잇 메서드 호출로 변환되는 일반 원칙을 정의합니다. 각 연산자가 어느 트레잇의 어느 메서드에 매핑되는지에 대한 구체적인 매트릭스는 표준 라이브러리에서 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.1. 연산자 디스패치 - rok docs">
+<meta property="og:description" content="이 장에서는 구두점과 연산자 토큰 에 정의된 연산자 토큰이 트레잇 메서드 호출로 변환되는 일반 원칙을 정의합니다. 각 연산자가 어느 트레잇의 어느 메서드에 매핑되는지에 대한 구체적인 매트릭스는 표준 라이브러리에서 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/301-operator-dispatch.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">3. 표현식 개요</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="301-operator-dispatch">3.1. 연산자 디스패치</a><ul class="toc"><li><a href="#311-모든-연산자는-트레잇-메서드">3.1.1. 모든 연산자는 트레잇 메서드</a></li><li><a href="#312-연산자--트레잇-매핑은-표준-라이브러리에서">3.1.2. 연산자 → 트레잇 매핑은 표준 라이브러리에서</a></li><li><a href="#313-디스패치는-vtable-없이">3.1.3. 디스패치는 vtable 없이</a></li><li><a href="#314-매핑이-없는-연산">3.1.4. 매핑이 없는 연산</a></li><li><a href="#315-단항-이항-후위">3.1.5. 단항, 이항, 후위</a></li><li><a href="#316-우선순위와-결합">3.1.6. 우선순위와 결합</a></li><li><a href="#317-사용자-정의-연산자">3.1.7. 사용자 정의 연산자</a></li><li><a href="#318-unicode-연산자">3.1.8. Unicode 연산자</a></li></ul></li><li><a href="302-precedence-and-associativity">3.2. 우선순위와 결합성</a></li><li><a href="303-broadcast-operators">3.3. 브로드캐스트 연산자</a></li><li><a href="304-assignment">3.4. 대입과 복합 대입</a></li><li><a href="305-member-access-and-method-call">3.5. 멤버 접근과 메서드 호출</a></li><li><a href="306-indexing-and-slicing">3.6. 인덱싱과 슬라이싱</a></li><li><a href="307-range-expressions">3.7. 범위 표현식</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. 옵셔널 체이닝과 null 합체</a></li><li><a href="309-block-expressions">3.9. 블록 표현식</a></li><li><a href="310-if-expression">3.10. if 표현식</a></li><li><a href="311-patterns">3.11. 패턴</a></li><li><a href="312-match-expression">3.12. match 표현식</a></li><li><a href="313-loop-expressions">3.13. 루프 표현식</a></li><li><a href="314-error-control-flow">3.14. 에러 제어 흐름</a></li><li><a href="315-destructuring">3.15. 분해 대입 (destructuring)</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using 표현식 - 자원의 결정론적 해제</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="31-연산자-디스패치 31-operator-dispatch 311-모든-연산자는-트레잇-메서드 311-every-operator-is-a-trait-method 312-연산자--트레잇-매핑은-표준-라이브러리에서 312-operator--trait-mapping-lives-in-the-standard-library 313-디스패치는-vtable-없이 313-dispatch-without-a-vtable impl-고르기 selecting-an-impl 314-매핑이-없는-연산 314-operations-without-a-mapping 315-단항-이항-후위 315-unary-binary-postfix 316-우선순위와-결합 316-precedence-and-associativity 317-사용자-정의-연산자 317-user-defined-operators 318-unicode-연산자 318-unicode-operators"><a href="../../../../spec/refs-lang/003-expressions/301-operator-dispatch" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="31-연산자-디스패치"><a class="anchor" tabindex="-1" href="#31-연산자-디스패치" aria-hidden="true">#</a>3.1. 연산자 디스패치</h1>
+<p>이 장에서는 <a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a> 에 정의된 연산자 토큰이 트레잇 메서드 호출로 변환되는 일반 원칙을 정의합니다. 각 연산자가 어느 트레잇의 어느 메서드에 매핑되는지에 대한 구체적인 매트릭스는 표준 라이브러리에서 정의합니다.</p>
+<h2 id="311-모든-연산자는-트레잇-메서드"><a class="anchor" tabindex="-1" href="#311-모든-연산자는-트레잇-메서드" aria-hidden="true">#</a>3.1.1. 모든 연산자는 트레잇 메서드</h2>
+<p><a href="../000-meta/004-language-vs-standard-libraries">언어와 표준 라이브러리의 경계</a> 에서 정한 바와 같이, 연산자 구문은 언어가 제공하지만 그 동작은 표준 라이브러리의 트레잇이 결정합니다.</p>
+<pre><code>a + b         →   &lt;typeof(a) as Add&lt;typeof(b)&gt;&gt;::add(a, b)
+a - b         →   &lt;typeof(a) as Sub&lt;typeof(b)&gt;&gt;::sub(a, b)
+a * b         →   &lt;typeof(a) as Mul&lt;typeof(b)&gt;&gt;::mul(a, b)
+a &lt; b         →   &lt;typeof(a) as Cmp&lt;typeof(b)&gt;&gt;::lt(a, b)
+-a            →   &lt;typeof(a) as Neg&gt;::neg(a)
+!a            →   &lt;typeof(a) as Not&gt;::not(a)
+</code></pre>
+<p>이처럼 모든 연산자가 같은 패턴을 따르고 있습니다. 즉 언어가 토큰을 인식한 뒤, 이를 트레잇 메서드 호출로 변환하는 구조입니다.</p>
+<h2 id="312-연산자--트레잇-매핑은-표준-라이브러리에서"><a class="anchor" tabindex="-1" href="#312-연산자--트레잇-매핑은-표준-라이브러리에서" aria-hidden="true">#</a>3.1.2. 연산자 → 트레잇 매핑은 표준 라이브러리에서</h2>
+<p>각 연산자 토큰이 어떤 트레잇 메서드로 매핑되는지에 대한 정확한 표는 표준 라이브러리에서 정의합니다. 본 문서는 매핑이 존재한다는 사실과 디스패치 메커니즘에 대한 부분만을 책임지고 있습니다.</p>
+<p>표준 라이브러리는 메타 시스템의 <code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code> 속성을 통해 매핑을 트레잇 메서드에 부착합니다. 정확한 메커니즘은 <a href="../006-meta-system/607-operator-magic"><code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code> 매직</a> 에서 정의하고 있으니 참고합니다.</p>
+<pre><code>trait Add&lt;Rhs = Self&gt; {
+    type Output;
+    #[infix(&quot;+&quot;)]
+    fn add(self, rhs: Rhs) -&gt; Output;
+}
+
+trait Neg {
+    type Output;
+    #[prefix(&quot;-&quot;)]
+    fn neg(self) -&gt; Output;
+}
+</code></pre>
+<p>위 예시는 트레잇과 메서드 시그니처의 모양을 보여주고 있으며, 2장의 트레잇 사양과 6장의 매직 사양이 합쳐져서 의미를 만들어 내게 됩니다. 본 3장에서는 언어가 토큰을 보고 위와 같은 호출로 변환한다는 사실까지를 정의합니다.</p>
+<h2 id="313-디스패치는-vtable-없이"><a class="anchor" tabindex="-1" href="#313-디스패치는-vtable-없이" aria-hidden="true">#</a>3.1.3. 디스패치는 vtable 없이</h2>
+<p>연산자 호출의 디스패치는 <a href="../002-types/212-trait-as-type-banned">트레잇-as-타입 금지</a> 의 원칙에 따라 vtable 간접 호출 없이 해소되도록 설계됩니다.</p>
+<ul>
+<li>정적 슬롯의 경우, 컴파일 타임에 트레잇 메서드가 결정되어 직접 함수 호출로 컴파일됩니다.
+</li>
+<li><code>any</code> 슬롯의 경우, <a href="../002-types/202-any-slot"><code>any</code> 슬롯</a> 의 런타임 태그 검사를 통해 트레잇 메서드를 결정한 뒤 직접 호출합니다. 비용은 태그 검사 한 번에 직접 호출이 더해지는 정도입니다.
+</li>
+</ul>
+<p>두 경우 모두 vtable lookup 으로 인한 추가 간접 호출이 발생하지 않습니다. 과학·수치 코드의 핵심 루프가 이러한 비용을 치르지 않도록 하는 것이 <a href="../002-types/212-trait-as-type-banned">트레잇-as-타입 금지</a> 의 동기이며, 그 귀결이 바로 본 디스패치 규칙입니다.</p>
+<h3 id="impl-고르기"><a class="anchor" tabindex="-1" href="#impl-고르기" aria-hidden="true">#</a>impl 고르기</h3>
+<p>이항 연산 <code>a op b</code> 는 왼쪽 피연산자 타입의 그 연산자 트레잇 impl 에서 고릅니다.</p>
+<ul>
+<li>한 타입에 같은 연산자 트레잇의 impl 이 여럿이면 (<code>Mul&lt;i64&gt;</code>, <code>Mul&lt;f64&gt;</code> 등), <code>Rhs</code> 가 오른쪽 피연산자의 타입과 맞는 impl 을 고릅니다.
+</li>
+<li>왼쪽이 원시 타입이고 오른쪽이 struct 이면, 원시 타입에 대해 선언된 impl 을 씁니다 (<code>2.0 * d</code> 는 <code>impl Mul&lt;Duration&gt; for f64</code>).
+</li>
+</ul>
+<p>같은 규칙은 연산자에 한하지 않습니다. 트레잇의 타입 매개변수를 채우는 값의 타입으로 impl 을 고르는 모든 자리에 적용됩니다. 연산자의 <code>Rhs</code>, <code>T::from(x)</code> / <code>T::try_from(x)</code> / <code>Tr::f(x)</code> 의 인자, 타입이 정해진 자리의 <code>.into()</code> / <code>.try_into()</code> 수신자, 그리고 impl 들이 그 매개변수에서 다를 때 메서드 호출 <code>x.m(v)</code> 나 경로 호출 <code>T::m(x, v)</code> 의 인자가 그렇습니다. 그 값이 접미사 없는 리터럴이면 다음 순서로 고릅니다.</p>
+<ol>
+<li>리터럴의 기본 타입 (<code>i32</code> / <code>f64</code>) 의 impl 이 있고 값이 그 타입에 들어가면 그것.
+</li>
+<li>아니면 매개변수 타입이 그 값을 담을 수 있는 유일한 impl (정수는 범위 안의 정수 타입 또는 <code>int</code>, 실수는 유한하게 표현되는 <code>f32</code> / <code>f64</code> 또는 <code>float</code>). <code>d * 2</code> 는 <code>Duration</code> 의 <code>Mul&lt;i64&gt;</code> 입니다.
+</li>
+<li>그런 impl 이 여럿이면 접미사를 요구하는 컴파일 에러.
+</li>
+</ol>
+<p>이 규칙은 맨 리터럴과 부호를 붙인 리터럴 (<code>-1</code>) 에만 적용되며, <code>1 + 1</code> 같은 식에는 적용되지 않습니다. <code>Tr::f(..)</code> 처럼 부른 정적 트레잇 메서드의 <code>Self</code> 는 기대 타입에서 정합니다. 트레잇의 매개변수를 채우는 인자가 없으면, 호출의 기대 타입이 그것을 반환 타입으로 갖는 impl (또는 bound) 을 고르며, 그렇지 않으면 호출은 모호합니다 (<a href="../004-functions/409-method#496-자유-함수와-메서드의-호출-형태">4.9.6</a>).</p>
+<h2 id="314-매핑이-없는-연산"><a class="anchor" tabindex="-1" href="#314-매핑이-없는-연산" aria-hidden="true">#</a>3.1.4. 매핑이 없는 연산</h2>
+<p>특정 타입 쌍에 대해 트레잇 구현이 없는 경우, 그 연산자 호출은 컴파일 에러로 처리됩니다.</p>
+<pre><code>let a: i32 = 1i32;
+let b: str = &quot;hi&quot;;
+let c = a + b;          // ERROR: Add 의 (i32, str) impl 없음
+</code></pre>
+<p>이때 진단은 어떤 트레잇이 빠져 있는지를 명시합니다.</p>
+<pre><code>ERROR: cannot apply '+' to 'i32' and 'str'
+       (no impl Add&lt;str&gt; for i32)
+</code></pre>
+<h2 id="315-단항-이항-후위"><a class="anchor" tabindex="-1" href="#315-단항-이항-후위" aria-hidden="true">#</a>3.1.5. 단항, 이항, 후위</h2>
+<p>연산자는 그 위치에 따라 다음 셋 중 하나로 분류되고 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>위치</th><th>형태</th><th>매핑 메커니즘</th></tr></thead>
+<tbody>
+<tr><td>이항 (infix)</td><td><code>a OP b</code></td><td><code>#[infix(&quot;OP&quot;)]</code></td></tr>
+<tr><td>전위 단항 (prefix)</td><td><code>OP a</code></td><td><code>#[prefix(&quot;OP&quot;)]</code></td></tr>
+<tr><td>후위 단항 (postfix)</td><td><code>a OP</code></td><td><code>#[postfix(&quot;OP&quot;)]</code></td></tr>
+</tbody></table></div>
+<p>같은 토큰이 여러 위치에 등장하는 경우도 있습니다. 예를 들어 <code>-</code> 은 이항 (<code>a - b</code>) 과 전위 단항 (<code>-a</code>) 양쪽 모두에 쓰이게 됩니다. 위치는 토큰이 등장한 문맥에 따라 결정되는데, 피연산자가 앞에 있으면 후위로, 양쪽에 있으면 이항으로 해석되는 식입니다.</p>
+<h2 id="316-우선순위와-결합"><a class="anchor" tabindex="-1" href="#316-우선순위와-결합" aria-hidden="true">#</a>3.1.6. 우선순위와 결합</h2>
+<p>위치별 디스패치 외에도, 연산자는 우선순위 (precedence) 와 결합성 (associativity) 을 갖고 있습니다. 이들에 대한 내용은 <a href="302-precedence-and-associativity">우선순위와 결합성</a> 에서 정의합니다.</p>
+<p>우선순위와 결합성은 토큰 → 트레잇 매핑의 일부가 아닙니다. 3.2 표가 언어 차원에서 고정하며, <code>#[infix(&quot;+&quot;)]</code> 같은 등록은 토큰과 트레잇 메서드를 연결하기만 합니다.</p>
+<h2 id="317-사용자-정의-연산자"><a class="anchor" tabindex="-1" href="#317-사용자-정의-연산자" aria-hidden="true">#</a>3.1.7. 사용자 정의 연산자</h2>
+<p>표준 라이브러리는 <code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code> 를 통해 기본 연산자에 의미를 부여합니다. 사용자 코드 역시 같은 메커니즘을 사용하여 추가 트레잇에 새로운 매핑을 부착할 수 있습니다.</p>
+<pre><code>#[infix(&quot;⊕&quot;, like = &quot;+&quot;)]          // 새 토큰은 기존 토큰의 단계를 따름
+fn combine(self, rhs: Rhs) -&gt; Output;
+</code></pre>
+<p>다만 같은 (토큰, 위치, 타입 쌍) 에 대한 매핑은 유일해야 하며, 충돌이 발생할 경우 컴파일 에러로 처리됩니다.</p>
+<p><a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a> 의 고정 토큰표에 없는 글자열을 새로운 연산자로 등록하시려면 같은 메커니즘을 통해 토큰 자체를 등록해야 합니다. 정확한 절차는 <a href="../006-meta-system/607-operator-magic"><code>#[infix]</code> / <code>#[prefix]</code> / <code>#[postfix]</code> 매직</a> 에서 정의합니다.</p>
+<h2 id="318-unicode-연산자"><a class="anchor" tabindex="-1" href="#318-unicode-연산자" aria-hidden="true">#</a>3.1.8. Unicode 연산자</h2>
+<p><code>≤</code>, <code>≥</code>, <code>≠</code>, <code>⊕</code>, <code>∈</code> 등 ASCII 영역 밖의 연산자에 대해서는, 표준 라이브러리가 같은 트레잇의 다중 alias 로 등록할 수 있도록 하고 있습니다.</p>
+<pre><code>trait Cmp&lt;Rhs = Self&gt; {
+    #[infix(&quot;&lt;=&quot;)]
+    #[infix(&quot;≤&quot;)]
+    fn le(self, rhs: Rhs) -&gt; bool;
+}
+</code></pre>
+<p>이처럼 같은 트레잇 메서드에 여러 토큰이 매핑되어 동일한 동작을 하게 됩니다. 따라서 사용자께서는 둘 중 어느 표기를 쓰시더라도 같은 결과를 얻으실 수 있습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/003-expressions/301-operator-dispatch.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>3. 표현식 개요</a><a class="next" href="302-precedence-and-associativity"><small>Next</small>3.2. 우선순위와 결합성</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

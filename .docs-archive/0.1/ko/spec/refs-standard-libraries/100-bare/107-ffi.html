@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::bare::ffi 모듈은 C ABI 와 호환되는 외부 함수 및 데이터 정의 메커니즘을 제공합니다. 이는 refs-lang 5.9 extern 블록 이 정의하는 extern &quot;C&quot; { ... } 블록과 함께 동작합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/107-ffi.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr - rok docs">
+<meta property="og:description" content="rok::bare::ffi 모듈은 C ABI 와 호환되는 외부 함수 및 데이터 정의 메커니즘을 제공합니다. 이는 refs-lang 5.9 extern 블록 이 정의하는 extern &quot;C&quot; { ... } 블록과 함께 동작합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/107-ffi.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/100-bare/107-ffi.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/100-bare/107-ffi.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">1. Unsafe tier</a></p><ul class="pages"><li><a href="101-ptr">1.1. Pointer 계열 - Ptr / ConstPtr / ManyPtr / CPtr</a></li><li><a href="102-cast">1.2. cast 연산 - 명시 named cast</a></li><li><a href="103-mem">1.3. MaybeUninit&lt;T&gt; - 미초기화 메모리</a></li><li><a href="104-alloc">1.4. raw allocation - alloc / dealloc / realloc</a></li><li><a href="105-volatile">1.5. volatile 메모리 접근</a></li><li><a href="106-gc-pin">1.6. Pinned&lt;T&gt; - GC pinning</a></li><li class="cur"><a aria-current="page" href="107-ffi">1.7. FFI - extern &quot;C&quot; / CStr / CString / CPtr</a><ul class="toc"><li><a href="#171-extern-c-block">1.7.1. extern &quot;C&quot; block</a></li><li><a href="#172-cstr--cstring---null-terminated-string">1.7.2. CStr / CString - null-terminated string</a></li><li><a href="#173-cptrt-와-nullable">1.7.3. CPtr&lt;T&gt; 와 nullable</a></li><li><a href="#174-using-블록---raii">1.7.4. using 블록 - RAII</a></li><li><a href="#175-안전-wrapper-패턴---sys--safe-분리">1.7.5. 안전 wrapper 패턴 - sys + safe 분리</a></li><li><a href="#176-자동-binding-생성">1.7.6. 자동 binding 생성</a></li><li><a href="#177-호출-안전-책임-분배">1.7.7. 호출 안전 책임 분배</a></li><li><a href="#178-다른-언어와의-비교">1.7.8. 다른 언어와의 비교</a></li></ul></li><li><a href="108-wit">1.8. WASM Component Model - ffi.wit</a></li><li><a href="109-mlir">1.9. rok::bare::mlir - MLIR 다이얼렉트 직접 접근</a></li><li><a href="110-mlir-plugin">1.10. rok::bare::mlir::plugin - 사용자 정의 다이얼렉트 등록</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="17-ffi---extern-c--cstr--cstring--cptr 17-ffi---extern-c--cstr--cstring--cptr 171-extern-c-block 171-extern-c-block linkname---library-지정 linkname---specifying-a-library 호출-규약-calling-convention calling-convention str-매개변수와-반환 str-parameters-and-returns 172-cstr--cstring---null-terminated-string 172-cstr--cstring---null-terminated-string cstring---owned-null-terminated cstring---owned-null-terminated 사용-예---strlen example---strlen 173-cptrt-와-nullable 173-cptrt-and-nullability 174-using-블록---raii 174-using-block---raii 175-안전-wrapper-패턴---sys--safe-분리 175-safe-wrapper-pattern---separating-sys-and-safe 176-자동-binding-생성 176-automatic-binding-generation 177-호출-안전-책임-분배 177-division-of-call-safety-responsibility 178-다른-언어와의-비교 178-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/100-bare/107-ffi" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="17-ffi---extern-c--cstr--cstring--cptr"><a class="anchor" tabindex="-1" href="#17-ffi---extern-c--cstr--cstring--cptr" aria-hidden="true">#</a>1.7. FFI - <code>extern &quot;C&quot;</code> / <code>CStr</code> / <code>CString</code> / <code>CPtr</code></h1>
+<p><code>rok::bare::ffi</code> 모듈은 C ABI 와 호환되는 외부 함수 및 데이터 정의 메커니즘을 제공합니다. 이는 <a href="../../refs-lang/005-modules/509-extern-block">refs-lang 5.9 extern 블록</a> 이 정의하는 <code>extern &quot;C&quot; { ... }</code> 블록과 함께 동작합니다.</p>
+<p>본 장에서는 전통적인 C FFI 만 다루며, WASM Component Model 기반의 FFI 는 <a href="108-wit">1.8 wit</a> 에서 별도로 서술합니다.</p>
+<h2 id="171-extern-c-block"><a class="anchor" tabindex="-1" href="#171-extern-c-block" aria-hidden="true">#</a>1.7.1. <code>extern &quot;C&quot;</code> block</h2>
+<p>가장 기본적인 형태는 다음과 같습니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="c">// 함수 선언</span>
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+    <span class="k">fn</span> strlen(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">usize</span>;
+
+    <span class="c">// 글로벌 (read-only)</span>
+    <span class="k">static</span> errno: <span class="t">i32</span>;
+
+    <span class="c">// 글로벌 (mutable) - `mut` 키워드 _이 자리에서만_ 허용</span>
+    <span class="k">static</span> <span class="k">mut</span> atexit_count: <span class="t">u64</span>;
+}
+</code></pre>
+<p>여기에서 등장하는 <code>mut</code> 키워드는 <a href="../../refs-lang/001-lexical/105-keywords">refs-lang 1.5 키워드</a> 에서 정의되며, 오직 이 자리에서만 의미를 가집니다. 일반 변수에는 사용할 수 없다는 점에 유의해야 합니다.</p>
+<h3 id="linkname---library-지정"><a class="anchor" tabindex="-1" href="#linkname---library-지정" aria-hidden="true">#</a><code>#[link(&quot;name&quot;)]</code> - library 지정</h3>
+<p>라이브러리를 명시적으로 지정하려면 <code>#[link]</code> 어트리뷰트를 활용합니다.</p>
+<pre><code class="language-rok"><span class="a">#[link("c")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+    <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+}
+
+<span class="a">#[link("m")]</span>
+<span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> cos(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+    <span class="k">fn</span> sin(x: <span class="t">f64</span>) -&gt; <span class="t">f64</span>;
+}
+</code></pre>
+<p>linker 가 <code>-lc</code> 또는 <code>-lm</code> 같은 플래그를 자동으로 부착합니다.</p>
+<h3 id="호출-규약-calling-convention"><a class="anchor" tabindex="-1" href="#호출-규약-calling-convention" aria-hidden="true">#</a>호출 규약 (calling convention)</h3>
+<p>플랫폼과 인터페이스에 따라 다양한 호출 규약을 선택할 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> { ... }              <span class="c">// System V (Unix) / Microsoft x64 (Windows)</span>
+<span class="k">extern</span> <span class="s">"system"</span> { ... }         <span class="c">// Windows: stdcall on x86, C on x64 / aarch64</span>
+<span class="k">extern</span> <span class="s">"fastcall"</span> { ... }       <span class="c">// x86 fastcall</span>
+<span class="k">extern</span> <span class="s">"stdcall"</span> { ... }        <span class="c">// x86 stdcall</span>
+<span class="k">extern</span> <span class="s">"aapcs"</span> { ... }          <span class="c">// ARM AAPCS</span>
+<span class="k">extern</span> <span class="s">"thiscall"</span> { ... }       <span class="c">// C++ this pointer (x86 only)</span>
+</code></pre>
+<p>대부분의 사용자는 기본값인 <code>&quot;C&quot;</code> 만 사용해도 충분합니다. 그 밖의 규약은 주로 <strong>Windows API</strong> 나 C++ 인터페이스를 다룰 때 등장합니다.</p>
+<h3 id="str-매개변수와-반환"><a class="anchor" tabindex="-1" href="#str-매개변수와-반환" aria-hidden="true">#</a><code>str</code> 매개변수와 반환</h3>
+<p><code>extern &quot;C&quot;</code> 함수의 <code>str</code> 매개변수는 NUL 로 끝나는 <code>char*</code> 로 전달되고, 반환된 <code>char*</code> 는 <code>strlen</code> 으로 길이를 재어 <code>str</code> 이 됩니다 (<a href="../../refs-lang/005-modules/509-extern-block#594-ffi-호환-타입">refs-lang 5.9.4</a>). <code>(ptr, len)</code> 전달은 런타임 ABI <code>extern &quot;rok&quot;</code> 의 것입니다 (<a href="../../refs-lang/005-modules/509-extern-block#592-abi-명시">5.9.2</a>).</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> puts(s: <span class="t">str</span>) -&gt; <span class="t">i32</span>;          <span class="c">// "hi" → NUL 로 끝나는 char*</span>
+    <span class="k">fn</span> getenv(name: <span class="t">str</span>) -&gt; <span class="t">CPtr</span>&lt;c_char&gt;;   <span class="c">// null 가능 - CPtr 로 받음</span>
+}
+</code></pre>
+<h2 id="172-cstr--cstring---null-terminated-string"><a class="anchor" tabindex="-1" href="#172-cstr--cstring---null-terminated-string" aria-hidden="true">#</a>1.7.2. <code>CStr</code> / <code>CString</code> - null-terminated string</h2>
+<p>C 문자열을 다루는 빌림(borrow) 형태의 타입이 <code>CStr</code> 입니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">CStr</span> {
+    <span class="c">// 내부: null-terminated UTF-8 또는 raw bytes (Unix 은 bytes, Windows 는 UTF-16 별도)</span>
+}
+
+<span class="k">impl</span> <span class="t">CStr</span> {
+    <span class="k">fn</span> from_ptr(p: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">CStr</span> | <span class="k">none</span>;
+                                    <span class="c">// null pointer → none</span>
+                                    <span class="c">// null-terminator 없으면 - undefined (호출자 책임)</span>
+
+    <span class="k">fn</span> from_bytes_with_nul(bytes: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">FromBytesWithNulError</span>) -&gt; <span class="t">CStr</span>;
+                                    <span class="c">// 검증 - 마지막이 0, 중간 0 없음</span>
+    <span class="k">fn</span> from_bytes_with_nul_unchecked(bytes: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) -&gt; <span class="t">CStr</span>;
+
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;c_char&gt;;
+    <span class="k">fn</span> as_bytes(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;            <span class="c">// null-terminator 제외</span>
+    <span class="k">fn</span> as_bytes_with_nul(<span class="k">self</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// null-terminator 포함</span>
+    <span class="k">fn</span> to_str(<span class="k">self</span>) <span class="k">throws</span> (<span class="t">Utf8Error</span>) -&gt; <span class="t">str</span>;  <span class="c">// UTF-8 변환</span>
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;                     <span class="c">// null-terminator 제외</span>
+}
+</code></pre>
+<p><code>from_ptr</code> 는 C 문자열을 복사해 들입니다. <code>CStr</code> / <code>CString</code> 은 바이트와 NUL 을 GC 객체 하나에 담으며, <code>as_ptr</code> 는 <code>str::as_ptr</code> 와 같은 동안 유효합니다 (<a href="../200-core/215-string#2152-str---불변-utf-8-문자열">2.15.2</a>): 포인터 값이 나올 수 있는 함수에서 그 <code>CStr</code> / <code>CString</code> 을 담은 변수가 scope 안에 있는 동안입니다.</p>
+<h3 id="cstring---owned-null-terminated"><a class="anchor" tabindex="-1" href="#cstring---owned-null-terminated" aria-hidden="true">#</a><code>CString</code> - owned, null-terminated</h3>
+<p>소유권을 가지는 형태가 필요하다면 <code>CString</code> 을 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">CString</span> { <span class="c">/* GC heap, null-terminated */</span> }
+
+<span class="k">impl</span> <span class="t">CString</span> {
+    <span class="k">fn</span> new(bytes: <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt;) <span class="k">throws</span> (<span class="t">NulError</span>) -&gt; <span class="t">CString</span>;
+                                        <span class="c">// 중간 null byte 거부</span>
+    <span class="k">fn</span> from_str(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NulError</span>) -&gt; <span class="t">CString</span>;
+
+    <span class="k">fn</span> as_c_str(<span class="k">self</span>) -&gt; <span class="t">CStr</span>;
+    <span class="k">fn</span> as_ptr(<span class="k">self</span>) -&gt; <span class="t">ConstPtr</span>&lt;c_char&gt;;
+    <span class="k">fn</span> into_bytes(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;     <span class="c">// owned bytes (null 제외)</span>
+    <span class="k">fn</span> into_bytes_with_nul(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt;;
+}
+</code></pre>
+<h3 id="사용-예---strlen"><a class="anchor" tabindex="-1" href="#사용-예---strlen" aria-hidden="true">#</a>사용 예 - strlen</h3>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> strlen(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">usize</span>;
+}
+
+<span class="k">let</span> s: <span class="t">str</span> = <span class="s">"hello"</span>;
+<span class="k">let</span> cs = <span class="k">try</span> <span class="t">CString</span>::from_str(s);
+<span class="k">let</span> n = <span class="k">unsafe</span> { strlen(cs.as_ptr()) };       <span class="c">//→ 5</span>
+</code></pre>
+<div class="callout note"><p class="callout-title">참고</p>
+<p><code>str</code> 와 <code>CStr</code> 사이의 변환에는 <strong>할당이 필요합니다</strong> (null-terminator 를 추가해야 하기 때문입니다). <code>str</code> 는 일반적으로 non-null-terminated 형태이므로 FFI 자리에서만 명시적으로 변환하는 편이 권장됩니다.</p>
+</div>
+<h2 id="173-cptrt-와-nullable"><a class="anchor" tabindex="-1" href="#173-cptrt-와-nullable" aria-hidden="true">#</a>1.7.3. <code>CPtr&lt;T&gt;</code> 와 nullable</h2>
+<p>권위 있는 정의는 <a href="101-ptr#115-cptrt---c-호환-nullable">1.1.5 CPtr</a> 에 있습니다. C 함수가 <code>T*</code> 를 반환할 때에는 null 가능성을 명시할 필요가 있는데, 그 자리에 등장하는 타입입니다.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> fopen(path: <span class="t">ConstPtr</span>&lt;c_char&gt;, mode: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">CPtr</span>&lt;<span class="t">FILE</span>&gt;;
+    <span class="k">fn</span> fclose(file: <span class="t">CPtr</span>&lt;<span class="t">FILE</span>&gt;) -&gt; <span class="t">i32</span>;
+}
+
+<span class="k">struct</span> <span class="t">FILE</span>;        <span class="c">// opaque</span>
+
+<span class="k">let</span> path = <span class="k">try</span> <span class="t">CString</span>::from_str(<span class="s">"data.txt"</span>);
+<span class="k">let</span> mode = <span class="k">try</span> <span class="t">CString</span>::from_str(<span class="s">"r"</span>);
+<span class="k">let</span> f: <span class="t">CPtr</span>&lt;<span class="t">FILE</span>&gt; = <span class="k">unsafe</span> { fopen(path.as_ptr(), mode.as_ptr()) };
+
+<span class="k">match</span> f.as_ptr() {
+    file: <span class="t">Ptr</span>&lt;<span class="t">FILE</span>&gt; =&gt; {
+        <span class="c">// 사용</span>
+        <span class="k">unsafe</span> { fclose(f) };
+    }
+    <span class="k">none</span> =&gt; panic(<span class="s">"fopen failed"</span>),
+}
+</code></pre>
+<h2 id="174-using-블록---raii"><a class="anchor" tabindex="-1" href="#174-using-블록---raii" aria-hidden="true">#</a>1.7.4. <code>using</code> 블록 - RAII</h2>
+<p>GC 는 finalizer 를 보장하지 않습니다. 이는 모든 GC 언어를 학습할 때 짚게 되는 원칙으로, 외부 자원의 RAII 는 <strong>명시적인 <code>using</code></strong> 으로 처리해야 합니다.</p>
+<pre><code class="language-rok"><span class="k">using</span> f = <span class="k">try</span> rok::bare::ffi::fopen(path, <span class="s">"r"</span>) {
+    <span class="k">let</span> buf = <span class="k">try</span> f.read_to_end();
+    process(buf);
+}     <span class="c">// ← scope 끝에서 자동 fclose (Drop)</span>
+
+<span class="c">// without using - 자원 누수 가능</span>
+<span class="k">let</span> f = <span class="k">try</span> rok::bare::ffi::fopen(path, <span class="s">"r"</span>);
+<span class="k">try</span> process(f);                                <span class="c">// 에러 전파 시 fclose 안 됨</span>
+rok::bare::ffi::fclose(f);                        <span class="c">// _explicit_ 만 보장</span>
+</code></pre>
+<p><code>using</code> 구문 자체는 <a href="../../refs-lang/003-expressions/317-using-expression">refs-lang 3.17 using 표현식</a> 이 권위를 가지며, <a href="../200-core/213-marker">2.13 marker</a> 의 <code>Drop</code> 트레잇과 통합되어 작동합니다.</p>
+<h2 id="175-안전-wrapper-패턴---sys--safe-분리"><a class="anchor" tabindex="-1" href="#175-안전-wrapper-패턴---sys--safe-분리" aria-hidden="true">#</a>1.7.5. 안전 wrapper 패턴 - sys + safe 분리</h2>
+<p>Rust 생태계의 표준 관용구는 <code>*-sys</code> 크레이트(raw FFI) 와 동명 크레이트(safe wrapper) 를 분리하는 것입니다. rok 도 같은 패턴을 권장합니다.</p>
+<pre><code class="language-rok"><span class="c">// libc-sys 모듈 - raw FFI</span>
+<span class="k">mod</span> c {
+    <span class="a">#[link("c")]</span>
+    <span class="k">extern</span> <span class="s">"C"</span> {
+        <span class="k">pub</span> <span class="k">fn</span> malloc(size: <span class="t">usize</span>) -&gt; <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;;
+        <span class="k">pub</span> <span class="k">fn</span> free(ptr: <span class="t">CPtr</span>&lt;<span class="t">u8</span>&gt;);
+        <span class="k">pub</span> <span class="k">fn</span> strdup(s: <span class="t">ConstPtr</span>&lt;c_char&gt;) -&gt; <span class="t">CPtr</span>&lt;c_char&gt;;
+    }
+}
+
+<span class="c">// libc - safe wrapper</span>
+<span class="k">pub</span> <span class="k">fn</span> alloc_buffer(size: <span class="t">usize</span>) <span class="k">throws</span> (<span class="t">AllocError</span>) -&gt; <span class="t">List</span>&lt;<span class="t">u8</span>&gt; {
+    <span class="k">let</span> p = <span class="k">unsafe</span> { c::malloc(size) };
+    <span class="k">match</span> p.as_ptr() {
+        ptr: <span class="t">Ptr</span>&lt;<span class="t">u8</span>&gt; =&gt; {
+            <span class="c">// unsafe → safe 경계</span>
+            <span class="k">let</span> bytes = <span class="k">unsafe</span> { <span class="t">Slice</span>::from_raw_parts(ptr, size).to_list() };
+            <span class="k">unsafe</span> { c::free(p) };
+            bytes
+        }
+        <span class="k">none</span> =&gt; { <span class="k">throw</span> <span class="t">AllocError</span>::<span class="t">OutOfMemory</span>; }
+    }
+}
+</code></pre>
+<p>이러한 분리는 unsafe 코드를 좁은 영역에 가두는 효과를 가집니다. 그 결과 사용자 코드에서는 safe wrapper 만 호출하게 되어 안전성이 자연스럽게 확보됩니다.</p>
+<h2 id="176-자동-binding-생성"><a class="anchor" tabindex="-1" href="#176-자동-binding-생성" aria-hidden="true">#</a>1.7.6. 자동 binding 생성</h2>
+<p><code>rokc bindgen</code> (<a href="../../refs-lang/009-tools/901-rokc-cli#rokc-bindgen-c-헤더-binding">refs-lang 9.1</a>) 은 libclang 으로 C 헤더에서 rok 선언을 생성합니다. libclang 은 toolchain 이 그 <code>lib/</code> 에 함께 배포하며, 이 명령만 로드합니다.</p>
+<pre><code class="language-bash">rokc bindgen libfoo.h &gt; libfoo_sys.rok
+rokc bindgen libfoo.h --target x86_64-pc-windows-msvc -o libfoo_sys.rok -- -I include -DFOO=1
+</code></pre>
+<p>출력은 target 하나 (<code>--target</code>, 기본값은 host) 를 위한 것입니다: 크기, 레이아웃, 정수 폭은 그 target 에 대한 clang 의 것입니다. <code>--</code> 뒤의 인자는 clang 에 넘깁니다. 기계의 시스템 헤더는 그 기계 자신의 플랫폼, Apple target (SDK), MSVC host 의 MSVC target 에 씁니다. 그 밖의 target 에서는 <code>--sysroot</code> 를 주지 않는 한 clang 이 자기 내장 헤더만 받으며, target 의 헤더는 <code>--</code> 뒤에 (<code>-isystem &lt;dir&gt;</code>) 넘깁니다. 헤더와 그것이 include 하는 시스템 아닌 헤더의 선언을 씁니다 (시스템 디렉토리의 헤더라면 자기 디렉토리 트리에서 include 하는 헤더의 선언도). 그것들이 쓰는 다른 헤더의 선언도 함께 씁니다. clang 이 거부하는 헤더는 clang 의 진단과 함께 에러 (exit 1) 입니다.</p>
+<p>매핑 규약은 다음과 같습니다.</p>
+<ul>
+<li>C 의 정수와 부동소수 타입은 그 target 에서 같은 크기의 rok 원시 타입이 됩니다 (<code>int</code> → <code>i32</code>, <code>long</code> → <code>i32</code> 또는 <code>i64</code>, <code>char</code> → <code>c_char</code>, <code>_Bool</code> → <code>bool</code>). <code>size_t</code> / <code>uintptr_t</code> → <code>usize</code>, <code>ssize_t</code> / <code>intptr_t</code> / <code>ptrdiff_t</code> → <code>isize</code>. 시스템 헤더가 그런 타입에 붙인 typedef 는 그 타입 자체입니다.
+</li>
+<li>typedef 는 rok 의 type alias 로 변환됩니다.
+</li>
+<li>struct 와 union 은 <code>#[repr(C)] struct</code> / <code>union</code> 에 대응합니다 (clang 의 레이아웃이 필요로 하면 <code>#[repr(C, align(N))]</code> 이나 <code>#[repr(packed)]</code>). 연속된 bitfield 는 그 저장소를 덮는 바이트 배열 필드 <code>_bitfieldN</code> 하나가 됩니다. rok 가 표현할 수 없는 레이아웃 (N &gt; 1 인 <code>#pragma pack(N)</code>, union 안의 bitfield) 은 같은 크기와 정렬로 <code>_opaque: [u8; N]</code> 을 담은 struct 가 됩니다. 선언만 되고 정의되지 않은 struct 는 <code>struct Name;</code> (opaque) 가 됩니다.
+</li>
+<li>enum 은 그 정수 타입의 alias 와 enumerator 마다 <code>const</code> 하나가 됩니다 (<code>pub type color = u32; pub const RED: color = 0;</code>). 이름 없는 enum 은 그 상수들입니다.
+</li>
+<li>객체 포인터 (<code>T*</code>, <code>const T*</code>) 는 <code>CPtr&lt;T&gt;</code> 가 되며, <code>void*</code> 는 <code>CPtr&lt;u8&gt;</code> 가 됩니다.
+</li>
+<li>함수는 <code>extern &quot;C&quot; fn</code> 이 됩니다 (C variadic 은 <code>...</code>). 32-bit x86 Windows 의 stdcall 함수는 <code>extern &quot;system&quot;</code> 에 들어갑니다. 전역 변수는 <code>static</code> 이 됩니다 (const 가 아니면 <code>static mut</code>). static 과 inline 함수는 건너뜁니다 (링크할 심볼이 없음).
+</li>
+<li>함수 포인터는 <code>unsafe extern &quot;C&quot; fn(...) -&gt; R | none</code> 이 됩니다 (<a href="../../refs-lang/005-modules/509-extern-block#c-함수-포인터-타입">refs-lang 5.9.4</a>; NULL = <code>none</code>).
+</li>
+<li>정수, 부동소수, 문자열 상수로 평가되는 object-like 매크로는 <code>const</code> 항목이 됩니다.
+</li>
+<li>rok 키워드나 원시 타입 이름인 C 이름에는 뒤에 <code>_</code> 가 붙습니다. 함수와 static 은 <code>#[link_name]</code> 으로 C 심볼을 유지합니다.
+</li>
+<li>그 밖의 것 (128-bit 정수, <code>_Float16</code>, 8 바이트보다 넓은 <code>long double</code>, vector 와 block 타입, variadic 함수 포인터, thread-local 변수, 다른 호출 규약) 은 <code>// skipped ...</code> 주석과 함께 건너뜁니다. 바이트로 적은 struct (<code>_opaque</code>) 는 결코 값으로 넘기지 않습니다: 그것을 직접 또는 다른 struct 안에 담아 받거나 돌려주는 함수나 함수 포인터는 건너뜁니다. C 는 그것을 필드로 분류하기 때문입니다.
+</li>
+</ul>
+<h2 id="177-호출-안전-책임-분배"><a class="anchor" tabindex="-1" href="#177-호출-안전-책임-분배" aria-hidden="true">#</a>1.7.7. 호출 안전 책임 분배</h2>
+<p>호출 자리에서 누가 무엇을 책임지는지 정리하면 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>항목</th><th>책임자</th></tr></thead>
+<tbody>
+<tr><td>Pointer null 검사</td><td>C → rok 시 rok 코드</td></tr>
+<tr><td>Buffer 길이 검증</td><td>rok 코드 (length 알고 있어야)</td></tr>
+<tr><td>String null-termination</td><td>CString 생성 시 자동</td></tr>
+<tr><td>GC pin</td><td>rok 코드 (long-running FFI 시)</td></tr>
+<tr><td>메모리 해제 (<code>free</code>)</td><td>rok 코드 또는 safe wrapper</td></tr>
+<tr><td>호출 규약 일치</td><td>extern 선언자</td></tr>
+<tr><td>Thread safety</td><td>C 라이브러리 문서 따름</td></tr>
+<tr><td>Errno / GetLastError</td><td>호출 직후 즉시 read</td></tr>
+</tbody></table></div>
+<h2 id="178-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#178-다른-언어와의-비교" aria-hidden="true">#</a>1.7.8. 다른 언어와의 비교</h2>
+<p>비교의 시야를 넓히면 rok 의 위치가 더 분명해집니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>C</th><th>Rust</th><th>Zig</th><th>Go</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>외부 함수</td><td>(직접)</td><td><code>extern &quot;C&quot; { ... }</code></td><td><code>extern &quot;...&quot;</code></td><td><code>import &quot;C&quot;</code> (cgo)</td><td><code>extern &quot;C&quot; { ... }</code></td></tr>
+<tr><td>호출 규약</td><td>(one default)</td><td><code>extern &quot;system&quot;</code> etc.</td><td><code>extern &quot;C&quot;</code> etc.</td><td><code>&quot;C&quot;</code> only</td><td>다중 (<code>&quot;C&quot;</code>/<code>&quot;system&quot;</code>/etc.)</td></tr>
+<tr><td>C string</td><td><code>char*</code></td><td><code>CStr</code> / <code>CString</code></td><td><code>[*:0]u8</code></td><td><code>C.CString</code> / <code>C.GoString</code></td><td><code>CStr</code> / <code>CString</code></td></tr>
+<tr><td>nullable ptr</td><td>(default)</td><td><code>Option&lt;*const T&gt;</code></td><td><code>?*T</code></td><td><code>*C.struct_T</code> (always nullable)</td><td><code>CPtr&lt;T&gt;</code></td></tr>
+<tr><td>binding 도구</td><td><strong>none</strong></td><td><code>bindgen</code> / <code>cbindgen</code></td><td><code>@cImport</code></td><td><code>cgo</code></td><td><code>rokc bindgen</code></td></tr>
+<tr><td>GC pin</td><td><strong>N/A</strong></td><td><strong>N/A</strong></td><td><strong>N/A</strong></td><td><code>runtime.Pinner</code> (1.21+)</td><td><code>rok::bare::gc::pin</code></td></tr>
+<tr><td>RAII / using</td><td>(manual)</td><td><code>Drop</code></td><td><code>defer</code></td><td><code>defer</code></td><td><code>using</code> block (Drop)</td></tr>
+</tbody></table></div>
+<p>rok 의 가장 큰 차이점은 다음 세 가지로 압축됩니다.</p>
+<ol>
+<li>GC 와 FFI 의 통합. <code>Pinned&lt;T&gt;</code> guard 와 <code>using</code> 블록을 함께 사용함으로써 자원 누수와 pin 누락을 동시에 차단합니다.
+</li>
+<li>엄격한 포인터 모델. <code>Ptr&lt;T&gt;</code> / <code>ConstPtr&lt;T&gt;</code> / <code>ManyPtr&lt;T&gt;</code> / <code>CPtr&lt;T&gt;</code> 가 분리됩니다 (<a href="101-ptr">1.1</a>).
+</li>
+<li>safe wrapper 강제. <code>as</code> cast 를 거부하고 named cast 만 허용합니다 (<a href="102-cast">1.2</a>).
+</li>
+</ol>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/100-bare/107-ffi.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="106-gc-pin"><small>Previous</small>1.6. Pinned&lt;T&gt; - GC pinning</a><a class="next" href="108-wit"><small>Next</small>1.8. WASM Component Model - ffi.wit</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

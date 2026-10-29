@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3.14. Error control flow - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="throw, try, catch, and finally are the control flow for raising errors, marking the points where errors may flow, and receiving and handling them. Postfix ? ret...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/314-error-control-flow.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="3.14. Error control flow - rok docs">
+<meta property="og:description" content="throw, try, catch, and finally are the control flow for raising errors, marking the points where errors may flow, and receiving and handling them. Postfix ? ret...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/314-error-control-flow.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/003-expressions/314-error-control-flow.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/003-expressions/314-error-control-flow.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">3. Expressions overview</a></p><ul class="pages"><li><a href="301-operator-dispatch">3.1. Operator dispatch</a></li><li><a href="302-precedence-and-associativity">3.2. Precedence and associativity</a></li><li><a href="303-broadcast-operators">3.3. Broadcast operators</a></li><li><a href="304-assignment">3.4. Assignment and compound assignment</a></li><li><a href="305-member-access-and-method-call">3.5. Member access and method calls</a></li><li><a href="306-indexing-and-slicing">3.6. Indexing and slicing</a></li><li><a href="307-range-expressions">3.7. Range expressions</a></li><li><a href="308-optional-chaining-and-coalescing">3.8. Optional chaining and null coalescing</a></li><li><a href="309-block-expressions">3.9. Block expressions</a></li><li><a href="310-if-expression">3.10. if expression</a></li><li><a href="311-patterns">3.11. Patterns</a></li><li><a href="312-match-expression">3.12. match expression</a></li><li><a href="313-loop-expressions">3.13. Loop expressions</a></li><li class="cur"><a aria-current="page" href="314-error-control-flow">3.14. Error control flow</a><ul class="toc"><li><a href="#3141-throw-raising-an-error">3.14.1. throw: raising an error</a></li><li><a href="#3142-try-marking-call-sites">3.14.2. try: marking call sites</a></li><li><a href="#3143-try-and-try">3.14.3. try? and try!</a></li><li><a href="#3144-catch-postfix-handling-expression">3.14.4. catch: postfix handling expression</a></li><li><a href="#3145-finally">3.14.5. finally</a></li><li><a href="#3146-value-and-type-of-the-expression">3.14.6. Value and type of the expression</a></li><li><a href="#3147-thrown-values-and-function-signatures">3.14.7. Thrown values and function signatures</a></li><li><a href="#3148-panics-and-fatal-errors">3.14.8. Panics and fatal errors</a></li><li><a href="#3149-evaluation-order">3.14.9. Evaluation order</a></li><li><a href="#31410-the--operator---early-return-of-none">3.14.10. The ? operator - early return of none</a></li></ul></li><li><a href="315-destructuring">3.15. Destructuring assignment</a></li><li><a href="316-let-else">3.16. let-else</a></li><li><a href="317-using-expression">3.17. using expression - deterministic release of resources</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="314-error-control-flow 314-에러-제어-흐름 3141-throw-raising-an-error 3141-throw-에러-발생 3142-try-marking-call-sites 3142-try-호출-지점-표시 coverage 덮는-범위 with-await await-와-함께 3143-try-and-try 3143-try-와-try 3144-catch-postfix-handling-expression 3144-catch-후위-처리-식 block-form 블록-형태 pattern-and-type-matching 패턴과-타입-매칭 exhaustiveness 완전성 warnings-for-unreachable-try-and-catch 도달하지-않는-try-와-catch-경고 3145-finally 3145-finally 3146-value-and-type-of-the-expression 3146-식의-값과-타입 3147-thrown-values-and-function-signatures 3147-던지는-값과-함수-시그니처 3148-panics-and-fatal-errors 3148-panic-과-fatal-에러 3149-evaluation-order 3149-평가-순서 31410-the--operator---early-return-of-none 31410--연산자---none-조기-반환 desugaring-rule desugar-규칙 scope-of-application 적용-범위"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/003-expressions/314-error-control-flow" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="314-error-control-flow"><a class="anchor" tabindex="-1" href="#314-error-control-flow" aria-hidden="true">#</a>3.14. Error control flow</h1>
+<p><code>throw</code>, <code>try</code>, <code>catch</code>, and <code>finally</code> are the control flow for raising errors, marking the points where errors may flow, and receiving and handling them. Postfix <code>?</code> returns the <code>none</code> of a <code>T | none</code> value early to the caller.</p>
+<pre><code>throw_stmt     ::= &quot;throw&quot; expr &quot;;&quot;
+try_expr       ::= (&quot;try&quot; | &quot;try?&quot; | &quot;try!&quot;) expr
+catch_expr     ::= expr catch_clause+ finally_clause?
+                 | expr finally_clause
+catch_clause   ::= &quot;catch&quot; pattern? block            // struct patterns also allowed: catch E { f, .. } { .. }
+finally_clause ::= &quot;finally&quot; block
+question_expr  ::= expr &quot;?&quot;
+</code></pre>
+<p><code>catch</code> and <code>finally</code> are contextual keywords, keywords only in the position of a postfix clause after an expression or block (<a href="../001-lexical/105-keywords#154-contextual-keywords">1.5.4</a>). The signatures of functions that can throw (<code>throws</code>, <code>rethrows</code>) are defined in <a href="../004-functions/414-throws"><code>throws</code> signatures</a>. This document covers control flow at the expression and statement level.</p>
+<h2 id="3141-throw-raising-an-error"><a class="anchor" tabindex="-1" href="#3141-throw-raising-an-error" aria-hidden="true">#</a>3.14.1. <code>throw</code>: raising an error</h2>
+<pre><code class="language-rok"><span class="k">throw</span> err;
+</code></pre>
+<p>A statement of the <code>throw</code> keyword followed by any expression; the expression's result value is thrown as the error value. A thrown error is handled by the nearest <code>catch</code> expression enclosing the statement; if unhandled, it becomes the error result of the enclosing function. The enclosing function's <code>throws</code> signature must then accept that error type (<a href="../004-functions/414-throws#4145-agreement-between-throws-and-the-body">4.14.5</a>).</p>
+<p>Flow does not continue after a <code>throw</code> statement, so a block ending in a <code>throw</code> statement is divergent.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="k">if</span> cond { <span class="n">42i32</span> } <span class="k">else</span> { <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">"not allowed"</span> }; };
+<span class="c">// x: i32 (else branch is divergent)</span>
+</code></pre>
+<h2 id="3142-try-marking-call-sites"><a class="anchor" tabindex="-1" href="#3142-try-marking-call-sites" aria-hidden="true">#</a>3.14.2. <code>try</code>: marking call sites</h2>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="k">try</span> parse(s);
+</code></pre>
+<p><code>try</code> is a prefix expression operator. A call to a throwing function (a function with a <code>throws</code> signature) must be inside an expression covered by <code>try</code>; otherwise it is a compile error. This rule makes every point where an error may flow visible in the code.</p>
+<p>The value and type of <code>try e</code> are those of <code>e</code>. If a throwing call inside <code>e</code> raises an error, the nearest <code>catch</code> handles it; if there is no <code>catch</code> or none matches, it propagates to the enclosing function.</p>
+<h3 id="coverage"><a class="anchor" tabindex="-1" href="#coverage" aria-hidden="true">#</a>Coverage</h3>
+<p><code>try</code> covers the entire expression to its right. One <code>try</code> can mark several calls together.</p>
+<pre><code class="language-rok"><span class="k">try</span> a(b());                 <span class="c">// covers both a and b</span>
+<span class="k">try</span> f().g().h();            <span class="c">// covers the whole chain</span>
+<span class="k">try</span> {                       <span class="c">// a block is also an expression, so every call in it is covered</span>
+    <span class="k">let</span> cfg = load(path);
+    apply(cfg);
+};
+</code></pre>
+<p>The operand of <code>try</code> extends rightward to where the expression ends, stopping before a <code>catch</code> / <code>finally</code> clause, the statement terminator <code>;</code>, a closing bracket, or a comma. So <code>try a + b()</code> is <code>try (a + b())</code>, and the <code>catch</code> of <code>try parse(s) catch _ { 0 }</code> attaches to the whole <code>try parse(s)</code>. The exact binding rules are defined in <a href="302-precedence-and-associativity">precedence and associativity</a>.</p>
+<p>When <code>try</code> appears as the right operand of a binary operator or in function argument position, it covers only that operand.</p>
+<pre><code class="language-rok"><span class="k">let</span> total = base + <span class="k">try</span> fetch_extra();
+log(<span class="k">try</span> describe(item));
+</code></pre>
+<h3 id="with-await"><a class="anchor" tabindex="-1" href="#with-await" aria-hidden="true">#</a>With <code>await</code></h3>
+<p>Errors of an <code>async</code> throwing function are delivered at the <code>await</code> point, so the <code>await</code> expression is covered by <code>try</code> (<a href="../004-functions/414-throws#41410-effect-of-throws-on-sum-type-signatures">4.14.10</a>). Errors of a generator are likewise received at the <code>next</code> point.</p>
+<pre><code class="language-rok"><span class="k">let</span> data = <span class="k">try</span> <span class="k">await</span> fetch(url);
+</code></pre>
+<h2 id="3143-try-and-try"><a class="anchor" tabindex="-1" href="#3143-try-and-try" aria-hidden="true">#</a>3.14.3. <code>try?</code> and <code>try!</code></h2>
+<p>The two variants of <code>try</code> do not propagate the error to the enclosing function; they convert it in place into another form.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Form</th><th>Result type when <code>e: T</code></th><th>On error</th></tr></thead>
+<tbody>
+<tr><td><code>try e</code></td><td><code>T</code></td><td>nearest <code>catch</code>, or propagate</td></tr>
+<tr><td><code>try? e</code></td><td><code>T | none</code></td><td>discard the error and yield <code>none</code></td></tr>
+<tr><td><code>try! e</code></td><td><code>T</code></td><td>panic (3.14.8)</td></tr>
+</tbody></table></div>
+<pre><code class="language-rok"><span class="k">let</span> port = (<span class="k">try</span>? env::var(<span class="s">"PORT"</span>)) ?? <span class="s">"8080"</span>;
+<span class="k">let</span> cfg = <span class="k">try</span>! load_builtin_config();      <span class="c">// failure is a program bug</span>
+</code></pre>
+<p>The <code>?</code> / <code>!</code> of <code>try?</code> / <code>try!</code> must immediately follow <code>try</code>. <code>try !x</code> is <code>try (!x)</code>. Because <code>try?</code> and <code>try!</code> do not propagate errors, the enclosing function need not be <code>throws</code>. Their coverage is the same as <code>try</code>. To chain <code>??</code> after the result of <code>try?</code>, close the range with parentheses as in the example above.</p>
+<h2 id="3144-catch-postfix-handling-expression"><a class="anchor" tabindex="-1" href="#3144-catch-postfix-handling-expression" aria-hidden="true">#</a>3.14.4. <code>catch</code>: postfix handling expression</h2>
+<pre><code class="language-rok"><span class="k">let</span> n = <span class="k">try</span> parse(s) <span class="k">catch</span> e: <span class="t">ParseError</span> { <span class="n">0</span> } <span class="k">catch</span> _ { -<span class="n">1</span> };
+</code></pre>
+<p>A <code>catch</code> clause is a postfix clause attached to the expression on its left. If an error arises while evaluating the left expression, the <code>catch</code> clauses are checked top to bottom and the block of the first matching clause is evaluated. If the left expression completes normally, no <code>catch</code> block runs. Errors from the left expression are those produced by throwing calls marked with <code>try</code> and by <code>throw</code> statements.</p>
+<p>If no clause matches, the error propagates again, and the enclosing function must <code>throws</code> that error type.</p>
+<h3 id="block-form"><a class="anchor" tabindex="-1" href="#block-form" aria-hidden="true">#</a>Block form</h3>
+<p>The form where <code>try</code> covers a block and <code>catch</code> / <code>finally</code> attach to that expression is interpreted by the same rules.</p>
+<pre><code class="language-rok"><span class="k">try</span> {
+    body
+} <span class="k">catch</span> e {
+    handler
+}
+</code></pre>
+<h3 id="pattern-and-type-matching"><a class="anchor" tabindex="-1" href="#pattern-and-type-matching" aria-hidden="true">#</a>Pattern and type matching</h3>
+<pre><code class="language-rok"><span class="k">try</span> fetch(url)
+<span class="k">catch</span> e: <span class="t">TimeoutError</span> { retry() }
+<span class="k">catch</span> <span class="t">HttpError</span> { code, msg } { fail(code, msg) }
+<span class="k">catch</span> e: <span class="k">any</span> <span class="t">Error</span> { log(<span class="s">f"{</span>e<span class="s">}"</span>); fallback() }
+</code></pre>
+<p>Any pattern form of <a href="311-patterns">patterns</a> may follow <code>catch</code>. <code>e: TimeoutError</code> is a type-check pattern, and inside the matched branch <code>e</code> is narrowed to that type. <code>catch e: A | B</code> binds the caught error as the sum type <code>A | B</code> (a subset of the error sum type). Errors of untyped <code>throws</code> are <a href="../002-types/202-any-slot"><code>any Error</code></a> values, so to receive every error under one name, use <code>catch e: any Error</code> or <code>catch e</code>. Writing the bare trait name, <code>catch e: Error</code>, is a compile error per the <a href="../002-types/212-trait-as-type-banned">trait-as-type ban</a>.</p>
+<p><code>catch { ... }</code> with the pattern omitted is the same as <code>catch _ { ... }</code>.</p>
+<h3 id="exhaustiveness"><a class="anchor" tabindex="-1" href="#exhaustiveness" aria-hidden="true">#</a>Exhaustiveness</h3>
+<p>If the <code>catch</code> clauses cover every error type the left expression can throw, the <code>catch</code> expression no longer throws. For a call with typed <code>throws (A | B)</code>, covering both <code>A</code> and <code>B</code> suffices; for untyped <code>throws</code>, there must be a clause accepting every value, such as <code>catch e</code>, <code>catch _</code>, or <code>catch e: any Error</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> parse_or_zero(s: <span class="t">str</span>) -&gt; <span class="t">i32</span> {          <span class="c">// non-throwing</span>
+    <span class="k">try</span> parse(s) <span class="k">catch</span> _ { <span class="n">0</span> }             <span class="c">// covers every error</span>
+}
+</code></pre>
+<h3 id="warnings-for-unreachable-try-and-catch"><a class="anchor" tabindex="-1" href="#warnings-for-unreachable-try-and-catch" aria-hidden="true">#</a>Warnings for unreachable <code>try</code> and <code>catch</code></h3>
+<p>The compiler warns in the following cases:</p>
+<ul>
+<li>a <code>try</code> that covers no throwing call
+</li>
+<li>a <code>catch</code> clause or branch that no error can reach
+</li>
+</ul>
+<p>Clauses that trigger the warning are still type-checked.</p>
+<h2 id="3145-finally"><a class="anchor" tabindex="-1" href="#3145-finally" aria-hidden="true">#</a>3.14.5. <code>finally</code></h2>
+<pre><code class="language-rok"><span class="k">try</span> {
+    body
+} <span class="k">finally</span> {
+    cleanup
+}
+</code></pre>
+<p>It can also be combined with <code>catch</code>:</p>
+<pre><code class="language-rok"><span class="k">try</span> {
+    body
+} <span class="k">catch</span> e: <span class="t">IOError</span> {
+    handler
+} <span class="k">finally</span> {
+    cleanup
+}
+</code></pre>
+<p>The <code>finally</code> block runs in every case of leaving the left expression: normal completion, handling by <code>catch</code>, propagation of an unhandled error, and exit via <code>return</code> / <code>break</code> / <code>continue</code>. This makes it suitable for releasing resources, releasing locks, and restoring temporary state. If a <code>catch</code> block throws a new error or an error is thrown inside the <code>finally</code> block, the new error takes precedence.</p>
+<p>Panics and fatal errors (3.14.8) terminate the process, so <code>finally</code> does not run.</p>
+<h2 id="3146-value-and-type-of-the-expression"><a class="anchor" tabindex="-1" href="#3146-value-and-type-of-the-expression" aria-hidden="true">#</a>3.14.6. Value and type of the expression</h2>
+<p><code>try</code>, <code>catch</code>, and <code>finally</code> are all expressions.</p>
+<pre><code class="language-rok"><span class="k">let</span> x = <span class="k">try</span> parse(input) <span class="k">catch</span> _ { default };
+</code></pre>
+<p>The value of a <code>catch</code> expression is the value of the left expression if it completes normally, or the value of the handler block if an error is caught. The left expression and every handler block must have the same type (the branch result rules of the <a href="./">expressions overview</a>); a handler block that ends in <code>throw</code> or <code>return</code> is divergent and is excluded from the type check. The <code>finally</code> block produces no value and does not affect the expression's result.</p>
+<h2 id="3147-thrown-values-and-function-signatures"><a class="anchor" tabindex="-1" href="#3147-thrown-values-and-function-signatures" aria-hidden="true">#</a>3.14.7. Thrown values and function signatures</h2>
+<p>The <code>err</code> of <code>throw err</code> is any expression. A function with typed <code>throws (E)</code> may throw values corresponding to the members of <code>E</code>; a function with untyped <code>throws</code> is shorthand for <code>throws (any Error)</code> and may throw values implementing the standard library <code>Error</code> trait.</p>
+<pre><code class="language-rok"><span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> { ... }              <span class="c">// untyped, any Error</span>
+<span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">TypeError</span>) -&gt; <span class="t">i32</span> { ... }  <span class="c">// single type</span>
+<span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">A</span> | <span class="t">B</span> | <span class="t">C</span>) -&gt; <span class="t">i32</span> { ... }  <span class="c">// sum type</span>
+</code></pre>
+<p>No error can leave a function whose signature lacks <code>throws</code>. When the <code>T</code> of <code>throws (T)</code> is a sum type, it is the closed set of errors the function can throw, used by callers to write <code>catch</code> clauses and check exhaustiveness.</p>
+<p>Function signatures and the meaning of <code>throws</code> are defined in detail in <a href="../004-functions/414-throws"><code>throws</code> signatures</a>.</p>
+<h2 id="3148-panics-and-fatal-errors"><a class="anchor" tabindex="-1" href="#3148-panics-and-fatal-errors" aria-hidden="true">#</a>3.14.8. Panics and fatal errors</h2>
+<p>Unlike <code>throws</code> errors, the following are not delivered as values and cannot be caught with <code>catch</code>.</p>
+<ul>
+<li>Panic. This includes calls to the standard library <code>panic_fn</code>, failure of <code>try!</code>, division by zero, integer overflow, bounds-check failure, and so on.
+</li>
+<li>Fatal. States from which execution cannot continue, such as <code>StackOverflowError</code>, <code>OutOfMemoryError</code>, and <code>InternalError</code>.
+</li>
+</ul>
+<p>In both cases the runtime prints a message to standard error (stderr) and terminates the process with exit code <code>101</code>. The exact list of situations that are panics or fatal errors is defined by the standard library.</p>
+<p>A failed <code>try!</code> panics at the position of the <code>try!</code>. Its message shows the error the way an uncaught error out of <code>main</code> does (<a href="../004-functions/416-entry-point">4.16.4</a>: its <code>Display</code>, else its <code>Debug</code>, else its type name), then the position the error was raised at:</p>
+<pre><code class="language-text">thread 'main' panicked at src/main.rok:12:13:
+try! failed: no such key `port`
+  raised at src/main.rok:12:18
+</code></pre>
+<h2 id="3149-evaluation-order"><a class="anchor" tabindex="-1" href="#3149-evaluation-order" aria-hidden="true">#</a>3.14.9. Evaluation order</h2>
+<p><code>catch</code> expressions and <code>finally</code> are evaluated in this order:</p>
+<ol>
+<li>Evaluate the left expression.
+</li>
+<li>If the left expression raises an error, find the matching <code>catch</code> clause and evaluate its block.
+</li>
+<li>If there is a <code>finally</code> block, evaluate it however the left expression was exited.
+</li>
+<li>If no <code>catch</code> clause matches, run <code>finally</code> and then propagate the error outward.
+</li>
+</ol>
+<p>When a <code>throw</code> statement is evaluated, its expression is evaluated first, and then the error is thrown.</p>
+<h2 id="31410-the--operator---early-return-of-none"><a class="anchor" tabindex="-1" href="#31410-the--operator---early-return-of-none" aria-hidden="true">#</a>3.14.10. The <code>?</code> operator - early return of <code>none</code></h2>
+<p><code>?</code> is a postfix unary operator that unwraps a <code>T | none</code> value and, if it is <code>none</code>, immediately returns <code>none</code> from the enclosing function.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first_word_len(text: <span class="t">str</span> | <span class="k">none</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span> {
+    <span class="k">let</span> t = text?;                      <span class="c">// none → return none immediately</span>
+    <span class="k">let</span> w = t.split(<span class="s">" "</span>).next()?;
+    w.len()
+}
+</code></pre>
+<p>In <code>e?</code> with <code>e: T | none</code>, the value of the expression is <code>T</code>. If <code>e</code> is <code>none</code>, the enclosing function does <code>return none</code>. The enclosing function's return type must therefore include a <code>none</code> member (<code>_ | none</code>); otherwise it is a compile error. Being postfix, it can be placed naturally at the end of a method chain.</p>
+<h3 id="desugaring-rule"><a class="anchor" tabindex="-1" href="#desugaring-rule" aria-hidden="true">#</a>Desugaring rule</h3>
+<p><code>?</code> is expanded directly by the compiler without going through a trait.</p>
+<pre><code>expr?
+</code></pre>
+<p>expands to:</p>
+<pre><code class="language-rok"><span class="k">match</span> expr {
+    <span class="k">none</span> =&gt; <span class="k">return</span> <span class="k">none</span>,
+    v =&gt; v,
+}
+</code></pre>
+<h3 id="scope-of-application"><a class="anchor" tabindex="-1" href="#scope-of-application" aria-hidden="true">#</a>Scope of application</h3>
+<p><code>?</code> applies only to <code>T | none</code>. It is not a means of propagating errors and cannot be used on standard library <code>Result</code> values or throwing calls. Error propagation is marked with <code>throws</code> signatures and <code>try</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> load() -&gt; <span class="t">Result</span>&lt;<span class="t">Config</span>, <span class="t">IOError</span>&gt; {
+    <span class="k">let</span> raw = read_result(path)?;     <span class="c">// ERROR - `?` is only for `T | none`.</span>
+                                      <span class="c">//   Use `throws` and `try` for error propagation.</span>
+    ...
+}
+</code></pre>
+<p>A <code>?</code> inside a closure body operates on the closure's return type and is unrelated to the outer function's return type.</p>
+<pre><code class="language-rok"><span class="k">let</span> lens = users.map(|u| -&gt; <span class="t">usize</span> | <span class="k">none</span> { <span class="k">let</span> nick = u.nickname?; nick.len() });
+</code></pre>
+<p>To fill <code>none</code> with a substitute value or pass member access through, use <code>?.</code> and <code>??</code> of <a href="308-optional-chaining-and-coalescing">optional chaining and coalescing</a>.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/003-expressions/314-error-control-flow.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="313-loop-expressions"><small>Previous</small>3.13. Loop expressions</a><a class="next" href="315-destructuring"><small>Next</small>3.15. Destructuring assignment</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

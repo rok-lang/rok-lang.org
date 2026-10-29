@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4. 함수 개요 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 장에서는 함수와 그 변형인 클로저, 메서드, 코루틴을 정의합니다. 본 문서는 세부 규칙으로 들어가기에 앞서 큰 그림을 그리는 데 목적이 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4. 함수 개요 - rok docs">
+<meta property="og:description" content="이 장에서는 함수와 그 변형인 클로저, 메서드, 코루틴을 정의합니다. 본 문서는 세부 규칙으로 들어가기에 앞서 큰 그림을 그리는 데 목적이 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/index.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a class="cur" href="./">4. 함수 개요</a></p><ul class="toc"><li><a href="#목차">목차</a></li><li><a href="#함수의-역할">함수의 역할</a></li><li><a href="#두-형태의-함수-정의">두 형태의 함수 정의</a></li><li><a href="#호출">호출</a></li><li><a href="#반환">반환</a></li><li><a href="#함수와-표현식">함수와 표현식</a></li><li><a href="#호출-디스패치">호출 디스패치</a></li></ul><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li><a href="405-closure">4.5. 클로저</a></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li><a href="409-method">4.9. 메서드</a></li><li><a href="410-nested-functions">4.10. 중첩 함수</a></li><li><a href="411-generators">4.11. 제너레이터 (yield)</a></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li><a href="413-stream">4.13. 스트림 (async yield)</a></li><li><a href="414-throws">4.14. throws 시그니처</a></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li><a href="416-entry-point">4.16. 진입점</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="4-함수-개요 4-functions-overview 목차 contents 함수의-역할 the-role-of-functions 두-형태의-함수-정의 two-forms-of-function-definition 명명된-함수 named-functions 익명-클로저 anonymous-closures 호출 calls 반환 return 함수와-표현식 functions-and-expressions 호출-디스패치 call-dispatch"><a href="../../../../spec/refs-lang/004-functions/" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="4-함수-개요"><a class="anchor" tabindex="-1" href="#4-함수-개요" aria-hidden="true">#</a>4. 함수 개요</h1>
+<p>이 장에서는 함수와 그 변형인 클로저, 메서드, 코루틴을 정의합니다. 본 문서는 세부 규칙으로 들어가기에 앞서 큰 그림을 그리는 데 목적이 있습니다.</p>
+<h2 id="목차"><a class="anchor" tabindex="-1" href="#목차" aria-hidden="true">#</a>목차</h2>
+<ul>
+<li><a href="401-function-declaration">4.1. 함수 선언</a>
+</li>
+<li><a href="402-parameters">4.2. 매개변수</a>
+</li>
+<li><a href="403-return">4.3. 반환</a>
+</li>
+<li><a href="404-function-type">4.4. 함수 타입</a>
+</li>
+<li><a href="405-closure">4.5. 클로저</a>
+</li>
+<li><a href="406-capture-semantics">4.6. 캡처 의미론</a>
+</li>
+<li><a href="407-ref-keyword">4.7. <code>ref</code> 키워드</a>
+</li>
+<li><a href="408-trailing-closure">4.8. 트레일링 클로저</a>
+</li>
+<li><a href="409-method">4.9. 메서드</a>
+</li>
+<li><a href="410-nested-functions">4.10. 중첩 함수</a>
+</li>
+<li><a href="411-generators">4.11. 제너레이터 (<code>yield</code>)</a>
+</li>
+<li><a href="412-async">4.12. 비동기 (<code>async</code> 와 <code>await</code>)</a>
+</li>
+<li><a href="413-stream">4.13. 스트림 (<code>async yield</code>)</a>
+</li>
+<li><a href="414-throws">4.14. <code>throws</code> 시그니처</a>
+</li>
+<li><a href="415-unsafe">4.15. <code>unsafe</code> (함수 modifier 와 블록 표현식)</a>
+</li>
+<li><a href="416-entry-point">4.16. 진입점 (<code>main.rok</code>, <code>fn main</code>, top-level 문)</a>
+</li>
+</ul>
+<h2 id="함수의-역할"><a class="anchor" tabindex="-1" href="#함수의-역할" aria-hidden="true">#</a>함수의 역할</h2>
+<p>함수는 입력 값을 받아 결과 값을 만드는 코드 단위입니다. rok 의 함수는 다음과 같은 성격을 모두 가질 수 있습니다.</p>
+<p>먼저 이름의 유무에 따라 구분됩니다. <code>fn name(...)</code> 으로 명명된 함수가 있고, <code>|...|</code> 으로 표현되는 익명 클로저가 있습니다. 다음으로 타입 명시 방식에 따라 정적 또는 점진적인 형태를 띱니다. 매개변수에 타입을 적으면 정적이고, 빠뜨리면 호출 지점에서 제네릭 단형화가 일어납니다 (<a href="../002-types/202-any-slot"><code>any</code> 슬롯</a>, <a href="../002-types/210-generics">제네릭</a>). 또한 실행 모델 측면에서는 동기, 비동기, 생성자 형태가 모두 가능합니다. 일반 함수, <code>async fn</code> (Future 반환), <code>yield fn</code> (Iterator 반환), <code>async yield fn</code> (Stream 반환) 이 이에 해당합니다. 예외 처리의 관점에서는 잡힐 수 있거나 던지는 함수로 나뉩니다. 시그니처에 <code>throws</code> 를 두면 예외를 던질 수 있습니다 (<a href="../003-expressions/314-error-control-flow">에러 제어 흐름</a>). 마지막으로 소속에 따라 메서드와 자유 함수로 구분됩니다. <code>impl</code> 블록 안에서 정의되어 어떤 타입에 부속되거나, 모듈 수준의 자유 함수로 존재합니다.</p>
+<h2 id="두-형태의-함수-정의"><a class="anchor" tabindex="-1" href="#두-형태의-함수-정의" aria-hidden="true">#</a>두 형태의 함수 정의</h2>
+<p>함수는 크게 두 가지 형태로 정의됩니다.</p>
+<h3 id="명명된-함수"><a class="anchor" tabindex="-1" href="#명명된-함수" aria-hidden="true">#</a>명명된 함수</h3>
+<p>먼저 이름을 가진 함수입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> area(r: <span class="t">f64</span>) -&gt; <span class="t">f64</span> {
+    <span class="n">3.14159</span> * r * r
+}
+</code></pre>
+<p>이 형태는 <code>fn</code> 키워드와 이름, 매개변수, 반환 타입, 본체로 구성됩니다. 모듈 수준이나 <a href="../002-types/209-impl"><code>impl</code></a> 블록 안에 정의할 수 있습니다.</p>
+<h3 id="익명-클로저"><a class="anchor" tabindex="-1" href="#익명-클로저" aria-hidden="true">#</a>익명 클로저</h3>
+<p>다음으로 이름이 없는 클로저입니다.</p>
+<pre><code class="language-rok">|x: <span class="t">f64</span>| -&gt; <span class="t">f64</span> { <span class="n">3.14159</span> * x * x }
+|x| x * <span class="n">2</span>
+|| compute()
+</code></pre>
+<p>이 형태는 <code>|...|</code> 로 매개변수 묶음을 둘러싸고 그 뒤에 본체를 적습니다. 표현식 위치에 직접 등장하며, 변수에 대입하거나 함수 인자로 그대로 전달할 수 있습니다.</p>
+<p>두 형태는 내부에서 같은 메커니즘으로 처리됩니다. 차이는 이름이 있는지, 그리고 클로저를 만들 때 환경을 캡처하는지뿐입니다.</p>
+<h2 id="호출"><a class="anchor" tabindex="-1" href="#호출" aria-hidden="true">#</a>호출</h2>
+<p>함수와 클로저 모두 <code>()</code> 로 호출합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> a = area(<span class="n">2.0f64</span>);
+<span class="k">let</span> f = |x: <span class="t">f64</span>| x * <span class="n">2</span>;
+<span class="k">let</span> b = f(<span class="n">3.0f64</span>);
+</code></pre>
+<p>호출 시 인자가 매개변수에 매칭됩니다. 정확한 매칭 규칙은 <a href="402-parameters">매개변수</a> 에서 정의합니다.</p>
+<h2 id="반환"><a class="anchor" tabindex="-1" href="#반환" aria-hidden="true">#</a>반환</h2>
+<p>본체의 마지막 식의 값이 함수의 반환값이 됩니다. <a href="../003-expressions/309-block-expressions">블록 표현식</a> 의 블록 규칙을 함수 본체가 그대로 따릅니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> add(x: <span class="t">i32</span>, y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x + y }
+<span class="k">fn</span> early(x: <span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">if</span> x &lt; <span class="n">0</span> { <span class="k">return</span> <span class="n">0</span>; }     <span class="c">// 조기 종료에는 명시적 return</span>
+    x * <span class="n">2</span>
+}
+</code></pre>
+<p>따라서 <code>return</code> 키워드는 필수가 아닙니다. 마지막 식이 자동으로 반환됩니다. 자세한 규칙은 <a href="403-return">반환</a> 에서 다룹니다.</p>
+<h2 id="함수와-표현식"><a class="anchor" tabindex="-1" href="#함수와-표현식" aria-hidden="true">#</a>함수와 표현식</h2>
+<p>함수와 클로저는 값입니다. 그래서 변수에 대입할 수 있고, 다른 함수에 인자로 넘길 수 있으며, 컬렉션에 넣을 수도 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = |x| x * <span class="n">2</span>;
+<span class="k">let</span> v = list.map(f);
+<span class="k">let</span> g = <span class="k">if</span> cond { f } <span class="k">else</span> { |x| x + <span class="n">1</span> };
+</code></pre>
+<p>함수의 타입은 <a href="404-function-type">함수 타입</a> 에서 정의하며, 매개변수 타입과 반환 타입으로 이루어집니다.</p>
+<h2 id="호출-디스패치"><a class="anchor" tabindex="-1" href="#호출-디스패치" aria-hidden="true">#</a>호출 디스패치</h2>
+<p>함수 호출의 디스패치는 <a href="../002-types/212-trait-as-type-banned">트레잇-as-타입 금지</a> 의 원칙에 따라 vtable 간접 호출 없이 해소됩니다.</p>
+<p>명명된 함수의 경우 정적으로 결정된 함수 주소로 직접 호출이 이루어집니다. 클로저는 캡처된 환경과 코드 포인터의 묶음이며, 호출은 캡처된 환경을 첫 인자로 넘기는 직접 호출 형태가 됩니다. 제네릭 함수는 <a href="../002-types/210-generics">제네릭</a> 의 단형화를 거쳐 호출 지점마다 직접 호출로 풀립니다.</p>
+<p>이처럼 함수와 클로저 호출은 원칙상 직접 호출이며 인라이닝이 가능합니다. 따라서 성능은 일반 메서드 호출과 동등합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/README.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../003-expressions/317-using-expression"><small>Previous</small>3.17. using 표현식 - 자원의 결정론적 해제</a><a class="next" href="401-function-declaration"><small>Next</small>4.1. 함수 선언</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

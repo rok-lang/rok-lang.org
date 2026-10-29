@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.5. Concurrent mark - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="A full collection may run its mark phase concurrently with mutators. Minor collection, explicit rok_gc_collect, and evacuation are always stop-the-world (7.3).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.5. Concurrent mark - rok docs">
+<meta property="og:description" content="A full collection may run its mark phase concurrently with mutators. Minor collection, explicit rok_gc_collect, and evacuation are always stop-the-world (7.3).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/705-concurrent-collection.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">7. Runtime overview</a></p><ul class="pages"><li><a href="701-object-layout">7.1. Object layout and memory spaces</a></li><li><a href="702-allocation">7.2. Allocation</a></li><li><a href="703-gc-algorithm">7.3. GC algorithm</a></li><li><a href="704-barriers-and-roots">7.4. Barriers and root tracking</a></li><li class="cur"><a aria-current="page" href="705-concurrent-collection">7.5. Concurrent mark</a><ul class="toc"><li><a href="#751-when">7.5.1. When</a></li><li><a href="#752-phases">7.5.2. Phases</a></li><li><a href="#753-satb-barrier">7.5.3. SATB barrier</a></li><li><a href="#754-allocation-and-collection">7.5.4. Allocation and collection</a></li></ul></li><li><a href="706-scheduler">7.6. Scheduler</a></li><li><a href="707-io-and-timer">7.7. I/O driver and timers</a></li><li><a href="708-coroutine">7.8. Coroutines</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="75-concurrent-mark 75-동시-mark 751-when 751-언제 752-phases 752-단계 753-satb-barrier 753-satb-barrier 754-allocation-and-collection 754-할당과-수집"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/007-runtime/705-concurrent-collection" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="75-concurrent-mark"><a class="anchor" tabindex="-1" href="#75-concurrent-mark" aria-hidden="true">#</a>7.5. Concurrent mark</h1>
+<p>A full collection may run its mark phase concurrently with mutators. Minor collection, explicit <code>rok_gc_collect</code>, and evacuation are always stop-the-world (<a href="703-gc-algorithm">7.3</a>).</p>
+<h2 id="751-when"><a class="anchor" tabindex="-1" href="#751-when" aria-hidden="true">#</a>7.5.1. When</h2>
+<div class="table-wrap"><table>
+<thead><tr><th><code>ROK_GC_CONCURRENT</code></th><th>Full collection</th></tr></thead>
+<tbody>
+<tr><td><code>auto</code> (default)</td><td>Concurrent mark if old objects total 32 MiB or more</td></tr>
+<tr><td><code>always</code></td><td>Always concurrent mark</td></tr>
+<tr><td><code>off</code></td><td>Always STW</td></tr>
+</tbody></table></div>
+<p>An unset or empty variable has its default. A value outside those listed prints one warning line on stderr naming the variable, the value and the accepted values, and the variable has its default.</p>
+<h2 id="752-phases"><a class="anchor" tabindex="-1" href="#752-phases" aria-hidden="true">#</a>7.5.2. Phases</h2>
+<ol>
+<li><strong>Initial pause (STW).</strong> Run one minor collection and take a snapshot of the roots at a safepoint. Set the global <code>MARKING</code> flag.
+</li>
+<li><strong>Concurrent mark.</strong> A single marker thread marks starting from the snapshot. Mutators keep running.
+</li>
+<li><strong>Final pause (STW).</strong> Drain the SATB buffers, rescan the roots, and sweep. Clear <code>MARKING</code>.
+</li>
+</ol>
+<h2 id="753-satb-barrier"><a class="anchor" tabindex="-1" href="#753-satb-barrier" aria-hidden="true">#</a>7.5.3. SATB barrier</h2>
+<p>Snapshot-at-the-beginning (Yuasa), per object. It reuses the generational write barrier (<a href="704-barriers-and-roots#742-write-barrier-incremental-update">7.4.2</a>) as is.</p>
+<ul>
+<li>The slow path on the first write to an <code>UNLOGGED</code> object, when <code>MARKING</code> is set, records all of that object's current references in the SATB buffer (TLS <code>rok_tls_satb_cursor</code> / <code>rok_tls_satb_limit</code>, <a href="../008-abi/803-tls-slots">8.3</a>).
+</li>
+<li>While recording, it sets the header's <code>SATB</code> bit. A competing store to the same object waits until that bit is cleared.
+</li>
+<li>So the barrier code the compiler emits is the same whether or not concurrent mark is in use.
+</li>
+</ul>
+<h2 id="754-allocation-and-collection"><a class="anchor" tabindex="-1" href="#754-allocation-and-collection" aria-hidden="true">#</a>7.5.4. Allocation and collection</h2>
+<ul>
+<li>Allocation during mark is black at line granularity (objects in that line are treated as live). Objects allocated during mark are young after mark finishes.
+</li>
+<li>No minor collection happens during mark. If allocation demands a collection, the ongoing mark is finished.
+</li>
+<li>Evacuation happens only in STW full collections. If the heap is fragmented after a concurrent mark, the next full collection is done as STW with evacuation.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/007-runtime/705-concurrent-collection.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="704-barriers-and-roots"><small>Previous</small>7.4. Barriers and root tracking</a><a class="next" href="706-scheduler"><small>Next</small>7.6. Scheduler</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

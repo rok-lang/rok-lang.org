@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.1. 실행 엔진과 사용자 표면 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok 의 실행 모델은 두 축으로 구성됩니다. 하나는 코드가 기계어가 되는 방식을 결정하는 실행 엔진이며, 다른 하나는 사용자가 코드를 입력하고 결과를 받는 환경인 사용자 표면입니다. 엔진은 두 가지이고 표면은 세 가지입니다. 같은 엔진을 여러 표면이 공유하기 때문에 엔진의 가짓수가 표...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/001-execution-modes.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.1. 실행 엔진과 사용자 표면 - rok docs">
+<meta property="og:description" content="rok 의 실행 모델은 두 축으로 구성됩니다. 하나는 코드가 기계어가 되는 방식을 결정하는 실행 엔진이며, 다른 하나는 사용자가 코드를 입력하고 결과를 받는 환경인 사용자 표면입니다. 엔진은 두 가지이고 표면은 세 가지입니다. 같은 엔진을 여러 표면이 공유하기 때문에 엔진의 가짓수가 표...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/001-execution-modes.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/001-execution-modes.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/001-execution-modes.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">0. 소개</a></p><ul class="pages"><li class="cur"><a aria-current="page" href="001-execution-modes">0.1. 실행 엔진과 사용자 표면</a><ul class="toc"><li><a href="#011-실행-엔진">0.1.1. 실행 엔진</a></li><li><a href="#012-사용자-표면">0.1.2. 사용자 표면</a></li><li><a href="#013-엔진과-표면의-매핑">0.1.3. 엔진과 표면의 매핑</a></li><li><a href="#014-의미의-기준">0.1.4. 의미의 기준</a></li></ul></li><li><a href="002-pipeline">0.2. 컴파일 파이프라인</a></li><li><a href="003-source-units">0.3. 소스 단위</a></li><li><a href="004-language-vs-standard-libraries">0.4. 언어와 표준 라이브러리의 경계</a></li><li><a href="005-standard-libraries-tiers">0.5. 표준 라이브러리 계층</a></li><li><a href="006-platform-targets">0.6. 플랫폼 타깃</a></li><li><a href="007-glossary">0.7. 용어집</a></li><li><a href="008-notation">0.8. 표기법</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="01-실행-엔진과-사용자-표면 01-execution-engines-and-user-surfaces 011-실행-엔진 011-execution-engines jit-just-in-time jit-just-in-time aot-ahead-of-time aot-ahead-of-time 의미론은-같습니다 the-semantics-are-the-same 같은-파이프라인을-공유합니다 they-share-the-same-pipeline 012-사용자-표면 012-user-surfaces repl repl jupyter jupyter aot-산출물 aot-artifacts 013-엔진과-표면의-매핑 013-mapping-between-engines-and-surfaces 014-의미의-기준 014-semantic-baseline"><a href="../../../../spec/refs-lang/000-meta/001-execution-modes" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="01-실행-엔진과-사용자-표면"><a class="anchor" tabindex="-1" href="#01-실행-엔진과-사용자-표면" aria-hidden="true">#</a>0.1. 실행 엔진과 사용자 표면</h1>
+<p>rok 의 실행 모델은 두 축으로 구성됩니다. 하나는 코드가 기계어가 되는 방식을 결정하는 실행 엔진이며, 다른 하나는 사용자가 코드를 입력하고 결과를 받는 환경인 사용자 표면입니다. 엔진은 두 가지이고 표면은 세 가지입니다. 같은 엔진을 여러 표면이 공유하기 때문에 엔진의 가짓수가 표면보다 적습니다.</p>
+<h2 id="011-실행-엔진"><a class="anchor" tabindex="-1" href="#011-실행-엔진" aria-hidden="true">#</a>0.1.1. 실행 엔진</h2>
+<h3 id="jit-just-in-time"><a class="anchor" tabindex="-1" href="#jit-just-in-time" aria-hidden="true">#</a>JIT (Just-in-Time)</h3>
+<p>JIT 엔진은 코드 조각이 입력되는 즉시 컴파일하여 실행합니다. 한 입력 단위, 즉 한 줄이나 한 셀은 그 직전까지 누적된 상태인 변수, 함수, 가져온 모듈 등을 참조합니다. 새 입력이 기존 정의를 덮어쓰면 그 이후의 입력은 새 정의를 보게 됩니다. 또한 컴파일 결과는 메모리와 디스크에 캐시되므로 같은 입력을 재실행할 때에는 즉시 끝납니다.</p>
+<h3 id="aot-ahead-of-time"><a class="anchor" tabindex="-1" href="#aot-ahead-of-time" aria-hidden="true">#</a>AOT (Ahead-of-Time)</h3>
+<p>AOT 엔진은 소스 전체를 미리 컴파일하여 단일 산출물, 즉 실행 파일 또는 정적 라이브러리 <code>.a</code> 로 만듭니다. 따라서 실행 시작 시 컴파일 비용이 발생하지 않으며, 다른 rok 코드에서 라이브러리로 링크할 수 있습니다. 다만 런타임에 새 코드를 추가하는 것은 불가능합니다.</p>
+<h3 id="의미론은-같습니다"><a class="anchor" tabindex="-1" href="#의미론은-같습니다" aria-hidden="true">#</a>의미론은 같습니다</h3>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>두 엔진은 같은 의미론을 공유합니다. JIT 에서 동작한 코드는 AOT 빌드에서도 같은 결과를 냅니다. 차이는 <strong>컴파일 시점</strong> 에만 있습니다. 본 사양은 두 엔진에 동시에 적용되며, 한쪽에만 적용되는 의미론은 없습니다.</p>
+</div>
+<p>이 원칙은 진입점에도 적용됩니다. REPL 과 Jupyter 의 입력은 실행 패키지의 <code>main.rok</code> 끝에 top-level 문과 항목을 차례로 덧붙인 것과 같은 의미를 가지며, 셀 최상위에서 같은 이름을 다시 <code>let</code> 으로 선언해 새 바인딩을 만드는 일이나 셀 재실행 같은 세션 조작만이 대화형 표면에 고유합니다 (<a href="../004-functions/416-entry-point#41610-jit--repl-과의-관계">4.16.10</a>).</p>
+<p>JIT 와 AOT 라는 약어는 <a href="007-glossary">용어집</a> 에 있는 그대로 사용합니다.</p>
+<h3 id="같은-파이프라인을-공유합니다"><a class="anchor" tabindex="-1" href="#같은-파이프라인을-공유합니다" aria-hidden="true">#</a>같은 파이프라인을 공유합니다</h3>
+<p>JIT 와 AOT 는 rok-mir 까지 같은 컴파일 파이프라인을 통과합니다 (<a href="002-pipeline">0.2. 컴파일 파이프라인</a>). 갈라지는 곳은 코드 생성뿐입니다. <strong>JIT 엔진</strong> 은 입력마다 rok 의 native backend 로 곧바로 기계어를 만들어, 세션 동안 사는 host 프로세스에서 실행합니다 (<a href="../009-tools/906-jit-engine">9.6</a>). <strong>AOT 엔진</strong> 은 <code>-O0</code> 에서는 native backend 로, <code>-O1</code> 이상에서는 MLIR → LLVM 파이프라인으로 코드를 만들고 네이티브 바이너리로 링크합니다 (<a href="../009-tools/902-aot-pipeline">9.2</a>). 두 backend 는 같은 런타임 ABI 를 따릅니다.</p>
+<p>이러한 구조에서는 하나의 컴파일러 구현이 두 엔진을 모두 담당합니다. 따라서 동작 차이가 발생한다면 그 원인은 컴파일러가 아니라 실행 시점의 환경, 즉 메모리, 스레드, OS 자원에 있다고 보아야 합니다.</p>
+<h2 id="012-사용자-표면"><a class="anchor" tabindex="-1" href="#012-사용자-표면" aria-hidden="true">#</a>0.1.2. 사용자 표면</h2>
+<h3 id="repl"><a class="anchor" tabindex="-1" href="#repl" aria-hidden="true">#</a>REPL</h3>
+<p>REPL 표면에서는 터미널에서 한 줄 또는 한 식을 입력하면 즉시 평가되어 결과가 출력됩니다. 주로 탐색, 수식 시연, 타입 확인 용도로 사용됩니다. 변수와 함수의 정의는 입력 사이에 누적되며, 마지막 표현식의 값과 타입은 자동으로 표시됩니다.</p>
+<p>엔진은 JIT 이고, 입력 단위는 한 줄 또는 한 식입니다.</p>
+<h3 id="jupyter"><a class="anchor" tabindex="-1" href="#jupyter" aria-hidden="true">#</a>Jupyter</h3>
+<p>Jupyter 표면은 Jupyter / JupyterLab 의 rok 커널로 동작합니다. 한 셀 단위로 평가하며, 결과는 노트북 안에 시각화, 테이블, 텍스트로 남습니다. 이를 통해 데이터 분석의 표준 작업 흐름을 지원하며, 셀을 재실행하면 이전 정의가 교체됩니다.</p>
+<p>엔진은 JIT 이고, 입력 단위는 한 셀입니다. Jupyter 프론트엔드 (JupyterLab, Notebook, VS Code 등) 가 rok 커널을 별도 프로세스로 실행하고 ZeroMQ 기반 Jupyter wire protocol 로 통신합니다 (<a href="../009-tools/908-jupyter-integration">9.8</a>). 커널은 OS 의 파일 시스템, 네트워크, 외부 프로세스를 그대로 씁니다.</p>
+<h3 id="aot-산출물"><a class="anchor" tabindex="-1" href="#aot-산출물" aria-hidden="true">#</a>AOT 산출물</h3>
+<p>AOT 산출물 표면에서는 소스를 빌드한 실행 파일을 직접 실행하거나, 만든 정적 라이브러리를 다른 빌드에 링크합니다.</p>
+<p>엔진은 AOT 입니다.</p>
+<h2 id="013-엔진과-표면의-매핑"><a class="anchor" tabindex="-1" href="#013-엔진과-표면의-매핑" aria-hidden="true">#</a>0.1.3. 엔진과 표면의 매핑</h2>
+<pre><code>              ┌── REPL (terminal)
+   JIT  ──────┤
+              └── Jupyter (kernel, ZMQ)
+
+   AOT  ────── direct artifact execution
+</code></pre>
+<p>세 표면이 두 엔진을 공유합니다.</p>
+<h2 id="014-의미의-기준"><a class="anchor" tabindex="-1" href="#014-의미의-기준" aria-hidden="true">#</a>0.1.4. 의미의 기준</h2>
+<p>사양이 모호한 지점에서는 AOT 의미가 우선합니다. JIT 는 AOT 의 의미를 셀 단위로 재현합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/000-meta/001-execution-modes.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="./"><small>Previous</small>0. 소개</a><a class="next" href="002-pipeline"><small>Next</small>0.2. 컴파일 파이프라인</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

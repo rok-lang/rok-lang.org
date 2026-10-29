@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.14. throws signatures - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines the throws / rethrows forms of function signatures, which combine with throw, try, catch and finally from error control flow.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/414-throws.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.14. throws signatures - rok docs">
+<meta property="og:description" content="This section defines the throws / rethrows forms of function signatures, which combine with throw, try, catch and finally from error control flow.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/414-throws.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/414-throws.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/414-throws.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">4. Functions overview</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. Function declarations</a></li><li><a href="402-parameters">4.2. Parameters</a></li><li><a href="403-return">4.3. Return</a></li><li><a href="404-function-type">4.4. Function types</a></li><li><a href="405-closure">4.5. Closures</a></li><li><a href="406-capture-semantics">4.6. Capture semantics</a></li><li><a href="407-ref-keyword">4.7. The ref Keyword</a></li><li><a href="408-trailing-closure">4.8. Trailing closures</a></li><li><a href="409-method">4.9. Methods</a></li><li><a href="410-nested-functions">4.10. Nested functions</a></li><li><a href="411-generators">4.11. Generators (yield)</a></li><li><a href="412-async">4.12. Async (async and await)</a></li><li><a href="413-stream">4.13. Streams (async yield)</a></li><li class="cur"><a aria-current="page" href="414-throws">4.14. throws signatures</a><ul class="toc"><li><a href="#4141-form">4.14.1. Form</a></li><li><a href="#4142-non-throwing-functions">4.14.2. Non-Throwing functions</a></li><li><a href="#4143-untyped-throws">4.14.3. Untyped throws</a></li><li><a href="#4144-typed-throws-single-types-and-sum-types">4.14.4. Typed throws: single types and sum types</a></li><li><a href="#4145-agreement-between-throws-and-the-body">4.14.5. Agreement between throws and the body</a></li><li><a href="#4146-caller-obligations">4.14.6. Caller obligations</a></li><li><a href="#4147-rethrows">4.14.7. rethrows</a></li><li><a href="#4148-throws-in-function-types">4.14.8. throws in function types</a></li><li><a href="#4149-combining-throws-with-async-and-yield">4.14.9. Combining throws with async and yield</a></li><li><a href="#41410-effect-of-throws-on-sum-type-signatures">4.14.10. Effect of throws on sum type signatures</a></li><li><a href="#41411-throws-on-methods">4.14.11. throws on methods</a></li><li><a href="#41412-value-based-implementation-model">4.14.12. Value-Based implementation model</a></li><li><a href="#41413-panics-and-fatal-errors">4.14.13. Panics and fatal errors</a></li></ul></li><li><a href="415-unsafe">4.15. unsafe - function modifier and block expression</a></li><li><a href="416-entry-point">4.16. Entry point</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="414-throws-signatures 414-throws-시그니처 4141-form 4141-형태 4142-non-throwing-functions 4142-non-throwing-함수 4143-untyped-throws 4143-untyped-throws 4144-typed-throws-single-types-and-sum-types 4144-typed-throws-의-단일-타입과-합-타입 4145-agreement-between-throws-and-the-body 4145-throws-와-본체의-일치 4146-caller-obligations 4146-호출자의-의무 4147-rethrows 4147-rethrows 4148-throws-in-function-types 4148-함수-타입의-throws 4149-combining-throws-with-async-and-yield 4149-throws-와-async-yield-의-결합 41410-effect-of-throws-on-sum-type-signatures 41410-throws-가-합-타입-시그니처에-미치는-영향 try-for try-for 41411-throws-on-methods 41411-메서드의-throws 41412-value-based-implementation-model 41412-값-기반-구현-모델 41413-panics-and-fatal-errors 41413-panic-과-fatal-에러"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/004-functions/414-throws" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="414-throws-signatures"><a class="anchor" tabindex="-1" href="#414-throws-signatures" aria-hidden="true">#</a>4.14. <code>throws</code> signatures</h1>
+<p>This section defines the <code>throws</code> / <code>rethrows</code> forms of function signatures, which combine with <code>throw</code>, <code>try</code>, <code>catch</code> and <code>finally</code> from <a href="../003-expressions/314-error-control-flow">error control flow</a>.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>rok has a single error model: <code>throws</code>. A function that can throw an error writes <code>throws</code> in its signature, and the caller marks the call with <code>try</code>. The standard library's <a href="../../refs-standard-libraries/200-core/214-error"><code>Result&lt;T, E&gt;</code></a> is used only when an error must be held as a value. The rule is one line: <strong>throw it → <code>throws</code>; hold it → <code>Result</code>.</strong></p>
+</div>
+<h2 id="4141-form"><a class="anchor" tabindex="-1" href="#4141-form" aria-hidden="true">#</a>4.14.1. Form</h2>
+<p>In <code>fn_decl</code> of <a href="401-function-declaration">function declarations</a>, <code>throws_clause?</code> sits after the parameter parentheses and before the return type arrow.</p>
+<pre><code>throws_clause   ::= &quot;throws&quot; (&quot;(&quot; type_expr &quot;)&quot;)?
+                  | &quot;rethrows&quot;
+</code></pre>
+<p>The full form of <code>fn_decl</code> is therefore:</p>
+<pre><code>fn_decl ::= visibility? fn_modifiers &quot;fn&quot; identifier &quot;(&quot; param_list? &quot;)&quot; throws_clause? return_type? block
+</code></pre>
+<p>Here <code>fn_modifiers</code> is <code>unsafe? async? yield?</code> as defined in <a href="401-function-declaration">4.1 Function Declarations</a>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> name(args) -&gt; <span class="t">R</span>                              <span class="c">// non-throwing</span>
+<span class="k">fn</span> name(args) <span class="k">throws</span> -&gt; <span class="t">R</span>                       <span class="c">// untyped - shorthand for throws (any Error)</span>
+<span class="k">fn</span> name(args) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">R</span>                   <span class="c">// typed - single error type</span>
+<span class="k">fn</span> name(args) <span class="k">throws</span> (<span class="t">A</span> | <span class="t">B</span> | <span class="t">C</span>) -&gt; <span class="t">R</span>           <span class="c">// typed - sum type of errors</span>
+<span class="k">fn</span> name(f: <span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> -&gt; <span class="t">U</span>) <span class="k">rethrows</span> -&gt; <span class="t">R</span>     <span class="c">// throws only when the function argument throws</span>
+</code></pre>
+<p><code>throws</code> and <code>rethrows</code> are contextual keywords, keywords only after the parameter parenthesis <code>)</code> (<a href="../001-lexical/105-keywords#154-contextual-keywords">1.5.4</a>), and are placed before the return type arrow. The optional parentheses after <code>throws</code> give the type of errors that can be thrown.</p>
+<h2 id="4142-non-throwing-functions"><a class="anchor" tabindex="-1" href="#4142-non-throwing-functions" aria-hidden="true">#</a>4.14.2. Non-Throwing functions</h2>
+<pre><code class="language-rok"><span class="k">fn</span> add(x: <span class="t">i32</span>, y: <span class="t">i32</span>) -&gt; <span class="t">i32</span> { x + y }
+</code></pre>
+<p>In a function without <code>throws</code>, no error can leave the function. If an error from a <code>throw</code> in the body or from a call marked with <code>try</code> is not fully handled by a <code>catch</code> inside the function, it is a compile error. Callers call this function without <code>try</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> bad() -&gt; <span class="t">i32</span> {
+    <span class="k">throw</span> <span class="t">ValueError</span> { msg: <span class="s">"nope"</span> };   <span class="c">// ERROR - error leaves a non-throwing function</span>
+}
+</code></pre>
+<p>This rule forces the signature to state whether a function can throw, which blocks silent error propagation.</p>
+<h2 id="4143-untyped-throws"><a class="anchor" tabindex="-1" href="#4143-untyped-throws" aria-hidden="true">#</a>4.14.3. Untyped <code>throws</code></h2>
+<pre><code class="language-rok"><span class="k">fn</span> parse(s: <span class="t">str</span>) <span class="k">throws</span> -&gt; <span class="t">i32</span> { ... }
+</code></pre>
+<p>Untyped <code>throws</code> is shorthand for <code>throws (any Error)</code>. The function may throw an error of any type implementing the standard library's <a href="../../refs-standard-libraries/200-core/214-error"><code>Error</code></a> trait, and the thrown value is delivered as an <code>any Error</code> value, a <a href="../002-types/202-any-slot">constrained <code>any</code></a>. The caller narrows to concrete types with type patterns in <code>catch</code>, or catches everything with <code>catch e: any Error</code> or a catch-all.</p>
+<p>The untyped form is recommended when the set of error kinds is not closed to the caller, as in public APIs.</p>
+<h2 id="4144-typed-throws-single-types-and-sum-types"><a class="anchor" tabindex="-1" href="#4144-typed-throws-single-types-and-sum-types" aria-hidden="true">#</a>4.14.4. Typed <code>throws</code>: single types and sum types</h2>
+<pre><code class="language-rok"><span class="k">fn</span> fetch_user(id: <span class="t">i64</span>) <span class="k">throws</span> (<span class="t">NotFound</span>) -&gt; <span class="t">User</span> { ... }
+<span class="k">fn</span> parse_or_load(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseError</span> | <span class="t">IOError</span> | <span class="t">TimeoutError</span>) -&gt; <span class="t">Data</span> { ... }
+</code></pre>
+<p>The parentheses may state the exact type that can be thrown, and sum types (<code>A | B | C</code>) may be used as-is.</p>
+<p>The typed form suits internal or library APIs, embedded environments, and cases where the set of error kinds is closed. The compiler can then check whether the caller's <code>catch</code> arms cover all error types; if they do, the expression is treated as no longer throwing.</p>
+<pre><code class="language-rok"><span class="k">fn</span> caller() -&gt; <span class="t">Data</span> {             <span class="c">// non-throwing - all three types handled</span>
+    <span class="k">try</span> parse_or_load(input)
+    <span class="k">catch</span> e: <span class="t">ParseError</span> { ... }
+    <span class="k">catch</span> e: <span class="t">IOError</span> { ... }
+    <span class="k">catch</span> e: <span class="t">TimeoutError</span> { ... }
+}
+</code></pre>
+<h2 id="4145-agreement-between-throws-and-the-body"><a class="anchor" tabindex="-1" href="#4145-agreement-between-throws-and-the-body" aria-hidden="true">#</a>4.14.5. Agreement between <code>throws</code> and the body</h2>
+<p>Every error that can leave the function must be compatible with the signature's <code>throws</code>. Errors originate from <code>throw</code> statements in the body and from throwing calls marked with <code>try</code>; errors handled by a <code>catch</code> inside the function are excluded from the check.</p>
+<pre><code class="language-rok"><span class="k">fn</span> f() <span class="k">throws</span> (<span class="t">A</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">throw</span> <span class="t">A_instance</span>;             <span class="c">// OK</span>
+    <span class="k">throw</span> <span class="t">B_instance</span>;             <span class="c">// ERROR - only A allowed</span>
+}
+</code></pre>
+<p>The compatibility rules: for typed <code>throws (E)</code>, every originating error type must be a member of <code>E</code>. For untyped <code>throws</code>, every originating error type must implement <code>Error</code>, and the value is delivered as <code>any Error</code>.</p>
+<p>There is no automatic conversion between error types. To propagate a callee's error as a different type, wrap it in a <code>catch</code> and throw again.</p>
+<pre><code class="language-rok"><span class="k">fn</span> load_config(path: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ConfigError</span>) -&gt; <span class="t">Config</span> {
+    <span class="k">try</span> parse_toml(read_text(path))
+    <span class="k">catch</span> e: <span class="t">IOError</span> { <span class="k">throw</span> <span class="t">ConfigError</span>::io(e); }
+    <span class="k">catch</span> e: <span class="t">ParseError</span> { <span class="k">throw</span> <span class="t">ConfigError</span>::syntax(e); }
+}
+</code></pre>
+<h2 id="4146-caller-obligations"><a class="anchor" tabindex="-1" href="#4146-caller-obligations" aria-hidden="true">#</a>4.14.6. Caller obligations</h2>
+<p>An expression calling a <code>throws</code> function must be inside an expression covered by <code>try</code>. Calling a throwing function without <code>try</code> is a compile error. <code>try</code> covers the entire expression to its right, so <code>try a(b())</code> covers both the <code>a</code> and <code>b</code> calls, and <code>try { a(); b(); }</code> covers all calls in the block (<a href="../003-expressions/314-error-control-flow#3142-try-marking-call-sites">3.14.2</a>).</p>
+<p>An error from a call marked with <code>try</code> is handled by the nearest <code>catch</code>; an unhandled error propagates to the enclosing function, whose <code>throws</code> must accept that error type (4.14.5).</p>
+<pre><code class="language-rok"><span class="k">fn</span> caller() {                     <span class="c">// non-throwing</span>
+    parse(s);                     <span class="c">// ERROR - throwing call not marked with try</span>
+    <span class="k">try</span> parse(s);                 <span class="c">// ERROR - error propagates but caller is not throws</span>
+}
+
+<span class="k">fn</span> caller2() <span class="k">throws</span> {             <span class="c">// propagates</span>
+    <span class="k">try</span> parse(s);                 <span class="c">// OK</span>
+}
+
+<span class="k">fn</span> caller3() {                    <span class="c">// catches</span>
+    <span class="k">try</span> parse(s) <span class="k">catch</span> _ {
+        ...
+    };
+}
+
+<span class="k">fn</span> caller4() -&gt; <span class="t">i32</span> {             <span class="c">// discards the error or turns it into a panic</span>
+    <span class="k">let</span> a = (<span class="k">try</span>? parse(s)) ?? <span class="n">0</span>; <span class="c">// try? - none on error</span>
+    <span class="k">let</span> b = <span class="k">try</span>! parse(t);        <span class="c">// try! - panic on error</span>
+    a + b
+}
+</code></pre>
+<p>Thus every point where an error can flow is visible in the code as <code>try</code>, and how far an error propagates is visible in the function signature's <code>throws</code>.</p>
+<h2 id="4147-rethrows"><a class="anchor" tabindex="-1" href="#4147-rethrows" aria-hidden="true">#</a>4.14.7. <code>rethrows</code></h2>
+<pre><code class="language-rok"><span class="k">fn</span> map&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> -&gt; <span class="t">U</span>) <span class="k">rethrows</span> -&gt; <span class="t">List</span>&lt;<span class="t">U</span>&gt; {
+    <span class="k">let</span> out: <span class="t">List</span>&lt;<span class="t">U</span>&gt; = [];
+    <span class="k">for</span> x <span class="k">in</span> <span class="k">self</span> {
+        out.push(<span class="k">try</span> f(x));
+    }
+    out
+}
+</code></pre>
+<p><code>rethrows</code> is the form for higher-order functions that take function-typed parameters. A <code>rethrows</code> function throws only when a function or closure passed as an argument throws.</p>
+<ul>
+<li>If every argument passed to a throwing function-typed parameter at the call site is non-throwing, the call is non-throwing and is made without <code>try</code>.
+</li>
+<li>If any of those arguments is throwing, the call is throwing, and the thrown error type is the error type of those arguments. The caller marks it with <code>try</code>.
+</li>
+<li>In the body of a <code>rethrows</code> function, the only errors that can leave the function are those from calls of the function-typed parameters. If the body throws its own error directly, it is a compile error.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> lens = names.map(|s| s.len());              <span class="c">// non-throwing closure - no try</span>
+<span class="k">let</span> nums = <span class="k">try</span> names.map(|s| <span class="k">try</span> parse(s));     <span class="c">// throwing closure - try required</span>
+</code></pre>
+<p>When a <code>rethrows</code> function is used as a value, the expected type (a function type) determines which instance is used. Without an expected type, the error parameter is set to <code>any Error</code>.</p>
+<h2 id="4148-throws-in-function-types"><a class="anchor" tabindex="-1" href="#4148-throws-in-function-types" aria-hidden="true">#</a>4.14.8. <code>throws</code> in function types</h2>
+<p><code>throws</code> also attaches to <a href="404-function-type">function types</a>.</p>
+<pre><code class="language-rok"><span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">U</span>                    <span class="c">// non-throwing</span>
+<span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> -&gt; <span class="t">U</span>             <span class="c">// untyped - throws (any Error)</span>
+<span class="k">fn</span>(<span class="t">T</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">U</span>         <span class="c">// typed</span>
+</code></pre>
+<p>A non-throwing function value may be used in a throwing function type position with the same parameter and return types, and a <code>throws (A)</code> function value may be used in a <code>throws (A | B)</code> position or (if <code>A</code> implements <code>Error</code>) an untyped <code>throws</code> position. The reverse direction is not allowed. Details are in <a href="404-function-type">4.4</a>.</p>
+<h2 id="4149-combining-throws-with-async-and-yield"><a class="anchor" tabindex="-1" href="#4149-combining-throws-with-async-and-yield" aria-hidden="true">#</a>4.14.9. Combining <code>throws</code> with <code>async</code> and <code>yield</code></h2>
+<p>All three modifiers may be combined on the same function.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch(url: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NetworkError</span>) -&gt; <span class="t">Data</span> { ... }
+
+<span class="k">yield</span> <span class="k">fn</span> lines(s: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">ParseError</span>) -&gt; <span class="t">str</span> { ... }
+
+<span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> read_paginated(url: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">NetworkError</span>) -&gt; <span class="t">Page</span> { ... }
+</code></pre>
+<p><code>throws</code> is a keyword in signature position and combines orthogonally with <code>async</code> or <code>yield</code>.</p>
+<h2 id="41410-effect-of-throws-on-sum-type-signatures"><a class="anchor" tabindex="-1" href="#41410-effect-of-throws-on-sum-type-signatures" aria-hidden="true">#</a>4.14.10. Effect of <code>throws</code> on sum type signatures</h2>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">fn</span> fetch_data() <span class="k">throws</span> (<span class="t">NetworkError</span>) -&gt; <span class="t">Data</span> { ... }
+</code></pre>
+<p>One might ask whether calling this function yields a Future holding <code>Data | NetworkError</code>.</p>
+<p>The answer is <strong><code>TryAsyncFuture&lt;Data, NetworkError&gt;</code></strong> (<a href="401-function-declaration#result-types-of-coroutine-functions">4.1.11</a>). The error is not mixed into the result type; it is delivered through the error channel at the <code>await</code> point. The side that <code>await</code>s therefore marks it with <code>try</code>. <code>TryAsyncFuture</code> does not implement the plain <code>Future</code> trait.</p>
+<pre><code class="language-rok"><span class="k">let</span> f = fetch_data();              <span class="c">// f: TryAsyncFuture&lt;Data, NetworkError&gt;</span>
+<span class="k">let</span> d = <span class="k">try</span> <span class="k">await</span> f <span class="k">catch</span> e: <span class="t">NetworkError</span> {
+    ...
+};
+</code></pre>
+<p>This decision keeps the result from turning into an <code>enum</code> with two variants, result and error.</p>
+<p><code>yield</code> and <code>async yield</code> follow the same pattern. A generator with <code>throws (E)</code> is <code>TryGenIter&lt;T, E&gt;</code> and a stream is <code>TryAsyncStream&lt;T, E&gt;</code>; the error is delivered through the error channel at the <code>next</code> point.</p>
+<h3 id="try-for"><a class="anchor" tabindex="-1" href="#try-for" aria-hidden="true">#</a><code>try for</code></h3>
+<p>A <code>for</code> over an iterator whose <code>next</code> throws (<code>TryGenIter</code>, etc.) is a throwing expression and must be covered with <code>try</code>. The same applies to <code>for await</code>.</p>
+<pre><code class="language-rok"><span class="k">try</span> <span class="k">for</span> line <span class="k">in</span> lines(<span class="s">"a.txt"</span>) {         <span class="c">// IoError from each next propagates</span>
+    process(line);
+}
+<span class="k">try</span> <span class="k">for</span> <span class="k">await</span> ev <span class="k">in</span> events() { handle(ev); }
+<span class="k">for</span> line <span class="k">in</span> lines(<span class="s">"a.txt"</span>) { ... }       <span class="c">// ERROR - no try</span>
+</code></pre>
+<h2 id="41411-throws-on-methods"><a class="anchor" tabindex="-1" href="#41411-throws-on-methods" aria-hidden="true">#</a>4.14.11. <code>throws</code> on methods</h2>
+<p>Like ordinary <a href="409-method">methods</a>, methods may have <code>throws</code> signatures.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">Database</span> {
+    <span class="k">fn</span> query(<span class="k">self</span>, sql: <span class="t">str</span>) <span class="k">throws</span> (<span class="t">SqlError</span>) -&gt; <span class="t">ResultSet</span> { ... }
+}
+</code></pre>
+<p>The caller's obligations and propagation rules apply exactly as for free functions.</p>
+<p>The <code>throws</code> of an impl method implementing a trait must be the same as the <code>throws</code> of the trait method. If the impl adds <code>throws</code> or widens the error type, it is a compile error.</p>
+<p>Operator trait methods (<code>Add::add</code>, etc.) are declared without <code>throws</code>, so operators do not throw. Operations that can fail are provided as named methods or return a <code>Result</code> (<a href="../../refs-standard-libraries/200-core/203-ops">stdlib 2.3</a>).</p>
+<h2 id="41412-value-based-implementation-model"><a class="anchor" tabindex="-1" href="#41412-value-based-implementation-model" aria-hidden="true">#</a>4.14.12. Value-Based implementation model</h2>
+<p>A throwing function returns its result as a value. The return value is a pair of a success flag and a payload holding either the success value or the error value. The error channel is distinguished by the signature, so the success type and the error type may be the same type. A <code>try</code> at the call site checks the flag and branches; on error, it goes to the nearest <code>catch</code> or returns the error as the enclosing function's error result.</p>
+<p>In this model, the cost of the no-error path is a single branch, and entering <code>try</code> or <code>catch</code> costs nothing. No stack unwinding and no runtime error-delivery function are used. The exact return value layout is defined in <a href="../008-abi/806-calling-convention#865-return-of-throwing-functions-value-based-error-propagation">8.6.5</a> and the lowering in <a href="../008-abi/809-lowering-control#896-try--catch--finally-value-based-branching">8.9.6</a>.</p>
+<h2 id="41413-panics-and-fatal-errors"><a class="anchor" tabindex="-1" href="#41413-panics-and-fatal-errors" aria-hidden="true">#</a>4.14.13. Panics and fatal errors</h2>
+<p>A panic is not a <code>throws</code> error. Panics - the standard library's <code>panic_fn</code>, a failed <code>try!</code>, division by zero, integer overflow, a failed bounds check - and the fatal errors of <a href="../003-expressions/314-error-control-flow">error control flow</a> are not part of any <code>throws</code> signature and cannot be caught with <code>catch</code>. The runtime writes the following to standard error (stderr) and terminates the process with exit code <code>101</code>.</p>
+<pre><code>thread '&lt;name&gt;' panicked at &lt;path&gt;:&lt;line&gt;:&lt;col&gt;:
+&lt;message&gt;
+</code></pre>
+<ul>
+<li><code>&lt;name&gt;</code> is the thread name: <code>main</code> for the main thread, <code>&lt;unnamed&gt;</code> for unnamed threads.
+</li>
+<li>The location is the failing expression. Inside a chain of <a href="../006-meta-system/602-built-in-attributes#6212-track_caller-passing-the-call-site"><code>#[track_caller]</code></a> functions, it is the first call location outside that chain.
+</li>
+<li>Backtraces are not defined.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/004-functions/414-throws.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="413-stream"><small>Previous</small>4.13. Streams (async yield)</a><a class="next" href="415-unsafe"><small>Next</small>4.15. unsafe - function modifier and block expression</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

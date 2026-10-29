@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.6. JIT engine - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines the JIT execution engine used by the REPL and Jupyter. It is the implementation of the JIT engine defined in Execution engines and user sur...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/906-jit-engine.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.6. JIT engine - rok docs">
+<meta property="og:description" content="This section defines the JIT execution engine used by the REPL and Jupyter. It is the implementation of the JIT engine defined in Execution engines and user sur...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/906-jit-engine.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/906-jit-engine.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/906-jit-engine.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li><a href="904-rokhir-bytecode">9.4. ROKHIR format</a></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li class="cur"><a aria-current="page" href="906-jit-engine">9.6. JIT engine</a><ul class="toc"><li><a href="#961-structure-rokc-and-the-jit-host">9.6.1. Structure: rokc and the JIT host</a></li><li><a href="#962-code-loading">9.6.2. Code loading</a></li><li><a href="#963-symbols-and-redefinition">9.6.3. Symbols and redefinition</a></li><li><a href="#964-reuse-of-library-code">9.6.4. Reuse of library code</a></li><li><a href="#965-execution-flow-one-repl-line--one-jupyter-cell">9.6.5. Execution flow (one REPL line / one Jupyter cell)</a></li><li><a href="#966-differences-between-jit-and-aot">9.6.6. Differences between JIT and AOT</a></li><li><a href="#967-next-cell-execution--state--errors">9.6.7. Next: cell execution / state / errors</a></li></ul></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="96-jit-engine 96-jit-엔진 961-structure-rokc-and-the-jit-host 961-구조-rokc-와-jit-host 962-code-loading 962-코드-로드 963-symbols-and-redefinition 963-심볼과-재정의 964-reuse-of-library-code 964-라이브러리-코드의-재사용 965-execution-flow-one-repl-line--one-jupyter-cell 965-실행-흐름-repl-한-줄--jupyter-한-셀 966-differences-between-jit-and-aot 966-jit-와-aot-의-차이 967-next-cell-execution--state--errors 967-다음-셀-실행--상태--에러"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/906-jit-engine" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="96-jit-engine"><a class="anchor" tabindex="-1" href="#96-jit-engine" aria-hidden="true">#</a>9.6. JIT engine</h1>
+<p>This section defines the JIT execution engine used by the REPL and Jupyter. It is the implementation of the JIT engine defined in <a href="../000-meta/001-execution-modes">Execution engines and user surfaces</a>. The rules of the cell session are defined by <a href="907-jit-cells#970-rules-of-the-cell-session">9.7.0</a>.</p>
+<h2 id="961-structure-rokc-and-the-jit-host"><a class="anchor" tabindex="-1" href="#961-structure-rokc-and-the-jit-host" aria-hidden="true">#</a>9.6.1. Structure: rokc and the JIT host</h2>
+<p>The session runs in a separate <strong>host process</strong> that contains the runtime and lives for the session. The host is prebuilt with <code>rokc</code> and linked by the embedded lld; it loads cell objects itself, with no libLLVM or ORC.</p>
+<pre><code>rokc (front end)                         JIT host (one per session)
+  cell → parse → HIR → MIR                   all of librokr.a
+     → native backend                        runtime initialized once
+     → machine code + relocations ───────►   load into executable memory, resolve symbols
+                                             → run the cell entry function once
+</code></pre>
+<ul>
+<li>Cells follow the backend selection of <a href="902-aot-pipeline#9210-backend-selection">9.2.10</a>. At <code>-O0</code> a cell is a native object (<a href="902-aot-pipeline#9211-native-backend">9.2.11</a>) mapped and linked by the host, with no LLVM. Above <code>-O0</code>, and for code the native backend does not take (<code>__mlir_op</code>, other targets), cells go through the embedded MLIR → LLVM pipeline into an object loaded into the same executable memory.
+</li>
+<li>The host places the code in executable memory, resolves its relocations against the runtime, libc and earlier cells, and runs the cell's entry function once.
+</li>
+<li>The host exports every symbol of the runtime (<code>librokr.a</code>), and cell code finds runtime and libc symbols in the host process.
+</li>
+</ul>
+<h2 id="962-code-loading"><a class="anchor" tabindex="-1" href="#962-code-loading" aria-hidden="true">#</a>9.6.2. Code loading</h2>
+<p>A cell is an object file: native at <code>-O0</code>, LLVM-compiled above <code>-O0</code>. Its code is position-independent with relocations. The host keeps one symbol table for the session; a cell's definitions are added to it after the cell is loaded. A symbol that cannot be resolved fails the cell with an error naming it (<a href="907-jit-cells">9.7</a>).</p>
+<h2 id="963-symbols-and-redefinition"><a class="anchor" tabindex="-1" href="#963-symbols-and-redefinition" aria-hidden="true">#</a>9.6.3. Symbols and redefinition</h2>
+<p>A session uses one symbol table. The definitions of all cells accumulate there.</p>
+<ul>
+<li>When a cell redefines an already defined symbol, the host renames that definition to <code>&lt;name&gt;.r&lt;cell&gt;</code>. References in later cells link to the newest name.
+</li>
+<li>A redefinition takes effect from the next cell (<a href="907-jit-cells#970-rules-of-the-cell-session">9.7.0</a> rule 3).
+</li>
+<li>Functions depending on a redefined symbol are recompiled by <code>rokc</code>. So even code compiled before the redefinition uses the new definition when a later cell reaches it again (a <code>g</code> calling a redefined <code>f</code>).
+</li>
+<li>Cell code and old definitions are not freed until the session ends.
+</li>
+</ul>
+<h2 id="964-reuse-of-library-code"><a class="anchor" tabindex="-1" href="#964-reuse-of-library-code" aria-hidden="true">#</a>9.6.4. Reuse of library code</h2>
+<p>Code of the standard library and dependency packages is compiled only once per session.</p>
+<ul>
+<li><code>rokc</code> remembers the functions the host has already loaded and their MIR. If a cell's function is identical to an already loaded one, only a reference is passed instead of the code.
+</li>
+<li>Names across cells are fixed so that identical MIR means identical meaning. String literal globals are named by a hash of their content, and GC type ids are fixed for the session keyed by <a href="../008-abi/802-scan-table">ScanTable</a> content.
+</li>
+<li>Functions that directly or indirectly call something this cell newly defines (a changed function, a <code>static</code>, a binding slot) are recompiled.
+</li>
+<li>A cell's object holds only what the cell adds: the functions it defines anew and, for statics of earlier cells its code reads, their initialization guard. It names only the symbols its code refers to.
+</li>
+</ul>
+<h2 id="965-execution-flow-one-repl-line--one-jupyter-cell"><a class="anchor" tabindex="-1" href="#965-execution-flow-one-repl-line--one-jupyter-cell" aria-hidden="true">#</a>9.6.5. Execution flow (one REPL line / one Jupyter cell)</h2>
+<pre><code>1. rokc: input → parse → HIR (on error the cell is discarded; session state unchanged)
+2. rokc: cell → MIR → native backend → machine code
+         (already loaded functions as references, redefinitions under new names)
+3. host: load the code in a process forked from the session snapshot and run the cell once
+4. success: that process becomes the new snapshot. If there is a value, print `type: value`
+   failure (panic, exit, signal, load failure): the previous snapshot takes over (9.7.0 rule 5)
+</code></pre>
+<p>Step 3 forks on Unix. Hosts without fork (Windows) save the session's memory and threads before the cell and put them back when it fails, with the same observable result as the forked snapshot.</p>
+<p>The latency of one cell is about 0.1 seconds, most of it spent in the front end (informative).</p>
+<h2 id="966-differences-between-jit-and-aot"><a class="anchor" tabindex="-1" href="#966-differences-between-jit-and-aot" aria-hidden="true">#</a>9.6.6. Differences between JIT and AOT</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>JIT (REPL / Jupyter)</th><th>AOT</th></tr></thead>
+<tbody>
+<tr><td>Pipeline</td><td>Same up to rok-mir</td><td>Same</td></tr>
+<tr><td>Backend</td><td>native, loaded into the host</td><td>native (<code>-O0</code>) or MLIR → LLVM, then lld</td></tr>
+<tr><td>Unit</td><td>Cell (libraries once per session)</td><td>Package</td></tr>
+<tr><td>Result</td><td>Host memory</td><td>Executable / <code>.a</code></td></tr>
+</tbody></table></div>
+<p>The two engines share the same monomorphization and rok-mir, and both backends follow the same ABI, so their semantics are the same.</p>
+<h2 id="967-next-cell-execution--state--errors"><a class="anchor" tabindex="-1" href="#967-next-cell-execution--state--errors" aria-hidden="true">#</a>9.6.7. Next: cell execution / state / errors</h2>
+<p><a href="907-jit-cells">JIT cell execution flow and state management</a> defines per-cell behavior (top-level variables, redefinition, errors).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/906-jit-engine.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="905-symbol-mangling"><small>Previous</small>9.5. Symbol mangling scheme</a><a class="next" href="907-jit-cells"><small>Next</small>9.7. JIT cell execution flow and state management</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

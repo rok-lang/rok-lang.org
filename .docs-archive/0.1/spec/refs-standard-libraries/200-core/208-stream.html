@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.8. stream - async iterator - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::stream module defines Stream, the async stepping trait (its element type is the associated type Item). Whereas Iterator of 2.7 iter is sync, Stre...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/208-stream.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.8. stream - async iterator - rok docs">
+<meta property="og:description" content="The rok::core::stream module defines Stream, the async stepping trait (its element type is the associated type Item). Whereas Iterator of 2.7 iter is sync, Stre...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/208-stream.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/208-stream.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/208-stream.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li class="cur"><a aria-current="page" href="208-stream">2.8. stream - async iterator</a><ul class="toc"><li><a href="#281-stream---async-stepping">2.8.1. Stream - async stepping</a></li><li><a href="#282-for-await-desugaring">2.8.2. for await desugaring</a></li><li><a href="#283-intostream---async-iterable">2.8.3. IntoStream - async iterable</a></li><li><a href="#284-async-yield---creating-a-stream">2.8.4. async yield - creating a Stream</a></li><li><a href="#285-stream-adapters">2.8.5. Stream adapters</a></li><li><a href="#286-fromstreamt---dispatch-of-collect">2.8.6. FromStream&lt;T&gt; - dispatch of collect</a></li><li><a href="#287-channel--stream">2.8.7. Channel ↔ Stream</a></li><li><a href="#288-merge--zip-etc">2.8.8. merge / zip, etc.</a></li><li><a href="#288a-asyncstreamt--tryasyncstreamt-e---the-value-of-an-async-stream">2.8.8a. AsyncStream&lt;T&gt; / TryAsyncStream&lt;T, E&gt; - the value of an async stream</a></li><li><a href="#289-module-mapping">2.8.9. Module mapping</a></li><li><a href="#2810-whether-stream-has-a-lang-slot">2.8.10. Whether Stream has a lang slot</a></li></ul></li><li><a href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="28-stream---async-iterator 28-stream---async-iterator 281-stream---async-stepping 281-stream---async-단계-진행 282-for-await-desugaring 282-for-await-desugar 283-intostream---async-iterable 283-intostream---async-iterable 284-async-yield---creating-a-stream 284-async-yield---stream-생성 285-stream-adapters 285-stream-어댑터 286-fromstreamt---dispatch-of-collect 286-fromstreamt---collect-의-dispatch 287-channel--stream 287-channel--stream 288-merge--zip-etc 288-merge--zip-등 288a-asyncstreamt--tryasyncstreamt-e---the-value-of-an-async-stream 288a-asyncstreamt--tryasyncstreamt-e---비동기-스트림의-값 289-module-mapping 289-모듈-매핑 2810-whether-stream-has-a-lang-slot 2810-stream-lang-slot-여부"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/208-stream" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="28-stream---async-iterator"><a class="anchor" tabindex="-1" href="#28-stream---async-iterator" aria-hidden="true">#</a>2.8. stream - async iterator</h1>
+<p>The <code>rok::core::stream</code> module defines <code>Stream</code>, the async stepping trait (its element type is the associated type <code>Item</code>). Whereas <code>Iterator</code> of <a href="207-iter">2.7 iter</a> is <strong>sync</strong>, <code>Stream</code> is <strong>async</strong>: each <code>next()</code> call is <strong>awaitable</strong>.</p>
+<p>This module is also the desugaring authority for <code>for await x in stream</code>, which dispatches to the traits defined in this chapter.</p>
+<h2 id="281-stream---async-stepping"><a class="anchor" tabindex="-1" href="#281-stream---async-stepping" aria-hidden="true">#</a>2.8.1. <code>Stream</code> - async stepping</h2>
+<p>The trait is defined as follows.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Stream</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">Item</span> | <span class="k">none</span>&gt;;
+}
+</code></pre>
+<p>This is the async version of <code>Iterator::next</code>. The return value means: <code>Poll::Ready(v)</code> (<code>v: Item</code>) - the next element <code>v</code> is ready; <code>Poll::Ready(none)</code> - the end of the stream; <code>Poll::Pending</code> - no value is ready yet, and the stream is polled again when the Waker wakes it.</p>
+<p>In short, it has the same meaning as <code>Iterator</code>'s <code>next() -&gt; T | none</code>, the decisive difference being that it is <strong>awaitable</strong>.</p>
+<h2 id="282-for-await-desugaring"><a class="anchor" tabindex="-1" href="#282-for-await-desugaring" aria-hidden="true">#</a>2.8.2. <code>for await</code> desugaring</h2>
+<p>Consider the following.</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> x <span class="k">in</span> stream { body }
+</code></pre>
+<p>Conceptually it desugars to:</p>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    <span class="k">match</span> <span class="k">await</span> stream.poll_next(<span class="k">ref</span> <span class="t">CURRENT_CONTEXT</span>) {
+        v: <span class="t">Item</span> =&gt; { <span class="k">let</span> x = v; body; }
+        <span class="k">none</span>    =&gt; <span class="k">break</span>,
+    }
+}
+</code></pre>
+<p>This has the same shape as the sync version in <a href="207-iter">2.7.2 for desugar</a>, with only <code>await</code> added.</p>
+<h2 id="283-intostream---async-iterable"><a class="anchor" tabindex="-1" href="#283-intostream---async-iterable" aria-hidden="true">#</a>2.8.3. <code>IntoStream</code> - async iterable</h2>
+<p>Next is the trait representing an async iterable.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">IntoStream</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">type</span> <span class="t">IntoStream</span>: <span class="t">Stream</span>&lt;<span class="t">Item</span> = <span class="t">Item</span>&gt;;
+
+    <span class="k">fn</span> into_stream(<span class="k">self</span>) -&gt; <span class="t">IntoStream</span>;
+}
+
+<span class="c">// every stream is its own IntoStream (as IntoIterator, 2.7)</span>
+<span class="k">impl</span>&lt;<span class="t">S</span>: <span class="t">Stream</span>&gt; <span class="t">IntoStream</span> <span class="k">for</span> <span class="t">S</span> {
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">S</span>::<span class="t">Item</span>;
+    <span class="k">type</span> <span class="t">IntoStream</span> = <span class="t">S</span>;
+    <span class="k">fn</span> into_stream(<span class="k">self</span>) -&gt; <span class="t">S</span> { <span class="k">self</span> }
+}
+</code></pre>
+<p>At the start of a <code>for await</code>, <code>IntoStream::into_stream</code> is called, then <code>Stream::poll_next</code> is repeated. The concrete transformation is:</p>
+<pre><code class="language-rok"><span class="k">for</span> <span class="k">await</span> event <span class="k">in</span> event_source { ... }
+<span class="c">// = let __s = event_source.into_stream();</span>
+<span class="c">//   loop {</span>
+<span class="c">//       match await __s.poll_next(ref CTX) {</span>
+<span class="c">//           e: Item =&gt; { let event = e; body; }</span>
+<span class="c">//           none    =&gt; break,</span>
+<span class="c">//       }</span>
+<span class="c">//   }</span>
+</code></pre>
+<h2 id="284-async-yield---creating-a-stream"><a class="anchor" tabindex="-1" href="#284-async-yield---creating-a-stream" aria-hidden="true">#</a>2.8.4. <code>async yield</code> - creating a Stream</h2>
+<p>The most direct way to create a Stream is to write an <code>async yield</code> function.</p>
+<pre><code class="language-rok"><span class="k">async</span> <span class="k">yield</span> <span class="k">fn</span> ticks(interval: <span class="t">Duration</span>) -&gt; <span class="t">Instant</span> {
+    <span class="k">loop</span> {
+        <span class="k">await</span> task::sleep(interval);
+        <span class="k">yield</span> <span class="t">Instant</span>::now();
+    }
+}
+</code></pre>
+<p><code>-&gt; Instant</code> is the element type, and the result of a call is <code>AsyncStream&lt;Instant&gt;</code> (implementing <code>Stream&lt;Item = Instant&gt;</code>) (<a href="../../refs-lang/004-functions/401-function-declaration#result-types-of-coroutine-functions">refs-lang 4.1.11</a>). The compiler turns this function into a state machine (<a href="../../refs-lang/007-runtime/708-coroutine">refs-lang 7.8</a>). Each <code>yield</code> is a <strong>suspend point</strong>, and so is each <code>await</code>.</p>
+<p>The syntax authority is <a href="../../refs-lang/004-functions/413-stream">refs-lang 4.13 stream (<code>async yield</code>)</a>.</p>
+<h2 id="285-stream-adapters"><a class="anchor" tabindex="-1" href="#285-stream-adapters" aria-hidden="true">#</a>2.8.5. Stream adapters</h2>
+<p>As with <code>Iterator</code>, a range of adapters are provided as default methods of the <code>Stream</code> trait, so every type implementing <code>Stream</code> (<code>AsyncStream&lt;T&gt;</code>, <code>Receiver&lt;T&gt;</code>, user types) has the same adapters.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Stream</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">Item</span> | <span class="k">none</span>&gt;;
+
+    <span class="c">// default methods</span>
+    <span class="k">fn</span> map&lt;<span class="t">U</span>&gt;(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">Item</span>) -&gt; <span class="t">U</span>) -&gt; <span class="t">Map</span>&lt;<span class="k">Self</span>, <span class="t">U</span>&gt;;
+    <span class="k">fn</span> filter(<span class="k">self</span>, pred: <span class="k">fn</span>(<span class="t">Item</span>) -&gt; <span class="t">bool</span>) -&gt; <span class="t">Filter</span>&lt;<span class="k">Self</span>&gt;;
+    <span class="k">fn</span> take(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">Take</span>&lt;<span class="k">Self</span>&gt;;
+    <span class="k">fn</span> skip(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">Skip</span>&lt;<span class="k">Self</span>&gt;;
+
+    <span class="k">async</span> <span class="k">fn</span> collect&lt;<span class="t">C</span>: <span class="t">FromStream</span>&lt;<span class="t">Item</span>&gt; = <span class="t">List</span>&lt;<span class="t">Item</span>&gt;&gt;(<span class="k">self</span>) -&gt; <span class="t">C</span>;   <span class="c">// List&lt;Item&gt; unless the slot decides</span>
+    <span class="k">async</span> <span class="k">fn</span> for_each(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">Item</span>));
+
+    <span class="c">// async-specific</span>
+    <span class="k">fn</span> buffer_unordered(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">BufferUnordered</span>&lt;<span class="k">Self</span>&gt; <span class="k">where</span> <span class="t">Item</span>: <span class="t">Future</span>;
+    <span class="k">fn</span> buffered(<span class="k">self</span>, n: <span class="t">usize</span>) -&gt; <span class="t">Buffered</span>&lt;<span class="k">Self</span>&gt; <span class="k">where</span> <span class="t">Item</span>: <span class="t">Future</span>;
+    <span class="k">fn</span> throttle(<span class="k">self</span>, dur: <span class="t">Duration</span>) -&gt; <span class="t">Throttle</span>&lt;<span class="k">Self</span>&gt;;
+}
+</code></pre>
+<p>As with the adapters of <a href="207-iter">2.7 iter</a>, the return types are named concrete structs, located in the <code>rok::core::stream</code> module (<code>stream::Map&lt;S, U&gt;</code>, <code>stream::Filter&lt;S&gt;</code>, ...). <code>Map&lt;Self, U&gt;</code> implements <code>Stream&lt;Item = U&gt;</code>; the rest implement <code>Stream&lt;Item = Item&gt;</code>.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><code>stream::Map</code> / <code>Filter</code> / <code>Take</code> / <code>Skip</code> / <code>Zip</code> share their names with <code>iter::Map</code> and the like. Under the implicit <code>use rok::core::**;</code> the bare name <code>Map</code> is ambiguous (<a href="../../refs-lang/005-modules/505-use">refs-lang 5.5.6</a>), so when the type must be written, use a path such as <code>stream::Map</code> or import it with an explicit <code>use</code>.</p>
+</div>
+<p>Of these, <code>buffer_unordered(n)</code> and <code>buffered(n)</code> serve as concurrency control, processing N futures concurrently.</p>
+<h2 id="286-fromstreamt---dispatch-of-collect"><a class="anchor" tabindex="-1" href="#286-fromstreamt---dispatch-of-collect" aria-hidden="true">#</a>2.8.6. <code>FromStream&lt;T&gt;</code> - dispatch of <code>collect</code></h2>
+<p>The trait that handles dispatch of <code>collect</code> is <code>FromStream&lt;T&gt;</code>. It is the async counterpart of <code>FromIterator&lt;T&gt;</code> in <a href="207-iter">2.7 iter</a>; its signature has the same form, except that <code>from_stream</code> is awaitable.</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">FromStream</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">async</span> <span class="k">fn</span> from_stream&lt;<span class="t">S</span>: <span class="t">IntoStream</span>&lt;<span class="t">Item</span> = <span class="t">T</span>&gt;&gt;(stream: <span class="t">S</span>) -&gt; <span class="k">Self</span>;
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">FromStream</span>&lt;<span class="t">T</span>&gt; <span class="k">for</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Hash</span>&gt; <span class="t">FromStream</span>&lt;<span class="t">T</span>&gt; <span class="k">for</span> <span class="t">Set</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span>, <span class="t">V</span>&gt; <span class="t">FromStream</span>&lt;(<span class="t">K</span>, <span class="t">V</span>)&gt; <span class="k">for</span> <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; { ... }
+</code></pre>
+<p>The target of <code>collect</code> is determined by the receiving slot; if the slot does not determine it, it is <code>List&lt;Item&gt;</code>.</p>
+<p>When <code>Stream::collect</code> is called, the target collection's <code>from_stream</code> is called, and every element of the stream is awaited and accumulated into the collection.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = <span class="k">await</span> (<span class="n">0</span>..).take(<span class="n">5</span>).map(|x| <span class="k">async</span> { x * <span class="n">2</span> }).buffered(<span class="n">3</span>).collect();
+<span class="c">//   = await List::from_stream(...)</span>
+</code></pre>
+<p><code>List</code>, <code>Dict</code> and <code>Set</code> implement both <code>FromIterator</code> and <code>FromStream</code>, following the same pattern in sync and async code.</p>
+<h2 id="287-channel--stream"><a class="anchor" tabindex="-1" href="#287-channel--stream" aria-hidden="true">#</a>2.8.7. <code>Channel</code> ↔ <code>Stream</code></h2>
+<p><code>Receiver&lt;T&gt;</code> (channel) implements <code>Stream&lt;Item = T&gt;</code>, so channel reception can be treated directly as a stream.</p>
+<pre><code class="language-rok"><span class="k">let</span> (tx, rx) = channel::&lt;<span class="t">Event</span>&gt;();
+task::spawn(<span class="k">async</span> { tx.send(event1); tx.send(event2); });
+
+<span class="k">for</span> <span class="k">await</span> event <span class="k">in</span> rx {
+    handle(event);
+}
+</code></pre>
+<p>That is, the receiver of <a href="217-channel">2.17 channel</a> is treated as an <strong>automatic stream</strong> and is compatible with <code>for await</code>.</p>
+<h2 id="288-merge--zip-etc"><a class="anchor" tabindex="-1" href="#288-merge--zip-etc" aria-hidden="true">#</a>2.8.8. <code>merge</code> / <code>zip</code>, etc.</h2>
+<p>Combinators that combine several streams are also provided.</p>
+<pre><code class="language-rok"><span class="k">fn</span> merge&lt;<span class="t">S1</span>: <span class="t">Stream</span>, <span class="t">S2</span>: <span class="t">Stream</span>&gt;(a: <span class="t">S1</span>, b: <span class="t">S2</span>) -&gt; <span class="t">Merge</span>&lt;<span class="t">S1</span>, <span class="t">S2</span>&gt;;    <span class="c">// Stream&lt;Item = S1::Item | S2::Item&gt;</span>
+<span class="k">fn</span> zip&lt;<span class="t">S1</span>: <span class="t">Stream</span>, <span class="t">S2</span>: <span class="t">Stream</span>&gt;(a: <span class="t">S1</span>, b: <span class="t">S2</span>) -&gt; <span class="t">Zip</span>&lt;<span class="t">S1</span>, <span class="t">S2</span>&gt;;        <span class="c">// Stream&lt;Item = (S1::Item, S2::Item)&gt;</span>
+<span class="k">fn</span> select&lt;<span class="t">S1</span>: <span class="t">Stream</span>, <span class="t">S2</span>: <span class="t">Stream</span>&gt;(a: <span class="t">S1</span>, b: <span class="t">S2</span>) -&gt; <span class="t">Select</span>&lt;<span class="t">S1</span>, <span class="t">S2</span>&gt;;  <span class="c">// Stream&lt;Item = S1::Item | S2::Item&gt;, whichever is ready first</span>
+</code></pre>
+<p><code>merge</code> produces the union of two streams, <code>zip</code> pairs two streams, and <code>select</code> races them, taking whichever is ready first.</p>
+<div class="callout note"><p class="callout-title">Note</p>
+<p><code>select</code> shares its name with <code>task::select</code>; under the implicit <code>use rok::core::**;</code> the bare name is ambiguous (<a href="../../refs-lang/005-modules/505-use#556-glob--recursive-glob-conflicts">refs-lang 5.5.6</a>): write <code>stream::select</code> or import it.</p>
+</div>
+<h2 id="288a-asyncstreamt--tryasyncstreamt-e---the-value-of-an-async-stream"><a class="anchor" tabindex="-1" href="#288a-asyncstreamt--tryasyncstreamt-e---the-value-of-an-async-stream" aria-hidden="true">#</a>2.8.8a. <code>AsyncStream&lt;T&gt;</code> / <code>TryAsyncStream&lt;T, E&gt;</code> - the value of an async stream</h2>
+<p>These are the values of an <code>async yield fn</code> call and of an <code>async yield { .. }</code> block (<a href="../../refs-lang/004-functions/401-function-declaration#result-types-of-coroutine-functions">refs-lang 4.1.11</a>).</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">AsyncStream</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* private */</span> }
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Stream</span> <span class="k">for</span> <span class="t">AsyncStream</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">T</span>;
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span> | <span class="k">none</span>&gt;;
+}
+
+<span class="k">struct</span> <span class="t">TryAsyncStream</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; { <span class="c">/* private */</span> }    <span class="c">// async yield fn .. throws (E)</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; <span class="t">TryAsyncStream</span>&lt;<span class="t">T</span>, <span class="t">E</span>&gt; {
+    <span class="k">fn</span> poll_next(<span class="k">ref</span> <span class="k">self</span>, <span class="k">ref</span> ctx: <span class="t">Context</span>) <span class="k">throws</span> (<span class="t">E</span>) -&gt; <span class="t">Poll</span>&lt;<span class="t">T</span> | <span class="k">none</span>&gt;;
+}
+</code></pre>
+<p>The adapters of <code>AsyncStream&lt;T&gt;</code> (<code>map</code>, <code>filter</code>, <code>collect</code>, etc.) are the default methods of <code>Stream</code> (2.8.5). <code>TryAsyncStream</code> does not implement <code>Stream</code>, because its <code>poll_next</code> throws; it is consumed with <code>try for await</code>. The private fields are not specified. Copies share the same coroutine frame and therefore share the progress position.</p>
+<h2 id="289-module-mapping"><a class="anchor" tabindex="-1" href="#289-module-mapping" aria-hidden="true">#</a>2.8.9. Module mapping</h2>
+<p>The module of each item:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Item</th><th>Module</th><th>Form</th></tr></thead>
+<tbody>
+<tr><td><code>Stream</code></td><td><code>rok::core::stream::stream</code></td><td>poll-based</td></tr>
+<tr><td><code>IntoStream</code></td><td><code>rok::core::stream::into_stream</code></td><td></td></tr>
+<tr><td><code>Receiver&lt;T&gt;</code></td><td><code>rok::core::channel::receiver</code></td><td>implements <code>Stream&lt;Item = T&gt;</code></td></tr>
+<tr><td><code>Stream::map</code>/<code>filter</code>/<code>take</code></td><td><code>rok::core::stream::adapter</code></td><td>adapter structs (implementing <code>Stream</code>)</td></tr>
+<tr><td><code>merge</code>/<code>zip</code>/<code>select</code></td><td><code>rok::core::stream::combinator</code></td><td><code>Merge</code>/<code>Zip</code>/<code>Select</code> structs</td></tr>
+</tbody></table></div>
+<h2 id="2810-whether-stream-has-a-lang-slot"><a class="anchor" tabindex="-1" href="#2810-whether-stream-has-a-lang-slot" aria-hidden="true">#</a>2.8.10. Whether <code>Stream</code> has a lang slot</h2>
+<p>This chapter attaches no <code>#[lang(...)]</code> to <code>Stream::poll_next</code>; <code>Stream</code> is an ordinary trait.</p>
+<p>The reasons: the <code>for await</code> desugaring is hard-coded in the compiler to call <code>Stream::poll_next</code> <strong>directly</strong>, so it is recognized without a lang slot. Moreover, lang slots are a mechanism for multiple dispatch entry points, and Stream has a single entry point, so none is needed.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/208-stream.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="207-iter"><small>Previous</small>2.7. iter - iteration traits</a><a class="next" href="209-collections"><small>Next</small>2.9. Collections - List / Dict / Set / Tuple / Slice</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

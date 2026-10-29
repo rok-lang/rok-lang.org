@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.4. ROKHIR format - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This section defines the interface file &lt;name&gt;.rokhir of a prebuilt library package. An ROKHIR file sits next to that package's lib&lt;name&gt;.a (Package archive) an...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="9.4. ROKHIR format - rok docs">
+<meta property="og:description" content="This section defines the interface file &lt;name&gt;.rokhir of a prebuilt library package. An ROKHIR file sits next to that package's lib&lt;name&gt;.a (Package archive) an...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/009-tools/904-rokhir-bytecode.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/" aria-current="page">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">9. Execution / tools overview</a></p><ul class="pages"><li><a href="901-rokc-cli">9.1. rokc CLI interface</a></li><li><a href="902-aot-pipeline">9.2. AOT build pipeline</a></li><li><a href="903-package-archive">9.3. Package archive (.a) format</a></li><li class="cur"><a aria-current="page" href="904-rokhir-bytecode">9.4. ROKHIR format</a><ul class="toc"><li><a href="#941-motivation">9.4.1. Motivation</a></li><li><a href="#942-no-external-libraries">9.4.2. No external libraries</a></li><li><a href="#943-overall-layout">9.4.3. Overall layout</a></li><li><a href="#944-header-and-producer">9.4.4. Header and producer</a></li><li><a href="#945-varint-encoding">9.4.5. VarInt encoding</a></li><li><a href="#946-meta">9.4.6. Meta</a></li><li><a href="#947-body">9.4.7. Body</a></li><li><a href="#948-rules-for-separate-compilation">9.4.8. Rules for separate compilation</a></li><li><a href="#949-reading-and-rejection">9.4.9. Reading and rejection</a></li><li><a href="#9410-rokhir-inspection">9.4.10. ROKHIR inspection</a></li><li><a href="#9411-stability">9.4.11. Stability</a></li></ul></li><li><a href="905-symbol-mangling">9.5. Symbol mangling scheme</a></li><li><a href="906-jit-engine">9.6. JIT engine</a></li><li><a href="907-jit-cells">9.7. JIT cell execution flow and state management</a></li><li><a href="908-jupyter-integration">9.8. Jupyter kernel integration</a></li><li><a href="909-debug-tools">9.9. Debug / diagnostic tools</a></li><li><a href="910-rok-frontend">9.10. rok - package / build front-end</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="94-rokhir-format 94-rokhir-포맷 941-motivation 941-동기 942-no-external-libraries 942-외부-라이브러리-미사용 943-overall-layout 943-전체-레이아웃 944-header-and-producer 944-header-와-producer 945-varint-encoding 945-varint-인코딩 946-meta 946-meta 947-body 947-body 948-rules-for-separate-compilation 948-분리-컴파일을-위한-규칙 949-reading-and-rejection 949-읽기와-거부 9410-rokhir-inspection 9410-rokhir-검사 9411-stability 9411-안정성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/009-tools/904-rokhir-bytecode" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="94-rokhir-format"><a class="anchor" tabindex="-1" href="#94-rokhir-format" aria-hidden="true">#</a>9.4. ROKHIR format</h1>
+<p>This section defines the interface file <code>&lt;name&gt;.rokhir</code> of a prebuilt library package. An <a href="../000-meta/007-glossary#rokhir-rok-hir-bytecode">ROKHIR</a> file sits next to that package's <code>lib&lt;name&gt;.a</code> (<a href="903-package-archive">Package archive</a>) and is not a member of the archive.</p>
+<h2 id="941-motivation"><a class="anchor" tabindex="-1" href="#941-motivation" aria-hidden="true">#</a>9.4.1. Motivation</h2>
+<p>Monomorphization in the <a href="902-aot-pipeline">AOT build pipeline</a> <a href="../000-meta/007-glossary#specialize">specializes</a> by the concrete types at the call site. So when another package calls a <a href="../000-meta/007-glossary#generic">generic</a> <code>fn</code> of a package, specialization must happen at that call site. The object code of <a href="../000-meta/007-glossary#concrete-fn--generic-fn">concrete fns</a> alone is not enough, so a separate interface is provided for downstream to read.</p>
+<p>The input of monomorphization is the AST. The ROKHIR body is therefore <strong>stripped package source</strong>, which the downstream parser reads.</p>
+<h2 id="942-no-external-libraries"><a class="anchor" tabindex="-1" href="#942-no-external-libraries" aria-hidden="true">#</a>9.4.2. No external libraries</h2>
+<p>Under the zero-dependency principle no serialization library is used either; ROKHIR is designed from scratch.</p>
+<h2 id="943-overall-layout"><a class="anchor" tabindex="-1" href="#943-overall-layout" aria-hidden="true">#</a>9.4.3. Overall layout</h2>
+<pre><code>ROKHIR file (little-endian):
++-----------------------------------+
+|  Header                           |  (16 bytes fixed)
+|    magic       &quot;ROKH&quot;    (4 bytes)  |
+|    version     u32  (= 6)         |
+|    flags       u32                |
+|    body_offset u32                |
++-----------------------------------+
+|  Producer string        str       |  &quot;rokc &lt;version&gt; (&lt;compiler id&gt;)&quot;
++-----------------------------------+
+|  Meta                             |
+|    name                 str       |  mount name (--extern &lt;name&gt;=)
+|    hash                 str       |  package hash (0.3.3)
+|    source dir           str       |
+|    gc type offset       varint    |
+|    gc type count        varint    |
+|    features  varint n, n × str    |
++-----------------------------------+
+|  Body (at body_offset)            |
+|    file count           varint    |
+|    file × n: path str, text str   |
++-----------------------------------+
+|  Summaries                        |
+|    count                varint    |
+|    n × (function str, summary str) |
++-----------------------------------+
+</code></pre>
+<p><code>str</code> is UTF-8 bytes preceded by a PrefixVarInt length (9.4.5). There are no string / type / item sections.</p>
+<h2 id="944-header-and-producer"><a class="anchor" tabindex="-1" href="#944-header-and-producer" aria-hidden="true">#</a>9.4.4. Header and producer</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Size</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>magic</code></td><td>4</td><td><code>&quot;ROKH&quot;</code></td></tr>
+<tr><td><code>version</code></td><td>u32</td><td>Format version (<code>6</code>). Bumped when the layout or body content changes: 2 added the <code>features</code> meta, 3 the <code>.wit</code> files of the body, 4 inlines <code>include_str!</code> / <code>include_bytes!</code> data, 5 adds the hand-off summaries, 6 adds the summaries' exit kinds</td></tr>
+<tr><td><code>flags</code></td><td>u32</td><td>Reserved (0)</td></tr>
+<tr><td><code>body_offset</code></td><td>u32</td><td>Start offset of the body</td></tr>
+</tbody></table></div>
+<p>The producer string is <code>rokc &lt;version&gt; (&lt;compiler id&gt;)</code>. The compiler id is the size and modification time of that <code>rokc</code> executable (<code>&lt;size&gt;-&lt;mtime&gt;</code>, hexadecimal).</p>
+<h2 id="945-varint-encoding"><a class="anchor" tabindex="-1" href="#945-varint-encoding" aria-hidden="true">#</a>9.4.5. VarInt encoding</h2>
+<p>The same PrefixVarInt as MLIR bytecode, a variant of LEB128. The number of leading 1 bits of the first byte is the number of following bytes, and the value occupies the remaining bits in big-endian order.</p>
+<pre><code>1-byte int  : 0xxxxxxx                    (0 ~ 127)
+2-byte int  : 10xxxxxx xxxxxxxx           (0 ~ 16383)
+3-byte int  : 110xxxxx xxxxxxxx xxxxxxxx  (0 ~ 2097151)
+...
+</code></pre>
+<h2 id="946-meta"><a class="anchor" tabindex="-1" href="#946-meta" aria-hidden="true">#</a>9.4.6. Meta</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>name</td><td>The package's mount name. It appears in symbols, so it must equal <code>--extern &lt;name&gt;=</code></td></tr>
+<tr><td>hash</td><td>Package hash (<a href="../000-meta/003-source-units#033-package-identifier">0.3.3</a>). The value used in symbol mangling. For the standard library package <code>rok</code> it is a <code>pkg=hash;...</code> list, one entry per tier</td></tr>
+<tr><td>source dir</td><td>The directory holding the package source at build time. The base for file paths in the body; downstream reads the body, not the disk</td></tr>
+<tr><td>gc type offset / count</td><td>This package's GC type id range <code>[offset, offset + count)</code> (9.4.8)</td></tr>
+<tr><td>features</td><td>The <code>feature</code> cfg values the package was built with. Downstream parses the body with the build's other cfg and these features</td></tr>
+</tbody></table></div>
+<h2 id="947-body"><a class="anchor" tabindex="-1" href="#947-body" aria-hidden="true">#</a>9.4.7. Body</h2>
+<p>The body holds <strong>every source file</strong> of the package as (path, text) pairs. Each file is stripped as follows.</p>
+<ul>
+<li>The bodies of concrete functions are cut down to <code>;</code>. Newlines are kept, so diagnostic line numbers match the original. These functions are linked as archive symbols.
+</li>
+<li>Bodies that downstream must monomorphize or inline are kept: generic functions, <code>async</code> / <code>yield</code> functions, <code>#[inline]</code> functions, <code>extern &quot;C&quot;</code> definitions, default methods of traits, and methods of generic <code>impl</code>s.
+</li>
+<li>Declarations such as signatures, types, traits, <code>impl</code>s and <code>use</code>s are left as is.
+</li>
+<li><code>include_str!</code> / <code>include_bytes!</code> in the kept text are replaced by the literal they read (line breaks kept), so downstream reads no included file and a moved library still works.
+</li>
+</ul>
+<p>After the source files come the <code>.wit</code> files the package's <code>ffi::wit</code> items read (<a href="../../refs-standard-libraries/100-bare/108-wit">stdlib 1.8</a>), with their <code>deps/</code>, whole. Their paths are relative to the source dir and may leave it through <code>..</code>. Downstream reads WIT from the body, not the disk.</p>
+<p>After the body come the hand-off summaries (<a href="../../refs-standard-libraries/200-core/213-marker#2139-send--sync---thread-boundary-markers">stdlib 2.13.9</a>) of the package's functions. A summary is lines of tab-separated fields:</p>
+<ul>
+<li><code>g &lt;root&gt; &lt;mutex|rwlock|channel&gt; &lt;line&gt; &lt;function&gt; &lt;file&gt;</code>: hands <code>&lt;root&gt;</code> over;
+</li>
+<li><code>s &lt;root&gt; &lt;root&gt;</code>: one object;
+</li>
+<li><code>i &lt;root&gt; &lt;root&gt;</code>: the first going away takes the second along;
+</li>
+<li><code>t &lt;guard parameter&gt; &lt;root&gt;</code>: tied to that guard.
+</li>
+<li><code>x &lt;tag|*&gt; [&lt;root&gt;]</code>: on the exits whose returned value has that tag (<code>*</code>: not known; a <code>bool</code>'s 0 / 1, a sum or enum variant, a carrier's 1 for an error, 0 for a value, 2 + the value's tag), <code>&lt;root&gt;</code> is among those handed over; with no <code>x</code> lines every exit hands over all <code>g</code> roots.
+</li>
+</ul>
+<p>A root is a parameter index or <code>r</code> (the return value), then a <code>.</code>-separated field path (a tuple index has bit 31 set). An entry named <code>#fn</code> (<code>#fne</code>: a closure, environment first) followed by U+001F-separated parameter type keys joins the summaries of the functions used as values with those parameter types.</p>
+<h2 id="948-rules-for-separate-compilation"><a class="anchor" tabindex="-1" href="#948-rules-for-separate-compilation" aria-hidden="true">#</a>9.4.8. Rules for separate compilation</h2>
+<p>A prebuilt library cannot see the whole program at once, so packages are reconciled by the following rules.</p>
+<ul>
+<li><strong><code>any</code> tag.</strong> The tag of an <code>any</code> slot is a 31-bit hash of the type name, so separately built packages use the same tag for the same type.
+</li>
+<li><strong><code>any</code> seed.</strong> So that the program knows the types a library puts into <code>any</code>, the library appends a small rok function using those types to the end of the body. The program's closed-world <code>any</code> dispatcher includes these types too.
+</li>
+<li><strong>Dispatcher symbol.</strong> The <code>any</code> dispatcher is the symbol <code>rok.any.&lt;hash&gt;</code>, defined weak in libraries and strong in the program. At link time the program's definition wins.
+</li>
+<li><strong>Sum member order.</strong> Terms of a sum are ordered by a structural key, not by internal type numbers (<a href="../002-types/206-sum-types#canonical-order">2.6.4</a>), so tags agree across packages.
+</li>
+<li><strong>GC type id.</strong> Each package has its own GC type id range (9.4.6). It is an error for the ranges of two packages in one program to overlap.
+</li>
+<li><strong>Method symbols.</strong> Methods of dependency packages are mangled by the stable path <code>&lt;module&gt;::&lt;type&gt;.&lt;method&gt;[__by_&lt;trait&gt;]</code> (<a href="905-symbol-mangling">9.5</a>).
+</li>
+</ul>
+<h2 id="949-reading-and-rejection"><a class="anchor" tabindex="-1" href="#949-reading-and-rejection" aria-hidden="true">#</a>9.4.9. Reading and rejection</h2>
+<p><code>--extern name=&lt;name&gt;.rokhir</code> or <code>--extern name=lib&lt;name&gt;.a</code> each locate the sibling file (<a href="902-aot-pipeline#923-dependency-resolution">9.2.3</a>). Downstream parses the body as a source overlay to obtain declarations, declares stripped functions as prebuilt symbols, monomorphizes generics in place, and then links the archive.</p>
+<p>If any of the following differs, the ROKHIR is rejected with a &quot;rebuild&quot; error.</p>
+<ul>
+<li><code>version</code>
+</li>
+<li>producer (an ROKHIR made by a different <code>rokc</code>)
+</li>
+<li>name (the <code>--extern</code> name versus the ROKHIR's mount name)
+</li>
+</ul>
+<h2 id="9410-rokhir-inspection"><a class="anchor" tabindex="-1" href="#9410-rokhir-inspection" aria-hidden="true">#</a>9.4.10. ROKHIR inspection</h2>
+<p><code>rokc rokhir-text &lt;file&gt;</code> prints the ROKHIR's version, producer, meta (including <code>features:</code>), the paths and text of the interface files, and the summaries (<a href="909-debug-tools#992-rokhir-inspection">9.9.2</a>). <code>rokc inspect</code> (<a href="909-debug-tools#9914-package-inspection">9.9.14</a>) shows a summary together with the archive.</p>
+<h2 id="9411-stability"><a class="anchor" tabindex="-1" href="#9411-stability" aria-hidden="true">#</a>9.4.11. Stability</h2>
+<p>Only ROKHIR made by the same <code>rokc</code> is read (9.4.9). When the format changes, <code>version</code> is bumped, and a different version requires a rebuild. The stability policy of the <a href="../008-abi/">Overview</a> applies.</p>
+<p>The standard library is not distributed as ROKHIR (<a href="903-package-archive#936-standard-library">9.3.6</a>).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/009-tools/904-rokhir-bytecode.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="903-package-archive"><small>Previous</small>9.3. Package archive (.a) format</a><a class="next" href="905-symbol-mangling"><small>Next</small>9.5. Symbol mangling scheme</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

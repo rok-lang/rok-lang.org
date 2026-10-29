@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.2. niche wrapper - NonZero / NonNan / Finite / Positive - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::num::niche 는 값의 부분집합을 강제하는 wrapper 를 둡니다. 각 wrapper 는 #[niche(..)] (refs-lang 2.7.4) 를 붙인 newtype 이며, 빠진 값이 T | none 의 niche 가 됩니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/202-non-zero.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.2. niche wrapper - NonZero / NonNan / Finite / Positive - rok docs">
+<meta property="og:description" content="rok::core::num::niche 는 값의 부분집합을 강제하는 wrapper 를 둡니다. 각 wrapper 는 #[niche(..)] (refs-lang 2.7.4) 를 붙인 newtype 이며, 빠진 값이 T | none 의 niche 가 됩니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/202-non-zero.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/202-non-zero.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/202-non-zero.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li class="cur"><a aria-current="page" href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a><ul class="toc"><li><a href="#221-크기">2.2.1. 크기</a></li><li><a href="#222-nonzerot---0-금지">2.2.2. NonZero&lt;T&gt; - 0 금지</a></li><li><a href="#223-nonnanf---nan-금지">2.2.3. NonNan&lt;F&gt; - NaN 금지</a></li><li><a href="#224-finitef---nan--금지">2.2.4. Finite&lt;F&gt; - NaN, ±∞ 금지</a></li><li><a href="#225-positivet---음수-금지">2.2.5. Positive&lt;T&gt; - 음수 금지</a></li><li><a href="#226-new_unchecked">2.2.6. new_unchecked</a></li><li><a href="#227-검증">2.2.7. 검증</a></li><li><a href="#228-정의-요약">2.2.8. 정의 요약</a></li><li><a href="#229-다른-언어와의-비교">2.2.9. 다른 언어와의 비교</a></li></ul></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li><a href="204-ops-assign">2.4. 복합 대입 트레잇</a></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="22-niche-wrapper---nonzero--nonnan--finite--positive 22-niche-wrappers---nonzero--nonnan--finite--positive 221-크기 221-size 222-nonzerot---0-금지 222-nonzerot---zero-forbidden 223-nonnanf---nan-금지 223-nonnanf---nan-forbidden 224-finitef---nan--금지 224-finitef---nan-and--forbidden 225-positivet---음수-금지 225-positivet---negative-values-forbidden 226-new_unchecked 226-new_unchecked 227-검증 227-validation 228-정의-요약 228-definition-summary 229-다른-언어와의-비교 229-comparison-with-other-languages"><a href="../../../../spec/refs-standard-libraries/200-core/202-non-zero" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="22-niche-wrapper---nonzero--nonnan--finite--positive"><a class="anchor" tabindex="-1" href="#22-niche-wrapper---nonzero--nonnan--finite--positive" aria-hidden="true">#</a>2.2. niche wrapper - <code>NonZero</code> / <code>NonNan</code> / <code>Finite</code> / <code>Positive</code></h1>
+<p><code>rok::core::num::niche</code> 는 값의 부분집합을 강제하는 wrapper 를 둡니다. 각 wrapper 는 <code>#[niche(..)]</code> (<a href="../../refs-lang/002-types/207-niche-optimization#274-opt-in-niche-niche">refs-lang 2.7.4</a>) 를 붙인 newtype 이며, 빠진 값이 <code>T | none</code> 의 niche 가 됩니다.</p>
+<h2 id="221-크기"><a class="anchor" tabindex="-1" href="#221-크기" aria-hidden="true">#</a>2.2.1. 크기</h2>
+<p>niche 가 있는 <code>T | none</code> 은 <code>T</code> 의 크기입니다 (<a href="../../refs-lang/002-types/207-niche-optimization#272-자동-niche">refs-lang 2.7.2</a>). <code>none</code> 은 그 niche 값으로 표현되며, 실제 비트는 구현이 정합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th><code>T | none</code> 크기</th><th><code>none</code> 의 niche 값</th></tr></thead>
+<tbody>
+<tr><td><code>i32 | none</code></td><td>8 B (태그)</td><td>없음</td></tr>
+<tr><td><code>NonZero&lt;i32&gt; | none</code></td><td>4 B</td><td>0</td></tr>
+<tr><td><code>f64 | none</code></td><td>16 B (태그)</td><td>없음</td></tr>
+<tr><td><code>NonNan&lt;f64&gt; | none</code></td><td>8 B</td><td>NaN</td></tr>
+<tr><td><code>Finite&lt;f64&gt; | none</code></td><td>8 B</td><td>NaN, ±∞</td></tr>
+<tr><td><code>Positive&lt;i32&gt; | none</code></td><td>4 B</td><td>음수</td></tr>
+<tr><td><code>Positive&lt;u32&gt; | none</code></td><td>8 B (태그)</td><td>없음</td></tr>
+</tbody></table></div>
+<p>niche 값이 0 인 경우 (<code>NonZero</code>) 항의 비트는 그대로이므로 <code>NonZero&lt;T&gt; | none</code> 은 C ABI 를 0 이 <code>none</code> 인 정수로 건넙니다.</p>
+<h2 id="222-nonzerot---0-금지"><a class="anchor" tabindex="-1" href="#222-nonzerot---0-금지" aria-hidden="true">#</a>2.2.2. <code>NonZero&lt;T&gt;</code> - 0 금지</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">NicheInt</span> { .. }            <span class="c">// 10 개의 정수 타입이 구현</span>
+
+<span class="a">#[niche(0)]</span>
+<span class="k">struct</span> <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt;(<span class="t">T</span>);
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">NicheInt</span>&gt; <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">T</span>) -&gt; <span class="t">NonZero</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// value == 0 이면 UB</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+</code></pre>
+<p>정수 타입만 받습니다. 부동소수는 <code>NonNan</code> / <code>Finite</code> 를 씁니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>연산</th><th>결과</th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt; * NonZero&lt;T&gt;</code></td><td><code>NonZero&lt;T&gt;</code>. 곱이 wrap 되어 0 이 되면 panic</td></tr>
+<tr><td><code>NonZero&lt;T&gt; + - / NonZero&lt;T&gt;</code></td><td><code>T</code></td></tr>
+<tr><td><code>T / NonZero&lt;T&gt;</code></td><td><code>T</code>. 0 으로 나누기가 없음</td></tr>
+</tbody></table></div>
+<p><code>TryFrom&lt;T&gt;</code> 는 0 이면 <code>ZeroError</code> 를 던집니다. <code>From&lt;NonZero&lt;T&gt;&gt; for T</code> 는 lossless 입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">NonZero</span>&lt;<span class="t">i32</span>&gt; = <span class="t">NonZero</span>::new(<span class="n">42</span>) ?? panic(<span class="s">"zero"</span>);
+<span class="k">let</span> nz: <span class="t">NonZero</span>&lt;<span class="t">i32</span>&gt; = <span class="k">try</span> <span class="n">7</span>.try_into();
+<span class="k">let</span> v: <span class="t">i32</span> = nz.into();
+</code></pre>
+<h2 id="223-nonnanf---nan-금지"><a class="anchor" tabindex="-1" href="#223-nonnanf---nan-금지" aria-hidden="true">#</a>2.2.3. <code>NonNan&lt;F&gt;</code> - NaN 금지</h2>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">NicheFloat</span> { .. }          <span class="c">// f32, f64 가 구현</span>
+
+<span class="a">#[niche(F::NAN)]</span>
+<span class="k">struct</span> <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt;(<span class="t">F</span>);
+
+<span class="k">impl</span>&lt;<span class="t">F</span>: <span class="t">NicheFloat</span>&gt; <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">F</span>) -&gt; <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt; | <span class="k">none</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">F</span>) -&gt; <span class="t">NonNan</span>&lt;<span class="t">F</span>&gt;;    <span class="c">// NaN 이면 UB</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">F</span>;
+}
+</code></pre>
+<ul>
+<li><code>Eq</code>, <code>Ord</code>, <code>Hash</code> 를 구현합니다. <code>-0.0 == 0.0</code> 이며 해시도 같습니다.
+</li>
+<li><code>+ - * /</code> 의 결과는 <code>F</code> 입니다 (∞ − ∞ 등이 NaN 일 수 있음).
+</li>
+<li><code>TryFrom&lt;F&gt;</code> 는 NaN 이면 <code>ConversionError</code> 를 던집니다.
+</li>
+</ul>
+<h2 id="224-finitef---nan--금지"><a class="anchor" tabindex="-1" href="#224-finitef---nan--금지" aria-hidden="true">#</a>2.2.4. <code>Finite&lt;F&gt;</code> - NaN, ±∞ 금지</h2>
+<pre><code class="language-rok"><span class="a">#[niche(F::NAN, F::INFINITY, F::NEG_INFINITY)]</span>
+<span class="k">struct</span> <span class="t">Finite</span>&lt;<span class="t">F</span>&gt;(<span class="t">F</span>);
+
+<span class="k">impl</span>&lt;<span class="t">F</span>: <span class="t">NicheFloat</span>&gt; <span class="t">Finite</span>&lt;<span class="t">F</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">F</span>) -&gt; <span class="t">Finite</span>&lt;<span class="t">F</span>&gt; | <span class="k">none</span>;
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">F</span>) -&gt; <span class="t">Finite</span>&lt;<span class="t">F</span>&gt;;    <span class="c">// NaN / ±∞ 이면 UB</span>
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">F</span>;
+}
+</code></pre>
+<ul>
+<li><code>Eq</code>, <code>Ord</code>, <code>Hash</code> 를 구현합니다. <code>-0.0 == 0.0</code> 입니다.
+</li>
+<li><code>+ - *</code> 는 <code>Result&lt;Finite&lt;F&gt;, OverflowError&gt;</code> 입니다 (결과가 ±∞ 이면 <code>Err</code>).
+</li>
+<li><code>TryFrom&lt;F&gt;</code> 는 NaN / ±∞ 이면 <code>ConversionError</code> 를 던집니다.
+</li>
+</ul>
+<h2 id="225-positivet---음수-금지"><a class="anchor" tabindex="-1" href="#225-positivet---음수-금지" aria-hidden="true">#</a>2.2.5. <code>Positive&lt;T&gt;</code> - 음수 금지</h2>
+<pre><code class="language-rok"><span class="a">#[niche(T::MIN..=-1)]</span>
+<span class="k">struct</span> <span class="t">Positive</span>&lt;<span class="t">T</span>&gt;(<span class="t">T</span>);
+
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">NicheInt</span>&gt; <span class="t">Positive</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new(value: <span class="t">T</span>) -&gt; <span class="t">Positive</span>&lt;<span class="t">T</span>&gt; | <span class="k">none</span>;            <span class="c">// 음수면 none. 0 은 포함</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> new_unchecked(value: <span class="t">T</span>) -&gt; <span class="t">Positive</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> get(<span class="k">self</span>) -&gt; <span class="t">T</span>;
+}
+</code></pre>
+<p>0 이상의 값입니다. unsigned <code>T</code> 에는 음수가 없으므로 niche 가 없습니다.</p>
+<h2 id="226-new_unchecked"><a class="anchor" tabindex="-1" href="#226-new_unchecked" aria-hidden="true">#</a>2.2.6. <code>new_unchecked</code></h2>
+<p><code>new_unchecked</code> 는 <code>unsafe fn</code> 입니다. 불변을 어기면 정의되지 않은 동작이며, <code>T | none</code> 이 값을 <code>none</code> 으로 읽을 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = compute();                                <span class="c">// 0 이 아님을 호출자가 보장</span>
+<span class="k">let</span> nz: <span class="t">NonZero</span>&lt;<span class="t">i32</span>&gt; = <span class="k">unsafe</span> { <span class="t">NonZero</span>::new_unchecked(n) };
+</code></pre>
+<h2 id="227-검증"><a class="anchor" tabindex="-1" href="#227-검증" aria-hidden="true">#</a>2.2.7. 검증</h2>
+<ul>
+<li>const 자리에서 <code>NonZero::new(0)</code> 등은 컴파일 타임에 평가되어 <code>none</code> 입니다. <code>?? panic(..)</code> 이 붙으면 컴파일 에러입니다 (<a href="../../refs-lang/005-modules/502-const#524-상수-식과-평가기">refs-lang 5.2.4</a>).
+</li>
+<li>런타임에는 <code>new</code> (<code>T | none</code>) 와 <code>try_from</code> (throw) 으로 검증합니다.
+</li>
+</ul>
+<h2 id="228-정의-요약"><a class="anchor" tabindex="-1" href="#228-정의-요약" aria-hidden="true">#</a>2.2.8. 정의 요약</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>bound</th><th><code>#[niche]</code></th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt;</code></td><td><code>NicheInt</code></td><td><code>0</code></td></tr>
+<tr><td><code>Positive&lt;T&gt;</code></td><td><code>NicheInt</code></td><td><code>T::MIN..=-1</code></td></tr>
+<tr><td><code>NonNan&lt;F&gt;</code></td><td><code>NicheFloat</code></td><td><code>F::NAN</code></td></tr>
+<tr><td><code>Finite&lt;F&gt;</code></td><td><code>NicheFloat</code></td><td><code>F::NAN, F::INFINITY, F::NEG_INFINITY</code></td></tr>
+</tbody></table></div>
+<h2 id="229-다른-언어와의-비교"><a class="anchor" tabindex="-1" href="#229-다른-언어와의-비교" aria-hidden="true">#</a>2.2.9. 다른 언어와의 비교</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th>Rust</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td><code>NonZero&lt;T&gt;</code></td><td><code>NonZero&lt;T&gt;</code> (정수)</td><td><code>NonZero&lt;T: NicheInt&gt;</code></td></tr>
+<tr><td><code>NonNan</code> / <code>Finite</code></td><td>없음 (외부 crate)</td><td>내장</td></tr>
+<tr><td>자동 niche</td><td><code>Option&lt;Box&lt;T&gt;&gt;</code> = <code>Box&lt;T&gt;</code></td><td><code>T | none</code></td></tr>
+<tr><td>사용자 niche</td><td>불안정 attribute</td><td><code>#[niche(..)]</code></td></tr>
+</tbody></table></div>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/202-non-zero.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="201-numbers"><small>Previous</small>2.1. 숫자 타입</a><a class="next" href="203-ops"><small>Next</small>2.3. 산술 / 비트 / 인덱싱 트레잇</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

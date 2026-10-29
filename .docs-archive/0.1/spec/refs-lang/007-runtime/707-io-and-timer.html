@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.7. I/O driver and timers - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Workers of the scheduler use two mechanisms to handle tasks waiting on I/O and on timers efficiently.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/707-io-and-timer.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7.7. I/O driver and timers - rok docs">
+<meta property="og:description" content="Workers of the scheduler use two mechanisms to handle tasks waiting on I/O and on timers efficiently.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/707-io-and-timer.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/007-runtime/707-io-and-timer.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/007-runtime/707-io-and-timer.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">7. Runtime overview</a></p><ul class="pages"><li><a href="701-object-layout">7.1. Object layout and memory spaces</a></li><li><a href="702-allocation">7.2. Allocation</a></li><li><a href="703-gc-algorithm">7.3. GC algorithm</a></li><li><a href="704-barriers-and-roots">7.4. Barriers and root tracking</a></li><li><a href="705-concurrent-collection">7.5. Concurrent mark</a></li><li><a href="706-scheduler">7.6. Scheduler</a></li><li class="cur"><a aria-current="page" href="707-io-and-timer">7.7. I/O driver and timers</a><ul class="toc"><li><a href="#771-io-multiplexing">7.7.1. I/O multiplexing</a></li><li><a href="#772-io-wait-pattern">7.7.2. I/O wait pattern</a></li><li><a href="#773-io-driver-abstraction">7.7.3. I/O driver abstraction</a></li><li><a href="#774-timer-structure">7.7.4. Timer structure</a></li><li><a href="#775-timer-precision">7.7.5. Timer precision</a></li><li><a href="#776-integrating-timers-and-io">7.7.6. Integrating timers and I/O</a></li><li><a href="#777-park--unpark">7.7.7. Park / unpark</a></li><li><a href="#778-dynamic-adjustment-of-worker-count">7.7.8. Dynamic adjustment of worker count</a></li><li><a href="#779-cancellation">7.7.9. Cancellation</a></li><li><a href="#7710-comparison-with-the-reactor-pattern">7.7.10. Comparison with the reactor pattern</a></li></ul></li><li><a href="708-coroutine">7.8. Coroutines</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="77-io-driver-and-timers 77-io-드라이버와-타이머 771-io-multiplexing 771-io-멀티플렉싱 772-io-wait-pattern 772-io-대기-패턴 773-io-driver-abstraction 773-io-driver-추상화 774-timer-structure 774-타이머-구조 775-timer-precision 775-타이머-정밀도 776-integrating-timers-and-io 776-타이머와-io-의-통합 777-park--unpark 777-park--unpark 778-dynamic-adjustment-of-worker-count 778-worker-수의-동적-조절 779-cancellation 779-cancellation 7710-comparison-with-the-reactor-pattern 7710-reactor-패턴과의-비교"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/007-runtime/707-io-and-timer" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="77-io-driver-and-timers"><a class="anchor" tabindex="-1" href="#77-io-driver-and-timers" aria-hidden="true">#</a>7.7. I/O driver and timers</h1>
+<p>Workers of the <a href="706-scheduler">scheduler</a> use two mechanisms to handle tasks waiting on I/O and on timers efficiently.</p>
+<h2 id="771-io-multiplexing"><a class="anchor" tabindex="-1" href="#771-io-multiplexing" aria-hidden="true">#</a>7.7.1. I/O multiplexing</h2>
+<p>Each process has <strong>one reactor thread</strong> that waits on the OS readiness multiplexer and wakes the tasks waiting on ready fds.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>OS / environment</th><th>Mechanism</th></tr></thead>
+<tbody>
+<tr><td>Linux</td><td>epoll (<code>EPOLLET</code>, edge-triggered)</td></tr>
+<tr><td>BSD (FreeBSD / macOS)</td><td>kqueue (<code>EV_CLEAR</code>, edge-triggered)</td></tr>
+<tr><td>Windows</td><td>IOCP + AFD poll (readiness emulation)</td></tr>
+<tr><td>WASI (<code>wasm32-wasi</code>)</td><td><code>wasi:io/poll</code></td></tr>
+<tr><td>WASI (<code>wasm32-wasi-threads</code>)</td><td><code>poll_oneoff</code></td></tr>
+</tbody></table></div>
+<p>The driver for the target is compiled at build time, through the <code>target_os</code> branches of <a href="../006-meta-system/603-cfg">Conditional compilation</a>.</p>
+<p>The reactor thread starts on the first async I/O wait.</p>
+<p>On <code>wasm32-wasi</code> (a preview 2 component) the driver is <code>wasi:io/poll</code>, and <code>std::net</code> works through <code>wasi:sockets</code> when the host grants network access. On <code>wasm32-wasi-threads</code> (preview 1) <code>poll_oneoff</code> watches the sockets the host passes in.</p>
+<h2 id="772-io-wait-pattern"><a class="anchor" tabindex="-1" href="#772-io-wait-pattern" aria-hidden="true">#</a>7.7.2. I/O wait pattern</h2>
+<p>An I/O wait proceeds as follows:</p>
+<pre><code>1. The task tries read on a non-blocking socket → WouldBlock.
+2. The task does await task::readable(fd) - (re)registers fd with the reactor and parks.
+3. The worker runs another task.
+4. When the reactor receives a readiness edge for fd, it unparks the task parked on that fd.
+5. Some worker takes that task and retries the read.
+</code></pre>
+<p>This flow combines with <code>await</code> in <code>async</code> <code>fn</code> (see <a href="../004-functions/412-async">Async</a>). Registration is edge-triggered, so it is re-armed for every wait. The <code>task::readable(fd)</code> / <code>task::writable(fd)</code> futures check the fd once more after parking so as not to miss an edge that passed in the meantime. A woken task may find the fd not yet ready, so the caller retries the operation.</p>
+<pre><code class="language-rok"><span class="k">fn</span> readable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;     <span class="c">// rok::core::task - Future&lt;Output = ()&gt;</span>
+<span class="k">fn</span> writable(fd: <span class="t">i32</span>) -&gt; <span class="t">IoReady</span>;
+</code></pre>
+<p>Blocking calls (<code>TcpStream::read</code> etc.) do not use this path; they block the calling OS thread. I/O that suspends the task is provided by the standard library's <code>*_async</code> methods (<a href="../../refs-standard-libraries/300-std/302-net#320-common-rules">stdlib 3.2.0</a>).</p>
+<p>Regular files cannot be waited on with the readiness model (they are always ready under epoll / kqueue). So async I/O on regular files (<code>fs::*_async</code>, <a href="../../refs-standard-libraries/300-std/301-fs#314a-asynchronous-file-io-_async">stdlib 3.1.4a</a>) runs the blocking syscall on another OS thread (<code>task::spawn_blocking</code>) and suspends the task meanwhile.</p>
+<h2 id="773-io-driver-abstraction"><a class="anchor" tabindex="-1" href="#773-io-driver-abstraction" aria-hidden="true">#</a>7.7.3. I/O driver abstraction</h2>
+<p>Each driver implements a common interface.</p>
+<pre><code>trait IODriver {
+    fn register(ref self, fd: Fd, interest: IoInterest) throws (IoError);   // edge-triggered
+    fn poll(ref self, timeout: Duration) -&gt; List&lt;Event&gt;;
+}
+</code></pre>
+<p>This interface is conceptual; the exact signatures are decided by the runtime implementation. The driver holds no wakers. The task to wake is found in the parking table of <code>rok::core::task</code> by a parking key determined by the fd and direction (read / write). For runtime symbols, see <a href="../008-abi/805-extern-symbols#855-io--timer-area">8.5.5</a>.</p>
+<h2 id="774-timer-structure"><a class="anchor" tabindex="-1" href="#774-timer-structure" aria-hidden="true">#</a>7.7.4. Timer structure</h2>
+<p>Waits of <code>task::sleep(d)</code> / <code>task::timeout(d, ..)</code> are kept in a binary heap ordered by deadline. When the deadline passes, the task is woken. Timers of cancelled tasks remain in the heap and are discarded on expiry or cleanup. Sleeps whose deadlines have passed by the time timers are processed wake in deadline order, even when several threads process timers at once; a sleep whose deadline has passed at its first poll completes then.</p>
+<p>Insertion and expiry are <code>O(log n)</code>.</p>
+<h2 id="775-timer-precision"><a class="anchor" tabindex="-1" href="#775-timer-precision" aria-hidden="true">#</a>7.7.5. Timer precision</h2>
+<p>The default tick is 1 ms (millisecond). When finer, microsecond-level timing is needed, the library provides separate mechanisms such as busy-waiting or hardware timers.</p>
+<p>Millisecond granularity is sufficient for most <code>async</code> code, timeouts and sleeps.</p>
+<h2 id="776-integrating-timers-and-io"><a class="anchor" tabindex="-1" href="#776-integrating-timers-and-io" aria-hidden="true">#</a>7.7.6. Integrating timers and I/O</h2>
+<p>The worker's main <code>loop</code> is as follows. For I/O readiness, the reactor thread returns tasks to the queue via the parking table, so workers do not poll the driver directly.</p>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    <span class="c">// 1. Process ready tasks from the queue (including tasks woken by the reactor)</span>
+    <span class="k">while</span> <span class="k">let</span> task: <span class="t">Task</span> = queue.next_ready() {        <span class="c">// stops on none</span>
+        execute(task);
+    }
+
+    <span class="c">// 2. Return tasks of expired timers to the queue</span>
+    timers.fire_due();
+
+    <span class="c">// 3. If there is nothing to do, park until the next timer (woken by unpark)</span>
+    park_until(timers.next_deadline());
+}
+</code></pre>
+<p>The reactor thread's <code>loop</code> is:</p>
+<pre><code class="language-rok"><span class="k">loop</span> {
+    <span class="k">let</span> events = io_driver.poll();                     <span class="c">// blocks - a native section for the GC</span>
+    <span class="k">for</span> event <span class="k">in</span> events {
+        task::unpark(parking_key(event.fd, event.direction));
+    }
+}
+</code></pre>
+<h2 id="777-park--unpark"><a class="anchor" tabindex="-1" href="#777-park--unpark" aria-hidden="true">#</a>7.7.7. Park / unpark</h2>
+<p>When a worker's queue is completely empty and I/O is idle, the worker is parked in an OS sleep.</p>
+<ul>
+<li>Park uses <code>pthread_cond_wait</code> or an OS-specific sleep mechanism.
+</li>
+<li>Unpark is triggered by another worker or an I/O event.
+</li>
+</ul>
+<p>CPU usage is zero while parked, so many idle workers cost nothing extra.</p>
+<h2 id="778-dynamic-adjustment-of-worker-count"><a class="anchor" tabindex="-1" href="#778-dynamic-adjustment-of-worker-count" aria-hidden="true">#</a>7.7.8. Dynamic adjustment of worker count</h2>
+<p>By default, N is fixed to the number of CPU cores.</p>
+<p>When enabled (<code>ROK_DYNAMIC_WORKERS=1</code>), an excessively idle worker parks and pushes wake the others first; it is taken back when every active worker is busy. A worker blocked in a call is replaced in every mode (<a href="706-scheduler#767-automatic-detection-of-blocking-syscalls">7.6.7</a>).</p>
+<h2 id="779-cancellation"><a class="anchor" tabindex="-1" href="#779-cancellation" aria-hidden="true">#</a>7.7.9. Cancellation</h2>
+<p><code>Task::cancel</code> <strong>requests</strong> cancellation (<a href="../../refs-standard-libraries/200-core/218-task#2184-cooperative-cancellation---taskcancel">stdlib 2.18.4</a>). The runtime sets a flag and wakes the task.</p>
+<ul>
+<li>Every <code>await</code> is a cancellation point. <code>await</code> checks the flag on entry and just before suspending.
+</li>
+<li>The check after the awaited future returns <code>Ready</code> is not &quot;is the flag set&quot; but &quot;<strong>did the awaited coroutine leave because of cancellation</strong>&quot;. So a value the future handed over (a received message, an acquired lock guard) is preserved, and the task leaves at the next <code>await</code>.
+</li>
+<li>A cancelled task leaves its body at the next <code>await</code> as if by <code>return</code>. <code>finally</code> blocks passed through and <code>drop</code>s of <code>using</code> run from the innermost outward. Nested <code>async fn</code> calls are cleaned up starting from the innermost coroutine.
+</li>
+<li>This is not an error that can be <code>catch</code>ed inside the task. A non-throwing async body ends by the same path. The result is discarded.
+</li>
+<li>A task cancelled after its last cancellation point finishes normally and has a result (<code>await</code> / <code>join</code> return that result). <code>CancellationError</code> applies only to tasks that ended without a result.
+</li>
+<li>Blocking syscalls (<code>TcpStream::read</code> etc.) are not cancellation points. The task leaves at the next <code>await</code> after the call finishes.
+</li>
+<li>A task waiting in socket I/O, <code>readable</code> / <code>writable</code>, <code>sleep</code> / <code>timeout</code>, <code>lock_async</code>, or <code>recv_async</code> / <code>send_async</code> is woken when cancelled and leaves at the next <code>await</code>.
+</li>
+<li>When a task finishes, all its wake registrations (I/O readiness waits, timers, wakers in the parking table) are released. The number of registrations in the running pool can be inspected with the diagnostic <code>task::registrations()</code>; the exact meaning of that value is implementation-defined.
+</li>
+</ul>
+<p>After <code>task::timeout</code> expires or <code>task::race</code> decides a winner, the losing tasks keep running. To stop them, call <code>cancel</code>. <code>task::select</code> does not spawn, so it cancels the losing futures itself (<a href="../../refs-standard-libraries/200-core/218-task#select---the-first-future-to-finish">stdlib 2.18.1</a>).</p>
+<h2 id="7710-comparison-with-the-reactor-pattern"><a class="anchor" tabindex="-1" href="#7710-comparison-with-the-reactor-pattern" aria-hidden="true">#</a>7.7.10. Comparison with the reactor pattern</h2>
+<p>rok uses a traditional reactor structure: a single separate reactor thread waits on I/O and meets the worker threads only through the parking table. The price is that an I/O wakeup crosses threads (one unpark).</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/007-runtime/707-io-and-timer.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="706-scheduler"><small>Previous</small>7.6. Scheduler</a><a class="next" href="708-coroutine"><small>Next</small>7.8. Coroutines</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.6. 합 타입 (A | B) - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="합 타입은 여러 기존 타입 중 하나의 값을 갖는 태그형 합집합입니다. enum 과 비슷하지만, 변형이 따로 명명되지 않고 기존 타입을 그대로 변형으로 쓴다는 차이가 있습니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/206-sum-types.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.6. 합 타입 (A | B) - rok docs">
+<meta property="og:description" content="합 타입은 여러 기존 타입 중 하나의 값을 갖는 태그형 합집합입니다. enum 과 비슷하지만, 변형이 따로 명명되지 않고 기존 타입을 그대로 변형으로 쓴다는 차이가 있습니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/206-sum-types.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/206-sum-types.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/206-sum-types.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">2. 타입 시스템 개요</a></p><ul class="pages"><li><a href="201-type-expressions">2.1. 타입 표현식</a></li><li><a href="202-any-slot">2.2. any 슬롯</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li class="cur"><a aria-current="page" href="206-sum-types">2.6. 합 타입 (A | B)</a><ul class="toc"><li><a href="#261-형태">2.6.1. 형태</a></li><li><a href="#262-의미">2.6.2. 의미</a></li><li><a href="#263-메모리-표현">2.6.3. 메모리 표현</a></li><li><a href="#264-집합-의미론">2.6.4. 집합 의미론</a></li><li><a href="#265-none-과의-결합">2.6.5. none 과의 결합</a></li><li><a href="#266-any-와의-차이">2.6.6. any 와의 차이</a></li><li><a href="#267-enum-과의-차이">2.6.7. enum 과의 차이</a></li><li><a href="#268-좁히기-narrowing">2.6.8. 좁히기 (narrowing)</a></li><li><a href="#269-type-alias-와-결합">2.6.9. type alias 와 결합</a></li></ul></li><li><a href="207-niche-optimization">2.7. niche 최적화</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. 제네릭</a></li><li><a href="211-const-generics">2.11. const 제네릭</a></li><li><a href="212-trait-as-type-banned">2.12. 트레잇-as-타입 금지</a></li><li><a href="213-type-paths">2.13. 타입 경로</a></li><li><a href="214-cast-and-conversion">2.14. 형 변환</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="26-합-타입-a--b 26-sum-types-a--b 261-형태 261-form 262-의미 262-meaning 263-메모리-표현 263-memory-representation 값-재귀와-크기-한도 value-recursion-and-size-limits 정확한-비트-폭 exact-bit-width 264-집합-의미론 264-set-semantics 정규화 normalization 제네릭-합의-층 layers-of-generic-sums 정규-순서 canonical-order 부분-집합 subsets 제네릭-추론 generic-inference 265-none-과의-결합 265-combining-with-none 중첩-optional nested-optional 266-any-와의-차이 266-difference-from-any 267-enum-과의-차이 267-difference-from-enum 268-좁히기-narrowing 268-narrowing 269-type-alias-와-결합 269-combining-with-type-aliases"><a href="../../../../spec/refs-lang/002-types/206-sum-types" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="26-합-타입-a--b"><a class="anchor" tabindex="-1" href="#26-합-타입-a--b" aria-hidden="true">#</a>2.6. 합 타입 (<code>A | B</code>)</h1>
+<p>합 타입은 여러 기존 타입 중 하나의 값을 갖는 태그형 합집합입니다. <code>enum</code> 과 비슷하지만, 변형이 따로 명명되지 않고 기존 타입을 그대로 변형으로 쓴다는 차이가 있습니다.</p>
+<h2 id="261-형태"><a class="anchor" tabindex="-1" href="#261-형태" aria-hidden="true">#</a>2.6.1. 형태</h2>
+<p>다음은 합 타입의 형태를 보여 주는 예시입니다.</p>
+<pre><code class="language-rok"><span class="t">i32</span> | <span class="t">f32</span>
+<span class="t">T</span> | <span class="k">none</span>
+<span class="t">A</span> | <span class="t">B</span> | <span class="t">C</span>
+<span class="t">i32</span> | <span class="t">str</span> | <span class="t">bool</span>
+</code></pre>
+<p>항을 구분할 때에는 <a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a> 의 <code>|</code> 토큰을 사용합니다. 그리고 항의 자리에는 임의의 타입 표현식이 올 수 있는데, 단순 이름이나 경로, 제네릭, 또는 또 다른 합 타입까지 모두 가능합니다.</p>
+<h2 id="262-의미"><a class="anchor" tabindex="-1" href="#262-의미" aria-hidden="true">#</a>2.6.2. 의미</h2>
+<p>합 타입의 값은 항 중 하나에 속하며, 어느 항에 속하는지는 태그를 통해 추적됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> x: <span class="t">i32</span> | <span class="t">f32</span> = <span class="n">42i32</span>;       <span class="c">// 태그가 i32 자리에 있음</span>
+<span class="k">let</span> y: <span class="t">i32</span> | <span class="t">f32</span> = <span class="n">3.14f32</span>;     <span class="c">// 태그가 f32 자리에 있음</span>
+</code></pre>
+<h2 id="263-메모리-표현"><a class="anchor" tabindex="-1" href="#263-메모리-표현" aria-hidden="true">#</a>2.6.3. 메모리 표현</h2>
+<p>기본 표현은 태그와 페이로드를 인라인으로 두는 형태입니다.</p>
+<pre><code>+------+----------------------+
+| tag  | payload (size of     |
+|      |  largest variant)    |
++------+----------------------+
+</code></pre>
+<p>이 구조에서 태그는 어느 항이 활성인지 식별하는 역할을 합니다. 페이로드는 모든 항 중 가장 큰 항의 크기만큼 자리를 갖도록 잡히고, 정렬은 모든 항의 정렬 중 가장 큰 값에 맞춰집니다.</p>
+<p>다만 이 표현은 <a href="207-niche-optimization">niche 최적화</a> 의 영향을 받기 때문에 태그 자리가 사라지는 경우도 있습니다.</p>
+<h3 id="값-재귀와-크기-한도"><a class="anchor" tabindex="-1" href="#값-재귀와-크기-한도" aria-hidden="true">#</a>값 재귀와 크기 한도</h3>
+<ul>
+<li>값으로 자기 자신을 담는 재귀 타입 (struct, enum, 튜플, 합, 배열, 제네릭 인스턴스를 거쳐도) 은 선언 위치의 에러입니다. 재귀에는 GC 참조 타입 (<code>List&lt;T&gt;</code> 등) 을 씁니다.
+</li>
+<li>rok 의 구현 한도 (구현이 정함, <a href="../000-meta/004-language-vs-standard-libraries#044-구현-한도">0.4.4</a>): 펼친 scalar 슬롯 65536 개 또는 4 GiB 를 넘는 값 타입은 에러입니다.
+</li>
+</ul>
+<p>정확한 배치는 구현이 정하지만 한 가지는 보장됩니다. 0 으로 채운 <code>T | none</code> 저장소 (<code>GcBuf&lt;T | none&gt;</code> 와 컬렉션 버퍼의 원소, 새로 할당된 GC 객체의 필드) 는 <code>none</code> 으로 읽힙니다.</p>
+<h3 id="정확한-비트-폭"><a class="anchor" tabindex="-1" href="#정확한-비트-폭" aria-hidden="true">#</a>정확한 비트 폭</h3>
+<p>태그의 비트 폭은 컴파일러가 결정하며, 항의 수에 따라 1 비트, 2 비트, 4 비트, 8 비트 등 다양한 값이 가능합니다. 사용자 코드에서 태그 비트에 직접 접근할 방법은 제공되지 않습니다.</p>
+<h2 id="264-집합-의미론"><a class="anchor" tabindex="-1" href="#264-집합-의미론" aria-hidden="true">#</a>2.6.4. 집합 의미론</h2>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>합 타입은 집합 연산의 의미론을 갖습니다.</p>
+</div>
+<h3 id="정규화"><a class="anchor" tabindex="-1" href="#정규화" aria-hidden="true">#</a>정규화</h3>
+<p>합 타입은 항상 정규형으로 다룹니다.</p>
+<ul>
+<li>중첩된 합은 펼칩니다. <code>(A | B) | C</code>, <code>A | (B | C)</code>, <code>A | B | C</code> 는 같은 타입입니다.
+</li>
+<li>중복은 제거합니다. <code>A | A | B</code> 는 <code>A | B</code> 입니다.
+</li>
+<li>항의 순서는 의미가 없습니다. <code>A | B</code> 와 <code>B | A</code> 는 같은 타입입니다.
+</li>
+<li>항이 하나 남으면 그 타입 자체입니다. <code>A | A</code> 는 <code>A</code> 입니다.
+</li>
+</ul>
+<p>타입 별칭을 펼친 결과도 다시 정규화합니다 (<code>type N = i32 | f64;</code> 이면 <code>N | i32</code> 는 <code>i32 | f64</code>). 제네릭 파라미터의 치환은 아래 &quot;제네릭 합의 층&quot; 을 따릅니다.</p>
+<p>따라서 합 타입의 형태가 같으면 같은 타입이며, 사용자가 <code>i32 | f32</code> 와 <code>f32 | i32</code> 중 어느 쪽을 적었는지 신경 쓸 필요가 없습니다.</p>
+<h3 id="제네릭-합의-층"><a class="anchor" tabindex="-1" href="#제네릭-합의-층" aria-hidden="true">#</a>제네릭 합의 층</h3>
+<p>제네릭 항을 가진 합 <code>T | X1 | ... | Xn</code> (예: <code>T | none</code>, <code>T | ParseErr</code>) 은 의미상 <strong>자기 층</strong> 을 가집니다. <code>X1 ... Xn</code> 은 그 합에 함께 적힌, 제네릭이 아닌 항입니다. 제네릭 항은 다음 넷입니다.</p>
+<ul>
+<li>타입 파라미터 (<code>T</code>)
+</li>
+<li><code>Self</code>
+</li>
+<li>연관 타입 (<code>Self::X</code>, <code>T::X</code>, <code>&lt;T as Tr&gt;::X</code>)
+</li>
+<li>제네릭 타입 별칭의 파라미터
+</li>
+</ul>
+<p>층 규칙은 제네릭 항이 실제 타입으로 바뀔 때 적용됩니다. 바뀐 타입이 함께 적힌 항과 겹치면 중첩 층, 겹치지 않으면 펼칩니다. 아래에서 <code>T</code> 는 제네릭 항 하나를 대표합니다.</p>
+<p><strong>층이 남는 조건.</strong> <code>T</code> 를 치환한 타입이 <code>X1 ... Xn</code> 가운데 하나라도 같은 항을 가지면, 치환된 <code>T</code> 는 하나의 항으로 남아 <strong>중첩 층</strong> 이 됩니다. 겹치지 않으면 펼쳐집니다. 펼쳐도 값을 구별하는 정보가 사라지지 않으므로, 결과는 평평한 합으로 보이고 그렇게 다룹니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>제네릭 합</th><th><code>T</code> 치환</th><th>결과</th></tr></thead>
+<tbody>
+<tr><td><code>T | none</code></td><td><code>i32 | str</code></td><td><code>i32 | str | none</code> (겹침 없음 - 펼침)</td></tr>
+<tr><td><code>T | none</code></td><td><code>i32 | none</code></td><td><code>(i32 | none)?</code> (두 층)</td></tr>
+<tr><td><code>T | ParseErr</code></td><td><code>i32 | ParseErr</code></td><td><code>(i32 | ParseErr) | ParseErr</code></td></tr>
+<tr><td><code>T | str | none</code></td><td><code>i32 | str</code></td><td><code>(i32 | str) | str | none</code> (<code>str</code> 이 겹침)</td></tr>
+</tbody></table></div>
+<ul>
+<li>겹침은 어떤 항이든 셉니다. <code>none</code> 만이 아닙니다.
+</li>
+<li>두 파라미터만의 합 <code>T | U</code> 는 둘 다 치환되므로, 겹쳐도 중첩되지 않고 펼쳐집니다. 두 값을 구별해야 하면 <code>enum</code> 을 씁니다.
+</li>
+<li>각 층은 따로 정규화됩니다. 그래서 <code>A | B == B | A</code> 는 모든 층에서 성립합니다.
+</li>
+<li>소스에 구체 타입으로 적은 합은 언제나 펼칩니다. <code>(i32 | none) | none</code> 이라고 적으면 <code>i32 | none</code> 입니다.
+</li>
+<li>제네릭이 아닌 타입 별칭은 적힌 타입이므로 언제나 펼칩니다. <code>type Opt = i32 | none; type Flat = Opt | none;</code> 이면 <code>Flat</code> 은 <code>i32 | none</code> 입니다.
+</li>
+<li>제네릭 별칭의 파라미터는 제네릭 항이므로 위 규칙을 따릅니다 (아래 &quot;중첩 타입 적기&quot;).
+</li>
+</ul>
+<p><strong>중첩 타입 적기.</strong> optional 은 후위 <code>?</code> 로 적습니다 (<a href="201-type-expressions#215a-optional-타입-t">2.1.5a</a>). <code>T?</code> 는 <code>Maybe&lt;T&gt;</code> 와 같으므로 그 피연산자는 제네릭 항이고, 같은 층 규칙이 적용됩니다. 그 밖의 중첩 (<code>(i32 | E) | E</code> 등) 은 제네릭 별칭이나 <code>Self::X</code> 로 적습니다.</p>
+<pre><code class="language-rok"><span class="k">type</span> <span class="t">Maybe</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> | <span class="k">none</span>;
+<span class="k">let</span> r: (<span class="t">i32</span> | <span class="k">none</span>)? = xs.get(<span class="n">0</span>);       <span class="c">// 두 층</span>
+<span class="k">let</span> q: <span class="t">Maybe</span>&lt;<span class="t">i32</span> | <span class="k">none</span>&gt; = xs.get(<span class="n">0</span>);   <span class="c">// 같은 타입</span>
+<span class="k">let</span> p: <span class="t">i32</span>? = <span class="n">1</span>;                         <span class="c">// i32 | none - 겹침 없음</span>
+<span class="k">let</span> f: (<span class="t">i32</span> | <span class="t">str</span>)? = <span class="k">none</span>;              <span class="c">// i32 | str | none</span>
+</code></pre>
+<p><strong>값 넣기.</strong> 중첩 합에 값을 넣을 때, <code>T</code> 의 항 타입 값은 안쪽 층으로 들어갑니다. 바깥 층의 항 타입 값 (<code>none</code> 리터럴, <code>ParseErr</code> 값 등) 은 바깥 층의 값입니다. 안쪽 층에 바깥 항 타입 값을 넣으려면 먼저 <code>T</code> 타입 슬롯에 담아 넣습니다.</p>
+<p><strong>변환.</strong> 중첩 타입은 평평한 타입으로 암묵 변환되지 않습니다. 타입 에러입니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="k">none</span> = xs.get(<span class="n">0</span>);    <span class="c">// ERROR - xs: List&lt;i32 | none&gt;</span>
+<span class="c">// mismatched types: `let v` expects `i32 | none`, found `(i32 | none)?`</span>
+</code></pre>
+<p><strong>연산.</strong> 패턴, <code>is</code>, <code>?.</code>, <code>??</code>, <code>?</code> 는 <strong>가장 바깥 층</strong> 에 작용합니다. 바깥 층의 다른 쪽은 안쪽 <code>T</code> 에 묶입니다. 바깥 층의 모든 항을 덮는 arm 뒤의 바인딩 패턴은 안쪽 층을 묶습니다.</p>
+<p><strong>진단 표기.</strong> 진단은 중첩 층을 괄호로 묶어 보여 줍니다. 바깥 층이 <code>none</code> 하나뿐이면 <code>(i32 | none)?</code> 로, 그 밖에는 <code>(i32 | E) | E</code>, <code>(i32 | none) | str | none</code> 처럼 적습니다. <code>(i32 | none)?</code> 는 같은 의미의 올바른 소스이기도 합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">ParseErr</span> { msg: <span class="t">str</span>; }
+
+<span class="k">fn</span> check&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> | <span class="t">ParseErr</span> {
+    <span class="k">if</span> bad(x) { <span class="k">return</span> <span class="t">ParseErr</span> { msg: <span class="s">"bad"</span> }; }   <span class="c">// 바깥 층의 ParseErr</span>
+    x                                                <span class="c">// T 의 값 - 안쪽 층</span>
+}
+
+<span class="k">let</span> a = check(<span class="n">1i32</span>);                  <span class="c">// T = i32 - 겹치지 않음: i32 | ParseErr</span>
+<span class="k">let</span> v: <span class="t">i32</span> | <span class="t">ParseErr</span> = <span class="t">ParseErr</span> { msg: <span class="s">"earlier"</span> };
+<span class="k">let</span> r = check(v);                     <span class="c">// T = i32 | ParseErr - 겹침: (i32 | ParseErr) | ParseErr</span>
+<span class="k">match</span> r {
+    e: <span class="t">ParseErr</span> =&gt; print(<span class="s">f"check 실패: {</span>e.msg<span class="s">}"</span>),        <span class="c">// 바깥 층 - check 가 만든 에러</span>
+    inner =&gt; <span class="k">match</span> inner {                                <span class="c">// inner: i32 | ParseErr</span>
+        e: <span class="t">ParseErr</span> =&gt; print(<span class="s">f"원래 값이 에러: {</span>e.msg<span class="s">}"</span>), <span class="c">// 안쪽 층 - v 에 들어 있던 에러</span>
+        n: <span class="t">i32</span> =&gt; print(n),
+    },
+}
+</code></pre>
+<p><strong>연관 타입.</strong> 트레잇과 모든 impl 안에서 맨 이름 <code>X</code> 와 <code>Self::X</code> 는 둘 다 그 연관 타입을 가리킵니다 (<a href="208-trait#283-연관-타입-associated-type">2.8.3</a>). 연관 타입은 제네릭 항이므로 같은 규칙이 적용됩니다. <code>fn next(ref self) -&gt; Self::Item?</code> 는 <code>Item</code> 이 <code>none</code> 을 담으면 중첩되므로, <code>i32 | none</code> 원소를 내는 사용자 iterator 도 저장된 <code>none</code> 을 원소로 돕니다.</p>
+<p><code>none</code> 의 경우 (중첩 optional) 는 2.6.5 의 예를 참조합니다.</p>
+<h3 id="정규-순서"><a class="anchor" tabindex="-1" href="#정규-순서" aria-hidden="true">#</a>정규 순서</h3>
+<p>정규형의 항에는 정해진 순서가 있습니다.</p>
+<ul>
+<li><code>none</code> 은 늘 마지막입니다.
+</li>
+<li>나머지 항은 구조적 키로 정렬합니다: 원시 타입은 이름, struct 나 enum 은 전체 경로, generic 인스턴스는 <code>path&lt;arg keys&gt;</code>. 중첩 합은 펼쳐지므로 (위 정규화) 합이 합의 항이 되는 일은 없습니다. generic 인자 안의 합은 정규 순서의 항들로 키를 만듭니다 (<code>List&lt;A | B&gt;</code> 의 키는 <code>List&lt;key(A)|key(B)&gt;</code>). &quot;제네릭 합의 층&quot; 으로 남은 안쪽 층은 하나의 항이며, 그 키는 <code>(</code> + 정규 순서의 항 키들을 <code>|</code> 로 이은 것 + <code>)</code> 입니다. 순서는 적은 순서와는 무관합니다.
+</li>
+<li>순서와 그에 따른 tag 는 빌드 내부의 타입 번호에 의존하지 않으므로, 미리 빌드한 라이브러리와 그 사용자가 일치합니다 (<a href="../009-tools/904-rokhir-bytecode#948-분리-컴파일을-위한-규칙">9.4.8</a>).
+</li>
+</ul>
+<p>합 타입 값의 <code>PartialOrd</code> / <code>Ord</code> 와 <code>min</code> / <code>max</code> / <code>clamp</code> 는 이 순서를 따릅니다 (<a href="../../refs-standard-libraries/200-core/205-cmp#257-구현-매트릭스">stdlib 2.5.7</a>). 서로 다른 항의 값은 정규 순서로, 같은 항의 값은 그 항 타입의 <code>Ord</code> 로 비교합니다. 그래서 <code>T | none</code> 에서 <code>none</code> 은 어떤 <code>T</code> 값보다 큽니다.</p>
+<h3 id="부분-집합"><a class="anchor" tabindex="-1" href="#부분-집합" aria-hidden="true">#</a>부분 집합</h3>
+<ul>
+<li>합 타입 값은 그 항을 모두 포함하는 더 큰 합 타입 자리에 그대로 들어갑니다. <code>i32 | none</code> 값은 <code>i32 | str | none</code> 자리에 넣을 수 있습니다. 항 하나 (<code>i32</code>) 의 값도 같습니다.
+</li>
+<li>타입 패턴 <code>v: A | B</code> 는 더 큰 합의 일부 항에 맞출 수 있습니다. 그 분기에서 <code>v</code> 는 <code>A | B</code> 입니다.
+</li>
+</ul>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> | <span class="t">f64</span> | <span class="k">none</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> | <span class="t">f64</span> =&gt; use_num(n),     <span class="c">// n: i32 | f64</span>
+    s: <span class="t">str</span> =&gt; use_str(s),
+    <span class="k">none</span> =&gt; {},
+}
+</code></pre>
+<h3 id="제네릭-추론"><a class="anchor" tabindex="-1" href="#제네릭-추론" aria-hidden="true">#</a>제네릭 추론</h3>
+<p>제네릭 추론은 합을 집합으로 봅니다. <code>T | none</code> 을 <code>i32 | str | none</code> 에 맞추면, 남는 항을 모아 <code>T = i32 | str</code> 입니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> unwrap_or&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span> | <span class="k">none</span>, d: <span class="t">T</span>) -&gt; <span class="t">T</span> { ... }
+<span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> | <span class="k">none</span> = ...;
+unwrap_or(v, <span class="n">0i32</span>);       <span class="c">// T = i32 | str</span>
+</code></pre>
+<h2 id="265-none-과의-결합"><a class="anchor" tabindex="-1" href="#265-none-과의-결합" aria-hidden="true">#</a>2.6.5. <code>none</code> 과의 결합</h2>
+<p><a href="../001-lexical/109-other-literals">진리값과 센티넬 리터럴</a> 의 <code>none</code> 은 합 타입의 한 항으로 가장 자주 등장합니다.</p>
+<pre><code class="language-rok"><span class="t">T</span> | <span class="k">none</span>
+</code></pre>
+<p>이 형태는 값이 있을 수도 있고 없을 수도 있음을 표현하며, 다른 언어의 <code>Option&lt;T&gt;</code>, <code>T?</code>, <code>Maybe T</code> 에 해당하는 자리입니다.</p>
+<p>여기에 niche 최적화가 결합되면 (예를 들어 포인터형 T 의 경우) 메모리 오버헤드 없이 null 을 <code>none</code> 으로 표현할 수 있습니다. 정확한 규칙은 <a href="207-niche-optimization">niche 최적화</a> 에서 정의합니다.</p>
+<h3 id="중첩-optional"><a class="anchor" tabindex="-1" href="#중첩-optional" aria-hidden="true">#</a>중첩 optional</h3>
+<p>2.6.4 의 &quot;제네릭 합의 층&quot; 규칙을 <code>none</code> 에 적용한 것입니다. 제네릭 <code>T | none</code> 의 <code>T</code> 가 이미 <code>none</code> 을 담으면 바깥 <code>none</code> 층이 남아 <strong>중첩 optional</strong> 이 됩니다 (Swift 의 <code>T??</code> 와 같음). <code>Maybe&lt;T&gt; = T | none</code> 에 <code>T = i32 | none</code> 을 넣은 <code>Maybe&lt;i32 | none&gt;</code>, 곧 <code>(i32 | none)?</code> 는 두 층이며, <code>none</code> 패턴, <code>is none</code>, <code>?.</code>, <code>??</code>, <code>?</code> 는 바깥 층에 작용하고 none 이 아닌 쪽은 안쪽 <code>T</code> (<code>i32 | none</code>) 에 묶입니다.</p>
+<p>그래서 <code>List&lt;i32 | none&gt;</code> 은 저장된 <code>none</code> 을 원소로 돌며, <code>get</code> / <code>pop</code> / <code>Dict</code> 조회는 &quot;없음&quot; 과 &quot;저장된 none&quot; 을 구별합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span> | <span class="k">none</span>&gt; = [<span class="n">1</span>, <span class="k">none</span>, <span class="n">3</span>];
+
+<span class="k">for</span> x <span class="k">in</span> xs { print(x); }        <span class="c">// 1, none, 3 - 저장된 none 도 원소</span>
+
+<span class="k">match</span> xs.get(<span class="n">1</span>) {                <span class="c">// get: (i32 | none) | none - 두 층</span>
+    <span class="k">none</span> =&gt; print(<span class="s">"범위 밖"</span>),     <span class="c">// 바깥 none: 원소 없음</span>
+    v =&gt; <span class="k">match</span> v {               <span class="c">// v: i32 | none - 저장된 값</span>
+        <span class="k">none</span> =&gt; print(<span class="s">"저장된 none"</span>),
+        n: <span class="t">i32</span> =&gt; print(n),
+    },
+}
+
+<span class="k">let</span> d: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span> | <span class="k">none</span>&gt; = {<span class="s">"a"</span>: <span class="k">none</span>};
+d.get(<span class="s">"a"</span>) ?? <span class="n">0i32</span>;              <span class="c">// none - 키는 있고 값이 none (?? 는 바깥 층만 벗김)</span>
+d.get(<span class="s">"b"</span>) ?? <span class="n">0i32</span>;              <span class="c">// 0 - 키 없음</span>
+</code></pre>
+<h2 id="266-any-와의-차이"><a class="anchor" tabindex="-1" href="#266-any-와의-차이" aria-hidden="true">#</a>2.6.6. <code>any</code> 와의 차이</h2>
+<p><a href="202-any-slot"><code>any</code> 슬롯</a> 의 <code>any</code> 는 열린 슬롯이어서, 모든 타입이 가능하고 변형을 자유롭게 추가할 수 있습니다.</p>
+<p>반면 합 타입 (<code>A | B</code>) 은 닫힌 슬롯이어서, 명시된 변형만 가능합니다. 그 대신 컴파일러가 모든 가능한 항을 알고 있기 때문에 패턴 매칭의 완전성 검사를 수행할 수 있습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>측면</th><th><code>any</code></th><th><code>A | B</code></th></tr></thead>
+<tbody>
+<tr><td>가능한 타입</td><td>모든 타입</td><td>명시된 항만</td></tr>
+<tr><td>디스패치</td><td>런타임 태그 검사</td><td>런타임 태그 검사 (단 항이 적어 분기 적음)</td></tr>
+<tr><td>완전성 검사</td><td>불가</td><td>가능</td></tr>
+<tr><td>메모리</td><td>태그 + 페이로드 (포괄)</td><td>태그 + 가장 큰 항 (좁음)</td></tr>
+<tr><td>점진성</td><td>점진 (코드 변경 없이 새 타입 OK)</td><td>정적 (변형 추가는 타입 변경)</td></tr>
+</tbody></table></div>
+<h2 id="267-enum-과의-차이"><a class="anchor" tabindex="-1" href="#267-enum-과의-차이" aria-hidden="true">#</a>2.6.7. <code>enum</code> 과의 차이</h2>
+<p><code>enum</code> 의 경우에는 명명된 변형이 컨테이너 안에 정의되며, 변형 자체가 <code>enum</code> 의 일부가 됩니다.</p>
+<p>이에 비해 합 타입은 기존 타입을 변형으로 그대로 쓰기 때문에 변형 이름이 따로 존재하지 않습니다.</p>
+<pre><code class="language-rok"><span class="k">enum</span> <span class="t">Result</span> { <span class="t">Ok</span>(<span class="t">i32</span>), <span class="t">Err</span>(<span class="t">str</span>) }       <span class="c">// Ok / Err 변형 이름이 enum 안에 정의됨</span>
+<span class="k">type</span> <span class="t">Either</span> = <span class="t">i32</span> | <span class="t">str</span>;                  <span class="c">// 변형 이름 없음 - 그냥 i32 또는 str</span>
+</code></pre>
+<p>선택 기준은 다음과 같습니다. 서로 다른 의미를 가진 변형이라 이름이 필요한 경우에는 <code>enum</code> 을 선택하는 것이 적절합니다. 반대로 기존 타입을 그대로 합치는 쪽이 자연스러운 경우에는 합 타입을 선택하면 됩니다.</p>
+<h2 id="268-좁히기-narrowing"><a class="anchor" tabindex="-1" href="#268-좁히기-narrowing" aria-hidden="true">#</a>2.6.8. 좁히기 (narrowing)</h2>
+<p>합 타입의 값은 <a href="202-any-slot"><code>any</code> 슬롯</a> 과 같은 방식으로 패턴 매칭이나 <code>is</code> 검사를 통해 항을 좁힐 수 있습니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">i32</span> | <span class="t">str</span> = ...;
+<span class="k">match</span> v {
+    n: <span class="t">i32</span> =&gt; ...,           <span class="c">// 이 분기 안에서 v 는 i32</span>
+    s: <span class="t">str</span> =&gt; ...,           <span class="c">// 이 분기 안에서 v 는 str</span>
+}
+</code></pre>
+<p>좁히기의 정확한 문법은 패턴과 표현식 사양에서 정의합니다.</p>
+<h2 id="269-type-alias-와-결합"><a class="anchor" tabindex="-1" href="#269-type-alias-와-결합" aria-hidden="true">#</a>2.6.9. type alias 와 결합</h2>
+<p>긴 합 타입은 <code>type</code> 으로 별칭을 줄 수 있습니다 (<code>type Num = i32 | f64;</code>). 순환하는 타입 별칭 (제네릭 인자를 거쳐도) 은 에러입니다. 타입 별칭의 <code>where</code> 는 별칭 대상 뒤에 둡니다 (<code>type A&lt;T&gt; = B&lt;T&gt; where T: X;</code>). 별칭의 <code>where</code> 는 별칭을 쓰는 자리마다 검사됩니다. 쓰는 자리의 인자가 타입 매개변수를 가리키면, 제네릭 본체에서처럼 (<a href="210-generics#2109-본체-검사">2.10.9</a>) 그 자리의 범위에 있는 bound 가 정합니다: 둘러싼 함수, <code>impl</code>, 트레잇의 매개변수 bound 와 <code>where</code> 절, 트레잇의 supertrait 와 연관 타입 bound. <code>type W&lt;T&gt; = S&lt;T&gt; where T: Num;</code> 이면 <code>fn get&lt;T: Num&gt;(x: W&lt;T&gt;)</code> 와 <code>impl&lt;T: Num&gt; W&lt;T&gt; { .. }</code> 는 유효하고, <code>fn get&lt;T&gt;(x: W&lt;T&gt;)</code> 는 한 번도 호출하지 않아도 에러입니다. 선언의 타입에서도 마찬가지입니다: <code>struct</code>, <code>enum</code>, <code>union</code> 의 필드, 트레잇 <code>impl</code> 의 트레잇 인자와 연관 타입, 트레잇 메서드의 시그니처는 별칭의 <code>where</code> 를 만족하지 않으면, 아무것도 그것을 쓰지 않아도 거부됩니다. help 는 bound 를 더할 제네릭을 알립니다 (<code>add `T: Num` to `F`'s generics</code>). <code>type</code> 은 문맥 키워드로, 항목 시작에서 식별자와 <code>=</code> 또는 <code>&lt;</code> 가 이어질 때만 키워드입니다 (<a href="../001-lexical/105-keywords#154-문맥-키워드">1.5.4</a>). 정확한 alias 문법은 타입 별칭 사양에서 정의합니다.</p>
+<pre><code class="language-rok"><span class="k">type</span> <span class="t">Number</span> = <span class="t">i32</span> | <span class="t">i64</span> | <span class="t">f32</span> | <span class="t">f64</span>;
+<span class="k">type</span> <span class="t">Maybe</span>&lt;<span class="t">T</span>&gt; = <span class="t">T</span> | <span class="k">none</span>;
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/002-types/206-sum-types.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="205-union"><small>Previous</small>2.5. union</a><a class="next" href="207-niche-optimization"><small>Next</small>2.7. niche 최적화</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

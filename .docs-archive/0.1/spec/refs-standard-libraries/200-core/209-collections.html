@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.9. Collections - List / Dict / Set / Tuple / Slice - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="The rok::core::collections module provides general-purpose containers. Every collection is allocated on the GC heap and can be created directly through literal ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/209-collections.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.9. Collections - List / Dict / Set / Tuple / Slice - rok docs">
+<meta property="og:description" content="The rok::core::collections module provides general-purpose containers. Every collection is allocated on the GC heap and can be created directly through literal ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/209-collections.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/209-collections.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/209-collections.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/">Reference</a><a href="../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok standard library reference</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. Numeric types</a></li><li><a href="202-non-zero">2.2. Niche wrappers - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. Arithmetic / bitwise / indexing traits</a></li><li><a href="204-ops-assign">2.4. Compound assignment traits</a></li><li><a href="205-cmp">2.5. Comparison traits</a></li><li><a href="206-broadcast">2.6. Broadcast - element-wise operators</a></li><li><a href="207-iter">2.7. iter - iteration traits</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li class="cur"><a aria-current="page" href="209-collections">2.9. Collections - List / Dict / Set / Tuple / Slice</a><ul class="toc"><li><a href="#291-literal-syntax---literalquery-binding">2.9.1. Literal syntax - #[literal(query)] binding</a></li><li><a href="#292-listt---dynamic-array">2.9.2. List&lt;T&gt; - dynamic array</a></li><li><a href="#293-dictk-v---hash-map">2.9.3. Dict&lt;K, V&gt; - hash map</a></li><li><a href="#294-sett---hash-set">2.9.4. Set&lt;T&gt; - hash set</a></li><li><a href="#295-ordereddictk-v--orderedsett---insertion-order">2.9.5. OrderedDict&lt;K, V&gt; / OrderedSet&lt;T&gt; - insertion order</a></li><li><a href="#295a-dequet---double-ended-queue">2.9.5a. Deque&lt;T&gt; - double-ended queue</a></li><li><a href="#295b-binaryheapt---priority-queue">2.9.5b. BinaryHeap&lt;T&gt; - priority queue</a></li><li><a href="#296-tuple---fixed-heterogeneous">2.9.6. Tuple&lt;...&gt; - fixed heterogeneous</a></li><li><a href="#297-slicet---view">2.9.7. Slice&lt;T&gt; - view</a></li><li><a href="#298-index--indexset--sliceable-trait-mapping">2.9.8. Index / IndexSet / Sliceable trait mapping</a></li><li><a href="#299-intoiterator--fromiterator">2.9.9. IntoIterator / FromIterator</a></li><li><a href="#2910-module-mapping">2.9.10. Module mapping</a></li><li><a href="#2911-comparison-with-other-languages">2.9.11. Comparison with other languages</a></li><li><a href="#2912-gcbuft---raw-gc-buffer">2.9.12. GcBuf&lt;T&gt; - raw GC buffer</a></li></ul></li><li><a href="210-fmt">2.10. fmt - Formatting traits</a></li><li><a href="211-conversion">2.11. Conversion traits</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - Error traits / types</a></li><li><a href="215-string">2.15. Strings - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - Concurrency primitives</a></li><li><a href="217-channel">2.17. channel - Message passing</a></li><li><a href="218-task">2.18. task - M:N scheduler task API</a></li><li><a href="219-par">2.19. par - Parallel processing API</a></li><li><a href="220-future">2.20. future - Future / await integration</a></li><li><a href="221-crypto">2.21. crypto:: - cryptographic algorithms</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="29-collections---list--dict--set--tuple--slice 29-컬렉션---list--dict--set--tuple--slice 291-literal-syntax---literalquery-binding 291-리터럴-문법---literalquery-바인딩 resolving-the-dict--set-ambiguity dict--set-모호성-해결 the-type-of- -의-타입 reference-handles 참조-핸들 292-listt---dynamic-array 292-listt---동적-배열 core-methods 핵심-메서드 examples 사용-예 trait-implementations 트레잇-구현 comparison--hashing--debug---common-rules 비교--해시--debug---공통-규칙 capacity-and-removal---common-rules 용량과-제거---공통-규칙 293-dictk-v---hash-map 293-dictk-v---hash-map core-methods-1 핵심-메서드-1 examples-1 사용-예-1 indexk indexk lazy-views lazy-view 294-sett---hash-set 294-sett---hash-set 295-ordereddictk-v--orderedsett---insertion-order 295-ordereddictk-v--orderedsett---insertion-order construction 생성 295a-dequet---double-ended-queue 295a-dequet---양끝-큐 295b-binaryheapt---priority-queue 295b-binaryheapt---우선순위-큐 296-tuple---fixed-heterogeneous 296-tuple---고정-heterogeneous trait-implementations-1 트레잇-구현-1 multiple-return-values 함수-다중-반환 297-slicet---view 297-slicet---view core-methods-2 핵심-메서드-2 examples-2 사용-예-2 integration-with-variadic-args variadic-args-와의-통합 298-index--indexset--sliceable-trait-mapping 298-index--indexset--sliceable-트레잇-매핑 299-intoiterator--fromiterator 299-intoiterator--fromiterator 2910-module-mapping 2910-모듈-매핑 2911-comparison-with-other-languages 2911-다른-언어와의-비교 2912-gcbuft---raw-gc-buffer 2912-gcbuft---raw-gc-buffer"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-standard-libraries/200-core/209-collections" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="29-collections---list--dict--set--tuple--slice"><a class="anchor" tabindex="-1" href="#29-collections---list--dict--set--tuple--slice" aria-hidden="true">#</a>2.9. Collections - <code>List</code> / <code>Dict</code> / <code>Set</code> / <code>Tuple</code> / <code>Slice</code></h1>
+<p>The <code>rok::core::collections</code> module provides general-purpose containers. Every collection is allocated on the GC heap and can be created directly through literal syntax bound with <code>#[literal(...)]</code>.</p>
+<p>This chapter defines the authoritative signatures of the following 6 collections.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Collection</th><th>Literal syntax</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>[1, 2, 3]</code></td><td>Dynamic array (insertion order)</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>{&quot;a&quot;: 1, &quot;b&quot;: 2}</code></td><td>Hash map (HashMap, unordered)</td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><code>{1, 2, 3}</code></td><td>Hash set (unordered)</td></tr>
+<tr><td><code>OrderedDict&lt;K, V&gt;</code></td><td><code>OrderedDict::from([...])</code></td><td>Insertion-order-preserving dict</td></tr>
+<tr><td><code>OrderedSet&lt;T&gt;</code></td><td><code>OrderedSet::from([...])</code></td><td>Insertion-order-preserving set</td></tr>
+<tr><td><code>Tuple&lt;...&gt;</code></td><td><code>(1, &quot;a&quot;, true)</code></td><td>Fixed-size heterogeneous</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>xs[1:3]</code></td><td>Zero-copy view of a container</td></tr>
+</tbody></table></div>
+<h2 id="291-literal-syntax---literalquery-binding"><a class="anchor" tabindex="-1" href="#291-literal-syntax---literalquery-binding" aria-hidden="true">#</a>2.9.1. Literal syntax - <code>#[literal(query)]</code> binding</h2>
+<p>Literal syntax is defined with the <strong>query DSL</strong> of <a href="../../refs-lang/006-meta-system/605-literal-magic">refs-lang 6.5 <code>#[literal]</code></a> as follows.</p>
+<pre><code class="language-rok"><span class="a">#[literal( "[" {expr} % "," * "]" )]</span>
+<span class="k">struct</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="a">#[literal( "{" {expr ":" expr} % "," * "}" )]</span>
+<span class="k">struct</span> <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="a">#[literal( "{" {expr} % "," + "}" )]</span>
+<span class="k">struct</span> <span class="t">Set</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* ... */</span> }
+
+<span class="a">#[literal( "(" expr "," {expr} % "," * ")" )]</span>
+<span class="k">struct</span> <span class="t">Tuple</span> { <span class="c">/* ... */</span> }
+</code></pre>
+<p>The literal query syntax means: <code>{...} % sep *</code> is zero or more repetitions separated by sep, and <code>{...} % sep +</code> is one or more. A single-element Set is written <code>{1,}</code> with a trailing comma to distinguish it from the block <code>{1}</code>. For token-sequence matching, the lexer distinguishes tokens directly and the parser then performs query matching.</p>
+<h3 id="resolving-the-dict--set-ambiguity"><a class="anchor" tabindex="-1" href="#resolving-the-dict--set-ambiguity" aria-hidden="true">#</a>Resolving the Dict / Set ambiguity</h3>
+<pre><code class="language-rok">{<span class="s">"a"</span>: <span class="n">1</span>}      <span class="c">// Dict - `:` pattern</span>
+{<span class="n">1</span>, <span class="n">2</span>}        <span class="c">// Set - values only</span>
+{<span class="n">1</span>,}          <span class="c">// Set (single element - trailing comma)</span>
+{<span class="n">1</span>}           <span class="c">// always a block - even when the slot is a Set</span>
+{ x = <span class="n">1</span> }     <span class="c">// block expression - the token after `{` is statement-like</span>
+</code></pre>
+<p>The parser decides from the contents alone: the <code>expr &quot;:&quot;</code> form is a Dict, a comma makes it a Set, and anything else is a block. The type of the receiving slot is not used in the decision.</p>
+<h3 id="the-type-of-"><a class="anchor" tabindex="-1" href="#the-type-of-" aria-hidden="true">#</a>The type of <code>[...]</code></h3>
+<p><code>[1, 2, 3]</code> is <code>List&lt;T&gt;</code> when there is no expected type. A fixed-size array <code>[T; N]</code> is created only when the expected type is written as <code>[T; N]</code>, as in <code>let a: [i32; 3] = [1, 2, 3];</code>. Fixed arrays are built directly by the compiler without going through a handler.</p>
+<p>A fixed array implements <code>Clone</code> / <code>Copy</code> / <code>Default</code> / <code>Debug</code> / <code>PartialEq</code> / <code>Eq</code> / <code>PartialOrd</code> / <code>Ord</code> / <code>Hash</code> when its element does, and has <code>len()</code> and <code>is_empty()</code>. Ordering is lexicographic, so comparison operators (<code>==</code>, <code>&lt;</code>, etc.) can be used directly.</p>
+<pre><code class="language-rok"><span class="k">let</span> a: [<span class="t">i32</span>; <span class="n">3</span>] = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+a.len();                 <span class="c">//→ 3</span>
+a == [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];          <span class="c">//→ true</span>
+a &lt; [<span class="n">1</span>, <span class="n">2</span>, <span class="n">4</span>];           <span class="c">//→ true (lexicographic)</span>
+</code></pre>
+<h3 id="reference-handles"><a class="anchor" tabindex="-1" href="#reference-handles" aria-hidden="true">#</a>Reference handles</h3>
+<p><code>List</code>, <code>Dict</code> and <code>Set</code> values are reference handles to GC heap objects. <code>let ys = xs;</code> and argument passing copy the handle, so the same collection is shared. Methods that modify a collection therefore take <code>self</code>, not <code>ref self</code>. Call <code>clone()</code> for an independent copy. A struct element is a value: <code>xs[i]</code> and <code>d[k]</code> return a copy, and a change is stored with <code>xs[i] = v</code> (<a href="../../refs-lang/002-types/203-struct#238-value-semantics">refs-lang 2.3.8</a>). <code>keys</code> / <code>values</code> / <code>entries</code> return lazy iterators that do not copy the collection.</p>
+<h2 id="292-listt---dynamic-array"><a class="anchor" tabindex="-1" href="#292-listt---dynamic-array" aria-hidden="true">#</a>2.9.2. <code>List&lt;T&gt;</code> - dynamic array</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// internal: ptr + len + capacity</span>
+}
+</code></pre>
+<p>Internally it consists of a contiguous memory buffer plus <code>len</code> / <code>capacity</code>, and provides amortized O(1) push/pop and O(1) random access.</p>
+<h3 id="core-methods"><a class="anchor" tabindex="-1" href="#core-methods" aria-hidden="true">#</a>Core methods</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> capacity(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+
+    <span class="k">fn</span> push(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> pop(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> insert(<span class="k">self</span>, idx: <span class="t">usize</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> remove(<span class="k">self</span>, idx: <span class="t">usize</span>) -&gt; <span class="t">T</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+    <span class="k">fn</span> truncate(<span class="k">self</span>, len: <span class="t">usize</span>);              <span class="c">// keeps the first len elements; no change if fewer</span>
+    <span class="k">fn</span> drain(<span class="k">self</span>, r: <span class="t">Range</span>&lt;<span class="t">usize</span>&gt;) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;; <span class="c">// removes and returns r's elements in order; panics if r is reversed or ends past len()</span>
+
+    <span class="k">fn</span> get(<span class="k">self</span>, idx: <span class="t">usize</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;       <span class="c">// safe - out-of-bounds → none</span>
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> last(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+
+    <span class="k">fn</span> extend&lt;<span class="t">I</span>: <span class="t">IntoIterator</span>&lt;<span class="t">Item</span> = <span class="t">T</span>&gt;&gt;(<span class="k">self</span>, iter: <span class="t">I</span>);
+    <span class="k">fn</span> sort(<span class="k">self</span>) <span class="k">where</span> <span class="t">T</span>: <span class="t">Ord</span>;                  <span class="c">// ascending, stable</span>
+    <span class="k">fn</span> sort_by(<span class="k">self</span>, cmp: <span class="k">fn</span>(<span class="t">T</span>, <span class="t">T</span>) -&gt; <span class="t">Ordering</span>); <span class="c">// stable</span>
+    <span class="k">fn</span> reserve(<span class="k">self</span>, additional: <span class="t">usize</span>);
+    <span class="k">fn</span> shrink_to_fit(<span class="k">self</span>);
+    <span class="k">fn</span> reverse(<span class="k">self</span>);                            <span class="c">// in place</span>
+
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">ListIter</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> into_iter(<span class="k">self</span>) -&gt; <span class="t">ListIntoIter</span>&lt;<span class="t">T</span>&gt;;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">List</span>&lt;<span class="t">str</span>&gt; {
+    <span class="k">fn</span> join(<span class="k">self</span>, sep: <span class="t">str</span>) -&gt; <span class="t">str</span>;              <span class="c">// joins the elements with sep</span>
+}
+
+<span class="k">impl</span> <span class="t">List</span>&lt;<span class="t">u8</span>&gt; {
+    <span class="k">fn</span> find&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, needle: <span class="t">B</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;   <span class="c">// self[:].find(needle)</span>
+}
+</code></pre>
+<h3 id="examples"><a class="anchor" tabindex="-1" href="#examples" aria-hidden="true">#</a>Examples</h3>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+xs.push(<span class="n">1</span>);
+xs.push(<span class="n">2</span>);
+xs.push(<span class="n">3</span>);
+
+<span class="k">let</span> ys: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">10</span>, <span class="n">20</span>, <span class="n">30</span>];
+ys[<span class="n">0</span>];                    <span class="c">//→ 10  (Index trait)</span>
+ys[<span class="n">100</span>];                  <span class="c">//→ panic (IndexError)</span>
+ys.get(<span class="n">100</span>);              <span class="c">//→ none</span>
+
+<span class="k">for</span> x <span class="k">in</span> ys {
+    <span class="k">use</span>(x);               <span class="c">//→ 10, 20, 30</span>
+}
+
+<span class="k">let</span> total: <span class="t">i32</span> = ys.into_iter().sum();   <span class="c">//→ 60</span>
+</code></pre>
+<h3 id="trait-implementations"><a class="anchor" tabindex="-1" href="#trait-implementations" aria-hidden="true">#</a>Trait implementations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Condition</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>IntoIterator</code></td><td>Always</td><td><code>for x in xs</code></td></tr>
+<tr><td><code>FromIterator&lt;T&gt;</code></td><td>Always</td><td><code>(0..5).collect::&lt;List&lt;i32&gt;&gt;()</code></td></tr>
+<tr><td><code>Index&lt;usize&gt;</code></td><td>Always</td><td><code>xs[i]</code></td></tr>
+<tr><td><code>IndexSet&lt;usize, T&gt;</code></td><td>Always</td><td><code>xs[i] = v</code></td></tr>
+<tr><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code></td><td>Always</td><td><code>xs[1:3]</code></td></tr>
+<tr><td><code>Display</code></td><td><strong>No</strong></td><td><strong>Manual output recommended</strong></td></tr>
+<tr><td><code>Debug</code></td><td><code>T: Debug</code></td><td><code>f&quot;{xs:?}&quot;</code> → <code>[1, 2, 3]</code></td></tr>
+<tr><td><code>Clone</code></td><td><code>T: Clone</code></td><td>Deep copy</td></tr>
+<tr><td><code>PartialEq</code></td><td><code>T: PartialEq</code></td><td>element-wise</td></tr>
+<tr><td><code>Eq</code>/<code>Ord</code>/<code>Hash</code></td><td>When T has the same trait</td><td>lexicographic</td></tr>
+</tbody></table></div>
+<h3 id="comparison--hashing--debug---common-rules"><a class="anchor" tabindex="-1" href="#comparison--hashing--debug---common-rules" aria-hidden="true">#</a>Comparison / hashing / Debug - common rules</h3>
+<ul>
+<li><code>List&lt;T&gt;</code> implements <code>PartialEq</code> / <code>Eq</code> / <code>Hash</code> element by element, in order.
+</li>
+<li><code>Dict&lt;K, V&gt;</code> and <code>Set&lt;T&gt;</code> compare and hash independently of order. They are equal if they hold the same elements (keys and values).
+</li>
+<li>All three collections implement <code>Debug</code> when their elements implement it, printing in iteration order.
+</li>
+<li>A collection whose elements are <code>Eq + Hash</code> can therefore be a <code>Set</code> element or a <code>Dict</code> key (<code>Set&lt;List&lt;i32&gt;&gt;</code>).
+</li>
+</ul>
+<h3 id="capacity-and-removal---common-rules"><a class="anchor" tabindex="-1" href="#capacity-and-removal---common-rules" aria-hidden="true">#</a>Capacity and removal - common rules</h3>
+<ul>
+<li>A size that overflows in <code>reserve</code>, <code>with_capacity</code>, <code>repeat</code> or growth panics with &quot;capacity overflow&quot;, at every optimization level.
+</li>
+<li>Removing an element (<code>pop</code>, <code>remove</code>, <code>clear</code>, <code>truncate</code>, <code>drain</code>, ..) releases the reference: the GC no longer sees it through the collection.
+</li>
+</ul>
+<h2 id="293-dictk-v---hash-map"><a class="anchor" tabindex="-1" href="#293-dictk-v---hash-map" aria-hidden="true">#</a>2.9.3. <code>Dict&lt;K, V&gt;</code> - hash map</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Dict</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; {
+    <span class="c">// internal: HashMap (open addressing or chaining)</span>
+}
+</code></pre>
+<p>It provides average O(1) lookup / insert / remove. Order is not guaranteed, so iteration order is nondeterministic.</p>
+<h3 id="core-methods-1"><a class="anchor" tabindex="-1" href="#core-methods-1" aria-hidden="true">#</a>Core methods</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>) -&gt; <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> insert(<span class="k">self</span>, k: <span class="t">K</span>, v: <span class="t">V</span>) -&gt; <span class="t">V</span> | <span class="k">none</span>;       <span class="c">// returns the previous V / none if absent</span>
+    <span class="k">fn</span> remove(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">V</span> | <span class="k">none</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">V</span> | <span class="k">none</span>;
+    <span class="k">fn</span> contains_key(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> keys(<span class="k">self</span>) -&gt; <span class="t">KeysIter</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+    <span class="k">fn</span> values(<span class="k">self</span>) -&gt; <span class="t">ValuesIter</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;
+    <span class="k">fn</span> entries(<span class="k">self</span>) -&gt; <span class="t">EntriesIter</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;            <span class="c">// (K, V) pairs</span>
+
+    <span class="k">fn</span> entry(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;          <span class="c">// the slot for that key (present or not)</span>
+}
+
+<span class="k">struct</span> <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; { <span class="c">/* dict + key */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">fn</span> key(<span class="k">self</span>) -&gt; <span class="t">K</span>;
+    <span class="k">fn</span> or_insert(<span class="k">self</span>, v: <span class="t">V</span>) -&gt; <span class="t">V</span>;                   <span class="c">// inserts v if absent; returns the value</span>
+    <span class="k">fn</span> or_insert_with(<span class="k">self</span>, f: <span class="k">fn</span>() -&gt; <span class="t">V</span>) -&gt; <span class="t">V</span>;      <span class="c">// inserts f() if absent; returns the value</span>
+    <span class="k">fn</span> and_modify(<span class="k">self</span>, f: <span class="k">fn</span>(<span class="t">V</span>) -&gt; <span class="t">V</span>) -&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt;;   <span class="c">// if present, replaces it with f(value)</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>: <span class="t">Default</span>&gt; <span class="t">Entry</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">fn</span> or_default(<span class="k">self</span>) -&gt; <span class="t">V</span>;                         <span class="c">// inserts V::default() if absent; returns the value</span>
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> counts: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = {};
+<span class="k">for</span> w <span class="k">in</span> words {
+    counts.entry(w).and_modify(|n| n + <span class="n">1</span>).or_insert(<span class="n">1</span>);
+}
+</code></pre>
+<h3 id="examples-1"><a class="anchor" tabindex="-1" href="#examples-1" aria-hidden="true">#</a>Examples</h3>
+<pre><code class="language-rok"><span class="k">let</span> d: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = {<span class="s">"a"</span>: <span class="n">1</span>, <span class="s">"b"</span>: <span class="n">2</span>};
+d[<span class="s">"a"</span>];                   <span class="c">//→ 1</span>
+d[<span class="s">"c"</span>];                   <span class="c">//→ panic (IndexError - key missing)</span>
+d.get(<span class="s">"c"</span>);               <span class="c">//→ none</span>
+
+d.insert(<span class="s">"c"</span>, <span class="n">3</span>);
+d.contains_key(<span class="s">"c"</span>);      <span class="c">//→ true</span>
+
+<span class="k">for</span> (k, v) <span class="k">in</span> d.entries() {
+    log(<span class="s">"{k} = {v}"</span>);
+}
+</code></pre>
+<h3 id="indexk"><a class="anchor" tabindex="-1" href="#indexk" aria-hidden="true">#</a><code>Index&lt;K&gt;</code></h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; <span class="t">Index</span>&lt;<span class="t">K</span>&gt; <span class="k">for</span> <span class="t">Dict</span>&lt;<span class="t">K</span>, <span class="t">V</span>&gt; {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">V</span>;
+    <span class="k">fn</span> index(<span class="k">self</span>, k: <span class="t">K</span>) -&gt; <span class="t">V</span> {
+        <span class="k">self</span>.get(k) ?? panic(<span class="s">"key not found"</span>)
+    }
+}
+</code></pre>
+<p>The <code>d[k]</code> notation assumes the key is present; use <code>.get(k)</code> when safe access is needed.</p>
+<h3 id="lazy-views"><a class="anchor" tabindex="-1" href="#lazy-views" aria-hidden="true">#</a>Lazy views</h3>
+<p><code>keys</code> / <code>values</code> / <code>entries</code> are lazy views onto the current table, not copies. Modifying the dict during iteration gives unspecified results (elements may be missed or seen twice), but memory safety is preserved.</p>
+<h2 id="294-sett---hash-set"><a class="anchor" tabindex="-1" href="#294-sett---hash-set" aria-hidden="true">#</a>2.9.4. <code>Set&lt;T&gt;</code> - hash set</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Set</span>&lt;<span class="t">T</span>: <span class="t">Hash</span> + <span class="t">Eq</span>&gt; {
+    <span class="c">// internal: Dict&lt;T, ()&gt;</span>
+}
+</code></pre>
+<p>Order is not guaranteed; average performance is O(1).</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Hash</span> + <span class="t">Eq</span>&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> insert(<span class="k">self</span>, x: <span class="t">T</span>) -&gt; <span class="t">bool</span>;        <span class="c">// true if newly inserted</span>
+    <span class="k">fn</span> remove(<span class="k">self</span>, x: <span class="t">T</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> contains(<span class="k">self</span>, x: <span class="t">T</span>) -&gt; <span class="t">bool</span>;
+
+    <span class="k">fn</span> <span class="k">union</span>(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> intersection(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> difference(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> symmetric_difference(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">Set</span>&lt;<span class="t">T</span>&gt;;
+
+    <span class="k">fn</span> is_subset(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_superset(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> is_disjoint(<span class="k">self</span>, other: <span class="t">Set</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> s: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>};
+s.contains(<span class="n">2</span>);            <span class="c">//→ true</span>
+s.insert(<span class="n">4</span>);
+
+<span class="k">let</span> a: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>};
+<span class="k">let</span> b: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = {<span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>};
+<span class="k">let</span> u = a.<span class="k">union</span>(b);       <span class="c">//→ {1, 2, 3, 4}</span>
+<span class="k">let</span> i = a.intersection(b);<span class="c">//→ {2, 3}</span>
+</code></pre>
+<h2 id="295-ordereddictk-v--orderedsett---insertion-order"><a class="anchor" tabindex="-1" href="#295-ordereddictk-v--orderedsett---insertion-order" aria-hidden="true">#</a>2.9.5. <code>OrderedDict&lt;K, V&gt;</code> / <code>OrderedSet&lt;T&gt;</code> - insertion order</h2>
+<p>These provide the same API as <code>Dict</code> / <code>Set</code> but <strong>preserve insertion order</strong>, equivalent in meaning to Python 3.7+ <code>dict</code> or Java's LinkedHashMap.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">OrderedDict</span>&lt;<span class="t">K</span>: <span class="t">Hash</span> + <span class="t">Eq</span>, <span class="t">V</span>&gt; { <span class="c">/* ... */</span> }
+<span class="k">struct</span> <span class="t">OrderedSet</span>&lt;<span class="t">T</span>: <span class="t">Hash</span> + <span class="t">Eq</span>&gt; { <span class="c">/* ... */</span> }
+</code></pre>
+<p>They suit situations that need order preservation, such as config, JSON-like structures and reproducible output; the indices vector holding the order adds slight overhead.</p>
+<ul>
+<li><code>OrderedDict</code> has <code>new</code> / <code>with_capacity</code> / <code>from</code> / <code>len</code> / <code>is_empty</code> / <code>insert</code> / <code>get</code> / <code>contains_key</code> / <code>remove</code> / <code>clear</code> / <code>keys</code> / <code>values</code> / <code>entries</code>, plus <code>d[k]</code> and <code>d[k] = v</code>. <code>keys</code> / <code>values</code> / <code>entries</code> iterate in insertion order. <code>insert</code> on an existing key changes only the value; the order is unchanged.
+</li>
+<li><code>OrderedSet</code> has <code>new</code> / <code>from</code> / <code>len</code> / <code>is_empty</code> / <code>insert</code> / <code>remove</code> / <code>contains</code> / <code>iter</code> / <code>to_list</code> and the set operations <code>union</code> / <code>intersection</code> / <code>difference</code> / <code>symmetric_difference</code> / <code>is_subset</code> / <code>is_superset</code> / <code>is_disjoint</code>. The result of a set operation follows the order of the left operand first.
+</li>
+<li>Both implement <code>Default</code>, <code>Clone</code>, <code>IntoIterator</code>, <code>FromIterator</code>, <code>PartialEq</code> (order-independent) and <code>Debug</code>.
+</li>
+</ul>
+<h3 id="construction"><a class="anchor" tabindex="-1" href="#construction" aria-hidden="true">#</a>Construction</h3>
+<p>There is no literal syntax; they are created only through constructor calls.</p>
+<pre><code class="language-rok"><span class="k">let</span> d = <span class="t">OrderedDict</span>::from([(<span class="s">"a"</span>, <span class="n">1</span>), (<span class="s">"b"</span>, <span class="n">2</span>)]);
+<span class="k">let</span> s = <span class="t">OrderedSet</span>::from([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>]);
+</code></pre>
+<h2 id="295a-dequet---double-ended-queue"><a class="anchor" tabindex="-1" href="#295a-dequet---double-ended-queue" aria-hidden="true">#</a>2.9.5a. <code>Deque&lt;T&gt;</code> - double-ended queue</h2>
+<p>A double-ended queue over a ring buffer.</p>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Deque</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">Deque</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> with_capacity(cap: <span class="t">usize</span>) -&gt; <span class="t">Deque</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> push_back(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> push_front(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> pop_front(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> pop_back(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> front(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> back(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">DequeIter</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// front to back</span>
+}
+</code></pre>
+<p>It implements <code>d[i]</code> / <code>d[i] = v</code> (panics when out of range), <code>IntoIterator</code>, <code>Default</code> and <code>Debug</code>.</p>
+<h2 id="295b-binaryheapt---priority-queue"><a class="anchor" tabindex="-1" href="#295b-binaryheapt---priority-queue" aria-hidden="true">#</a>2.9.5b. <code>BinaryHeap&lt;T&gt;</code> - priority queue</h2>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Ord</span>&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> new() -&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt;;                 <span class="c">// max-heap: largest first</span>
+}
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> by(before: <span class="k">fn</span>(<span class="t">T</span>, <span class="t">T</span>) -&gt; <span class="t">bool</span>) -&gt; <span class="t">BinaryHeap</span>&lt;<span class="t">T</span>&gt;;   <span class="c">// a comes first if before(a, b)</span>
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> peek(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> push(<span class="k">self</span>, x: <span class="t">T</span>);
+    <span class="k">fn</span> pop(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> clear(<span class="k">self</span>);
+    <span class="k">fn</span> retain(<span class="k">self</span>, keep: <span class="k">fn</span>(<span class="t">T</span>) -&gt; <span class="t">bool</span>);
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">ListIter</span>&lt;<span class="t">T</span>&gt;;              <span class="c">// unordered</span>
+}
+</code></pre>
+<h2 id="296-tuple---fixed-heterogeneous"><a class="anchor" tabindex="-1" href="#296-tuple---fixed-heterogeneous" aria-hidden="true">#</a>2.9.6. <code>Tuple&lt;...&gt;</code> - fixed heterogeneous</h2>
+<pre><code class="language-rok"><span class="a">#[literal( "(" expr "," {expr} % "," * ")" )]</span>
+<span class="k">struct</span> <span class="t">Tuple</span> { <span class="c">/* heterogeneous, determined at compile time */</span> }
+</code></pre>
+<p>Tuples are intrinsic to the language and cannot be registered as a literal handler (<a href="../../refs-lang/006-meta-system/605-literal-magic#657-user-defined-literals">refs-lang 6.5.7</a>). A tuple expression must contain at least one comma. <code>(e)</code> is a grouping expression; a one-element tuple is <code>(e,)</code>.</p>
+<p>Each position may have a different type, and the length is fixed at compile time.</p>
+<pre><code class="language-rok"><span class="k">let</span> t: <span class="t">Tuple</span>&lt;<span class="t">i32</span>, <span class="t">str</span>, <span class="t">bool</span>&gt; = (<span class="n">42</span>, <span class="s">"hello"</span>, <span class="k">true</span>);
+<span class="k">let</span> n = t.<span class="n">0</span>;              <span class="c">//→ 42</span>
+<span class="k">let</span> s = t.<span class="n">1</span>;              <span class="c">//→ "hello"</span>
+<span class="k">let</span> b = t.<span class="n">2</span>;              <span class="c">//→ true</span>
+
+<span class="c">// pattern destructuring</span>
+<span class="k">let</span> (n, s, b) = t;
+</code></pre>
+<h3 id="trait-implementations-1"><a class="anchor" tabindex="-1" href="#trait-implementations-1" aria-hidden="true">#</a>Trait implementations</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Trait</th><th>Condition</th></tr></thead>
+<tbody>
+<tr><td><code>Clone</code></td><td>Every component <code>Clone</code></td></tr>
+<tr><td><code>Copy</code></td><td>Every component <code>Copy</code></td></tr>
+<tr><td><code>Debug</code></td><td>Every component <code>Debug</code></td></tr>
+<tr><td><code>PartialEq</code></td><td>Every component <code>PartialEq</code></td></tr>
+<tr><td><code>Eq</code></td><td>Every component <code>Eq</code></td></tr>
+<tr><td><code>PartialOrd</code></td><td>Every component <code>PartialOrd</code></td></tr>
+<tr><td><code>Ord</code></td><td>Every component <code>Ord</code></td></tr>
+<tr><td><code>Hash</code></td><td>Every component <code>Hash</code></td></tr>
+</tbody></table></div>
+<p>The traits in the table are provided by <code>rok::core::tuple</code> for tuples of 1 to 12 elements. <code>PartialOrd</code> / <code>Ord</code> are lexicographic (from the first element; the first differing element decides), so <code>&lt;</code> / <code>&lt;=</code> / <code>&gt;</code> / <code>&gt;=</code> can be used on tuples directly (<code>(1, &quot;b&quot;) &lt; (1, &quot;c&quot;)</code>).</p>
+<p><code>Display</code> is not derived automatically; implementing it directly where needed is recommended.</p>
+<h3 id="multiple-return-values"><a class="anchor" tabindex="-1" href="#multiple-return-values" aria-hidden="true">#</a>Multiple return values</h3>
+<p>The multi-return of <a href="../../refs-lang/004-functions/403-return#435-multiple-returns-tuples">refs-lang 4.3.5 Multiple return</a> is handled as a Tuple return.</p>
+<pre><code class="language-rok"><span class="k">fn</span> divmod(a: <span class="t">i32</span>, b: <span class="t">i32</span>) -&gt; (<span class="t">i32</span>, <span class="t">i32</span>) {
+    (a / b, a % b)
+}
+
+<span class="k">let</span> (q, r) = divmod(<span class="n">17</span>, <span class="n">5</span>);     <span class="c">//→ q = 3, r = 2</span>
+</code></pre>
+<h2 id="297-slicet---view"><a class="anchor" tabindex="-1" href="#297-slicet---view" aria-hidden="true">#</a>2.9.7. <code>Slice&lt;T&gt;</code> - view</h2>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; {
+    <span class="c">// GC buffer + start position + length + stride (1 = contiguous, k = step, negative = reversed)</span>
+}
+</code></pre>
+<p>It is the result of expressions such as <code>xs[1:3]</code> / <code>xs[::2]</code> / <code>xs[1:]</code> (<a href="203-ops#234-indexing-traits">2.3.4 <code>Sliceable</code></a>). A view does not copy elements; it points into the original's GC buffer, and that buffer stays alive while the view is alive.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Source</th><th>What the view sees</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td>The list's current buffer. Element writes are visible; changes after the list grows and moves its buffer are not</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td>The same buffer (a view of a view)</td></tr>
+<tr><td><code>[T; N]</code></td><td>A copy of the array (arrays are values)</td></tr>
+</tbody></table></div>
+<h3 id="core-methods-2"><a class="anchor" tabindex="-1" href="#core-methods-2" aria-hidden="true">#</a>Core methods</h3>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> len(<span class="k">self</span>) -&gt; <span class="t">usize</span>;
+    <span class="k">fn</span> is_empty(<span class="k">self</span>) -&gt; <span class="t">bool</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> last(<span class="k">self</span>) -&gt; <span class="t">T</span> | <span class="k">none</span>;
+    <span class="k">fn</span> step(<span class="k">self</span>, k: <span class="t">isize</span>) -&gt; <span class="t">Slice</span>&lt;<span class="t">T</span>&gt;;     <span class="c">// every k-th; from the end if k &lt; 0. k == 0 panics</span>
+    <span class="k">fn</span> iter(<span class="k">self</span>) -&gt; <span class="t">SliceIter</span>&lt;<span class="t">T</span>&gt;;
+    <span class="k">fn</span> to_list(<span class="k">self</span>) -&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt;;             <span class="c">// allocates a new List</span>
+}
+
+<span class="k">impl</span> <span class="t">Slice</span>&lt;<span class="t">u8</span>&gt; {
+    <span class="k">fn</span> find&lt;<span class="t">B</span>: <span class="t">AsBytes</span>&gt;(<span class="k">self</span>, needle: <span class="t">B</span>) -&gt; <span class="t">usize</span> | <span class="k">none</span>;   <span class="c">// offset of the first occurrence; an empty needle is at 0</span>
+}
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Index</span>&lt;<span class="t">usize</span>&gt; <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }               <span class="c">// s[i] - panics when out of range</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">Sliceable</span>&lt;<span class="t">Range</span>&lt;<span class="t">usize</span>&gt;&gt; <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }    <span class="c">// s[a:b] - a view of a view; the range is clamped to the length</span>
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">IntoIterator</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">PartialEq</span>&gt; <span class="t">PartialEq</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }
+<span class="k">impl</span>&lt;<span class="t">T</span>: <span class="t">Debug</span>&gt; <span class="t">Debug</span> <span class="k">for</span> <span class="t">Slice</span>&lt;<span class="t">T</span>&gt; { ... }
+</code></pre>
+<p>A byte string passes as the needle of <code>find</code> (its <code>Slice&lt;u8&gt;</code> rule, <a href="../../refs-lang/001-lexical/107-string-literals#175-byte-strings">refs-lang 1.7.5</a>).</p>
+<p><code>Slice</code> is read-only (no <code>IndexSet</code>). Negative indices count from the end (<a href="../../refs-lang/003-expressions/306-indexing-and-slicing#361-indexing-arri">refs-lang 3.6.1</a>).</p>
+<h3 id="examples-2"><a class="anchor" tabindex="-1" href="#examples-2" aria-hidden="true">#</a>Examples</h3>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>, <span class="n">5</span>];
+<span class="k">let</span> s1: <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt; = xs[<span class="n">1</span>:<span class="n">4</span>];           <span class="c">//→ view of [2, 3, 4]</span>
+<span class="k">let</span> s2: <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt; = xs[::<span class="n">2</span>];           <span class="c">//→ view of [1, 3, 5]</span>
+<span class="k">let</span> s3: <span class="t">Slice</span>&lt;<span class="t">i32</span>&gt; = xs[..];            <span class="c">//→ view of all</span>
+
+s1.len();                               <span class="c">//→ 3</span>
+s1.iter().sum::&lt;<span class="t">i32</span>&gt;();                 <span class="c">//→ 9</span>
+xs[<span class="n">2</span>] = <span class="n">30</span>;
+s1[<span class="n">1</span>];                                  <span class="c">//→ 30 - the list's element write is visible</span>
+
+<span class="k">let</span> owned: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = s1.to_list();    <span class="c">//→ [2, 30, 4] (new List)</span>
+</code></pre>
+<h3 id="integration-with-variadic-args"><a class="anchor" tabindex="-1" href="#integration-with-variadic-args" aria-hidden="true">#</a>Integration with variadic args</h3>
+<p>The <code>xs</code> of <code>fn f(xs: ...T)</code> is a <code>Slice&lt;T&gt;</code> view (<a href="../../refs-lang/004-functions/402-parameters#425-variadic-t">refs-lang 4.2.5</a>). Individual arguments and a list spread (<code>f(..ys)</code>) are received in the same shape.</p>
+<pre><code class="language-rok"><span class="k">fn</span> sum(xs: ...<span class="t">i32</span>) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> total = <span class="n">0</span>;
+    <span class="k">for</span> x <span class="k">in</span> xs {            <span class="c">// xs: Slice&lt;i32&gt;</span>
+        total = total + x;   <span class="c">// reassignment without `let`</span>
+    }
+    total
+}
+
+sum(<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>);                <span class="c">//→ 6</span>
+sum(..[<span class="n">4</span>, <span class="n">5</span>]);               <span class="c">//→ 9 (list spread)</span>
+</code></pre>
+<h2 id="298-index--indexset--sliceable-trait-mapping"><a class="anchor" tabindex="-1" href="#298-index--indexset--sliceable-trait-mapping" aria-hidden="true">#</a>2.9.8. <code>Index</code> / <code>IndexSet</code> / <code>Sliceable</code> trait mapping</h2>
+<p>The traits of <a href="203-ops">2.3 ops</a> define the meaning of <code>[]</code>, <code>[i] = v</code> and <code>[a:b]</code> on containers.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Container</th><th><code>Index&lt;I&gt;</code></th><th><code>IndexSet&lt;I, V&gt;</code></th><th><code>Sliceable&lt;R&gt;</code></th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>Index&lt;usize&gt;</code> → T</td><td><code>IndexSet&lt;usize, T&gt;</code></td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>Slice&lt;T&gt;</code></td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>Index&lt;K&gt;</code> → V</td><td><code>IndexSet&lt;K, V&gt;</code></td><td><strong>none</strong></td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><strong>none</strong></td><td><strong>none</strong></td><td><strong>none</strong></td></tr>
+<tr><td><code>Tuple&lt;...&gt;</code></td><td><strong>compiler-direct</strong> (<code>.0</code>/.1)</td><td><strong>compiler-direct</strong></td><td><strong>none</strong></td></tr>
+<tr><td><code>[T; N]</code></td><td><code>Index&lt;usize&gt;</code> → T</td><td><code>IndexSet&lt;usize, T&gt;</code></td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>Slice&lt;T&gt;</code> (copy)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>Index&lt;usize&gt;</code> → T</td><td><strong>none</strong> (read-only view)</td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>Slice&lt;T&gt;</code></td></tr>
+<tr><td><code>str</code></td><td><strong>none</strong> (direct byte access rejected)</td><td><strong>none</strong></td><td><code>Sliceable&lt;Range&lt;usize&gt;&gt;</code> → <code>str</code> (copy, UTF-8 boundary check)</td></tr>
+</tbody></table></div>
+<p><code>s[10]</code> on a <code>str</code> is deliberately not provided, for the safety of UTF-8 multibyte characters. Use <code>s.chars()</code> for character-wise access and <code>s[10..15]</code> for extraction (as a slice, multibyte boundaries are validated).</p>
+<h2 id="299-intoiterator--fromiterator"><a class="anchor" tabindex="-1" href="#299-intoiterator--fromiterator" aria-hidden="true">#</a>2.9.9. <code>IntoIterator</code> / <code>FromIterator</code></h2>
+<p>Every container implements <code>IntoIterator</code>.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Container</th><th><code>Item</code></th><th>Order</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>T</code></td><td>first → last</td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>(K, V)</code></td><td><strong>nondeterministic</strong></td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><code>T</code></td><td><strong>nondeterministic</strong></td></tr>
+<tr><td><code>OrderedDict&lt;K, V&gt;</code></td><td><code>(K, V)</code></td><td>insertion order</td></tr>
+<tr><td><code>OrderedSet&lt;T&gt;</code></td><td><code>T</code></td><td>insertion order</td></tr>
+<tr><td><code>Tuple&lt;T...&gt;</code></td><td><strong>not implemented</strong></td><td>(heterogeneous - no Iterator meaning)</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>T</code></td><td>view order (stride applied)</td></tr>
+</tbody></table></div>
+<p><code>FromIterator&lt;T&gt;</code> determines which container <code>collect::&lt;C&gt;()</code> builds.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = (<span class="n">0</span>..<span class="n">5</span>).collect();
+<span class="k">let</span> s: <span class="t">Set</span>&lt;<span class="t">i32</span>&gt; = (<span class="n">0</span>..<span class="n">5</span>).collect();
+<span class="k">let</span> d: <span class="t">Dict</span>&lt;<span class="t">str</span>, <span class="t">i32</span>&gt; = [(<span class="s">"a"</span>, <span class="n">1</span>), (<span class="s">"b"</span>, <span class="n">2</span>)].into_iter().collect();
+</code></pre>
+<h2 id="2910-module-mapping"><a class="anchor" tabindex="-1" href="#2910-module-mapping" aria-hidden="true">#</a>2.9.10. Module mapping</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Container</th><th>Module</th><th>Internal structure</th></tr></thead>
+<tbody>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>rok::core::collections::list</code></td><td>inspired by Rust <code>Vec</code></td></tr>
+<tr><td><code>Dict&lt;K, V&gt;</code></td><td><code>rok::core::collections::dict</code></td><td>open addressing</td></tr>
+<tr><td><code>Set&lt;T&gt;</code></td><td><code>rok::core::collections::set</code></td><td>on top of <code>Dict&lt;T, ()&gt;</code></td></tr>
+<tr><td><code>OrderedDict</code></td><td><code>rok::core::collections::ordered_dict</code></td><td>linked-hash or indices</td></tr>
+<tr><td><code>OrderedSet</code></td><td><code>rok::core::collections::ordered_set</code></td><td>(same as above)</td></tr>
+<tr><td><code>Deque&lt;T&gt;</code></td><td><code>rok::core::collections::deque</code></td><td>ring buffer</td></tr>
+<tr><td><code>BinaryHeap&lt;T&gt;</code></td><td><code>rok::core::collections::heap</code></td><td>implicit binary tree on a <code>List</code></td></tr>
+<tr><td><code>Tuple</code></td><td><strong>compiler built-in</strong> + standard library hook</td><td><code>#[literal(...)]</code> + compiler lookup</td></tr>
+<tr><td><code>Slice&lt;T&gt;</code></td><td><code>rok::core::collections::slice</code></td><td>struct ptr + len + stride</td></tr>
+</tbody></table></div>
+<h2 id="2911-comparison-with-other-languages"><a class="anchor" tabindex="-1" href="#2911-comparison-with-other-languages" aria-hidden="true">#</a>2.9.11. Comparison with other languages</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Aspect</th><th>Rust</th><th>Python</th><th>rok</th></tr></thead>
+<tbody>
+<tr><td>Dynamic array</td><td><code>Vec&lt;T&gt;</code></td><td><code>list</code></td><td><code>List&lt;T&gt;</code></td></tr>
+<tr><td>Hash map</td><td><code>HashMap&lt;K, V&gt;</code></td><td><code>dict</code> (insertion-ordered)</td><td><code>Dict&lt;K, V&gt;</code> + <code>OrderedDict&lt;K, V&gt;</code></td></tr>
+<tr><td>Hash set</td><td><code>HashSet&lt;T&gt;</code></td><td><code>set</code></td><td><code>Set&lt;T&gt;</code> + <code>OrderedSet&lt;T&gt;</code></td></tr>
+<tr><td>Fixed hetero</td><td><code>(T1, T2)</code> tuple</td><td><code>tuple</code></td><td><code>Tuple&lt;T1, T2&gt;</code></td></tr>
+<tr><td>View</td><td><code>&amp;[T]</code> / <code>&amp;str</code></td><td><strong>slice object</strong></td><td><code>Slice&lt;T&gt;</code></td></tr>
+<tr><td>Literals</td><td><code>vec![...]</code> (macro)</td><td><code>[...]</code> <code>{...}</code> <code>(...)</code></td><td><code>[...]</code> <code>{...}</code> <code>(...)</code> (<code>#[literal]</code>)</td></tr>
+<tr><td>Ordered map</td><td><code>BTreeMap</code> (sorted map)</td><td><strong>default dict</strong></td><td>separate <code>OrderedDict</code></td></tr>
+</tbody></table></div>
+<p>rok differs most in these ways. First, all 6 collections have first-class literal syntax, so no macro such as <code>vec![]</code> is used. Second, insertion order of <code>Dict</code> / <code>Set</code> is not guaranteed - unlike Python 3.7+ - so <code>OrderedDict</code> must be used explicitly when order matters. Third, <code>Slice&lt;T&gt;</code> is a view with a stride, so even an expression like <code>xs[::2]</code> is zero-copy.</p>
+<h2 id="2912-gcbuft---raw-gc-buffer"><a class="anchor" tabindex="-1" href="#2912-gcbuft---raw-gc-buffer" aria-hidden="true">#</a>2.9.12. <code>GcBuf&lt;T&gt;</code> - raw GC buffer</h2>
+<p><code>GcBuf&lt;T&gt;</code> in <code>rok::core::collections::raw</code> is the fixed-length GC buffer used by collection implementations such as <code>List</code> / <code>Dict</code>, and is a type known to the compiler. <code>GcBuf</code> is defined by <code>rok::bare</code> (<code>rok::bare::mem</code>) and re-exported here. It sits on top of the runtime's word-traced buffer (type id <code>2</code>, <a href="../../refs-lang/008-abi/802-scan-table#8212-runtime-reserved-type-ids">refs-lang 8.2.12</a>).</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt; { <span class="c">/* representation known to the compiler */</span> }
+
+<span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt; {
+    <span class="a">#[intrinsic("rok.buf_new")]</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> new(len: <span class="t">usize</span>) -&gt; <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;;           <span class="c">// every word set to 0 (null)</span>
+    <span class="a">#[intrinsic("rok.buf_get")]</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">T</span>;        <span class="c">// no bounds check (the owner tracks the length)</span>
+    <span class="a">#[intrinsic("rok.buf_set")]</span>
+    <span class="k">unsafe</span> <span class="k">fn</span> set(<span class="k">self</span>, i: <span class="t">usize</span>, v: <span class="t">T</span>);       <span class="c">// includes the write barrier</span>
+}
+</code></pre>
+<p>Each element occupies one word. Ordinary user code uses <code>List&lt;T&gt;</code>; <code>GcBuf&lt;T&gt;</code> is for implementing collections.</p>
+<p><code>GcBuf&lt;T&gt;</code> and its primitives (<code>buf_new</code> / <code>buf_get</code> / <code>buf_set</code>, <code>new</code> / <code>get</code> / <code>set</code>, indexing a <code>GcBuf</code>) are <code>unsafe</code>: they skip the element-type and initialization checks the collections keep.</p>
+<pre><code class="language-rok"><span class="a">#[intrinsic("rok.buf_same")]</span>
+<span class="k">fn</span> buf_same&lt;<span class="t">T</span>&gt;(a: <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;, b: <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">bool</span>;   <span class="c">// whether they are the same buffer (identity, not contents). Pins nothing</span>
+<span class="a">#[intrinsic("rok.buf_erase")]</span>
+<span class="k">pub</span>(<span class="k">pkg</span>) <span class="k">fn</span> buf_erase&lt;<span class="t">T</span>&gt;(buf: <span class="t">GcBuf</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">GcBuf</span>&lt;<span class="t">u8</span>&gt;;   <span class="c">// typed as GcBuf&lt;u8&gt; for runtime parameters taking any GC object</span>
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-standard-libraries/200-core/209-collections.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="208-stream"><small>Previous</small>2.8. stream - async iterator</a><a class="next" href="210-fmt"><small>Next</small>2.10. fmt - Formatting traits</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

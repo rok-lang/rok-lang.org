@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7. Generics - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Use generics when you want the same logic to work for many types. rok generics are compiled separately for each concrete type they're called with (monomorphizat...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/learn/07-generics.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="7. Generics - rok docs">
+<meta property="og:description" content="Use generics when you want the same logic to work for many types. rok generics are compiled separately for each concrete type they're called with (monomorphizat...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/learn/07-generics.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/" aria-current="page">Learn</a><a href="../examples/">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Learn rok</a></p><ul class="pages"><li><a href="01-getting-started">1. Getting Started</a></li><li><a href="02-values-and-types">2. Values and Types</a></li><li><a href="03-functions">3. Functions</a></li><li><a href="04-control-flow">4. Control Flow</a></li><li><a href="05-sum-types">5. Sum Types and none</a></li><li><a href="06-structs-enums-traits">6. Structs, Enums, and Traits</a></li><li class="cur"><a aria-current="page" href="07-generics">7. Generics</a><ul class="toc"><li><a href="#generic-functions">Generic functions</a></li><li><a href="#trait-bounds">Trait bounds</a></li><li><a href="#where-clauses">where clauses</a></li><li><a href="#generic-structs-and-impl">Generic structs and impl</a></li><li><a href="#associated-types">Associated types</a></li><li><a href="#advanced-const-generics">Advanced: const generics</a></li><li><a href="#generics-and-any">Generics and any</a></li><li><a href="#summary">Summary</a></li><li><a href="#further-reading">Further reading</a></li></ul></li><li><a href="08-collections-iterators">8. Collections and Iterators</a></li><li><a href="09-strings">9. Strings and f-strings</a></li><li><a href="10-errors">10. Error Handling</a></li><li><a href="11-modules-packages">11. Modules and Packages</a></li><li><a href="12-concurrency">12. Concurrency</a></li><li><a href="13-io">13. File and Network IO</a></li><li><a href="14-ffi">14. FFI Basics</a></li><li><a href="15-rokon">15. ROKON</a></li><li><a href="16-tools">16. Tools</a></li><li><a href="17-conditional-compilation">17. Conditional Compilation</a></li><li><a href="18-features-and-stones">18. Features and Stones</a></li><li><a href="19-crypto-and-tls">19. Cryptography and TLS</a></li><li><a href="20-cookbook">20. How Do I...</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="7-generics"><a class="anchor" tabindex="-1" href="#7-generics" aria-hidden="true">#</a>7. Generics</h1>
+<p>Use generics when you want the same logic to work for many types. rok generics are compiled separately for each concrete type they're called with (monomorphization), so they run as fast as hand-written per-type functions.</p>
+<h2 id="generic-functions"><a class="anchor" tabindex="-1" href="#generic-functions" aria-hidden="true">#</a>Generic functions</h2>
+<p>Declare type parameters in <code>&lt;T&gt;</code> after the function name and use them in the parameter and return types. At the call site you usually don't write the type; the compiler infers it from the arguments.</p>
+<pre><code class="language-rok"><span class="k">fn</span> first_or&lt;<span class="t">T</span>&gt;(xs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;, fallback: <span class="t">T</span>) -&gt; <span class="t">T</span> {
+    xs.first() ?? fallback
+}
+
+println(<span class="s">f"{</span>first_or([<span class="n">10</span>, <span class="n">20</span>], <span class="n">0</span>)<span class="s">}"</span>);
+println(first_or([<span class="s">"a"</span>, <span class="s">"b"</span>], <span class="s">"-"</span>));
+<span class="k">let</span> empty: <span class="t">List</span>&lt;<span class="t">f64</span>&gt; = [];
+println(<span class="s">f"{</span>first_or(empty, <span class="n">1.5</span>)<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">10
+a
+1.5
+</code></pre>
+<p>Within one call, <code>T</code> is a single type. Passing different types, as in <code>first_or([1, 2], &quot;x&quot;)</code>, is a compile error.</p>
+<h2 id="trait-bounds"><a class="anchor" tabindex="-1" href="#trait-bounds" aria-hidden="true">#</a>Trait bounds</h2>
+<p>With an unbounded <code>T</code>, all you can do is move values around. To compare or add them, require the needed traits with a <strong>bound</strong> such as <code>T: Ord</code>. Join multiple bounds with <code>+</code>. The compiler checks a generic body against its bounds alone, so the body cannot break no matter which type it's called with.</p>
+<pre><code class="language-rok"><span class="k">fn</span> largest&lt;<span class="t">T</span>: <span class="t">Ord</span>&gt;(xs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span>? {
+    <span class="k">let</span> best = xs.first()?;
+    <span class="k">for</span> x <span class="k">in</span> xs {
+        <span class="k">if</span> x &gt; best { best = x; }
+    }
+    best
+}
+
+println(<span class="s">f"{</span>largest([<span class="n">3</span>, <span class="n">9</span>, <span class="n">2</span>])<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span>largest([<span class="s">"pear"</span>, <span class="s">"apple"</span>])<span class="s">:?</span><span class="s">}"</span>);
+<span class="k">let</span> none_here: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [];
+println(<span class="s">f"{</span>largest(none_here)<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">9
+&quot;pear&quot;
+none
+</code></pre>
+<p>With <code>T: Zero</code>, you can also call static methods on the type parameter, such as <code>T::zero()</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> sum&lt;<span class="t">T</span>: <span class="t">Zero</span> + <span class="t">Add</span>&lt;<span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(xs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) -&gt; <span class="t">T</span> {
+    <span class="k">let</span> acc = <span class="t">T</span>::zero();
+    <span class="k">for</span> x <span class="k">in</span> xs { acc = acc + x; }
+    acc
+}
+
+println(<span class="s">f"{</span>sum([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>])<span class="s">} {</span>sum([<span class="n">0.5</span>, <span class="n">0.25</span>])<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">6 0.75
+</code></pre>
+<h3 id="the-body-is-checked-against-its-bounds"><a class="anchor" tabindex="-1" href="#the-body-is-checked-against-its-bounds" aria-hidden="true">#</a>The body is checked against its bounds</h3>
+<p>A generic body is type-checked once, on its own, before any call is looked at. Inside it, <code>T</code> supports only what its bounds promise, plus what every type supports: moving, storing into <code>any</code>, forming <code>T | none</code>, and <code>is</code>. Forgetting a bound is an error in the body, even if every call passes a type that would work.</p>
+<pre><code class="language-rok"><span class="k">fn</span> double&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x + x }
+</code></pre>
+<pre><code class="language-text">error[E200]: operator `+` on `T` needs a `Add` bound on `T` (spec 2.10.9)
+  --&gt; main.rok:1:27
+   |
+ 1 | fn double&lt;T&gt;(x: T) -&gt; T { x + x }
+   |                           ^^^^^
+</code></pre>
+<p>With the bound added, the same body compiles for every type that has <code>Add</code>. The operations that need no bound work without one.</p>
+<pre><code class="language-rok"><span class="k">fn</span> double&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">T</span>, <span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> { x + x }
+<span class="k">fn</span> keep&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>, yes: <span class="t">bool</span>) -&gt; <span class="t">T</span> | <span class="k">none</span> { <span class="k">if</span> yes { x } <span class="k">else</span> { <span class="k">none</span> } }
+<span class="k">fn</span> boxed&lt;<span class="t">T</span>&gt;(x: <span class="t">T</span>) -&gt; <span class="k">any</span> { x }
+
+println(<span class="s">f"{</span>double(<span class="n">21</span>)<span class="s">} {</span>double(<span class="n">1.5</span>)<span class="s">}"</span>);
+println(<span class="s">f"{</span>keep(<span class="s">"a"</span>, <span class="k">true</span>)<span class="s">:?</span><span class="s">} {</span>keep(<span class="n">1</span>, <span class="k">false</span>)<span class="s">:?</span><span class="s">}"</span>);
+println(<span class="s">f"{</span>boxed(<span class="n">3</span>) <span class="k">is</span> <span class="t">i32</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">42 3
+&quot;a&quot; none
+true
+</code></pre>
+<p>Because of this rule, a library's generic function that compiles for you compiles for everyone who calls it; an error never surfaces at a distant call site. Trait default methods are checked the same way, with <code>Self</code> known only through the trait. A function with untyped parameters (an implicit generic, below) is the exception.</p>
+<p>A bound can name the same trait twice with different parameters. Each use in the body picks the bound whose parameter matches the argument's type, just as an operator picks among a type's impls.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Meters</span> { v: <span class="t">f64</span>; }
+<span class="k">impl</span> <span class="t">Add</span>&lt;<span class="t">i32</span>&gt; <span class="k">for</span> <span class="t">Meters</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Meters</span>; <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">i32</span>) -&gt; <span class="t">Meters</span> { <span class="t">Meters</span> { v: <span class="k">self</span>.v + rhs <span class="k">as</span> <span class="t">f64</span> } } }
+<span class="k">impl</span> <span class="t">Add</span>&lt;<span class="t">f64</span>&gt; <span class="k">for</span> <span class="t">Meters</span> { <span class="k">type</span> <span class="t">Output</span> = <span class="t">Meters</span>; <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">f64</span>) -&gt; <span class="t">Meters</span> { <span class="t">Meters</span> { v: <span class="k">self</span>.v + rhs } } }
+
+<span class="k">fn</span> nudge&lt;<span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">i32</span>, <span class="t">Output</span> = <span class="t">T</span>&gt; + <span class="t">Add</span>&lt;<span class="t">f64</span>, <span class="t">Output</span> = <span class="t">T</span>&gt;&gt;(x: <span class="t">T</span>) -&gt; <span class="t">T</span> {
+    (x + <span class="n">1</span>) + <span class="n">0.5</span>          <span class="c">// Add&lt;i32&gt;, then Add&lt;f64&gt;</span>
+}
+
+println(<span class="s">f"{</span>nudge(<span class="t">Meters</span> { v: <span class="n">2.0</span> }).v<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">3.5
+</code></pre>
+<h2 id="where-clauses"><a class="anchor" tabindex="-1" href="#where-clauses" aria-hidden="true">#</a><code>where</code> clauses</h2>
+<p>When bounds get long, moving them to a <code>where</code> clause at the end of the signature makes it easier to read. The meaning is the same.</p>
+<pre><code class="language-rok"><span class="k">fn</span> join_all&lt;<span class="t">T</span>&gt;(xs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;, sep: <span class="t">str</span>) -&gt; <span class="t">str</span>
+<span class="k">where</span>
+    <span class="t">T</span>: <span class="t">Display</span>,
+{
+    <span class="k">let</span> out = <span class="t">StrBuf</span>::new();
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..xs.len() {
+        <span class="k">if</span> i &gt; <span class="n">0</span> { out.push_str(sep); }
+        out.push_str(<span class="s">f"{</span>xs[i]<span class="s">}"</span>);
+    }
+    out.to_str()
+}
+
+println(join_all([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>], <span class="s">", "</span>));
+println(join_all([<span class="k">true</span>, <span class="k">false</span>], <span class="s">" / "</span>));
+</code></pre>
+<pre class="output"><code class="language-output">1, 2, 3
+true / false
+</code></pre>
+<h2 id="generic-structs-and-impl"><a class="anchor" tabindex="-1" href="#generic-structs-and-impl" aria-hidden="true">#</a>Generic structs and impl</h2>
+<p>Structs and enums can take type parameters too. When adding methods, declare the parameters on the <code>impl</code> as well, as in <code>impl&lt;A, B&gt; Pair&lt;A, B&gt;</code>.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Pair</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; { first: <span class="t">A</span>; second: <span class="t">B</span>; }
+
+<span class="k">impl</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; <span class="t">Pair</span>&lt;<span class="t">A</span>, <span class="t">B</span>&gt; {
+    <span class="k">fn</span> swap(<span class="k">self</span>) -&gt; <span class="t">Pair</span>&lt;<span class="t">B</span>, <span class="t">A</span>&gt; {
+        <span class="t">Pair</span> { first: <span class="k">self</span>.second, second: <span class="k">self</span>.first }
+    }
+}
+
+<span class="k">let</span> p = <span class="t">Pair</span> { first: <span class="n">1</span>, second: <span class="s">"one"</span> };
+<span class="k">let</span> q = p.swap();
+println(<span class="s">f"{</span>q.first<span class="s">} {</span>q.second<span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">one 1
+</code></pre>
+<h2 id="associated-types"><a class="anchor" tabindex="-1" href="#associated-types" aria-hidden="true">#</a>Associated types</h2>
+<p>To let each implementation of a trait pick one type, declare an <strong>associated type</strong> <code>type Item;</code>. Inside the trait, refer to it as plain <code>Item</code>; in generic code outside, as <code>C::Item</code>. The standard <code>Iterator</code> works this way (next chapter).</p>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">Container</span> {
+    <span class="k">type</span> <span class="t">Item</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">Item</span> | <span class="k">none</span>;
+    <span class="k">fn</span> first(<span class="k">self</span>) -&gt; <span class="t">Item</span> | <span class="k">none</span> { <span class="k">self</span>.get(<span class="n">0</span>) }
+}
+
+<span class="k">struct</span> <span class="t">Shelf</span> { books: <span class="t">List</span>&lt;<span class="t">str</span>&gt;; }
+
+<span class="k">impl</span> <span class="t">Container</span> <span class="k">for</span> <span class="t">Shelf</span> {
+    <span class="k">type</span> <span class="t">Item</span> = <span class="t">str</span>;
+    <span class="k">fn</span> get(<span class="k">self</span>, i: <span class="t">usize</span>) -&gt; <span class="t">str</span>? { <span class="k">self</span>.books.get(i) }
+}
+
+<span class="k">fn</span> first_of&lt;<span class="t">C</span>: <span class="t">Container</span>&gt;(c: <span class="t">C</span>) -&gt; <span class="t">C</span>::<span class="t">Item</span> | <span class="k">none</span> { c.first() }
+
+<span class="k">let</span> s = <span class="t">Shelf</span> { books: [<span class="s">"Dune"</span>, <span class="s">"Emma"</span>] };
+println(<span class="s">f"{</span>first_of(s)<span class="s">:?</span><span class="s">} {</span>s.get(<span class="n">5</span>)<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">&quot;Dune&quot; none
+</code></pre>
+<p>It is an associated type rather than a type parameter because <code>Item</code> is fixed to exactly one type for a given implementor. Users don't need to spell out <code>Shelf</code>'s element type.</p>
+<h2 id="advanced-const-generics"><a class="anchor" tabindex="-1" href="#advanced-const-generics" aria-hidden="true">#</a>Advanced: const generics</h2>
+<p>You can skip this section on a first read. A parameter can also be a compile-time <strong>value</strong> instead of a type. Use this when a value is part of a type, like the length of a fixed-size array <code>[T; N]</code>.</p>
+<pre><code class="language-rok"><span class="k">fn</span> total&lt;<span class="k">const</span> <span class="t">N</span>: <span class="t">usize</span>&gt;(a: [<span class="t">i32</span>; <span class="t">N</span>]) -&gt; <span class="t">i32</span> {
+    <span class="k">let</span> s = <span class="n">0</span>;
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="t">N</span> { s += a[i]; }
+    s
+}
+
+<span class="k">let</span> a: [<span class="t">i32</span>; <span class="n">4</span>] = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>, <span class="n">4</span>];
+<span class="k">let</span> z: [<span class="t">f64</span>; <span class="n">3</span>] = [<span class="n">0.5</span>; <span class="n">3</span>];
+println(<span class="s">f"{</span>total(a)<span class="s">} {</span>a.len()<span class="s">} {</span>z<span class="s">:?</span><span class="s">}"</span>);
+</code></pre>
+<pre class="output"><code class="language-output">10 4 [0.5, 0.5, 0.5]
+</code></pre>
+<p><code>const</code> parameters can only be integers, <code>bool</code>, or <code>char</code>.</p>
+<h2 id="generics-and-any"><a class="anchor" tabindex="-1" href="#generics-and-any" aria-hidden="true">#</a>Generics and <code>any</code></h2>
+<p>Generics are static. When you instead need a slot whose value's type may change at runtime, write <code>any</code> <strong>explicitly</strong>. Narrow <code>any</code> values with <code>is</code> before use. Dynamic dispatch costs appear only where you wrote <code>any</code>.</p>
+<pre><code class="language-rok"><span class="k">let</span> v: <span class="k">any</span> = <span class="n">1</span>;
+println(<span class="s">f"{</span>v <span class="k">is</span> <span class="t">i32</span><span class="s">}"</span>);
+v = <span class="s">"text"</span>;
+<span class="k">if</span> v <span class="k">is</span> <span class="t">str</span> {
+    println(<span class="s">f"now a string, length {</span>v.len()<span class="s">}"</span>);
+}
+</code></pre>
+<pre class="output"><code class="language-output">true
+now a string, length 4
+</code></pre>
+<p>The spec defines a function with omitted parameter types, <code>fn show_sum(x, y)</code>, as an implicit generic, not as <code>any</code>. Bounds are inferred from how the body uses the parameters, and the function is monomorphized at each call site.</p>
+<pre><code class="language-rok"><span class="k">fn</span> show_sum(x, y) { println(<span class="s">f"{</span>x + y<span class="s">}"</span>); }   <span class="c">// implicit generic: T: Add&lt;U&gt;</span>
+
+show_sum(<span class="n">1</span>, <span class="n">2</span>);       <span class="c">// 3</span>
+show_sum(<span class="n">1.5</span>, <span class="n">2.0</span>);   <span class="c">// 3.5</span>
+</code></pre>
+<pre class="output"><code class="language-output">3
+3.5
+</code></pre>
+<h2 id="summary"><a class="anchor" tabindex="-1" href="#summary" aria-hidden="true">#</a>Summary</h2>
+<ul>
+<li>Declare generics with <code>fn f&lt;T&gt;(..)</code>, <code>struct S&lt;A, B&gt;</code>, and <code>impl&lt;A, B&gt; S&lt;A, B&gt;</code>. Type arguments are usually inferred.
+</li>
+<li>Bounds like <code>T: Ord + Clone</code> determine which operations the body may use. Move long ones to a <code>where</code> clause.
+</li>
+<li>An associated type <code>type Item;</code> is fixed to one type per implementation and is written <code>C::Item</code> from outside.
+</li>
+<li><code>const N: usize</code> takes a value as a type parameter.
+</li>
+<li>Generics are static (monomorphized); <code>any</code> is a dynamic slot that exists only where you write it.
+</li>
+</ul>
+<h2 id="further-reading"><a class="anchor" tabindex="-1" href="#further-reading" aria-hidden="true">#</a>Further reading</h2>
+<ul>
+<li><a href="../spec/refs-lang/002-types/210-generics">2.10. Generics</a>: <a href="../spec/refs-lang/002-types/210-generics#2103-trait-bounds">2.10.3. Trait bounds</a>, <a href="../spec/refs-lang/002-types/210-generics#2104-where-clauses">2.10.4. where clauses</a>, <a href="../spec/refs-lang/002-types/210-generics#2109-body-checking">2.10.9. Body checking</a>, <a href="../spec/refs-lang/002-types/210-generics#2107-combination-with-gradual-typing">2.10.7. Interaction with gradual typing</a>
+</li>
+<li><a href="../spec/refs-lang/002-types/208-trait#283-associated-types">2.8.3. Associated types</a>
+</li>
+<li><a href="../spec/refs-lang/002-types/211-const-generics">2.11. <code>const</code> generics</a>
+</li>
+<li><a href="../spec/refs-lang/002-types/202-any-slot">2.2. The <code>any</code> slot</a>
+</li>
+<li>Next chapter: <a href="08-collections-iterators">8. Collections and Iterators</a>
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/learn/07-generics.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="06-structs-enums-traits"><small>Previous</small>6. Structs, Enums, and Traits</a><a class="next" href="08-collections-iterators"><small>Next</small>8. Collections and Iterators</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.4. Safepoint protocol - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="For the GC to perform temporary STW (Stop-The-World) work, every mutator thread must have reached a safe point. This document defines the ABI protocol for that ...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/804-safepoint.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="8.4. Safepoint protocol - rok docs">
+<meta property="og:description" content="For the GC to perform temporary STW (Stop-The-World) work, every mutator thread must have reached a safe point. This document defines the ABI protocol for that ...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/804-safepoint.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/008-abi/804-safepoint.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/008-abi/804-safepoint.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a href="./">8. Runtime ABI / MLIR lowering overview</a></p><ul class="pages"><li><a href="801-object-header-abi">8.1. Object header ABI</a></li><li><a href="802-scan-table">8.2. ScanTable serialization format</a></li><li><a href="803-tls-slots">8.3. Mutator TLS slot layout</a></li><li class="cur"><a aria-current="page" href="804-safepoint">8.4. Safepoint protocol</a><ul class="toc"><li><a href="#841-yield-flag-check-fast-path">8.4.1. yield flag check: fast path</a></li><li><a href="#842-emission-sites">8.4.2. Emission sites</a></li><li><a href="#843-rok_runtime_yield-slow-path">8.4.3. rok_runtime_yield: slow path</a></li><li><a href="#844-setting--clearing-the-yield-flag">8.4.4. Setting / clearing the yield flag</a></li><li><a href="#845-fast-path-cost">8.4.5. Fast path cost</a></li><li><a href="#846-stw-phases">8.4.6. STW phases</a></li><li><a href="#847-safepoint-invariant">8.4.7. Safepoint invariant</a></li><li><a href="#848-loop-back-edge-poll">8.4.8. Loop back-edge poll</a></li><li><a href="#849-inline-functions-and-polls">8.4.9. Inline functions and polls</a></li><li><a href="#8410-native-calls">8.4.10. Native calls</a></li><li><a href="#8411-direct-calls-from-user-code">8.4.11. Direct calls from user code</a></li><li><a href="#8412-stability">8.4.12. Stability</a></li></ul></li><li><a href="805-extern-symbols">8.5. Extern &quot;C&quot; symbols</a></li><li><a href="806-calling-convention">8.6. Calling convention</a></li><li><a href="807-mlir-dialects">8.7. MLIR dialect usage</a></li><li><a href="808-lowering-types">8.8. Lowering: data types and expressions</a></li><li><a href="809-lowering-control">8.9. Lowering: control flow and GC integration</a></li><li><a href="810-lowering-coroutine-generic">8.10. Lowering: coroutines and generics</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="84-safepoint-protocol 84-safepoint-프로토콜 841-yield-flag-check-fast-path 841-yield-flag-검사-fast-path 842-emission-sites 842-emit-위치 843-rok_runtime_yield-slow-path 843-rok_runtime_yield-slow-path 844-setting--clearing-the-yield-flag 844-yield-flag-의-set--clear 845-fast-path-cost 845-fast-path-비용 846-stw-phases 846-stw-단계 847-safepoint-invariant 847-safepoint-의-불변 848-loop-back-edge-poll 848-loop-back-edge-poll 849-inline-functions-and-polls 849-inline-함수와-poll 8410-native-calls 8410-native-호출 8411-direct-calls-from-user-code 8411-사용자-코드의-직접-호출 8412-stability 8412-안정성"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/008-abi/804-safepoint" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="84-safepoint-protocol"><a class="anchor" tabindex="-1" href="#84-safepoint-protocol" aria-hidden="true">#</a>8.4. Safepoint protocol</h1>
+<p>For the <a href="../000-meta/007-glossary#gc-garbage-collector">GC</a> to perform temporary STW (Stop-The-World) work, every mutator thread must have reached a safe point. This document defines the <a href="../000-meta/007-glossary#abi-application-binary-interface">ABI</a> protocol for that synchronization.</p>
+<h2 id="841-yield-flag-check-fast-path"><a class="anchor" tabindex="-1" href="#841-yield-flag-check-fast-path" aria-hidden="true">#</a>8.4.1. <code>yield</code> flag check: fast path</h2>
+<p>Mutators periodically check the <a href="803-tls-slots">TLS slot</a> <code>rok_tls_yield_flag</code> (u8). The check proceeds as follows.</p>
+<pre><code>poll:
+    flag = TLS[yield_flag]
+    if flag != 0:
+        call rok_runtime_yield()    // slow path
+    // proceed normally
+</code></pre>
+<p>In LLVM IR:</p>
+<pre><code class="language-mlir">%t = call ptr @llvm.threadlocal.address(ptr @rok_tls)
+%flag_p = getelementptr i8, ptr %t, i64 88    ; yield_flag at 10p+8, p = 8
+%flag = load i8, ptr %flag_p
+%check = icmp ne i8 %flag, 0
+br i1 %check, label %slow, label %cont
+
+slow:
+  call void @rok_runtime_yield()
+  br label %cont
+
+cont:
+  ; ... continue
+</code></pre>
+<p>This is a two-instruction fast path plus one branch, and the branch almost always evaluates to <code>false</code>.</p>
+<h2 id="842-emission-sites"><a class="anchor" tabindex="-1" href="#842-emission-sites" aria-hidden="true">#</a>8.4.2. Emission sites</h2>
+<p>The compiler emits safepoint polls at the following sites.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Site</th><th>Reason</th></tr></thead>
+<tbody>
+<tr><td>Function entry (or before the first safepoint of each path)</td><td>Can cooperate with the GC right after a call</td></tr>
+<tr><td>Loop back-edge</td><td>Prevents an infinite loop from blocking the GC</td></tr>
+<tr><td>Right after a function call (optional)</td><td>Cooperate immediately if the call was long</td></tr>
+</tbody></table></div>
+<p>The detailed emission policy is up to the compiler; this specification guarantees only the following minimum frequency.</p>
+<ul>
+<li>Every loop back-edge has a poll, except a loop with a compile-time constant trip count of at most 64 whose body reaches no safepoint; every cycle of calls contains a poll.
+</li>
+<li>A function that can reach no safepoint (no loop but such bounded loops, no allocation, indirect call, lazy <code>static</code>, or call to a function that may reach one) needs none.
+</li>
+</ul>
+<p>Together these bound the time from a yield request to the next safepoint.</p>
+<h2 id="843-rok_runtime_yield-slow-path"><a class="anchor" tabindex="-1" href="#843-rok_runtime_yield-slow-path" aria-hidden="true">#</a>8.4.3. <code>rok_runtime_yield</code>: slow path</h2>
+<p>The slow path signature is:</p>
+<pre><code>extern &quot;C&quot; {
+    fn rok_runtime_yield();
+}
+</code></pre>
+<p>A mutator calls this function to cooperate with the GC. Its effects are:</p>
+<ol>
+<li>Sets <code>mutator_state</code> in the mutator's <a href="803-tls-slots">Mutator TLS slot layout</a> to <code>GC_COOPERATING</code>.
+</li>
+<li>Exposes the root information the GC needs, such as the <a href="../000-meta/007-glossary#shadow-stack">shadow stack</a> walk.
+</li>
+<li>Waits until the GC finishes.
+</li>
+<li>When the GC finishes, sets <code>mutator_state</code> back to <code>RUNNING</code>.
+</li>
+</ol>
+<p><code>yield_flag</code> is cleared automatically while inside <code>rok_runtime_yield</code>, or is cleared by the GC.</p>
+<h2 id="844-setting--clearing-the-yield-flag"><a class="anchor" tabindex="-1" href="#844-setting--clearing-the-yield-flag" aria-hidden="true">#</a>8.4.4. Setting / clearing the <code>yield</code> flag</h2>
+<p>When the GC needs an STW pause:</p>
+<pre><code>gc_initiate_stw():
+  for each mutator thread:
+    atomic store TLS[yield_flag] = 1
+
+  // wait until every mutator yields
+  for each mutator thread:
+    wait until mutator_state == GC_COOPERATING
+</code></pre>
+<p>When the GC finishes STW:</p>
+<pre><code>gc_finish_stw():
+  for each mutator thread:
+    atomic store TLS[yield_flag] = 0
+  notify all (resume)
+</code></pre>
+<h2 id="845-fast-path-cost"><a class="anchor" tabindex="-1" href="#845-fast-path-cost" aria-hidden="true">#</a>8.4.5. Fast path cost</h2>
+<p>The cost borne by a mutator is a single load of the <code>yield</code> flag and one branch.</p>
+<p>In almost all cases the flag is 0, so the branch is not taken, and the branch predictor of modern CPUs handles it at nearly zero cost.</p>
+<p>For that cost, every thread gets a deterministic cooperative synchronization mechanism.</p>
+<h2 id="846-stw-phases"><a class="anchor" tabindex="-1" href="#846-stw-phases" aria-hidden="true">#</a>8.4.6. STW phases</h2>
+<p>STW collection (minor, full with evacuation, <code>rok_gc_collect</code>) is a single pause. The thread that started the collection stops all other mutators (<code>GC_COOPERATING</code>, or <code>PARKED</code> if inside a blocking runtime call), finishes the collection and resumes them.</p>
+<p>A full collection with concurrent mark has two pauses, an initial and a final one (<a href="../007-runtime/705-concurrent-collection#752-phases">7.5.2</a>). In between, a single marker thread runs alongside the mutators.</p>
+<h2 id="847-safepoint-invariant"><a class="anchor" tabindex="-1" href="#847-safepoint-invariant" aria-hidden="true">#</a>8.4.7. Safepoint invariant</h2>
+<p>When a safepoint is reached, every live GC object variable of the mutator must be registered in the shadow stack.</p>
+<p>The compiler guarantees this by linking the shadow stack frame from <a href="../007-runtime/704-barriers-and-roots">Barriers and root tracking</a> before the first safepoint on each path through the function: at entry, or later on a path that reaches one. A path that reaches no safepoint need not link it, and a frame is unlinked on return only where it was linked. Likewise, a function entered only by direct rok calls may move its entry poll to just after the link: every cycle of calls still contains a poll, since the call that closes the cycle is a safepoint. A function called from C or through a function value polls at entry. A local holding GC references at a safepoint is registered in the frame, and the registered word is kept current at every write. A local only back-edge polls see may instead be registered by the poll's slow path just for the runtime call (<a href="../007-runtime/704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">7.4.1</a> rule 4), so a loop whose only safepoints are its polls links no frame and writes no root word while it runs. The compiler may also keep a private copy (in a register), since a collection never rewrites a root word: objects reached directly from roots are not moved (<a href="../007-runtime/704-barriers-and-roots#741-root-tracking-a-shadow-stack-emitted-directly-by-the-compiler">7.4.1</a>).</p>
+<h2 id="848-loop-back-edge-poll"><a class="anchor" tabindex="-1" href="#848-loop-back-edge-poll" aria-hidden="true">#</a>8.4.8. Loop back-edge poll</h2>
+<p>If a long loop does not cooperate with the GC, STW waits forever. The compiler therefore emits a poll on every loop back-edge (8.4.2's bounded loops aside).</p>
+<pre><code>loop:
+    body
+    poll                              // back-edge poll
+    branch loop
+</code></pre>
+<p>The cost of this poll is again two instructions and one branch, negligible compared to the loop body.</p>
+<p>The poll stays on the back edge. Its slow path (the <code>rok_runtime_yield</code> call) may branch to a re-entry block placed before the loop header instead of returning into the edge.</p>
+<p>The compiler detects every natural loop and emits a poll for each but the bounded loops of 8.4.2.</p>
+<h2 id="849-inline-functions-and-polls"><a class="anchor" tabindex="-1" href="#849-inline-functions-and-polls" aria-hidden="true">#</a>8.4.9. Inline functions and polls</h2>
+<p>When a small function is inlined, its entry poll may disappear with it. The inlined result is absorbed into the caller's body, however, so the caller's entry poll suffices.</p>
+<p>When large-scale inlining happens, an LLVM pass adds extra polls automatically (an implementation decision).</p>
+<h2 id="8410-native-calls"><a class="anchor" tabindex="-1" href="#8410-native-calls" aria-hidden="true">#</a>8.4.10. Native calls</h2>
+<p>A thread inside C or a blocking runtime call cannot reach a safepoint, so it counts as <code>PARKED</code>: the GC treats it as already cooperating.</p>
+<ul>
+<li>The compiler brackets every <code>extern &quot;C&quot;</code> call: <code>PARKED</code> for the duration of the call, <code>RUNNING</code> after it, then a yield-flag check. The caller's argument roots stay in its shadow-stack frame. The fast path is inline; <code>rok_enter_native</code> / <code>rok_leave_native</code> are the slow paths (<a href="805-extern-symbols#852-runtime-area">8.5.2</a>).
+</li>
+<li>Every <code>extern &quot;C&quot; fn</code> definition starts with <code>rok_native_reenter</code> and ends with <code>rok_native_resume</code>, so a C callback runs as a mutator.
+</li>
+<li>The runtime brackets its own blocking calls (I/O wait, <code>rok_sync_wait</code>, join, sleep) the same way, and its long computations that touch no GC object but buffers the caller's frame keeps alive (the <code>int</code> multiplication, division and gcd kernels). Their <code>extern &quot;rok&quot;</code> declarations are not <code>#[no_safepoint]</code> (<a href="../005-modules/509-extern-block#592-abi-specifiers">5.9.2</a>), so a call to them is a safepoint and the buffers are rooted.
+</li>
+<li>A call through an <code>extern &quot;C&quot;</code> declaration of a <code>rok_*</code> symbol (<a href="805-extern-symbols">8.5</a>, the runtime's reserved prefix) is not bracketed: the runtime function runs as a mutator.
+</li>
+</ul>
+<pre><code>call_extern_c:
+    mutator_state = PARKED      // seq_cst
+    c_function()
+    mutator_state = RUNNING     // seq_cst
+    if yield_flag:
+        rok_leave_native()      // wait out a running collection
+</code></pre>
+<h2 id="8411-direct-calls-from-user-code"><a class="anchor" tabindex="-1" href="#8411-direct-calls-from-user-code" aria-hidden="true">#</a>8.4.11. Direct calls from user code</h2>
+<p>User code may also (rarely) call <code>rok_runtime_yield()</code> directly.</p>
+<pre><code class="language-rok"><span class="k">extern</span> <span class="s">"C"</span> {
+    <span class="k">fn</span> rok_runtime_yield();
+}
+
+<span class="k">fn</span> long_loop() {
+    <span class="k">for</span> i <span class="k">in</span> <span class="n">0</span>..<span class="n">1_000_000</span> {
+        ...
+        <span class="k">if</span> i % <span class="n">1000</span> == <span class="n">0</span> { rok_runtime_yield(); }
+    }
+}
+</code></pre>
+<p><code>rok_runtime_yield</code> is a <code>rok_*</code> symbol, so the call is not bracketed (8.4.10) and the thread yields as a running mutator. The compiler already emits polls on loop back-edges, so users almost never need to call it directly. This pattern is used only in special situations such as inside inline assembly.</p>
+<h2 id="8412-stability"><a class="anchor" tabindex="-1" href="#8412-stability" aria-hidden="true">#</a>8.4.12. Stability</h2>
+<p>The ABI is the slot at offset 10p+8 of <code>rok_tls</code> (<code>rok_tls_yield_flag</code>) and its type (u8) (<a href="803-tls-slots#831-tls-slot-structure">8.3.1</a>).</p>
+<p><code>rok_runtime_yield</code> follows a simple calling convention with no arguments and no return value.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/008-abi/804-safepoint.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="803-tls-slots"><small>Previous</small>8.3. Mutator TLS slot layout</a><a class="next" href="805-extern-symbols"><small>Next</small>8.5. Extern &quot;C&quot; symbols</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

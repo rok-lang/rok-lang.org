@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>0.3. 소스 단위 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok 의 컴파일 단위는 패키지입니다. 패키지는 파일 시스템 위에서 정해진 규약 (src/main.rok / src/lib.rok) 으로 인식됩니다. 매니페스트 rok.rokon 은 의존성 등을 선언할 때만 두며, 의존성이 없는 패키지에는 필요하지 않습니다 (0.3.4).">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/003-source-units.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="0.3. 소스 단위 - rok docs">
+<meta property="og:description" content="rok 의 컴파일 단위는 패키지입니다. 패키지는 파일 시스템 위에서 정해진 규약 (src/main.rok / src/lib.rok) 으로 인식됩니다. 매니페스트 rok.rokon 은 의존성 등을 선언할 때만 두며, 의존성이 없는 패키지에는 필요하지 않습니다 (0.3.4).">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/003-source-units.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/000-meta/003-source-units.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/000-meta/003-source-units.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">0. 소개</a></p><ul class="pages"><li><a href="001-execution-modes">0.1. 실행 엔진과 사용자 표면</a></li><li><a href="002-pipeline">0.2. 컴파일 파이프라인</a></li><li class="cur"><a aria-current="page" href="003-source-units">0.3. 소스 단위</a><ul class="toc"><li><a href="#031-실행-파일과-라이브러리">0.3.1. 실행 파일과 라이브러리</a></li><li><a href="#032-파일과-모듈">0.3.2. 파일과 모듈</a></li><li><a href="#033-패키지-식별자">0.3.3. 패키지 식별자</a></li><li><a href="#034-매니페스트-rokrokon-는-선택">0.3.4. 매니페스트 (rok.rokon) 는 선택</a></li><li><a href="#035-테스트와-벤치마크-디렉토리">0.3.5. 테스트와 벤치마크 디렉토리</a></li></ul></li><li><a href="004-language-vs-standard-libraries">0.4. 언어와 표준 라이브러리의 경계</a></li><li><a href="005-standard-libraries-tiers">0.5. 표준 라이브러리 계층</a></li><li><a href="006-platform-targets">0.6. 플랫폼 타깃</a></li><li><a href="007-glossary">0.7. 용어집</a></li><li><a href="008-notation">0.8. 표기법</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="03-소스-단위 03-source-units 031-실행-파일과-라이브러리 031-executables-and-libraries 실행-패키지-srcmainrok executable-package-srcmainrok 라이브러리-패키지-srclibrok library-package-srclibrok 한-패키지의-라이브러리와-실행-파일 library-and-executable-in-one-package 032-파일과-모듈 032-files-and-modules 033-패키지-식별자 033-package-identifier 034-매니페스트-rokrokon-는-선택 034-the-manifest-rokrokon-is-optional 035-테스트와-벤치마크-디렉토리 035-test-and-benchmark-directories"><a href="../../../../spec/refs-lang/000-meta/003-source-units" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="03-소스-단위"><a class="anchor" tabindex="-1" href="#03-소스-단위" aria-hidden="true">#</a>0.3. 소스 단위</h1>
+<p>rok 의 컴파일 단위는 <strong>패키지</strong>입니다. 패키지는 파일 시스템 위에서 정해진 규약 (<code>src/main.rok</code> / <code>src/lib.rok</code>) 으로 인식됩니다. 매니페스트 <code>rok.rokon</code> 은 의존성 등을 선언할 때만 두며, 의존성이 없는 패키지에는 필요하지 않습니다 (0.3.4).</p>
+<h2 id="031-실행-파일과-라이브러리"><a class="anchor" tabindex="-1" href="#031-실행-파일과-라이브러리" aria-hidden="true">#</a>0.3.1. 실행 파일과 라이브러리</h2>
+<p>패키지는 실행 파일, 라이브러리, 또는 둘 다를 가집니다. 무엇을 가지는지는 소스 디렉토리 <code>src/</code> 의 루트 파일만으로 정해집니다: <code>src/main.rok</code> 는 실행 파일의 루트, <code>src/lib.rok</code> 는 라이브러리의 루트입니다.</p>
+<p>패키지 디렉토리는 패키지의 소스를 <code>src/</code> 에 두고, 그 밖의 모든 것을 그 옆에 둡니다: 매니페스트 <code>rok.rokon</code> 과 lockfile <code>rok.lock</code> (0.3.4), <code>target/</code> (빌드 산출물, <a href="../009-tools/902-aot-pipeline#9215-산출물">9.2.15</a>), 그리고 <code>README</code>, <code>LICENSE</code>, 테스트 데이터 같은 파일입니다. <code>src/</code> 아래의 파일만 패키지의 소스이며, <code>src/</code> 밖의 <code>.rok</code> 파일은 패키지의 일부가 아닙니다 (함께 컴파일되지 않고, 식별자 (0.3.3) 에 들어가지 않으며, 따로 실행하면 익명 패키지입니다, <a href="../004-functions/416-entry-point#4168-단일-파일-실행">4.16.8</a>). 유일한 예외는 <code>tests/</code> 와 <code>benches/</code> 디렉토리로, <code>rokc test</code> / <code>rokc bench</code> 에서만 컴파일됩니다 (<a href="#035-테스트와-벤치마크-디렉토리">0.3.5</a>).</p>
+<h3 id="실행-패키지-srcmainrok"><a class="anchor" tabindex="-1" href="#실행-패키지-srcmainrok" aria-hidden="true">#</a>실행 패키지: <code>src/main.rok</code></h3>
+<p><code>src/main.rok</code> 가 있는 디렉토리는 실행 패키지로 인식됩니다.</p>
+<pre><code>my_app/
+├── rok.rokon         &lt;- manifest (optional, 0.3.4)
+├── src/
+│   ├── main.rok      &lt;- entry point
+│   └── ...           &lt;- other module files
+└── target/           &lt;- build output
+</code></pre>
+<p><code>main.rok</code> 는 진입 모듈로서, 명시적인 <code>fn main</code> 이나 top-level 문 가운데 한 가지 형태로 진입점을 제공합니다. 진입점의 정확한 형태와 top-level 문의 의미는 <a href="../004-functions/416-entry-point">4.16 진입점</a> 에서 정의합니다. 패키지에 속하지 않은 단일 파일을 실행하면 그 파일이 익명 패키지의 <code>main.rok</code> 로 취급됩니다 (<a href="../004-functions/416-entry-point#4168-단일-파일-실행">4.16.8</a>).</p>
+<h3 id="라이브러리-패키지-srclibrok"><a class="anchor" tabindex="-1" href="#라이브러리-패키지-srclibrok" aria-hidden="true">#</a>라이브러리 패키지: <code>src/lib.rok</code></h3>
+<p><code>src/lib.rok</code> 가 있는 디렉토리는 라이브러리 패키지로 인식됩니다.</p>
+<pre><code>my_lib/
+├── rok.rokon
+└── src/
+    ├── lib.rok       &lt;- library root
+    └── ...
+</code></pre>
+<p>라이브러리 패키지에는 진입점이 없으며, 외부에서 불러서 쓰는 정의 묶음의 역할을 합니다. <code>lib.rok</code> 를 포함한 <code>main.rok</code> 이외의 모든 모듈 파일은 항목만 담을 수 있고 top-level 문을 둘 수 없으므로, 모듈을 가져오는 일은 어떤 코드도 실행하지 않습니다 (<a href="../004-functions/416-entry-point#4166-모듈은-정의-전용">4.16.6</a>).</p>
+<h3 id="한-패키지의-라이브러리와-실행-파일"><a class="anchor" tabindex="-1" href="#한-패키지의-라이브러리와-실행-파일" aria-hidden="true">#</a>한 패키지의 라이브러리와 실행 파일</h3>
+<p>패키지는 <code>src/main.rok</code> 와 <code>src/lib.rok</code> 를 둘 다 가질 수 있습니다. 그것들은 하나의 <code>src/</code> 에서 빌드하는 두 target 입니다: 라이브러리와, 그것을 쓰는 실행 파일. 실행 파일은 라이브러리를 패키지 이름을 딴 의존 패키지로 봅니다 (<code>use my_app::parse;</code>; <a href="../009-tools/910-rok-frontend#9103-rokrokon--roklock">9.10.3</a> 의 코드 이름, <code>-</code> 를 <code>_</code> 로 바꾼 것). 라이브러리는 실행 파일과 별개의 패키지입니다: 거기서는 <code>pub</code> 항목만 보이며 <code>pub(pkg)</code>, <code>pub(sub)</code>, 비공개 항목은 보이지 않고 (<a href="../005-modules/507-paths#5714-패키지-사이-경로">5.7.14</a>), 실행 파일이 <code>use</code> 하기 전에는 그 어떤 항목도 범위에 없습니다. 어느 target 에서든 <code>pkg::</code> 는 그 target 자신의 루트입니다. target 마다 자기 모듈 트리가 있으므로 둘 다 같은 <code>src/util.rok</code> 에 대해 <code>mod util;</code> 을 선언할 수 있으며, 각자 자기 사본을 얻습니다. 이 패키지에 의존하는 패키지는 라이브러리만 얻습니다.</p>
+<h2 id="032-파일과-모듈"><a class="anchor" tabindex="-1" href="#032-파일과-모듈" aria-hidden="true">#</a>0.3.2. 파일과 모듈</h2>
+<p>패키지 안의 추가 모듈은 <code>src/</code> 아래의 파일로서 두 형태 중 하나를 택합니다.</p>
+<pre><code>foo.rok                &lt;- single-file module (no submodules)
+</code></pre>
+<p>또는 다음과 같이 폴더를 동반하는 형태로 둘 수도 있습니다.</p>
+<pre><code>foo.rok                &lt;- module body
+foo/                   &lt;- foo's submodules
+├── bar.rok                foo::bar submodule
+└── baz.rok                foo::baz submodule
+</code></pre>
+<p>폴더 형태에서는 본체 파일 (<code>foo.rok</code>) 과 같은 이름의 폴더 (<code>foo/</code>) 가 함께 놓입니다. 이때 본체 안에 <code>mod 이름;</code> 으로 선언된 서브모듈만 폴더 안의 파일과 매핑됩니다. Rust 2018+ 와 같은 규칙이며, 자세한 매핑 규칙은 <a href="../005-modules/504-modules">모듈</a> 에서 정의합니다.</p>
+<p>한편 별도 파일 없이 본체 안에 <code>mod 이름 { ... }</code> 또는 <code>pub mod 이름 { ... }</code> 형태로 인라인 모듈을 둘 수도 있습니다. Rust 의 인라인 모듈과 같은 동작이며, 자세한 형태와 매핑 역시 <a href="../005-modules/504-modules">모듈</a> 에서 정의합니다.</p>
+<h2 id="033-패키지-식별자"><a class="anchor" tabindex="-1" href="#033-패키지-식별자" aria-hidden="true">#</a>0.3.3. 패키지 식별자</h2>
+<p>각 패키지에는 내용 기반 해시가 부여됩니다. 해시 입력은 패키지의 모든 소스 파일을 <code>src/</code> 기준 상대 경로 (<code>/</code> 구분자) 의 바이트 순서로 정렬해 이어 붙인 것이며, 각 파일은 <code>경로 + \0 + 내용 + \0</code> 으로 직렬화합니다. 그 SHA-256 의 앞 8 글자를 식별자로 사용합니다.</p>
+<p>이 해시는 다음과 같은 성질을 가집니다. 같은 내용의 패키지는 어디서 빌드해도 같은 해시가 나오며, 한 글자라도 바뀌면 새 해시가 만들어집니다.</p>
+<p>이 해시는 산출물의 심볼 이름과 캐시 키에 사용되며, 구체적 사용처는 후속 문서에서 정의합니다.</p>
+<h2 id="034-매니페스트-rokrokon-는-선택"><a class="anchor" tabindex="-1" href="#034-매니페스트-rokrokon-는-선택" aria-hidden="true">#</a>0.3.4. 매니페스트 (<code>rok.rokon</code>) 는 선택</h2>
+<p>패키지의 정의는 파일 존재만으로 결정됩니다. 디렉토리에 <code>src/main.rok</code> 나 <code>src/lib.rok</code> 가 있으면 그 디렉토리가 패키지이고, 어느 것들이 있느냐가 실행 파일, 라이브러리, 또는 둘 다를 가지는지를 정합니다. 매니페스트는 이 규약을 바꾸지 않습니다.</p>
+<p>의존성, dev 의존성, toolchain 고정 같은 정보가 필요할 때만 패키지 루트의 <code>src/</code> 옆에 매니페스트 <code>rok.rokon</code> (<a href="../009-tools/910-rok-frontend#9103-rokrokon--roklock">9.10.3</a>) 을 두고, 도구가 해소한 결과는 lockfile <code>rok.lock</code> 에 남습니다. 두 파일 이름은 이 철자 그대로 (모두 소문자) 입니다. 대소문자가 다른 이름 (<code>Rok.rokon</code> 등) 은 경고입니다. 두 파일은 <a href="../../refs-standard-libraries/300-std/309-rokon">ROKON</a> 형식이며, 매니페스트는 <code>Package { .. }</code> 값 하나로 읽기만 하고 컴파일하거나 실행하지 않습니다.</p>
+<p>이 결정은 두 가지를 가능하게 합니다. 첫째로 의존성이 없는 패키지는 컴파일러가 파일만 보고 처리할 수 있습니다. 둘째로 매니페스트는 추가될 뿐이며, 기존 패키지 정의를 깨지 않습니다.</p>
+<h2 id="035-테스트와-벤치마크-디렉토리"><a class="anchor" tabindex="-1" href="#035-테스트와-벤치마크-디렉토리" aria-hidden="true">#</a>0.3.5. 테스트와 벤치마크 디렉토리</h2>
+<p>패키지는 <code>src/</code> 옆에 <code>tests/</code> 와 <code>benches/</code> 디렉토리를 둘 수 있습니다. <code>src/</code> 밖의 다른 파일 (0.3.1) 과 달리 이들은 컴파일되지만, 대응하는 명령에서만 그렇습니다: <code>tests/</code> 는 <code>rokc test</code>, <code>benches/</code> 는 <code>rokc bench</code>. 일반 빌드, 라이브러리 인터페이스 (<code>.rokhir</code>), 패키지 식별자 (0.3.3) 에는 들어가지 않으며, 이들은 모두 <code>src/</code> 만으로 정해집니다.</p>
+<p>각 디렉토리는 합성 루트 모듈로 올라갑니다 - <code>tests/</code> 는 <code>tests</code> 모듈, <code>benches/</code> 는 <code>benches</code> 모듈 아래에 - <a href="../005-modules/504-modules#544-패키지-루트">모듈</a> 의 일반 레이아웃 규칙을 따릅니다: <code>tests/parse.rok</code> 는 <code>tests::parse</code> 이고, 옆의 <code>tests/parse/</code> 폴더가 그 모듈의 하위 모듈을 담습니다. <code>mod.rok</code> 는 없습니다 (<a href="../005-modules/504-modules#546-사용자-정의-경로-path">5.4.6</a>); 이름 규칙은 <code>src/</code> 와 같습니다.</p>
+<p>코드는 in-crate 입니다: 패키지와 함께 컴파일되며 <code>pkg::</code> 로 패키지에 닿고, <code>src/</code> 아래 모듈과 동일한 패키지 내부 가시성을 가집니다 - 의존성의 <code>pub</code> 전용 뷰가 아니므로 <code>pub(pkg)</code> 항목과 패키지 자신의 비공개 모듈까지 다룰 수 있습니다. 매니페스트의 <code>dev_deps</code> (<a href="../009-tools/910-rok-frontend#9103-rokrokon--roklock">9.10.3</a>) 를 쓸 수 있습니다. <code>src/lib.rok</code> 와 <code>src/main.rok</code> 를 둘 다 가진 패키지에서는 두 디렉토리가 라이브러리를 대상으로 빌드되며, 실행 파일 자신의 테스트는 <code>src/</code> 안에 인라인으로 둡니다.</p>
+<p>여기의 파일은 암묵적으로 test/bench 전용이라 <code>#[cfg(test)]</code> 가 필요 없습니다. 측정 함수는 <code>#[test]</code> 나 <code>#[bench]</code> 로 표시하고 (<a href="../006-meta-system/602-built-in-attributes#625-test-테스트-함수-마커">6.2.5</a>), 디렉토리의 다른 항목은 공용 헬퍼입니다.</p>
+<pre><code>my_lib/
+├── rok.rokon
+├── src/
+│   └── lib.rok
+├── tests/                &lt;- rokc test 전용
+│   ├── parse.rok             tests::parse   (pkg:: 사용)
+│   └── common.rok            tests::common  (공용 헬퍼, #[test] 없음)
+└── benches/              &lt;- rokc bench 전용
+    └── parse.rok             benches::parse
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/000-meta/003-source-units.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="002-pipeline"><small>Previous</small>0.2. 컴파일 파이프라인</a><a class="next" href="004-language-vs-standard-libraries"><small>Next</small>0.4. 언어와 표준 라이브러리의 경계</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

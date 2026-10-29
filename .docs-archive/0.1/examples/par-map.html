@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parallel map / reduce - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="Split prime counting across cores with map, reduce, filter and join from rok::core::par, and check the result against a sequential count.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/examples/par-map.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="Parallel map / reduce - rok docs">
+<meta property="og:description" content="Split prime counting across cores with map, reduce, filter and join from rok::core::par, and check the result against a sequential count.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/examples/par-map.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+</head>
+<body class="doc" data-root="../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../"><img src="../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../learn/">Learn</a><a href="../examples/" aria-current="page">Examples</a><a href="../spec/refs-lang/">Reference</a><a href="../spec/refs-standard-libraries/">Library</a><a href="../std/">API</a><a href="../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><p class="side-title"><a href="./">Examples</a></p><ul class="pages"><li><a href="bank-mutex">Bank transfers</a></li><li><a href="bigint-factorial">Big integers and factorials</a></li><li><a href="cli-args">Command-line tool</a></li><li><a href="csv-report">CSV report</a></li><li><a href="downloader">Concurrent downloader</a></li><li><a href="ffi-libc">Calling a C library</a></li><li><a href="game-of-life">Game of Life</a></li><li><a href="generators">Generators</a></li><li><a href="interpreter">A small Lisp interpreter</a></li><li><a href="json-parser">JSON parser</a></li><li><a href="matrix">Matrix operations</a></li><li><a href="notebook">Exploring data in a Jupyter notebook</a></li><li class="cur"><a aria-current="page" href="par-map">Parallel map / reduce</a><ul class="toc"><li><a href="#code">Code</a></li><li><a href="#walkthrough">Walkthrough</a></li><li><a href="#running-it">Running it</a></li></ul></li><li><a href="process">Child processes</a></li><li><a href="rokon-config">ROKON configuration</a></li><li><a href="sealed-messages">Sealed messages</a></li><li><a href="sudoku">Sudoku solver</a></li><li><a href="tcp-echo">TCP echo server</a></li><li><a href="text-adventure">Text adventure</a></li><li><a href="word-count">Word count</a></li></ul></details></aside><main id="content">
+<article>
+<h1 id="parallel-map--reduce"><a class="anchor" tabindex="-1" href="#parallel-map--reduce" aria-hidden="true">#</a>Parallel map / reduce</h1>
+<p>Split prime counting across cores with <code>map</code>, <code>reduce</code>, <code>filter</code> and <code>join</code> from <code>rok::core::par</code>, and check the result against a sequential count.</p>
+<h2 id="code"><a class="anchor" tabindex="-1" href="#code" aria-hidden="true">#</a>Code</h2>
+<pre><code class="language-rok"><span class="c">// Count primes in parallel with rok::core::par and check against a sequential count.</span>
+
+<span class="k">fn</span> is_prime(n: <span class="t">i64</span>) -&gt; <span class="t">bool</span> {
+    <span class="k">if</span> n &lt; <span class="n">2</span> { <span class="k">return</span> <span class="k">false</span>; }
+    <span class="k">if</span> n % <span class="n">2</span> == <span class="n">0</span> { <span class="k">return</span> n == <span class="n">2</span>; }
+    <span class="k">let</span> d: <span class="t">i64</span> = <span class="n">3</span>;
+    <span class="k">while</span> d * d &lt;= n {
+        <span class="k">if</span> n % d == <span class="n">0</span> { <span class="k">return</span> <span class="k">false</span>; }
+        d += <span class="n">2</span>;
+    }
+    <span class="k">true</span>
+}
+
+<span class="k">fn</span> count_primes(lo: <span class="t">i64</span>, hi: <span class="t">i64</span>) -&gt; <span class="t">i64</span> {
+    <span class="k">let</span> c: <span class="t">i64</span> = <span class="n">0</span>;
+    <span class="k">for</span> n <span class="k">in</span> lo..hi {
+        <span class="k">if</span> is_prime(n) { c += <span class="n">1</span>; }
+    }
+    c
+}
+
+<span class="k">fn</span> main() {
+    <span class="k">let</span> limit: <span class="t">i64</span> = <span class="n">2000000</span>;
+    <span class="k">let</span> block: <span class="t">i64</span> = <span class="n">250000</span>;
+
+    <span class="c">// 1. map: one block per item; results come back in input order.</span>
+    <span class="k">let</span> starts: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = [];
+    <span class="k">let</span> s: <span class="t">i64</span> = <span class="n">0</span>;
+    <span class="k">while</span> s &lt; limit { starts.push(s); s += block; }
+    <span class="k">let</span> counts: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = par::map(starts, |lo: <span class="t">i64</span>| count_primes(lo, lo + block));
+    <span class="k">for</span> (i, c) <span class="k">in</span> counts.iter().enumerate() {
+        <span class="k">let</span> lo = starts[i];
+        println(<span class="s">f"[{</span>lo<span class="s">:&gt;7</span><span class="s">}, {</span>lo + block<span class="s">:&gt;7</span><span class="s">})  {</span>c<span class="s">:&gt;6</span><span class="s">} primes"</span>);
+    }
+
+    <span class="c">// 2. reduce: sum the per-block counts (the function must be associative).</span>
+    <span class="k">let</span> total = par::reduce(counts, <span class="n">0i64</span>, |a: <span class="t">i64</span>, b: <span class="t">i64</span>| a + b);
+    println(<span class="s">f"total below {</span>limit<span class="s">}: {</span>total<span class="s">}"</span>);
+
+    <span class="c">// 3. filter: keep the primes of a smaller range, in order.</span>
+    <span class="k">let</span> nums: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = [];
+    <span class="k">for</span> n <span class="k">in</span> <span class="n">999900i64</span>..<span class="n">1000100i64</span> { nums.push(n); }
+    <span class="k">let</span> near: <span class="t">List</span>&lt;<span class="t">i64</span>&gt; = par::filter(nums, |n: <span class="t">i64</span>| is_prime(n));
+    println(<span class="s">f"primes around one million: {</span>near<span class="s">:?</span><span class="s">}"</span>);
+
+    <span class="c">// 4. join: two independent computations at once.</span>
+    <span class="k">let</span> (twins, max_gap) = par::join(|| twin_primes(<span class="n">100000</span>), || largest_gap(<span class="n">100000</span>));
+    println(<span class="s">f"twin prime pairs below 100000: {</span>twins<span class="s">}, largest gap: {</span>max_gap<span class="s">}"</span>);
+
+    <span class="c">// The sequential answer must match the parallel one.</span>
+    <span class="k">let</span> seq = count_primes(<span class="n">0</span>, limit);
+    println(<span class="s">f"sequential: {</span>seq<span class="s">}, parallel: {</span>total<span class="s">}, match: {</span>seq == total<span class="s">}"</span>);
+}
+
+<span class="k">fn</span> twin_primes(limit: <span class="t">i64</span>) -&gt; <span class="t">i64</span> {
+    <span class="k">let</span> c: <span class="t">i64</span> = <span class="n">0</span>;
+    <span class="k">for</span> n <span class="k">in</span> <span class="n">3i64</span>..limit - <span class="n">2</span> {
+        <span class="k">if</span> is_prime(n) &amp;&amp; is_prime(n + <span class="n">2</span>) { c += <span class="n">1</span>; }
+    }
+    c
+}
+
+<span class="k">fn</span> largest_gap(limit: <span class="t">i64</span>) -&gt; <span class="t">i64</span> {
+    <span class="k">let</span> prev: <span class="t">i64</span> = <span class="n">2</span>;
+    <span class="k">let</span> best: <span class="t">i64</span> = <span class="n">0</span>;
+    <span class="k">for</span> n <span class="k">in</span> <span class="n">3i64</span>..limit {
+        <span class="k">if</span> is_prime(n) {
+            <span class="k">if</span> n - prev &gt; best { best = n - prev; }
+            prev = n;
+        }
+    }
+    best
+}
+</code></pre>
+<pre class="output"><code class="language-output">[      0,  250000)   22044 primes
+[ 250000,  500000)   19494 primes
+[ 500000,  750000)   18700 primes
+[ 750000, 1000000)   18260 primes
+[1000000, 1250000)   17971 primes
+[1250000, 1500000)   17686 primes
+[1500000, 1750000)   17453 primes
+[1750000, 2000000)   17325 primes
+total below 2000000: 148933
+primes around one million: [999907, 999917, 999931, 999953, 999959, 999961, 999979, 999983, 1000003, 1000033, 1000037, 1000039, 1000081, 1000099]
+twin prime pairs below 100000: 1224, largest gap: 72
+sequential: 148933, parallel: 148933, match: true
+</code></pre>
+<h2 id="walkthrough"><a class="anchor" tabindex="-1" href="#walkthrough" aria-hidden="true">#</a>Walkthrough</h2>
+<ul>
+<li><code>par::map</code> splits the items into chunks processed at the same time on the thread pool, but the result list keeps the input order, so <code>counts[i]</code> is the answer for the block starting at <code>starts[i]</code> (<a href="../spec/refs-standard-libraries/200-core/219-par#2191-core-api">2.19.1 core API</a>, <a href="../std/core/par#fn.map"><code>par::map</code></a>).
+</li>
+<li><code>par::reduce</code> folds each chunk first and then folds the chunk results. The function must be associative so that regrouping gives the same answer: addition is, subtraction is not (<a href="../std/core/par#fn.reduce"><code>par::reduce</code></a>).
+</li>
+<li><code>par::filter</code> keeps the order as well, so the primes around one million come out ascending.
+</li>
+<li><code>par::join</code> runs two unrelated computations at once and returns both results as a tuple (<a href="../learn/12-concurrency">Concurrency</a>).
+</li>
+<li>Comparing the parallel and sequential answers is the simplest way to check parallelized code. Timings vary from machine to machine, so they are not part of the output.
+</li>
+</ul>
+<h2 id="running-it"><a class="anchor" tabindex="-1" href="#running-it" aria-hidden="true">#</a>Running it</h2>
+<p>To see the speedup, time an optimized build.</p>
+<pre><code class="language-bash">rokc build --release par.rok -o par
+time ./par
+</code></pre>
+<p class="edit"><a href="https://github.com/rok-lang/rok-lang.org/blob/main/docs/examples/par-map.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="notebook"><small>Previous</small>Exploring data in a Jupyter notebook</a><a class="next" href="process"><small>Next</small>Child processes</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../search.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2. Type system overview - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="This chapter sets out what the rok type system is responsible for and what it delegates to the standard library. The concrete kinds of types and their syntax ar...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/index.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2. Type system overview - rok docs">
+<meta property="og:description" content="This chapter sets out what the rok type system is responsible for and what it delegates to the standard library. The concrete kinds of types and their syntax ar...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/index.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../style.css">
+<link rel="icon" href="../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/002-types/index.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/002-types/index.html">
+</head>
+<body class="doc" data-root="../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../"><img src="../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../learn/">Learn</a><a href="../../../examples/">Examples</a><a href="../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../spec/refs-standard-libraries/">Library</a><a href="../../../std/">API</a><a href="../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok language reference</a><p class="side-title"><a class="cur" href="./">2. Type system overview</a></p><ul class="toc"><li><a href="#contents">Contents</a></li><li><a href="#positional-definition">Positional definition</a></li><li><a href="#two-modes-static-and-gradual">Two modes: static and gradual</a></li><li><a href="#what-the-language-defines">What the language defines</a></li><li><a href="#what-the-standard-library-defines">What the standard library defines</a></li><li><a href="#boundary-of-gradual-typing">Boundary of gradual typing</a></li><li><a href="#trait-as-type-ban">Trait-as-type ban</a></li><li><a href="#monomorphization">Monomorphization</a></li></ul><ul class="pages"><li><a href="201-type-expressions">2.1. Type expressions</a></li><li><a href="202-any-slot">2.2. The any slot</a></li><li><a href="203-struct">2.3. struct</a></li><li><a href="204-enum">2.4. enum</a></li><li><a href="205-union">2.5. union</a></li><li><a href="206-sum-types">2.6. Sum types (A | B)</a></li><li><a href="207-niche-optimization">2.7. Niche optimization</a></li><li><a href="208-trait">2.8. trait</a></li><li><a href="209-impl">2.9. impl</a></li><li><a href="210-generics">2.10. Generics</a></li><li><a href="211-const-generics">2.11. const generics</a></li><li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a></li><li><a href="213-type-paths">2.13. Type paths</a></li><li><a href="214-cast-and-conversion">2.14. Conversions</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="2-type-system-overview 2-타입-시스템-개요 contents 목차 positional-definition 위치-정의-positional-definition two-modes-static-and-gradual 두-모드-정적과-점진 what-the-language-defines 언어가-정의하는-것 what-the-standard-library-defines 표준-라이브러리가-정의하는-것 boundary-of-gradual-typing 점진-타이핑의-경계 trait-as-type-ban 트레잇-as-타입-금지 monomorphization 단형화-monomorphization"><span aria-current="true">EN</span><span aria-hidden="true"> · </span><a href="../../../ko/spec/refs-lang/002-types/" hreflang="ko" lang="ko">한국어</a></nav>
+<h1 id="2-type-system-overview"><a class="anchor" tabindex="-1" href="#2-type-system-overview" aria-hidden="true">#</a>2. Type system overview</h1>
+<p>This chapter sets out what the rok type system is responsible for and what it delegates to the standard library. The concrete kinds of types and their syntax are defined in the documents that follow.</p>
+<h2 id="contents"><a class="anchor" tabindex="-1" href="#contents" aria-hidden="true">#</a>Contents</h2>
+<ul>
+<li><a href="201-type-expressions">2.1. Type expressions</a>
+</li>
+<li><a href="202-any-slot">2.2. The <code>any</code> slot</a>
+</li>
+<li><a href="203-struct">2.3. <code>struct</code></a>
+</li>
+<li><a href="204-enum">2.4. <code>enum</code></a>
+</li>
+<li><a href="205-union">2.5. <code>union</code></a>
+</li>
+<li><a href="206-sum-types">2.6. Sum types (<code>A | B</code>)</a>
+</li>
+<li><a href="207-niche-optimization">2.7. Niche optimization</a>
+</li>
+<li><a href="208-trait">2.8. <code>trait</code></a>
+</li>
+<li><a href="209-impl">2.9. <code>impl</code></a>
+</li>
+<li><a href="210-generics">2.10. Generics</a>
+</li>
+<li><a href="211-const-generics">2.11. Const generics</a>
+</li>
+<li><a href="212-trait-as-type-banned">2.12. Trait-as-type ban</a>
+</li>
+<li><a href="213-type-paths">2.13. Type paths</a>
+</li>
+<li><a href="214-cast-and-conversion">2.14. Conversions</a>
+</li>
+</ul>
+<h2 id="positional-definition"><a class="anchor" tabindex="-1" href="#positional-definition" aria-hidden="true">#</a>Positional definition</h2>
+<p>A type is the information by which the compiler decides what shape and behavior a value is allowed to have. Every rok value belongs to some type; there is no untyped value.</p>
+<p>Variables are slightly different. A variable is either fixed to one type (static) or a slot that can hold several types (dynamic), and both modes coexist in the same language.</p>
+<h2 id="two-modes-static-and-gradual"><a class="anchor" tabindex="-1" href="#two-modes-static-and-gradual" aria-hidden="true">#</a>Two modes: static and gradual</h2>
+<pre><code>static (explicit)   let x: i32 = 42i32;     x is always i32
+static (inferred)   let z = 42i32;          z is fixed to the initializer's type i32
+gradual (any)       let y: any = 42i32;     y is a slot that can hold any type
+</code></pre>
+<p>A static variable is one whose type is written at the declaration or omitted and inferred from the initializer; it always holds only values of that type. A gradual variable is one with <code>any</code> written in the type position; such a variable is a dynamic slot. Static is the default; dynamic exists only where <code>any</code> is written.</p>
+<p>This chapter only establishes that both modes exist in the same language.</p>
+<p>The motivation is in <a href="../000-meta/001-execution-modes">Execution engines and the user surface</a>: REPL/Jupyter exploration and <a href="../000-meta/007-glossary#aot-ahead-of-time">AOT</a> static compilation must share the same code. As a result, exploratory code tends to use the inferred style with types omitted, library code uses the explicit style, and dynamic slots are written as <code>any</code> only where they are really needed.</p>
+<h2 id="what-the-language-defines"><a class="anchor" tabindex="-1" href="#what-the-language-defines" aria-hidden="true">#</a>What the language defines</h2>
+<p>The language specification directly defines the following about types.</p>
+<p>The syntax of type expressions, i.e. how type names are written. The container syntax that creates types: <code>struct</code>, <code>enum</code>, <code>union</code>, <code>trait</code>, <code>impl</code>, generics, and sum types (<code>|</code>). The meaning of the dynamic slot (<code>any</code>), and the monomorphization rule for generics, which <a href="../000-meta/007-glossary#specialize">specializes</a> per type at the call site. Finally, the type system invariants the compiler must recognize, such as the trait-as-type ban and the niche optimization rules.</p>
+<h2 id="what-the-standard-library-defines"><a class="anchor" tabindex="-1" href="#what-the-standard-library-defines" aria-hidden="true">#</a>What the standard library defines</h2>
+<p>The standard library is responsible for the following about types.</p>
+<p>The names and meanings of all primitive types: <code>i32</code>, <code>f64</code>, <code>bool</code>, <code>str</code>, and so on. All collection types: <code>List</code>, <code>Dict</code>, <code>Set</code>, <code>Tuple</code>, and so on. All conversions between types such as cast, from, and into. The contents of traits - which traits have which methods and which types implement them. Finally, which type a literal evaluates to is also decided by the standard library, through handlers.</p>
+<div class="callout important"><p class="callout-title">Important</p>
+<p>This chapter defines only the shape. The contents are defined in the library specification.</p>
+</div>
+<h2 id="boundary-of-gradual-typing"><a class="anchor" tabindex="-1" href="#boundary-of-gradual-typing" aria-hidden="true">#</a>Boundary of gradual typing</h2>
+<p>Gradual typing applies only where <code>any</code> is written. Omitting a type annotation never produces a dynamic slot.</p>
+<p>A variable without a type annotation becomes a static slot inferred from its initializer's type. A function parameter without a type annotation makes the function generic, monomorphized at the call site; it does not become a dynamic slot, so a parameter that should behave gradually must be written as <code>any</code> explicitly. Struct fields require a type annotation. A function whose return type is omitted has it inferred from the body; if it cannot be inferred, it is a compile error.</p>
+<p>This boundary confines runtime <a href="../000-meta/007-glossary#dispatch">dispatch</a> cost to positions written as <code>any</code>. Variables, parameters and fields are all either static or explicitly <code>any</code>.</p>
+<h2 id="trait-as-type-ban"><a class="anchor" tabindex="-1" href="#trait-as-type-ban" aria-hidden="true">#</a>Trait-as-type ban</h2>
+<p>A trait name cannot be written directly as a variable, parameter or return type. Where polymorphism is needed, use generics, sum types, or the constrained <code>any Trait</code>.</p>
+<p>Runtime dispatch is confined to positions written as <code>any</code> (<code>any</code>, <code>any Trait</code>).</p>
+<h2 id="monomorphization"><a class="anchor" tabindex="-1" href="#monomorphization" aria-hidden="true">#</a>Monomorphization</h2>
+<p>Generic functions and types produce a separate compilation result for each tuple of concrete types at a call or instantiation site.</p>
+<p>For example, if the same generic function is used at two call sites with <code>i32</code> and <code>f64</code>, two distinct function bodies are generated. As a result, indirect call cost is zero, with the same performance as a direct call. The cost shows up as compile time and binary size, but is mostly offset by MLIR + LLVM dead-code elimination.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/en/refs-lang/002-types/README.md">Edit this page on GitHub</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="../001-lexical/110-punctuation-and-operator-tokens"><small>Previous</small>1.10. Punctuation and operator tokens</a><a class="next" href="201-type-expressions"><small>Next</small>2.1. Type expressions</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../search.js" defer></script>
+</body>
+</html>

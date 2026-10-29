@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.16. 진입점 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="실행 패키지가 시작될 때 어떤 코드가 어떤 순서로 실행되는지를 정의합니다. 소스 단위 가 &quot;진입점의 정확한 형태는 함수 사양에서 정의&quot; 한다고 남겨 둔 자리가 바로 이 절입니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/416-entry-point.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="4.16. 진입점 - rok docs">
+<meta property="og:description" content="실행 패키지가 시작될 때 어떤 코드가 어떤 순서로 실행되는지를 정의합니다. 소스 단위 가 &quot;진입점의 정확한 형태는 함수 사양에서 정의&quot; 한다고 남겨 둔 자리가 바로 이 절입니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/416-entry-point.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/004-functions/416-entry-point.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/004-functions/416-entry-point.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">4. 함수 개요</a></p><ul class="pages"><li><a href="401-function-declaration">4.1. 함수 선언</a></li><li><a href="402-parameters">4.2. 매개변수</a></li><li><a href="403-return">4.3. 반환</a></li><li><a href="404-function-type">4.4. 함수 타입</a></li><li><a href="405-closure">4.5. 클로저</a></li><li><a href="406-capture-semantics">4.6. 캡처 의미론</a></li><li><a href="407-ref-keyword">4.7. ref 키워드</a></li><li><a href="408-trailing-closure">4.8. 트레일링 클로저</a></li><li><a href="409-method">4.9. 메서드</a></li><li><a href="410-nested-functions">4.10. 중첩 함수</a></li><li><a href="411-generators">4.11. 제너레이터 (yield)</a></li><li><a href="412-async">4.12. 비동기 (async 와 await)</a></li><li><a href="413-stream">4.13. 스트림 (async yield)</a></li><li><a href="414-throws">4.14. throws 시그니처</a></li><li><a href="415-unsafe">4.15. unsafe - 함수 modifier 와 블록 표현식</a></li><li class="cur"><a aria-current="page" href="416-entry-point">4.16. 진입점</a><ul class="toc"><li><a href="#4161-진입-모듈-mainrok">4.16.1. 진입 모듈: main.rok</a></li><li><a href="#4162-top-level-문의-의미-암묵-main">4.16.2. top-level 문의 의미: 암묵 main</a></li><li><a href="#4163-명시-main-의-시그니처">4.16.3. 명시 main 의 시그니처</a></li><li><a href="#4164-종료-코드와-미처리-예외">4.16.4. 종료 코드와 미처리 예외</a></li><li><a href="#4165-비동기-main">4.16.5. 비동기 main</a></li><li><a href="#4166-모듈은-정의-전용">4.16.6. 모듈은 정의 전용</a></li><li><a href="#4167-전역-상태">4.16.7. 전역 상태</a></li><li><a href="#4168-단일-파일-실행">4.16.8. 단일 파일 실행</a></li><li><a href="#4169-진입점-속성은-없음">4.16.9. 진입점 속성은 없음</a></li><li><a href="#41610-jit--repl-과의-관계">4.16.10. JIT / REPL 과의 관계</a></li></ul></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="416-진입점 416-entry-point 4161-진입-모듈-mainrok 4161-entry-module-mainrok 4162-top-level-문의-의미-암묵-main 4162-meaning-of-top-level-statements-implicit-main 4163-명시-main-의-시그니처 4163-signature-of-an-explicit-main 4164-종료-코드와-미처리-예외 4164-exit-codes-and-unhandled-exceptions 4165-비동기-main 4165-async-main 4166-모듈은-정의-전용 4166-modules-are-definition-only 4167-전역-상태 4167-global-state 4168-단일-파일-실행 4168-single-file-execution 4169-진입점-속성은-없음 4169-no-entry-point-attribute 41610-jit--repl-과의-관계 41610-relationship-to-jit--repl"><a href="../../../../spec/refs-lang/004-functions/416-entry-point" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="416-진입점"><a class="anchor" tabindex="-1" href="#416-진입점" aria-hidden="true">#</a>4.16. 진입점</h1>
+<p>실행 패키지가 시작될 때 어떤 코드가 어떤 순서로 실행되는지를 정의합니다. <a href="../000-meta/003-source-units">소스 단위</a> 가 &quot;진입점의 정확한 형태는 함수 사양에서 정의&quot; 한다고 남겨 둔 자리가 바로 이 절입니다.</p>
+<h2 id="4161-진입-모듈-mainrok"><a class="anchor" tabindex="-1" href="#4161-진입-모듈-mainrok" aria-hidden="true">#</a>4.16.1. 진입 모듈: <code>main.rok</code></h2>
+<p>실행 패키지의 루트 파일 <code>src/main.rok</code> (<a href="../000-meta/003-source-units#실행-패키지-srcmainrok">0.3.1</a>) 가 <strong>진입 모듈</strong> 입니다. 진입 모듈은 다음 두 형태 중 <strong>정확히 하나</strong> 로 진입점을 제공합니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>형태</th><th>진입점</th><th>용도</th></tr></thead>
+<tbody>
+<tr><td>명시 <code>fn main</code></td><td>사용자가 선언한 <code>fn main</code> 함수</td><td>일반 애플리케이션</td></tr>
+<tr><td>top-level 문</td><td>top-level 문들을 본체로 하는 <strong>암묵 <code>main</code></strong></td><td>스크립트, 예제, 짧은 프로그램</td></tr>
+</tbody></table></div>
+<pre><code class="language-ebnf">main_file   ::= item* fn_main item*            // 형태 1: 명시 main
+              | (item | top_stmt)*             // 형태 2: top-level 문 (fn main 없음)
+top_stmt    ::= let_stmt | let_else_stmt | expr &quot;;&quot; | block_like_expr &quot;;&quot;?   // 3.9.1
+module_file ::= item*                          // lib.rok 및 main.rok 가 아닌 모든 모듈 파일
+</code></pre>
+<p><code>item</code> 은 <a href="../005-modules/504-modules#547-모듈-안의-항목">모듈 안의 항목</a> (<code>fn</code>, <code>struct</code>, <code>enum</code>, <code>trait</code>, <code>impl</code>, <code>const</code>, <code>static</code>, <code>mod</code>, <code>use</code> 등) 이고, <code>let_stmt</code> / <code>let_else_stmt</code> / <code>expr &quot;;&quot;</code> 은 <a href="../003-expressions/309-block-expressions">블록 표현식</a> 의 문장과 같습니다. 제어 흐름 (<code>if</code>, <code>match</code>, <code>for</code>, <code>while</code>, <code>loop</code>, <code>try</code>) 은 모두 식이므로 <code>expr &quot;;&quot;</code> 에 포함됩니다. 함수 본체와 달리 종결자 없는 마지막 식 (<code>tail_expr</code>) 은 두지 않습니다 - 암묵 <code>main</code> 은 값을 반환하지 않기 때문입니다. 항목만 있고 문장도 <code>fn main</code> 도 없는 <code>main.rok</code> 는 빈 암묵 <code>main</code> 을 가집니다. 단 WIT 를 export 하는 패키지는 예외로, 진입점 없는 reactor 입니다 (<a href="../../refs-standard-libraries/100-bare/108-wit#export">stdlib 1.8.2</a>).</p>
+<div class="callout important"><p class="callout-title">중요</p>
+<p>한 <code>main.rok</code> 안에 top-level 문과 <code>fn main</code> 선언이 <strong>함께</strong> 있으면 <strong>컴파일 에러</strong> 입니다. 두 진입점 가운데 어느 쪽이 실행되는지를 독자가 추측해야 하는 상황을 원천적으로 막기 위함입니다.</p>
+</div>
+<pre><code class="language-rok"><span class="c">// main.rok - ERROR</span>
+<span class="k">fn</span> main() { run(); }
+run();                      <span class="c">// ERROR: fn main 이 있는 파일에 top-level 문</span>
+</code></pre>
+<h2 id="4162-top-level-문의-의미-암묵-main"><a class="anchor" tabindex="-1" href="#4162-top-level-문의-의미-암묵-main" aria-hidden="true">#</a>4.16.2. top-level 문의 의미: 암묵 <code>main</code></h2>
+<p><code>fn main</code> 이 없는 <code>main.rok</code> 의 top-level 문들은 <strong>소스 순서대로</strong> 하나의 함수 본체로 모여, 컴파일러가 합성하는 암묵 <code>main</code> 의 본체가 됩니다. 항목 (item) 은 실행되는 대상이 아니므로 본체에서 빠지며, 항목과 문이 서로 섞여 있어도 문 사이의 상대 순서만 의미를 가집니다.</p>
+<pre><code class="language-rok"><span class="c">// main.rok</span>
+<span class="k">let</span> names = [<span class="s">"ada"</span>, <span class="s">"grace"</span>];
+<span class="k">for</span> n <span class="k">in</span> names {
+    greet(n);               <span class="c">// greet 은 아래에서 선언 - 순서 무관하게 보임</span>
+}
+
+<span class="k">fn</span> greet(name: <span class="t">str</span>) {
+    println(<span class="s">f"hello, {</span>name<span class="s">}"</span>);
+}
+
+<span class="k">let</span> total = names.len();
+println(<span class="s">f"{</span>total<span class="s">} greeted"</span>);
+</code></pre>
+<p>위 파일은 다음과 같이 쓴 것과 같은 의미를 가집니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> greet(name: <span class="t">str</span>) {
+    println(<span class="s">f"hello, {</span>name<span class="s">}"</span>);
+}
+
+<span class="k">fn</span> main() <span class="k">throws</span> {          <span class="c">// 암묵 main 의 형태 - 4.16.4 참고</span>
+    <span class="k">let</span> names = [<span class="s">"ada"</span>, <span class="s">"grace"</span>];
+    <span class="k">for</span> n <span class="k">in</span> names {
+        greet(n);
+    }
+    <span class="k">let</span> total = names.len();
+    println(<span class="s">f"{</span>total<span class="s">} greeted"</span>);
+}
+</code></pre>
+<p>이 등가 변환에서 다음 규칙이 따라 나옵니다.</p>
+<ul>
+<li><strong>항목은 순서와 무관하게 보입니다.</strong> <code>main.rok</code> 의 항목은 일반 모듈 항목과 똑같이 모듈 스코프에 속하므로, top-level 문은 자신보다 뒤에 선언된 <code>fn</code> / <code>struct</code> 등도 참조할 수 있습니다.
+</li>
+<li><strong>top-level <code>let</code> 은 암묵 <code>main</code> 의 지역 변수입니다.</strong> 전역 변수가 아니며, 선언 이후의 top-level 문에서만 보입니다 (<a href="../005-modules/501-variable-declaration">변수 선언</a> 의 블록 스코프 규칙 그대로).
+</li>
+<li><strong>top-level <code>let</code> 은 항목 본체 안에서 보이지 않습니다.</strong> 위 예에서 <code>greet</code> 의 본체가 <code>names</code> 나 <code>total</code> 을 참조하면 이름 해소 에러입니다. 지역 변수를 클로저로 캡처하는 것은 가능합니다 (<code>let shout = |s| println(f&quot;{s}! ({total})&quot;);</code>) - 클로저는 문이고, 암묵 <code>main</code> 본체 안에서 만들어지기 때문입니다.
+</li>
+</ul>
+<div class="callout note"><p class="callout-title">참고</p>
+<p><strong>top-level <code>let</code> 이 항목에서 보이지 않는 이유.</strong> 항목은 순서와 무관하게 존재하지만 <code>let</code> 은 실행 시점에 비로소 값이 생깁니다. 만약 <code>fn greet</code> 이 top-level <code>let</code> 을 볼 수 있다면, <code>greet</code> 이 그 <code>let</code> 보다 <strong>먼저</strong> 호출되는 경우 (예: 첫 줄에서 <code>greet()</code> 호출) 의 의미를 정해야 하고, 이는 곧 &quot;전역 초기화 순서&quot; 의미론을 언어에 들이는 일이 됩니다. rok 은 전역 초기화 순서를 갖지 않는 것을 원칙으로 삼으므로 (4.16.6), top-level <code>let</code> 을 암묵 <code>main</code> 의 지역 변수로 한정합니다. 항목 사이에 공유해야 하는 상태는 매개변수로 넘기거나 <code>static</code> 으로 선언합니다.</p>
+</div>
+<h2 id="4163-명시-main-의-시그니처"><a class="anchor" tabindex="-1" href="#4163-명시-main-의-시그니처" aria-hidden="true">#</a>4.16.3. 명시 <code>main</code> 의 시그니처</h2>
+<p>명시 <code>fn main</code> 은 매개변수와 제네릭 매개변수를 갖지 않으며, 다음 형태 가운데 하나여야 합니다. 그 외의 형태는 컴파일 에러입니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>시그니처</th><th>정상 종료 시 종료 코드</th><th>비고</th></tr></thead>
+<tbody>
+<tr><td><code>fn main()</code></td><td><code>0</code></td><td></td></tr>
+<tr><td><code>fn main() -&gt; i32</code></td><td>반환값</td><td>반환값이 그대로 프로세스 종료 코드</td></tr>
+<tr><td><code>fn main() throws</code> / <code>throws (E)</code></td><td><code>0</code></td><td>미처리 예외 → 4.16.4</td></tr>
+<tr><td>위 세 형태에 <code>async</code> 를 붙인 것</td><td>위와 같음</td><td>4.16.5</td></tr>
+</tbody></table></div>
+<p><code>Result</code> 를 반환하는 <code>main</code> 이나 <code>throws</code> 와 <code>-&gt; i32</code> 를 함께 쓴 <code>main</code> 은 없습니다. 에러가 있을 때 특정 종료 코드가 필요하면 <code>catch</code> 에서 <a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env::exit(code)</code></a> 를 호출합니다.</p>
+<p>명령행 인자와 환경 변수는 매개변수가 아니라 표준 라이브러리 <a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env</code></a> 로 얻습니다. <code>unsafe</code>, <code>yield</code> 수식어는 <code>main</code> 에 붙일 수 없습니다. 가시성 (<code>pub</code>) 은 진입점 여부에 영향을 주지 않습니다.</p>
+<p><code>lib.rok</code> 이나 일반 모듈에 선언된 <code>fn main</code> 은 진입점이 아니며, 이름이 <code>main</code> 인 평범한 함수일 뿐입니다.</p>
+<h2 id="4164-종료-코드와-미처리-예외"><a class="anchor" tabindex="-1" href="#4164-종료-코드와-미처리-예외" aria-hidden="true">#</a>4.16.4. 종료 코드와 미처리 예외</h2>
+<p>진입점이 끝나는 방식에 따라 프로세스 종료 코드가 정해집니다.</p>
+<ul>
+<li><strong>정상 종료</strong>: 4.16.3 의 표대로 <code>0</code> 또는 반환된 <code>i32</code>.
+</li>
+<li><strong>미처리 예외</strong>: <code>throws</code> main 에서 에러가 진입점 밖으로 전파되면, 런타임은 예외 값을 표준 에러 (stderr) 에 출력하고 종료 코드 <strong><code>1</code></strong> 로 종료합니다. 출력 형식은 값이 <a href="../../refs-standard-libraries/200-core/210-fmt"><code>Display</code></a> 를 구현하면 <code>Display</code>, 아니면 <code>Debug</code>, 둘 다 없으면 타입 이름입니다 (<a href="../../refs-standard-libraries/200-core/214-error"><code>Error</code></a> 트레잇은 <code>Display</code> 를 요구하므로 일반적인 에러 타입은 <code>Display</code> 로 출력됩니다). 다음 줄에 에러가 <code>main</code> 을 떠난 위치를 <code>  --&gt; path:line:col</code> 로 씁니다.
+</li>
+<li><strong>panic</strong>: panic 과 fatal 에러는 <code>catch</code> 로 잡히지 않으며, 런타임은 메시지를 표준 에러에 출력하고 종료 코드 <strong><code>101</code></strong> 로 종료합니다 (<a href="414-throws#41413-panic-과-fatal-에러">4.14.13</a>).
+</li>
+<li><strong>명시 종료</strong>: <a href="../../refs-standard-libraries/300-std/306-env"><code>rok::std::env::exit(code)</code></a> 는 어느 지점에서든 즉시 프로세스를 종료합니다. 이 경로는 <code>finally</code> 와 <code>Drop</code> 을 실행하지 않습니다.
+</li>
+</ul>
+<p><strong>암묵 <code>main</code></strong> 은 타입을 적지 않은 <code>fn main() throws</code> (에러 타입 <code>any Error</code>) 로 취급됩니다 (본체에 <code>await</code> 가 있으면 <code>async fn main() throws</code>, 4.16.5). 따라서 top-level 문에서 <code>try</code> 로 표시한 throwing 호출의 에러는 별도의 <code>catch</code> 없이 진입점 밖으로 전파될 수 있고, 미처리 예외는 위 규칙대로 종료 코드 <code>1</code> 이 됩니다. 정상적으로 끝까지 실행되면 종료 코드는 <code>0</code> 입니다.</p>
+<p><code>wasm32-wasi</code> (preview 2 component) 에서는 <code>wasi:cli/exit</code> 가 성공과 실패만 전하므로, 0 이 아닌 종료 코드 (<code>1</code>, <code>101</code> 포함) 는 모두 host 에 실패 (status 1) 로 전해집니다. <code>wasm32-wasi-threads</code> (preview 1) 는 코드를 그대로 전하지만, host 가 126 이상의 <code>proc_exit</code> 를 실패 (status 1) 로 바꿀 수 있습니다. <code>abort</code> 같은 trap 은 134 로 끝납니다.</p>
+<div class="callout important"><p class="callout-title">중요</p>
+<p><strong>top-level <code>return</code> 은 허용하지 않습니다.</strong> <code>main.rok</code> 의 top-level 에 <code>return</code> 이 나타나면 컴파일 에러입니다. 암묵 <code>main</code> 에서 0 이 아닌 종료 코드가 필요하면 <code>env::exit(code)</code> 를 호출하고, 반환값으로 종료 코드를 표현하고 싶다면 명시 <code>fn main() -&gt; i32</code> 형태를 씁니다. top-level <code>return</code> 을 허용하면 &quot;어떤 타입의 <code>return</code> 이 허용되는가&quot;, &quot;top-level 블록 안쪽의 <code>return</code> 은 무엇을 반환하는가&quot; 같은 규칙이 암묵 <code>main</code> 에만 추가되므로, 진입점 형태를 둘로 나누는 쪽이 더 단순합니다.</p>
+</div>
+<h2 id="4165-비동기-main"><a class="anchor" tabindex="-1" href="#4165-비동기-main" aria-hidden="true">#</a>4.16.5. 비동기 <code>main</code></h2>
+<p><code>async fn main()</code> 은 런타임 <a href="../007-runtime/706-scheduler">스케줄러</a> 위의 최상위 task 로 실행됩니다. 플랫폼 진입 wrapper 가 런타임을 초기화한 뒤 <code>main</code> 이 만든 Future 를 스케줄러에 넘기고, 그 Future 가 완료될 때까지 기다린 다음 4.16.4 의 규칙으로 종료 코드를 정합니다 (<a href="../../refs-standard-libraries/200-core/220-future"><code>task::block_on</code></a> 과 같은 동작). 이때 <code>main</code> 이 끝난 시점에 아직 실행 중인 다른 task 는 기다리지 않습니다.</p>
+<p>암묵 <code>main</code> 은 top-level 문에 <code>await</code> 가 (다른 <code>async</code> 블록이나 클로저 안이 아닌 위치에) 직접 나타날 때 <code>async fn main() throws</code> 가 되고, 그렇지 않으면 동기 <code>fn main() throws</code> 입니다.</p>
+<pre><code class="language-rok"><span class="c">// main.rok - 암묵 async main</span>
+<span class="k">let</span> body = <span class="k">await</span> http::get(<span class="s">"https://example.com"</span>);
+println(body.len());
+</code></pre>
+<h2 id="4166-모듈은-정의-전용"><a class="anchor" tabindex="-1" href="#4166-모듈은-정의-전용" aria-hidden="true">#</a>4.16.6. 모듈은 정의 전용</h2>
+<p>top-level 문은 <strong>진입 모듈 <code>main.rok</code> 에서만</strong> 허용됩니다. <code>lib.rok</code> 과 <code>main.rok</code> 가 아닌 모든 모듈 파일 (그리고 인라인 <code>mod { ... }</code> 본체) 은 항목만 담을 수 있으며 (<code>module_file ::= item*</code>), top-level 문이 나타나면 <strong>컴파일 에러</strong> 입니다. 인라인 <code>mod x { stmt }</code> 본체의 문에는 이 절을 가리키는 전용 진단을 냅니다.</p>
+<p>그 결과 <strong>모듈을 가져오는 일 (<code>mod</code>, <code>use</code>) 은 어떤 코드도 실행하지 않습니다.</strong> 이는 Python 과 의도적으로 다른 지점입니다. Python 에서는 <code>import</code> 가 모듈 파일의 top-level 코드를 실행하므로, 라이브러리로도 쓰이고 스크립트로도 쓰이는 파일은 <code>if __name__ == &quot;__main__&quot;:</code> 가드로 두 용도를 구분해야 합니다. rok 에는 이런 가드가 필요하지 않습니다. 스크립트로 실행되는 코드는 오직 <code>main.rok</code> 에만 있고, 그 밖의 모든 파일은 import 시점에 아무 일도 일으키지 않습니다.</p>
+<p>이 결정의 근거는 다음과 같습니다.</p>
+<ul>
+<li><strong>AOT 가 의미의 기준</strong> (<a href="../000-meta/001-execution-modes#014-의미의-기준">0.1.4</a>). AOT 산출물에서 import 시점 실행을 지원하려면 모듈별 초기화 함수와 그 호출 순서를 링크 단계에서 합성해야 합니다. 정의 전용 모듈은 이 장치가 필요 없습니다.
+</li>
+<li><strong>초기화 순서 의미론이 없음.</strong> 모듈 사이의 import 시점 코드는 &quot;어느 모듈이 먼저 초기화되는가&quot;, &quot;순환 import 시 무엇이 보이는가&quot; 를 정의해야 합니다. rok 은 이 질문 자체가 생기지 않도록 합니다. 전역 상태의 초기값은 컴파일 타임에 결정됩니다 (4.16.7).
+</li>
+<li><strong>캐시와 증분 빌드.</strong> 모듈의 의미가 그 정의만으로 결정되므로, 내용 해시 (<a href="../000-meta/003-source-units#033-패키지-식별자">0.3.3</a>) 기반 캐시와 증분 빌드가 실행 부수효과를 고려할 필요가 없습니다.
+</li>
+<li><strong>패키지 종류는 파일 존재로 결정</strong> (<a href="../000-meta/003-source-units#034-매니페스트-rokrokon-는-선택">0.3.4</a>). 실행 가능한 코드가 있는 곳이 곧 <code>src/main.rok</code> 이므로, &quot;이 패키지는 실행 패키지인가&quot; 라는 질문과 &quot;실행 코드가 어디에 있는가&quot; 라는 질문의 답이 항상 같습니다.
+</li>
+</ul>
+<h2 id="4167-전역-상태"><a class="anchor" tabindex="-1" href="#4167-전역-상태" aria-hidden="true">#</a>4.16.7. 전역 상태</h2>
+<p>모듈 수준의 전역 상태는 <a href="../005-modules/503-static"><code>static</code></a> 으로만 선언하며, 그 초기값은 컴파일 타임에 평가 가능한 <code>const</code> 식이어야 합니다 (<a href="../005-modules/503-static#539-초기값의-const-한정">5.3.9</a>). 실행 시점에 처음 접근할 때 계산되는 지연 초기화 (lazy initialization) 는 언어 기능이 아니라 표준 라이브러리 wrapper 의 책임입니다. 따라서 프로그램의 실행은 언제나 진입점의 첫 문장에서 시작하며, 그보다 앞서 사용자 코드가 실행되는 일은 없습니다.</p>
+<h2 id="4168-단일-파일-실행"><a class="anchor" tabindex="-1" href="#4168-단일-파일-실행" aria-hidden="true">#</a>4.16.8. 단일 파일 실행</h2>
+<p>패키지에 속하지 않은 단일 <code>.rok</code> 파일도 바로 실행할 수 있습니다.</p>
+<pre><code>rokc run hello.rok
+rokc build hello.rok
+</code></pre>
+<p>인자로 받은 파일이 패키지의 <code>src/</code> 안에 있지 않으면, <code>rokc</code> 는 그 파일 하나만으로 이루어진 <strong>익명 실행 패키지</strong> 를 구성하고 그 파일을 해당 패키지의 <code>main.rok</code> 로 취급합니다. 파일 이름은 의미를 갖지 않으며, 진입점 규칙 (4.16.1 ~ 4.16.5) 은 <code>main.rok</code> 와 똑같이 적용됩니다. 패키지의 <code>src/</code> 옆에 있는 <code>.rok</code> 파일 (패키지 루트의 스크립트 등) 도 이렇게 실행됩니다. 익명 패키지도 파일 서브모듈을 가질 수 있습니다: <code>mod foo;</code> 는 패키지의 <code>src/</code> 에서와 똑같이 (<a href="../005-modules/504-modules#544-패키지-루트">5.4.4</a>) 파일 옆의 <code>foo.rok</code> 를 읽습니다 (그 자신의 서브모듈은 <code>foo/</code> 에). 파일 없는 소스 (표준 입력, REPL 세션) 만 그럴 수 없으며, 인라인 모듈을 씁니다. 의존성이 필요하면 그 파일과 서브모듈 파일 머리의 inline 매니페스트 블록으로 선언합니다 (<a href="../009-tools/910-rok-frontend#9107-단일-파일-스크립트의-inline-매니페스트">9.10.7</a>). 명령의 자세한 형태는 <a href="../009-tools/901-rokc-cli"><code>rokc</code> CLI</a> 에서 정의합니다.</p>
+<h2 id="4169-진입점-속성은-없음"><a class="anchor" tabindex="-1" href="#4169-진입점-속성은-없음" aria-hidden="true">#</a>4.16.9. 진입점 속성은 없음</h2>
+<p>rok 에는 진입점을 지정하는 속성 (예: <code>#[main]</code>) 이 <strong>없습니다</strong>. 진입 모듈은 루트 파일 <code>src/main.rok</code> 가, 진입 함수는 이름 <code>main</code> (또는 top-level 문) 이 이미 지정하므로, 같은 정보를 표현하는 두 번째 수단을 두지 않습니다. 진입점을 정하는 메커니즘을 하나로 유지하면 &quot;어느 함수가 실행되는가&quot; 를 파일 구조만 보고 판단할 수 있습니다. <code>main</code> 은 예약어가 아니며, <code>#[main]</code> 이라는 이름도 언어가 예약하지 않습니다.</p>
+<h2 id="41610-jit--repl-과의-관계"><a class="anchor" tabindex="-1" href="#41610-jit--repl-과의-관계" aria-hidden="true">#</a>4.16.10. JIT / REPL 과의 관계</h2>
+<p>REPL 의 입력과 Jupyter 의 셀 (<a href="../009-tools/907-jit-cells">JIT 셀</a>) 은 <strong>암묵 <code>main.rok</code> 의 끝에 top-level 문과 항목을 차례로 덧붙이는 것</strong> 과 같은 의미를 가집니다. 셀의 <code>let</code> 은 암묵 <code>main</code> 의 지역 변수로서 이후 셀에서 보이고, 셀의 <code>fn</code> / <code>struct</code> 는 모듈 항목이 됩니다. 4.16.2 의 규칙도 그대로 적용되므로, 셀에서 선언한 <code>fn</code> 의 본체는 이전 셀의 top-level <code>let</code> 을 참조할 수 없습니다 (클로저 캡처는 가능합니다).</p>
+<p>이 등가성 덕분에 <a href="../000-meta/001-execution-modes#의미론은-같습니다">0.1.1</a> 의 &quot;JIT 와 AOT 는 같은 의미론을 공유한다&quot; 는 원칙이 진입점에서도 성립합니다. 노트북의 셀을 순서대로 이어 붙인 파일은 같은 결과를 내는 <code>main.rok</code> 가 됩니다. 다만 다음 세 가지는 대화형 세션에만 있는 <strong>세션 조작</strong> 이며, 언어 의미론의 확장이 아닙니다.</p>
+<ul>
+<li>셀 최상위에서 같은 이름의 재 <code>let</code> 선언 (<a href="../009-tools/907-jit-cells#같은-이름의-재선언">9.7.3</a>). 새 바인딩을 만듭니다.
+</li>
+<li>셀의 삭제와 재실행 (<a href="../009-tools/907-jit-cells#974-undo--셀-재실행">9.7.4</a>).
+</li>
+<li>종결자 없는 마지막 식의 값 자동 표시 (<a href="../009-tools/907-jit-cells#977-시각화--출력">9.7.7</a>). 파일에서는 이 식에 <code>;</code> 를 붙인 것과 같습니다.
+</li>
+</ul>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/004-functions/416-entry-point.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="415-unsafe"><small>Previous</small>4.15. unsafe - 함수 modifier 와 블록 표현식</a><a class="next" href="../005-modules/"><small>Next</small>5. 변수 / 모듈 / 가시성 / 패키지 개요</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

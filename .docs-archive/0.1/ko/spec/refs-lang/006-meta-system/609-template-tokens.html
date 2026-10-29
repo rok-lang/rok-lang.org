@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.9. 템플릿 토큰과 확장 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="이 절에서는 메타 블록 의 본체 안에서 사용할 수 있는 템플릿 토큰의 전체 목록과 함께, 메타 블록이 언제 어떤 메커니즘으로 확장되는지를 정의합니다.">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/609-template-tokens.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="6.9. 템플릿 토큰과 확장 - rok docs">
+<meta property="og:description" content="이 절에서는 메타 블록 의 본체 안에서 사용할 수 있는 템플릿 토큰의 전체 목록과 함께, 메타 블록이 언제 어떤 메커니즘으로 확장되는지를 정의합니다.">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/609-template-tokens.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-lang/006-meta-system/609-template-tokens.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-lang/006-meta-system/609-template-tokens.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/" aria-current="page">Reference</a><a href="../../../../spec/refs-standard-libraries/">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 언어 참조</a><p class="side-title"><a href="./">6. 메타 시스템 개요</a></p><ul class="pages"><li><a href="601-attribute-syntax">6.1. 속성 문법</a></li><li><a href="602-built-in-attributes">6.2. 내장 속성</a></li><li><a href="603-cfg">6.3. #[cfg] 조건부 컴파일</a></li><li><a href="604-lang-magic">6.4. #[lang(...)] 매직</a></li><li><a href="605-literal-magic">6.5. #[literal(...)] 매직</a></li><li><a href="606-keyword-magic">6.6. #[keyword(...)] 매직</a></li><li><a href="607-operator-magic">6.7. 연산자 매직</a></li><li><a href="608-meta-blocks">6.8. 사용자 정의 메타 정의</a></li><li class="cur"><a aria-current="page" href="609-template-tokens">6.9. 템플릿 토큰과 확장</a><ul class="toc"><li><a href="#691-템플릿-토큰의-형태">6.9.1. 템플릿 토큰의 형태</a></li><li><a href="#692-타입-컨텍스트">6.9.2. 타입 컨텍스트</a></li><li><a href="#693-필드-반복">6.9.3. 필드 반복</a></li><li><a href="#694-변형-variant-반복">6.9.4. 변형 (variant) 반복</a></li><li><a href="#695-조건부와-경계">6.9.5. 조건부와 경계</a></li><li><a href="#696-derive_attribute-토큰">6.9.6. derive_attribute 토큰</a></li><li><a href="#697-attribute-전용-토큰">6.9.7. attribute 전용 토큰</a></li><li><a href="#698-호출부-macro-토큰">6.9.8. 호출부 (macro) 토큰</a></li><li><a href="#699-확장-메커니즘">6.9.9. 확장 메커니즘</a></li><li><a href="#6910-디버깅">6.9.10. 디버깅</a></li><li><a href="#6911-정리">6.9.11. 정리</a></li></ul></li><li><a href="610-reflection">6.10. 리플렉션</a></li><li><a href="611-include">6.11. 컴파일 시점 파일 포함</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="69-템플릿-토큰과-확장 69-template-tokens-and-expansion 691-템플릿-토큰의-형태 691-form-of-template-tokens 토큰-목록 token-list 692-타입-컨텍스트 692-type-context self-대상-타입-이름 self-target-type-name if_struct-----if_enum-----if_union--- if_struct-----if_enum-----if_union--- selfname--selfis_unit--is_tuple--is_named selfname--selfis_unit--is_tuple--is_named 693-필드-반복 693-field-iteration for_fields--- for_fields--- field field fieldname-식별자-토큰 fieldname-identifier-token fieldtype fieldtype fieldis_pub fieldis_pub fieldhas_attrx fieldhas_attrx fieldhas_default--fielddefault fieldhas_default--fielddefault 694-변형-variant-반복 694-variant-iteration for_variants--- for_variants--- variantname-variant-이름 variantname-variant-name variantpattern-매칭-패턴 variantpattern-matching-pattern variantis_unit--variantis_tuple--variantis_named variantis_unit--variantis_tuple--variantis_named for_variant_fields--- for_variant_fields--- 695-조건부와-경계 695-conditionals-and-bounds apply_ifcond--- apply_ifcond--- accept accept where_alltrait where_alltrait 696-derive_attribute-토큰 696-derive_attribute-tokens has_derive_attrname has_derive_attrname derive_attrname-그-attr-의-인자 derive_attrname-the-attrs-argument 697-attribute-전용-토큰 697-attribute-only-tokens item-원본-항목-재사용 item-reusing-the-original-item itembody itembody itemname-itemparams-itemreturn_type itemname-itemparams-itemreturn_type attribute--인자 attribute--arguments 698-호출부-macro-토큰 698-call-site-macro-tokens name-fragment-fragment-캡처 name-fragment-fragment-capture rep--for-반복 rep--for-repetition concat-이름-합성 concat-name-synthesis 699-확장-메커니즘 699-expansion-mechanism 모으기와-확장 collection-and-expansion cfg-와의-관계 relation-to-cfg 위생-hygiene hygiene 자유-식별자의-해소 resolution-of-free-identifiers 진단-위치 diagnostic-locations 6910-디버깅 6910-debugging 6911-정리 6911-summary"><a href="../../../../spec/refs-lang/006-meta-system/609-template-tokens" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="69-템플릿-토큰과-확장"><a class="anchor" tabindex="-1" href="#69-템플릿-토큰과-확장" aria-hidden="true">#</a>6.9. 템플릿 토큰과 확장</h1>
+<p>이 절에서는 <a href="608-meta-blocks">메타 블록</a> 의 본체 안에서 사용할 수 있는 템플릿 토큰의 전체 목록과 함께, 메타 블록이 언제 어떤 메커니즘으로 확장되는지를 정의합니다.</p>
+<h2 id="691-템플릿-토큰의-형태"><a class="anchor" tabindex="-1" href="#691-템플릿-토큰의-형태" aria-hidden="true">#</a>6.9.1. 템플릿 토큰의 형태</h2>
+<p>템플릿 토큰은 다음과 같은 문법 형태를 가집니다.</p>
+<pre><code>template_token  ::= &quot;@&quot; identifier
+                  | &quot;@&quot; identifier &quot;.&quot; identifier
+                  | &quot;@&quot; identifier &quot;{&quot; &lt;template body&gt; &quot;}&quot;
+                  | &quot;@&quot; identifier &quot;(&quot; &lt;args&gt; &quot;)&quot; &quot;{&quot; &lt;body&gt; &quot;}&quot;
+</code></pre>
+<p>모든 템플릿 토큰은 <code>@</code> 토큰 (<a href="../001-lexical/110-punctuation-and-operator-tokens">구두점과 연산자 토큰</a>) 으로 시작합니다. 대표적인 예는 다음과 같습니다.</p>
+<pre><code>@Self                   대상 타입 이름
+@field                  현재 필드의 자리 표시
+@field.name             현재 필드의 이름
+@for_fields { ... }     필드 반복 블록
+</code></pre>
+<h3 id="토큰-목록"><a class="anchor" tabindex="-1" href="#토큰-목록" aria-hidden="true">#</a>토큰 목록</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>토큰</th><th>값</th><th>절</th></tr></thead>
+<tbody>
+<tr><td><code>@Self</code></td><td>대상 타입 (<code>Name&lt;T, ..&gt;</code>)</td><td>6.9.2</td></tr>
+<tr><td><code>@Self.name</code></td><td>타입 인자 없는 대상 타입 이름</td><td>6.9.2</td></tr>
+<tr><td><code>@Self.is_unit</code> / <code>.is_tuple</code> / <code>.is_named</code></td><td>struct 모양 (부울)</td><td>6.9.2</td></tr>
+<tr><td><code>@if_struct</code> / <code>@if_enum</code> / <code>@if_union { .. }</code></td><td>대상 종류가 맞을 때만 본문</td><td>6.9.2</td></tr>
+<tr><td><code>@for_fields { .. }</code></td><td>필드마다 본문</td><td>6.9.3</td></tr>
+<tr><td><code>@field</code>, <code>@field.name</code>, <code>@field.type</code></td><td>현재 필드 (접근 / 이름 / 타입)</td><td>6.9.3</td></tr>
+<tr><td><code>@field.is_pub</code>, <code>@field.has_attr(x)</code></td><td>부울</td><td>6.9.3</td></tr>
+<tr><td><code>@field.has_default</code>, <code>@field.default</code></td><td>필드의 <code>= expr</code> 유무 (부울) / 그 식</td><td>6.9.3</td></tr>
+<tr><td><code>@for_variants { .. }</code></td><td><code>enum</code> 변형마다 본문</td><td>6.9.4</td></tr>
+<tr><td><code>@variant.name</code>, <code>@variant.pattern</code></td><td>현재 변형 (이름 / 매칭 패턴)</td><td>6.9.4</td></tr>
+<tr><td><code>@variant.is_unit</code> / <code>.is_tuple</code> / <code>.is_named</code></td><td>부울</td><td>6.9.4</td></tr>
+<tr><td><code>@for_variant_fields { .. }</code></td><td>현재 변형의 필드마다 본문</td><td>6.9.4</td></tr>
+<tr><td><code>@apply_if(cond) { .. }</code></td><td><code>cond</code> 가 참일 때만 본문</td><td>6.9.5</td></tr>
+<tr><td><code>@accept(kind, ..)</code></td><td>대상 종류 제한 (attribute 전용)</td><td>6.9.5</td></tr>
+<tr><td><code>@where_all(Trait)</code></td><td>타입 파라미터마다 <code>T: Trait</code></td><td>6.9.5</td></tr>
+<tr><td><code>@has_derive_attr(a)</code>, <code>@derive_attr(a)</code></td><td>필드의 derive attribute (부울 / 인자)</td><td>6.9.6</td></tr>
+<tr><td><code>@item</code>, <code>@item.name</code> / <code>.params</code> / <code>.return_type</code> / <code>.body</code></td><td>부착 대상 항목과 그 부분 (attribute 전용)</td><td>6.9.7</td></tr>
+<tr><td><code>@attribute</code></td><td>사용처의 attribute 인자 (attribute 전용)</td><td>6.9.7</td></tr>
+<tr><td><code>&lt;이름 토큰&gt;.as_str()</code></td><td>이름의 문자열 리터럴</td><td>6.9.3</td></tr>
+</tbody></table></div>
+<p>목록에 없는 <code>@이름</code> 은 에러입니다. <code>@where_for_fields</code> 는 예약된 이름이며, 써도 에러입니다.</p>
+<h2 id="692-타입-컨텍스트"><a class="anchor" tabindex="-1" href="#692-타입-컨텍스트" aria-hidden="true">#</a>6.9.2. 타입 컨텍스트</h2>
+<h3 id="self-대상-타입-이름"><a class="anchor" tabindex="-1" href="#self-대상-타입-이름" aria-hidden="true">#</a><code>@Self</code> 대상 타입 이름</h3>
+<p><code>@Self</code> 는 메타 블록이 적용되는 대상 타입의 이름을 나타냅니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(MyTrait)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyTrait</span> <span class="k">for</span> @<span class="k">Self</span> {                 <span class="c">// @Self → Point / 사용자 타입 이름</span>
+        ...
+    }
+}
+</code></pre>
+<h3 id="if_struct-----if_enum-----if_union---"><a class="anchor" tabindex="-1" href="#if_struct-----if_enum-----if_union---" aria-hidden="true">#</a><code>@if_struct { ... }</code> / <code>@if_enum { ... }</code> / <code>@if_union { ... }</code></h3>
+<p>이 토큰들은 대상 타입이 각각 <code>struct</code>, <code>enum</code>, <code>union</code> 일 때만 안의 코드를 생성하도록 해줍니다.</p>
+<pre><code class="language-rok">@if_struct {
+    <span class="k">fn</span> struct_only_method() { ... }
+}
+
+@if_enum {
+    <span class="k">fn</span> enum_only_method() { ... }
+}
+</code></pre>
+<p>만약 대상 타입이 다른 종류라면 해당 블록은 무시되며, 코드가 생성되지 않습니다.</p>
+<h3 id="selfname--selfis_unit--is_tuple--is_named"><a class="anchor" tabindex="-1" href="#selfname--selfis_unit--is_tuple--is_named" aria-hidden="true">#</a><code>@Self.name</code> / <code>@Self.is_unit</code> / <code>.is_tuple</code> / <code>.is_named</code></h3>
+<p><code>@Self.name</code> 은 타입 인자 없는 대상 타입 이름 (<code>Pair&lt;T&gt;</code> 의 <code>Pair</code>) 입니다. <code>@Self.is_unit</code> / <code>@Self.is_tuple</code> / <code>@Self.is_named</code> 는 대상 struct 가 unit struct, 튜플 struct, 이름 있는 필드 struct 인지를 나타내는 부울이며, <code>@apply_if</code> 에 씁니다.</p>
+<h2 id="693-필드-반복"><a class="anchor" tabindex="-1" href="#693-필드-반복" aria-hidden="true">#</a>6.9.3. 필드 반복</h2>
+<h3 id="for_fields---"><a class="anchor" tabindex="-1" href="#for_fields---" aria-hidden="true">#</a><code>@for_fields { ... }</code></h3>
+<p><code>@for_fields</code> 는 <code>struct</code> 나 <code>union</code> 의 필드 각각에 대해 블록을 반복합니다. <code>@for_variants</code> 안에서는 현재 변형의 필드를 반복하며 <code>@for_variant_fields</code> 와 같습니다. <code>enum</code> 에 <code>@for_variants</code> 없이 쓰면 에러입니다.</p>
+<pre><code class="language-rok">@for_fields {
+    println(<span class="k">self</span>.@field);
+}
+</code></pre>
+<p>위 코드는 각 필드마다 한 번씩 생성됩니다.</p>
+<h3 id="field"><a class="anchor" tabindex="-1" href="#field" aria-hidden="true">#</a><code>@field</code></h3>
+<p><code>@field</code> 는 현재 필드의 자리 표시이며, 필드 접근 위치에서 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">self</span>.@field                          <span class="c">// self.x, self.y, ...</span>
+@<span class="k">Self</span> { @field: <span class="n">0i32</span> }                <span class="c">// 필드 초기화 자리</span>
+</code></pre>
+<h3 id="fieldname-식별자-토큰"><a class="anchor" tabindex="-1" href="#fieldname-식별자-토큰" aria-hidden="true">#</a><code>@field.name</code> 식별자 토큰</h3>
+<p>식별자가 필요한 자리에서는 필드 이름이 식별자 토큰으로 삽입됩니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> v = @field.name;                  <span class="c">// 식별자 자리에 그 이름이 들어감</span>
+<span class="k">fn</span> @field.name() -&gt; <span class="t">i32</span> { ... }       <span class="c">// 함수 이름으로도 사용 가능</span>
+</code></pre>
+<p>문자열이 필요하면 <code>.as_str()</code> 을 붙입니다. <code>@field.name.as_str()</code>, <code>@variant.name.as_str()</code>, <code>@item.name.as_str()</code>, <code>@Self.as_str()</code> 은 확장 시점에 그 이름의 문자열 리터럴 (<code>&quot;x&quot;</code>) 로 바뀝니다. <code>@Self.as_str()</code> 은 타입 인자 없는 이름입니다. 문자열이나 f-string 안에 적은 <code>@item.name</code> 같은 이름 토큰은 글자 그대로 치환됩니다.</p>
+<h3 id="fieldtype"><a class="anchor" tabindex="-1" href="#fieldtype" aria-hidden="true">#</a><code>@field.type</code></h3>
+<p><code>@field.type</code> 은 필드의 타입을 가리킵니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> typed&lt;<span class="t">T</span>&gt;() <span class="k">where</span> <span class="t">T</span> == @field.<span class="k">type</span> { ... }
+</code></pre>
+<h3 id="fieldis_pub"><a class="anchor" tabindex="-1" href="#fieldis_pub" aria-hidden="true">#</a><code>@field.is_pub</code></h3>
+<p>이 토큰은 필드가 <code>pub</code> 이면 참, 아니면 거짓의 값을 가집니다.</p>
+<pre><code class="language-rok">@apply_if(@field.is_pub) {
+    <span class="c">// pub 필드만 처리</span>
+}
+</code></pre>
+<h3 id="fieldhas_attrx"><a class="anchor" tabindex="-1" href="#fieldhas_attrx" aria-hidden="true">#</a><code>@field.has_attr(X)</code></h3>
+<p>필드에 <code>#[X]</code> 가 부착되어 있으면 참이 됩니다.</p>
+<pre><code class="language-rok">@apply_if(@field.has_attr(skip)) {
+    <span class="c">// #[skip] 부착된 필드만 처리</span>
+}
+</code></pre>
+<h3 id="fieldhas_default--fielddefault"><a class="anchor" tabindex="-1" href="#fieldhas_default--fielddefault" aria-hidden="true">#</a><code>@field.has_default</code> / <code>@field.default</code></h3>
+<p><code>@field.has_default</code> 는 필드에 기본값 (<code>x: i32 = 0</code>, <a href="../002-types/203-struct#233-필드-기본값">2.3.3</a>) 이 있으면 참이고, <code>@field.default</code> 는 그 <code>= expr</code> 의 식입니다. 기본값이 없는 필드에서 <code>@field.default</code> 를 쓰면 에러입니다.</p>
+<pre><code class="language-rok">@apply_if(@field.has_default) {
+    <span class="k">let</span> @field.name = @field.default;
+}
+</code></pre>
+<h2 id="694-변형-variant-반복"><a class="anchor" tabindex="-1" href="#694-변형-variant-반복" aria-hidden="true">#</a>6.9.4. 변형 (variant) 반복</h2>
+<h3 id="for_variants---"><a class="anchor" tabindex="-1" href="#for_variants---" aria-hidden="true">#</a><code>@for_variants { ... }</code></h3>
+<p><code>@for_variants</code> 는 <code>enum</code> 의 각 variant 에 대해 블록을 반복합니다.</p>
+<pre><code class="language-rok">@for_variants {
+    @variant.name =&gt; <span class="c">/* ... */</span>
+}
+</code></pre>
+<h3 id="variantname-variant-이름"><a class="anchor" tabindex="-1" href="#variantname-variant-이름" aria-hidden="true">#</a><code>@variant.name</code> variant 이름</h3>
+<p><code>@variant.name</code> 은 variant 의 이름입니다.</p>
+<h3 id="variantpattern-매칭-패턴"><a class="anchor" tabindex="-1" href="#variantpattern-매칭-패턴" aria-hidden="true">#</a><code>@variant.pattern</code> 매칭 패턴</h3>
+<p><code>@variant.pattern</code> 은 variant 의 매칭 패턴 형태로, 예를 들면 <code>Shape::Circle(r)</code>, <code>Shape::Pending</code>, <code>Shape::Click { x: x1, y: y1 }</code> 와 같은 모양이 됩니다. 여기서 <code>r</code>, <code>x1</code>, <code>y1</code> 자리의 바인딩은 컴파일러가 만든 이름이며 (위생, 6.9.8), 그 값은 <code>@for_variant_fields</code> 안의 <code>@field</code> 로 꺼냅니다. 바인딩 이름을 템플릿이 직접 쓸 수는 없습니다.</p>
+<pre><code class="language-rok"><span class="k">match</span> <span class="k">self</span> {
+    @for_variants {
+        @variant.pattern =&gt; <span class="c">/* ... */</span>
+    }
+}
+</code></pre>
+<h3 id="variantis_unit--variantis_tuple--variantis_named"><a class="anchor" tabindex="-1" href="#variantis_unit--variantis_tuple--variantis_named" aria-hidden="true">#</a><code>@variant.is_unit</code> / <code>@variant.is_tuple</code> / <code>@variant.is_named</code></h3>
+<p>이 토큰들은 variant 의 종류를 검사할 때 사용합니다.</p>
+<pre><code class="language-rok">@apply_if(@variant.is_tuple) {
+    <span class="c">// tuple variant 만 처리</span>
+}
+</code></pre>
+<h3 id="for_variant_fields---"><a class="anchor" tabindex="-1" href="#for_variant_fields---" aria-hidden="true">#</a><code>@for_variant_fields { ... }</code></h3>
+<p>variant 안의 필드들에 대해 반복할 때는 <code>@for_variant_fields</code> 를 사용합니다. 그 안에서는 <code>@field.name</code> 등을 함께 사용할 수 있습니다.</p>
+<pre><code class="language-rok">@for_variants {
+    @variant.pattern =&gt; {
+        @for_variant_fields {
+            process(@field);
+        }
+    }
+}
+</code></pre>
+<h2 id="695-조건부와-경계"><a class="anchor" tabindex="-1" href="#695-조건부와-경계" aria-hidden="true">#</a>6.9.5. 조건부와 경계</h2>
+<h3 id="apply_ifcond---"><a class="anchor" tabindex="-1" href="#apply_ifcond---" aria-hidden="true">#</a><code>@apply_if(cond) { ... }</code></h3>
+<p><code>@apply_if</code> 는 <code>cond</code> 가 참일 때만 안의 코드를 생성합니다.</p>
+<pre><code class="language-rok">@apply_if(@field.is_pub) {
+    <span class="c">// 코드</span>
+}
+
+@apply_if(!@field.has_attr(skip)) {
+    <span class="c">// skip 이 *없는* 필드만</span>
+}
+
+@apply_if(@field.is_pub &amp;&amp; @field.has_attr(serialize)) {
+    <span class="c">// 두 조건 모두 참</span>
+}
+</code></pre>
+<p>여기서 <code>cond</code> 는 템플릿 토큰의 부울 값 (예: <code>@field.is_pub</code>, <code>@field.has_attr(...)</code>) 과 일반 부울 연산자 (<code>!</code>, <code>&amp;&amp;</code>, <code>||</code>) 를 결합한 식이며, 컴파일 타임에 평가됩니다.</p>
+<p><code>else</code> 분기는 별도의 키워드 없이 반대 조건의 <code>@apply_if</code> 를 사용해 표현합니다.</p>
+<h3 id="accept"><a class="anchor" tabindex="-1" href="#accept" aria-hidden="true">#</a><code>@accept(...)</code></h3>
+<p><code>@accept</code> 는 derive 또는 attribute 의 대상 종류를 제한하는 데 사용합니다. 콤마나 <code>|</code> 로 구분된 항목 종류 목록을 받습니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(my_wrap)]</span> <span class="k">pub</span> @attribute {
+    @accept(<span class="k">struct</span>, <span class="k">enum</span>)                    <span class="c">// struct, enum 만 받음 - union 거부</span>
+    @item
+}
+
+<span class="a">#[impl_attribute(timed)]</span> <span class="k">pub</span> @attribute {
+    @accept(<span class="k">fn</span>)                              <span class="c">// fn 만 받음</span>
+    <span class="k">fn</span> @item.name(...) { ... }
+}
+</code></pre>
+<p>가능한 종류는 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>종류</th><th>의미</th></tr></thead>
+<tbody>
+<tr><td><code>struct</code></td><td><code>struct</code> 항목</td></tr>
+<tr><td><code>enum</code></td><td><code>enum</code> 항목</td></tr>
+<tr><td><code>union</code></td><td><code>union</code> 항목</td></tr>
+<tr><td><code>fn</code></td><td>함수 또는 메서드</td></tr>
+<tr><td><code>impl</code></td><td><code>impl</code> 블록</td></tr>
+<tr><td><code>trait</code></td><td><code>trait</code> 항목</td></tr>
+</tbody></table></div>
+<p>여러 종류를 콤마나 <code>|</code> 로 구분하면 그중 하나만 맞아도 허용됩니다. 만약 대상이 허용 종류가 아니라면 사용처에서 컴파일 에러가 발생합니다.</p>
+<h3 id="where_alltrait"><a class="anchor" tabindex="-1" href="#where_alltrait" aria-hidden="true">#</a><code>@where_all(Trait)</code></h3>
+<p><code>@where_all</code> 은 모든 필드 타입이 <code>Trait</code> 를 충족해야 한다는 조건을 자동 where 절로 추가합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(Eq)]</span> <span class="k">pub</span> @derive {
+    @where_all(<span class="t">Eq</span>)                           <span class="c">// 모든 필드의 타입이 Eq 면 OK</span>
+    <span class="k">impl</span> <span class="t">Eq</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> eq(<span class="k">self</span>, other: <span class="k">Self</span>) -&gt; <span class="t">bool</span> {
+            @for_fields {
+                <span class="k">if</span> !<span class="k">self</span>.@field.eq(other.@field) { <span class="k">return</span> <span class="k">false</span>; }
+            }
+            <span class="k">true</span>
+        }
+    }
+}
+</code></pre>
+<p>이렇게 하면 생성되는 <code>impl</code> 에는 대상 타입의 타입 파라미터마다 <code>T: Eq</code> 가 추가됩니다. 구체 필드 타입에 대한 절은 넣지 않으며, 그 필드들이 <code>Eq</code> 를 구현하는지는 생성된 본문의 타입 검사가 봅니다. 템플릿의 <code>impl</code> 뒤에는 대상 타입의 제네릭 파라미터가 들어가며, 바운드는 <code>@where_all</code> 이 붙인 것뿐입니다.</p>
+<h2 id="696-derive_attribute-토큰"><a class="anchor" tabindex="-1" href="#696-derive_attribute-토큰" aria-hidden="true">#</a>6.9.6. derive_attribute 토큰</h2>
+<p>다음은 <code>#[impl_derive_attribute(Trait, attr)]</code> 안에서 추가로 사용할 수 있는 토큰들입니다.</p>
+<h3 id="has_derive_attrname"><a class="anchor" tabindex="-1" href="#has_derive_attrname" aria-hidden="true">#</a><code>@has_derive_attr(name)</code></h3>
+<p>이 토큰은 필드에 <code>derive_attribute</code> 의 대상 attr 가 부착되어 있는지를 나타냅니다.</p>
+<h3 id="derive_attrname-그-attr-의-인자"><a class="anchor" tabindex="-1" href="#derive_attrname-그-attr-의-인자" aria-hidden="true">#</a><code>@derive_attr(name)</code> 그 attr 의 인자</h3>
+<p><code>@derive_attr(name)</code> 은 부착된 attr 의 인자를 가리킵니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive_attribute(Serialize, rename)]</span> <span class="k">pub</span> @derive {
+    @for_fields {
+        @apply_if(@has_derive_attr(rename)) {
+            <span class="k">let</span> key = @derive_attr(rename);  <span class="c">// #[rename("...")] 의 인자</span>
+            obj.set(key, ...);
+        }
+    }
+}
+</code></pre>
+<h2 id="697-attribute-전용-토큰"><a class="anchor" tabindex="-1" href="#697-attribute-전용-토큰" aria-hidden="true">#</a>6.9.7. attribute 전용 토큰</h2>
+<p>다음 토큰들은 <code>#[impl_attribute(name)]</code> 안에서 사용합니다.</p>
+<h3 id="item-원본-항목-재사용"><a class="anchor" tabindex="-1" href="#item-원본-항목-재사용" aria-hidden="true">#</a><code>@item</code> 원본 항목 재사용</h3>
+<p><code>@item</code> 은 부착 대상 항목 전체를 그대로 재사용할 때 사용합니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(deprecated_warning)]</span> <span class="k">pub</span> @attribute {
+    @item                                    <span class="c">// 원본 그대로</span>
+}
+<span class="c">// 위는 attribute 가 사실상 no-op - 원본 그대로 통과</span>
+</code></pre>
+<h3 id="itembody"><a class="anchor" tabindex="-1" href="#itembody" aria-hidden="true">#</a><code>@item.body</code></h3>
+<p><code>@item.body</code> 는 함수의 본체이며, 함수 항목에 대해서만 의미가 있습니다.</p>
+<h3 id="itemname-itemparams-itemreturn_type"><a class="anchor" tabindex="-1" href="#itemname-itemparams-itemreturn_type" aria-hidden="true">#</a><code>@item.name</code>, <code>@item.params</code>, <code>@item.return_type</code></h3>
+<p>이 토큰들은 함수 시그니처의 각 부분을 가리킵니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(timed)]</span> <span class="k">pub</span> @attribute {
+    <span class="k">fn</span> @item.name(@item.params) -&gt; @item.return_type {
+        <span class="k">let</span> start = now();
+        <span class="k">let</span> r = { @item.body };
+        log(<span class="s">f"@item.name took {</span>now() - start<span class="s">}"</span>);
+        r
+    }
+}
+</code></pre>
+<h3 id="attribute--인자"><a class="anchor" tabindex="-1" href="#attribute--인자" aria-hidden="true">#</a><code>@attribute</code> <code>#[...]</code> 인자</h3>
+<p><code>@attribute</code> 는 부착 시점에 적힌 인자를 의미합니다. 즉 <code>#[impl_attribute(name)]</code> 가 부착된 항목을 사용처가 <code>#[name(args)]</code> 형태로 사용했다면, <code>@attribute</code> 는 그 args 가 됩니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_attribute(prefix)]</span> <span class="k">pub</span> @attribute {
+    <span class="k">fn</span> @item.name() {
+        <span class="k">let</span> p = @attribute;                  <span class="c">// 사용처의 인자</span>
+        log(<span class="s">f"{</span>p<span class="s">}: {</span>@item.name<span class="s">}"</span>);
+        @item.body
+    }
+}
+
+<span class="c">// 사용처</span>
+<span class="a">#[prefix("INFO")]</span>
+<span class="k">fn</span> run() { ... }
+<span class="c">// → 생성.</span>
+<span class="c">//   fn run() {</span>
+<span class="c">//       let p = "INFO";</span>
+<span class="c">//       log(f"{p}: run");</span>
+<span class="c">//       ...</span>
+<span class="c">//   }</span>
+</code></pre>
+<h2 id="698-호출부-macro-토큰"><a class="anchor" tabindex="-1" href="#698-호출부-macro-토큰" aria-hidden="true">#</a>6.9.8. 호출부 (macro) 토큰</h2>
+<p>위의 토큰들은 정의가 붙은 타입이나 항목을 바인딩합니다. macro (<a href="608-meta-blocks#6812-macro-형태">6.8.12</a>) 는 대신 호출자의 토큰을 매처로 바인딩하며, 아래 토큰을 씁니다. <code>@for</code> 와 <code>@concat</code> 은 위의 형태들과 공유합니다. shape 조건(<code>@apply_if</code> 와 그것이 검사하는 <code>@Self</code>/<code>@field</code>/<code>@variant</code>)은 공유하지 않습니다. macro 는 검사할 타입 shape 가 없습니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>토큰</th><th>매처 / 템플릿에서</th><th>절</th></tr></thead>
+<tbody>
+<tr><td><code>@name: &lt;fragment&gt;</code></td><td>매처: fragment 하나 캡처 (<code>expr</code>, <code>stmt</code>, <code>block</code>, <code>ty</code>, <code>pat</code>, <code>path</code>, <code>ident</code>, <code>literal</code>, <code>item</code>, <code>tt</code>)</td><td>6.9.8</td></tr>
+<tr><td><code>@name</code></td><td>템플릿: 캡처한 fragment, 또는 <code>@for</code> 안에서 현재 원소</td><td>6.9.8</td></tr>
+<tr><td><code>@rep[sep = &quot;,&quot;, trailing] { .. }</code></td><td>매처: 하위 패턴을 반복 (구분자·끝 구분자 선택)</td><td>6.9.8</td></tr>
+<tr><td><code>@for @name { .. }</code></td><td>템플릿: 캡처 시퀀스의 원소마다 본체 (여럿이면 lockstep)</td><td>6.9.3</td></tr>
+<tr><td><code>@concat(a, @name, ..)</code></td><td>템플릿: 이름 토큰·문자열 리터럴을 인덱싱되는 식별자 하나로 이음</td><td>6.9.8</td></tr>
+</tbody></table></div>
+<h3 id="name-fragment-fragment-캡처"><a class="anchor" tabindex="-1" href="#name-fragment-fragment-캡처" aria-hidden="true">#</a><code>@name: &lt;fragment&gt;</code> fragment 캡처</h3>
+<p>매처에서 <code>@name: &lt;fragment&gt;</code> 는 그 문법을 매칭해 바인딩합니다. <code>tt</code> 를 뺀 fragment 는 실제 구문 노드로 파싱되므로 캡처한 코드는 타입이 붙고 검사되며 도구가 그 안의 이름을 해석합니다. <code>tt</code> 는 rok 문법이 아닌 DSL 을 위해 원시 토큰 트리 하나 (토큰 또는 균형 그룹) 를 캡처합니다. 매처의 다른 리터럴 토큰은 그대로 나타나야 합니다. 템플릿에서 <code>@name</code> 은 캡처를 치환하며 호출 위치의 위생을 유지합니다 (<a href="#699-확장-메커니즘">6.9.9</a>).</p>
+<h3 id="rep--for-반복"><a class="anchor" tabindex="-1" href="#rep--for-반복" aria-hidden="true">#</a><code>@rep</code> / <code>@for</code> 반복</h3>
+<p><code>@rep[sep = &quot;,&quot;, trailing] { &lt;하위 패턴&gt; }</code> 은 하위 패턴을 0회 이상 매칭하고, 안에서 캡처한 메타변수는 시퀀스를 바인딩합니다. <code>@for @name { &lt;본체&gt; }</code> 는 <code>@for_fields</code> (<a href="#693-필드-반복">6.9.3</a>) 와 같은 반복자로, 여기서는 그 시퀀스에 적용됩니다. 한 <code>@rep</code> 의 메타변수들은 lockstep 으로 돌며 길이가 같아야 합니다. <code>@rep</code> 과 <code>@for</code> 는 중첩됩니다.</p>
+<h3 id="concat-이름-합성"><a class="anchor" tabindex="-1" href="#concat-이름-합성" aria-hidden="true">#</a><code>@concat(..)</code> 이름 합성</h3>
+<p><code>@concat(..)</code> 은 이름 토큰 (<code>@name</code>, <code>@Self.name</code>, 맨 식별자) 과 문자열 리터럴을 하나의 식별자로 잇되, 정의나 경로 위치에서만 쓸 수 있습니다. 만든 식별자는 기록되므로 심볼 검색과 정의로 이동이 생성된 항목에 도달합니다 (<a href="608-meta-blocks#도구-지원과-위생">6.8.12</a>). 이름이 아닌 조각이나 이름 위치 밖의 사용은 에러입니다.</p>
+<h2 id="699-확장-메커니즘"><a class="anchor" tabindex="-1" href="#699-확장-메커니즘" aria-hidden="true">#</a>6.9.9. 확장 메커니즘</h2>
+<h3 id="모으기와-확장"><a class="anchor" tabindex="-1" href="#모으기와-확장" aria-hidden="true">#</a>모으기와 확장</h3>
+<p>메타 확장은 다음 흐름으로 진행됩니다.</p>
+<ol>
+<li>parse 전의 pre-pass 가 라이브러리와 사용자 패키지의 모든 파일에서 메타 블록을 모읍니다 (<a href="608-meta-blocks#6811-등록가시성과의-결합">6.8.11</a>).
+</li>
+<li>파서가 <code>#[derive(X)]</code> 나 <code>#[x]</code> 가 붙은 항목을 만나면, 그 메타 블록의 본체에서 템플릿 토큰을 항목의 값으로 치환하고 결과를 다시 파싱합니다.
+</li>
+<li>생성된 항목도 다시 메타 처리됩니다. 고정점에 도달할 때까지 반복합니다.
+</li>
+<li>순환 (<code>A → B → A</code>) 은 에러입니다 (<a href="608-meta-blocks#688-fixed-point-확장">6.8.8</a>).
+</li>
+</ol>
+<h3 id="cfg-와의-관계"><a class="anchor" tabindex="-1" href="#cfg-와의-관계" aria-hidden="true">#</a><code>cfg</code> 와의 관계</h3>
+<p>메타 블록 자체에 붙은 <code>#[cfg(..)]</code> 는 그 블록의 <strong>등록</strong> 을 정합니다. cfg 평가가 메타 블록 수집보다 먼저이므로, cfg 가 거짓인 블록의 derive / attribute 는 등록되지 않습니다. 그래서 서로 배타적인 cfg 아래에서 두 블록이 같은 이름을 정의할 수 있습니다. 블록을 둘러싼 모듈 (인라인 <code>mod</code> 와 파일 모듈) 의 <code>#[cfg]</code> 도 등록에 적용됩니다. 파일 안의 <code>#![cfg]</code> 는 아직 적용되지 않습니다.</p>
+<p>항목에 붙은 <a href="603-cfg"><code>#[cfg]</code></a> 는 그 항목에서 생성된 모든 항목에 그대로 복사됩니다. 따라서 cfg 가 거짓인 항목은 생성물과 함께 사라지며, 결과는 다음 순서와 같습니다.</p>
+<pre><code>parse → cfg eval → meta expansion (fixed-point) → 이름 해소 → 타입 검사 → ...
+</code></pre>
+<h3 id="위생-hygiene"><a class="anchor" tabindex="-1" href="#위생-hygiene" aria-hidden="true">#</a>위생 (hygiene)</h3>
+<p>템플릿이 묶는 지역 이름, 곧 <code>let</code> / <code>for</code> 의 바인딩과 클로저 매개변수 (f-string 의 <code>{..}</code> 안 포함) 는 확장할 때 겹치지 않는 이름으로 바뀝니다. 그래서 템플릿의 지역은 항목에서 온 이름 (<code>@item.body</code>, <code>@item.params</code>, <code>let @field.name = ..</code>) 을 가리거나 붙잡지 않습니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(Foo)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">Foo</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> foo(<span class="k">self</span>) -&gt; <span class="t">i32</span> {
+            <span class="k">let</span> temp = compute();             <span class="c">// 확장 시 이름이 바뀜</span>
+            temp * <span class="n">2</span>
+        }
+    }
+}
+
+<span class="c">// 사용처</span>
+<span class="a">#[derive(Foo)]</span>
+<span class="k">struct</span> <span class="t">S</span> { temp: <span class="t">str</span>; }                       <span class="c">// 사용처의 'temp' 필드</span>
+
+<span class="k">let</span> s = <span class="t">S</span> { temp: <span class="s">"hi"</span> };
+<span class="k">let</span> r = s.foo();                              <span class="c">// 메타가 만든 'temp' 와 충돌 안 함</span>
+</code></pre>
+<p><code>match</code> arm 패턴이 묶는 이름과 <code>S { x }</code> 축약은 바꾸지 않습니다. 템플릿은 그 자리에 항목과 겹칠 수 있는 이름을 쓰지 않습니다. <code>@variant.pattern</code> 의 바인딩은 컴파일러가 만든 이름이므로 겹치지 않습니다.</p>
+<h3 id="자유-식별자의-해소"><a class="anchor" tabindex="-1" href="#자유-식별자의-해소" aria-hidden="true">#</a>자유 식별자의 해소</h3>
+<p>생성된 항목은 <strong>사용처의 모듈</strong> 에 놓입니다. 따라서 템플릿 안에서 묶이지 않은 식별자 (예: <code>compute()</code>, <code>now()</code>, <code>log()</code>) 는 메타 블록의 모듈이 아니라 사용처에서 해소됩니다.</p>
+<p>템플릿 작성자는 절대 경로 (<code>rok::core::..</code>, 라이브러리의 <code>pkg::..</code>) 를 쓰거나, 사용처에서 보이는 이름 (묵시 <code>use rok::core::**;</code> 의 항목 등) 만 씁니다. 템플릿 안의 <code>pkg::</code> 는 어디서 확장되든 메타 블록을 정의한 패키지를 가리킵니다.</p>
+<pre><code class="language-rok"><span class="a">#[impl_derive(MyHash)]</span> <span class="k">pub</span> @derive {
+    <span class="k">impl</span> <span class="t">MyHash</span> <span class="k">for</span> @<span class="k">Self</span> {
+        <span class="k">fn</span> my_hash(<span class="k">self</span>) -&gt; <span class="t">u64</span> {
+            <span class="k">let</span> h: <span class="t">u64</span> = <span class="n">0u64</span>;
+            @for_fields { h = mylib::hash::combine(h, <span class="k">self</span>.@field.my_hash()); }   <span class="c">// 절대 경로</span>
+            h
+        }
+    }
+}
+</code></pre>
+<h3 id="진단-위치"><a class="anchor" tabindex="-1" href="#진단-위치" aria-hidden="true">#</a>진단 위치</h3>
+<p>확장 중의 에러와 확장 결과의 파싱 에러는 템플릿의 위치를 가리키고, 사용처 (<code>#[derive(X)]</code> / <code>#[x]</code>) 를 note 로 덧붙입니다. 템플릿 토큰을 거쳐 항목에서 온 토큰은 항목의 위치를 가리킵니다.</p>
+<h2 id="6910-디버깅"><a class="anchor" tabindex="-1" href="#6910-디버깅" aria-hidden="true">#</a>6.9.10. 디버깅</h2>
+<p><code>rokc build --emit=expanded</code> (<a href="../009-tools/909-debug-tools#9910-메타-블록-디버그">9.9.10</a>) 는 사용자 패키지의 확장 결과를 소스 텍스트로 출력합니다. 확장마다 <code>// expanded from this #[derive(X)] (file:line:col)</code> 주석과 생성된 소스가 이어지며, 생성물이 다시 확장되면 바깥 확장 뒤에 이어집니다.</p>
+<h2 id="6911-정리"><a class="anchor" tabindex="-1" href="#6911-정리" aria-hidden="true">#</a>6.9.11. 정리</h2>
+<p>템플릿 토큰은 rok 메타 시스템의 코드 생성 어휘입니다. 단순한 형태이지만 실용적인 derive 와 attribute 의 핵심 사례를 모두 다룰 수 있습니다.</p>
+<p>토큰 변환의 유연성을 제한하는 대신 디버깅 가능성과 도구 친화성, 위생 보장을 얻는 것이 rok 의 선택입니다.</p>
+<p>이로써 6장 (메타 시스템) 을 마무리합니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-lang/006-meta-system/609-template-tokens.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="608-meta-blocks"><small>Previous</small>6.8. 사용자 정의 메타 정의</a><a class="next" href="610-reflection"><small>Next</small>6.10. 리플렉션</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>

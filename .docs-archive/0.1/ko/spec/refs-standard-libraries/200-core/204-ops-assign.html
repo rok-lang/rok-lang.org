@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.4. 복합 대입 트레잇 - rok docs</title>
+<script>try{const t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+<meta name="description" content="rok::core::ops 의 *Assign 트레잇 패밀리는 a += b, a *= b 같은 복합 대입 연산자를 in-place 갱신으로 dispatch 하는 역할을 담당합니다. 즉, refs-lang 3.4 대입과 복합 대입 에서 정의된 syntax 가 본 트레잇으로 desugar 되...">
+<link rel="canonical" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="rok">
+<meta property="og:title" content="2.4. 복합 대입 트레잇 - rok docs">
+<meta property="og:description" content="rok::core::ops 의 *Assign 트레잇 패밀리는 a += b, a *= b 같은 복합 대입 연산자를 in-place 갱신으로 dispatch 하는 역할을 담당합니다. 즉, refs-lang 3.4 대입과 복합 대입 에서 정의된 syntax 가 본 트레잇으로 desugar 되...">
+<meta property="og:url" content="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+<meta property="og:image" content="https://docs.rok-lang.org/latest/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#fcfbfd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15151b" media="(prefers-color-scheme: dark)">
+<link rel="stylesheet" href="../../../../style.css">
+<link rel="icon" href="../../../../logo.svg" type="image/svg+xml">
+<link rel="icon" href="../../../../favicon.ico" sizes="32x32">
+<link rel="apple-touch-icon" href="../../../../apple-touch-icon.png">
+<link rel="alternate" hreflang="en" href="https://docs.rok-lang.org/latest/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+<link rel="alternate" hreflang="ko" href="https://docs.rok-lang.org/latest/ko/spec/refs-standard-libraries/200-core/204-ops-assign.html">
+</head>
+<body class="doc" data-root="../../../../" data-version="0.1" data-play="https://playground.rok-lang.org">
+<a class="skip" href="#content">Skip to content</a>
+<header class="top">
+<a class="brand" href="../../../../"><img src="../../../../logo.svg" alt="" width="28" height="28"><span>rok</span><span class="docs-tag">docs</span></a>
+<details class="vers"><summary aria-label="Docs version: v0.1">v0.1</summary><ul class="vers-menu"></ul></details>
+<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav"><span class="bars"></span></button>
+<nav id="nav" class="main-nav" aria-label="Main"><a href="../../../../learn/">Learn</a><a href="../../../../examples/">Examples</a><a href="../../../../spec/refs-lang/">Reference</a><a href="../../../../spec/refs-standard-libraries/" aria-current="page">Library</a><a href="../../../../std/">API</a><a href="../../../../spec/refs-lang/009-tools/">Tools</a><a href="https://playground.rok-lang.org">Playground ↗</a><a href="https://rokstones.io">Packages ↗</a></nav>
+<div class="search" role="search"><input id="q" type="search" placeholder="Search docs" aria-label="Search docs" aria-keyshortcuts="/" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="results"><kbd aria-hidden="true">/</kbd><ul id="results" class="results" role="listbox" aria-label="Search results" hidden></ul><p class="sr-only" role="status"></p></div>
+<button class="theme" type="button" aria-label="Theme">◐</button>
+</header>
+<div class="wrap">
+<aside class="side" aria-label="Contents"><details open><summary>Contents</summary><a class="up" href="../">← rok 표준 라이브러리 참조</a><p class="side-title"><a href="./">2. Rok tier</a></p><ul class="pages"><li><a href="201-numbers">2.1. 숫자 타입</a></li><li><a href="202-non-zero">2.2. niche wrapper - NonZero / NonNan / Finite / Positive</a></li><li><a href="203-ops">2.3. 산술 / 비트 / 인덱싱 트레잇</a></li><li class="cur"><a aria-current="page" href="204-ops-assign">2.4. 복합 대입 트레잇</a><ul class="toc"><li><a href="#241-핵심-차이----vs--then-">2.4.1. 핵심 차이 - += vs = then +</a></li><li><a href="#242-산술-assign-트레잇">2.4.2. 산술 *Assign 트레잇</a></li><li><a href="#243-비트-assign-트레잇">2.4.3. 비트 *Assign 트레잇</a></li><li><a href="#244-시그니처-패턴---ref-self">2.4.4. 시그니처 패턴 - ref self</a></li><li><a href="#245-우선순위--결합성---prec-1-right">2.4.5. 우선순위 / 결합성 - prec=-1, right</a></li><li><a href="#246-트레잇-구현-매트릭스">2.4.6. 트레잇 구현 매트릭스</a></li><li><a href="#247-컬렉션의-assign---핵심-사용처">2.4.7. 컬렉션의 *Assign - 핵심 사용처</a></li><li><a href="#248-사용자-정의-assign">2.4.8. 사용자 정의 *Assign</a></li><li><a href="#249-assign-의-supertrait-관계---없음">2.4.9. *Assign 의 supertrait 관계 - 없음</a></li><li><a href="#2410-관련---broadcast-assign">2.4.10. 관련 - broadcast *Assign?</a></li></ul></li><li><a href="205-cmp">2.5. 비교 트레잇</a></li><li><a href="206-broadcast">2.6. broadcast - element-wise 연산자</a></li><li><a href="207-iter">2.7. iter - 반복 트레잇</a></li><li><a href="208-stream">2.8. stream - async iterator</a></li><li><a href="209-collections">2.9. 컬렉션 - List / Dict / Set / Tuple / Slice</a></li><li><a href="210-fmt">2.10. fmt - 포맷 트레잇</a></li><li><a href="211-conversion">2.11. 변환 트레잇</a></li><li><a href="212-reflect">2.12. reflect - Reflect / Inspect</a></li><li><a href="213-marker">2.13. marker - Clone / Copy / Drop</a></li><li><a href="214-error">2.14. error - 에러 트레잇 / 타입</a></li><li><a href="215-string">2.15. 문자열 - str / char / c_char</a></li><li><a href="216-sync">2.16. sync - 동시성 primitive</a></li><li><a href="217-channel">2.17. channel - 메시지 패싱</a></li><li><a href="218-task">2.18. task - M:N 스케줄러 task API</a></li><li><a href="219-par">2.19. par - 병렬 처리 API</a></li><li><a href="220-future">2.20. future - Future / await 통합</a></li><li><a href="221-crypto">2.21. crypto:: - 암호 알고리즘</a></li></ul></details></aside><main id="content">
+<article>
+<nav class="lang-switch" aria-label="Language" data-sec="24-복합-대입-트레잇 24-compound-assignment-traits 241-핵심-차이----vs--then- 241-the-key-difference----vs--then- 242-산술-assign-트레잇 242-arithmetic-assign-traits addassign--- addassign--- subassign---- subassign---- mulassign--- mulassign--- divassign--- divassign--- remassign--- remassign--- moduloassign--- moduloassign--- 243-비트-assign-트레잇 243-bitwise-assign-traits bitandassign--- bitandassign--- bitorassign--- bitorassign--- bitxorassign--- bitxorassign--- shlassign--- shlassign--- shrassign--- shrassign--- 244-시그니처-패턴---ref-self 244-signature-pattern---ref-self 245-우선순위--결합성---prec-1-right 245-precedence--associativity---prec-1-right 246-트레잇-구현-매트릭스 246-trait-implementation-matrix 247-컬렉션의-assign---핵심-사용처 247-assign-on-collections---the-main-use 248-사용자-정의-assign 248-user-defined-assign 249-assign-의-supertrait-관계---없음 249-supertrait-relationship-of-assign---none 2410-관련---broadcast-assign 2410-related---broadcast-assign"><a href="../../../../spec/refs-standard-libraries/200-core/204-ops-assign" hreflang="en" lang="en">EN</a><span aria-hidden="true"> · </span><span aria-current="true">한국어</span></nav>
+<h1 id="24-복합-대입-트레잇"><a class="anchor" tabindex="-1" href="#24-복합-대입-트레잇" aria-hidden="true">#</a>2.4. 복합 대입 트레잇</h1>
+<p><code>rok::core::ops</code> 의 <code>*Assign</code> 트레잇 패밀리는 <code>a += b</code>, <code>a *= b</code> 같은 복합 대입 연산자를 <strong>in-place</strong> 갱신으로 dispatch 하는 역할을 담당합니다. 즉, <a href="../../refs-lang/003-expressions/304-assignment">refs-lang 3.4 대입과 복합 대입</a> 에서 정의된 syntax 가 본 트레잇으로 desugar 되는 구조입니다.</p>
+<div class="callout note"><p class="callout-title">참고</p>
+<p>rok 은 <code>mut</code> 키워드를 일반 코드에서 쓰지 않습니다 (<a href="../../refs-lang/005-modules/501-variable-declaration">refs-lang 5.1 변수 선언</a>).
+변수는 항상 <code>let</code> 으로 선언되고, 같은 이름에 다시 대입하면 <strong>재할당</strong> 으로 처리됩니다.
+heap 객체 (List, Dict 등) 의 in-place 갱신은 변수 선언자 <code>let mut</code> 가 아니라
+<strong>객체가 가변 메서드를 노출하는지</strong> 로 결정됩니다. <code>*Assign</code> 트레잇이 그 가변 메서드의 자리입니다.</p>
+</div>
+<h2 id="241-핵심-차이----vs--then-"><a class="anchor" tabindex="-1" href="#241-핵심-차이----vs--then-" aria-hidden="true">#</a>2.4.1. 핵심 차이 - <code>+=</code> vs <code>=</code> then <code>+</code></h2>
+<pre><code class="language-rok">a += b;
+</code></pre>
+<p>이 식에는 두 가지 의미가 가능합니다. 먼저 <strong>in-place dispatch</strong> 의 경우 <code>&lt;typeof(a) as AddAssign&lt;typeof(b)&gt;&gt;::add_assign(ref a, b)</code> 로 풀려서 <code>a</code> 가 가리키는 객체의 <strong>내용</strong> 을 직접 수정하므로 새 객체를 만들지 않습니다. 반면 <strong>fallback</strong> (<code>Add::add</code> 후 재대입) 의 경우 <code>a = a + b</code> 형태가 되어 <code>Add</code> 호출 결과를 <code>a</code> 에 다시 저장하면서 새 객체를 생성합니다.</p>
+<p>rok 은 이 두 모드를 자동으로 선택합니다.</p>
+<pre><code>컴파일러 동작 (a += b 받았을 때):
+1. typeof(a) 가 AddAssign&lt;typeof(b)&gt; 구현했으면
+     → AddAssign::add_assign(ref a, b) dispatch
+2. 그렇지 않고 typeof(a) 가 Add&lt;typeof(b)&gt; 구현했으면
+     → a = Add::add(a, b) 로 desugar
+3. 둘 다 없으면 컴파일 에러
+</code></pre>
+<p>이러한 정책 덕분에 컬렉션의 in-place 최적화가 가능해집니다. 예를 들어 <code>xs: List&lt;i32&gt;</code> 가 <code>xs += y</code> 를 수행할 때 새 List 를 만들지 않고 직접 push 됩니다.</p>
+<h2 id="242-산술-assign-트레잇"><a class="anchor" tabindex="-1" href="#242-산술-assign-트레잇" aria-hidden="true">#</a>2.4.2. 산술 *Assign 트레잇</h2>
+<h3 id="addassign---"><a class="anchor" tabindex="-1" href="#addassign---" aria-hidden="true">#</a><code>AddAssign</code> - <code>+=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">AddAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("+=")]</span>
+    <span class="k">fn</span> add_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> counter: <span class="t">i32</span> = <span class="n">0</span>;
+counter += <span class="n">5</span>;       <span class="c">//→ 5 (counter 가 in-place 갱신)</span>
+counter += <span class="n">3</span>;       <span class="c">//→ 8</span>
+
+<span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>];
+xs += [<span class="n">3</span>, <span class="n">4</span>];       <span class="c">//→ [1, 2, 3, 4]  (List 의 add_assign - push 효율)</span>
+</code></pre>
+<h3 id="subassign----"><a class="anchor" tabindex="-1" href="#subassign----" aria-hidden="true">#</a><code>SubAssign</code> - <code>-=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">SubAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("-=")]</span>
+    <span class="k">fn</span> sub_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="mulassign---"><a class="anchor" tabindex="-1" href="#mulassign---" aria-hidden="true">#</a><code>MulAssign</code> - <code>*=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">MulAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("*=")]</span>
+    <span class="k">fn</span> mul_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="divassign---"><a class="anchor" tabindex="-1" href="#divassign---" aria-hidden="true">#</a><code>DivAssign</code> - <code>/=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">DivAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("/=")]</span>
+    <span class="k">fn</span> div_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="remassign---"><a class="anchor" tabindex="-1" href="#remassign---" aria-hidden="true">#</a><code>RemAssign</code> - <code>%=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">RemAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("%=")]</span>
+    <span class="k">fn</span> rem_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="moduloassign---"><a class="anchor" tabindex="-1" href="#moduloassign---" aria-hidden="true">#</a><code>ModuloAssign</code> - <code>%%=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">ModuloAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("%%=")]</span>
+    <span class="k">fn</span> modulo_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<p><code>%%=</code> 는 <a href="203-ops#modulo---floored-modulo-"><code>Modulo</code></a> (floored modulo, 결과 부호 = 제수 부호) 의 복합 대입 형태입니다. <code>RemAssign</code> 과 다른 트레잇으로 분리되어 있으며, 양수 제수에 대해 결과가 항상 <code>[0, rhs)</code> 범위에 있도록 in-place 갱신합니다.</p>
+<h2 id="243-비트-assign-트레잇"><a class="anchor" tabindex="-1" href="#243-비트-assign-트레잇" aria-hidden="true">#</a>2.4.3. 비트 *Assign 트레잇</h2>
+<h3 id="bitandassign---"><a class="anchor" tabindex="-1" href="#bitandassign---" aria-hidden="true">#</a><code>BitAndAssign</code> - <code>&amp;=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">BitAndAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&amp;=")]</span>
+    <span class="k">fn</span> bitand_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> flags: <span class="t">u32</span> = <span class="n">0xFF</span>;
+flags &amp;= <span class="n">0x0F</span>;     <span class="c">//→ 0x0F</span>
+</code></pre>
+<h3 id="bitorassign---"><a class="anchor" tabindex="-1" href="#bitorassign---" aria-hidden="true">#</a><code>BitOrAssign</code> - <code>|=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">BitOrAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("|=")]</span>
+    <span class="k">fn</span> bitor_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="bitxorassign---"><a class="anchor" tabindex="-1" href="#bitxorassign---" aria-hidden="true">#</a><code>BitXorAssign</code> - <code>^=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">BitXorAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("^=")]</span>
+    <span class="k">fn</span> bitxor_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h3 id="shlassign---"><a class="anchor" tabindex="-1" href="#shlassign---" aria-hidden="true">#</a><code>ShlAssign</code> - <code>&lt;&lt;=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">ShlAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&lt;&lt;=")]</span>
+    <span class="k">fn</span> shl_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<pre><code class="language-rok"><span class="k">let</span> n: <span class="t">i32</span> = <span class="n">1</span>;
+n &lt;&lt;= <span class="n">4</span>;       <span class="c">//→ 16</span>
+</code></pre>
+<h3 id="shrassign---"><a class="anchor" tabindex="-1" href="#shrassign---" aria-hidden="true">#</a><code>ShrAssign</code> - <code>&gt;&gt;=</code></h3>
+<pre><code class="language-rok"><span class="k">trait</span> <span class="t">ShrAssign</span>&lt;<span class="t">Rhs</span> = <span class="k">Self</span>&gt; {
+    <span class="a">#[infix("&gt;&gt;=")]</span>
+    <span class="k">fn</span> shr_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+}
+</code></pre>
+<h2 id="244-시그니처-패턴---ref-self"><a class="anchor" tabindex="-1" href="#244-시그니처-패턴---ref-self" aria-hidden="true">#</a>2.4.4. 시그니처 패턴 - <code>ref self</code></h2>
+<p>모든 <code>*Assign</code> 메서드는 <code>ref self</code> 를 받습니다 (<a href="../../refs-lang/004-functions/407-ref-keyword">refs-lang 4.7 ref keyword</a>). 이렇게 함으로써 caller 의 변수 binding 자체를 참조해 in-place 수정이 이루어집니다.</p>
+<pre><code class="language-rok"><span class="k">fn</span> add_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Rhs</span>);
+       ^^^^^
+       caller 의 변수가 가리키는 객체를 직접 수정
+</code></pre>
+<p>이 시그니처가 in-place 의 핵심에 해당합니다. 만일 <code>self</code> (값) 만 받게 된다면 복사본을 수정하는 데 그쳐서 caller 측에서는 변경 결과를 볼 수 없게 됩니다.</p>
+<h2 id="245-우선순위--결합성---prec-1-right"><a class="anchor" tabindex="-1" href="#245-우선순위--결합성---prec-1-right" aria-hidden="true">#</a>2.4.5. 우선순위 / 결합성 - prec=-1, right</h2>
+<p>모든 <code>*Assign</code> 토큰은 <a href="../../refs-lang/003-expressions/302-precedence-and-associativity">refs-lang 3.2</a> 표에서 동일한 등급으로 고정됩니다. 우선순위 측면에서 <code>prec = -1</code> 을 가지므로 일반 산술 (+=7, *=8) 보다 낮고, <code>..</code> (=0) 보다도 낮은 위치에 자리합니다. 가장 낮은 등급입니다. 연쇄 대입은 허용하지 않습니다 (<a href="../../refs-lang/003-expressions/304-assignment">refs-lang 3.4.4</a>).</p>
+<h2 id="246-트레잇-구현-매트릭스"><a class="anchor" tabindex="-1" href="#246-트레잇-구현-매트릭스" aria-hidden="true">#</a>2.4.6. 트레잇 구현 매트릭스</h2>
+<p>primitive 타입의 <code>*Assign</code> impl 에는 모두 <code>#[intrinsic(&quot;rok.OP_assign.TYPE&quot;)]</code> 가 부착됩니다.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>타입</th><th>트레잇</th><th>동작</th></tr></thead>
+<tbody>
+<tr><td><code>i*</code>, <code>u*</code></td><td>산술 6 개 + 비트 5 개 (11 트레잇)</td><td><code>rok.add_assign.i32</code>, <code>rok.shl_assign.u32</code>, ...</td></tr>
+<tr><td><code>f32</code>, <code>f64</code></td><td>산술 6 개만</td><td><code>rok.add_assign.f64</code>, ...</td></tr>
+<tr><td><code>bool</code></td><td><code>BitAndAssign</code>/<code>BitOrAssign</code>/<code>BitXorAssign</code></td><td><code>rok.and_assign.bool</code>, ...</td></tr>
+<tr><td><code>int</code></td><td>산술 + 비트</td><td>auto-promote 로직 - 새 값으로 교체 (불변)</td></tr>
+<tr><td><code>float</code></td><td>산술</td><td>(위와 동일 - auto-promote)</td></tr>
+<tr><td><code>List&lt;T&gt;</code></td><td><code>AddAssign&lt;List&lt;T&gt;&gt;</code>, <code>AddAssign&lt;T&gt;</code></td><td>push</td></tr>
+<tr><td><code>str</code></td><td><code>AddAssign&lt;str&gt;</code>, <code>AddAssign&lt;char&gt;</code></td><td><code>s = s + t</code> - 새 str 로 교체 (str 은 불변)</td></tr>
+<tr><td><code>Dict&lt;K,V&gt;</code></td><td><code>AddAssign&lt;Dict&lt;K,V&gt;&gt;</code></td><td>merge - 기존 키 덮어씀</td></tr>
+</tbody></table></div>
+<p><code>a op= b</code> 는 왼쪽 타입이 <code>XxxAssign</code> 을 구현하면 <code>XxxAssign::xxx_assign</code> (<code>AddAssign::add_assign</code> 등) 을 부르고, 아니면 <code>a = a op b</code> 입니다.</p>
+<h2 id="247-컬렉션의-assign---핵심-사용처"><a class="anchor" tabindex="-1" href="#247-컬렉션의-assign---핵심-사용처" aria-hidden="true">#</a>2.4.7. 컬렉션의 *Assign - 핵심 사용처</h2>
+<p><code>List&lt;T&gt;</code> / <code>Dict&lt;K,V&gt;</code> 같은 가변 컨테이너에서는 <code>*Assign</code> 가 <strong>진짜 in-place</strong> 동작을 수행합니다.</p>
+<pre><code class="language-rok"><span class="k">let</span> xs: <span class="t">List</span>&lt;<span class="t">i32</span>&gt; = [<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>];
+<span class="k">let</span> alias = xs;             <span class="c">// 같은 객체 공유 (Python 식, refs-lang 4.7.x)</span>
+
+xs += [<span class="n">4</span>, <span class="n">5</span>];               <span class="c">// xs 에 push (새 객체 안 만듦)</span>
+alias;                       <span class="c">//→ [1, 2, 3, 4, 5]  (alias 도 변화 봄)</span>
+
+<span class="c">// 비교: xs = xs + [4, 5] 는 새 List 생성, alias 는 변화 못 봄</span>
+</code></pre>
+<p>이 의미는 rok 의 heap 객체 자동 공유 모델 (<a href="../../refs-lang/004-functions/407-ref-keyword">refs-lang 4.7</a>) 과 정확히 일치합니다.</p>
+<h2 id="248-사용자-정의-assign"><a class="anchor" tabindex="-1" href="#248-사용자-정의-assign" aria-hidden="true">#</a>2.4.8. 사용자 정의 *Assign</h2>
+<p>사용자 타입이 <code>Add</code> 만 구현하고 <code>AddAssign</code> 을 구현하지 않은 경우 컴파일러가 fallback 을 사용합니다.</p>
+<pre><code class="language-rok"><span class="k">struct</span> <span class="t">Vec3</span> { x: <span class="t">f64</span>; y: <span class="t">f64</span>; z: <span class="t">f64</span>; }
+
+<span class="k">impl</span> <span class="t">Add</span> <span class="k">for</span> <span class="t">Vec3</span> {
+    <span class="k">type</span> <span class="t">Output</span> = <span class="t">Vec3</span>;
+    <span class="k">fn</span> add(<span class="k">self</span>, rhs: <span class="t">Vec3</span>) -&gt; <span class="t">Vec3</span> { ... }
+}
+<span class="c">// AddAssign 정의 안 됨</span>
+
+<span class="k">let</span> v = <span class="t">Vec3</span> { x: <span class="n">1.0</span>, y: <span class="n">2.0</span>, z: <span class="n">3.0</span> };
+v += <span class="t">Vec3</span> { x: <span class="n">0.5</span>, y: <span class="n">0.5</span>, z: <span class="n">0.5</span> };
+<span class="c">// → 컴파일러: AddAssign 없음, Add 있음 → desugar 'v = v + (...)'</span>
+<span class="c">// Vec3 가 immutable 이라 새 객체 생성 후 v 재대입</span>
+</code></pre>
+<p>성능이 중요한 경우라면 사용자가 <code>AddAssign</code> 을 명시적으로 구현하는 편이 권장됩니다.</p>
+<pre><code class="language-rok"><span class="k">impl</span> <span class="t">AddAssign</span> <span class="k">for</span> <span class="t">Vec3</span> {
+    <span class="k">fn</span> add_assign(<span class="k">ref</span> <span class="k">self</span>, rhs: <span class="t">Vec3</span>) {
+        <span class="k">self</span>.x += rhs.x;
+        <span class="k">self</span>.y += rhs.y;
+        <span class="k">self</span>.z += rhs.z;
+    }
+}
+</code></pre>
+<h2 id="249-assign-의-supertrait-관계---없음"><a class="anchor" tabindex="-1" href="#249-assign-의-supertrait-관계---없음" aria-hidden="true">#</a>2.4.9. *Assign 의 supertrait 관계 - 없음</h2>
+<p>rok 은 <code>AddAssign</code> 을 <code>Add</code> 의 supertrait 로 묶지 <strong>않습니다</strong>. 따라서 두 트레잇은 서로 독립적으로 다루어집니다.</p>
+<p>그 이유는 컬렉션처럼 <code>Add</code> 가 의미가 없고 (<code>xs + ys</code> 가 새 컬렉션을 만드는 비용이 큼) <code>AddAssign</code> 만 의미가 있는 경우가 존재하기 때문입니다. 만약 supertrait 로 묶는다면 그러한 타입이 <code>AddAssign</code> 만 구현하는 일이 불가능해집니다.</p>
+<h2 id="2410-관련---broadcast-assign"><a class="anchor" tabindex="-1" href="#2410-관련---broadcast-assign" aria-hidden="true">#</a>2.4.10. 관련 - broadcast <code>*Assign</code>?</h2>
+<p><a href="206-broadcast">2.6 broadcast</a> 의 19 개 토큰 (<code>.+</code>, <code>.*</code>, <code>.%%</code>, <code>.&amp;&amp;</code>, ...) 에 대응하는 복합 대입 변형은 정의되지 않습니다. 즉 <code>a .+= b</code> 같은 토큰은 존재하지 않습니다. broadcast 의 결과는 보통 새 컨테이너를 생성하기 때문에 in-place 의미가 모호해진다는 점이 그 배경입니다.</p>
+<p>필요한 경우 사용자가 <code>dot_add_assign</code> 같은 메서드를 명시적으로 호출하면 됩니다.</p>
+<pre><code class="language-rok">xs.dot_add_assign(ys);    <span class="c">// 메서드 호출 (broadcast in-place)</span>
+</code></pre>
+<pre><code class="language-rok"><span class="k">impl</span>&lt;<span class="t">T</span>&gt; <span class="t">List</span>&lt;<span class="t">T</span>&gt; {
+    <span class="k">fn</span> dot_add_assign(<span class="k">self</span>, rhs: <span class="t">List</span>&lt;<span class="t">T</span>&gt;) <span class="k">where</span> <span class="t">T</span>: <span class="t">Add</span>&lt;<span class="t">Output</span> = <span class="t">T</span>&gt;;
+    <span class="c">// dot_OP_assign 도 같음 - OP 는 add, sub, mul, div, rem, modulo,</span>
+    <span class="c">// bitand, bitor, bitxor, shl, shr 이며 각각 T: OP&lt;Output = T&gt; 필요</span>
+}
+</code></pre>
+<p>길이가 같아야 하며, 다르면 panic 입니다. <code>Slice</code> 형태는 없습니다.</p>
+<p class="edit"><a href="https://github.com/rok-lang/spec/blob/main/ko/refs-standard-libraries/200-core/204-ops-assign.md">GitHub에서 이 페이지 고치기</a></p>
+</article>
+<nav class="pager" aria-label="Previous and next page"><a class="prev" href="203-ops"><small>Previous</small>2.3. 산술 / 비트 / 인덱싱 트레잇</a><a class="next" href="205-cmp"><small>Next</small>2.5. 비교 트레잇</a></nav>
+</main>
+</div>
+<footer>
+<ul class="links"><li><a href="https://rok-lang.org">rok home</a></li><li>Spec text © Han Damin, <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a></li><li><a href="https://github.com/rok-lang/spec">Spec repository</a></li><li><a href="https://rokstones.io">Packages</a></li><li><a href="mailto:contact@rok-lang.org">Contact</a></li></ul>
+<p class="by">Made and maintained by <a href="https://daminstudio.com">DaminStudio</a></p>
+<p class="made">built with a static site generator written in rok</p>
+</footer>
+<script src="../../../../search.js" defer></script>
+</body>
+</html>
