@@ -184,10 +184,17 @@ fn site_local(cfg: Cfg, docs: str, spec: str, library: str, extra: str) -> str {
     f"{{\n    docs: \"{s}/docs/{docs}\",\n    www: \"{s}/www/main\",\n    spec: \"{s}/spec/{spec}/en\",\n    spec_ko: \"{s}/spec/{spec}/ko\",\n    library: \"{s}/rok/{library}/library\",\n{extra}}}\n"
 }
 
-/// Fetch what changed, rebuild it, swap the output in.
-fn round(cfg: Cfg, exe: str) throws {
+/// Fetch what changed, rebuild it, swap the output in. A new `build`
+/// (this program, site.rokon or static/) re-archives every release.
+fn round(cfg: Cfg, exe: str, build: str) throws {
     let t0 = Instant::now();
     let changed: Set<str> = Set::new();
+    let mark = cfg.data + "/build";
+    let fresh = !fs::exists(mark) || (try fs::read_to_str(mark)).trim() != build;
+    if fresh {
+        if fs::exists(cfg.data + "/archive") { try fs::remove_dir_all(cfg.data + "/archive"); }
+        changed.insert("build");
+    }
     for (repo, branch) in [("docs", "main"), ("www", "main"), ("spec", "main")] {
         if try sync_bundle(cfg, repo, branch) { changed.insert(f"{repo}/{branch}"); }
     }
@@ -240,6 +247,7 @@ fn round(cfg: Cfg, exe: str) throws {
     if fs::exists(old) { try fs::remove_dir_all(old); }
     if fs::exists(out) { try fs::rename(out, old); }
     try fs::rename(next, out);
+    if fresh { try fs::write(mark, build + "\n"); }
     eprintln(f"round: rebuilt {changed.len()} source(s) ({t0.elapsed():?})");
 }
 
@@ -248,11 +256,15 @@ fn rebuild_loop(cfg: Cfg) {
         eprintln(f"cannot find this program to rebuild the site: {e}");
         return;
     };
+    let build = try sh(f"cat {q(exe.as_str())} site.rokon $(find static -type f | sort) | sha256sum | cut -c1-16") catch e {
+        eprintln(f"cannot fingerprint this build: {e}");
+        return;
+    };
     let idle = 0;
     loop {
         if STALE.swap(0) == 1 || idle >= 300 {
             idle = 0;
-            try round(cfg, exe.as_str()) catch e { eprintln(f"round: {e}"); };
+            try round(cfg, exe.as_str(), build.trim()) catch e { eprintln(f"round: {e}"); };
         }
         thread::sleep(Duration::sec(1));
         idle += 1;
