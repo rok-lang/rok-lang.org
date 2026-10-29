@@ -1,0 +1,216 @@
+// The rok-lang.org landing page.
+
+use rok::std::fs;
+use markdown::esc;
+use pkg::Site;
+use pkg::layout;
+
+/// A program from the docs' examples.
+pub struct Example {
+    pub title: str;
+    pub lead: str;
+    pub href: str;
+}
+
+/// The changelog section of one release.
+struct News {
+    date: str;
+    items: List<str>;
+}
+
+/// Shown first, in this order, when the docs have them.
+const PICKS: [str; 8] = ["sudoku", "game-of-life", "interpreter", "tcp-echo", "text-adventure", "csv-report", "word-count", "json-parser"];
+
+const MONTHS: [str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/// "2026-10-29" -> "29 October 2026".
+fn long_date(d: str) -> str {
+    let p: List<str> = List::new();
+    for x in d.split("-") { p.push(x); }
+    if p.len() != 3 { return d; }
+    let m = try p[1].parse::<usize>() catch _ { return d; };
+    let day = try p[2].parse::<usize>() catch _ { return d; };
+    if m < 1 || m > 12 { return d; }
+    f"{day} {MONTHS[m - 1]} {p[0]}"
+}
+
+/// The `## <release> (<date>)` section of CHANGELOG.md, one entry per
+/// top-level bullet.
+fn news(path: str, release: str) -> News | none {
+    let text = try fs::read_to_str(path) catch _ { return none; };
+    let head = f"## {release} (";
+    let date = "";
+    let items: List<str> = List::new();
+    let on = false;
+    for l in text.lines() {
+        if l.starts_with("## ") {
+            if on { break; }
+            if l.starts_with(head) {
+                on = true;
+                date = l[head.len():].trim_end_matches(")");
+            }
+            continue;
+        }
+        if !on { continue; }
+        if l.starts_with("- ") {
+            items.push(l[2:]);
+        } else if l.starts_with("  ") && items.len() > 0 {
+            items[items.len() - 1] = items[items.len() - 1] + " " + l.trim();
+        }
+    }
+    if !on { return none; }
+    News { date: date, items: items }
+}
+
+/// Inline markdown, without the paragraph.
+fn inline(s: str) -> str {
+    let h = layout::md(s, |x| x, false).html.trim();
+    if h.starts_with("<p>") && h.ends_with("</p>") { h[3:h.len() - 4] } else { h }
+}
+
+fn code(src: str) -> str { f"<pre class=\"cb pre\"><code>{rok_syntax::highlight_rok(src)}</code></pre>" }
+
+fn feature(title: str, text: str, link: str, label: str, src: str) -> str {
+    f"<div class=\"feat\"><div class=\"feat-t\"><h3 class=\"t-h3\">{title}</h3><p>{text}</p><a class=\"t-ui\" href=\"{esc(link)}\">{label}</a></div>{code(src)}</div>\n"
+}
+
+const DESCRIBE: str = "fn describe(v: i32 | str | bool) -> str {
+    match v {
+        n: i32 => f\"integer {n}\",
+        s: str => f\"string {s}\",
+        b: bool => f\"boolean {b}\",
+    }
+}";
+
+const FIND: str = "fn find(xs: List<i32>, target: i32) -> usize? {
+    for i in 0..xs.len() {
+        if xs[i] == target { return i; }
+    }
+    none
+}
+
+let at = find(scores, 90) ?? 0;";
+
+const PARSE: str = "fn parse_age(s: str) throws -> i32 {
+    let n: i32 = try s.parse();
+    if n < 0 { throw ValueError { msg: f\"age {n} is negative\" }; }
+    n
+}
+
+let age = try parse_age(\"-1\") catch e { println(f\"error: {e}\"); 0 };";
+
+/// The release archives: (system, triple, note, extension).
+const ARCHIVES: [(str, str, str, str); 6] = [
+    ("macOS", "aarch64-apple-darwin", "Apple silicon", ".tar.xz"),
+    ("Linux", "x86_64-unknown-linux-gnu", "glibc 2.34 or later", ".tar.xz"),
+    ("Linux", "aarch64-unknown-linux-gnu", "glibc 2.34 or later", ".tar.xz"),
+    ("Linux", "x86_64-unknown-linux-musl", "static, any distribution", ".tar.xz"),
+    ("Linux", "aarch64-unknown-linux-musl", "static, any distribution", ".tar.xz"),
+    ("Windows", "x86_64-pc-windows-msvc", "Windows 10 or later", ".zip"),
+];
+
+/// The landing page's body. `examples` are the docs' examples; the
+/// release notes come from the toolchain's CHANGELOG.md, if present.
+pub fn body(site: Site, examples: List<Example>) -> str {
+    let r = site.release;
+    let docs = |p: str| esc(layout::latest(site, p));
+    let rel_url = f"https://github.com/rok-lang/rok/releases/tag/v{r}";
+    let n = news(site.library + "/../CHANGELOG.md", r);
+    let out = StrBuf::new();
+
+    let came = if let x: News = n { f"Rok {r} came out on {long_date(x.date)}" } else { f"Rok {r} is out" };
+    out.push_str(f"<section class=\"hero\"><div class=\"frame\">
+<div class=\"hero-t\">
+<a class=\"t-ui news-link\" href=\"{rel_url}\">{came} →</a>
+<h1 class=\"t-display\">A compiled language that tells you what to write.</h1>
+<p class=\"t-lead\">Rok has closed sum types, no null, and errors in function signatures. When code doesn't compile, the error says what is wrong and, most of the time, what to write instead.</p>
+<div class=\"install\">
+<div class=\"line mono\"><code>curl -fsSL https://rok-lang.org/install.sh | sh</code><button type=\"button\" class=\"btn-2 btn-sm\" data-copy=\"curl -fsSL https://rok-lang.org/install.sh | sh\">Copy</button></div>
+<p class=\"t-small\">macOS and Linux. On Windows, use <a href=\"install.ps1\">install.ps1</a> or <a href=\"download.html#archives\">an archive</a>.</p>
+</div>
+<p class=\"go\"><a class=\"btn\" href=\"{docs("learn/index.html")}\">Read the guide</a><a class=\"t-ui\" href=\"{esc(site.playground)}\">or try it in the browser</a></p>
+</div>
+<figure class=\"hero-f\">
+<pre class=\"term\" aria-label=\"rok run in a terminal: an error that says what to write, then the fixed program runs\"><span class=\"p\">$</span> rok run
+<span class=\"v\">   Compiling</span> hello (.)
+<span class=\"e\">error[E200]</span>: `name` is a `str | none`, and only a
+       `str` has the method `len`
+  <span class=\"g\">--&gt;</span> src/main.rok:3:13
+   <span class=\"g\">|</span>
+ <span class=\"g\">3 |</span>     println(name.len());
+   <span class=\"g\">|</span>             <span class=\"e\">^^^^^^^^^^</span>
+   <span class=\"g\">|</span>
+   <span class=\"g\">=</span> <span class=\"h\">help</span>: check which case it holds first:
+           `if let s: str = name {{ s.len() }}`
+
+<span class=\"p\">$</span> rok run
+<span class=\"v\">   Compiling</span> hello (.)
+<span class=\"v\">    Finished</span> in 0.10s
+<span class=\"v\">     Running</span> `./target/debug/hello`
+5</pre>
+<figcaption class=\"t-small\">rok {esc(r)}. Line 3 after the fix: <code class=\"ic\">println((name ?? \"guest\").len());</code></figcaption>
+</figure>
+</div></section>
+");
+
+    out.push_str("<section class=\"feats\"><div class=\"frame\">\n<h2 class=\"t-h2\">What it checks for you</h2>\n");
+    out.push_str(feature("Every case of a sum type", "A value is <code class=\"ic\">i32 | str | bool</code>, and <code class=\"ic\">match</code> has to handle all three. Add a variant later and the compiler lists every match that needs a new arm.", layout::latest(site, "learn/05-sum-types.html"), "Chapter 5, Sum Types and none", DESCRIBE));
+    out.push_str(feature("Values that may be missing", "There is no null. A value that might not be there has the type <code class=\"ic\">T?</code>, and you say what happens when it isn't: a default with <code class=\"ic\">??</code>, or a branch with <code class=\"ic\">if let</code>.", layout::latest(site, "learn/05-sum-types.html#defaults-with--and-chaining-with-"), "Defaults with ?? and ?.", FIND));
+    out.push_str(feature("Errors you can see coming", "A function that can fail says so with <code class=\"ic\">throws</code>, and every call to it is marked <code class=\"ic\">try</code>. Reading the code, you can see each place an error can come from.", layout::latest(site, "learn/10-errors.html"), "Chapter 10, Error Handling", PARSE));
+    out.push_str("</div></section>\n");
+
+    if examples.len() > 0 {
+        let picked: List<Example> = List::new();
+        let seen: Set<str> = Set::new();
+        for slug in PICKS {
+            for e in examples {
+                if e.href.ends_with("/" + slug + ".html") {
+                    picked.push(e);
+                    seen.insert(e.href);
+                }
+            }
+        }
+        for e in examples {
+            if picked.len() >= 8 { break; }
+            if !seen.contains(e.href) { picked.push(e); }
+        }
+        out.push_str(f"<section class=\"progs\"><div class=\"frame\">
+<div><h2 class=\"t-h2\">Programs to read</h2><p>{examples.len()} complete programs, each one built and run when the docs are checked.</p><a class=\"t-ui\" href=\"{docs("examples/index.html")}\">All {examples.len()} examples</a></div>
+<div class=\"ex-list\">");
+        for k in 0..picked.len() {
+            if k >= 8 { break; }
+            let e = picked[k];
+            out.push_str(f"<a class=\"ex\" href=\"{esc(e.href)}\"><b>{esc(e.title)}</b><span>{esc(e.lead)}</span></a>");
+        }
+        out.push_str("</div>\n</div></section>\n");
+    }
+
+    out.push_str(f"<section class=\"get\"><div class=\"frame\">
+<div><h2 class=\"t-h2\">Install</h2><p>One toolchain: the compiler with LLVM built in, the package tool, a REPL, a Jupyter kernel and a language server. Nothing else to install.</p>
+<pre class=\"cb pre\"><code><span class=\"c\"># macOS, Linux</span>
+curl -fsSL https://rok-lang.org/install.sh | sh
+
+<span class=\"c\"># Windows, in PowerShell</span>
+powershell -ExecutionPolicy Bypass -c \"irm https://rok-lang.org/install.ps1 | iex\"
+
+<span class=\"c\"># Nix</span>
+nix profile install github:rok-lang/rok</code></pre></div>
+<div class=\"arc-wrap\"><table class=\"arc\"><caption>Archives for {esc(r)}</caption><tbody>");
+    for (os, triple, note, ext) in ARCHIVES {
+        let url = f"https://github.com/rok-lang/rok/releases/download/v{r}/rok-{r}-{triple}{ext}";
+        out.push_str(f"<tr><th scope=\"row\">{os}</th><td class=\"mono\">{triple}</td><td class=\"note\">{note}</td><td><a href=\"{esc(url)}\">{ext}</a></td></tr>");
+    }
+    out.push_str("</tbody></table><p class=\"t-small\">Checksums, other formats and cross-compilation targets: <a href=\"download.html\">Download</a>.</p></div>\n</div></section>\n");
+
+    if let x: News = n {
+        out.push_str(f"<section class=\"new\"><div class=\"frame\">
+<div><h2 class=\"t-h2\">New in {esc(r)}</h2><p class=\"t-small\">{long_date(x.date)}</p><a class=\"t-ui\" href=\"https://github.com/rok-lang/rok/blob/v{r}/CHANGELOG.md\">Full changelog</a></div>
+<ul>");
+        for k in 0..x.items.len() {
+            if k >= 6 { break; }
+            out.push_str(f"<li>{inline(x.items[k])}</li>");
+        }
+        out.push_str("</ul>\n</div></section>\n");
+    }
+    out.to_str()
+}

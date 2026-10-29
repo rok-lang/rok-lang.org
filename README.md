@@ -2,7 +2,7 @@
 
 The generator for the two Rok websites, written in Rok. The pages themselves live in their own repositories:
 
-- rok-lang.org: the home, download and roadmap pages from [rok-lang/www](https://github.com/rok-lang/www) and the installers (`/install.sh`, `/install.ps1`), built into `public/www/`.
+- rok-lang.org: the landing page (`src/home.rok`), the download and roadmap pages from [rok-lang/www](https://github.com/rok-lang/www) and the installers (`/install.sh`, `/install.ps1`), built into `public/www/`.
 - docs.rok-lang.org: the docs, one directory per version (`/0.1/`, `/dev/`, `/latest/`), built into `public/docs/<version>/`.
 
 The docs combine the guide and examples from [rok-lang/docs](https://github.com/rok-lang/docs), the spec (English `spec/en`, Korean `spec/ko`) and the standard library API extracted from `rok/library`. Released versions are the `vX.Y.Z` branches of docs and spec.
@@ -61,7 +61,9 @@ Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: 
 | `src/check.rok`  | Code block extraction and parallel compile / run / output comparison |
 | `src/apidoc.rok` | API pages from the standard library sources |
 | `src/layout.rok` | Page frames: header, navigation, sidebar, footer, 404 |
+| `src/home.rok`   | The rok-lang.org landing page; its release notes come from rok's CHANGELOG.md |
 | `src/serve.rok`  | The server: bundles, release archives, rebuilds, routing |
-| `static/`        | `style.css`, `search.js`, logos, `og.png` |
+| `static/`        | `rok.css` (shared tokens, a copy of `css/rok.css` from [rok-lang/web](https://github.com/rok-lang/web); do not edit here), `style.css` (this site), `search.js`, logos, `og.png` |
+| `og/`            | `og.png` source: `cd og && npm ci && node render.mjs card.html ../static/og.png` |
 
 Markdown and ` ```rok ` / ` ```rokon ` highlighting come from the [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) stones (path dependencies until switched to their rokstones.io versions).

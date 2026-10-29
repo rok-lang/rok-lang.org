@@ -155,8 +155,9 @@ fn before_last(s: str, sep: str) -> str | none {
 
 fn dir_of(p: str) -> str { before_last(p, "/") ?? "." }
 
-/// The rok sources a build needs (library/, install.sh, install.ps1) at
-/// `rev` (a tag or main), under data/src/rok/<rev>; true if they changed.
+/// The rok sources a build needs (library/, install.sh, install.ps1, and
+/// CHANGELOG.md on main) at `rev` (a tag or main), under
+/// data/src/rok/<rev>; true if they changed.
 fn sync_library(cfg: Cfg, rev: str) throws -> bool {
     let git = cfg.data + "/rok.git";
     if !fs::exists(git) { try sh(f"git clone -q --bare --filter=blob:none {q(cfg.rok_git)} {q(git)}"); }
@@ -173,7 +174,9 @@ fn sync_library(cfg: Cfg, rev: str) throws -> bool {
     if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == sha { return false; }
     if fs::exists(dir) { try fs::remove_dir_all(dir); }
     try fs::create_dir_all(dir);
-    try sh(f"git -C {q(git)} archive {q(sha)} library install.sh install.ps1 | tar -x -C {q(dir)}");
+    // CHANGELOG.md: the landing page's release notes.
+    let extra = if is_tag { "" } else { " CHANGELOG.md" };
+    try sh(f"git -C {q(git)} archive {q(sha)} library install.sh install.ps1{extra} | tar -x -C {q(dir)}");
     try fs::write(mark, sha + "\n");
     eprintln(f"library {rev} @ {short(sha)}");
     true
