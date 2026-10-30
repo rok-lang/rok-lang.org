@@ -588,9 +588,77 @@ fn stub_html(m: Module, it: Item, id: str, title: str, since: Dict<str, str>) ->
     let href = rel(m.out, sub_out(m, id));
     let out = StrBuf::new();
     out.push_str(f"<section class=\"api-item api-split\" id=\"{esc(id)}\"><h3><a href=\"{href}\">{esc(title)}</a>{badge(since, m.path + "::" + id)}</h3>");
-    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{rok_syntax::highlight_rok(it.sig)}</code></pre>"); }
+    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{sig_html(it.sig)}</code></pre>"); }
     let more = if it.traits.len() > 0 { f", {it.traits.len()} trait implementations" } else { "" };
     out.push_str(f"<p class=\"api-more\"><a href=\"{href}\">{it.members.len()} members{more} →</a></p></section>");
+    out.to_str()
+}
+
+/// A one-line fn signature as highlighted pieces that each stay on one
+/// line: the head up to `(`, each parameter, `-> T`, `where ...`. A
+/// narrow screen breaks it only between them. Others are highlighted
+/// whole.
+fn sig_html(sig: str) -> str {
+    if sig.contains("\n") || !sig.contains("fn ") { return rok_syntax::highlight_rok(sig); }
+    let fn_at = sig.find("fn ") ?? 0;
+    let pieces: List<str> = List::new();
+    let seps: List<str> = List::new();
+    let cur = StrBuf::new();
+    let sep = "";
+    let depth = 0;
+    let params = false;
+    let done = false;
+    let skip = false;
+    let prev = ' ';
+    let pos = 0usize;
+    for c in sig.chars() {
+        let at = pos;
+        pos += c.len_utf8();
+        if skip {
+            skip = false;
+            if c == ' ' { continue; }
+        }
+        if depth == 0 && done && c == ' ' && (sig[at:].starts_with(" -> ") || sig[at:].starts_with(" where ")) {
+            pieces.push(cur.to_str());
+            seps.push(sep);
+            cur.clear();
+            sep = " ";
+            prev = c;
+            continue;
+        }
+        cur.push(c);
+        if c == '(' || c == '[' || c == '{' || c == '<' {
+            depth += 1;
+        } else if c == ')' || c == ']' || c == '}' || (c == '>' && prev != '-') {
+            depth -= 1;
+        }
+        if c == '(' && depth == 1 && !params && !done && at > fn_at {
+            params = true;
+            pieces.push(cur.to_str());
+            seps.push(sep);
+            cur.clear();
+            sep = "<wbr>";
+        } else if c == ')' && depth == 0 && params {
+            params = false;
+            done = true;
+        } else if c == ',' && depth == 1 && params {
+            pieces.push(cur.to_str());
+            seps.push(sep);
+            cur.clear();
+            sep = " ";
+            skip = true;
+        }
+        prev = c;
+    }
+    if !cur.is_empty() {
+        pieces.push(cur.to_str());
+        seps.push(sep);
+    }
+    let out = StrBuf::new();
+    for k in 0..pieces.len() {
+        out.push_str(seps[k]);
+        out.push_str(f"<span class=\"nw\">{rok_syntax::highlight_rok(pieces[k])}</span>");
+    }
     out.to_str()
 }
 
@@ -603,7 +671,7 @@ fn item_html(it: Item, id: str, title: str, heads: List<Heading>, path: str, sin
     let key = path + "::" + id;
     let out = StrBuf::new();
     out.push_str(f"<section class=\"api-item\" id=\"{esc(id)}\"><h3><a href=\"#{esc(id)}\">{esc(title)}</a>{badge(since, key)}</h3>");
-    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{rok_syntax::highlight_rok(it.sig)}</code></pre>"); }
+    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{sig_html(it.sig)}</code></pre>"); }
     out.push_str(md(it.doc));
     if it.members.len() > 0 {
         out.push_str("<ul class=\"members\">");
@@ -612,7 +680,7 @@ fn item_html(it: Item, id: str, title: str, heads: List<Heading>, path: str, sin
             // A member of an item added after it: the item's own badge
             // covers members that came with it.
             let mb = if since.contains_key(key) { "" } else { badge(since, key + "::" + m.name) };
-            out.push_str(f"<li id=\"{esc(mid)}\">{mb}<pre><code>{rok_syntax::highlight_rok(m.sig)}</code></pre>{md(m.doc)}</li>");
+            out.push_str(f"<li id=\"{esc(mid)}\">{mb}<pre><code>{sig_html(m.sig)}</code></pre>{md(m.doc)}</li>");
             if m.sig.contains("fn ") { heads.push(Heading { level: 3, id: mid, text: f"{path}::{it.name}::{m.name}" }); }
         }
         out.push_str("</ul>");
@@ -636,7 +704,7 @@ pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>) -> (str, List<
     let acc = "";
     for k in 0..parts.len() {
         acc = if k == 0 { parts[0] } else { acc + "::" + parts[k] };
-        if k > 0 { out.push_str("::"); }
+        if k > 0 { out.push_str("::<wbr>"); }
         let link = "";
         if let t: Module = find(mods, acc) {
             if k + 1 < parts.len() { link = rel(m.out, t.out); }
@@ -798,4 +866,14 @@ pub fn index(mods: List<Module>) -> str {
         out.push_str("</ul>");
     }
     out.to_str()
+}
+
+#[test]
+fn signature_pieces() {
+    // The head, each parameter, the return type; `fn(T) -> bool` inside a
+    // parameter stays whole.
+    let h = sig_html("pub fn retain(self, keep: fn(T) -> bool) -> List<T>");
+    assert(h.split("class=\"nw\"").count() == 5, h);
+    assert(h.contains("<wbr><span") && !h.contains("( ") && !h.contains("<span class=\"nw\"> "), h);
+    assert(sig_html("pub struct List<T>").split("class=\"nw\"").count() == 1, "not a fn");
 }
