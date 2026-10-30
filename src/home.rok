@@ -1,6 +1,7 @@
 // The rok-lang.org landing page.
 
 use rok::std::fs;
+use rok::core::encoding;
 use markdown::esc;
 use pkg::Site;
 use pkg::layout;
@@ -150,17 +151,27 @@ fn transcript(out: str, docs: fn(str) -> str) -> str {
     "<span class=\"p\">$</span> rok run\n" + body
 }
 
+/// The playground with `src` in its editor: `#src=` and the source as
+/// base64url, which every browser opens; search.js swaps in the shorter
+/// deflated `#code=` where it can.
+fn play_link(site: Site, src: str) -> str { site.playground + "/#src=" + encoding::base64_encode(src, true, false) }
+
 /// A program and what rokc says about it: the code with the reported
 /// line marked, then the terminal.
-fn program(s: Sample, docs: fn(str) -> str, label: str) -> str {
+fn program(site: Site, s: Sample, docs: fn(str) -> str, label: str) -> str {
     let hl = error_line(s.out);
-    f"<div class=\"cb prog\"><div class=\"cb-h\"><span class=\"t-label\">src/main.rok</span></div><pre class=\"pre\"><code>{numbered(s.src, hl)}</code></pre></div>
+    let play = f"<a class=\"btn-2 btn-sm play\" href=\"{esc(play_link(site, s.src))}\" aria-label=\"Open src/main.rok in the playground\">Open in Playground</a>";
+    f"<div class=\"cb prog\"><div class=\"cb-h\"><span class=\"t-label\">src/main.rok</span>{play}</div><pre class=\"pre\"><code>{numbered(s.src, hl)}</code></pre></div>
 <div class=\"term-bar\" aria-hidden=\"true\">~/{s.name}</div><pre class=\"term\" aria-label=\"{label}\">{transcript(s.out, docs)}</pre>"
 }
 
-fn feature(title: str, text: str, link: str, label: str, s: Sample, docs: fn(str) -> str) -> str {
-    f"<div class=\"feat\"><div class=\"feat-t\"><h3 class=\"t-h3\">{title}</h3><p>{text}</p><a class=\"t-ui\" href=\"{esc(link)}\">{label}</a></div><div class=\"feat-f\">{program(s, docs, "rok run in a terminal: what rokc reports for this program")}</div></div>\n"
+fn feature(site: Site, title: str, text: str, link: str, label: str, s: Sample, docs: fn(str) -> str) -> str {
+    f"<div class=\"feat\"><div class=\"feat-t\"><h3 class=\"t-h3\">{title}</h3><p>{text}</p><a class=\"t-ui\" href=\"{esc(link)}\">{label}</a></div><div class=\"feat-f\">{program(site, s, docs, "rok run in a terminal: what rokc reports for this program")}</div></div>\n"
 }
+
+/// The install commands: the shell script, the PowerShell one.
+const SH: str = "curl -fsSL https://rok-lang.org/install.sh | sh";
+const PS: str = "powershell -ExecutionPolicy Bypass -c \"irm https://rok-lang.org/install.ps1 | iex\"";
 
 /// The release archives: (system, triple, note, extension).
 const ARCHIVES: [(str, str, str, str); 6] = [
@@ -189,23 +200,26 @@ pub fn body(site: Site, examples: List<Example>, sizes: Dict<str, i64>) -> str {
 <a class=\"t-ui news-link\" href=\"{rel_url}\">{came} →</a>
 <h1 class=\"t-display\">A compiled language that tells you what to write.</h1>
 <p class=\"t-lead\">Rok has closed sum types, no null, and errors in function signatures. When code doesn't compile, the error says what is wrong and, most of the time, what to write instead.</p>
-<div class=\"install\">
-<div class=\"line mono\"><code>curl -fsSL <span class=\"nw\">https://rok-lang.org/install.sh | sh</span></code>{web::chrome::copy_button("curl -fsSL https://rok-lang.org/install.sh | sh", false)}</div>
-<p class=\"t-small\">macOS and Linux. On Windows, use <a href=\"install.ps1\">install.ps1</a> or <a href=\"download.html#archives\">an archive</a>.</p>
+<div class=\"install\" data-os-pick>
+<div class=\"os-pick\" role=\"group\" aria-label=\"Install command for\"><button type=\"button\" data-pick=\"unix\" aria-pressed=\"true\">macOS &amp; Linux</button><button type=\"button\" data-pick=\"windows\" aria-pressed=\"false\">Windows</button></div>
+<div class=\"line mono\" data-for=\"unix\"><code>curl -fsSL <span class=\"nw\">https://rok-lang.org/install.sh | sh</span></code>{web::chrome::copy_button(SH, false)}</div>
+<div class=\"line mono\" data-for=\"windows\" hidden><code>powershell -ExecutionPolicy Bypass <span class=\"nw\">-c \"irm https://rok-lang.org/install.ps1 | iex\"</span></code>{web::chrome::copy_button(PS, false)}</div>
+<p class=\"t-small\" data-for=\"unix\">macOS (Apple silicon) and Linux. Or <a href=\"download.html#archives\">an archive</a>.</p>
+<p class=\"t-small\" data-for=\"windows\" hidden>Windows 10 or later, in PowerShell. Or <a href=\"download.html#archives\">an archive</a>.</p>
 </div>
 <p class=\"go\"><a class=\"btn\" href=\"{docs("learn/index.html")}\">Read the guide</a><a class=\"t-ui\" href=\"{esc(site.playground)}\">or try it in the browser</a></p>
 </div>
 <figure class=\"hero-f\">
-{program(sample("hello"), to, "rok run in a terminal: an error that says what to write")}
+{program(site, sample("hello"), to, "rok run in a terminal: an error that says what to write")}
 <figcaption class=\"t-small\">rok {esc(r)}. Line 3 after the fix: <code class=\"ic\">println((name ?? \"guest\").len());</code></figcaption>
 </figure>
 </div></section>
 ");
 
     out.push_str("<section class=\"feats\"><div class=\"frame\">\n<h2 class=\"t-h2\">What it checks for you</h2>\n");
-    out.push_str(feature("Every case of a sum type", "A value is <code class=\"ic\">i32 | str | bool</code>, and <code class=\"ic\">match</code> has to handle all three. Leave one out, or add a variant later, and the compiler names the case no arm covers.", layout::latest(site, "learn/05-sum-types.html"), "Guide, chapter 5: Sum Types and none", sample("describe"), to));
-    out.push_str(feature("Values that may be missing", "There is no null. A value that might not be there has the type <code class=\"ic\">T?</code>, and you say what happens when it isn't: a default with <code class=\"ic\">??</code>, or a branch with <code class=\"ic\">if let</code>.", layout::latest(site, "learn/05-sum-types.html#defaults-with--and-chaining-with-"), "Guide: defaults with ?? and ?.", sample("find"), to));
-    out.push_str(feature("Errors you can see coming", "A function that can fail says so with <code class=\"ic\">throws</code>, and every call to it is marked <code class=\"ic\">try</code>. Reading the code, you can see each place an error can come from.", layout::latest(site, "learn/10-errors.html"), "Guide, chapter 10: Error Handling", sample("ages"), to));
+    out.push_str(feature(site, "Every case of a sum type", "A value is <code class=\"ic\">i32 | str | bool</code>, and <code class=\"ic\">match</code> has to handle all three. Leave one out, or add a variant later, and the compiler names the case no arm covers.", layout::latest(site, "learn/05-sum-types.html"), "Guide, chapter 5: Sum Types and none", sample("describe"), to));
+    out.push_str(feature(site, "Values that may be missing", "There is no null. A value that might not be there has the type <code class=\"ic\">T?</code>, and you say what happens when it isn't: a default with <code class=\"ic\">??</code>, or a branch with <code class=\"ic\">if let</code>.", layout::latest(site, "learn/05-sum-types.html#defaults-with--and-chaining-with-"), "Guide: defaults with ?? and ?.", sample("find"), to));
+    out.push_str(feature(site, "Errors you can see coming", "A function that can fail says so with <code class=\"ic\">throws</code>, and every call to it is marked <code class=\"ic\">try</code>. Reading the code, you can see each place an error can come from.", layout::latest(site, "learn/10-errors.html"), "Guide, chapter 10: Error Handling", sample("ages"), to));
     out.push_str("</div></section>\n");
 
     if examples.len() > 0 {
@@ -236,7 +250,7 @@ pub fn body(site: Site, examples: List<Example>, sizes: Dict<str, i64>) -> str {
 
     out.push_str(f"<section class=\"get\"><div class=\"frame\">
 <div><h2 class=\"t-h2\">Install</h2><p>One toolchain: the compiler with LLVM built in, the package tool, a REPL, a Jupyter kernel and a language server. Nothing else to install.</p>
-<pre class=\"cb pre\"><code><span class=\"c\"># macOS, Linux</span>
+<pre class=\"cb pre\"><code><span class=\"c\"># macOS (Apple silicon), Linux</span>
 curl -fsSL https://rok-lang.org/install.sh | sh
 
 <span class=\"c\"># Windows, in PowerShell</span>
