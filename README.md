@@ -9,7 +9,7 @@ The docs combine the guide and examples from [rok-lang/docs](https://github.com/
 
 ## Build
 
-Needs the Rok toolchain (`rok`, `rokc`) plus checkouts of [rok-lang/docs](https://github.com/rok-lang/docs), [rok-lang/www](https://github.com/rok-lang/www), [rok-lang/rok](https://github.com/rok-lang/rok), [rok-lang/spec](https://github.com/rok-lang/spec), and the `markdown` / `rok-syntax` stones, laid out beside this repo (see `rok.rokon`):
+Needs the Rok toolchain (`rok`, `rokc`), the [web kit](https://github.com/rok-lang/web) submodule at `web/` (clone with `git clone --recurse-submodules`, or run `git submodule update --init` in an existing clone), plus checkouts of [rok-lang/docs](https://github.com/rok-lang/docs), [rok-lang/www](https://github.com/rok-lang/www), [rok-lang/rok](https://github.com/rok-lang/rok), [rok-lang/spec](https://github.com/rok-lang/spec), and the `markdown` / `rok-syntax` stones, laid out beside this repo (see `rok.rokon`):
 
 ```
 ./
@@ -33,6 +33,16 @@ rok test                     # code block extraction tests
 ```
 
 Generation takes 1-5 seconds; `check` compiles and runs hundreds of code blocks and takes 1-3 minutes. See `src/check.rok` for the ` ```rok ` block check rules (`build`, `norun`, `output`).
+
+## Web kit
+
+`web/` is [rok-lang/web](https://github.com/rok-lang/web), pinned to a commit. The generator builds its `web` library in (`Dep::path("web/rok")`): HTTP and the canonical-address rules (`web::url`), the theme controls, social links and footer (`web::chrome`), and the kit's files, which every build writes beside `static/` into `public/www/` and each docs version directory: `rok.css`, `theme.js`, `keys.js`, `rok.svg`, `logo.svg`, `favicon.ico`, `apple-touch-icon.png`. `serve` needs nothing from `web/` at run time. Move to a newer kit with:
+
+```bash
+git submodule update --remote web
+rok run && rok test
+git commit -am "chore: bump the web kit"
+```
 
 ## Preview
 
@@ -67,7 +77,8 @@ Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: 
 | `src/layout.rok` | Page frames: header, navigation, sidebar, footer, 404 |
 | `src/home.rok`   | The rok-lang.org landing page; its release notes come from rok's CHANGELOG.md |
 | `src/serve.rok`  | The server: bundles, release archives, rebuilds, routing |
-| `static/`        | `rok.css` (shared tokens, a copy of `css/rok.css` from [rok-lang/web](https://github.com/rok-lang/web); do not edit here), `style.css` (this site), `search.js`, logos, `og.png` |
+| `static/`        | `style.css` (this site), `search.js`, `og.png` |
+| `web/`           | the web kit (submodule): `rok.css`, `theme.js`, `keys.js`, marks and icons, and the `web` library (HTTP, addresses, footer markup) |
 | `og/`            | `og.png` source: `cd og && npm ci && node render.mjs card.html ../static/og.png` |
 
 Markdown and ` ```rok ` / ` ```rokon ` highlighting come from the [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) stones (path dependencies until switched to their rokstones.io versions).

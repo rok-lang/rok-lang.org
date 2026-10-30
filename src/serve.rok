@@ -25,9 +25,9 @@ use rok::std::time::Duration;
 use rok::core::crypto::{Hmac, HashAlgorithm, constant_time_eq};
 use rok::core::encoding;
 use rok::core::task::time::Instant;
-use pkg::http;
-use pkg::http::Request;
-use pkg::url;
+use web::http;
+use web::http::Request;
+use web::url;
 
 static STALE: Atomic<i32> = Atomic::new(1);
 static ACTIVE: Atomic<i32> = Atomic::new(0);
@@ -320,12 +320,10 @@ pub fn query_v(query: str) -> str {
     ""
 }
 
-/// Where a non-canonical request path goes (url.rok), or none: `/a.html`,
-/// `/a/index`, `/a/` to `/a`; the docs root to `/latest`. A path with a
-/// backslash is never redirected (`/\host` would leave the site).
+/// Where a non-canonical request path goes (web's url::canonical), or
+/// none: `/a.html`, `/a/index`, `/a/` to `/a`; the docs root to `/latest`.
 pub fn redirect(path: str, docs: bool) -> str | none {
-    if path.contains("\\") { return none; }
-    let c = url::canon(path);
+    let c = url::canonical(path) ?? path;
     if docs && c == "/" { c = "/latest"; }
     if c == path { none } else { c }
 }
@@ -344,8 +342,7 @@ fn route(cfg: Cfg, r: Request) -> Resp {
     let docs = host == cfg.docs_host || host.starts_with("docs.");
     let root = cfg.data + "/out/" + if docs { "docs" } else { "www" };
     if let to: str = redirect(r.path, docs) {
-        let loc = if r.query.is_empty() { to } else { to + "?" + r.query };
-        return Resp { status: 301, headers: [f"Location: {loc}", "Cache-Control: public, max-age=3600"], body: "", file: "" };
+        return Resp { status: 301, headers: [url::moved(to, r.query), "Cache-Control: public, max-age=3600"], body: "", file: "" };
     }
     let p = r.path;
     // /0.1/... is the newest built 0.1.x.
@@ -356,10 +353,7 @@ fn route(cfg: Cfg, r: Request) -> Resp {
         }
     }
     // A page is <path>.html or <path>/index.html; anything else by its name.
-    if p != "/" {
-        if let g: str = http::static_file(root, p + ".html") { return page(g, r.query); }
-    }
-    if let f: str = http::static_file(root, p) { return page(f, r.query); }
+    if let f: str = http::page_file(root, p) { return page(f, r.query); }
     // A missing docs page under a version gets that version's 404 page.
     let nf = root + "/404.html";
     if docs {

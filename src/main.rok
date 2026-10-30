@@ -11,7 +11,7 @@
 //                   (each version directory has its own too);
 //                   latest/ is the newest release (versions.rokon) again
 //
-// Every link is written as a canonical root-relative address (url.rok),
+// Every link is written as a canonical root-relative address (web::url),
 // so each version directory, latest/ included, links within itself.
 //
 // Other version directories already in out/docs/ are kept, so a deploy
@@ -26,10 +26,8 @@
 mod apidoc;
 mod check;
 mod home;
-mod http;
 mod layout;
 mod serve;
-mod url;
 
 use rok::std::env;
 use rok::std::fs;
@@ -39,6 +37,8 @@ use rok::core::encoding;
 use rok::core::task::time::Instant;
 use markdown::Heading;
 use layout::{dir_of, rel};
+use web::kit;
+use web::url;
 
 #[derive(Rokon)]
 pub struct Site {
@@ -409,7 +409,7 @@ fn chars_of(s: str) -> List<char> {
 
 /// `html` of the page `out` under the site directory `base` (`/latest`,
 /// `""` for a site root) with every internal `href`, `src` and `data-root`
-/// as its canonical root-relative address (url.rok), and absolute links
+/// as its canonical root-relative address (web::url), and absolute links
 /// into either site canonical too (markdown autolinks bypass the link
 /// mappers). Pages are generated
 /// with relative links, so the link check and the archives stay
@@ -651,9 +651,11 @@ fn load_versions() throws -> Versions {
     try rokon::decode(try rokon::parse(try fs::read_to_str(path)), path)
 }
 
-/// The names under static/, without copying (for the link check).
+/// The names under static/ and of the kit's files, without copying (for
+/// the link check).
 fn static_names() throws -> Set<str> {
     let names: Set<str> = Set::new();
+    for f in kit::files(kit::Mark::Rok) { names.insert(f.name); }
     for entry in fs::walk("static") {
         let e = try entry.get();
         if e.is_file() { names.insert(e.path().as_str()["static/".len():]); }
@@ -661,9 +663,15 @@ fn static_names() throws -> Set<str> {
     names
 }
 
-/// Copies static/ into `dir`; the copied names.
+/// Writes the kit's files (web/, built in) and copies static/ into `dir`;
+/// the names written.
 fn copy_static(dir: str) throws -> Set<str> {
     let names: Set<str> = Set::new();
+    try fs::create_dir_all(dir);
+    for f in kit::files(kit::Mark::Rok) {
+        try fs::write(dir + "/" + f.name, f.data);
+        names.insert(f.name);
+    }
     for entry in fs::walk("static") {
         let e = try entry.get();
         if !e.is_file() { continue; }

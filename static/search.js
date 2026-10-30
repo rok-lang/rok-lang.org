@@ -84,46 +84,6 @@
   const tocM = document.querySelector(".toc-m");
   if (tocM) tocM.addEventListener("click", (e) => { if (e.target.closest("a")) tocM.open = false; });
 
-  // Theme: "light" or "dark" from the `theme` cookie, which every
-  // *.rok-lang.org site shares, else localStorage, else the system
-  // setting. The inline script in <head> sets the class before the first
-  // paint.
-  const html = document.documentElement;
-  const media = matchMedia("(prefers-color-scheme: dark)");
-  const stored = () => {
-    const m = document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/);
-    if (m) return m[1];
-    try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : "auto"; } catch { return "auto"; }
-  };
-  const ko = html.lang === "ko";
-  // One theme-color, the resolved --bg: the media-query pair would follow
-  // the system, not the chosen theme.
-  const tint = document.querySelector("meta[name=theme-color]");
-  const apply = () => {
-    const t = stored();
-    const dark = t === "dark" || (t === "auto" && media.matches);
-    html.classList.toggle("dk", dark);
-    html.classList.toggle("lt", !dark);
-    if (tint) tint.content = getComputedStyle(html).getPropertyValue("--bg").trim() || (dark ? "#090a0d" : "#fbfbfc");
-    for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", b.dataset.themeSet === t ? "true" : "false");
-    for (const b of document.querySelectorAll(".ib.theme")) {
-      b.setAttribute("aria-pressed", dark ? "true" : "false");
-      b.title = ko ? (dark ? "라이트 테마로 바꾸기" : "다크 테마로 바꾸기") : (dark ? "Switch to light theme" : "Switch to dark theme");
-    }
-  };
-  const setTheme = (t) => {
-    try { t === "auto" ? localStorage.removeItem("theme") : localStorage.setItem("theme", t); } catch {}
-    const where = (/(^|\.)rok-lang\.org$/.test(location.hostname) ? "; Domain=.rok-lang.org" : "") + "; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
-    document.cookie = t === "auto" ? `theme=${where}; Max-Age=0` : `theme=${t}${where}; Max-Age=31536000`;
-    apply();
-  };
-  apply();
-  media.addEventListener("change", apply);
-  // Back from another rok-lang.org site, maybe with another theme.
-  addEventListener("pageshow", apply);
-  for (const b of document.querySelectorAll("[data-theme-set]")) b.addEventListener("click", () => setTheme(b.dataset.themeSet));
-  for (const b of document.querySelectorAll(".ib.theme")) b.addEventListener("click", () => setTheme(html.classList.contains("dk") ? "light" : "dark"));
-
   // Copy buttons with their text in data-copy.
   for (const b of document.querySelectorAll("[data-copy]")) {
     const label = b.textContent;
@@ -527,9 +487,8 @@
 
   document.addEventListener("keydown", (ev) => {
     const typing = ev.target.closest && ev.target.closest("input, textarea, select");
-    // ev.code: Caps Lock and the Korean IME change ev.key.
-    if ((ev.key === "/" && !typing) || (ev.code === "KeyK" && (ev.metaKey || ev.ctrlKey))) { ev.preventDefault(); sbox.click(); q.focus(); }
-    else if (ev.key === "?" && !typing) { ev.preventDefault(); toggleHelp(); }
+    // `/`, Ctrl+K and Cmd+K are keys.js's.
+    if (ev.key === "?" && !typing) { ev.preventDefault(); toggleHelp(); }
     else if (ev.key === "Escape" && help) { closeHelp(); }
   });
   document.addEventListener("click", (ev) => {
