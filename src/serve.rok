@@ -302,7 +302,23 @@ pub struct Resp {
 
 fn text(status: i32, body: str) -> Resp { Resp { status: status, headers: ["Content-Type: text/plain; charset=utf-8", "Cache-Control: no-store"], body: body + "\n", file: "" } }
 
-fn page(f: str) -> Resp { Resp { status: 200, headers: [f"Content-Type: {http::content_type(f)}", "Cache-Control: public, max-age=300"], body: "", file: f } }
+fn page(f: str, query: str) -> Resp { Resp { status: 200, headers: [f"Content-Type: {http::content_type(f)}", "Cache-Control: " + cache_for(f, query)], body: "", file: f } }
+
+/// An og.png asked for by its current version (`?v=`, layout.rok) never
+/// changes: cache it for good. The bare or a stale address stays short.
+pub fn cache_for(f: str, query: str) -> str {
+    if !f.ends_with("/og.png") { return "public, max-age=300"; }
+    let v = query_v(query);
+    if !v.is_empty() && v == (try pkg::og_version(f) catch _ { "" }) { "public, max-age=31536000, immutable" } else { "public, max-age=3600" }
+}
+
+/// The `v` parameter of a query string, or "".
+pub fn query_v(query: str) -> str {
+    for kv in query.split("&") {
+        if let v: str = kv.strip_prefix("v=") { return v; }
+    }
+    ""
+}
 
 /// Where a non-canonical request path goes (url.rok), or none: `/a.html`,
 /// `/a/index`, `/a/` to `/a`; the docs root to `/latest`. A path with a
@@ -341,9 +357,9 @@ fn route(cfg: Cfg, r: Request) -> Resp {
     }
     // A page is <path>.html or <path>/index.html; anything else by its name.
     if p != "/" {
-        if let g: str = http::static_file(root, p + ".html") { return page(g); }
+        if let g: str = http::static_file(root, p + ".html") { return page(g, r.query); }
     }
-    if let f: str = http::static_file(root, p) { return page(f); }
+    if let f: str = http::static_file(root, p) { return page(f, r.query); }
     // A missing docs page under a version gets that version's 404 page.
     let nf = root + "/404.html";
     if docs {
@@ -424,5 +440,8 @@ fn redirects() {
     assert(to("/latest/learn/05-sum-types.html", true) == "/latest/learn/05-sum-types", ".html");
     assert(to("/0.1/learn/", true) == "/0.1/learn" && to("/0.1", true) == "-", "minor alias");
     assert(to("/download/", false) == "/download" && to("/rok.css", false) == "-", "www");
+    assert(query_v("v=abc") == "abc" && query_v("x=1&v=d") == "d" && query_v("vv=1") == "", "query v");
+    assert(cache_for("out/www/rok.css", "v=1") == "public, max-age=300", "not og");
+    assert(cache_for("out/www/og.png", "") == "public, max-age=3600", "bare og");
     assert(to("//evil.example/", false) == "/evil.example" && to("/\\evil.example/", false) == "-", "off-site");
 }

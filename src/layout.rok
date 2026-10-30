@@ -326,8 +326,11 @@ const FONT_FILES: [str; 2] = ["https://fonts.gstatic.com/s/geist/v5/gyByhwUxId8g
 const PRETENDARD: str = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css";
 
 /// `<head>` from the charset to the icons. `root` leads to the icons and
-/// stylesheets, `url` is the canonical address, `img` the og:image.
+/// stylesheets, `url` is the canonical address, `img` the og:image,
+/// versioned by its content so a new image busts preview caches.
 fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: str) -> str {
+    let img = esc(if site.og.is_empty() { img } else { img + "?v=" + site.og });
+    let alt = esc(f"{site.title}: {site.tagline}");
     f"<meta charset=\"utf-8\">
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
 <title>{esc(full)}</title>
@@ -339,8 +342,14 @@ fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: 
 <meta property=\"og:title\" content=\"{esc(full)}\">
 <meta property=\"og:description\" content=\"{desc}\">
 <meta property=\"og:url\" content=\"{esc(url)}\">
-<meta property=\"og:image\" content=\"{esc(img)}\">
+<meta property=\"og:image\" content=\"{img}\">
+<meta property=\"og:image:type\" content=\"image/png\">
+<meta property=\"og:image:width\" content=\"{site.og_w}\">
+<meta property=\"og:image:height\" content=\"{site.og_h}\">
+<meta property=\"og:image:alt\" content=\"{alt}\">
 <meta name=\"twitter:card\" content=\"summary_large_image\">
+<meta name=\"twitter:image\" content=\"{img}\">
+<meta name=\"twitter:image:alt\" content=\"{alt}\">
 <meta name=\"theme-color\" content=\"#fbfbfc\" media=\"(prefers-color-scheme: light)\">
 <meta name=\"theme-color\" content=\"#0f1013\" media=\"(prefers-color-scheme: dark)\">
 <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">

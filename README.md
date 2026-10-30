@@ -49,6 +49,10 @@ python3 -m http.server -d public/docs 8403   # docs.rok-lang.org
 
 Deployment itself lives in a private repository.
 
+## Link previews
+
+og:image and twitter:image are `og.png?v=<first 10 hex digits of its SHA-256>`, taken from `static/og.png` at build time, so a new image is a new URL that every platform fetches afresh. `serve` caches `og.png` at its current `?v=` for a year (`immutable`), anything else for an hour. When only a page's text changes, the cached card stays: re-scrape it with the [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/), the [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) or Kakao's [sharing debugger](https://developers.kakao.com/tool/debugger/sharing) (clear the cache); X has no tool and refreshes in about 7 days.
+
 ## Configuration
 
 Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: `title`, `tagline`, `description`, `base_url`, `docs_url`, `docs`, `www`, `spec` / `spec_ko`, `packages`, `library`, `out`. `versions.rokon` lists released docs versions, newest first.

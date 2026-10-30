@@ -34,6 +34,8 @@ mod url;
 use rok::std::env;
 use rok::std::fs;
 use rok::std::rokon;
+use rok::core::crypto::HashAlgorithm;
+use rok::core::encoding;
 use rok::core::task::time::Instant;
 use markdown::Heading;
 use layout::{dir_of, rel};
@@ -83,6 +85,12 @@ pub struct Site {
     /// empty, no badges.
     pub built_from: str = "";
     pub history: List<Release> = List::new();
+    /// The og:image version: the first 10 hex digits of static/og.png's
+    /// SHA-256, set on load. A new image is a new URL, so link previews
+    /// refetch it. Its pixel size comes from the same file.
+    pub og: str = "";
+    pub og_w: i64 = 0i64;
+    pub og_h: i64 = 0i64;
 }
 
 /// A release and its standard library sources.
@@ -557,7 +565,25 @@ fn load_site() throws -> Site {
             }
         }
     }
-    try rokon::decode(base, "site.rokon")
+    let site: Site = try rokon::decode(base, "site.rokon");
+    site.og = try og_version("static/og.png");
+    let (w, h) = try png_size("static/og.png");
+    site.og_w = w;
+    site.og_h = h;
+    site
+}
+
+/// Width and height from a PNG's IHDR chunk.
+fn png_size(path: str) throws -> (i64, i64) {
+    let b = try fs::read(path);
+    if b.len() < 24 { throw ValueError { msg: f"{path}: not a PNG" }; }
+    let be = |k: usize| ((b[k] as i64) << 24) | ((b[k + 1] as i64) << 16) | ((b[k + 2] as i64) << 8) | (b[k + 3] as i64);
+    (be(16), be(20))
+}
+
+/// The first 10 hex digits of the SHA-256 of the file at `path`.
+pub fn og_version(path: str) throws -> str {
+    encoding::hex_encode(HashAlgorithm::Sha256.digest(try fs::read(path)))[:10]
 }
 
 fn sitemap(urls: List<str>) -> str {
