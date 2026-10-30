@@ -22,6 +22,8 @@
 //                                on a broken link or a failing block
 //   rok run -- code [filter]     only run the code blocks (of pages whose
 //                                path contains `filter`)
+//   rok run -- home              rewrite home/<name>.out, what `rok run`
+//                                prints for the landing page's programs
 
 mod apidoc;
 mod check;
@@ -31,12 +33,14 @@ mod serve;
 
 use rok::std::env;
 use rok::std::fs;
+use rok::std::process::{Command, Stdio};
 use rok::std::rokon;
 use rok::core::crypto::HashAlgorithm;
 use rok::core::encoding;
 use rok::core::task::time::Instant;
 use markdown::Heading;
 use layout::{dir_of, rel};
+use web::chrome;
 use web::kit;
 use web::url;
 
@@ -91,6 +95,12 @@ pub struct Site {
     pub og: str = "";
     pub og_w: i64 = 0i64;
     pub og_h: i64 = 0i64;
+    /// The docs pages' own link preview cards (static/og/<name>.png, see
+    /// layout::og_name), each with its `?v=` version.
+    pub og_cards: Dict<str, str> = Dict::new();
+    /// The docs being wrapped have no error code pages (releases before
+    /// they were written): no Error codes section in the chrome.
+    pub no_errors: bool = false;
 }
 
 /// A release and its standard library sources.
@@ -118,6 +128,8 @@ pub struct Page {
     pub title: str;
     pub html: str;
     pub heads: List<Heading>;
+    /// Search notes of headings by id: `kind\tsummary` (API items).
+    pub notes: Dict<str, str> = Dict::new();
 }
 
 /// A doc page's content and navigation without any chrome: enough for the
@@ -132,8 +144,15 @@ pub struct Frag {
     pub pager: str;
     /// "On this page" items, or `""`.
     pub toc: str = "";
-    /// An hreflang `<link>` block to splice before `</head>`, or `""`.
+    /// hreflang `<link>`s for `<head>`, or `""`.
     pub head: str;
+    /// The page in the other language, from the version root, or `""`.
+    pub alt: str = "";
+    /// This page's heading ids paired with those of `alt` (search.js
+    /// carries the reader's section over).
+    pub sec: str = "";
+    /// A Korean page still in English: kept out of search engines.
+    pub noindex: bool = false;
 }
 
 /// One released version's docs as fragments, plus its search index.
@@ -142,13 +161,14 @@ pub struct Bundle {
     pub version: str;
     pub pages: List<Frag>;
     pub search: str;
+    /// The Korean pages' search index.
+    pub search_ko: str = "";
 }
 
 /// Final HTML of a doc page: the current chrome around `f`'s content.
 /// `latest` holds the pages of the newest release.
 fn wrap(site: Site, f: Frag, latest: Set<str>) -> str {
-    let html = layout::page(site, f.out, f.title, f.side, f.toc, f.body, f.pager, layout::ver_banner(site, layout::root_of(f.out), f.out, latest.contains(f.out)));
-    if f.head.is_empty() { html } else { html.replace("</head>", f.head) }
+    layout::page(site, f, layout::ver_banner(site, layout::root_of(f.out), f.out, latest.contains(f.out)))
 }
 
 /// `a/./b/../c` -> `a/c`; leading `..` kept.
@@ -272,22 +292,13 @@ fn sec_map(a: List<Heading>, b: List<Heading>) -> str {
     out.to_str()
 }
 
-/// EN / Korean switch for spec page `p`, linking to the same page of the
-/// other edition (`others`); search.js carries the reader's section over.
-fn lang_switch(p: Page, others: List<Page>, ko: bool) -> str {
-    if others.len() == 0 { return ""; }
-    let q = others[0];
-    let sec = "";
+/// The other edition's page of `p` among `others` (the same source), with
+/// the heading pairs for search.js; `("", "")` if it has none.
+fn twin(p: Page, others: List<Page>) -> (str, str) {
     for o in others {
-        if o.src == p.src {
-            q = o;
-            sec = sec_map(p.heads, o.heads);
-        }
+        if o.src == p.src { return (o.out, sec_map(p.heads, o.heads)); }
     }
-    let href = rel(p.out, q.out);
-    let en = if ko { f"<a href=\"{href}\" hreflang=\"en\" lang=\"en\">EN</a>" } else { "<span aria-current=\"true\">EN</span>" };
-    let kr = if ko { "<span aria-current=\"true\">한국어</span>" } else { f"<a href=\"{href}\" hreflang=\"ko\" lang=\"ko\">한국어</a>" };
-    f"<nav class=\"lang-switch\" aria-label=\"Language\" data-sec=\"{markdown::esc(sec)}\">{en}<span aria-hidden=\"true\"> · </span>{kr}</nav>\n"
+    ("", "")
 }
 
 /// The edit link of spec page `p` of the edition in `spec`.
@@ -295,9 +306,10 @@ fn spec_edit(site: Site, spec: str, p: Page) -> str {
     layout::edit_link(f"{site.spec_repo}/blob/{site.spec_branch}/{last_seg(spec)}/{p.src}", p.out.starts_with("ko/"))
 }
 
-/// The edit link of docs page `p` (docs/).
-fn docs_edit(site: Site, p: Page) -> str {
-    layout::edit_link(f"{site.repo}/blob/{docs_branch(site)}/{p.src.replace("README.md", "index.md")}", false)
+/// The edit link of docs page `p` (docs/), whose source is under `dir`
+/// (`""`, or `ko/` for a Korean page).
+fn docs_edit(site: Site, p: Page, dir: str) -> str {
+    layout::edit_link(f"{site.repo}/blob/{docs_branch(site)}/{dir}{p.src.replace("README.md", "index.md")}", dir == "ko/")
 }
 
 fn spec_root(dir: str) -> str {
@@ -463,15 +475,20 @@ fn site_hrefs(site: Site, html: str, base: str, out: str) -> str {
 /// The pages of one version directory `dir` (`latest`, `0.1.0`, `dev`)
 /// under `docs_root`, linking within it, with its 404 page, search index
 /// and static files; the static names.
-fn write_version(site: Site, docs_root: str, dir: str, files: Dict<str, str>, search: str) throws -> Set<str> {
+fn write_version(site: Site, docs_root: str, dir: str, files: Dict<str, str>, search: str, search_ko: str) throws -> Set<str> {
     let vdir = docs_root + "/" + dir;
     if fs::exists(vdir) { try fs::remove_dir_all(vdir); }
     let base = "/" + dir;
     for out in files.keys() { try write(vdir, out, site_hrefs(site, files[out], base, out)); }
-    try write(vdir, "404.html", site_hrefs(site, layout::not_found_page(site, dir), base, "404.html"));
+    try write(vdir, "404.html", site_hrefs(site, layout::not_found_page(site, dir, false), base, "404.html"));
+    try write(vdir, "ko/404.html", site_hrefs(site, layout::not_found_page(site, dir, true), base, "ko/404.html"));
     try write(vdir, "search-index.json", search);
     let statics = try copy_static(vdir);
     statics.insert("search-index.json");
+    if !search_ko.is_empty() {
+        try write(vdir, "ko/search-index.json", search_ko);
+        statics.insert("ko/search-index.json");
+    }
     statics
 }
 
@@ -543,7 +560,7 @@ fn page_sources(root: str) throws -> List<str> {
     for entry in fs::walk(root) {
         let e = try entry.get();
         let p = e.path().as_str()[root.len() + 1:];
-        if !e.is_file() || !p.ends_with(".md") || p.starts_with(".") { continue; }
+        if !e.is_file() || !p.ends_with(".md") || p.starts_with(".") || p.starts_with("ko/") { continue; }
         if p == "README.md" || p == "CODE_OF_CONDUCT.md" || p == "SECURITY.md" || p == "CONTRIBUTING.md" { continue; }
         srcs.push(p);
     }
@@ -553,11 +570,41 @@ fn page_sources(root: str) throws -> List<str> {
     srcs
 }
 
+/// What `rok run` prints for the landing page's program home/<name>/.
+fn home_run(name: str) throws -> str {
+    let rok = try env::var("ROK") catch _ { "rok" };
+    let dir = f"home/{name}";
+    let out = try Command::new(rok).args(["run"]).current_dir(dir).stdin(Stdio::Null).output();
+    if fs::exists(dir + "/target") { try fs::remove_dir_all(dir + "/target"); }
+    let text = ((try? str::from_utf8(out.stderr)) ?? "") + ((try? str::from_utf8(out.stdout)) ?? "");
+    text.trim_end() + "\n"
+}
+
+/// The landing page's programs whose checked-in output (home/<name>.out)
+/// is no longer what `rok run` prints; with `write`, rewritten instead.
+fn home_check(write: bool) throws -> List<str> {
+    let bad: List<str> = List::new();
+    for smp in home::SAMPLES {
+        let got = try home_run(smp.name);
+        if got == smp.out { continue; }
+        if write {
+            try fs::write(f"home/{smp.name}.out", got);
+            println(f"home/{smp.name}.out rewritten");
+        } else {
+            bad.push(f"home/{smp.name}.out differs from what `rok run` prints now; rerun `rok run -- home` and rebuild:\n{got}");
+        }
+    }
+    bad
+}
+
 fn code_check(filter: str) throws -> List<str> {
     let snips: List<check::Snippet> = List::new();
     let paths: List<str> = List::new();
     let site = try load_site();
     for src in try page_sources(site.docs) { paths.push(site.docs + "/" + src); }
+    if fs::exists(site.docs + "/ko") {
+        for src in try page_sources(site.docs + "/ko") { paths.push(site.docs + "/ko/" + src); }
+    }
     paths.push(site.www + "/index.md");
     paths.push(site.www + "/download.md");
     for page in paths {
@@ -595,6 +642,13 @@ fn load_site() throws -> Site {
     let (w, h) = try png_size("static/og.png");
     site.og_w = w;
     site.og_h = h;
+    if fs::exists("static/og") {
+        for entry in try fs::read_dir("static/og") {
+            let e = try entry.get();
+            let name = e.file_name();
+            if name.ends_with(".png") { site.og_cards.insert(name, try og_version("static/og/" + name)); }
+        }
+    }
     site
 }
 
@@ -621,7 +675,7 @@ fn sitemap(urls: List<str>) -> str {
 
 /// For the "Added in" badges: each API item and member that the first
 /// release of `site.history` lacks, mapped to the release that added it.
-fn added_in(site: Site, mods: List<apidoc::Module>) throws -> Dict<str, str> {
+fn added_in(site: Site, mods: List<web::apidoc::Module>) throws -> Dict<str, str> {
     let since: Dict<str, str> = Dict::new();
     if site.history.len() == 0 || site.built_from.is_empty() { return since; }
     let seen = apidoc::keys(try apidoc::collect(site.history[0].library));
@@ -708,11 +762,347 @@ fn usage() {
     env::exit(2);
 }
 
+/// The size of each asset of release `r` on GitHub, by file name, from
+/// the release API; empty when it cannot be read (offline, rate limit).
+fn release_sizes(r: str) -> Dict<str, i64> {
+    let sizes: Dict<str, i64> = Dict::new();
+    let out = try Command::new("curl").args(["-fsSL", "--max-time", "15", "-H", "Accept: application/vnd.github+json", f"https://api.github.com/repos/rok-lang/rok/releases/tags/v{r}"]).stdin(Stdio::Null).output() catch _ { return sizes; };
+    if !out.status.success() { return sizes; }
+    let text = (try? str::from_utf8(out.stdout)) ?? "";
+    // Each asset object has "name" before "size"; the uploader's object
+    // in between has neither.
+    let at = text.find("\"assets\":") ?? text.len();
+    loop {
+        let (name, k) = between(text, at, "\"name\": \"", "\"") ?? break;
+        at = k;
+        let (num, k2) = between(text, at, "\"size\": ", ",") ?? break;
+        if let n: i64 = try? num.trim().parse::<i64>() {
+            sizes.insert(name, n);
+            at = k2;
+        }
+    }
+    sizes
+}
+
+/// `42034164` -> `42 MB`.
+pub fn mb(n: i64) -> str { f"{(n + 500000i64) / 1000000i64} MB" }
+
+/// The download page as served: each archive link followed by its size
+/// (`sizes`), each system's row marked with its os, architecture and libc
+/// for search.js.
+fn download_page(html: str, sizes: Dict<str, i64>) -> str {
+    let h = html;
+    for (name, n) in sizes.entries() {
+        if name.ends_with(".sha256") { continue; }
+        let pat = f"/{name}\">";
+        let k = h.find(pat) ?? continue;
+        let e = (h[k:].find("</a>") ?? continue) + k + 4;
+        h = h[:e] + f"<span class=\"sz\">{mb(n)}</span>" + h[e:];
+    }
+    let out = StrBuf::new();
+    let rest = h;
+    let open = "<div class=\"dl-os\">";
+    loop {
+        let k = rest.find(open) ?? rest.len();
+        out.push_str(rest[:k]);
+        if k == rest.len() { break; }
+        rest = rest[k + open.len():];
+        let triple = if let (t, _): (str, usize) = between(rest, 0, "<code>", "</code>") { t } else { "" };
+        out.push_str(f"<div class=\"dl-os\"{os_attrs(triple)}>");
+    }
+    out.to_str()
+}
+
+/// ` data-os="linux" data-arch="aarch64" data-libc="gnu"` for a triple.
+pub fn os_attrs(triple: str) -> str {
+    let os = if triple.contains("apple-darwin") { "macos" } else if triple.contains("windows") { "windows" } else if triple.contains("linux") { "linux" } else { "" };
+    if os.is_empty() { return ""; }
+    let arch = (triple.split_once("-") ?? (triple, "")).0;
+    let libc = if triple.ends_with("-musl") { "musl" } else if triple.ends_with("-gnu") { "gnu" } else { "" };
+    f" data-os=\"{os}\" data-arch=\"{arch}\" data-libc=\"{libc}\""
+}
+
+/// The first sentence of `s`.
+fn first_sentence(s: str) -> str {
+    let k = s.find(". ") ?? s.len();
+    if k < s.len() { s[:k + 1] } else { s }
+}
+
+/// The cards of the pages that have one (layout::has_card), as JSON for
+/// og/cards.mjs: file, section, title, first sentence, language.
+fn og_manifest(frags: Dict<str, Frag>) -> str {
+    let outs: List<str> = List::new();
+    for o in frags.keys() {
+        if layout::has_card(o) && !frags[o].noindex { outs.push(o); }
+    }
+    outs.sort();
+    let b = StrBuf::new();
+    b.push_str("[\n");
+    for k in 0..outs.len() {
+        let f = frags[outs[k]];
+        let ko = f.out.starts_with("ko/");
+        let at = if ko { f.out["ko/".len():] } else { f.out };
+        let (_, en, kr, _) = layout::section(at);
+        let (no, rest) = layout::split_no(f.title);
+        let index = f.out.ends_with("/index.html");
+        let sec = if index { layout::tr(ko, "Docs", "문서") } else { layout::tr(ko, en, kr) + if no.is_empty() { "" } else { layout::tr(ko, " / Chapter " + no, " / " + no + "장") } };
+        let sentence = first_sentence(layout::lead_text(f.body));
+        let comma = if k + 1 < outs.len() { "," } else { "" };
+        b.push_str(f"{{\"file\": {json_str(layout::og_name(f.out))}, \"section\": {json_str(sec)}, \"title\": {json_str(rest)}, \"sentence\": {json_str(sentence)}, \"lang\": \"{if ko { "ko" } else { "en" }}\"}}{comma}\n");
+    }
+    b.push_str("]\n");
+    b.to_str()
+}
+
+/// hreflang links between a page's English and Korean editions.
+fn hreflang(site: Site, en: str, ko: str) -> str {
+    let e = markdown::esc(layout::latest(site, en));
+    f"<link rel=\"alternate\" hreflang=\"en\" href=\"{e}\">\n<link rel=\"alternate\" hreflang=\"ko\" href=\"{markdown::esc(layout::latest(site, ko))}\">\n<link rel=\"alternate\" hreflang=\"x-default\" href=\"{e}\">\n"
+}
+
+/// The text between `a` and the next `b` in `s` after `from`, and the
+/// index after `b`; none without them.
+fn between(s: str, from: usize, a: str, b: str) -> (str, usize) | none {
+    let i = (s[from:].find(a) ?? return none) + from + a.len();
+    let j = (s[i:].find(b) ?? return none) + i;
+    (s[i:j], j + b.len())
+}
+
+/// The docs home (docs/index.md, raw HTML) as this site shows it: its
+/// install command in the landing page's command box, its section cards
+/// as one plain list in header order, each section by its one name.
+fn docs_home(html: str, ko: bool) -> str {
+    let h = html;
+    // The block layout::md made of it: `<div class="code cb">...</div></div>`.
+    let i = h.find("<div class=\"install\">") ?? h.len();
+    if let (cmd, _): (str, usize) = between(h, i, "<pre><code", "</code></pre>") {
+        let a = (h[i:].find("<div class=\"code cb") ?? 0) + i;
+        let e = (h[a:].find("</div></div>") ?? 0) + a + "</div></div>".len();
+        let text = markdown::strip_tags(cmd[(cmd.find(">") ?? 0) + 1:]).replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'");
+        if a > i && e > a { h = h[:a] + f"<div class=\"line mono\"><code>{markdown::esc(text)}</code>{chrome::copy_button(text, ko)}</div>" + h[e:]; }
+    }
+    let a = h.find("<div class=\"cards\">") ?? return h;
+    let e = (h[a:].find("</div>") ?? return h) + a;
+    let cards = h[a:e];
+    // (order, name, href, text)
+    let rows: List<(usize, str, str, str)> = List::new();
+    let at = 0usize;
+    loop {
+        let (href, k) = between(cards, at, "<a class=\"card\" href=\"", "\"") ?? break;
+        let (title, k2) = between(cards, k, "<h3>", "</h3>") ?? break;
+        let (text, k3) = between(cards, k2, "<p>", "</p>") ?? break;
+        at = k3;
+        let target = href.replace("../", "");
+        let (_, en, kr, index) = layout::section(target);
+        let order = 100usize;
+        for i in 0..layout::SECTIONS.len() {
+            if layout::SECTIONS[i].3 == target { order = i * 2; }
+        }
+        if target == "spec/refs-standard-libraries/index.html" { order = 7; }
+        let name = if index == target { layout::tr(ko, en, kr) } else { markdown::strip_tags(title) };
+        rows.push((order, name, href, text));
+    }
+    if rows.len() == 0 { return h; }
+    rows.sort_by(|x, y| x.0.cmp(y.0));
+    let list = StrBuf::new();
+    list.push_str("<dl class=\"sections\">");
+    for (_, name, href, text) in rows { list.push_str(f"<dt><a href=\"{href}\">{name}</a></dt><dd>{text}</dd>"); }
+    list.push_str("</dl>");
+    h[:a] + list.to_str() + h[e + "</div>".len():]
+}
+
+/// `html` of page `out` with each `error[E...]` / `warning[E...]` inside a
+/// `<pre>` linked to its page (the Korean one on a Korean page), for the
+/// codes in `codes`.
+fn link_codes(html: str, out: str, codes: Set<str>) -> str {
+    if codes.len() == 0 || !html.contains("[E") { return html; }
+    let pre = if out.starts_with("ko/") { "ko/" } else { "" };
+    let res = StrBuf::new();
+    let rest = html;
+    loop {
+        let a = rest.find("<pre") ?? rest.len();
+        res.push_str(rest[:a]);
+        rest = rest[a:];
+        if rest.is_empty() { break; }
+        let b = if let e: usize = rest.find("</pre>") { e + 6 } else { rest.len() };
+        res.push_str(link_codes_in(rest[:b], |c| if codes.contains(c) && out != pre + "errors/" + c + ".html" { rel(out, pre + "errors/" + c + ".html") } else { "" }));
+        rest = rest[b:];
+    }
+    res.to_str()
+}
+
+/// `s` with each `error[E...]` / `warning[E...]` whose code `to` maps to
+/// an href linked there.
+pub fn link_codes_in(s: str, to: fn(str) -> str) -> str {
+    let res = StrBuf::new();
+    let rest = s;
+    loop {
+        let k = rest.find("[E") ?? rest.len();
+        if k == rest.len() {
+            res.push_str(rest);
+            break;
+        }
+        let w = if rest[:k].ends_with("error") { 5usize } else if rest[:k].ends_with("warning") { 7usize } else { 0usize };
+        let close = rest[k:].find("]") ?? 0;
+        let code = if close > 2 && close < 8 { rest[k + 1:k + close] } else { "" };
+        let href = if w == 0 || code.is_empty() { "" } else { to(code) };
+        if href.is_empty() {
+            res.push_str(rest[:k + 2]);
+            rest = rest[k + 2:];
+            continue;
+        }
+        res.push_str(rest[:k - w]);
+        res.push_str(f"<a class=\"ecode\" href=\"{href}\">{rest[k - w:k + close + 1]}</a>");
+        rest = rest[k + close + 1:];
+    }
+    res.to_str()
+}
+
+/// `html` of Korean page `out` with links to Korean pages that do not
+/// exist (`outs` has them all), such as the API's or the logo, or to a
+/// section a Korean page does not have (`ids`: each page's ids), pointed
+/// at the English ones.
+fn ko_links(html: str, out: str, outs: Set<str>, ids: Dict<str, Set<str>>) -> str {
+    ko_attr(ko_attr(html, out, outs, ids, " href=\""), out, outs, ids, " src=\"")
+}
+
+fn ko_attr(html: str, out: str, outs: Set<str>, ids: Dict<str, Set<str>>, pat: str) -> str {
+    let res = StrBuf::new();
+    let rest = html;
+    loop {
+        let k = rest.find(pat) ?? rest.len();
+        if k == rest.len() {
+            res.push_str(rest);
+            break;
+        }
+        res.push_str(rest[:k + pat.len()]);
+        rest = rest[k + pat.len():];
+        let e = rest.find("\"") ?? rest.len();
+        let v = rest[:e];
+        rest = rest[e:];
+        if v.contains("://") || v.starts_with("#") || v.starts_with("mailto:") || v.is_empty() {
+            res.push_str(v);
+            continue;
+        }
+        let (path, frag) = if let i: usize = v.find("#") { (v[:i], v[i:]) } else { (v, "") };
+        let target = norm(join(dir_of(out), path));
+        let plain = target.strip_prefix("ko/") ?? "";
+        // A section of the English text (an untranslated page's link) that
+        // the Korean page names otherwise: the English page.
+        let id = if frag.len() > 1 { frag[1:] } else { "" };
+        let lacks = !id.is_empty() && !((ids.get(target) ?? Set::new()).contains(id)) && (ids.get(plain) ?? Set::new()).contains(id);
+        if !plain.is_empty() && ((!outs.contains(target) && (outs.contains(plain) || !plain.ends_with(".html"))) || lacks) {
+            res.push_str(rel(out, plain) + frag);
+        } else {
+            res.push_str(v);
+        }
+    }
+    res.to_str()
+}
+
+/// The standard library spec's numbered sections: `2.9.2` -> its page and
+/// anchor (`spec/refs-standard-libraries/.../209-collections.html#292-list`).
+fn spec_sections(pages: List<Page>) -> Dict<str, str> {
+    let out: Dict<str, str> = Dict::new();
+    for p in pages {
+        if !p.src.starts_with("refs-standard-libraries/") { continue; }
+        for h in p.heads {
+            let n = sec_no(h.text).trim_end_matches(".");
+            if !n.is_empty() && !out.contains_key(n) { out.insert(n, if h.level == 1 { p.out } else { p.out + "#" + h.id }); }
+        }
+    }
+    out
+}
+
+/// The first paragraph after each `##` / `###` heading of `html`, as
+/// plain text cut to a search excerpt, by heading id.
+fn section_leads(html: str) -> Dict<str, str> {
+    let out: Dict<str, str> = Dict::new();
+    let at = 0usize;
+    loop {
+        let k = html[at:].find(" id=\"") ?? break;
+        let i = at + k;
+        at = i + 5;
+        if i < 3 || !(html[i - 3:i] == "<h2" || html[i - 3:i] == "<h3") { continue; }
+        let id = html[at:at + (html[at:].find("\"") ?? 0)];
+        let close = (html[at:].find("</h") ?? continue) + at;
+        let next_h = (html[close + 3:].find("<h") ?? html.len()) + close + 3;
+        if let (para, _): (str, usize) = between(html, close, "<p>", "</p>") {
+            let pos = (html[close:].find("<p>") ?? 0) + close;
+            if pos < next_h { out.insert(id, clip_text(markdown::strip_tags(para).replace("\n", " ").trim(), 110)); }
+        }
+    }
+    out
+}
+
+fn clip_text(s: str, n: usize) -> str {
+    if s.char_count() <= n { return s; }
+    let out = StrBuf::new();
+    let k = 0usize;
+    for c in s.chars() {
+        if k == n { break; }
+        out.push(c);
+        k += 1;
+    }
+    out.to_str().trim_end() + "…"
+}
+
+/// The search index of one language: {"p": [[title, url, excerpt]], "h":
+/// [[page, text, id, named, kind, excerpt]]}. A url is the page's
+/// canonical address in its version (`learn/05-sum-types`); `named` is 1
+/// when many pages share the heading (`Code`), so results name its page;
+/// `kind` is the API item's (`fn`, `method`, `struct` ..) or `""`.
+fn search_index(groups: [List<Page>; 3]) -> str {
+    let seen: Dict<str, usize> = Dict::new();
+    for group in groups {
+        for p in group {
+            for h in p.heads { seen.insert(h.text, (seen.get(h.text) ?? 0usize) + 1); }
+        }
+    }
+    let pl = StrBuf::new();
+    let hl = StrBuf::new();
+    let n = 0usize;
+    for group in groups {
+        for p in group {
+            if p.out == "index.html" || p.out == "ko/index.html" { continue; }
+            if n > 0 { pl.push_str(",\n"); }
+            let lead = clip_text(layout::lead_text(p.html), 110);
+            pl.push_str(f"[{json_str(p.title)},{json_str(url::canon(p.out))},{json_str(lead)}]");
+            let leads: Dict<str, str> = if p.html.is_empty() { Dict::new() } else { section_leads(p.html) };
+            for h in p.heads {
+                if h.level != 2 && h.level != 3 { continue; }
+                let (kind, note) = (p.notes.get(h.id) ?? "\t").split_once("\t") ?? ("", "");
+                let text = if kind.is_empty() { h.text } else { api_name(h.text, kind) };
+                let named = if kind.is_empty() && (seen.get(h.text) ?? 0usize) >= 4 { 1 } else { 0 };
+                let ex = if kind.is_empty() { leads.get(h.id) ?? "" } else { note };
+                if !hl.is_empty() { hl.push_str(",\n"); }
+                hl.push_str(f"[{n},{json_str(text)},{json_str(h.id)},{named},{json_str(kind)},{json_str(ex)}]");
+            }
+            n += 1;
+        }
+    }
+    f"{{\"p\":[\n{pl.to_str()}],\n\"h\":[\n{hl.to_str()}]}}\n"
+}
+
+/// An API heading's search name: `rok::core::collections::list::List::push`
+/// -> `List::push` for a member, `List` for an item.
+fn api_name(text: str, kind: str) -> str {
+    let parts: List<str> = List::new();
+    for x in text.split("::") { parts.push(x); }
+    if parts.len() >= 2 && (kind == "method" || kind == "field" || kind == "variant" || kind == "assoc") { return parts[parts.len() - 2] + "::" + parts[parts.len() - 1]; }
+    if text.starts_with("impl ") { return text; }
+    parts[parts.len() - 1]
+}
+
 fn main() throws {
     let t0 = Instant::now();
     let args = env::args();
     if args.len() > 1 && args[1] == "serve" {
         try serve::run();
+        return;
+    }
+    if args.len() > 1 && args[1] == "home" {
+        try home_check(true);
         return;
     }
     if args.len() > 1 && args[1] == "code" {
@@ -757,125 +1147,154 @@ fn main() throws {
     let pages = try spec_pages(site, spec_root(site.spec), "", false);
     let ko_pages: List<Page> = if site.spec_ko.is_empty() { List::new() } else { try spec_pages(site, spec_root(site.spec_ko), "ko/", true) };
 
-    let ko_outs: Set<str> = Set::new();
-    for p in ko_pages { ko_outs.insert(p.out); }
     // Each doc page as a chrome-less fragment, keyed by output path; the
     // current chrome is applied in `wrap`, so a released version's archived
     // fragments re-wrap with it too.
     let frags: Dict<str, Frag> = Dict::new();
-    for k in 0..pages.len() {
-        let p = pages[k];
-        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(pages, k), toc: layout::toc(p), body: lang_switch(p, ko_pages, false) + p.html + spec_edit(site, site.spec, p), pager: layout::pager(pages, k), head: "" });
-    }
-    for k in 0..ko_pages.len() {
-        let p = ko_pages[k];
-        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(ko_pages, k), toc: layout::toc(p), body: lang_switch(p, pages, true) + p.html + spec_edit(site, site.spec_ko, p), pager: layout::pager(ko_pages, k), head: "" });
-    }
-
-    // Each spec page names its other edition for search engines.
-    for p in pages {
-        let ko = "ko/" + p.out;
-        if !ko_outs.contains(ko) { continue; }
-        let alt = f"<link rel=\"alternate\" hreflang=\"en\" href=\"{markdown::esc(layout::latest(site, p.out))}\">\n<link rel=\"alternate\" hreflang=\"ko\" href=\"{markdown::esc(layout::latest(site, ko))}\">\n</head>";
-        let fe = frags[p.out];
-        fe.head = alt;
-        frags.insert(p.out, fe);
-        let fk = frags[ko];
-        fk.head = alt;
-        frags.insert(ko, fk);
+    for (eds, others, spec, ko) in [(pages, ko_pages, site.spec, false), (ko_pages, pages, site.spec_ko, true)] {
+        for k in 0..eds.len() {
+            let p = eds[k];
+            let (alt, sec) = twin(p, others);
+            // Each spec page names its other edition for search engines.
+            let head = if alt.is_empty() { "" } else { hreflang(site, if ko { alt } else { p.out }, if ko { p.out } else { alt }) };
+            frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(eds, k), toc: layout::toc(p), body: p.html + spec_edit(site, spec, p), pager: layout::pager(eds, k, ko), head: head, alt: alt, sec: sec });
+        }
     }
 
     // The docs' own pages: `docs/x.md` -> `x.html`; a directory
-    // (`docs/learn/`) is a chapter with its own sidebar and pager.
+    // (`docs/learn/`) is a chapter with its own sidebar and pager. The
+    // Korean ones mirror them under `ko/`: a page not translated yet is
+    // its English text under a note.
     let own: List<Page> = List::new();
     for src in try page_sources(site.docs) {
         let doc = layout::md(try fs::read_to_str(site.docs + "/" + src), |h| h, false);
         let key = src.replace("index.md", "README.md");
         own.push(Page { src: key, out: src.replace(".md", ".html"), dir: dir_of(src), title: doc.title, html: doc.html, heads: doc.headings });
     }
-    for k in 0..own.len() {
-        let p = own[k];
-        if p.dir.is_empty() {
-            let side = if p.out == "index.html" { "" } else { layout::page_toc(p) };
-            let toc = if p.out == "index.html" { "" } else { layout::toc(p) };
-            frags.insert(p.out, Frag { out: p.out, title: p.title, side: side, toc: toc, body: p.html + docs_edit(site, p), pager: "", head: "" });
-            continue;
+    let ko_dir = site.docs + "/ko";
+    let ko_own: List<Page> = List::new();
+    let translated: Set<str> = Set::new();
+    for p in own {
+        let file = ko_dir + "/" + p.src.replace("README.md", "index.md");
+        if fs::exists(file) {
+            let doc = layout::md(try fs::read_to_str(file), |h| h, true);
+            ko_own.push(Page { src: p.src, out: "ko/" + p.out, dir: p.dir, title: if doc.title.is_empty() { p.title } else { doc.title }, html: doc.html, heads: doc.headings });
+            translated.insert("ko/" + p.out);
+        } else {
+            let note = "<p class=\"tr-note\">이 페이지는 아직 번역되지 않았습니다. 영어 원문을 그대로 보여 줍니다.</p>\n";
+            ko_own.push(Page { src: p.src, out: "ko/" + p.out, dir: p.dir, title: p.title, html: note + "<div lang=\"en\">\n" + p.html + "</div>\n", heads: p.heads });
         }
-        let group: List<Page> = List::new();
-        let at = 0usize;
-        for q in own {
-            if q.dir == p.dir {
-                if q.out == p.out { at = group.len(); }
-                group.push(q);
+    }
+    if fs::exists(ko_dir) {
+        for src in try page_sources(ko_dir) {
+            if !fs::exists(site.docs + "/" + src) { eprintln(f"note: docs/ko/{src} has no English page, so it is not built"); }
+        }
+    }
+    for (group_all, others, ko) in [(own, ko_own, false), (ko_own, own, true)] {
+        for k in 0..group_all.len() {
+            let p = group_all[k];
+            let (alt, sec) = twin(p, others);
+            let real = !ko || translated.contains(p.out);
+            let alt_real = ko || translated.contains(alt);
+            let head = if real && alt_real && !alt.is_empty() { hreflang(site, if ko { alt } else { p.out }, if ko { p.out } else { alt }) } else { "" };
+            let edit = docs_edit(site, p, if ko && real { "ko/" } else { "" });
+            if p.dir.is_empty() {
+                let side = if p.src == "README.md" { "" } else { layout::page_toc(p) };
+                let toc = if p.src == "README.md" { "" } else { layout::toc(p) };
+                let body = if p.src == "README.md" { docs_home(p.html, ko) } else { p.html };
+                frags.insert(p.out, Frag { out: p.out, title: p.title, side: side, toc: toc, body: body + edit, pager: "", head: head, alt: alt, sec: sec, noindex: !real });
+                continue;
             }
+            let group: List<Page> = List::new();
+            let at = 0usize;
+            for q in group_all {
+                if q.dir == p.dir {
+                    if q.out == p.out { at = group.len(); }
+                    group.push(q);
+                }
+            }
+            let html = if p.dir == "learn" { layout::chapter(p.html, p.title) } else { p.html };
+            // The errors index lists its codes itself.
+            let body = (if at == 0 && p.dir != "errors" { html + layout::contents(group) } else { html }) + edit;
+            frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(group, at), toc: layout::toc(p), body: body, pager: layout::pager(group, at, ko), head: head, alt: alt, sec: sec, noindex: !real });
         }
-        let html = if p.dir == "learn" { layout::chapter(p.html, p.title) } else { p.html };
-        let body = (if at == 0 { html + layout::contents(group) } else { html }) + docs_edit(site, p);
-        frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(group, at), toc: layout::toc(p), body: body, pager: layout::pager(group, at), head: "" });
     }
 
-    // Standard library API: `std/<tier>/<module>.html`.
+    // Standard library API: `std/<tier>/<module>.html`, English only.
     let api: List<Page> = List::new();
     let mods = try apidoc::collect(site.library);
     let since = try added_in(site, mods);
+    let spec_secs = spec_sections(pages);
+    let src_ref = if site.version == "dev" || site.built_from.is_empty() { "main" } else { "v" + site.built_from };
     for m in mods {
-        let (html, heads) = apidoc::body(m, mods, since);
+        let notes: Dict<str, str> = Dict::new();
+        let (html, heads) = apidoc::body(m, mods, since, notes, src_ref, spec_secs);
         frags.insert(m.out, Frag { out: m.out, title: m.path, side: apidoc::sidebar(m, mods, m.out), toc: apidoc::toc(heads), body: html, pager: "", head: "" });
-        for s in apidoc::subpages(m, since) {
+        for s in apidoc::subpages(m, since, src_ref) {
             frags.insert(s.out, Frag { out: s.out, title: s.title, side: apidoc::sidebar(m, mods, s.out), toc: apidoc::toc(s.heads), body: s.html, pager: "", head: "" });
-            api.push(Page { src: "", out: s.out, dir: "std", title: s.title, html: "", heads: s.heads });
+            api.push(Page { src: "", out: s.out, dir: "std", title: s.title, html: "", heads: s.heads, notes: s.notes });
         }
-        api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads });
+        api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads, notes: notes });
     }
     frags.insert("std/index.html", Frag { out: "std/index.html", title: "Standard library API", side: "", body: apidoc::index(mods), pager: "", head: "" });
 
-    // Search index: every page and its `##` / `###` sections (the
-    // English spec only).
-    // A heading many pages share ("Code", "Walkthrough") is named by its
-    // page in the results.
-    let seen: Dict<str, usize> = Dict::new();
-    for group in [own, pages, api] {
-        for p in group {
-            for h in p.heads { seen.insert(h.text, (seen.get(h.text) ?? 0usize) + 1); }
-        }
+    // Every `error[E...]` in a terminal or output block links to its page,
+    // and a Korean page's links into pages that exist only in English (the
+    // API, the logo) go there.
+    let codes: Set<str> = Set::new();
+    for p in own {
+        if p.dir == "errors" && p.src != "errors/README.md" { codes.insert(p.out["errors/".len():p.out.len() - ".html".len()]); }
     }
-    // Each page is written once: {"p": [[title, url]], "h": [[page,
-    // heading, id] or [page, heading, id, 1] when named by its page]};
-    // a url is the page's canonical address in its version (`learn`,
-    // `learn/05-sum-types`).
-    let pl = StrBuf::new();
-    let hl = StrBuf::new();
-    let n = 0usize;
-    for group in [own, pages, api] {
-        for p in group {
-            if p.out == "index.html" { continue; }
-            if n > 0 { pl.push_str(",\n"); }
-            pl.push_str(f"[{json_str(p.title)},{json_str(url::canon(p.out))}]");
-            for h in p.heads {
-                if h.level == 2 || h.level == 3 {
-                    let named = if (seen.get(h.text) ?? 0usize) >= 4 { ",1" } else { "" };
-                    if !hl.is_empty() { hl.push_str(",\n"); }
-                    hl.push_str(f"[{n},{json_str(h.text)},{json_str(h.id)}{named}]");
-                }
-            }
-            n += 1;
-        }
+    let outs: Set<str> = Set::new();
+    let ids: Dict<str, Set<str>> = Dict::new();
+    for o in frags.keys() {
+        outs.insert(o);
+        let set: Set<str> = Set::new();
+        for id in attr_values(chars_of(frags[o].body), "id") { set.insert(id); }
+        ids.insert(o, set);
     }
-    let idx = StrBuf::new();
-    idx.push_str(f"{{\"p\":[\n{pl.to_str()}],\n\"h\":[\n{hl.to_str()}]}}\n");
+    for o in outs {
+        let f = frags[o];
+        f.body = link_codes(f.body, o, codes);
+        if o.starts_with("ko/") {
+            f.body = ko_links(f.body, o, outs, ids);
+            f.side = ko_links(f.side, o, outs, ids);
+        }
+        frags.insert(o, f);
+    }
+
+    // A search index per language: every page, its `##` / `###` sections
+    // and the API's items and members.
+    let idx = search_index([own, pages, api]);
+    let idx_ko = search_index([ko_own, ko_pages, api]);
 
     // The newest release's pages, for the banner's link on other versions.
     let archive = try env::var("ROK_DOCS_ARCHIVE") catch _ { "" };
     let latest_outs: Set<str> = Set::new();
+    let latest_hidden: Set<str> = Set::new();
     if version == newest {
-        for o in frags.keys() { latest_outs.insert(o); }
+        for o in frags.keys() {
+            latest_outs.insert(o);
+            if frags[o].noindex { latest_hidden.insert(o); }
+        }
     } else if !archive.is_empty() && fs::exists(f"{archive}/{newest}/bundle.rokon") {
         let bpath = f"{archive}/{newest}/bundle.rokon";
         let b: Bundle = try rokon::decode(try rokon::parse(try fs::read_to_str(bpath)), bpath);
-        for f in b.pages { latest_outs.insert(f.out); }
+        for f in b.pages {
+            latest_outs.insert(f.out);
+            if f.noindex { latest_hidden.insert(f.out); }
+        }
     }
 
+    // The link preview cards these pages want (og/cards.mjs renders them
+    // into static/og/); a note when the rendered ones are out of date.
+    let cards = og_manifest(frags);
+    try write(out_root, "og-cards.json", cards);
+    let rendered = try fs::read_to_str("static/og/cards.json") catch _ { "" };
+    if rendered != cards { eprintln(f"note: the docs' link preview cards are out of date: cd og && node cards.mjs ../{out_root}/og-cards.json ../static/og"); }
+
     // This version's pages, with the current chrome.
+    site.no_errors = !frags.contains_key("errors/index.html");
     let files: Dict<str, str> = Dict::new();
     for out in frags.keys() { files.insert(out, wrap(site, frags[out], latest_outs)); }
 
@@ -891,7 +1310,7 @@ fn main() throws {
         outs.sort();
         let fl: List<Frag> = List::new();
         for o in outs { fl.push(frags[o]); }
-        try write(archive_out, "bundle.rokon", rokon::to_string(Bundle { version: version, pages: fl, search: idx.to_str() }));
+        try write(archive_out, "bundle.rokon", rokon::to_string(Bundle { version: version, pages: fl, search: idx, search_ko: idx_ko }));
         println(f"archived docs {version}: {fl.len()} pages → {archive_out}/bundle.rokon ({t0.elapsed():?})");
         return;
     }
@@ -907,23 +1326,29 @@ fn main() throws {
     }
     // `{release}` in its pages is the release the download page offers.
     let www_urls: List<str> = List::new();
+    // The home site links into latest/: an Error codes link only if the
+    // newest release's docs have them.
+    let docs_no_errors = site.no_errors;
+    if latest_outs.len() > 0 { site.no_errors = !latest_outs.contains("errors/index.html"); }
+    let sizes = release_sizes(site.release);
     for name in ["index", "download", "roadmap"] {
         let text = (try fs::read_to_str(f"{site.www}/{name}.md")).replace("{release}", site.release);
         let doc = layout::md(text, |h| if h.starts_with("docs:") { layout::latest(site, h["docs:".len():]) } else { h }, false);
         // Raw HTML blocks are not seen by the link mapper.
         let html = doc.html.replace("href=\"docs:", "href=\"" + layout::latest(site, "")).replace("href=\"play:", "href=\"" + site.playground + "/");
         let out = name + ".html";
-        let body = if name == "index" { home::body(site, examples) } else { html };
+        let body = if name == "index" { home::body(site, examples, sizes) } else if name == "download" { download_page(html, sizes) } else { html };
         www.insert(out, layout::www_page(site, out, doc.title, body));
         www_urls.push(site.base_url + "/" + if name == "index" { "" } else { name });
     }
-    www.insert("404.html", layout::www_page(site, "404.html", "Page not found", layout::not_found(|p| layout::latest(site, p), false)));
+    www.insert("404.html", layout::www_page(site, "404.html", "Page not found", layout::not_found(|p| layout::latest(site, p), false, site.no_errors)));
+    site.no_errors = docs_no_errors;
 
     let docs_root = out_root + "/docs";
     let docs_dir = docs_root + "/" + version;
     let www_dir = out_root + "/www";
     if fs::exists(www_dir) { try fs::remove_dir_all(www_dir); }
-    let statics = try write_version(site, docs_root, version, files, idx.to_str());
+    let statics = try write_version(site, docs_root, version, files, idx, idx_ko);
     for out in www.keys() { try write(www_dir, out, site_hrefs(site, www[out], "", out)); }
     let www_statics = try copy_static(www_dir);
     // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
@@ -933,7 +1358,8 @@ fn main() throws {
     }
     // latest/ is the newest release's pages again, linking within latest/.
     let latest_pages: Dict<str, str> = if version == newest { files } else { Dict::new() };
-    let latest_search = if version == newest { idx.to_str() } else { "" };
+    let latest_search = if version == newest { idx } else { "" };
+    let latest_search_ko = if version == newest { idx_ko } else { "" };
 
     // Released versions other than the one built now: re-wrap their
     // archived fragments with the current chrome, so a design change reaches
@@ -947,13 +1373,18 @@ fn main() throws {
             if !fs::exists(bpath) { continue; }
             let b: Bundle = try rokon::decode(try rokon::parse(try fs::read_to_str(bpath)), bpath);
             site.version = v;
+            site.no_errors = true;
+            for f in b.pages {
+                if f.out == "errors/index.html" { site.no_errors = false; }
+            }
             let vfiles: Dict<str, str> = Dict::new();
             for f in b.pages { vfiles.insert(f.out, wrap(site, f, latest_outs)); }
-            let vstatics = try write_version(site, docs_root, v, vfiles, b.search);
+            let vstatics = try write_version(site, docs_root, v, vfiles, b.search, b.search_ko);
             for bd in check(vfiles, vstatics) { arch_bad.push(f"[{v}] {bd}"); }
             if v == newest {
                 latest_pages = vfiles;
                 latest_search = b.search;
+                latest_search_ko = b.search_ko;
             }
             println(f"docs {v}: {b.pages.len()} pages re-wrapped from archive → {docs_root}/{v}/");
         }
@@ -983,7 +1414,7 @@ fn main() throws {
     if latest_outs.len() > 0 {
         let urls: List<str> = List::new();
         for out in latest_outs {
-            if out != "404.html" { urls.push(layout::latest(site, if out == "index.html" { "" } else { out })); }
+            if out != "404.html" && !latest_hidden.contains(out) { urls.push(layout::latest(site, if out == "index.html" { "" } else { out })); }
         }
         urls.sort();
         try write(docs_root, "sitemap.xml", sitemap(urls));
@@ -993,8 +1424,8 @@ fn main() throws {
     // version directories, for the docs root.
     site.version = if newest.is_empty() { version } else { newest };
     let has_latest = !newest.is_empty() && latest_pages.len() > 0;
-    if has_latest { try write_version(site, docs_root, "latest", latest_pages, latest_search); }
-    try write(docs_root, "404.html", site_hrefs(site, layout::not_found_page(site, "latest"), "/latest", "404.html"));
+    if has_latest { try write_version(site, docs_root, "latest", latest_pages, latest_search, latest_search_ko); }
+    try write(docs_root, "404.html", site_hrefs(site, layout::not_found_page(site, "latest", false), "/latest", "404.html"));
     site.version = version;
 
     let bad = check(files, statics);
@@ -1009,7 +1440,39 @@ fn main() throws {
     }
     if strict {
         let failing = try code_check("");
+        for b in try home_check(false) {
+            eprintln(f"home: {b}");
+            failing.push(b);
+        }
         println(f"checked in {t0.elapsed():?}");
         if bad.len() > 0 || failing.len() > 0 { env::exit(1); }
     }
+}
+
+#[test]
+fn error_codes_link() {
+    let codes: Set<str> = Set::new();
+    codes.insert("E200");
+    let h = link_codes("<p>error[E200]</p><pre>error[E200]: x\nwarning[E999]: y</pre>", "ko/learn/02-x.html", codes);
+    assert(h.starts_with("<p>error[E200]</p>"), "prose untouched");
+    assert(h.contains("<a class=\"ecode\" href=\"../errors/E200.html\">error[E200]</a>: x") && h.contains("warning[E999]: y"), h);
+}
+
+#[test]
+fn korean_links() {
+    let outs: Set<str> = Set::new();
+    for o in ["ko/learn/a.html", "learn/a.html", "std/index.html", "spec/x.html", "ko/spec/x.html"] { outs.insert(o); }
+    let ids: Dict<str, Set<str>> = Dict::new();
+    let en: Set<str> = Set::new();
+    en.insert("intro");
+    ids.insert("spec/x.html", en);
+    let h = ko_links("<a href=\"../std/index.html\">a</a><a href=\"a.html\">b</a><a href=\"../spec/x.html#intro\">c</a><img src=\"../../logo.svg\">", "ko/learn/a.html", outs, ids);
+    assert(h.contains("href=\"../../std/index.html\"") && h.contains("href=\"a.html\""), h);
+    assert(h.contains("href=\"../../spec/x.html#intro\"") && h.contains("src=\"../../logo.svg\""), h);
+}
+
+#[test]
+fn docs_home_sections() {
+    let h = docs_home("<div class=\"cards\"><a class=\"card\" href=\"std/index.html\"><span class=\"tag\">api/</span><h3>API</h3><p>Every module.</p></a><a class=\"card\" href=\"learn/index.html\"><h3>Learn Rok</h3><p>Chapters.</p></a></div>", false);
+    assert(h == "<dl class=\"sections\"><dt><a href=\"learn/index.html\">Guide</a></dt><dd>Chapters.</dd><dt><a href=\"std/index.html\">Std library</a></dt><dd>Every module.</dd></dl>", h);
 }

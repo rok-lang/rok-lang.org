@@ -8,10 +8,17 @@
   const box = document.getElementById("results");
   let index = null;
   let sel = -1;
-  // Interface strings; the Korean spec pages get Korean ones.
-  const T = document.documentElement.lang === "ko"
-    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", down: "지금은 검색을 사용할 수 없습니다.", copiedLink: "링크 복사됨 ✓", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요`, version: "문서 버전", found: (n, all) => (all > n ? `결과 ${all}개 중 ${n}개 표시` : `결과 ${n}개`) }
-    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", down: "Search is unavailable right now.", copiedLink: "link copied ✓", linkInBar: "link in the address bar", press: (k) => `Press ${k}`, version: "Docs version", found: (n, all) => (all > n ? `${n} of ${all} results shown` : n === 1 ? "1 result" : `${n} results`) };
+  // Interface strings; Korean pages get Korean ones.
+  const ko = document.documentElement.lang === "ko";
+  const T = ko
+    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", down: "검색할 수 없습니다. 잠시 후 다시 시도하세요.", copiedLink: "링크 복사됨", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요`, version: "문서 버전", found: (n, all) => (all > n ? `결과 ${all}개 중 ${n}개 표시` : `결과 ${n}개`),
+        legend: [["↑ ↓", "이동"], ["↵", "열기"], ["esc", "닫기"]], missing: (v) => `${v}에는 그 페이지가 없어서 가장 가까운 페이지를 열었습니다.`,
+        help: "키보드 단축키", rows: { search: "문서 검색", pager: "이전 / 다음 페이지", filter: "메서드 거르기", help: "이 도움말", esc: "닫기 / 검색 지우기" },
+        filter: "메서드 거르기", shown: (n) => `메서드 ${n}개`, here: "(지금 쓰는 시스템)" }
+    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", down: "Search is unavailable right now.", copiedLink: "Link copied", linkInBar: "link in the address bar", press: (k) => `Press ${k}`, version: "Docs version", found: (n, all) => (all > n ? `${n} of ${all} results shown` : n === 1 ? "1 result" : `${n} results`),
+        legend: [["↑ ↓", "to move"], ["↵", "to open"], ["esc", "to close"]], missing: (v) => `That page is not in ${v}, so this is the closest one.`,
+        help: "Keyboard shortcuts", rows: { search: "Search the docs", pager: "Previous / next page", filter: "Filter methods", help: "This help", esc: "Close / clear search" },
+        filter: "Filter methods", shown: (n) => (n === 1 ? "1 method" : `${n} methods`), here: "(your system)" };
 
   // On wide screens the sidebar scrolls to the current page (the API
   // list is long).
@@ -84,14 +91,7 @@
   const tocM = document.querySelector(".toc-m");
   if (tocM) tocM.addEventListener("click", (e) => { if (e.target.closest("a")) tocM.open = false; });
 
-  // Copy buttons with their text in data-copy.
-  for (const b of document.querySelectorAll("[data-copy]")) {
-    const label = b.textContent;
-    b.addEventListener("click", async () => {
-      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; } catch { b.textContent = "Press Ctrl+C"; }
-      setTimeout(() => { b.textContent = label; }, 1600);
-    });
-  }
+  // Buttons with data-copy are copy.js's.
 
   // Compact header: the hamburger opens the nav as a drop panel. It
   // closes on a link, an outside click, Escape, or a return to the full nav.
@@ -199,7 +199,7 @@
     if (play && lang === "rok" && deflate && runnableRok(pre.innerText)) {
       packed(pre.innerText).then((code) => {
         const t = document.createElement("a");
-        t.className = "btn btn-sm run";
+        t.className = "btn-2 btn-sm run";
         t.href = `${play}/#code=${code}`;
         t.target = "_blank";
         t.rel = "noopener";
@@ -209,7 +209,7 @@
       }, () => {});
     }
     b.type = "button";
-    b.className = "btn-2 btn-sm copy";
+    b.className = "btn-2 btn-sm copy code-copy";
     b.textContent = T.copy;
     b.setAttribute("aria-label", T.copyLabel);
     b.addEventListener("click", async () => {
@@ -282,15 +282,31 @@
     });
   }
 
-  // 404.html: name the missing path in the error.
+  // 404.html: name the missing path.
   const lost = document.getElementById("lost-path");
   if (lost) lost.textContent = location.pathname;
 
-  // Where a hit lives, by the first part of its url.
+  // Where a hit lives, by the first part of its url: the section's one
+  // name, as in the header.
   const under = (u, d) => u === d || u.startsWith(d + "/") || u.startsWith(d + "#");
-  const where = (u) =>
-    under(u, "learn") ? "Learn" : under(u, "examples") ? "Example" : under(u, "std") ? "API"
-      : under(u, "spec/refs-standard-libraries") ? "Library spec" : under(u, "spec") ? "Spec" : "";
+  const SEC = ko
+    ? [["learn", "가이드"], ["examples", "예제"], ["errors", "에러 코드"], ["spec/refs-lang/009-tools", "도구"], ["spec/refs-standard-libraries", "라이브러리 명세"], ["spec", "언어 명세"], ["std", "표준 라이브러리"]]
+    : [["learn", "Guide"], ["examples", "Examples"], ["errors", "Error codes"], ["spec/refs-lang/009-tools", "Tools"], ["spec/refs-standard-libraries", "Library spec"], ["spec", "Language spec"], ["std", "Std library"]];
+  const where = (u) => {
+    const v = u.replace(/^ko\//, "");
+    for (const [d, name] of SEC) if (under(v, d)) return name;
+    return "";
+  };
+  // The section index of a page path (after the version directory).
+  const sectionOf = (path) => {
+    const lang = path.startsWith("ko/") ? "ko/" : "";
+    const v = path.slice(lang.length);
+    for (const [d] of SEC) if (under(v, d)) return lang + d;
+    return lang.replace(/\/$/, "");
+  };
+  const KIND = ko
+    ? { method: "메서드", fn: "함수", struct: "구조체", enum: "열거형", trait: "트레이트", type: "타입 별칭", const: "상수", static: "정적", impl: "impl" }
+    : { method: "method", fn: "fn", struct: "struct", enum: "enum", trait: "trait", type: "type", const: "const", static: "static", impl: "impl" };
 
   // Docs: the version menu and, off the newest release, a banner.
   const vers = document.querySelector(".vers");
@@ -314,6 +330,23 @@
         const li = document.createElement("li");
         const a = document.createElement("a");
         a.href = "/" + dir + (here ? "/" + here : "");
+        // A page that version lacks: its section's start, with a note.
+        if (!cur && here) {
+          a.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            fetch(a.href, { method: "HEAD" }).then((r) => {
+              if (r.ok) { location.href = a.href; return; }
+              try { sessionStorage.setItem("rok-missing", label); } catch {}
+              // The section's start, or the docs home if that version
+              // has no such section either.
+              const s = sectionOf(here);
+              const to = "/" + dir + (s ? "/" + s : "");
+              const home = "/" + dir + (here.startsWith("ko/") ? "/ko" : "");
+              if (to === home) { location.href = home; return; }
+              fetch(to, { method: "HEAD" }).then((r2) => { location.href = r2.ok ? to : home; }, () => { location.href = home; });
+            }, () => { location.href = a.href; });
+          });
+        }
         a.textContent = label;
         if (note) { const s = document.createElement("small"); s.textContent = note; a.append(s); }
         if (cur) a.setAttribute("aria-current", "true");
@@ -337,6 +370,85 @@
     }).catch(() => {});
   }
 
+  // Arrived from the version menu at a section start instead of a page.
+  try {
+    const v = sessionStorage.getItem("rok-missing");
+    if (v) {
+      sessionStorage.removeItem("rok-missing");
+      const art = document.querySelector("article.prose");
+      if (art) {
+        const p = document.createElement("p");
+        p.className = "tr-note";
+        p.setAttribute("role", "status");
+        p.textContent = T.missing(v);
+        art.prepend(p);
+      }
+    }
+  } catch {}
+
+  // API pages: `f` filters the methods, on the page and in the rail.
+  const items = [...document.querySelectorAll("article .api-item")];
+  if (items.some((it) => it.querySelector(".members > li"))) {
+    const box = document.createElement("div");
+    box.className = "api-filter";
+    box.innerHTML = `<input type="search" placeholder="${T.filter}" aria-label="${T.filter}" aria-keyshortcuts="f" autocomplete="off"><kbd class="kbd" aria-hidden="true">f</kbd><span class="ct" role="status"></span>`;
+    const first = document.querySelector("article.prose > h2, article.prose > .api-item");
+    first.before(box);
+    const fi = box.querySelector("input");
+    const ct = box.querySelector(".ct");
+    const rail = [...document.querySelectorAll(".toc li.m, .toc-m li.m")];
+    const apply = () => {
+      const v = fi.value.trim().toLowerCase();
+      let n = 0;
+      for (const it of items) {
+        const name = (it.id.split(".").pop() || "").toLowerCase();
+        const whole = v && name.includes(v);
+        let any = false;
+        for (const li of it.querySelectorAll(".members > li")) {
+          const m = (li.id.split(".").pop() || "").toLowerCase();
+          const on = !v || whole || m.includes(v);
+          li.hidden = !on;
+          if (on) { any = true; n++; }
+        }
+        it.hidden = !!v && !any && !whole;
+      }
+      for (const li of rail) {
+        const a = li.querySelector("a");
+        li.hidden = !!v && !a.textContent.toLowerCase().includes(v);
+      }
+      ct.textContent = v ? T.shown(n) : "";
+    };
+    fi.addEventListener("input", apply);
+    fi.addEventListener("keydown", (ev) => { if (ev.key === "Escape") { fi.value = ""; apply(); fi.blur(); } });
+    addEventListener("keydown", (ev) => {
+      if (ev.key !== "f" || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+      if (ev.target.closest && ev.target.closest("input, textarea, select, [contenteditable]")) return;
+      ev.preventDefault();
+      fi.focus();
+      fi.select();
+    });
+  }
+
+  // The download page and the landing page's archives: the row for the
+  // visitor's system is marked once known (a tint, so nothing moves).
+  const rows = document.querySelectorAll("[data-os]");
+  if (rows.length) {
+    const ua = navigator.userAgent;
+    const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+    const os = /Android|iPhone|iPad/.test(ua) ? "" : /mac/i.test(plat) ? "macos" : /win/i.test(plat) ? "windows" : /linux/i.test(plat) ? "linux" : "";
+    const arm = /aarch64|arm/i.test(plat + " " + ua);
+    for (const r of rows) {
+      if (r.dataset.os !== os) continue;
+      // Linux: the glibc archive of the machine's architecture.
+      if (os === "linux" && (r.dataset.libc !== "gnu" || (r.dataset.arch === "aarch64") !== arm)) continue;
+      r.classList.add("here");
+      const s = document.createElement("span");
+      s.className = "sr-only";
+      s.textContent = " " + T.here;
+      (r.querySelector("h3, th") || r).append(s);
+    }
+  }
+
   // `text` as nodes, each search term in it wrapped in <mark>.
   const marked = (text, terms) => {
     const words = terms.filter(Boolean).map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
@@ -352,14 +464,14 @@
 
   const load = () =>
     index ? Promise.resolve(index)
-      : fetch(root + "search-index.json").then((r) => {
+      : fetch(root + (ko ? "ko/" : "") + "search-index.json").then((r) => {
         if (!r.ok) throw new Error(`search-index.json: ${r.status}`);
         return r.json();
       }).then((d) => {
-        index = d.p.map(([t, u]) => ({ t, u, p: "" }));
-        for (const [k, t, id, named] of d.h) {
-          const [pt, pu] = d.p[k];
-          index.push({ t: named ? `${pt} › ${t}` : t, u: `${pu}#${id}`, p: pt });
+        index = d.p.map(([t, u, x]) => ({ t, u, p: "", k: "", x: x || "" }));
+        for (const [n, t, id, named, kind, x] of d.h) {
+          const [pt, pu] = d.p[n];
+          index.push({ t: named ? `${pt} › ${t}` : t, u: `${pu}#${id}`, p: pt, k: kind || "", x: x || "" });
         }
         return index;
       });
@@ -386,6 +498,30 @@
     if (!on) q.removeAttribute("aria-activedescendant");
   };
 
+  // Ranking: an API name equal to the query, then one starting with it,
+  // then a page title or heading, then the excerpts. Below four
+  // characters only names, titles and headings that start (or have a
+  // word that starts) with the query count, so "fn" finds no "define".
+  const KIND_ORDER = { struct: 0, enum: 0, trait: 0, type: 1, fn: 2, const: 3, static: 3, impl: 4, method: 5 };
+  const MAIN_TYPES = ["list", "str", "strbuf", "dict", "set"];
+  const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const score = (e, query, terms, short) => {
+    const t = e.t.toLowerCase();
+    if (e.k) {
+      const name = t.split("::").pop();
+      if (name === query || t === query) return 0;
+      if (name.startsWith(query) || t.startsWith(query)) return 1;
+    }
+    const word = new RegExp("(^|[^\\p{L}\\p{N}_])" + esc(query), "u");
+    if (t.startsWith(query)) return 2;
+    if (word.test(t)) return 2.2;
+    if (short) return -1;
+    if (terms.every((w) => t.includes(w))) return 2.5;
+    const hay = t + " " + (e.x + " " + e.p).toLowerCase();
+    if (terms.every((w) => hay.includes(w))) return 4;
+    return -1;
+  };
+
   const search = async () => {
     const query = q.value.trim().toLowerCase();
     const terms = query.split(/\s+/).filter(Boolean);
@@ -405,16 +541,18 @@
       mark(-1);
       return;
     }
+    const short = query.length < 4;
     const hits = [];
     for (const e of data) {
-      const t = e.t.toLowerCase();
-      const hay = t + " " + e.p.toLowerCase();
-      if (!terms.every((w) => hay.includes(w))) continue;
-      hits.push([t.includes(query) ? (t.startsWith(query) ? 0 : 1) : 2, e.p ? 1 : 0, e]);
+      const s = score(e, query, terms, short);
+      if (s < 0) continue;
+      const owner = e.k === "method" ? e.t.toLowerCase().split("::")[0] : "";
+      hits.push([s, e.k ? (KIND_ORDER[e.k] ?? 6) : (e.p ? 7 : 6), MAIN_TYPES.includes(owner) ? 0 : 1, e.t.length, e]);
     }
-    hits.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    hits.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3]);
     box.replaceChildren();
-    hits.slice(0, 40).forEach(([, , e], k) => {
+    hits.slice(0, 40).forEach((h, k) => {
+      const e = h[4];
       const li = document.createElement("li");
       li.setAttribute("role", "none");
       const a = document.createElement("a");
@@ -422,17 +560,24 @@
       a.setAttribute("role", "option");
       a.tabIndex = -1;
       a.href = root + e.u;
-      const w = where(e.u);
-      if (w) {
-        const tag = document.createElement("span");
-        tag.className = "src";
-        tag.textContent = w;
-        a.append(tag);
-      }
-      a.append(...marked(e.t, terms));
+      const tag = document.createElement("span");
+      tag.className = "src";
+      tag.textContent = e.k ? KIND[e.k] || e.k : where(e.u);
+      a.append(tag);
+      const title = document.createElement("span");
+      title.className = "hit-t";
+      title.append(...marked(e.t, terms));
+      a.append(title);
       if (e.p) {
         const s = document.createElement("small");
+        s.className = "hit-p";
         s.textContent = e.p;
+        a.append(s);
+      }
+      if (e.x) {
+        const s = document.createElement("small");
+        s.className = "hit-x";
+        s.textContent = e.x;
         a.append(s);
       }
       li.append(a);
@@ -445,6 +590,17 @@
       li.textContent = T.none;
       box.append(li);
     }
+    const legend = document.createElement("li");
+    legend.setAttribute("role", "none");
+    legend.setAttribute("aria-hidden", "true");
+    legend.className = "legend";
+    for (const [k, what] of T.legend) {
+      const span = document.createElement("span");
+      for (const key of k.split(" ")) { const b = document.createElement("kbd"); b.className = "kbd"; b.textContent = key; span.append(b); }
+      span.append(" " + what);
+      legend.append(span);
+    }
+    box.append(legend);
     show(true);
     status.textContent = !hits.length ? T.none : T.found(Math.min(hits.length, 40), hits.length);
     mark(hits.length ? 0 : -1);
@@ -469,14 +625,15 @@
   // A shortcuts help card, opened with ? (and closed with Escape).
   let help = null;
   const buildHelp = () => {
-    const rows = [["/", "Search the docs"]];
-    if (document.querySelector(".pager")) rows.push(["[  ]", "Previous / next page"]);
-    rows.push(["?", "This help"], ["Esc", "Close / clear search"]);
+    const rows = [["/", T.rows.search]];
+    if (document.querySelector(".pager")) rows.push(["[  ]", T.rows.pager]);
+    if (document.querySelector(".api-filter")) rows.push(["f", T.rows.filter]);
+    rows.push(["?", T.rows.help], ["Esc", T.rows.esc]);
     help = document.createElement("div");
     help.className = "kbd-help";
     help.innerHTML =
-      '<div class="kbd-card" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">' +
-      "<h2>Keyboard shortcuts</h2><dl>" +
+      `<div class="kbd-card" role="dialog" aria-modal="true" aria-label="${T.help}">` +
+      `<h2>${T.help}</h2><dl>` +
       rows.map(([k, d]) => `<dt>${k.trim().split(/\s+/).map((x) => `<kbd>${x}</kbd>`).join(" ")}</dt><dd>${d}</dd>`).join("") +
       "</dl></div>";
     help.addEventListener("click", (e) => { if (e.target === help) closeHelp(); });
@@ -494,4 +651,12 @@
   document.addEventListener("click", (ev) => {
     if (!ev.target.closest(".search")) show(false);
   });
+  // `?q=` (the 404 page's search field): open the search with it.
+  const pre = new URLSearchParams(location.search).get("q");
+  if (pre) {
+    q.value = pre;
+    sbox.classList.add("open");
+    q.focus();
+    search();
+  }
 })();

@@ -62,6 +62,33 @@ fn news(path: str, release: str) -> News | none {
     News { date: date, items: items }
 }
 
+/// `#123` in a changelog entry as a link to that issue or pull request
+/// (GitHub sends either address to the right one).
+fn refs(html: str) -> str {
+    let out = StrBuf::new();
+    let rest = html;
+    loop {
+        let k = rest.find("#") ?? rest.len();
+        out.push_str(rest[:k]);
+        if k == rest.len() { break; }
+        let n = 0usize;
+        for c in rest[k + 1:].chars() {
+            if c < '0' || c > '9' { break; }
+            n += 1;
+        }
+        let before = if k == 0 { ' ' } else { (out.to_str().chars().last() ?? ' ') };
+        if n == 0 || !(before == ' ' || before == '(' || before == ',') {
+            out.push('#');
+            rest = rest[k + 1:];
+            continue;
+        }
+        let num = rest[k + 1:k + 1 + n];
+        out.push_str(f"<a href=\"https://github.com/rok-lang/rok/issues/{num}\">#{num}</a>");
+        rest = rest[k + 1 + n:];
+    }
+    out.to_str()
+}
+
 /// Inline markdown, without the paragraph.
 fn inline(s: str) -> str {
     let h = layout::md(s, |x| x, false).html.trim();
@@ -70,34 +97,70 @@ fn inline(s: str) -> str {
 
 fn code(src: str) -> str { f"<pre class=\"cb pre\"><code>{rok_syntax::highlight_rok(src)}</code></pre>" }
 
-fn feature(title: str, text: str, link: str, label: str, src: str) -> str {
-    f"<div class=\"feat\"><div class=\"feat-t\"><h3 class=\"t-h3\">{title}</h3><p>{text}</p><a class=\"t-ui\" href=\"{esc(link)}\">{label}</a></div>{code(src)}</div>\n"
+/// A program of the landing page (home/<name>/) and what `rok run` prints
+/// for it (home/<name>.out), both checked in; `rok run -- check` reruns
+/// them with the toolchain and fails when the output has changed.
+pub struct Sample {
+    pub name: str;
+    pub src: str;
+    pub out: str;
 }
 
-const DESCRIBE: str = "fn describe(v: i32 | str | bool) -> str {
-    match v {
-        n: i32 => f\"integer {n}\",
-        s: str => f\"string {s}\",
-        b: bool => f\"boolean {b}\",
+pub const SAMPLES: [Sample; 4] = [
+    Sample { name: "hello", src: include_str!("../home/hello/src/main.rok"), out: include_str!("../home/hello.out") },
+    Sample { name: "describe", src: include_str!("../home/describe/src/main.rok"), out: include_str!("../home/describe.out") },
+    Sample { name: "find", src: include_str!("../home/find/src/main.rok"), out: include_str!("../home/find.out") },
+    Sample { name: "ages", src: include_str!("../home/ages/src/main.rok"), out: include_str!("../home/ages.out") },
+];
+
+fn sample(name: str) -> Sample {
+    for s in SAMPLES {
+        if s.name == name { return s; }
     }
-}";
+    SAMPLES[0]
+}
 
-const FIND: str = "fn find(xs: List<i32>, target: i32) -> usize? {
-    for i in 0..xs.len() {
-        if xs[i] == target { return i; }
+/// The line `rok run` points at (`--> src/main.rok:3:13`), or 0.
+fn error_line(out: str) -> usize {
+    for l in out.lines() {
+        if let r: str = l.trim().strip_prefix("--> src/main.rok:") {
+            return try (r.split_once(":") ?? (r, "")).0.parse::<usize>() catch _ { 0usize };
+        }
     }
-    none
+    0
 }
 
-let at = find(scores, 90) ?? 0;";
-
-const PARSE: str = "fn parse_age(s: str) throws -> i32 {
-    let n: i32 = try s.parse();
-    if n < 0 { throw ValueError { msg: f\"age {n} is negative\" }; }
-    n
+/// `src` highlighted, one `.ln` per line, line `hl` marked.
+fn numbered(src: str, hl: usize) -> str {
+    let out = StrBuf::new();
+    let k = 0usize;
+    for l in src.trim_end().split("\n") {
+        k += 1;
+        let cls = if k == hl { "ln hl" } else { "ln" };
+        out.push_str(f"<span class=\"{cls}\">{rok_syntax::highlight_rok(l)}\n</span>");
+    }
+    // No line break after the last line: it would show as an empty line.
+    out.to_str().replace("\n</span>", "</span>").replace("</span><span class=\"ln", "\n</span><span class=\"ln")
 }
 
-let age = try parse_age(\"-1\") catch e { println(f\"error: {e}\"); 0 };";
+/// What rokc printed as a terminal transcript in its own colours, after
+/// `$ rok run`; each error code links to its page (`docs`).
+fn transcript(out: str, docs: fn(str) -> str) -> str {
+    let body = pkg::link_codes_in(layout::diag_html(out), |c| docs(f"errors/{c}.html"));
+    "<span class=\"p\">$</span> rok run\n" + body
+}
+
+/// A program and what rokc says about it: the code with the reported
+/// line marked, then the terminal.
+fn program(s: Sample, docs: fn(str) -> str, label: str) -> str {
+    let hl = error_line(s.out);
+    f"<div class=\"cb prog\"><div class=\"cb-h\"><span class=\"t-label\">src/main.rok</span></div><pre class=\"pre\"><code>{numbered(s.src, hl)}</code></pre></div>
+<div class=\"term-bar\" aria-hidden=\"true\">~/{s.name}</div><pre class=\"term\" aria-label=\"{label}\">{transcript(s.out, docs)}</pre>"
+}
+
+fn feature(title: str, text: str, link: str, label: str, s: Sample, docs: fn(str) -> str) -> str {
+    f"<div class=\"feat\"><div class=\"feat-t\"><h3 class=\"t-h3\">{title}</h3><p>{text}</p><a class=\"t-ui\" href=\"{esc(link)}\">{label}</a></div><div class=\"feat-f\">{program(s, docs, "rok run in a terminal: what rokc reports for this program")}</div></div>\n"
+}
 
 /// The release archives: (system, triple, note, extension).
 const ARCHIVES: [(str, str, str, str); 6] = [
@@ -111,13 +174,15 @@ const ARCHIVES: [(str, str, str, str); 6] = [
 
 /// The landing page's body. `examples` are the docs' examples; the
 /// release notes come from the toolchain's CHANGELOG.md, if present.
-pub fn body(site: Site, examples: List<Example>) -> str {
+pub fn body(site: Site, examples: List<Example>, sizes: Dict<str, i64>) -> str {
     let r = site.release;
     let docs = |p: str| esc(layout::latest(site, p));
     let rel_url = f"https://github.com/rok-lang/rok/releases/tag/v{r}";
     let n = news(site.library + "/../CHANGELOG.md", r);
     let out = StrBuf::new();
 
+    // Error codes link to their pages when latest/ has them.
+    let to = |p: str| if p.starts_with("errors/") && site.no_errors { "" } else { layout::latest(site, p) };
     let came = if let x: News = n { f"Rok {r} came out on {long_date(x.date)}" } else { f"Rok {r} is out" };
     out.push_str(f"<section class=\"hero\"><div class=\"frame\">
 <div class=\"hero-t\">
@@ -125,38 +190,22 @@ pub fn body(site: Site, examples: List<Example>) -> str {
 <h1 class=\"t-display\">A compiled language that tells you what to write.</h1>
 <p class=\"t-lead\">Rok has closed sum types, no null, and errors in function signatures. When code doesn't compile, the error says what is wrong and, most of the time, what to write instead.</p>
 <div class=\"install\">
-<div class=\"line mono\"><code>curl -fsSL https://rok-lang.org/install.sh | sh</code><button type=\"button\" class=\"btn-2 btn-sm\" data-copy=\"curl -fsSL https://rok-lang.org/install.sh | sh\">Copy</button></div>
+<div class=\"line mono\"><code>curl -fsSL <span class=\"nw\">https://rok-lang.org/install.sh | sh</span></code>{web::chrome::copy_button("curl -fsSL https://rok-lang.org/install.sh | sh", false)}</div>
 <p class=\"t-small\">macOS and Linux. On Windows, use <a href=\"install.ps1\">install.ps1</a> or <a href=\"download.html#archives\">an archive</a>.</p>
 </div>
 <p class=\"go\"><a class=\"btn\" href=\"{docs("learn/index.html")}\">Read the guide</a><a class=\"t-ui\" href=\"{esc(site.playground)}\">or try it in the browser</a></p>
 </div>
 <figure class=\"hero-f\">
-<pre class=\"term\" aria-label=\"rok run in a terminal: an error that says what to write, then the fixed program runs\"><span class=\"p\">$</span> rok run
-<span class=\"v\">   Compiling</span> hello (.)
-<span class=\"e\">error[E200]</span>: `name` is a `str | none`, and only a
-       `str` has the method `len`
-  <span class=\"g\">--&gt;</span> src/main.rok:3:13
-   <span class=\"g\">|</span>
- <span class=\"g\">3 |</span>     println(name.len());
-   <span class=\"g\">|</span>             <span class=\"e\">^^^^^^^^^^</span>
-   <span class=\"g\">|</span>
-   <span class=\"g\">=</span> <span class=\"h\">help</span>: check which case it holds first:
-           `if let s: str = name {{ s.len() }}`
-
-<span class=\"p\">$</span> rok run
-<span class=\"v\">   Compiling</span> hello (.)
-<span class=\"v\">    Finished</span> in 0.10s
-<span class=\"v\">     Running</span> `./target/debug/hello`
-5</pre>
+{program(sample("hello"), to, "rok run in a terminal: an error that says what to write")}
 <figcaption class=\"t-small\">rok {esc(r)}. Line 3 after the fix: <code class=\"ic\">println((name ?? \"guest\").len());</code></figcaption>
 </figure>
 </div></section>
 ");
 
     out.push_str("<section class=\"feats\"><div class=\"frame\">\n<h2 class=\"t-h2\">What it checks for you</h2>\n");
-    out.push_str(feature("Every case of a sum type", "A value is <code class=\"ic\">i32 | str | bool</code>, and <code class=\"ic\">match</code> has to handle all three. Add a variant later and the compiler lists every match that needs a new arm.", layout::latest(site, "learn/05-sum-types.html"), "Chapter 5, Sum Types and none", DESCRIBE));
-    out.push_str(feature("Values that may be missing", "There is no null. A value that might not be there has the type <code class=\"ic\">T?</code>, and you say what happens when it isn't: a default with <code class=\"ic\">??</code>, or a branch with <code class=\"ic\">if let</code>.", layout::latest(site, "learn/05-sum-types.html#defaults-with--and-chaining-with-"), "Defaults with ?? and ?.", FIND));
-    out.push_str(feature("Errors you can see coming", "A function that can fail says so with <code class=\"ic\">throws</code>, and every call to it is marked <code class=\"ic\">try</code>. Reading the code, you can see each place an error can come from.", layout::latest(site, "learn/10-errors.html"), "Chapter 10, Error Handling", PARSE));
+    out.push_str(feature("Every case of a sum type", "A value is <code class=\"ic\">i32 | str | bool</code>, and <code class=\"ic\">match</code> has to handle all three. Leave one out, or add a variant later, and the compiler names the case no arm covers.", layout::latest(site, "learn/05-sum-types.html"), "Guide, chapter 5: Sum Types and none", sample("describe"), to));
+    out.push_str(feature("Values that may be missing", "There is no null. A value that might not be there has the type <code class=\"ic\">T?</code>, and you say what happens when it isn't: a default with <code class=\"ic\">??</code>, or a branch with <code class=\"ic\">if let</code>.", layout::latest(site, "learn/05-sum-types.html#defaults-with--and-chaining-with-"), "Guide: defaults with ?? and ?.", sample("find"), to));
+    out.push_str(feature("Errors you can see coming", "A function that can fail says so with <code class=\"ic\">throws</code>, and every call to it is marked <code class=\"ic\">try</code>. Reading the code, you can see each place an error can come from.", layout::latest(site, "learn/10-errors.html"), "Guide, chapter 10: Error Handling", sample("ages"), to));
     out.push_str("</div></section>\n");
 
     if examples.len() > 0 {
@@ -198,7 +247,8 @@ nix profile install github:rok-lang/rok</code></pre></div>
 <div class=\"arc-wrap\"><table class=\"arc\"><caption>Archives for {esc(r)}</caption><tbody>");
     for (os, triple, note, ext) in ARCHIVES {
         let url = f"https://github.com/rok-lang/rok/releases/download/v{r}/rok-{r}-{triple}{ext}";
-        out.push_str(f"<tr><th scope=\"row\">{os}</th><td class=\"mono\">{triple}</td><td class=\"note\">{note}</td><td><a href=\"{esc(url)}\">{ext}</a></td></tr>");
+        let size = if let n: i64 = sizes.get(f"rok-{r}-{triple}{ext}") { f"<span class=\"sz\">{pkg::mb(n)}</span>" } else { "" };
+        out.push_str(f"<tr{pkg::os_attrs(triple)}><th scope=\"row\">{os}</th><td class=\"mono\">{triple}</td><td class=\"note\">{note}</td><td><a href=\"{esc(url)}\">{ext}</a>{size}</td></tr>");
     }
     out.push_str("</tbody></table><p class=\"t-small\">Checksums, other formats and cross-compilation targets: <a href=\"download.html\">Download</a>.</p></div>\n</div></section>\n");
 
@@ -208,7 +258,7 @@ nix profile install github:rok-lang/rok</code></pre></div>
 <ul>");
         for k in 0..x.items.len() {
             if k >= 6 { break; }
-            out.push_str(f"<li>{inline(x.items[k])}</li>");
+            out.push_str(f"<li>{refs(inline(x.items[k]))}</li>");
         }
         out.push_str("</ul>\n</div></section>\n");
     }
