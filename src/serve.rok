@@ -27,6 +27,7 @@ use rok::core::encoding;
 use rok::core::task::time::Instant;
 use pkg::http;
 use pkg::http::Request;
+use pkg::url;
 
 static STALE: Atomic<i32> = Atomic::new(1);
 static ACTIVE: Atomic<i32> = Atomic::new(0);
@@ -303,6 +304,16 @@ fn text(status: i32, body: str) -> Resp { Resp { status: status, headers: ["Cont
 
 fn page(f: str) -> Resp { Resp { status: 200, headers: [f"Content-Type: {http::content_type(f)}", "Cache-Control: public, max-age=300"], body: "", file: f } }
 
+/// Where a non-canonical request path goes (url.rok), or none: `/a.html`,
+/// `/a/index`, `/a/` to `/a`; the docs root to `/latest`. A path with a
+/// backslash is never redirected (`/\host` would leave the site).
+pub fn redirect(path: str, docs: bool) -> str | none {
+    if path.contains("\\") { return none; }
+    let c = url::canon(path);
+    if docs && c == "/" { c = "/latest"; }
+    if c == path { none } else { c }
+}
+
 fn route(cfg: Cfg, r: Request) -> Resp {
     if r.path == "/_admin/reload" {
         if r.method != "POST" { return text(405, "POST only"); }
@@ -316,6 +327,10 @@ fn route(cfg: Cfg, r: Request) -> Resp {
     let host = (r.header("host").split_once(":") ?? (r.header("host"), "")).0;
     let docs = host == cfg.docs_host || host.starts_with("docs.");
     let root = cfg.data + "/out/" + if docs { "docs" } else { "www" };
+    if let to: str = redirect(r.path, docs) {
+        let loc = if r.query.is_empty() { to } else { to + "?" + r.query };
+        return Resp { status: 301, headers: [f"Location: {loc}", "Cache-Control: public, max-age=3600"], body: "", file: "" };
+    }
     let p = r.path;
     // /0.1/... is the newest built 0.1.x.
     if docs {
@@ -324,10 +339,11 @@ fn route(cfg: Cfg, r: Request) -> Resp {
             if let v: str = newest_of(root, first) { p = "/" + v + p[1 + first.len():]; }
         }
     }
-    if let f: str = http::static_file(root, p) { return page(f); }
-    if !p.ends_with("/") {
+    // A page is <path>.html or <path>/index.html; anything else by its name.
+    if p != "/" {
         if let g: str = http::static_file(root, p + ".html") { return page(g); }
     }
+    if let f: str = http::static_file(root, p) { return page(f); }
     // A missing docs page under a version gets that version's 404 page.
     let nf = root + "/404.html";
     if docs {
@@ -395,4 +411,18 @@ fn signatures_and_versions() {
     assert(minor_of("0.1.4") == "0.1" && minor_of("1.2.3") == "1.2", "minor");
     let e = parse_env("# c\nA=1\nexport B = \"x y\"\n");
     assert(e["A"] == "1" && e["B"] == "x y", "env");
+}
+
+#[test]
+fn redirects() {
+    let to = |p: str, docs: bool| redirect(p, docs) ?? "-";
+    assert(to("/", false) == "-" && to("/", true) == "/latest", "root");
+    assert(to("/index.html", false) == "/" && to("/index.html", true) == "/latest", "root index");
+    assert(to("/latest", true) == "-" && to("/latest/", true) == "/latest", "version");
+    assert(to("/latest/learn/index.html", true) == "/latest/learn", "index.html");
+    assert(to("/latest/learn/index", true) == "/latest/learn", "index");
+    assert(to("/latest/learn/05-sum-types.html", true) == "/latest/learn/05-sum-types", ".html");
+    assert(to("/0.1/learn/", true) == "/0.1/learn" && to("/0.1", true) == "-", "minor alias");
+    assert(to("/download/", false) == "/download" && to("/rok.css", false) == "-", "www");
+    assert(to("//evil.example/", false) == "/evil.example" && to("/\\evil.example/", false) == "-", "off-site");
 }
