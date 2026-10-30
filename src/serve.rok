@@ -328,7 +328,12 @@ fn route(cfg: Cfg, r: Request) -> Resp {
     if !p.ends_with("/") {
         if let g: str = http::static_file(root, p + ".html") { return page(g); }
     }
+    // A missing docs page under a version gets that version's 404 page.
     let nf = root + "/404.html";
+    if docs {
+        let first = (p[1:].split_once("/") ?? ("", "")).0;
+        if !first.is_empty() && !first.contains("..") && fs::exists(root + "/" + first + "/404.html") { nf = root + "/" + first + "/404.html"; }
+    }
     if fs::exists(nf) { return Resp { status: 404, headers: ["Content-Type: text/html; charset=utf-8", "Cache-Control: no-store"], body: "", file: nf }; }
     text(404, "not found")
 }

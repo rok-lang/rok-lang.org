@@ -445,10 +445,12 @@ fn section(at: str) -> (str, str) {
 
 /// The note over the docs of any version but the newest release, linking
 /// to this page in latest/ if it is there (`in_latest`), else to latest/.
-pub fn ver_banner(site: Site, out: str, in_latest: bool) -> str {
+/// `root` leads from the page to its version's directory.
+pub fn ver_banner(site: Site, root: str, out: str, in_latest: bool) -> str {
     if site.version == site.newest || site.newest.is_empty() { return ""; }
     let ko = out.starts_with("ko/");
-    let to = root_of(out) + "../latest/" + if in_latest && out != "404.html" { out } else { "index.html" };
+    let up = if root.starts_with("/") { "/" } else { root + "../" };
+    let to = up + "latest/" + if in_latest && out != "404.html" { out } else { "index.html" };
     let rel = "v" + if site.newest_release.is_empty() { site.newest } else { site.newest_release };
     let (what, go) = if ko {
         (if site.version == "dev" { "다음 버전을 위한, 아직 릴리스되지 않은 문서입니다." } else { f"v{site.version} 문서를 보고 있습니다." }, f"최신 릴리스: {rel} →")
@@ -462,9 +464,17 @@ pub fn ver_banner(site: Site, out: str, in_latest: bool) -> str {
 /// root, under `banner` (`ver_banner`). search.js fills the version menu
 /// from `versions.json` beside the version directories.
 pub fn page(site: Site, out: str, title: str, side: str, toc: str, body: str, pager: str, banner: str) -> str {
-    // The 404 page sits above the versions and is served for any missing
-    // path, so it borrows the newest release's files.
-    let root = if out == "404.html" { "/latest/" } else { root_of(out) };
+    frame(site, root_of(out), out, title, side, toc, body, pager, banner)
+}
+
+/// The 404 page of the version directory `dir`, served for any missing
+/// path under it, so its links are absolute and stay in that version.
+pub fn not_found_page(site: Site, dir: str) -> str {
+    let root = "/" + dir + "/";
+    frame(site, root, "404.html", "Page not found", "", "", not_found(|p| root + p, true), "", ver_banner(site, root, "404.html", false))
+}
+
+fn frame(site: Site, root: str, out: str, title: str, side: str, toc: str, body: str, pager: str, banner: str) -> str {
     let ko = out.starts_with("ko/");
     // Nav state of a Korean spec page is that of its English twin.
     let at = if ko { out["ko/".len():] } else { out };

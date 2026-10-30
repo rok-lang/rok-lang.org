@@ -7,7 +7,8 @@
 //   out/docs/<v>/   docs.rok-lang.org/<v>/: the spec (English at `spec/`,
 //                   Korean at `ko/spec/`), the guide and examples (docs/)
 //                   and the standard library API, for one version
-//   out/docs/       versions.json, index.html (to latest/) and 404.html;
+//   out/docs/       versions.json, index.html (to latest/) and 404.html
+//                   (each version directory has its own too);
 //                   latest/ is a copy of the newest release (versions.rokon)
 //
 // Other version directories already in out/docs/ are kept, so a deploy
@@ -134,7 +135,7 @@ pub struct Bundle {
 /// Final HTML of a doc page: the current chrome around `f`'s content.
 /// `latest` holds the pages of the newest release.
 fn wrap(site: Site, f: Frag, latest: Set<str>) -> str {
-    let html = layout::page(site, f.out, f.title, f.side, f.toc, f.body, f.pager, layout::ver_banner(site, f.out, latest.contains(f.out)));
+    let html = layout::page(site, f.out, f.title, f.side, f.toc, f.body, f.pager, layout::ver_banner(site, layout::root_of(f.out), f.out, latest.contains(f.out)));
     if f.head.is_empty() { html } else { html.replace("</head>", f.head) }
 }
 
@@ -833,6 +834,7 @@ fn main() throws {
         if fs::exists(d) { try fs::remove_dir_all(d); }
     }
     for out in files.keys() { try write(docs_dir, out, clean_hrefs(files[out])); }
+    try write(docs_dir, "404.html", clean_hrefs(layout::not_found_page(site, version)));
     try write(docs_dir, "search-index.json", idx.to_str());
     let statics = try copy_static(docs_dir);
     statics.insert("search-index.json");
@@ -861,6 +863,7 @@ fn main() throws {
             let vfiles: Dict<str, str> = Dict::new();
             for f in b.pages { vfiles.insert(f.out, wrap(site, f, latest_outs)); }
             for out in vfiles.keys() { try write(vdir, out, clean_hrefs(vfiles[out])); }
+            try write(vdir, "404.html", clean_hrefs(layout::not_found_page(site, v)));
             try write(vdir, "search-index.json", b.search);
             let vstatics = try copy_static(vdir);
             vstatics.insert("search-index.json");
@@ -903,9 +906,12 @@ fn main() throws {
     let latest_from = docs_root + "/" + newest;
     let has_latest = !newest.is_empty() && fs::exists(latest_from);
     if has_latest { try copy_tree(latest_from, docs_root + "/latest"); }
-    // The 404 page uses latest/'s files, so it speaks for that version.
+    // Each version directory has its own 404 page (the server picks it
+    // by the path); the one above them speaks for latest/.
     site.version = if newest.is_empty() { version } else { newest };
-    try write(docs_root, "404.html", clean_hrefs(layout::page(site, "404.html", "Page not found", "", "", layout::not_found(|p| "/latest/" + p, true), "", "")));
+    let lost = clean_hrefs(layout::not_found_page(site, "latest"));
+    if has_latest { try write(docs_root + "/latest", "404.html", lost); }
+    try write(docs_root, "404.html", lost);
 
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }
