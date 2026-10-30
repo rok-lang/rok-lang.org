@@ -302,14 +302,53 @@ pub struct Resp {
 
 fn text(status: i32, body: str) -> Resp { Resp { status: status, headers: ["Content-Type: text/plain; charset=utf-8", "Cache-Control: no-store"], body: body + "\n", file: "" } }
 
-fn page(f: str, query: str) -> Resp { Resp { status: 200, headers: [f"Content-Type: {http::content_type(f)}", "Cache-Control: " + cache_for(f, query)], body: "", file: f } }
+fn page(f: str, path: str, query: str, docs: bool) -> Resp { Resp { status: 200, headers: [f"Content-Type: {http::content_type(f)}", "Cache-Control: " + cache_for(f, path, query, docs)], body: "", file: f } }
 
-/// An og.png asked for by its current version (`?v=`, layout.rok) never
-/// changes: cache it for good. The bare or a stale address stays short.
-pub fn cache_for(f: str, query: str) -> str {
-    if !f.ends_with("/og.png") { return "public, max-age=300"; }
+const FOREVER: str = "public, max-age=31536000, immutable";
+
+/// This server is the one place that says how long a response keeps
+/// (the proxy in front adds none). A file asked for by its current
+/// version (`?v=`, layout::asset and the og images) never changes, nor do
+/// the fonts, whose names carry their release: cache them for good. Pages
+/// of a released version (`/0.1.2/...`) keep a day; those of latest/, dev/
+/// and rok-lang.org five minutes, as do the search indexes. Pages also
+/// carry an ETag (handle), so a stale copy revalidates for free.
+pub fn cache_for(f: str, path: str, query: str, docs: bool) -> str {
+    if f.ends_with(".html") {
+        let first = (path[1:].split_once("/") ?? (path[1:], "")).0;
+        let released = docs && first.split(".").count() == 3;
+        return if released { "public, max-age=86400" } else { "public, max-age=300" };
+    }
+    if f.contains("/fonts/") { return FOREVER; }
     let v = query_v(query);
-    if !v.is_empty() && v == (try pkg::og_version(f) catch _ { "" }) { "public, max-age=31536000, immutable" } else { "public, max-age=3600" }
+    if !v.is_empty() && v == (try pkg::og_version(f) catch _ { "" }) { return FOREVER; }
+    if f.ends_with(".json") { "public, max-age=300" } else { "public, max-age=3600" }
+}
+
+/// The ETag of a file's bytes: the first 16 hex digits of their SHA-256.
+fn etag(data: List<u8>) -> str { "\"" + encoding::hex_encode(HashAlgorithm::Sha256.digest(data))[:16] + "\"" }
+
+/// True when an If-None-Match header names `tag` (or is `*`).
+pub fn matches(header: str, tag: str) -> bool {
+    for t in header.split(",") {
+        let x = t.trim();
+        if x == "*" || x == tag || x == "W/" + tag { return true; }
+    }
+    false
+}
+
+/// A 304 for a conditional GET whose copy is current: the validators and
+/// caching headers only, and no Content-Length (http::send would say 0,
+/// which a 304 must not unless the page is empty).
+fn not_modified(s: TcpStream, headers: List<str>) throws {
+    let h = StrBuf::new();
+    h.push_str("HTTP/1.1 304 Not Modified\r\n");
+    for x in headers {
+        if !x.starts_with("Content-Type:") { h.push_str(x + "\r\n"); }
+    }
+    h.push_str("Connection: close\r\nX-Content-Type-Options: nosniff\r\n\r\n");
+    try s.set_write_timeout(Duration::sec(30));
+    try s.write_all(h.to_str());
 }
 
 /// The `v` parameter of a query string, or "".
@@ -353,7 +392,7 @@ fn route(cfg: Cfg, r: Request) -> Resp {
         }
     }
     // A page is <path>.html or <path>/index.html; anything else by its name.
-    if let f: str = http::page_file(root, p) { return page(f, r.query); }
+    if let f: str = http::page_file(root, p) { return page(f, r.path, r.query, docs); }
     // A missing docs page under a version gets that version's 404 page.
     let nf = root + "/404.html";
     if docs {
@@ -375,14 +414,23 @@ fn handle(s: TcpStream, cfg: Cfg) {
     };
     let resp = route(cfg, r);
     let head = r.method == "HEAD";
+    let status = resp.status;
     if !resp.file.is_empty() {
         let data = try fs::read(resp.file) catch _ { List::new() };
-        try http::send(s, resp.status, resp.headers, data, head) catch _ {};
+        if status == 200 {
+            let tag = etag(data);
+            resp.headers.push("ETag: " + tag);
+            if matches(r.header("if-none-match"), tag) {
+                status = 304;
+                try not_modified(s, resp.headers) catch _ {};
+            }
+        }
+        if status != 304 { try http::send(s, status, resp.headers, data, head) catch _ {}; }
     } else {
         try http::send(s, resp.status, resp.headers, resp.body, head) catch _ {};
     }
     s.close();
-    eprintln(f"{r.method} {r.header("host")}{r.path} {resp.status} {t0.elapsed().as_ms()}ms");
+    eprintln(f"{r.method} {r.header("host")}{r.path} {status} {t0.elapsed().as_ms()}ms");
 }
 
 pub fn run() throws {
@@ -437,7 +485,14 @@ fn redirects() {
     assert(to("/0.1/learn/", true) == "/0.1/learn" && to("/0.1", true) == "-", "minor alias");
     assert(to("/download/", false) == "/download" && to("/rok.css", false) == "-", "www");
     assert(query_v("v=abc") == "abc" && query_v("x=1&v=d") == "d" && query_v("vv=1") == "", "query v");
-    assert(cache_for("out/www/rok.css", "v=1") == "public, max-age=300", "not og");
-    assert(cache_for("out/www/og.png", "") == "public, max-age=3600", "bare og");
+    assert(cache_for("out/www/rok.css", "/rok.css", "v=1", false) == "public, max-age=3600", "stale version");
+    assert(cache_for("out/www/og.png", "/og.png", "", false) == "public, max-age=3600", "bare og");
+    assert(cache_for("out/docs/latest/learn.html", "/latest/learn", "", true) == "public, max-age=300", "latest");
+    assert(cache_for("out/docs/dev/learn.html", "/dev/learn", "", true) == "public, max-age=300", "dev");
+    assert(cache_for("out/docs/0.1.2/learn.html", "/0.1.2/learn", "", true) == "public, max-age=86400", "release");
+    assert(cache_for("out/www/download.html", "/download", "", false) == "public, max-age=300", "home");
+    assert(cache_for("out/www/fonts/Geist-Variable-1.8.2.woff2", "/fonts/Geist-Variable-1.8.2.woff2", "", false) == FOREVER, "fonts");
+    assert(cache_for("out/docs/latest/search-index.json", "/latest/search-index.json", "", true) == "public, max-age=300", "index");
+    assert(matches("\"a\", \"b\"", "\"b\"") && matches("W/\"b\"", "\"b\"") && !matches("", "\"b\""), "if-none-match");
     assert(to("//evil.example/", false) == "/evil.example" && to("/\\evil.example/", false) == "-", "off-site");
 }
