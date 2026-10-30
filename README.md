@@ -36,7 +36,7 @@ Generation takes 1-5 seconds; `check` compiles and runs hundreds of code blocks 
 
 ## Preview
 
-Serve over HTTP (the search index is loaded with `fetch`); set `base_url` / `docs_url` in `site.local.rokon` for cross-site links.
+Serve over HTTP (the search index is loaded with `fetch`); set `base_url` / `docs_url` in `site.local.rokon` for cross-site links. Pages link with canonical addresses (`/latest/learn/05-sum-types`: no `.html`, no `/index`, no trailing slash but on `/`), which `serve` resolves to `<path>.html` or `<path>/index.html`; a plain file server needs the `.html` typed in.
 
 ```bash
 python3 -m http.server -d public/www 8401    # rok-lang.org

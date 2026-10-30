@@ -1,7 +1,9 @@
 // Client-side search over search-index.json: {p: [[title, url]], h:
 // [[page, heading, id, named?]]}, read into [{t: title, u: url, p: page}].
+// Page urls are canonical addresses within the version (`learn`,
+// `learn/05-sum-types`); data-root is the version's root (`/latest/`).
 (() => {
-  const root = document.body.dataset.root || "";
+  const root = document.body.dataset.root || "/";
   const q = document.getElementById("q");
   const box = document.getElementById("results");
   let index = null;
@@ -310,9 +312,10 @@
   if (lost) lost.textContent = location.pathname;
 
   // Where a hit lives, by the first part of its url.
+  const under = (u, d) => u === d || u.startsWith(d + "/") || u.startsWith(d + "#");
   const where = (u) =>
-    u.startsWith("learn/") ? "Learn" : u.startsWith("examples/") ? "Example" : u.startsWith("std/") ? "API"
-      : u.startsWith("spec/refs-standard-libraries/") ? "Library spec" : u.startsWith("spec/") ? "Spec" : "";
+    under(u, "learn") ? "Learn" : under(u, "examples") ? "Example" : under(u, "std") ? "API"
+      : under(u, "spec/refs-standard-libraries") ? "Library spec" : under(u, "spec") ? "Spec" : "";
 
   // Docs: the version menu and, off the newest release, a banner.
   const vers = document.querySelector(".vers");
@@ -326,15 +329,16 @@
     document.addEventListener("click", (ev) => { if (!vers.contains(ev.target)) vers.open = false; });
   }
   if (vers && version) {
-    const base = new URL(root || "./", location.href);
-    const here = location.href.slice(base.href.length).split("#")[0];
-    const at = base.pathname.replace(/\/$/, "").split("/").pop();
-    fetch(new URL("../versions.json", base)).then((r) => r.json()).then((v) => {
+    // This page in another version: the same path after the version
+    // directory (which may be the /0.1 alias of /0.1.2).
+    const here = location.pathname.split("/").slice(2).join("/");
+    const at = root.replace(/\/$/, "").split("/").pop();
+    fetch("/versions.json").then((r) => r.json()).then((v) => {
       const menu = vers.querySelector(".vers-menu");
       const item = (dir, label, note, cur) => {
         const li = document.createElement("li");
         const a = document.createElement("a");
-        a.href = new URL("../" + dir + "/" + here, base).href;
+        a.href = "/" + dir + (here ? "/" + here : "");
         a.textContent = label;
         if (note) { const s = document.createElement("small"); s.textContent = note; a.append(s); }
         if (cur) a.setAttribute("aria-current", "true");
@@ -425,8 +429,7 @@
       a.id = "hit-" + k;
       a.setAttribute("role", "option");
       a.tabIndex = -1;
-      // The pages' own addresses, without .html.
-      a.href = root + e.u.replace(/(^|\/)index\.html(?=#|$)/, "$1").replace(/\.html(?=#|$)/, "");
+      a.href = root + e.u;
       const w = where(e.u);
       if (w) {
         const tag = document.createElement("span");

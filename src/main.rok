@@ -9,7 +9,10 @@
 //                   and the standard library API, for one version
 //   out/docs/       versions.json, index.html (to latest/) and 404.html
 //                   (each version directory has its own too);
-//                   latest/ is a copy of the newest release (versions.rokon)
+//                   latest/ is the newest release (versions.rokon) again
+//
+// Every link is written as a canonical root-relative address (url.rok),
+// so each version directory, latest/ included, links within itself.
 //
 // Other version directories already in out/docs/ are kept, so a deploy
 // lays the builds of earlier tags there first.
@@ -396,34 +399,72 @@ fn chars_of(s: str) -> List<char> {
     cs
 }
 
-/// Rewrite every `href="..."` to its extensionless form. Output files keep
-/// their `.html` names; the server / Pages resolve the clean paths. The link
-/// check runs on the uncleaned pages, so it still verifies `.html` targets.
-fn clean_hrefs(html: str) -> str {
+/// `html` of the page `out` under the site directory `base` (`/latest`,
+/// `""` for a site root) with every internal `href`, `src` and `data-root`
+/// as its canonical root-relative address (url.rok), and absolute links
+/// into either site canonical too (markdown autolinks bypass the link
+/// mappers). Pages are generated
+/// with relative links, so the link check and the archives stay
+/// independent of where a version is served; this is the last step.
+fn site_hrefs(site: Site, html: str, base: str, out: str) -> str {
+    let d = dir_of(out);
+    let dir = if d.is_empty() { base } else { base + "/" + d };
     let cs = chars_of(html);
     let n = cs.len();
-    let out = StrBuf::new();
+    let res = StrBuf::new();
     let i = 0usize;
     while i < n {
-        let hit = cs[i] == 'h' && i + 6 <= n && (i == 0 || cs[i - 1] == ' ')
-            && cs[i + 1] == 'r' && cs[i + 2] == 'e' && cs[i + 3] == 'f' && cs[i + 4] == '=' && cs[i + 5] == '"';
-        if !hit {
-            out.push(cs[i]);
+        let name = "";
+        if i > 0 && cs[i - 1] == ' ' {
+            for a in ["href=\"", "src=\"", "data-root=\""] {
+                let k = 0usize;
+                let ac = chars_of(a);
+                while k < ac.len() && i + k < n && cs[i + k] == ac[k] { k += 1; }
+                if k == ac.len() {
+                    name = a;
+                    break;
+                }
+            }
+        }
+        if name.is_empty() {
+            res.push(cs[i]);
             i += 1;
             continue;
         }
-        out.push_str("href=\"");
-        let j = i + 6;
+        res.push_str(name);
+        let j = i + name.char_count();
         let v = StrBuf::new();
         while j < n && cs[j] != '"' {
             v.push(cs[j]);
             j += 1;
         }
-        out.push_str(layout::clean(v.to_str()));
-        out.push('"');
+        let val = v.to_str();
+        if name == "data-root=\"" {
+            // search.js joins page paths to it.
+            let r = url::resolve(dir, val);
+            res.push_str(if r == "/" { r } else { r + "/" });
+        } else {
+            res.push_str(url::site_href(dir, layout::own(site, val)));
+        }
+        res.push('"');
         i = if j < n { j + 1 } else { j };
     }
-    out.to_str()
+    res.to_str()
+}
+
+/// The pages of one version directory `dir` (`latest`, `0.1.0`, `dev`)
+/// under `docs_root`, linking within it, with its 404 page, search index
+/// and static files; the static names.
+fn write_version(site: Site, docs_root: str, dir: str, files: Dict<str, str>, search: str) throws -> Set<str> {
+    let vdir = docs_root + "/" + dir;
+    if fs::exists(vdir) { try fs::remove_dir_all(vdir); }
+    let base = "/" + dir;
+    for out in files.keys() { try write(vdir, out, site_hrefs(site, files[out], base, out)); }
+    try write(vdir, "404.html", site_hrefs(site, layout::not_found_page(site, dir), base, "404.html"));
+    try write(vdir, "search-index.json", search);
+    let statics = try copy_static(vdir);
+    statics.insert("search-index.json");
+    statics
 }
 
 /// Broken internal `href` / `src` targets (missing file or anchor).
@@ -583,17 +624,6 @@ fn copy_static(dir: str) throws -> Set<str> {
     names
 }
 
-fn copy_tree(from: str, to: str) throws {
-    if fs::exists(to) { try fs::remove_dir_all(to); }
-    for entry in fs::walk(from) {
-        let e = try entry.get();
-        if !e.is_file() { continue; }
-        let dest = to + e.path().as_str()[from.len():];
-        try fs::create_dir_all(dir_of(dest));
-        try fs::copy(e.path(), dest);
-    }
-}
-
 /// A version is `dev`, a minor (`0.1`, whose patch releases share one
 /// build) or a patch release (`0.1.4`, the server's builds).
 fn is_version(v: str) -> bool {
@@ -751,7 +781,9 @@ fn main() throws {
         }
     }
     // Each page is written once: {"p": [[title, url]], "h": [[page,
-    // heading, id] or [page, heading, id, 1] when named by its page]}.
+    // heading, id] or [page, heading, id, 1] when named by its page]};
+    // a url is the page's canonical address in its version (`learn`,
+    // `learn/05-sum-types`).
     let pl = StrBuf::new();
     let hl = StrBuf::new();
     let n = 0usize;
@@ -759,7 +791,7 @@ fn main() throws {
         for p in group {
             if p.out == "index.html" { continue; }
             if n > 0 { pl.push_str(",\n"); }
-            pl.push_str(f"[{json_str(p.title)},{json_str(p.out)}]");
+            pl.push_str(f"[{json_str(p.title)},{json_str(url::canon(p.out))}]");
             for h in p.heads {
                 if h.level == 2 || h.level == 3 {
                     let named = if (seen.get(h.text) ?? 0usize) >= 4 { ",1" } else { "" };
@@ -831,21 +863,18 @@ fn main() throws {
     let docs_root = out_root + "/docs";
     let docs_dir = docs_root + "/" + version;
     let www_dir = out_root + "/www";
-    for d in [docs_dir, www_dir] {
-        if fs::exists(d) { try fs::remove_dir_all(d); }
-    }
-    for out in files.keys() { try write(docs_dir, out, clean_hrefs(files[out])); }
-    try write(docs_dir, "404.html", clean_hrefs(layout::not_found_page(site, version)));
-    try write(docs_dir, "search-index.json", idx.to_str());
-    let statics = try copy_static(docs_dir);
-    statics.insert("search-index.json");
-    for out in www.keys() { try write(www_dir, out, clean_hrefs(www[out])); }
+    if fs::exists(www_dir) { try fs::remove_dir_all(www_dir); }
+    let statics = try write_version(site, docs_root, version, files, idx.to_str());
+    for out in www.keys() { try write(www_dir, out, site_hrefs(site, www[out], "", out)); }
     let www_statics = try copy_static(www_dir);
     // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
     for f in ["install.sh", "install.ps1"] {
         try fs::copy(site.library + "/../" + f, www_dir + "/" + f);
         www_statics.insert(f);
     }
+    // latest/ is the newest release's pages again, linking within latest/.
+    let latest_pages: Dict<str, str> = if version == newest { files } else { Dict::new() };
+    let latest_search = if version == newest { idx.to_str() } else { "" };
 
     // Released versions other than the one built now: re-wrap their
     // archived fragments with the current chrome, so a design change reaches
@@ -859,17 +888,15 @@ fn main() throws {
             if !fs::exists(bpath) { continue; }
             let b: Bundle = try rokon::decode(try rokon::parse(try fs::read_to_str(bpath)), bpath);
             site.version = v;
-            let vdir = docs_root + "/" + v;
-            if fs::exists(vdir) { try fs::remove_dir_all(vdir); }
             let vfiles: Dict<str, str> = Dict::new();
             for f in b.pages { vfiles.insert(f.out, wrap(site, f, latest_outs)); }
-            for out in vfiles.keys() { try write(vdir, out, clean_hrefs(vfiles[out])); }
-            try write(vdir, "404.html", clean_hrefs(layout::not_found_page(site, v)));
-            try write(vdir, "search-index.json", b.search);
-            let vstatics = try copy_static(vdir);
-            vstatics.insert("search-index.json");
+            let vstatics = try write_version(site, docs_root, v, vfiles, b.search);
             for bd in check(vfiles, vstatics) { arch_bad.push(f"[{v}] {bd}"); }
-            println(f"docs {v}: {b.pages.len()} pages re-wrapped from archive → {vdir}/");
+            if v == newest {
+                latest_pages = vfiles;
+                latest_search = b.search;
+            }
+            println(f"docs {v}: {b.pages.len()} pages re-wrapped from archive → {docs_root}/{v}/");
         }
         site.version = version;
     }
@@ -902,17 +929,14 @@ fn main() throws {
         urls.sort();
         try write(docs_root, "sitemap.xml", sitemap(urls));
     }
-    // latest/ follows the newest release, whether built now or laid in
-    // from the archive.
-    let latest_from = docs_root + "/" + newest;
-    let has_latest = !newest.is_empty() && fs::exists(latest_from);
-    if has_latest { try copy_tree(latest_from, docs_root + "/latest"); }
-    // Each version directory has its own 404 page (the server picks it
-    // by the path); the one above them speaks for latest/.
+    // latest/ follows the newest release, whether built now or re-wrapped
+    // from the archive; its own 404 page speaks for it and, above the
+    // version directories, for the docs root.
     site.version = if newest.is_empty() { version } else { newest };
-    let lost = clean_hrefs(layout::not_found_page(site, "latest"));
-    if has_latest { try write(docs_root + "/latest", "404.html", lost); }
-    try write(docs_root, "404.html", lost);
+    let has_latest = !newest.is_empty() && latest_pages.len() > 0;
+    if has_latest { try write_version(site, docs_root, "latest", latest_pages, latest_search); }
+    try write(docs_root, "404.html", site_hrefs(site, layout::not_found_page(site, "latest"), "/latest", "404.html"));
+    site.version = version;
 
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }
@@ -921,7 +945,7 @@ fn main() throws {
     let latest_note = if has_latest { ", latest/ = " + newest } else { "" };
     println(f"docs {version}: {pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} guide pages + {api.len()} API pages → {docs_dir}/ ({files.len()} html){latest_note}; home → {www_dir}/; {bad.len()} broken links, {t0.elapsed():?}");
     if !has_latest && !newest.is_empty() {
-        eprintln(f"note: no {docs_root}/{newest}/, so no latest/: build it with `--version {newest}`, or point ROK_DOCS_ARCHIVE at an archive");
+        eprintln(f"note: {newest} is neither built now nor archived, so no latest/: build it with `--version {newest}`, or point ROK_DOCS_ARCHIVE at an archive");
     }
     if strict {
         let failing = try code_check("");

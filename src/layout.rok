@@ -3,6 +3,7 @@
 
 use pkg::Page;
 use pkg::Site;
+use pkg::url;
 use markdown::{Doc, Options, esc, strip_tags};
 
 /// Markdown as HTML: `link` maps hrefs, ```rok / ```rokon highlighted,
@@ -356,32 +357,26 @@ fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: 
 "
 }
 
-/// Drop `.html` from an internal href target (`index.html` -> its
-/// directory). External, mailto and anchor-only hrefs are left alone.
-pub fn clean(href: str) -> str {
-    if href.contains("://") || href.starts_with("mailto:") || href.starts_with("#") || href.is_empty() { return href; }
-    let path = href;
-    let frag = "";
-    if let k: usize = href.find("#") {
-        path = href[:k];
-        frag = href[k:];
-    }
-    let c = if path.ends_with("/index.html") {
-        path[:path.len() - "index.html".len()]
-    } else if path == "index.html" {
-        "./"
-    } else if path.ends_with(".html") {
-        path[:path.len() - ".html".len()]
-    } else {
-        path
-    };
-    c + frag
+/// The address of `path` (`learn/index.html#x`) in the newest release's
+/// docs: `https://docs.rok-lang.org/latest/learn#x`.
+pub fn latest(site: Site, path: str) -> str {
+    let (p, rest) = url::split_ref(path);
+    let c = url::canon(p);
+    site.docs_url + "/latest" + (if c.is_empty() { "" } else { "/" + c }) + rest
 }
 
-/// The address of `path` in the newest release's docs, without `.html`.
-pub fn latest(site: Site, path: str) -> str {
-    let c = clean(path);
-    site.docs_url + "/latest/" + if c.starts_with("./") { c[2:] } else { c }
+/// An absolute link into either site as its canonical address
+/// (`https://docs.rok-lang.org` -> `.../latest`); any other href as is.
+pub fn own(site: Site, href: str) -> str {
+    for base in [site.docs_url, site.base_url] {
+        let at = href.strip_prefix(base) ?? "-";
+        if !(at.is_empty() || at.starts_with("/") || at.starts_with("?") || at.starts_with("#")) { continue; }
+        let (p, rest) = url::split_ref(at);
+        let c = url::canon(if p.is_empty() { "/" } else { p });
+        if base == site.docs_url && c == "/" { c = "/latest"; }
+        return base + c + rest;
+    }
+    href
 }
 
 const ICON_SEARCH: str = "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"M20 20l-4-4\"/></svg>";
@@ -592,7 +587,7 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
     nav.push_str(nav_item(esc(site.packages), "Stones", false));
     nav.push_str(nav_item(root + "roadmap.html", "Roadmap", out == "roadmap.html"));
     let full = if out == "index.html" { site.title + " - " + site.tagline } else { title + " - " + site.title };
-    let url = if out == "index.html" || out == "404.html" { site.base_url + "/" } else { site.base_url + "/" + clean(out) };
+    let url = if out == "index.html" || out == "404.html" { site.base_url + "/" } else { site.base_url + "/" + url::canon(out) };
     let kind = if out == "index.html" { "landing" } else { "plain" };
     let desc = esc(if out == "download.html" { f"Download rok {site.release} for macOS, Linux and Windows: the install script, or an archive with its SHA-256." } else if out == "roadmap.html" { "The rok roadmap: what the current release ships and where the language is headed next." } else { site.description });
     let main = if out == "index.html" { body } else { f"<div class=\"frame page\"><article class=\"prose\">\n{body}</article></div>\n" };
@@ -648,11 +643,11 @@ pub fn to_latest(site: Site) -> str {
 <head>
 <meta charset=\"utf-8\">
 <title>Rok Docs</title>
-<meta http-equiv=\"refresh\" content=\"0; url=latest/\">
+<meta http-equiv=\"refresh\" content=\"0; url=/latest\">
 <link rel=\"canonical\" href=\"{home}\">
 </head>
 <body>
-<p><a href=\"latest/\">Rok Docs</a></p>
+<p><a href=\"/latest\">Rok Docs</a></p>
 </body>
 </html>
 "
