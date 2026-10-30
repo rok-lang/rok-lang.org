@@ -11,15 +11,76 @@
     ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", copiedLink: "링크 복사됨 ✓", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요` }
     : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", copiedLink: "link copied ✓", linkInBar: "link in the address bar", press: (k) => `Press ${k}` };
 
-  // The sidebar starts folded on small screens; on wide ones it scrolls
-  // to the current page (the API list is long).
-  const side = document.querySelector(".side details");
-  if (side && matchMedia("(max-width: 860px)").matches) side.open = false;
+  // On wide screens the sidebar scrolls to the current page (the API
+  // list is long).
   const aside = document.querySelector(".side");
   const hereItem = aside && aside.querySelector("[aria-current=page]");
-  if (hereItem && aside.scrollHeight > aside.clientHeight) {
-    aside.scrollTop = hereItem.offsetTop - aside.offsetTop - aside.clientHeight / 2;
+  const centre = () => {
+    if (hereItem && aside.scrollHeight > aside.clientHeight) {
+      aside.scrollTop = hereItem.offsetTop - aside.clientHeight / 2;
+    }
+  };
+  centre();
+
+  // A modal panel keeps Tab among `els()`, with the rest of the page inert
+  // and not scrolling.
+  let heldAt = 0;
+  const hold = (on) => {
+    if (on) heldAt = scrollY;
+    document.documentElement.classList.toggle("lock", on);
+    for (const el of document.querySelectorAll("body > :is(.skip, .ver-banner, main, .foot), .shell > main")) el.inert = on;
+    if (!on) scrollTo(scrollX, heldAt);
+  };
+  // Focus moves by hand: the header's sticky panel would otherwise
+  // scroll the locked page to each link.
+  const trap = (ev, els) => {
+    if (ev.key !== "Tab" || !els.length) return;
+    ev.preventDefault();
+    const i = els.indexOf(document.activeElement);
+    const n = els.length;
+    const next = i < 0 ? (ev.shiftKey ? n - 1 : 0) : (i + (ev.shiftKey ? n - 1 : 1)) % n;
+    els[next].focus({ preventScroll: true });
+  };
+  const narrow = matchMedia("(max-width: 900px)");
+
+  // Narrow screens: the sidebar is a drawer, opened from the header.
+  const sideBtn = document.querySelector(".side-toggle");
+  if (aside && sideBtn) {
+    const scrim = document.createElement("div");
+    scrim.className = "scrim";
+    scrim.hidden = true;
+    document.body.append(scrim);
+    const header = document.querySelector(".hdr");
+    const isOpen = () => document.body.classList.contains("side-open");
+    const setSide = (open, back) => {
+      if (open === isOpen()) return;
+      document.body.classList.toggle("side-open", open);
+      sideBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      scrim.hidden = !open;
+      hold(open);
+      if (header) header.inert = open;
+      if (open) {
+        centre();
+        (hereItem || aside.querySelector("a, button")).focus({ preventScroll: true });
+      } else if (back) {
+        sideBtn.focus({ preventScroll: true });
+      }
+    };
+    sideBtn.addEventListener("click", () => setSide(true));
+    aside.querySelector(".side-close")?.addEventListener("click", () => setSide(false, true));
+    scrim.addEventListener("click", () => setSide(false, true));
+    aside.addEventListener("click", (e) => { if (e.target.closest("a")) setSide(false); });
+    aside.addEventListener("keydown", (e) => {
+      if (!isOpen()) return;
+      if (e.key === "Escape") setSide(false, true);
+      else trap(e, [...aside.querySelectorAll("a[href], button")]);
+    });
+    narrow.addEventListener("change", () => setSide(false));
   }
+
+  // "On this page" under the title folds again once a section is chosen.
+  const tocM = document.querySelector(".toc-m");
+  if (tocM) tocM.addEventListener("click", (e) => { if (e.target.closest("a")) tocM.open = false; });
 
   // Theme: "light" or "dark" in localStorage, else the system setting.
   // The inline script in <head> sets the class before the first paint.
@@ -59,8 +120,10 @@
   const nav = document.getElementById("nav");
   if (top && navToggle && nav) {
     const setNav = (open) => {
+      if (open === top.classList.contains("nav-open")) return;
       top.classList.toggle("nav-open", open);
       navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      hold(open);
     };
     navToggle.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -71,7 +134,9 @@
       if (top.classList.contains("nav-open") && !e.target.closest(".nav-toggle, #nav")) setNav(false);
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && top.classList.contains("nav-open")) { setNav(false); navToggle.focus(); }
+      if (!top.classList.contains("nav-open")) return;
+      if (e.key === "Escape") { setNav(false); navToggle.focus({ preventScroll: true }); }
+      else trap(e, [navToggle, ...nav.querySelectorAll("a")]);
     });
     // Collapse exactly when the full nav would not fit on one row: measure
     // the natural width with the row forced not to wrap or shrink. Works
@@ -242,7 +307,7 @@
     // Escape or a click elsewhere closes the menu.
     const sum = vers.querySelector("summary");
     document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape" && vers.open) { vers.open = false; sum.focus(); }
+      if (ev.key === "Escape" && vers.open) { vers.open = false; sum.focus({ preventScroll: true }); }
     });
     document.addEventListener("click", (ev) => { if (!vers.contains(ev.target)) vers.open = false; });
   }
