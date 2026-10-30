@@ -10,8 +10,8 @@
   let sel = -1;
   // Interface strings; the Korean spec pages get Korean ones.
   const T = document.documentElement.lang === "ko"
-    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", copiedLink: "링크 복사됨 ✓", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요`, version: "문서 버전", found: (n, all) => (all > n ? `결과 ${all}개 중 ${n}개 표시` : `결과 ${n}개`) }
-    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", copiedLink: "link copied ✓", linkInBar: "link in the address bar", press: (k) => `Press ${k}`, version: "Docs version", found: (n, all) => (all > n ? `${n} of ${all} results shown` : n === 1 ? "1 result" : `${n} results`) };
+    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", down: "지금은 검색을 사용할 수 없습니다.", copiedLink: "링크 복사됨 ✓", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요`, version: "문서 버전", found: (n, all) => (all > n ? `결과 ${all}개 중 ${n}개 표시` : `결과 ${n}개`) }
+    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", down: "Search is unavailable right now.", copiedLink: "link copied ✓", linkInBar: "link in the address bar", press: (k) => `Press ${k}`, version: "Docs version", found: (n, all) => (all > n ? `${n} of ${all} results shown` : n === 1 ? "1 result" : `${n} results`) };
 
   // On wide screens the sidebar scrolls to the current page (the API
   // list is long).
@@ -96,11 +96,15 @@
     try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : "auto"; } catch { return "auto"; }
   };
   const ko = html.lang === "ko";
+  // One theme-color, the resolved --bg: the media-query pair would follow
+  // the system, not the chosen theme.
+  const tint = document.querySelector("meta[name=theme-color]");
   const apply = () => {
     const t = stored();
     const dark = t === "dark" || (t === "auto" && media.matches);
     html.classList.toggle("dk", dark);
     html.classList.toggle("lt", !dark);
+    if (tint) tint.content = getComputedStyle(html).getPropertyValue("--bg").trim() || (dark ? "#090a0d" : "#fbfbfc");
     for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", b.dataset.themeSet === t ? "true" : "false");
     for (const b of document.querySelectorAll(".ib.theme")) {
       b.setAttribute("aria-pressed", dark ? "true" : "false");
@@ -211,6 +215,17 @@
     return false;
   };
 
+  // Run needs deflate-raw, which Chrome 80-102 lacks though it has
+  // CompressionStream.
+  const deflate = (() => { try { new CompressionStream("deflate-raw"); return true; } catch { return false; } })();
+  const packed = async (src) => {
+    const s = new Blob([src]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+    const b = new Uint8Array(await new Response(s).arrayBuffer());
+    let bin = "";
+    for (const c of b) bin += String.fromCharCode(c);
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  };
+
   // Code blocks come with their bar (layout.rok); add run and copy.
   for (const wrap of document.querySelectorAll("article .code.cb")) {
     const head = wrap.querySelector(".cb-h");
@@ -218,21 +233,21 @@
     if (!head || !pre) continue;
     const lang = (pre.querySelector("code")?.className.match(/language-(\w+)/) || [])[1] || "";
     const play = document.body.dataset.play;
-    if (play && lang === "rok" && runnableRok(pre.innerText) && "CompressionStream" in window) {
-      const t = document.createElement("button");
-      t.type = "button";
-      t.className = "btn btn-sm run";
-      t.textContent = T.run;
-      t.setAttribute("aria-label", T.runLabel);
-      t.addEventListener("click", async () => {
-        const s = new Blob([pre.innerText]).stream().pipeThrough(new CompressionStream("deflate-raw"));
-        const b = new Uint8Array(await new Response(s).arrayBuffer());
-        const code = btoa(String.fromCharCode(...b)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-        window.open(`${play}/#code=${code}`, "_blank", "noopener");
-      });
-      head.append(t);
-    }
     const b = document.createElement("button");
+    // Run is a link with its address ready before the click: Safari
+    // blocks a window opened after an await.
+    if (play && lang === "rok" && deflate && runnableRok(pre.innerText)) {
+      packed(pre.innerText).then((code) => {
+        const t = document.createElement("a");
+        t.className = "btn btn-sm run";
+        t.href = `${play}/#code=${code}`;
+        t.target = "_blank";
+        t.rel = "noopener";
+        t.textContent = T.run;
+        t.setAttribute("aria-label", T.runLabel);
+        b.before(t);
+      }, () => {});
+    }
     b.type = "button";
     b.className = "btn-2 btn-sm copy";
     b.textContent = T.copy;
@@ -377,7 +392,10 @@
 
   const load = () =>
     index ? Promise.resolve(index)
-      : fetch(root + "search-index.json").then((r) => r.json()).then((d) => {
+      : fetch(root + "search-index.json").then((r) => {
+        if (!r.ok) throw new Error(`search-index.json: ${r.status}`);
+        return r.json();
+      }).then((d) => {
         index = d.p.map(([t, u]) => ({ t, u, p: "" }));
         for (const [k, t, id, named] of d.h) {
           const [pt, pu] = d.p[k];
@@ -412,7 +430,21 @@
     const query = q.value.trim().toLowerCase();
     const terms = query.split(/\s+/).filter(Boolean);
     if (!terms.length) { show(false); status.textContent = ""; return; }
-    const data = await load();
+    let data;
+    try {
+      data = await load();
+    } catch {
+      // Offline, or the index is missing mid-deploy: say so in the list.
+      const li = document.createElement("li");
+      li.setAttribute("role", "none");
+      li.className = "empty";
+      li.textContent = T.down;
+      box.replaceChildren(li);
+      show(true);
+      status.textContent = T.down;
+      mark(-1);
+      return;
+    }
     const hits = [];
     for (const e of data) {
       const t = e.t.toLowerCase();
@@ -465,7 +497,7 @@
     if (top && top.classList.contains("nav-compact")) { sbox.classList.add("open"); q.focus(); }
   });
   q.addEventListener("blur", () => { if (!q.value) setTimeout(() => sbox.classList.remove("open"), 150); });
-  q.addEventListener("focus", load, { once: true });
+  q.addEventListener("focus", () => load().catch(() => {}), { once: true });
   q.addEventListener("input", search);
   q.addEventListener("keydown", (ev) => {
     const n = links().length;
@@ -495,7 +527,8 @@
 
   document.addEventListener("keydown", (ev) => {
     const typing = ev.target.closest && ev.target.closest("input, textarea, select");
-    if ((ev.key === "/" && !typing) || (ev.key === "k" && (ev.metaKey || ev.ctrlKey))) { ev.preventDefault(); sbox.click(); q.focus(); }
+    // ev.code: Caps Lock and the Korean IME change ev.key.
+    if ((ev.key === "/" && !typing) || (ev.code === "KeyK" && (ev.metaKey || ev.ctrlKey))) { ev.preventDefault(); sbox.click(); q.focus(); }
     else if (ev.key === "?" && !typing) { ev.preventDefault(); toggleHelp(); }
     else if (ev.key === "Escape" && help) { closeHelp(); }
   });
