@@ -1288,10 +1288,13 @@ fn main() throws {
 
     // The link preview cards these pages want (og/cards.mjs renders them
     // into static/og/); a note when the rendered ones are out of date.
-    let cards = og_manifest(frags);
-    try write(out_root, "og-cards.json", cards);
-    let rendered = try fs::read_to_str("static/og/cards.json") catch _ { "" };
-    if rendered != cards { eprintln(f"note: the docs' link preview cards are out of date: cd og && node cards.mjs ../{out_root}/og-cards.json ../static/og"); }
+    // Not when archiving: the server's working directory is read-only.
+    if archive_out.is_empty() {
+        let cards = og_manifest(frags);
+        try write(out_root, "og-cards.json", cards);
+        let rendered = try fs::read_to_str("static/og/cards.json") catch _ { "" };
+        if rendered != cards { eprintln(f"note: the docs' link preview cards are out of date: cd og && node cards.mjs ../{out_root}/og-cards.json ../static/og"); }
+    }
 
     // This version's pages, with the current chrome.
     site.no_errors = !frags.contains_key("errors/index.html");
