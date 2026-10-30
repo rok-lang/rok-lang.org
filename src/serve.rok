@@ -186,7 +186,8 @@ fn site_local(cfg: Cfg, docs: str, spec: str, library: str, extra: str) -> str {
 }
 
 /// Fetch what changed, rebuild it, swap the output in. A new `build`
-/// (this program, site.rokon or static/) re-archives every release.
+/// (this program, site.rokon, static/ or the kit's fonts) re-archives
+/// every release.
 fn round(cfg: Cfg, exe: str, build: str) throws {
     let t0 = Instant::now();
     let changed: Set<str> = Set::new();
@@ -257,7 +258,7 @@ fn rebuild_loop(cfg: Cfg) {
         eprintln(f"cannot find this program to rebuild the site: {e}");
         return;
     };
-    let build = try sh(f"cat {q(exe.as_str())} site.rokon $(find static -type f | sort) | sha256sum | cut -c1-16") catch e {
+    let build = try sh(f"cat {q(exe.as_str())} site.rokon $(find static web/assets/fonts -type f 2>/dev/null | sort) | sha256sum | cut -c1-16") catch e {
         eprintln(f"cannot fingerprint this build: {e}");
         return;
     };
@@ -308,47 +309,21 @@ const FOREVER: str = "public, max-age=31536000, immutable";
 
 /// This server is the one place that says how long a response keeps
 /// (the proxy in front adds none). A file asked for by its current
-/// version (`?v=`, layout::asset and the og images) never changes, nor do
-/// the fonts, whose names carry their release: cache them for good. Pages
-/// of a released version (`/0.1.2/...`) keep a day; those of latest/, dev/
-/// and rok-lang.org five minutes, as do the search indexes. Pages also
-/// carry an ETag (handle), so a stale copy revalidates for free.
+/// version (`?v=`, layout::asset and the og images) never changes: cache
+/// it for good. Pages of a released version (`/0.1.2/...`) and the fonts
+/// (the kit's, unversioned names) keep a day; pages of latest/, dev/ and
+/// rok-lang.org five minutes, as do the search indexes. Every file also
+/// carries an ETag (handle), so a stale copy revalidates for free.
 pub fn cache_for(f: str, path: str, query: str, docs: bool) -> str {
     if f.ends_with(".html") {
         let first = (path[1:].split_once("/") ?? (path[1:], "")).0;
         let released = docs && first.split(".").count() == 3;
         return if released { "public, max-age=86400" } else { "public, max-age=300" };
     }
-    if f.contains("/fonts/") { return FOREVER; }
+    if f.contains("/fonts/") { return "public, max-age=86400"; }
     let v = query_v(query);
     if !v.is_empty() && v == (try pkg::og_version(f) catch _ { "" }) { return FOREVER; }
     if f.ends_with(".json") { "public, max-age=300" } else { "public, max-age=3600" }
-}
-
-/// The ETag of a file's bytes: the first 16 hex digits of their SHA-256.
-fn etag(data: List<u8>) -> str { "\"" + encoding::hex_encode(HashAlgorithm::Sha256.digest(data))[:16] + "\"" }
-
-/// True when an If-None-Match header names `tag` (or is `*`).
-pub fn matches(header: str, tag: str) -> bool {
-    for t in header.split(",") {
-        let x = t.trim();
-        if x == "*" || x == tag || x == "W/" + tag { return true; }
-    }
-    false
-}
-
-/// A 304 for a conditional GET whose copy is current: the validators and
-/// caching headers only, and no Content-Length (http::send would say 0,
-/// which a 304 must not unless the page is empty).
-fn not_modified(s: TcpStream, headers: List<str>) throws {
-    let h = StrBuf::new();
-    h.push_str("HTTP/1.1 304 Not Modified\r\n");
-    for x in headers {
-        if !x.starts_with("Content-Type:") { h.push_str(x + "\r\n"); }
-    }
-    h.push_str("Connection: close\r\nX-Content-Type-Options: nosniff\r\n\r\n");
-    try s.set_write_timeout(Duration::sec(30));
-    try s.write_all(h.to_str());
 }
 
 /// The `v` parameter of a query string, or "".
@@ -418,14 +393,19 @@ fn handle(s: TcpStream, cfg: Cfg) {
     if !resp.file.is_empty() {
         let data = try fs::read(resp.file) catch _ { List::new() };
         if status == 200 {
-            let tag = etag(data);
+            let tag = http::etag(data);
             resp.headers.push("ETag: " + tag);
-            if matches(r.header("if-none-match"), tag) {
+            // A 304 carries the validators and Cache-Control, not the type.
+            if http::not_modified(r, tag) {
                 status = 304;
-                try not_modified(s, resp.headers) catch _ {};
+                let kept: List<str> = List::new();
+                for x in resp.headers {
+                    if !x.starts_with("Content-Type:") { kept.push(x); }
+                }
+                resp.headers = kept;
             }
         }
-        if status != 304 { try http::send(s, status, resp.headers, data, head) catch _ {}; }
+        try http::send(s, status, resp.headers, data, head) catch _ {};
     } else {
         try http::send(s, resp.status, resp.headers, resp.body, head) catch _ {};
     }
@@ -491,8 +471,7 @@ fn redirects() {
     assert(cache_for("out/docs/dev/learn.html", "/dev/learn", "", true) == "public, max-age=300", "dev");
     assert(cache_for("out/docs/0.1.2/learn.html", "/0.1.2/learn", "", true) == "public, max-age=86400", "release");
     assert(cache_for("out/www/download.html", "/download", "", false) == "public, max-age=300", "home");
-    assert(cache_for("out/www/fonts/Geist-Variable-1.8.2.woff2", "/fonts/Geist-Variable-1.8.2.woff2", "", false) == FOREVER, "fonts");
+    assert(cache_for("out/www/fonts/Geist-Variable.woff2", "/fonts/Geist-Variable.woff2", "", false) == "public, max-age=86400", "fonts");
     assert(cache_for("out/docs/latest/search-index.json", "/latest/search-index.json", "", true) == "public, max-age=300", "index");
-    assert(matches("\"a\", \"b\"", "\"b\"") && matches("W/\"b\"", "\"b\"") && !matches("", "\"b\""), "if-none-match");
     assert(to("//evil.example/", false) == "/evil.example" && to("/\\evil.example/", false) == "-", "off-site");
 }

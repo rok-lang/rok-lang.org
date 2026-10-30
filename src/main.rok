@@ -787,11 +787,16 @@ fn load_versions() throws -> Versions {
     try rokon::decode(try rokon::parse(try fs::read_to_str(path)), path)
 }
 
-/// The names under static/ and of the kit's files, without copying (for
-/// the link check).
+/// The names under static/, of the kit's files and of its fonts, without
+/// copying (for the link check).
 fn static_names() throws -> Set<str> {
     let names: Set<str> = Set::new();
     for f in kit::files(kit::Mark::Rok) { names.insert(f.name); }
+    for entry in fs::walk(kit::FONTS_DIR) {
+        let e = try entry.get();
+        let name = e.path().as_str()[kit::FONTS_DIR.len() + 1:].replace("\\", "/");
+        if e.is_file() && !name.ends_with(".md") { names.insert("fonts/" + name); }
+    }
     for entry in fs::walk("static") {
         let e = try entry.get();
         if e.is_file() { names.insert(e.path().as_str()["static/".len():]); }
@@ -799,8 +804,8 @@ fn static_names() throws -> Set<str> {
     names
 }
 
-/// Writes the kit's files (web/, built in) and copies static/ into `dir`;
-/// the names written.
+/// Writes the kit's files (web/, built in), copies its fonts to fonts/
+/// and static/ into `dir`; the names written.
 fn copy_static(dir: str) throws -> Set<str> {
     let names: Set<str> = Set::new();
     try fs::create_dir_all(dir);
@@ -808,6 +813,7 @@ fn copy_static(dir: str) throws -> Set<str> {
         try fs::write(dir + "/" + f.name, f.data);
         names.insert(f.name);
     }
+    for name in try kit::copy_fonts(kit::FONTS_DIR, dir + "/fonts") { names.insert("fonts/" + name); }
     for entry in fs::walk("static") {
         let e = try entry.get();
         if !e.is_file() { continue; }
@@ -1514,7 +1520,7 @@ fn main() throws {
     try write(docs_root, "index.html", layout::to_latest(site));
     try write(docs_root, "robots.txt", f"User-agent: *\nDisallow: /dev/\nSitemap: {site.docs_url}/sitemap.xml\n");
     try write(www_dir, "robots.txt", f"User-agent: *\nAllow: /\nSitemap: {site.base_url}/sitemap.xml\n");
-    try write(www_dir, ".well-known/security.txt", f"Contact: mailto:security@rok-lang.org\nExpires: 2027-10-24T00:00:00.000Z\nPreferred-Languages: en, ko\nCanonical: {site.base_url}/.well-known/security.txt\nPolicy: https://github.com/rok-lang/rok/blob/main/SECURITY.md\n");
+    try write(www_dir, ".well-known/security.txt", f"Contact: mailto:security@rok-lang.org\nExpires: 2027-10-24T00:00:00.000Z\nPreferred-Languages: en, ko\nCanonical: {site.base_url}/.well-known/security.txt\nPolicy: {chrome::SECURITY}\n");
     try write(www_dir, "sitemap.xml", sitemap(www_urls));
     // The sitemap lists latest/: this build's pages if it is the newest
     // release, else the archived ones.
