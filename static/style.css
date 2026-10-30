@@ -1,5 +1,21 @@
 /* rok-lang.org and docs.rok-lang.org, on top of rok.css. */
 
+/* Local fonts sized to Geist's metrics, so text keeps its line breaks when
+ * the webfonts swap in (no layout shift). Measured for rokstones.io: size-
+ * adjust is Geist's width over the local font's; Liberation matches Arial.
+ * Safari ignores the overrides but honours size-adjust.
+ * Latin only: other scripts fall through to Pretendard as before. */
+@font-face{font-family:"Geist Fallback";src:local("Arial"),local("ArialMT"),local("Helvetica"),local("Liberation Sans");size-adjust:102.5%;ascent-override:98.05%;descent-override:28.78%;line-gap-override:0%;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:"Geist Fallback";font-weight:600 700;src:local("Arial Bold"),local("Arial-BoldMT"),local("Helvetica Bold"),local("Liberation Sans Bold");size-adjust:100.8%;ascent-override:99.7%;descent-override:29.27%;line-gap-override:0%;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:"Geist Fallback Roboto";src:local("Roboto"),local("Roboto Regular"),local("Roboto-Regular");size-adjust:103.4%;ascent-override:97.2%;descent-override:28.53%;line-gap-override:0%;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:"Geist Fallback Roboto";font-weight:600 700;src:local("Roboto Bold"),local("Roboto-Bold");size-adjust:106.3%;ascent-override:94.54%;descent-override:27.75%;line-gap-override:0%;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:"Geist Mono Fallback";src:local("Menlo"),local("Menlo-Regular"),local("DejaVu Sans Mono"),local("Liberation Mono"),local("Courier New");size-adjust:99.65%;ascent-override:100.85%;descent-override:29.6%;line-gap-override:0%;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122}
+@font-face{font-family:"Geist Mono Fallback Consolas";src:local("Consolas");size-adjust:109.13%;ascent-override:92.09%;descent-override:27.03%;line-gap-override:0%;unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+2000-206F,U+20AC,U+2122}
+.rk {
+  --sans: "Geist", "Geist Fallback", "Geist Fallback Roboto", "Pretendard Variable", "Pretendard", system-ui, sans-serif;
+  --mono: "Geist Mono", "Geist Mono Fallback", "Geist Mono Fallback Consolas", "Pretendard Variable", "Pretendard", ui-monospace, monospace;
+}
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-padding-top: 76px; }
 body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); overflow-wrap: break-word; }
@@ -118,7 +134,8 @@ button { font: inherit; }
 .prose .toc-m a { display: block; padding: 6px 14px; color: var(--ink-2); text-decoration: none; }
 .prose .toc-m li.sub a { padding-left: 28px; }
 .prose .toc-m a:hover { color: var(--ink); }
-.scrim { position: fixed; inset: 0; z-index: 39; background: color-mix(in oklch, var(--bg) 70%, transparent); }
+.scrim { position: fixed; inset: 0; z-index: 39; background: rgb(251 251 252 / .7); }
+.rk.dk .scrim { background: rgb(9 10 13 / .7); }
 html.lock { overflow: hidden; }
 .wide .main > article { max-width: 880px; }
 .home .main > article { max-width: 960px; }
@@ -143,7 +160,9 @@ article.prose { display: block; max-width: none; font-size: 16px; line-height: 2
 .prose li > :is(ul, ol) { margin: 4px 0; }
 .prose li::marker { color: var(--ink-3); }
 .prose hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
-.prose :is(p, li, td, dd, blockquote) a { text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--link) 35%, transparent); text-underline-offset: 3px; }
+/* --link at 35%, per theme: no color-mix() on iOS < 16.2 */
+.prose :is(p, li, td, dd, blockquote) a { text-decoration: underline; text-decoration-color: rgb(0 106 165 / .35); text-underline-offset: 3px; }
+:where(.rk.dk) .prose :is(p, li, td, dd, blockquote) a { text-decoration-color: rgb(122 213 248 / .35); }
 .prose :is(p, li, td, dd, blockquote) a:hover { text-decoration-color: currentColor; }
 .prose blockquote { padding: 0 0 0 16px; border-left: 2px solid var(--line-2); color: var(--ink-2); }
 .prose strong { font-weight: 600; }
@@ -158,7 +177,7 @@ article.prose { display: block; max-width: none; font-size: 16px; line-height: 2
 .code.cb { position: relative; }
 .code.cb > .cb-h { min-height: 36px; padding: 4px 6px 4px 14px; }
 .code .cb-h .t-label { font-size: 12px; }
-.code .cb-h button { padding: 3px 10px; font-size: 13px; line-height: 18px; }
+.code .cb-h :is(button, .run) { padding: 3px 10px; font-size: 13px; line-height: 18px; }
 .code .cb-h .copy { border-color: transparent; background: transparent; color: var(--ink-2); }
 .code .cb-h .copy:hover { color: var(--ink); background: var(--bg-2); }
 .code .cb-h .copy.done { color: var(--ink); }
@@ -189,7 +208,9 @@ pre.err .h { color: var(--acc); font-weight: 600; }
 .callout > :last-child { margin-bottom: 0; }
 .callout > p { margin-bottom: 8px; }
 .callout-title { margin: 0 0 2px !important; color: var(--note-ink); font-size: 13px; line-height: 18px; font-weight: 600; }
-.callout.warning, .callout.caution, .callout.important { border-color: color-mix(in oklch, var(--acc) 35%, var(--line)); background: var(--acc-bg); }
+/* --acc 35% into --line, per theme */
+.callout.warning, .callout.caution, .callout.important { border-color: #d4a0bb; background: var(--acc-bg); }
+.rk.dk :is(.callout.warning, .callout.caution, .callout.important) { border-color: #6c5262; }
 .callout:is(.warning, .caution, .important) .callout-title { color: var(--acc); }
 .prose .callout :not(pre) > code { background: var(--bg); }
 .footnote { font-size: 14px; line-height: 20px; color: var(--ink-2); }
@@ -227,6 +248,8 @@ pre.err .h { color: var(--acc); font-weight: 600; }
 .home .hero > img { width: 40px; height: 40px; }
 .home .hero h1 { margin: 0; }
 .home .hero .lead { font-size: 19px; line-height: 30px; color: var(--ink-2); max-width: 36em; }
+/* stretched, not sized to the unbreakable command (WebKit overflowed) */
+.home .install { align-self: stretch; min-width: 0; }
 .home .install pre { margin: 8px 0 4px; }
 .home .install p { margin: 0; color: var(--ink-3); font-size: 13px; line-height: 18px; }
 .prose .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; margin: 16px 0 32px; }
