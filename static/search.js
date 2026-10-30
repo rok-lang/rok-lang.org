@@ -8,8 +8,8 @@
   let sel = -1;
   // Interface strings; the Korean spec pages get Korean ones.
   const T = document.documentElement.lang === "ko"
-    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", copiedLink: "링크 복사됨 ✓", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요` }
-    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", copiedLink: "link copied ✓", linkInBar: "link in the address bar", press: (k) => `Press ${k}` };
+    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", copiedLink: "링크 복사됨 ✓", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요`, version: "문서 버전", found: (n, all) => (all > n ? `결과 ${all}개 중 ${n}개 표시` : `결과 ${n}개`) }
+    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", copiedLink: "link copied ✓", linkInBar: "link in the address bar", press: (k) => `Press ${k}`, version: "Docs version", found: (n, all) => (all > n ? `${n} of ${all} results shown` : n === 1 ? "1 result" : `${n} results`) };
 
   // On wide screens the sidebar scrolls to the current page (the API
   // list is long).
@@ -353,7 +353,7 @@
         const latest = (v.patches && v.patches[v.latest]) || v.latest;
         tail.textContent = ` (v${latest})`;
         s.append(tail);
-        s.setAttribute("aria-label", `Docs version: latest (v${latest})`);
+        s.setAttribute("aria-label", `${T.version}: latest (v${latest})`);
       }
     }).catch(() => {});
   }
@@ -451,7 +451,7 @@
       box.append(li);
     }
     show(true);
-    status.textContent = !hits.length ? T.none : hits.length > 40 ? `40 of ${hits.length} results shown` : hits.length === 1 ? "1 result" : `${hits.length} results`;
+    status.textContent = !hits.length ? T.none : T.found(Math.min(hits.length, 40), hits.length);
     mark(hits.length ? 0 : -1);
   };
 

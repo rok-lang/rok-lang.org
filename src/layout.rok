@@ -432,6 +432,25 @@ fn footer(site: Site, l: Links, note: str, logo: str, ko: bool) -> str {
 "
 }
 
+/// A header section's name on Korean pages.
+fn ko_label(l: str) -> str {
+    if l == "Learn" {
+        "배우기"
+    } else if l == "Examples" {
+        "예제"
+    } else if l == "Language" {
+        "언어"
+    } else if l == "Std library" {
+        "표준 라이브러리"
+    } else if l == "Tools" {
+        "도구"
+    } else if l == "Spec" {
+        "사양"
+    } else {
+        l
+    }
+}
+
 /// The section a docs page belongs to: (label, index page).
 fn section(at: str) -> (str, str) {
     if at.starts_with("learn/") { return ("Learn", "learn/index.html"); }
@@ -481,7 +500,7 @@ fn frame(site: Site, root: str, out: str, title: str, side: str, toc: str, body:
     let (sec, sec_index) = section(at);
     let nav = StrBuf::new();
     for (label, href) in [("Learn", "learn/index.html"), ("Examples", "examples/index.html"), ("Language", "spec/refs-lang/index.html"), ("Std library", "std/index.html"), ("Tools", "spec/refs-lang/009-tools/index.html")] {
-        nav.push_str(nav_item(root + href, label, sec == label));
+        nav.push_str(nav_item(root + href, if ko { ko_label(label) } else { label }, sec == label));
     }
     let name = site.title + " Docs";
     let full = if out == "index.html" { name } else { title + " - " + name };
@@ -505,7 +524,7 @@ fn frame(site: Site, root: str, out: str, title: str, side: str, toc: str, body:
         body
     };
     let kind = if out == "index.html" { "home" } else if side.is_empty() { "doc wide" } else { "doc" };
-    let crumb = if sec.is_empty() || at == sec_index || out == "404.html" { "" } else { f"<nav class=\"crumb\" aria-label=\"Breadcrumb\"><a href=\"{root}{sec_index}\">{sec}</a></nav>\n" };
+    let crumb = if sec.is_empty() || at == sec_index || out == "404.html" { "" } else { f"<nav class=\"crumb\" aria-label=\"{if ko { "이동 경로" } else { "Breadcrumb" }}\"><a href=\"{root}{sec_index}\">{if ko { ko_label(sec) } else { sec }}</a></nav>\n" };
     let lang = if ko { "ko" } else { "en" };
     let desc = esc(describe(site, out, body));
     let url = latest(site, if out == "index.html" || out == "404.html" { "" } else { out });
@@ -514,21 +533,29 @@ fn frame(site: Site, root: str, out: str, title: str, side: str, toc: str, body:
     let ver = if site.version == "dev" { "dev" } else { "v" + site.version };
     let links = Links { home: site.base_url, docs: root + "index.html", learn: root + "learn/index.html", examples: root + "examples/index.html", spec: root + "spec/refs-lang/index.html", api: root + "std/index.html", tools: root + "spec/refs-lang/009-tools/index.html", publishing: root + "learn/18-features-and-stones.html#publishing-a-stone", roadmap: site.base_url + "/roadmap" };
     let play = if !site.newest.is_empty() && site.version == site.newest { esc(site.playground) } else { "" };
+    let (skip, menu, sections, find, results, version) = if ko {
+        ("본문으로 건너뛰기", "메뉴", "섹션", "문서 검색", "검색 결과", "문서 버전")
+    } else {
+        ("Skip to content", "Menu", "Sections", "Search docs", "Search results", "Docs version")
+    };
+    // Korean pages say Previous / Next in Korean; the pager comes in
+    // English from the archive.
+    let pager = if ko { pager.replace("aria-label=\"Previous and next page\"", "aria-label=\"이전 페이지와 다음 페이지\"").replace("<small>← Previous</small>", "<small>← 이전</small>").replace("<small>Next →</small>", "<small>다음 →</small>") } else { pager };
     let note = if at.starts_with("spec/") { "<span>Spec text © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a></span>" } else { "" };
     f"<!doctype html>
 <html class=\"rk lt\" lang=\"{lang}\">
 <head>
 {head(site, root, full, desc, url, latest(site, "og.png"), robots)}</head>
 <body class=\"{kind}\" data-root=\"{root}\" data-version=\"{esc(site.version)}\" data-play=\"{play}\">
-<a class=\"skip\" href=\"#content\">Skip to content</a>
-<header class=\"hdr top\" lang=\"en\">
+<a class=\"skip\" href=\"#content\">{skip}</a>
+<header class=\"hdr top\" lang=\"{lang}\">
 <div class=\"in\">
-<a class=\"brand\" href=\"{root}index.html\"><img src=\"{root}logo.svg\" alt=\"\" width=\"24\" height=\"24\">Rok<span class=\"sl\">/</span><span class=\"site\">Docs</span></a>
-{TOGGLE}
-<nav id=\"nav\" class=\"nav main-nav\" aria-label=\"Sections\">{nav.to_str()}</nav>
+<a class=\"brand\" href=\"{root}index.html\" lang=\"en\"><img src=\"{root}logo.svg\" alt=\"\" width=\"24\" height=\"24\">Rok<span class=\"sl\">/</span><span class=\"site\">Docs</span></a>
+{TOGGLE.replace("aria-label=\"Menu\"", f"aria-label=\"{menu}\"")}
+<nav id=\"nav\" class=\"nav main-nav\" aria-label=\"{sections}\">{nav.to_str()}</nav>
 <div class=\"tools\">
-<div class=\"search\" role=\"search\">{ICON_SEARCH}<input id=\"q\" type=\"search\" placeholder=\"Search docs\" aria-label=\"Search docs\" aria-keyshortcuts=\"/\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd class=\"kbd\" aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
-<details class=\"vers\"><summary aria-label=\"Docs version: {ver}\">{ver}</summary><ul class=\"vers-menu\"></ul></details>
+<div class=\"search\" role=\"search\">{ICON_SEARCH}<input id=\"q\" type=\"search\" placeholder=\"{find}\" aria-label=\"{find}\" aria-keyshortcuts=\"/ Control+K Meta+K\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd class=\"kbd\" aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"{results}\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
+<details class=\"vers\"><summary aria-label=\"{version}: {ver}\">{ver}</summary><ul class=\"vers-menu\"></ul></details>
 {theme_button(ko)}
 </div>
 </div>
