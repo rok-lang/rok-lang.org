@@ -187,7 +187,24 @@ fn spec_link(site: Site, spec: str, prefix: str, href: str, src_dir: str, out: s
     }
     let target = norm(join(src_dir, path));
     if target == ".." || target.starts_with("../") {
-        // Outside the language directory: the spec repository.
+        // The other edition (`../ko/README.md`): its pages here.
+        for (ed, pre) in [("en", ""), ("ko", "ko/")] {
+            if pre == "ko/" && site.spec_ko.is_empty() { continue; }
+            let top = "../" + ed;
+            if target != top && !target.starts_with(top + "/") { continue; }
+            let r = target[top.len():].trim_start_matches("/");
+            let file = if r.is_empty() {
+                "README.md"
+            } else if r.ends_with(".md") {
+                r
+            } else if !last_seg(r).contains(".") {
+                layout::readme_of(r)
+            } else {
+                ""
+            };
+            if !file.is_empty() { return rel(out, pre + out_of(file)) + frag; }
+        }
+        // Anything else outside the language directory: the spec repository.
         let in_repo = norm(last_seg(spec) + "/" + target);
         return f"{site.spec_repo}/blob/{site.spec_branch}/{in_repo}{frag}";
     }
