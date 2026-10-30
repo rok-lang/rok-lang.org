@@ -290,7 +290,7 @@
   // name, as in the header.
   const under = (u, d) => u === d || u.startsWith(d + "/") || u.startsWith(d + "#");
   const SEC = ko
-    ? [["learn", "가이드"], ["examples", "예제"], ["errors", "에러 코드"], ["spec/refs-lang/009-tools", "도구"], ["spec/refs-standard-libraries", "라이브러리 명세"], ["spec", "언어 명세"], ["std", "표준 라이브러리"]]
+    ? [["learn", "가이드"], ["examples", "예제"], ["errors", "에러 코드"], ["spec/refs-lang/009-tools", "도구"], ["spec/refs-standard-libraries", "라이브러리 사양"], ["spec", "언어 사양"], ["std", "표준 라이브러리"]]
     : [["learn", "Guide"], ["examples", "Examples"], ["errors", "Error codes"], ["spec/refs-lang/009-tools", "Tools"], ["spec/refs-standard-libraries", "Library spec"], ["spec", "Language spec"], ["std", "Std library"]];
   const where = (u) => {
     const v = u.replace(/^ko\//, "");
@@ -305,7 +305,7 @@
     return lang.replace(/\/$/, "");
   };
   const KIND = ko
-    ? { method: "메서드", fn: "함수", struct: "구조체", enum: "열거형", trait: "트레이트", type: "타입 별칭", const: "상수", static: "정적", impl: "impl" }
+    ? { method: "메서드", fn: "함수", struct: "struct", enum: "enum", trait: "트레잇", type: "타입 별칭", const: "상수", static: "정적", impl: "impl" }
     : { method: "method", fn: "fn", struct: "struct", enum: "enum", trait: "trait", type: "type", const: "const", static: "static", impl: "impl" };
 
   // Docs: the version menu and, off the newest release, a banner.
