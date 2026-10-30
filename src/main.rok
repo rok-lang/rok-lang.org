@@ -394,25 +394,6 @@ fn chars_of(s: str) -> List<char> {
     cs
 }
 
-/// Drop `.html` from an internal href target (`index.html` -> its directory).
-/// External, mailto and anchor-only hrefs are left alone.
-fn clean_one(href: str) -> str {
-    if href.contains("://") || href.starts_with("mailto:") || href.starts_with("#") || href.is_empty() { return href; }
-    let path = href;
-    let frag = "";
-    if let k: usize = href.find("#") { path = href[:k]; frag = href[k:]; }
-    let clean = if path.ends_with("/index.html") {
-        path[:path.len() - "index.html".len()]
-    } else if path == "index.html" {
-        "./"
-    } else if path.ends_with(".html") {
-        path[:path.len() - ".html".len()]
-    } else {
-        path
-    };
-    clean + frag
-}
-
 /// Rewrite every `href="..."` to its extensionless form. Output files keep
 /// their `.html` names; the server / Pages resolve the clean paths. The link
 /// check runs on the uncleaned pages, so it still verifies `.html` targets.
@@ -436,7 +417,7 @@ fn clean_hrefs(html: str) -> str {
             v.push(cs[j]);
             j += 1;
         }
-        out.push_str(clean_one(v.to_str()));
+        out.push_str(layout::clean(v.to_str()));
         out.push('"');
         i = if j < n { j + 1 } else { j };
     }
@@ -841,7 +822,7 @@ fn main() throws {
         let out = name + ".html";
         let body = if name == "index" { home::body(site, examples) } else { html };
         www.insert(out, layout::www_page(site, out, doc.title, body));
-        www_urls.push(site.base_url + "/" + if name == "index" { "" } else { out });
+        www_urls.push(site.base_url + "/" + if name == "index" { "" } else { name });
     }
     www.insert("404.html", layout::www_page(site, "404.html", "Page not found", layout::not_found(|p| layout::latest(site, p), false)));
 
@@ -907,10 +888,11 @@ fn main() throws {
     try write(www_dir, "robots.txt", f"User-agent: *\nAllow: /\nSitemap: {site.base_url}/sitemap.xml\n");
     try write(www_dir, ".well-known/security.txt", f"Contact: mailto:security@rok-lang.org\nExpires: 2027-10-24T00:00:00.000Z\nPreferred-Languages: en, ko\nCanonical: {site.base_url}/.well-known/security.txt\nPolicy: https://github.com/rok-lang/rok/blob/main/SECURITY.md\n");
     try write(www_dir, "sitemap.xml", sitemap(www_urls));
-    // The sitemap lists latest/, so the build of that version writes it.
-    if version == newest {
+    // The sitemap lists latest/: this build's pages if it is the newest
+    // release, else the archived ones.
+    if latest_outs.len() > 0 {
         let urls: List<str> = List::new();
-        for out in files.keys() {
+        for out in latest_outs {
             if out != "404.html" { urls.push(layout::latest(site, if out == "index.html" { "" } else { out })); }
         }
         urls.sort();

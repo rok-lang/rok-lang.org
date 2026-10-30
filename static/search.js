@@ -425,7 +425,8 @@
       a.id = "hit-" + k;
       a.setAttribute("role", "option");
       a.tabIndex = -1;
-      a.href = root + e.u;
+      // The pages' own addresses, without .html.
+      a.href = root + e.u.replace(/(^|\/)index\.html(?=#|$)/, "$1").replace(/\.html(?=#|$)/, "");
       const w = where(e.u);
       if (w) {
         const tag = document.createElement("span");
