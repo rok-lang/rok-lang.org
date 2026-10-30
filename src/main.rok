@@ -423,7 +423,7 @@ fn site_hrefs(site: Site, html: str, base: str, out: str) -> str {
     let i = 0usize;
     while i < n {
         let name = "";
-        if i > 0 && cs[i - 1] == ' ' {
+        if i > 0 && (cs[i - 1] == ' ' || cs[i - 1] == '\n' || cs[i - 1] == '\t') {
             for a in ["href=\"", "src=\"", "data-root=\""] {
                 let k = 0usize;
                 let ac = chars_of(a);
@@ -505,6 +505,31 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
                 if !frag.is_empty() && !s.contains(frag) { bad.push(f"{out}: {href} (no anchor)"); }
             } else if !statics.contains(target) {
                 bad.push(f"{out}: {href} (no page)");
+            }
+        }
+    }
+    bad
+}
+
+/// Static files referenced by a relative path from the pages written
+/// under `root` (after site_hrefs, so the served HTML).
+fn relative_assets(root: str) throws -> List<str> {
+    let bad: List<str> = List::new();
+    for entry in fs::walk(root) {
+        let e = try entry.get();
+        let p = e.path().as_str();
+        if !e.is_file() || !p.ends_with(".html") { continue; }
+        let html = try fs::read_to_str(p);
+        // After any white space, not just the space site_hrefs looks for.
+        for a in ["href=\"", "src=\""] {
+            let rest = html;
+            loop {
+                let k = rest.find(a) ?? rest.len();
+                if k == rest.len() { break; }
+                let ws = k > 0 && rest[k - 1:k].trim().is_empty();
+                rest = rest[k + a.len():];
+                let v = rest[:rest.find("\"") ?? rest.len()];
+                if ws && url::relative_asset(v) { bad.push(f"{p[root.len() + 1:]}: {v} (relative asset path)"); }
             }
         }
     }
@@ -967,6 +992,7 @@ fn main() throws {
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }
     for b in arch_bad { bad.push(b); }
+    for b in try relative_assets(out_root) { bad.push(b); }
     for b in bad { eprintln(f"broken link: {b}"); }
     let latest_note = if has_latest { ", latest/ = " + newest } else { "" };
     println(f"docs {version}: {pages.len()} + {ko_pages.len()} (ko) spec pages + {own.len()} guide pages + {api.len()} API pages → {docs_dir}/ ({files.len()} html){latest_note}; home → {www_dir}/; {bad.len()} broken links, {t0.elapsed():?}");

@@ -67,6 +67,18 @@ pub fn site_href(dir: str, href: str) -> str {
     canon(resolve(dir, path)) + rest
 }
 
+/// True for an `href` / `src` that names a static file (`rok.css`,
+/// `logo.svg`) by a relative path: it breaks on a directory page served
+/// without its trailing slash, so no generated page may carry one.
+pub fn relative_asset(v: str) -> bool {
+    if foreign(v) || v.starts_with("/") { return false; }
+    let path = split_ref(v).0;
+    for ext in [".css", ".js", ".svg", ".png", ".ico", ".json", ".woff2"] {
+        if path.ends_with(ext) { return true; }
+    }
+    false
+}
+
 #[cfg(test)]
 fn expect(got: str, want: str) {
     if got != want { panic(f"got `{got}`, want `{want}`"); }
@@ -109,4 +121,16 @@ fn hrefs() {
     expect(site_href("/x", "mailto:a@b"), "mailto:a@b");
     expect(site_href("/x", "//cdn.example/a.css"), "//cdn.example/a.css");
     expect(split_ref("a#b?c").0, "a");
+}
+
+#[test]
+fn relative_assets() {
+    assert(relative_asset("rok.css"), "bare name");
+    assert(relative_asset("../../rok.css?v=1"), "up and query");
+    assert(relative_asset("./logo.svg"), "dot");
+    assert(!relative_asset("/latest/rok.css"), "root-relative");
+    assert(!relative_asset("https://cdn.example/a.css"), "foreign");
+    assert(!relative_asset("//cdn.example/a.js"), "scheme-relative");
+    assert(!relative_asset("learn/05-sum-types"), "page");
+    assert(!relative_asset("#rok.css"), "fragment");
 }
