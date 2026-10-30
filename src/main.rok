@@ -53,6 +53,8 @@ pub struct Site {
     /// The newest release. Only its docs open code in the playground,
     /// which runs that release.
     pub newest: str = "";
+    /// Its newest patch release (`0.1.4`), for the banner of other versions.
+    pub newest_release: str = "";
     /// The spec's English edition (`spec/en`), relative to this file.
     pub spec: str = "../spec/en";
     /// The Korean edition (`spec/ko`), rendered under `ko/`; `""` for none.
@@ -130,8 +132,9 @@ pub struct Bundle {
 }
 
 /// Final HTML of a doc page: the current chrome around `f`'s content.
-fn wrap(site: Site, f: Frag) -> str {
-    let html = layout::page(site, f.out, f.title, f.side, f.toc, f.body, f.pager);
+/// `latest` holds the pages of the newest release.
+fn wrap(site: Site, f: Frag, latest: Set<str>) -> str {
+    let html = layout::page(site, f.out, f.title, f.side, f.toc, f.body, f.pager, layout::ver_banner(site, f.out, latest.contains(f.out)));
     if f.head.is_empty() { html } else { html.replace("</head>", f.head) }
 }
 
@@ -447,6 +450,8 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
                 frag = href[k + 1:];
             }
             let target = if path.is_empty() { out } else { norm(join(dir_of(out), path)) };
+            // Another version's docs (the banner's link to latest/).
+            if target.starts_with("../latest/") { continue; }
             if let s: Set<str> = ids.get(target) {
                 if !frag.is_empty() && !s.contains(frag) { bad.push(f"{out}: {href} (no anchor)"); }
             } else if !statics.contains(target) {
@@ -654,6 +659,7 @@ fn main() throws {
     let vs = try load_versions();
     let newest = if vs.released.len() > 0 { vs.released[0] } else { "" };
     site.newest = newest;
+    site.newest_release = vs.patches.get(newest) ?? newest;
     if version != "dev" && !vs.released.contains(version) {
         eprintln(f"note: {version} is not in versions.rokon, so the version menu will not list it");
     }
@@ -767,9 +773,20 @@ fn main() throws {
     let idx = StrBuf::new();
     idx.push_str(f"{{\"p\":[\n{pl.to_str()}],\n\"h\":[\n{hl.to_str()}]}}\n");
 
+    // The newest release's pages, for the banner's link on other versions.
+    let archive = try env::var("ROK_DOCS_ARCHIVE") catch _ { "" };
+    let latest_outs: Set<str> = Set::new();
+    if version == newest {
+        for o in frags.keys() { latest_outs.insert(o); }
+    } else if !archive.is_empty() && fs::exists(f"{archive}/{newest}/bundle.rokon") {
+        let bpath = f"{archive}/{newest}/bundle.rokon";
+        let b: Bundle = try rokon::decode(try rokon::parse(try fs::read_to_str(bpath)), bpath);
+        for f in b.pages { latest_outs.insert(f.out); }
+    }
+
     // This version's pages, with the current chrome.
     let files: Dict<str, str> = Dict::new();
-    for out in frags.keys() { files.insert(out, wrap(site, frags[out])); }
+    for out in frags.keys() { files.insert(out, wrap(site, frags[out], latest_outs)); }
 
     // `archive` mode: emit this version's content as a bundle for a later
     // deploy to re-wrap with the chrome of the day, instead of writing HTML.
@@ -834,7 +851,6 @@ fn main() throws {
     // them while their content stays pinned. `serve` archives each release
     // once and points ROK_DOCS_ARCHIVE at the archive.
     let arch_bad: List<str> = List::new();
-    let archive = try env::var("ROK_DOCS_ARCHIVE") catch _ { "" };
     if !archive.is_empty() {
         for v in vs.released {
             if v == version { continue; }
@@ -845,7 +861,7 @@ fn main() throws {
             let vdir = docs_root + "/" + v;
             if fs::exists(vdir) { try fs::remove_dir_all(vdir); }
             let vfiles: Dict<str, str> = Dict::new();
-            for f in b.pages { vfiles.insert(f.out, wrap(site, f)); }
+            for f in b.pages { vfiles.insert(f.out, wrap(site, f, latest_outs)); }
             for out in vfiles.keys() { try write(vdir, out, clean_hrefs(vfiles[out])); }
             try write(vdir, "search-index.json", b.search);
             let vstatics = try copy_static(vdir);
@@ -890,7 +906,7 @@ fn main() throws {
     if has_latest { try copy_tree(latest_from, docs_root + "/latest"); }
     // The 404 page uses latest/'s files, so it speaks for that version.
     site.version = if newest.is_empty() { version } else { newest };
-    try write(docs_root, "404.html", clean_hrefs(layout::page(site, "404.html", "Page not found", "", "", layout::not_found(|p| "/latest/" + p, true), "")));
+    try write(docs_root, "404.html", clean_hrefs(layout::page(site, "404.html", "Page not found", "", "", layout::not_found(|p| "/latest/" + p, true), "", "")));
 
     let bad = check(files, statics);
     for b in check(www, www_statics) { bad.push("www/" + b); }

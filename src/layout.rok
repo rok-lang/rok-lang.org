@@ -14,7 +14,84 @@ pub fn md(src: str, link: fn(str) -> str, ko: bool) -> Doc {
     d.html = d.html.replace("<pre><code class=\"language-output\">", "<pre class=\"output\"><code class=\"language-output\">");
     // The heading permalinks are aria-hidden, so keep them out of the tab order too.
     d.html = d.html.replace("class=\"anchor\" href=", "class=\"anchor\" tabindex=\"-1\" href=");
+    d.html = code_blocks(d.html, ko);
     d
+}
+
+/// Visible text of highlighted code: tags dropped, entities decoded.
+fn code_text(html: str) -> str {
+    strip_tags(html).replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&")
+}
+
+fn text_lines(text: str) -> List<str> {
+    let ls: List<str> = List::new();
+    for l in text.trim_end_matches("\n").split("\n") { ls.push(l); }
+    ls
+}
+
+fn widest(ls: List<str>) -> usize {
+    let w = 0usize;
+    for l in ls {
+        if l.char_count() > w { w = l.char_count(); }
+    }
+    w
+}
+
+/// Fenced code as a `.code.cb` block: its bar, the output that follows
+/// it folded in, side by side when both are short, folded when long.
+/// Decided here, not in search.js, so nothing moves once the page shows;
+/// search.js only adds the buttons to the bar.
+fn code_blocks(html: str, ko: bool) -> str {
+    let open = "<pre><code";
+    let close = "</code></pre>";
+    let out = StrBuf::new();
+    let rest = html;
+    loop {
+        let k = rest.find(open) ?? rest.len();
+        out.push_str(rest[:k]);
+        rest = rest[k:];
+        if rest.is_empty() { break; }
+        let e = rest.find(close) ?? 0;
+        let b = (rest[open.len():].find(">") ?? 0) + open.len() + 1;
+        if e < b {
+            out.push_str(rest);
+            break;
+        }
+        let lang = "";
+        let cls = "<pre><code class=\"language-";
+        if rest.starts_with(cls) {
+            if let q: usize = rest[cls.len():].find("\"") { lang = rest[cls.len():cls.len() + q]; }
+        }
+        let code = rest[:e + close.len()];
+        let c = text_lines(code_text(rest[b:e]));
+        rest = rest[e + close.len():];
+        let output = "";
+        let t = rest.trim_start();
+        if t.starts_with("<pre class=\"output\">") {
+            if let oe: usize = t.find(close) {
+                output = t[:oe + close.len()];
+                rest = t[oe + close.len():];
+            }
+        }
+        let side = if output.is_empty() {
+            false
+        } else {
+            let o = text_lines(code_text(output));
+            o.len() <= c.len() && widest(o) <= 28 && widest(c) <= 60
+        };
+        // search.js clips a block taller than 440px (20 lines of 22px).
+        let tall = c.len() > 20;
+        let label = if lang == "text" { "" } else { lang };
+        let fold = if tall { " tall collapsed" } else { "" };
+        let two = if side { " side-by-side" } else { "" };
+        out.push_str(f"<div class=\"code cb{fold}\"><div class=\"cb-h\"><span class=\"t-label\">{label}</span></div><div class=\"cb-body{two}\">{code}{output}</div>");
+        if tall {
+            let more = if ko { f"{c.len()}줄 모두 보기" } else { f"Show all {c.len()} lines" };
+            out.push_str(f"<button type=\"button\" class=\"expand\" aria-expanded=\"false\">{more}</button>");
+        }
+        out.push_str("</div>\n");
+    }
+    out.to_str()
 }
 
 fn code_html(lang: str, body: str) -> (str | none) {
@@ -325,10 +402,25 @@ fn section(at: str) -> (str, str) {
     ("", "")
 }
 
+/// The note over the docs of any version but the newest release, linking
+/// to this page in latest/ if it is there (`in_latest`), else to latest/.
+pub fn ver_banner(site: Site, out: str, in_latest: bool) -> str {
+    if site.version == site.newest || site.newest.is_empty() { return ""; }
+    let ko = out.starts_with("ko/");
+    let to = root_of(out) + "../latest/" + if in_latest && out != "404.html" { out } else { "index.html" };
+    let rel = "v" + if site.newest_release.is_empty() { site.newest } else { site.newest_release };
+    let (what, go) = if ko {
+        (if site.version == "dev" { "다음 버전을 위한, 아직 릴리스되지 않은 문서입니다." } else { f"v{site.version} 문서를 보고 있습니다." }, f"최신 릴리스: {rel} →")
+    } else {
+        (if site.version == "dev" { "Unreleased docs for the next version." } else { f"You are reading the docs for v{site.version}." }, f"Latest release: {rel} →")
+    };
+    f"<p class=\"ver-banner\">{what} <a href=\"{to}\">{go}</a></p>\n"
+}
+
 /// A page of the docs of one version, `out` relative to that version's
-/// root. search.js fills the version menu and banner from `versions.json`
-/// beside the version directories.
-pub fn page(site: Site, out: str, title: str, side: str, toc: str, body: str, pager: str) -> str {
+/// root, under `banner` (`ver_banner`). search.js fills the version menu
+/// from `versions.json` beside the version directories.
+pub fn page(site: Site, out: str, title: str, side: str, toc: str, body: str, pager: str, banner: str) -> str {
     // The 404 page sits above the versions and is served for any missing
     // path, so it borrows the newest release's files.
     let root = if out == "404.html" { "/latest/" } else { root_of(out) };
@@ -377,7 +469,7 @@ pub fn page(site: Site, out: str, title: str, side: str, toc: str, body: str, pa
 </div>
 </div>
 </header>
-<div class=\"shell\">
+{banner}<div class=\"shell\">
 {aside}<main id=\"content\" class=\"main\">
 <article class=\"prose\">
 {crumb}{body}{pager}

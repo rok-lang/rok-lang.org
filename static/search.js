@@ -6,6 +6,10 @@
   const box = document.getElementById("results");
   let index = null;
   let sel = -1;
+  // Interface strings; the Korean spec pages get Korean ones.
+  const T = document.documentElement.lang === "ko"
+    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", copiedLink: "링크 복사됨 ✓", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요` }
+    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", copiedLink: "link copied ✓", linkInBar: "link in the address bar", press: (k) => `Press ${k}` };
 
   // The sidebar starts folded on small screens; on wide ones it scrolls
   // to the current page (the API list is long).
@@ -126,26 +130,19 @@
     return false;
   };
 
-  // Code blocks get a bar (language, run, copy); output that follows a
-  // block moves into it, beside the code when both are short.
-  for (const pre of document.querySelectorAll("article pre:not(.output):not(.err):not(.sig):not(.term)")) {
-    if (pre.closest(".members, .code, .landing")) continue;
+  // Code blocks come with their bar (layout.rok); add run and copy.
+  for (const wrap of document.querySelectorAll("article .code.cb")) {
+    const head = wrap.querySelector(".cb-h");
+    const pre = wrap.querySelector(".cb-body > pre");
+    if (!head || !pre) continue;
     const lang = (pre.querySelector("code")?.className.match(/language-(\w+)/) || [])[1] || "";
-    const wrap = document.createElement("div");
-    wrap.className = "code cb";
-    const head = document.createElement("div");
-    head.className = "cb-h";
-    const title = document.createElement("span");
-    title.className = "t-label";
-    title.textContent = lang && lang !== "text" ? lang : "";
-    head.append(title);
     const play = document.body.dataset.play;
     if (play && lang === "rok" && runnableRok(pre.innerText) && "CompressionStream" in window) {
       const t = document.createElement("button");
       t.type = "button";
       t.className = "btn btn-sm run";
-      t.textContent = "Run";
-      t.setAttribute("aria-label", "Run in the playground");
+      t.textContent = T.run;
+      t.setAttribute("aria-label", T.runLabel);
       t.addEventListener("click", async () => {
         const s = new Blob([pre.innerText]).stream().pipeThrough(new CompressionStream("deflate-raw"));
         const b = new Uint8Array(await new Response(s).arrayBuffer());
@@ -157,46 +154,28 @@
     const b = document.createElement("button");
     b.type = "button";
     b.className = "btn-2 btn-sm copy";
-    b.textContent = "Copy";
-    b.setAttribute("aria-label", "Copy code");
+    b.textContent = T.copy;
+    b.setAttribute("aria-label", T.copyLabel);
     b.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(pre.innerText.replace(/\n$/, ""));
-        b.textContent = "Copied";
+        b.textContent = T.copied;
       } catch {
-        b.textContent = /Mac|iPhone|iPad/.test(navigator.platform) ? "Press \u2318C" : "Press Ctrl+C";
+        b.textContent = T.press(/Mac|iPhone|iPad/.test(navigator.platform) ? "\u2318C" : "Ctrl+C");
       }
       b.classList.add("done");
-      setTimeout(() => { b.textContent = "Copy"; b.classList.remove("done"); }, 1600);
+      setTimeout(() => { b.textContent = T.copy; b.classList.remove("done"); }, 1600);
     });
     head.append(b);
-    const body = document.createElement("div");
-    body.className = "cb-body";
-    const out = pre.nextElementSibling;
-    pre.replaceWith(wrap);
-    wrap.append(head, body);
-    body.append(pre);
-    if (out && out.matches("pre.output")) {
-      body.append(out);
-      const lines = (el) => el.innerText.replace(/\n$/, "").split("\n");
-      const o = lines(out), c = lines(pre);
-      if (o.length <= c.length && Math.max(...o.map((l) => l.length)) <= 28 && Math.max(...c.map((l) => l.length)) <= 60) body.classList.add("side-by-side");
-    }
-    if (pre.scrollHeight > 480) {
-      const n = pre.innerText.replace(/\n$/, "").split("\n").length;
-      wrap.classList.add("tall", "collapsed");
-      const ex = document.createElement("button");
-      ex.type = "button";
-      ex.className = "expand";
-      const label = () => { ex.textContent = wrap.classList.contains("collapsed") ? `Show all ${n} lines` : "Collapse"; };
-      label();
+    const ex = wrap.querySelector(".expand");
+    if (ex) {
+      const more = ex.textContent;
       ex.addEventListener("click", () => {
-        const wasOpen = !wrap.classList.contains("collapsed");
-        wrap.classList.toggle("collapsed");
-        label();
-        if (wasOpen) wrap.scrollIntoView({ block: "nearest" });
+        const open = wrap.classList.toggle("collapsed") === false;
+        ex.textContent = open ? T.collapse : more;
+        ex.setAttribute("aria-expanded", open ? "true" : "false");
+        if (!open) wrap.scrollIntoView({ block: "nearest" });
       });
-      wrap.append(ex);
     }
   }
 
@@ -240,9 +219,9 @@
       history.replaceState(null, "", a.hash);
       try {
         await navigator.clipboard.writeText(location.href);
-        toast("link copied ✓");
+        toast(T.copiedLink);
       } catch {
-        toast("link in the address bar");
+        toast(T.linkInBar);
       }
     });
   }
@@ -296,16 +275,6 @@
         tail.textContent = ` (v${latest})`;
         s.append(tail);
         s.setAttribute("aria-label", `Docs version: latest (v${latest})`);
-      }
-      if (version !== v.latest && v.latest) {
-        const b = document.createElement("p");
-        b.className = "ver-banner";
-        b.append(version === "dev" ? "These are the docs of the unreleased main branch." : `These are the docs of Rok ${version}.`);
-        const a = document.createElement("a");
-        a.href = new URL("../latest/" + here, base).href;
-        a.textContent = `Latest release: v${v.latest} →`;
-        b.append(a);
-        document.querySelector(".hdr").after(b);
       }
     }).catch(() => {});
   }
@@ -398,11 +367,11 @@
       const li = document.createElement("li");
       li.setAttribute("role", "none");
       li.className = "empty";
-      li.textContent = "No results";
+      li.textContent = T.none;
       box.append(li);
     }
     show(true);
-    status.textContent = !hits.length ? "No results" : hits.length > 40 ? `40 of ${hits.length} results shown` : hits.length === 1 ? "1 result" : `${hits.length} results`;
+    status.textContent = !hits.length ? T.none : hits.length > 40 ? `40 of ${hits.length} results shown` : hits.length === 1 ? "1 result" : `${hits.length} results`;
     mark(hits.length ? 0 : -1);
   };
 
