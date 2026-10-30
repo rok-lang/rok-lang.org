@@ -82,27 +82,41 @@
   const tocM = document.querySelector(".toc-m");
   if (tocM) tocM.addEventListener("click", (e) => { if (e.target.closest("a")) tocM.open = false; });
 
-  // Theme: "light" or "dark" in localStorage, else the system setting.
-  // The inline script in <head> sets the class before the first paint.
+  // Theme: "light" or "dark" from the `theme` cookie, which every
+  // *.rok-lang.org site shares, else localStorage, else the system
+  // setting. The inline script in <head> sets the class before the first
+  // paint.
   const html = document.documentElement;
   const media = matchMedia("(prefers-color-scheme: dark)");
-  const stored = () => { try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : "auto"; } catch { return "auto"; } };
+  const stored = () => {
+    const m = document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/);
+    if (m) return m[1];
+    try { const t = localStorage.getItem("theme"); return t === "light" || t === "dark" ? t : "auto"; } catch { return "auto"; }
+  };
+  const ko = html.lang === "ko";
   const apply = () => {
     const t = stored();
     const dark = t === "dark" || (t === "auto" && media.matches);
     html.classList.toggle("dk", dark);
     html.classList.toggle("lt", !dark);
     for (const b of document.querySelectorAll("[data-theme-set]")) b.setAttribute("aria-pressed", b.dataset.themeSet === t ? "true" : "false");
+    for (const b of document.querySelectorAll(".ib.theme")) {
+      b.setAttribute("aria-pressed", dark ? "true" : "false");
+      b.title = ko ? (dark ? "라이트 테마로 바꾸기" : "다크 테마로 바꾸기") : (dark ? "Switch to light theme" : "Switch to dark theme");
+    }
   };
   const setTheme = (t) => {
     try { t === "auto" ? localStorage.removeItem("theme") : localStorage.setItem("theme", t); } catch {}
+    const where = (/(^|\.)rok-lang\.org$/.test(location.hostname) ? "; Domain=.rok-lang.org" : "") + "; Path=/; SameSite=Lax" + (location.protocol === "https:" ? "; Secure" : "");
+    document.cookie = t === "auto" ? `theme=${where}; Max-Age=0` : `theme=${t}${where}; Max-Age=31536000`;
     apply();
   };
   apply();
   media.addEventListener("change", apply);
+  // Back from another rok-lang.org site, maybe with another theme.
+  addEventListener("pageshow", apply);
   for (const b of document.querySelectorAll("[data-theme-set]")) b.addEventListener("click", () => setTheme(b.dataset.themeSet));
-  const tb = document.querySelector(".theme");
-  if (tb) tb.addEventListener("click", () => setTheme(html.classList.contains("dk") ? "light" : "dark"));
+  for (const b of document.querySelectorAll(".ib.theme")) b.addEventListener("click", () => setTheme(html.classList.contains("dk") ? "light" : "dark"));
 
   // Copy buttons with their text in data-copy.
   for (const b of document.querySelectorAll("[data-copy]")) {

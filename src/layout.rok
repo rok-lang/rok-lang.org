@@ -325,7 +325,7 @@ fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, extra: 
     f"<meta charset=\"utf-8\">
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
 <title>{esc(full)}</title>
-<script>try{{var t=localStorage.getItem(\"theme\");if(t!==\"light\"&&t!==\"dark\")t=matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\";document.documentElement.className=\"rk \"+(t===\"dark\"?\"dk\":\"lt\")}}catch(e){{document.documentElement.className=\"rk lt\"}}</script>
+<script>try{{var m=document.cookie.match(/(?:^|; )theme=(light|dark)(?:;|$)/),t=m?m[1]:localStorage.getItem(\"theme\");if(t!==\"light\"&&t!==\"dark\")t=matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\";document.documentElement.className=\"rk \"+(t===\"dark\"?\"dk\":\"lt\")}}catch(e){{document.documentElement.className=\"rk lt\"}}</script>
 <meta name=\"description\" content=\"{desc}\">
 <link rel=\"canonical\" href=\"{esc(url)}\">
 {extra}<meta property=\"og:type\" content=\"website\">
@@ -373,7 +373,20 @@ struct Links {
     roadmap: str;
 }
 
-fn footer(site: Site, l: Links, note: str, logo: str) -> str {
+/// The header's theme button; search.js keeps aria-pressed and the title
+/// in step with the theme.
+fn theme_button(ko: bool) -> str {
+    let (label, title) = if ko { ("다크 테마", "다크 테마로 바꾸기") } else { ("Dark theme", "Switch to dark theme") };
+    f"<button class=\"ib theme\" type=\"button\" aria-label=\"{label}\" aria-pressed=\"false\" title=\"{title}\">{ICON_THEME}</button>"
+}
+
+/// The footer's System / Light / Dark switch.
+fn theme_seg(ko: bool) -> str {
+    let (lang, group, sys, light, dark) = if ko { ("ko", "테마", "시스템", "라이트", "다크") } else { ("en", "Theme", "System", "Light", "Dark") };
+    f"<span class=\"seg\" role=\"group\" aria-label=\"{group}\" lang=\"{lang}\"><button type=\"button\" data-theme-set=\"auto\" aria-pressed=\"false\">{sys}</button><button type=\"button\" data-theme-set=\"light\" aria-pressed=\"false\">{light}</button><button type=\"button\" data-theme-set=\"dark\" aria-pressed=\"false\">{dark}</button></span>"
+}
+
+fn footer(site: Site, l: Links, note: str, logo: str, ko: bool) -> str {
     let gh = "https://github.com/rok-lang";
     let col = |head: str, items: str| f"<div class=\"col\"><p class=\"t-label\">{head}</p>{items}</div>";
     f"<footer class=\"foot\" lang=\"en\">
@@ -388,7 +401,7 @@ fn footer(site: Site, l: Links, note: str, logo: str) -> str {
 <nav aria-label=\"Rok sites\"><a href=\"{esc(l.home)}\">Home</a><a href=\"{esc(l.docs)}\">Docs</a><a href=\"{esc(site.packages)}\">Stones</a><a href=\"{esc(site.playground)}\">Playground</a></nav>
 <span class=\"mono\">rok {esc(site.release)}</span>
 <span>MIT OR Apache-2.0</span><span>Made by <a href=\"https://daminstudio.com\">DaminStudio</a></span>{note}
-<span class=\"seg\" role=\"group\" aria-label=\"Theme\"><button type=\"button\" data-theme-set=\"auto\">System</button><button type=\"button\" data-theme-set=\"light\">Light</button><button type=\"button\" data-theme-set=\"dark\">Dark</button></span>
+{theme_seg(ko)}
 </div>
 </footer>
 "
@@ -481,7 +494,7 @@ pub fn page(site: Site, out: str, title: str, side: str, toc: str, body: str, pa
 <div class=\"tools\">
 <div class=\"search\" role=\"search\">{ICON_SEARCH}<input id=\"q\" type=\"search\" placeholder=\"Search docs\" aria-label=\"Search docs\" aria-keyshortcuts=\"/\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd class=\"kbd\" aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"Search results\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
 <details class=\"vers\"><summary aria-label=\"Docs version: {ver}\">{ver}</summary><ul class=\"vers-menu\"></ul></details>
-<button class=\"ib theme\" type=\"button\" aria-label=\"Switch theme\">{ICON_THEME}</button>
+{theme_button(ko)}
 </div>
 </div>
 {bar}</header>
@@ -492,7 +505,7 @@ pub fn page(site: Site, out: str, title: str, side: str, toc: str, body: str, pa
 </article>
 {on_page}</main>
 </div>
-{footer(site, links, note, root + "logo.svg")}<script src=\"{root}search.js\" defer></script>
+{footer(site, links, note, root + "logo.svg", ko)}<script src=\"{root}search.js\" defer></script>
 </body>
 </html>
 "
@@ -530,13 +543,13 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
 <div class=\"tools\">
 <a class=\"gh\" href=\"https://github.com/rok-lang/rok\">GitHub</a>
 <a class=\"btn btn-sm\" href=\"{root}download.html\"{install}>Install</a>
-<button class=\"ib theme\" type=\"button\" aria-label=\"Switch theme\">{ICON_THEME}</button>
+{theme_button(false)}
 </div>
 </div>
 </header>
 <main id=\"content\">
 {main}</main>
-{footer(site, links, "", root + "logo.svg")}<script src=\"{root}search.js\" defer></script>
+{footer(site, links, "", root + "logo.svg", false)}<script src=\"{root}search.js\" defer></script>
 </body>
 </html>
 "
