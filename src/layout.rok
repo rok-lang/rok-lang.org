@@ -6,18 +6,69 @@ use pkg::Frag;
 use pkg::Site;
 use web::chrome;
 use web::url;
-use markdown::{Doc, Options, esc, strip_tags};
+use markdown::{Doc, Heading, Options, esc, strip_tags};
 
 /// Markdown as HTML: `link` maps hrefs, ```rok / ```rokon highlighted,
 /// ```output as `<pre class="output">`; Korean callout titles if `ko`
 /// (Korean spec pages), English otherwise.
 pub fn md(src: str, link: fn(str) -> str, ko: bool) -> Doc {
-    let o = if ko { Options { link: link, code: code_html, callout: callout_ko } } else { Options { link: link, code: code_html } };
+    // Fragments of links into the docs follow the tidied heading ids.
+    let fix = |h: str| tidy_ref(link(h));
+    let o = if ko { Options { link: fix, code: code_html, callout: callout_ko } } else { Options { link: fix, code: code_html } };
     let d = markdown::render(src, o);
     d.html = d.html.replace("<pre><code class=\"language-output\">", "<pre class=\"output\"><code class=\"language-output\">");
-    // The heading permalinks are aria-hidden, so keep them out of the tab order too.
-    d.html = d.html.replace("class=\"anchor\" href=", "class=\"anchor\" tabindex=\"-1\" href=");
+    // The heading permalinks are links in their own right: named, focusable.
+    d.html = d.html.replace(" aria-hidden=\"true\">#</a>", f" aria-label=\"{anchor_label(ko)}\">#</a>");
+    d = tidy_ids(d);
     d.html = code_blocks(d.html, ko);
+    d
+}
+
+/// The accessible name of a heading's permalink.
+pub fn anchor_label(ko: bool) -> str { if ko { "이 절의 링크" } else { "Link to this section" } }
+
+/// A heading slug with each run of dashes collapsed and none at either
+/// end: `31410-the--operator---early-return-of-none` ->
+/// `31410-the-operator-early-return-of-none`.
+pub fn tidy(id: str) -> str {
+    let out = StrBuf::new();
+    let dash = false;
+    for c in id.chars() {
+        if c == '-' {
+            dash = true;
+            continue;
+        }
+        if dash && !out.is_empty() { out.push('-'); }
+        dash = false;
+        out.push(c);
+    }
+    let t = out.to_str();
+    if t.is_empty() { id } else { t }
+}
+
+/// `href` with its fragment tidied, for links within the docs.
+pub fn tidy_ref(href: str) -> str {
+    if href.contains("://") || href.starts_with("mailto:") { return href; }
+    let k = href.find("#") ?? return href;
+    href[:k + 1] + tidy(href[k + 1:])
+}
+
+/// `d` with its heading ids tidied. The old id stays on an empty span in
+/// the heading, so links written before (and other sites') still land.
+/// An id whose tidy form another heading has keeps its old form.
+fn tidy_ids(d: Doc) -> Doc {
+    let have: Set<str> = Set::new();
+    for h in d.headings { have.insert(h.id); }
+    for k in 0..d.headings.len() {
+        let h = d.headings[k];
+        let id = tidy(h.id);
+        if id == h.id || have.contains(id) { continue; }
+        let old = f"id=\"{h.id}\"><a class=\"anchor\" href=\"#{h.id}\"";
+        if !d.html.contains(old) { continue; }
+        d.html = d.html.replace(old, f"id=\"{id}\"><span id=\"{h.id}\" class=\"old-id\"></span><a class=\"anchor\" href=\"#{id}\"");
+        have.insert(id);
+        d.headings[k] = Heading { level: h.level, id: id, text: h.text };
+    }
     d
 }
 
@@ -87,10 +138,13 @@ fn code_blocks(html: str, ko: bool) -> str {
         };
         // search.js clips a block taller than 440px (20 lines of 22px).
         let tall = c.len() > 20;
+        // The bar names the file the block shows, else its language.
         let label = file_label(c);
+        if label.is_empty() { label = code_lang(code); }
+        let name = if label.is_empty() { "" } else { f"<span class=\"t-label\">{label}</span>" };
         let fold = if tall { " tall collapsed" } else { "" };
         let two = if side { " side-by-side" } else { "" };
-        out.push_str(f"<div class=\"code cb{fold}\"><div class=\"cb-h\"><span class=\"t-label\">{label}</span></div><div class=\"cb-body{two}\">{code}{output}</div>");
+        out.push_str(f"<div class=\"code cb{fold}\"><div class=\"cb-h\">{name}</div><div class=\"cb-body{two}\">{code}{output}</div>");
         if tall {
             let more = if ko { f"{c.len()}줄 모두 보기" } else { f"Show all {c.len()} lines" };
             out.push_str(f"<button type=\"button\" class=\"expand\" aria-expanded=\"false\">{more}</button>");
@@ -149,6 +203,14 @@ fn file_label(lines: List<str>) -> str {
     let name = t.strip_prefix("// ") ?? (t.strip_prefix("# ") ?? "");
     if name.is_empty() || name.contains(" ") || !name.contains(".") || name.ends_with(".") || name.char_count() > 48 { return ""; }
     esc(name)
+}
+
+/// The language of a `<pre><code class="language-x">` block, `""` for none.
+fn code_lang(code: str) -> str {
+    let at = code.find("class=\"language-") ?? return "";
+    let rest = code[at + "class=\"language-".len():];
+    let lang = rest[:rest.find("\"") ?? 0];
+    if lang.char_count() > 16 || lang.contains(" ") { "" } else { esc(lang) }
 }
 
 fn code_html(lang: str, body: str) -> (str | none) {
@@ -248,7 +310,7 @@ pub fn chapter(html: str, title: str) -> str {
     let (no, rest) = split_no(title);
     if no.is_empty() { return html; }
     let t = esc(rest) + "</h1>";
-    html.replace(f"aria-hidden=\"true\">#</a>{no}. {t}", "aria-hidden=\"true\">#</a>" + t)
+    html.replace(f"\">#</a>{no}. {t}", "\">#</a>" + t)
 }
 
 /// "On this page": the `##` and `###` sections of `p`.
@@ -264,21 +326,31 @@ pub fn toc(p: Page) -> str {
     out.to_str()
 }
 
-/// The pages of the current chapter (directory): its index, its files
-/// and its sub-chapters.
+/// The sidebar of `pages[idx]`: the part it is in (its first directory:
+/// a spec reference, a docs section) with every chapter listed and the
+/// ones on the way to the page open.
 pub fn sidebar(pages: List<Page>, idx: usize) -> str {
     let p = pages[idx];
-    let d = p.dir;
+    let top = if let k: usize = p.dir.find("/") { p.dir[:k] } else { p.dir };
     let out = StrBuf::new();
-    if !d.is_empty() {
-        if let up: usize = find(pages, readme_of(dir_of(d))) {
+    if !top.is_empty() {
+        if let up: usize = find(pages, readme_of(dir_of(top))) {
             out.push_str(f"<a class=\"up\" href=\"{rel(p.out, pages[up].out)}\">← {esc(pages[up].title)}</a>");
         }
     }
-    if let h: usize = find(pages, readme_of(d)) {
+    if let h: usize = find(pages, readme_of(top)) {
         let cur = if h == idx { " aria-current=\"page\"" } else { "" };
         out.push_str(f"<p class=\"side-title\"><a{cur} href=\"{rel(p.out, pages[h].out)}\">{esc(pages[h].title)}</a></p>");
     }
+    out.push_str(side_tree(pages, idx, top));
+    out.to_str()
+}
+
+/// The files and sub-chapters of directory `d`, a sub-chapter on the way
+/// to `pages[idx]` open.
+fn side_tree(pages: List<Page>, idx: usize, d: str) -> str {
+    let p = pages[idx];
+    let out = StrBuf::new();
     out.push_str("<ul class=\"pages\">");
     for k in 0..pages.len() {
         let q = pages[k];
@@ -286,18 +358,67 @@ pub fn sidebar(pages: List<Page>, idx: usize) -> str {
         let sub = is_readme(q.src) && q.dir != d && dir_of(q.dir) == d;
         if !file && !sub { continue; }
         let cur = if k == idx { " aria-current=\"page\"" } else { "" };
-        out.push_str(f"<li><a{cur} href=\"{rel(p.out, q.out)}\">{label(q.title)}</a></li>");
+        let open = sub && (p.dir == q.dir || p.dir.starts_with(q.dir + "/"));
+        let cls = if open { " class=\"open\"" } else { "" };
+        out.push_str(f"<li{cls}><a{cur} href=\"{rel(p.out, q.out)}\">{label(q.title)}</a>");
+        if open { out.push_str(side_tree(pages, idx, q.dir)); }
+        out.push_str("</li>");
     }
     out.push_str("</ul>");
     out.to_str()
 }
 
-/// First paragraph of a page's HTML (its summary), tags and all.
+/// First paragraph of a page's HTML (its summary), tags and all: not one
+/// in a quote or callout, nor a line that only switches the language.
 fn lead(html: str) -> str {
-    if let a: usize = html.find("<p>") {
-        if let b: usize = html[a:].find("</p>") { return html[a + 3:a + b]; }
+    let h = drop_blocks(drop_blocks(html, "<blockquote", "blockquote"), "<div class=\"callout", "div");
+    let at = 0usize;
+    loop {
+        let a = (h[at:].find("<p>") ?? return "") + at;
+        let b = (h[a:].find("</p>") ?? return "") + a;
+        let p = h[a + 3:b];
+        if !is_lang_line(p) { return p; }
+        at = b;
     }
-    ""
+}
+
+/// `English · 한국어` and the like.
+fn is_lang_line(p: str) -> bool {
+    let t = strip_tags(p);
+    t.contains("English") && t.contains("한국어") && t.char_count() < 40
+}
+
+/// `html` without the elements that start with `open` (`<blockquote`),
+/// nested `<tag>`s and all.
+fn drop_blocks(html: str, open: str, tag: str) -> str {
+    let out = StrBuf::new();
+    let rest = html;
+    let o_pat = "<" + tag;
+    let c_pat = "</" + tag + ">";
+    loop {
+        let k = rest.find(open) ?? rest.len();
+        out.push_str(rest[:k]);
+        if k == rest.len() { break; }
+        let i = k + open.len();
+        let depth = 1;
+        while depth > 0 {
+            let c = rest[i:].find(c_pat) ?? rest.len();
+            if c == rest.len() {
+                i = rest.len();
+                break;
+            }
+            let o = rest[i:].find(o_pat) ?? rest.len();
+            if o < c {
+                depth += 1;
+                i = i + o + o_pat.len();
+            } else {
+                depth -= 1;
+                i = i + c + c_pat.len();
+            }
+        }
+        rest = rest[i:];
+    }
+    out.to_str()
 }
 
 /// The summary of a page as plain text.
@@ -368,34 +489,50 @@ fn clip(s: str, n: usize) -> str {
     out.to_str()
 }
 
+/// The site's description in Korean (site.description in English).
+pub const DESC_KO: str = "Rok은 무엇을 써야 하는지 알려 주는 컴파일 언어입니다. 닫힌 합 타입, AOT 컴파일, 풍부한 라이브러리, 패키지 레지스트리, REPL, Jupyter를 갖추고 있습니다.";
+
 /// The page's summary for `<meta name="description">`: its first paragraph.
 fn describe(site: Site, out: str, body: str) -> str {
-    if out == "index.html" || out.ends_with("404.html") { return site.description; }
+    let ko = out.starts_with("ko/");
+    let whole = if ko { DESC_KO } else { site.description };
+    let at = out.strip_prefix("ko/") ?? out;
+    if at == "index.html" || at == "404.html" { return whole; }
     let s = lead_text(body);
-    if s.is_empty() { site.description } else { clip(s, 160) }
+    if s.is_empty() { whole } else { clip(s, 160) }
+}
+
+/// Static file `name` under `root`, with `?v=` and the first 10 hex
+/// digits of its SHA-256 when known (Site::assets): `serve` caches a file
+/// asked for by its current version for good.
+pub fn asset(site: Site, root: str, name: str) -> str {
+    if let v: str = site.assets.get(name) { return root + name + "?v=" + v; }
+    root + name
 }
 
 /// `<head>` from the charset to the icons. `root` leads to the icons and
-/// stylesheets, `url` is the canonical address, `img` the og:image (with
-/// its `?v=`) and `alt` its text.
-fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, alt: str, extra: str) -> str {
+/// stylesheets, `url` is the canonical address (`""`: none), `img` the
+/// og:image (with its `?v=`) and `alt` its text. `ko`: a Korean page
+/// (the kit's chrome::fonts_in loads Pretendard for those only).
+fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, alt: str, extra: str, _ko: bool) -> str {
     // The docs' own cards are 1200 x 630; the site's card is og.png's size.
     let (w, h) = if img.contains("/og/") { (1200i64, 630i64) } else { (site.og_w, site.og_h) };
     let img = esc(img);
     let alt = esc(alt);
+    let canonical = if url.is_empty() { "" } else { f"<link rel=\"canonical\" href=\"{esc(url)}\">\n" };
+    let og_url = if url.is_empty() { "" } else { f"<meta property=\"og:url\" content=\"{esc(url)}\">\n" };
     f"<meta charset=\"utf-8\">
 <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">
 <title>{esc(full)}</title>
 <meta name=\"color-scheme\" content=\"light dark\">
 <meta name=\"theme-color\" content=\"#fbfbfc\">
-{chrome::theme_script(root)}<meta name=\"description\" content=\"{desc}\">
-<link rel=\"canonical\" href=\"{esc(url)}\">
-{extra}<meta property=\"og:type\" content=\"website\">
+<script src=\"{asset(site, root, "theme.js")}\"></script>
+<meta name=\"description\" content=\"{desc}\">
+{canonical}{extra}<meta property=\"og:type\" content=\"website\">
 <meta property=\"og:site_name\" content=\"{esc(site.title)}\">
 <meta property=\"og:title\" content=\"{esc(full)}\">
 <meta property=\"og:description\" content=\"{desc}\">
-<meta property=\"og:url\" content=\"{esc(url)}\">
-<meta property=\"og:image\" content=\"{img}\">
+{og_url}<meta property=\"og:image\" content=\"{img}\">
 <meta property=\"og:image:type\" content=\"image/png\">
 <meta property=\"og:image:width\" content=\"{w}\">
 <meta property=\"og:image:height\" content=\"{h}\">
@@ -403,8 +540,8 @@ fn head(site: Site, root: str, full: str, desc: str, url: str, img: str, alt: st
 <meta name=\"twitter:card\" content=\"summary_large_image\">
 <meta name=\"twitter:image\" content=\"{img}\">
 <meta name=\"twitter:image:alt\" content=\"{alt}\">
-{chrome::fonts()}<link rel=\"stylesheet\" href=\"{root}rok.css\">
-<link rel=\"stylesheet\" href=\"{root}style.css\">
+{chrome::fonts()}<link rel=\"stylesheet\" href=\"{asset(site, root, "rok.css")}\">
+<link rel=\"stylesheet\" href=\"{asset(site, root, "style.css")}\">
 {chrome::icons(root)}"
 }
 
@@ -525,9 +662,8 @@ pub fn section(at: str) -> (str, str, str, str) {
     ("", "", "", "")
 }
 
-/// Docs page `p` (from the version root) in Korean if `ko`: the API has
-/// its English pages only.
-pub fn in_lang(p: str, ko: bool) -> str { if ko && !p.starts_with("std/") { "ko/" + p } else { p } }
+/// Docs page `p` (from the version root) in Korean if `ko`.
+pub fn in_lang(p: str, ko: bool) -> str { if ko { "ko/" + p } else { p } }
 
 /// The note over the docs of any version but the newest release, linking
 /// to this page in latest/ if it is there (`in_latest`), else to latest/.
@@ -562,23 +698,44 @@ pub fn not_found_page(site: Site, dir: str, ko: bool) -> str {
 }
 
 /// EN / Korean switch of the page `at` (without `ko/`): links to `alt`,
-/// the other language's page, from the version root. An API page has no
-/// Korean edition, so its Korean link goes to the Korean docs home.
-/// `sec` pairs this page's heading ids with the other's (search.js).
+/// the other language's page, from the version root, else to the same
+/// path in the other language. `sec` pairs this page's heading ids with
+/// the other's (search.js).
 fn lang_switch(root: str, at: str, ko: bool, alt: str, sec: str) -> str {
-    let api = at.starts_with("std/");
-    let other = if api && !ko { "ko/index.html" } else if !alt.is_empty() { alt } else if ko { at } else { "ko/" + at };
+    let other = if !alt.is_empty() { alt } else if ko { at } else { "ko/" + at };
     let href = root + other;
     let data = if sec.is_empty() { "" } else { f" data-sec=\"{esc(sec)}\"" };
     let en = if ko { f"<a href=\"{href}\" hreflang=\"en\" lang=\"en\">English</a>" } else { "<span aria-current=\"true\" lang=\"en\">English</span>" };
-    let kr = if ko {
-        "<span aria-current=\"true\" lang=\"ko\">한국어</span>"
-    } else if api {
-        f"<a href=\"{href}\" lang=\"ko\" title=\"API 문서는 영어로만 있습니다\">한국어</a>"
-    } else {
-        f"<a href=\"{href}\" hreflang=\"ko\" lang=\"ko\">한국어</a>"
-    };
+    let kr = if ko { "<span aria-current=\"true\" lang=\"ko\">한국어</span>" } else { f"<a href=\"{href}\" hreflang=\"ko\" lang=\"ko\">한국어</a>" };
     f"<nav class=\"lang-switch\" aria-label=\"{tr(ko, "Language", "언어")}\"{data}>{en}{kr}</nav>"
+}
+
+/// The version menu's items: each released version and dev, linking to
+/// this page in it (to its docs home from a 404 page). search.js sends a
+/// reader to the section's start when that version lacks the page.
+fn vers_items(site: Site, root: str, out: str, lost: bool) -> str {
+    let ko = out.starts_with("ko/");
+    let page = if lost { in_lang("index.html", ko) } else { out };
+    let b = StrBuf::new();
+    let item = |dir: str, label: str, note: str| {
+        let cur = if dir == site.version { " aria-current=\"true\"" } else { "" };
+        let small = if note.is_empty() { "" } else { f"<small>{esc(note)}</small>" };
+        b.push_str(f"<li><a href=\"{root}../{dir}/{page}\" data-label=\"{esc(label)}\"{cur}>{esc(label)}{small}</a></li>");
+    };
+    for r in site.released {
+        let patch = site.patches.get(r) ?? "";
+        let note = if r == site.newest { if patch.is_empty() { "latest" } else { patch + " · latest" } } else { patch };
+        item(r, "v" + r, note);
+    }
+    item("dev", "dev", tr(ko, "main branch", "main 브랜치"));
+    b.to_str()
+}
+
+/// The version a page title names off the newest release: ` (v0.1.0)`,
+/// ` (dev)`; `""` on the newest.
+fn ver_suffix(site: Site) -> str {
+    if site.version == site.newest || site.newest.is_empty() { return ""; }
+    if site.version == "dev" { " (dev)" } else { f" (v{site.version})" }
 }
 
 fn frame(site: Site, root: str, f: Frag, banner: str) -> str {
@@ -593,7 +750,7 @@ fn frame(site: Site, root: str, f: Frag, banner: str) -> str {
         nav.push_str(nav_item(root + in_lang(href, ko), tr(ko, en, kr), sec == key));
     }
     let name = tr(ko, "Rok Docs", "Rok 문서");
-    let full = if at == "index.html" { name } else { f.title + " - " + name };
+    let full = (if at == "index.html" { name } else { f.title + " - " + name }) + ver_suffix(site);
     let contents = tr(ko, "Contents", "목차");
     let on_this = tr(ko, "On this page", "이 페이지의 내용");
     // On narrow screens the sidebar is a drawer, opened from a bar in
@@ -620,19 +777,28 @@ fn frame(site: Site, root: str, f: Frag, banner: str) -> str {
         ""
     } else {
         let (no, _) = split_no(f.title);
-        let chap = if sec == "guide" && !no.is_empty() { f"<span class=\"sep\" aria-hidden=\"true\">/</span><span aria-current=\"page\">{tr(ko, "Chapter " + no, no + "장")}</span>" } else { "" };
+        let sep = "<span class=\"sep\" aria-hidden=\"true\">/</span>";
+        let chap = if sec == "guide" && !no.is_empty() {
+            f"{sep}<span aria-current=\"page\">{tr(ko, "Chapter " + no, no + "장")}</span>"
+        } else if !f.crumb.is_empty() {
+            f"{f.crumb}{sep}<span class=\"here\" aria-current=\"page\">{esc(f.title)}</span>"
+        } else {
+            ""
+        };
         f"<nav class=\"crumb\" aria-label=\"{tr(ko, "Breadcrumb", "이동 경로")}\"><a href=\"{root}{in_lang(sec_index, ko)}\">{tr(ko, sec_en, sec_ko)}</a>{chap}</nav>"
     };
     let switch = if lost { "" } else { lang_switch(root, at, ko, f.alt, f.sec) };
     let pagehead = if crumb.is_empty() && switch.is_empty() { "" } else { f"<div class=\"pagehead\">{crumb}{switch}</div>\n" };
     let lang = if ko { "ko" } else { "en" };
     let desc = esc(describe(site, out, body));
-    let url = latest(site, if at == "index.html" && !ko { "" } else if lost { "" } else { out });
+    // A 404 page has no address of its own; the Korean API pages are the
+    // English ones in Korean chrome, so they name those.
+    let url = if lost { "" } else if ko && at.starts_with("std/") { latest(site, at) } else { latest(site, if at == "index.html" && !ko { "" } else { out }) };
     // Unreleased docs, and Korean pages still in English, stay out of
     // search engines.
     let robots = if site.version == "dev" || f.noindex { "<meta name=\"robots\" content=\"noindex\">\n" } else { "" };
     let ver = if site.version == "dev" { "dev" } else { "v" + site.version };
-    let links = Links { home: site.base_url, docs: root + in_lang("index.html", ko), learn: root + in_lang("learn/index.html", ko), examples: root + in_lang("examples/index.html", ko), errors: if site.no_errors { "" } else { root + in_lang("errors/index.html", ko) }, spec: root + in_lang("spec/refs-lang/index.html", ko), api: root + "std/index.html", tools: root + in_lang("spec/refs-lang/009-tools/index.html", ko), publishing: root + in_lang("learn/18-features-and-stones.html", ko) + (if ko { "" } else { "#publishing-a-stone" }), roadmap: site.base_url + "/roadmap" };
+    let links = Links { home: site.base_url, docs: root + in_lang("index.html", ko), learn: root + in_lang("learn/index.html", ko), examples: root + in_lang("examples/index.html", ko), errors: if site.no_errors { "" } else { root + in_lang("errors/index.html", ko) }, spec: root + in_lang("spec/refs-lang/index.html", ko), api: root + in_lang("std/index.html", ko), tools: root + in_lang("spec/refs-lang/009-tools/index.html", ko), publishing: root + in_lang("learn/18-features-and-stones.html", ko) + (if ko { "" } else { "#publishing-a-stone" }), roadmap: site.base_url + "/roadmap" };
     let play = if !site.newest.is_empty() && site.version == site.newest { esc(site.playground) } else { "" };
     let (skip, menu, sections, find, results, version) = if ko {
         ("본문으로 건너뛰기", "메뉴", "섹션", "문서 검색", "검색 결과", "문서 버전")
@@ -645,7 +811,7 @@ fn frame(site: Site, root: str, f: Frag, banner: str) -> str {
     f"<!doctype html>
 <html class=\"rk lt\" lang=\"{lang}\">
 <head>
-{head(site, root, full, desc, url, img, alt, robots + f.head)}</head>
+{head(site, root, full, desc, url, img, alt, robots + f.head, ko)}</head>
 <body class=\"{kind}\" data-root=\"{root}\" data-version=\"{esc(site.version)}\" data-play=\"{play}\">
 <a class=\"skip\" href=\"#content\">{skip}</a>
 <header class=\"hdr top\" lang=\"{lang}\">
@@ -655,7 +821,7 @@ fn frame(site: Site, root: str, f: Frag, banner: str) -> str {
 <nav id=\"nav\" class=\"nav main-nav\" aria-label=\"{sections}\">{nav.to_str()}</nav>
 <div class=\"tools\">
 <div class=\"search\" role=\"search\">{ICON_SEARCH}<input id=\"q\" type=\"search\" placeholder=\"{find}\" aria-label=\"{find}\" aria-keyshortcuts=\"/ Control+K Meta+K\" autocomplete=\"off\" role=\"combobox\" aria-autocomplete=\"list\" aria-expanded=\"false\" aria-controls=\"results\"><kbd class=\"kbd\" aria-hidden=\"true\">/</kbd><ul id=\"results\" class=\"results\" role=\"listbox\" aria-label=\"{results}\" hidden></ul><p class=\"sr-only\" role=\"status\"></p></div>
-<details class=\"vers\"><summary aria-label=\"{version}: {ver}\">{ver}</summary><ul class=\"vers-menu\"></ul></details>
+<details class=\"vers\"><summary aria-label=\"{version}: {ver}\">{ver}</summary><ul class=\"vers-menu\">{vers_items(site, root, out, lost)}</ul></details>
 {chrome::theme_button(ko)}
 </div>
 </div>
@@ -667,9 +833,9 @@ fn frame(site: Site, root: str, f: Frag, banner: str) -> str {
 </article>
 {on_page}</main>
 </div>
-{footer(site, links, note, root + "logo.svg", ko, "docs")}<script src=\"{root}keys.js\" defer></script>
-<script src=\"{root}copy.js\" defer></script>
-<script src=\"{root}search.js\" defer></script>
+{footer(site, links, note, root + "logo.svg", ko, "docs")}<script src=\"{asset(site, root, "keys.js")}\" defer></script>
+<script src=\"{asset(site, root, "copy.js")}\" defer></script>
+<script src=\"{asset(site, root, "search.js")}\" defer></script>
 </body>
 </html>
 "
@@ -686,8 +852,10 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
     nav.push_str(nav_item(esc(site.playground), "Playground", false));
     nav.push_str(nav_item(esc(site.packages), "Stones", false));
     nav.push_str(nav_item(root + "roadmap.html", "Roadmap", out == "roadmap.html"));
-    let full = if out == "index.html" { site.title + " - " + site.tagline } else { title + " - " + site.title };
-    let url = if out == "index.html" || out == "404.html" { site.base_url + "/" } else { site.base_url + "/" + url::canon(out) };
+    // "Download Rok" is "Download - Rok", not "Download Rok - Rok".
+    let short = title.strip_suffix(" " + site.title) ?? title;
+    let full = if out == "index.html" { site.title + " - " + site.tagline } else { short + " - " + site.title };
+    let url = if out == "404.html" { "" } else if out == "index.html" { site.base_url + "/" } else { site.base_url + "/" + url::canon(out) };
     let kind = if out == "index.html" { "landing" } else { "plain" };
     let desc = esc(if out == "download.html" { f"Download rok {site.release} for macOS, Linux and Windows: the install script, or an archive with its SHA-256." } else if out == "roadmap.html" { "The rok roadmap: what the current release ships and where the language is headed next." } else { site.description });
     let main = if out == "index.html" { body } else { f"<div class=\"frame page\"><article class=\"prose\">\n{body}</article></div>\n" };
@@ -697,7 +865,7 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
     f"<!doctype html>
 <html class=\"rk lt\" lang=\"en\">
 <head>
-{head(site, root, full, desc, url, img, f"{site.title}: {site.tagline}", "")}</head>
+{head(site, root, full, desc, url, img, f"{site.title}: {site.tagline}", "", false)}</head>
 <body class=\"{kind} www\" data-root=\"{root}\" data-play=\"{esc(site.playground)}\">
 <a class=\"skip\" href=\"#content\">Skip to content</a>
 <header class=\"hdr top\" lang=\"en\">
@@ -714,8 +882,8 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
 </header>
 <main id=\"content\">
 {main}</main>
-{footer(site, links, "", root + "logo.svg", false, "home")}<script src=\"{root}copy.js\" defer></script>
-<script src=\"{root}search.js\" defer></script>
+{footer(site, links, "", root + "logo.svg", false, "home")}<script src=\"{asset(site, root, "copy.js")}\" defer></script>
+<script src=\"{asset(site, root, "search.js")}\" defer></script>
 </body>
 </html>
 "
@@ -731,10 +899,14 @@ pub fn not_found(to: fn(str) -> str, ko: bool, no_errors: bool) -> str {
         if key == "errors" && no_errors { continue; }
         links.push_str(f"<li><a href=\"{esc(to(href))}\">{tr(ko, en, kr)}</a></li>"); }
     let find = tr(ko, "Search the docs", "문서 검색");
+    // A form's action is no href, so site_hrefs leaves it: canonical here.
+    let home = to("index.html");
+    let action = if home.starts_with("/") { url::canon(home) } else { home };
     f"<div class=\"lost\">
 <h1>{tr(ko, "Page not found", "페이지를 찾을 수 없습니다")}</h1>
 <p class=\"lead\">{tr(ko, "There is no page at <code id=\"lost-path\">this address</code>.", "<code id=\"lost-path\">이 주소</code>에는 페이지가 없습니다.")}</p>
-<form class=\"lost-find\" action=\"{esc(to("index.html"))}\" method=\"get\" role=\"search\"><label class=\"lost-q\">{ICON_SEARCH}<input name=\"q\" type=\"search\" placeholder=\"{find}\" aria-label=\"{find}\" autocomplete=\"off\"></label><button class=\"btn-2\" type=\"submit\">{tr(ko, "Search", "검색")}</button></form>
+<p class=\"lost-hint\" hidden></p>
+<form class=\"lost-find\" action=\"{esc(action)}\" method=\"get\" role=\"search\"><label class=\"lost-q\">{ICON_SEARCH}<input name=\"q\" type=\"search\" placeholder=\"{find}\" aria-label=\"{find}\" autocomplete=\"off\"></label><button class=\"btn-2\" type=\"submit\">{tr(ko, "Search", "검색")}</button></form>
 <ul class=\"lost-links\">{links.to_str()}</ul>
 </div>
 "

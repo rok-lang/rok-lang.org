@@ -282,9 +282,48 @@
     });
   }
 
-  // 404.html: name the missing path.
+  // 404.html: name the missing path and, on the docs, suggest where it
+  // may be: the same path in latest/ (from an older version or dev),
+  // else the page of its section that it nearly names
+  // (`learn/5` -> `learn/05-sum-types`).
   const lost = document.getElementById("lost-path");
   if (lost) lost.textContent = location.pathname;
+  const hint = document.querySelector(".lost-hint");
+  if (lost && hint && document.body.dataset.version) {
+    const segs = location.pathname.split("/").filter(Boolean);
+    const ver = segs[0] || "";
+    const rest = segs.slice(1).join("/");
+    const say = (href, label) => {
+      hint.replaceChildren(ko ? "혹시 이 페이지인가요? " : "Did you mean ");
+      const a = document.createElement("a");
+      a.href = href;
+      a.textContent = label;
+      hint.append(a, ko ? "" : "?");
+      hint.hidden = false;
+    };
+    const near = () => load().then((idx) => {
+      const lang = rest.startsWith("ko/") ? "ko/" : "";
+      const path = rest.slice(lang.length);
+      const k = path.lastIndexOf("/");
+      const dir = k < 0 ? "" : path.slice(0, k + 1);
+      const leaf = path.slice(k + 1).toLowerCase();
+      if (!leaf) return;
+      const num = /^\d+/.exec(leaf);
+      const pages = idx.filter((e) => !e.p && e.u.startsWith(dir) && !e.u.slice(dir.length).includes("/"));
+      const hit = pages.find((e) => {
+        const name = e.u.slice(dir.length).toLowerCase();
+        if (num) { const m = /^\d+/.exec(name); return m && +m[0] === +num[0] && (leaf === num[0] || name.startsWith(leaf.replace(/^\d+/, m[0]))); }
+        return name.startsWith(leaf) || leaf.startsWith(name);
+      });
+      if (hit) say(root + hit.u, "/" + (root + hit.u).replace(/^\//, ""));
+    }).catch(() => {});
+    if (ver && ver !== "latest" && rest) {
+      const to = "/latest/" + rest;
+      fetch(to, { method: "HEAD" }).then((r) => (r.ok ? say(to, to) : near()), near);
+    } else {
+      near();
+    }
+  }
 
   // Where a hit lives, by the first part of its url: the section's one
   // name, as in the header.
@@ -320,44 +359,31 @@
     document.addEventListener("click", (ev) => { if (!vers.contains(ev.target)) vers.open = false; });
   }
   if (vers && version) {
-    // This page in another version: the same path after the version
-    // directory (which may be the /0.1 alias of /0.1.2).
+    // The menu comes with the page (layout.rok): each version's link is
+    // this page in it. A page that version lacks: its section's start,
+    // with a note, or that version's docs home.
     const here = location.pathname.split("/").slice(2).join("/");
+    for (const a of vers.querySelectorAll(".vers-menu a:not([aria-current])")) {
+      if (!here) continue;
+      a.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        const dir = new URL(a.href).pathname.split("/")[1];
+        const label = a.dataset.label || dir;
+        fetch(a.href, { method: "HEAD" }).then((r) => {
+          if (r.ok) { location.href = a.href; return; }
+          try { sessionStorage.setItem("rok-missing", label); } catch {}
+          const s = sectionOf(here);
+          const to = "/" + dir + (s ? "/" + s : "");
+          const home = "/" + dir + (here.startsWith("ko/") ? "/ko" : "");
+          if (to === home) { location.href = home; return; }
+          fetch(to, { method: "HEAD" }).then((r2) => { location.href = r2.ok ? to : home; }, () => { location.href = home; });
+        }, () => { location.href = a.href; });
+      });
+    }
+    // Under latest/ the menu's button says so, with the release.
     const at = root.replace(/\/$/, "").split("/").pop();
-    fetch("/versions.json").then((r) => r.json()).then((v) => {
-      const menu = vers.querySelector(".vers-menu");
-      const item = (dir, label, note, cur) => {
-        const li = document.createElement("li");
-        const a = document.createElement("a");
-        a.href = "/" + dir + (here ? "/" + here : "");
-        // A page that version lacks: its section's start, with a note.
-        if (!cur && here) {
-          a.addEventListener("click", (ev) => {
-            ev.preventDefault();
-            fetch(a.href, { method: "HEAD" }).then((r) => {
-              if (r.ok) { location.href = a.href; return; }
-              try { sessionStorage.setItem("rok-missing", label); } catch {}
-              // The section's start, or the docs home if that version
-              // has no such section either.
-              const s = sectionOf(here);
-              const to = "/" + dir + (s ? "/" + s : "");
-              const home = "/" + dir + (here.startsWith("ko/") ? "/ko" : "");
-              if (to === home) { location.href = home; return; }
-              fetch(to, { method: "HEAD" }).then((r2) => { location.href = r2.ok ? to : home; }, () => { location.href = home; });
-            }, () => { location.href = a.href; });
-          });
-        }
-        a.textContent = label;
-        if (note) { const s = document.createElement("small"); s.textContent = note; a.append(s); }
-        if (cur) a.setAttribute("aria-current", "true");
-        li.append(a);
-        menu.append(li);
-      };
-      // "v0.1", noted with the patch release its docs follow: "0.1.2 · latest".
-      const note = (r) => [v.patches && v.patches[r], r === v.latest && "latest"].filter(Boolean).join(" · ");
-      for (const r of v.released) item(r, "v" + r, note(r), at !== "latest" && at === r || at === "latest" && r === v.latest);
-      item("dev", "dev", "main branch", at === "dev");
-      if (at === "latest") {
+    if (at === "latest") {
+      fetch("/versions.json").then((r) => r.json()).then((v) => {
         const s = vers.querySelector("summary");
         s.textContent = "latest";
         const tail = document.createElement("span");
@@ -366,8 +392,8 @@
         tail.textContent = ` (v${latest})`;
         s.append(tail);
         s.setAttribute("aria-label", `${T.version}: latest (v${latest})`);
-      }
-    }).catch(() => {});
+      }).catch(() => {});
+    }
   }
 
   // Arrived from the version menu at a section start instead of a page.
@@ -405,7 +431,7 @@
         const whole = v && name.includes(v);
         let any = false;
         for (const li of it.querySelectorAll(".members > li")) {
-          const m = (li.id.split(".").pop() || "").toLowerCase();
+          const m = ((li.querySelector("h4") || li).id.split(".").pop() || "").toLowerCase();
           const on = !v || whole || m.includes(v);
           li.hidden = !on;
           if (on) { any = true; n++; }
@@ -446,6 +472,34 @@
       s.className = "sr-only";
       s.textContent = " " + T.here;
       (r.querySelector("h3, th") || r).append(s);
+    }
+  }
+
+  // The landing page's install command for the visitor's system: the
+  // PowerShell line on Windows; the switch shows either.
+  const pick = document.querySelector("[data-os-pick]");
+  if (pick) {
+    const choose = (os) => {
+      for (const b of pick.querySelectorAll("button[data-pick]")) b.setAttribute("aria-pressed", b.dataset.pick === os ? "true" : "false");
+      for (const el of pick.querySelectorAll("[data-for]")) el.hidden = el.dataset.for !== os;
+    };
+    const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+    if (/win/i.test(plat)) choose("windows");
+    pick.addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-pick]");
+      if (b) choose(b.dataset.pick);
+    });
+  }
+
+  // Playground links carry the plain source (`#src=`); where the browser
+  // can deflate, the shorter `#code=` the playground also reads.
+  if (deflate) {
+    for (const a of document.querySelectorAll("a.play[href*='#src=']")) {
+      const [base, data] = a.href.split("#src=");
+      try {
+        const bytes = Uint8Array.from(atob(data.replace(/-/g, "+").replace(/_/g, "/")), (c) => c.charCodeAt(0));
+        packed(new TextDecoder().decode(bytes)).then((code) => { a.href = `${base}#code=${code}`; }, () => {});
+      } catch {}
     }
   }
 

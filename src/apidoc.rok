@@ -36,7 +36,101 @@ fn summary(doc: str) -> str {
     t
 }
 
-fn anchor(it: Item) -> str { it.kind + "." + it.name }
+/// Inline markdown, without the paragraph.
+fn inline(text: str) -> str {
+    let h = md(text).trim();
+    if h.starts_with("<p>") && h.ends_with("</p>") { h[3:h.len() - 4] } else { h }
+}
+
+/// A module's one-line summary on page `from`: its intro's first
+/// sentence (intro), as HTML.
+fn mod_summary(m: Module, spec: Dict<str, str>, from: str) -> str { inline(summary(intro(m, spec, from))) }
+
+/// An item's id: `struct.List`; a re-export by the names it brings in,
+/// `reexport.List.ListIter` for `use list::{List, ListIter}`.
+fn anchor(it: Item) -> str {
+    if it.kind != "use" { return it.kind + "." + it.name; }
+    let tail = it.name;
+    if let k: usize = tail.find("{") { tail = tail[k + 1:]; } else if let k: usize = tail.rfind("::") { tail = tail[k + 2:]; }
+    let names: List<str> = List::new();
+    for w in tail.replace("}", "").replace(" as ", ",").split(",") {
+        let n = w.trim();
+        if let k: usize = n.rfind("::") { n = n[k + 2:]; }
+        if !n.is_empty() { names.push(if n == "*" { "all" } else { n }); }
+    }
+    "reexport." + names.join(".")
+}
+
+/// The pages and ids of the types (structs, enums, traits, aliases) whose
+/// name is one item's alone: signatures link them.
+pub fn type_index(mods: List<Module>) -> Dict<str, str> {
+    let seen: Dict<str, usize> = Dict::new();
+    let at: Dict<str, str> = Dict::new();
+    for m in mods {
+        for it in m.items {
+            if !(it.kind == "struct" || it.kind == "enum" || it.kind == "trait" || it.kind == "type") { continue; }
+            seen.insert(it.name, (seen.get(it.name) ?? 0usize) + 1);
+            let id = anchor(it);
+            at.insert(it.name, (if moves_out(m, it) { sub_out(m, id) } else { m.out }) + "#" + id);
+        }
+    }
+    let out: Dict<str, str> = Dict::new();
+    for (name, n) in seen.entries() {
+        if n == 1 { out.insert(name, at[name]); }
+    }
+    out
+}
+
+/// Highlighted code with each type of `types` linked to its item, from
+/// page `from`; not the item `self_at` (`page#id`) itself.
+fn link_types(html: str, types: Dict<str, str>, from: str, self_at: str) -> str {
+    if types.len() == 0 { return html; }
+    let open = "<span class=\"t\">";
+    let out = StrBuf::new();
+    let rest = html;
+    loop {
+        let k = rest.find(open) ?? rest.len();
+        out.push_str(rest[:k]);
+        if k == rest.len() { break; }
+        rest = rest[k + open.len():];
+        let e = rest.find("</span>") ?? 0;
+        let name = rest[:e];
+        let to = types.get(name) ?? "";
+        if to.is_empty() || to == self_at {
+            out.push_str(open);
+            continue;
+        }
+        let (page, id) = to.split_once("#") ?? (to, "");
+        let href = if page == from { "#" + id } else { rel(from, page) + "#" + id };
+        out.push_str(f"<a class=\"t\" href=\"{href}\">{name}</a>");
+        rest = rest[e + "</span>".len():];
+    }
+    out.to_str()
+}
+
+/// Public items and members without a doc comment, and all of them.
+pub fn coverage(mods: List<Module>) -> (usize, usize) {
+    let bare = 0usize;
+    let all = 0usize;
+    for m in mods {
+        for it in m.items {
+            if it.kind == "use" { continue; }
+            all += 1;
+            if it.doc.trim().is_empty() { bare += 1; }
+            for mb in it.members {
+                all += 1;
+                if mb.doc.trim().is_empty() { bare += 1; }
+            }
+        }
+        for it in m.impls {
+            for mb in it.members {
+                all += 1;
+                if mb.doc.trim().is_empty() { bare += 1; }
+            }
+        }
+    }
+    (bare, all)
+}
 
 /// Every item and member of `mods`, keyed as the "Added in" badges look
 /// them up: `rok::core::iter::trait.Iterator`, `...::trait.Iterator::exact_len`.
@@ -80,11 +174,11 @@ fn moves_out(m: Module, it: Item) -> bool { split(m) && it.members.len() >= SPLI
 fn sub_out(m: Module, id: str) -> str { m.out[:m.out.len() - ".html".len()] + "/" + id + ".html" }
 
 /// The module page's stand-in for an item on a page of its own.
-fn stub_html(m: Module, it: Item, id: str, title: str, since: Dict<str, str>) -> str {
+fn stub_html(m: Module, it: Item, id: str, title: str, since: Dict<str, str>, types: Dict<str, str>) -> str {
     let href = rel(m.out, sub_out(m, id));
     let out = StrBuf::new();
     out.push_str(f"<section class=\"api-item api-split\" id=\"{esc(id)}\"><h3><a href=\"{href}\">{esc(title)}</a>{badge(since, m.path + "::" + id)}</h3>");
-    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{sig_html(it.sig)}</code></pre>"); }
+    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{link_types(sig_html(it.sig), types, m.out, sub_out(m, id) + "#" + id)}</code></pre>"); }
     let more = if it.traits.len() > 0 { f", {it.traits.len()} trait implementations" } else { "" };
     out.push_str(f"<p class=\"api-more\"><a href=\"{href}\">{it.members.len()} members{more} →</a></p></section>");
     out.to_str()
@@ -181,13 +275,15 @@ fn src_link(file: str, line: usize, at: str) -> str {
     f"<a class=\"src\" href=\"https://github.com/rok-lang/rok/blob/{at}/library/{esc(file)}#L{line}\">Source</a>"
 }
 
-fn item_html(it: Item, id: str, title: str, heads: List<Heading>, m: Module, since: Dict<str, str>, notes: Dict<str, str>, at: str) -> str {
+/// Item `it` on page `from` (its module's, or its own when it moved out).
+fn item_html(it: Item, id: str, title: str, heads: List<Heading>, m: Module, since: Dict<str, str>, notes: Dict<str, str>, at: str, types: Dict<str, str>, from: str) -> str {
     let path = m.path;
     let key = path + "::" + id;
+    let here = from + "#" + id;
     let out = StrBuf::new();
     out.push_str(f"<section class=\"api-item\" id=\"{esc(id)}\"><h3><a href=\"#{esc(id)}\">{esc(title)}</a>{badge(since, key)}{src_link(m.file, it.line, at)}</h3>");
     notes.insert(id, (if it.kind == "impl" { "impl" } else { it.kind }) + "\t" + summary(it.doc).replace("`", ""));
-    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{sig_html(it.sig)}</code></pre>"); }
+    if !it.sig.is_empty() { out.push_str(f"<pre class=\"sig\"><code>{link_types(sig_html(it.sig), types, from, here)}</code></pre>"); }
     out.push_str(md(it.doc));
     if it.members.len() > 0 {
         out.push_str("<ul class=\"members\">");
@@ -197,8 +293,10 @@ fn item_html(it: Item, id: str, title: str, heads: List<Heading>, m: Module, sin
             // covers members that came with it.
             let b = if since.contains_key(key) { "" } else { badge(since, key + "::" + mb.name) };
             let is_fn = mb.sig.contains("fn ");
-            let code = if is_fn { sig_named(mb.sig, mb.name) } else { sig_html(mb.sig) };
-            out.push_str(f"<li id=\"{esc(mid)}\"><div class=\"m-h\"><pre><code>{code}</code></pre>{b}{src_link(m.file, mb.line, at)}</div>{md(mb.doc)}</li>");
+            let code = link_types(if is_fn { sig_named(mb.sig, mb.name) } else { sig_html(mb.sig) }, types, from, here);
+            // A heading of its own, so it has an address and a place in the
+            // page's outline; § is its link.
+            out.push_str(f"<li><div class=\"m-h\"><h4 id=\"{esc(mid)}\"><code>{code}</code><a class=\"self\" href=\"#{esc(mid)}\" aria-label=\"Link to {esc(mb.name)}\">§</a></h4>{b}{src_link(m.file, mb.line, at)}</div>{md(mb.doc)}</li>");
             if is_fn {
                 heads.push(Heading { level: 3, id: mid, text: f"{path}::{it.name}::{mb.name}" });
                 notes.insert(mid, "method\t" + summary(mb.doc).replace("`", ""));
@@ -209,18 +307,18 @@ fn item_html(it: Item, id: str, title: str, heads: List<Heading>, m: Module, sin
     if it.traits.len() > 0 {
         out.push_str("<details class=\"impls\"><summary>Trait implementations ");
         out.push_str(f"{it.traits.len()}</summary><ul>");
-        for t in it.traits { out.push_str(f"<li><code>{rok_syntax::highlight_rok(t)}</code></li>"); }
+        for t in it.traits { out.push_str(f"<li><code>{link_types(rok_syntax::highlight_rok(t), types, from, here)}</code></li>"); }
         out.push_str("</ul></details>");
     }
     out.push_str("</section>");
     out.to_str()
 }
 
-/// A module's leading comment as its intro: the repeated module path
-/// dropped, and spec references in parentheses linked to the standard
+/// A module's leading comment as its intro on page `from`: the repeated
+/// module path dropped, and spec references in parentheses linked to the standard
 /// library spec section (`spec` maps `2.9.2` to its page and anchor) or,
 /// when they name no section there, dropped.
-fn intro(m: Module, spec: Dict<str, str>) -> str {
+fn intro(m: Module, spec: Dict<str, str>, from: str) -> str {
     let d = m.doc;
     for sep in [" - ", " -- ", ": "] {
         if let r: str = d.strip_prefix(m.path + sep) {
@@ -253,7 +351,7 @@ fn intro(m: Module, spec: Dict<str, str>) -> str {
         let stdlib = !inner.contains("refs-lang");
         let found: str | none = if stdlib { spec.get(num) } else { none };
         if let to: str = found {
-            out.push_str(f"([stdlib spec {num}]({rel(m.out, to)}))");
+            out.push_str(f"([stdlib spec {num}]({rel(from, to)}))");
         } else if out.to_str().ends_with(" ") && rest[e + 1:].starts_with(" ") {
             rest = rest[1:];
         }
@@ -272,7 +370,7 @@ fn is_sec(s: str) -> bool {
 }
 
 /// A module page's body and its section headings (for search / TOC).
-pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>, notes: Dict<str, str>, at: str, spec: Dict<str, str>) -> (str, List<Heading>) {
+pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>, notes: Dict<str, str>, at: str, spec: Dict<str, str>, types: Dict<str, str>) -> (str, List<Heading>) {
     let heads: List<Heading> = List::new();
     let out = StrBuf::new();
     out.push_str("<h1><code>");
@@ -292,13 +390,13 @@ pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>, notes: Dict<st
         }
     }
     out.push_str("</code></h1>");
-    out.push_str(md(intro(m, spec)));
+    out.push_str(md(intro(m, spec, m.out)));
     if m.children.len() > 0 {
         out.push_str("<h2 id=\"modules\">Modules</h2><ul class=\"api-list\">");
         heads.push(Heading { level: 2, id: "modules", text: "Modules" });
         for c in m.children {
             if let cm: Module = find(mods, m.path + "::" + c) {
-                out.push_str(f"<li><a href=\"{rel(m.out, cm.out)}\"><code>{esc(c)}</code></a> <span>{esc(summary(cm.doc))}</span></li>");
+                out.push_str(f"<li><a href=\"{rel(m.out, cm.out)}\"><code>{esc(c)}</code></a> <span>{mod_summary(cm, spec, m.out)}</span></li>");
             }
         }
         out.push_str("</ul>");
@@ -314,9 +412,9 @@ pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>, notes: Dict<st
         for it in its {
             if kind != "use" { heads.push(Heading { level: 3, id: anchor(it), text: m.path + "::" + it.name }); }
             if moves_out(m, it) {
-                out.push_str(stub_html(m, it, anchor(it), it.name, since));
+                out.push_str(stub_html(m, it, anchor(it), it.name, since, types));
             } else {
-                out.push_str(item_html(it, anchor(it), it.name, heads, m, since, notes, at));
+                out.push_str(item_html(it, anchor(it), it.name, heads, m, since, notes, at, types, m.out));
             }
         }
     }
@@ -326,9 +424,9 @@ pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>, notes: Dict<st
         for it in m.impls {
             heads.push(Heading { level: 3, id: "impl." + it.name, text: "impl " + it.name });
             if moves_out(m, it) {
-                out.push_str(stub_html(m, it, "impl." + it.name, "impl " + it.name, since));
+                out.push_str(stub_html(m, it, "impl." + it.name, "impl " + it.name, since, types));
             } else {
-                out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m, since, notes, at));
+                out.push_str(item_html(it, "impl." + it.name, "impl " + it.name, heads, m, since, notes, at, types, m.out));
             }
         }
     }
@@ -336,7 +434,7 @@ pub fn body(m: Module, mods: List<Module>, since: Dict<str, str>, notes: Dict<st
 }
 
 /// The pages of `m`'s items that moved out (none unless `m` is split).
-pub fn subpages(m: Module, since: Dict<str, str>, at: str) -> List<Sub> {
+pub fn subpages(m: Module, since: Dict<str, str>, at: str, types: Dict<str, str>) -> List<Sub> {
     let subs: List<Sub> = List::new();
     let all: List<(Item, str, str)> = List::new();
     for it in m.items {
@@ -350,7 +448,7 @@ pub fn subpages(m: Module, since: Dict<str, str>, at: str) -> List<Sub> {
         let notes: Dict<str, str> = Dict::new();
         let b = StrBuf::new();
         b.push_str(f"<h1><code><a href=\"{rel(out, m.out)}\">{esc(m.path)}</a>::{esc(title)}</code></h1>");
-        b.push_str(item_html(it, id, title, heads, m, since, notes, at));
+        b.push_str(item_html(it, id, title, heads, m, since, notes, at, types, out));
         subs.push(Sub { out: out, title: m.path + "::" + title, html: b.to_str(), heads: heads, notes: notes });
     }
     subs
@@ -359,7 +457,7 @@ pub fn subpages(m: Module, since: Dict<str, str>, at: str) -> List<Sub> {
 /// A split module's pages for the sidebar, from page `from`.
 pub fn sub_toc(m: Module, from: str) -> str {
     let out = StrBuf::new();
-    for s in subpages(m, Dict::new(), "main") {
+    for s in subpages(m, Dict::new(), "main", Dict::new()) {
         let name = s.title[m.path.len() + 2:];
         let cur = if s.out == from { " aria-current=\"page\"" } else { "" };
         out.push_str(f"<li><a{cur} href=\"{rel(from, s.out)}\">{esc(name)}</a></li>");
@@ -436,7 +534,7 @@ pub fn toc(heads: List<Heading>) -> str {
 }
 
 /// `/std/index.html`: the tiers and their modules.
-pub fn index(mods: List<Module>) -> str {
+pub fn index(mods: List<Module>, spec: Dict<str, str>) -> str {
     let out = StrBuf::new();
     out.push_str("<h1>Standard library API</h1>");
     out.push_str("<p>API listing generated from the public items and doc comments of the standard library sources (<code>library/</code>). Behavior and guarantees are defined in the <a href=\"../spec/refs-standard-libraries/index.html\">standard library specification</a>.</p>");
@@ -444,12 +542,20 @@ pub fn index(mods: List<Module>) -> str {
         out.push_str(f"<h2 id=\"{tier}\"><code>rok::{tier}</code></h2><p>{what}.</p><ul class=\"api-list\">");
         for q in mods {
             if q.path == "rok::" + tier || q.path.starts_with("rok::" + tier + "::") {
-                out.push_str(f"<li><a href=\"{rel("std/index.html", q.out)}\"><code>{esc(q.path)}</code></a> <span>{esc(summary(q.doc))}</span></li>");
+                out.push_str(f"<li><a href=\"{rel("std/index.html", q.out)}\"><code>{esc(q.path)}</code></a> <span>{mod_summary(q, spec, "std/index.html")}</span></li>");
             }
         }
         out.push_str("</ul>");
     }
     out.to_str()
+}
+
+#[test]
+fn reexport_ids() {
+    let it = |name: str| Item { kind: "use", name: name, sig: "", doc: "", members: List::new(), traits: List::new() };
+    assert(anchor(it("list::{List, ListIter, ListIntoIter}")) == "reexport.List.ListIter.ListIntoIter", anchor(it("list::{List, ListIter, ListIntoIter}")));
+    assert(anchor(it("rok::std::io::SeekFrom")) == "reexport.SeekFrom", "path");
+    assert(anchor(it("heap::BinaryHeap")) == "reexport.BinaryHeap", "one");
 }
 
 #[test]

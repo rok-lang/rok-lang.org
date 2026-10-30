@@ -101,6 +101,11 @@ pub struct Site {
     /// The docs being wrapped have no error code pages (releases before
     /// they were written): no Error codes section in the chrome.
     pub no_errors: bool = false;
+    /// The static files' versions (layout::asset), by name, set on load.
+    pub assets: Dict<str, str> = Dict::new();
+    /// versions.rokon, for the version menu.
+    pub released: List<str> = List::new();
+    pub patches: Dict<str, str> = Dict::new();
 }
 
 /// A release and its standard library sources.
@@ -153,6 +158,9 @@ pub struct Frag {
     pub sec: str = "";
     /// A Korean page still in English: kept out of search engines.
     pub noindex: bool = false;
+    /// The breadcrumb between the section and this page (spec chapters),
+    /// each link after a separator, or `""`.
+    pub crumb: str = "";
 }
 
 /// One released version's docs as fragments, plus its search index.
@@ -301,21 +309,54 @@ fn twin(p: Page, others: List<Page>) -> (str, str) {
     ("", "")
 }
 
+/// Where `path` of the repository `repo` is edited: GitHub's editor on
+/// main for dev and the newest release (changes land there), else the
+/// file as it is on `branch`, the older release's.
+fn edit_url(site: Site, repo: str, branch: str, path: str) -> str {
+    if site.version == "dev" || site.version == site.newest || site.newest.is_empty() { f"{repo}/edit/main/{path}" } else { f"{repo}/blob/{branch}/{path}" }
+}
+
 /// The edit link of spec page `p` of the edition in `spec`.
 fn spec_edit(site: Site, spec: str, p: Page) -> str {
-    layout::edit_link(f"{site.spec_repo}/blob/{site.spec_branch}/{last_seg(spec)}/{p.src}", p.out.starts_with("ko/"))
+    layout::edit_link(edit_url(site, site.spec_repo, site.spec_branch, f"{last_seg(spec)}/{p.src}"), p.out.starts_with("ko/"))
 }
 
 /// The edit link of docs page `p` (docs/), whose source is under `dir`
 /// (`""`, or `ko/` for a Korean page).
 fn docs_edit(site: Site, p: Page, dir: str) -> str {
-    layout::edit_link(f"{site.repo}/blob/{docs_branch(site)}/{dir}{p.src.replace("README.md", "index.md")}", dir == "ko/")
+    layout::edit_link(edit_url(site, site.repo, docs_branch(site), dir + p.src.replace("README.md", "index.md")), dir == "ko/")
 }
 
 fn spec_root(dir: str) -> str {
     let d = norm(dir);
     if dir.starts_with("/") { d = "/" + d; }
     d
+}
+
+/// The chapters between spec page `pages[k]` and its section's index
+/// (layout::section), outermost first, as breadcrumb links.
+fn spec_crumb(pages: List<Page>, k: usize) -> str {
+    let p = pages[k];
+    let ko = p.out.starts_with("ko/");
+    let (_, _, _, index) = layout::section(if ko { p.out["ko/".len():] } else { p.out });
+    if index.is_empty() { return ""; }
+    let top = layout::in_lang(index, ko);
+    if p.out == top { return ""; }
+    let chain: List<str> = List::new();
+    let d = p.dir;
+    while !d.is_empty() {
+        let readme = layout::readme_of(d);
+        let up = dir_of(d);
+        for q in pages {
+            if q.src != readme || q.out == top || q.out == p.out { continue; }
+            chain.push(f"<span class=\"sep\" aria-hidden=\"true\">/</span><a href=\"{rel(p.out, q.out)}\">{markdown::esc(q.title)}</a>");
+        }
+        // Stop at the section's own directory.
+        if top.ends_with(readme.replace("README.md", "index.html")) { break; }
+        d = up;
+    }
+    chain.reverse();
+    chain.join("")
 }
 
 /// The spec edition in `spec`, rendered under `prefix` (`""`, `"ko/"`).
@@ -332,11 +373,48 @@ fn spec_pages(site: Site, spec: str, prefix: str, ko: bool) throws -> List<Page>
         let out = prefix + out_of(src);
         let dir = dir_of(src);
         let text = try fs::read_to_str(spec + "/" + src);
+        if src == "README.md" { text = spec_intro(text); }
         let doc = layout::md(text, |h| spec_link(site, spec, prefix, h, dir, out), ko);
         let title = if doc.title.is_empty() { src } else { doc.title };
         pages.push(Page { src: src, out: out, dir: dir, title: title, html: doc.html, heads: doc.headings });
     }
     pages
+}
+
+/// The spec's README as the spec's own introduction: without what only
+/// the repository needs (the language switch, the maintainer line, the
+/// table of project links), and naming itself the specification rather
+/// than the repository. Text it does not find is left alone.
+fn spec_intro(text: str) -> str {
+    let out = StrBuf::new();
+    let table = false;
+    for l in text.split("\n") {
+        let t = l.trim();
+        // The page has its own language switch.
+        if t.contains("English") && t.contains("한국어") && t.contains("·") && t.char_count() < 60 { continue; }
+        if t.starts_with("Designed and maintained by") || t.starts_with("설계와 유지보수는") { continue; }
+        if t.starts_with("|") {
+            if !table && (t.contains("GitHub organization") || t.contains("GitHub 조직") || t.contains("| What ") || t.contains("| 자리 ")) { table = true; }
+            if table { continue; }
+        } else {
+            table = false;
+        }
+        out.push_str(l);
+        out.push('\n');
+    }
+    let s = out.to_str();
+    // Blank lines the dropped blocks leave behind.
+    while s.contains("\n\n\n") { s = s.replace("\n\n\n", "\n\n"); }
+    for (from, to) in [
+        ("this repository is its formal specification", "this is its formal specification"),
+        ("live in a separate repository; this one holds", "live in a separate repository; the specification holds"),
+        ("The repository has a fixed shape.", "The specification has a fixed shape."),
+        ("이 저장소는 그 언어의 형식 사양", "이 문서는 그 언어의 형식 사양"),
+        ("저장소는 정해진 모양으로", "사양은 정해진 모양으로"),
+    ] {
+        s = s.replace(from, to);
+    }
+    s
 }
 
 /// README first within each directory, then by name.
@@ -515,9 +593,11 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
                 path = href[:k];
                 frag = href[k + 1:];
             }
+            // An asset's `?v=`.
+            path = url::split_ref(path).0;
             let target = if path.is_empty() { out } else { norm(join(dir_of(out), path)) };
-            // Another version's docs (the banner's link to latest/).
-            if target.starts_with("../latest/") { continue; }
+            // Another version's docs (the banner, the version menu).
+            if target.starts_with("../") { continue; }
             if let s: Set<str> = ids.get(target) {
                 if !frag.is_empty() && !s.contains(frag) { bad.push(f"{out}: {href} (no anchor)"); }
             } else if !statics.contains(target) {
@@ -642,6 +722,8 @@ fn load_site() throws -> Site {
     let (w, h) = try png_size("static/og.png");
     site.og_w = w;
     site.og_h = h;
+    for f in kit::files(kit::Mark::Rok) { site.assets.insert(f.name, encoding::hex_encode(HashAlgorithm::Sha256.digest(f.data))[:10]); }
+    for name in ["style.css", "search.js"] { site.assets.insert(name, try og_version("static/" + name)); }
     if fs::exists("static/og") {
         for entry in try fs::read_dir("static/og") {
             let e = try entry.get();
@@ -893,6 +975,8 @@ fn docs_home(html: str, ko: bool) -> str {
         let (text, k3) = between(cards, k2, "<p>", "</p>") ?? break;
         at = k3;
         let target = href.replace("../", "");
+        // The Korean home's API card goes to the Korean API pages.
+        if ko && target.starts_with("std/") { href = target; }
         let (_, en, kr, index) = layout::section(target);
         let order = 100usize;
         for i in 0..layout::SECTIONS.len() {
@@ -1139,6 +1223,8 @@ fn main() throws {
     let newest = if vs.released.len() > 0 { vs.released[0] } else { "" };
     site.newest = newest;
     site.newest_release = vs.patches.get(newest) ?? newest;
+    site.released = vs.released;
+    site.patches = vs.patches;
     if version != "dev" && !vs.released.contains(version) {
         eprintln(f"note: {version} is not in versions.rokon, so the version menu will not list it");
     }
@@ -1157,7 +1243,7 @@ fn main() throws {
             let (alt, sec) = twin(p, others);
             // Each spec page names its other edition for search engines.
             let head = if alt.is_empty() { "" } else { hreflang(site, if ko { alt } else { p.out }, if ko { p.out } else { alt }) };
-            frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(eds, k), toc: layout::toc(p), body: p.html + spec_edit(site, spec, p), pager: layout::pager(eds, k, ko), head: head, alt: alt, sec: sec });
+            frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(eds, k), toc: layout::toc(p), body: p.html + spec_edit(site, spec, p), pager: layout::pager(eds, k, ko), head: head, alt: alt, sec: sec, crumb: spec_crumb(eds, k) });
         }
     }
 
@@ -1220,23 +1306,41 @@ fn main() throws {
         }
     }
 
-    // Standard library API: `std/<tier>/<module>.html`, English only.
+    // Standard library API: `std/<tier>/<module>.html`, from the library's
+    // English doc comments; `ko/std/` is the same in Korean chrome.
     let api: List<Page> = List::new();
     let mods = try apidoc::collect(site.library);
     let since = try added_in(site, mods);
     let spec_secs = spec_sections(pages);
+    let types = apidoc::type_index(mods);
     let src_ref = if site.version == "dev" || site.built_from.is_empty() { "main" } else { "v" + site.built_from };
     for m in mods {
         let notes: Dict<str, str> = Dict::new();
-        let (html, heads) = apidoc::body(m, mods, since, notes, src_ref, spec_secs);
+        let (html, heads) = apidoc::body(m, mods, since, notes, src_ref, spec_secs, types);
         frags.insert(m.out, Frag { out: m.out, title: m.path, side: apidoc::sidebar(m, mods, m.out), toc: apidoc::toc(heads), body: html, pager: "", head: "" });
-        for s in apidoc::subpages(m, since, src_ref) {
+        for s in apidoc::subpages(m, since, src_ref, types) {
             frags.insert(s.out, Frag { out: s.out, title: s.title, side: apidoc::sidebar(m, mods, s.out), toc: apidoc::toc(s.heads), body: s.html, pager: "", head: "" });
             api.push(Page { src: "", out: s.out, dir: "std", title: s.title, html: "", heads: s.heads, notes: s.notes });
         }
         api.push(Page { src: "", out: m.out, dir: "std", title: m.path, html: "", heads: heads, notes: notes });
     }
-    frags.insert("std/index.html", Frag { out: "std/index.html", title: "Standard library API", side: "", body: apidoc::index(mods), pager: "", head: "" });
+    frags.insert("std/index.html", Frag { out: "std/index.html", title: "Standard library API", side: "", body: apidoc::index(mods, spec_secs), pager: "", head: "" });
+    let (bare, all) = apidoc::coverage(mods);
+    if bare > 0 { eprintln(f"note: {bare} of {all} public API items and members have no doc comment"); }
+    let api_ko: List<Page> = List::new();
+    for p in api { api_ko.push(Page { src: "", out: "ko/" + p.out, dir: "ko/std", title: p.title, html: "", heads: p.heads, notes: p.notes }); }
+    let api_note = "<p class=\"tr-note\">API 참조는 영어로만 있습니다. 표준 라이브러리 소스의 영어 문서 주석에서 만듭니다.</p>\n";
+    let std_outs: List<str> = List::new();
+    for o in frags.keys() {
+        if o.starts_with("std/") { std_outs.push(o); }
+    }
+    for o in std_outs {
+        let f = frags[o];
+        let body = if let k: usize = f.body.find("</h1>") { f.body[:k + 5] + "\n" + api_note + "<div lang=\"en\">\n" + f.body[k + 5:] + "</div>\n" } else { api_note + "<div lang=\"en\">\n" + f.body + "</div>\n" };
+        frags.insert("ko/" + o, Frag { out: "ko/" + o, title: f.title, side: f.side, toc: f.toc, body: body, pager: "", head: "", alt: o, noindex: true });
+        f.alt = "ko/" + o;
+        frags.insert(o, f);
+    }
 
     // Every `error[E...]` in a terminal or output block links to its page,
     // and a Korean page's links into pages that exist only in English (the
@@ -1266,7 +1370,7 @@ fn main() throws {
     // A search index per language: every page, its `##` / `###` sections
     // and the API's items and members.
     let idx = search_index([own, pages, api]);
-    let idx_ko = search_index([ko_own, ko_pages, api]);
+    let idx_ko = search_index([ko_own, ko_pages, api_ko]);
 
     // The newest release's pages, for the banner's link on other versions.
     let archive = try env::var("ROK_DOCS_ARCHIVE") catch _ { "" };
