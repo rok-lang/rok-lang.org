@@ -393,7 +393,8 @@ fn handle(s: TcpStream, cfg: Cfg) {
     if !resp.file.is_empty() {
         let data = try fs::read(resp.file) catch _ { List::new() };
         if status == 200 {
-            let tag = http::etag(data);
+            // Weak: Cloudflare drops a strong one from what it recompresses.
+            let tag = "W/" + http::etag(data);
             resp.headers.push("ETag: " + tag);
             // A 304 carries the validators and Cache-Control, not the type.
             if http::not_modified(r, tag) {
