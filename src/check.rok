@@ -85,21 +85,22 @@ fn file_name(s: Snippet) -> str {
 /// Run `rokc` with `args` (outputs into `dir/<name>.out` / `.err`); exit
 /// status, or `none` after `limit`.
 fn run(rokc: str, args: List<str>, dir: str, name: str, limit: Duration) throws -> bool | none {
-    let child = try Command::new(rokc)
+    using child = try Command::new(rokc)
         .args(args)
         .stdin(Stdio::Null)
         .stdout(Stdio::File(try fs::File::create(f"{dir}/{name}.out")))
         .stderr(Stdio::File(try fs::File::create(f"{dir}/{name}.err")))
-        .spawn();
-    let t0 = Instant::now();
-    loop {
-        if let st: ExitStatus = try child.try_wait() { return st.success(); }
-        if t0.elapsed() > limit {
-            try child.kill();
-            try child.wait();
-            return none;
+        .spawn() {
+        let t0 = Instant::now();
+        loop {
+            if let st: ExitStatus = try child.try_wait() { return st.success(); }
+            if t0.elapsed() > limit {
+                try child.kill();
+                try child.wait();
+                return none;
+            }
+            thread::sleep(Duration::ms(20));
         }
-        thread::sleep(Duration::ms(20));
     }
 }
 
@@ -125,7 +126,7 @@ fn check_snippet(rokc: str, dir: str, s: Snippet, at: str) throws -> str {
     let src = f"{dir}/{name}.rok";
     try fs::write(src, s.code);
     let cmd = if s.mode == "build" { "build" } else { "run" };
-    let ok = try run(rokc, ["-q", cmd, src, "--target-dir", f"{dir}/{name}.target"], dir, name, Duration::sec(60));
+    let ok = try run(rokc, ["-q", cmd, src, "--target-dir", f"{dir}/{name}.target"], dir, name, Duration::secs(60));
     let out = try fs::read_to_str(f"{dir}/{name}.out");
     let err = try fs::read_to_str(f"{dir}/{name}.err");
     if !(ok is bool) { return f"{at}: timed out\n"; }

@@ -33,6 +33,7 @@ mod serve;
 
 use rok::std::env;
 use rok::std::fs;
+use rok::std::process;
 use rok::std::process::{Command, Stdio};
 use rok::std::rokon;
 use rok::core::crypto::HashAlgorithm;
@@ -838,7 +839,7 @@ fn is_version(v: str) -> bool {
 
 fn usage() {
     eprintln("usage: rok run [-- [check] [--version <major.minor> | --version dev] | -- code [filter] | -- archive <major.minor> <dir>]");
-    env::exit(2);
+    process::exit(2);
 }
 
 /// The size of each asset of release `r` on GitHub, by file name, from
@@ -1156,7 +1157,7 @@ fn main() throws {
     }
     if args.len() > 1 && args[1] == "code" {
         let bad = try code_check(if args.len() > 2 { args[2] } else { "" });
-        if bad.len() > 0 { env::exit(1); }
+        if bad.len() > 0 { process::exit(1); }
         return;
     }
     let strict = false;
@@ -1180,7 +1181,7 @@ fn main() throws {
     }
     if !is_version(version) {
         eprintln(f"error: `--version {version}`: write a release as <major>.<minor> (`--version 0.1`) or <major>.<minor>.<patch>, or `--version dev`");
-        env::exit(2);
+        process::exit(2);
     }
     let site = try load_site();
     site.version = version;
@@ -1367,7 +1368,7 @@ fn main() throws {
     if !archive_out.is_empty() {
         let abad = check(files, try static_names());
         for b in abad { eprintln(f"broken link: {b}"); }
-        if abad.len() > 0 { env::exit(1); }
+        if abad.len() > 0 { process::exit(1); }
         let outs: List<str> = List::new();
         for o in frags.keys() { outs.push(o); }
         outs.sort();
@@ -1517,7 +1518,7 @@ fn main() throws {
             failing.push(b);
         }
         println(f"checked in {t0.elapsed():?}");
-        if bad.len() > 0 || failing.len() > 0 { env::exit(1); }
+        if bad.len() > 0 || failing.len() > 0 { process::exit(1); }
     }
 }
 
