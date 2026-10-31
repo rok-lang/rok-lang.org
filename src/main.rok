@@ -1389,6 +1389,7 @@ fn main() throws {
     }
     // `{release}` in its pages is the release the download page offers.
     let www_urls: List<str> = List::new();
+    let www_cards: List<(str, str)> = List::new();
     // The home site links into latest/: an Error codes link only if the
     // newest release's docs have them.
     let docs_no_errors = site.no_errors;
@@ -1401,6 +1402,7 @@ fn main() throws {
         let html = doc.html.replace("href=\"docs:", "href=\"" + layout::latest(site, "")).replace("href=\"play:", "href=\"" + site.playground + "/");
         let out = name + ".html";
         let body = if name == "index" { home::body(site, examples, sizes) } else if name == "download" { download_page(html, sizes) } else { html };
+        if name != "index" { www_cards.push((out, doc.title)); }
         www.insert(out, layout::www_page(site, out, doc.title, body));
         www_urls.push(site.base_url + "/" + if name == "index" { "" } else { name });
     }
@@ -1417,6 +1419,9 @@ fn main() throws {
     try write(docs_root + "/" + version, "og.rokon", rokon::to_string(layout::cards(fl)));
     for out in www.keys() { try write(www_dir, out, site_hrefs(site, www[out], "", out)); }
     let www_statics = try copy_static(www_dir);
+    let wcards: List<layout::Card> = List::new();
+    for (out, title) in www_cards { wcards.push(layout::www_card(site, out, title)); }
+    try write(www_dir, "og.rokon", rokon::to_string(layout::Cards { cards: wcards }));
     // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
     for f in ["install.sh", "install.ps1"] {
         try fs::copy(site.library + "/../" + f, www_dir + "/" + f);

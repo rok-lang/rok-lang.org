@@ -1,4 +1,4 @@
-// A docs page's link preview card, 1200x630 at 72 ppi. serve renders it
+// A page's link preview card, 1200x630 at 72 ppi. serve renders it
 // on request (serve.rok og_card) with --input section, title, lead, lang;
 // logo.svg sits beside it. Colours are web/css/rok.css's dark theme.
 #let bg = rgb("#090a0d")
@@ -27,7 +27,8 @@
     align: horizon,
     image("logo.svg", width: 48pt),
     text(size: 30pt, weight: "semibold", tracking: -0.018em)[Rok],
-    text(size: 30pt, fill: line2)[/],
+    // rok-lang.org's own pages have no section
+    if input("section") != "" { text(size: 30pt, fill: line2)[/] },
     text(size: 30pt, weight: "medium", fill: ink2, tracking: -0.018em, input("section")),
   ),
   [],

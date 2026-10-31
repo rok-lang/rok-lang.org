@@ -394,10 +394,11 @@ fn route(cfg: Cfg, r: Request) -> Resp {
             if let v: str = newest_of(root, first) { p = "/" + v + p[1 + first.len():]; }
         }
     }
-    // A docs page's card, /<version>/og/<page>.png: drawn when first
-    // asked for, else the site's.
-    if docs && p.ends_with(".png") {
-        let (ver, rest) = p[1:].split_once("/") ?? ("", "");
+    // A page's card, /<version>/og/<page>.png on the docs and
+    // /og/<page>.png on rok-lang.org: drawn when first asked for, else the
+    // site's.
+    if p.ends_with(".png") {
+        let (ver, rest) = if docs { p[1:].split_once("/") ?? ("", "") } else { (".", p[1:]) };
         if let name: str = rest.strip_prefix("og/") {
             if let png: str = og_card(cfg, root, ver, name) {
                 let keep = if query_v(r.query).is_empty() { "public, max-age=86400" } else { FOREVER };
@@ -423,11 +424,12 @@ fn route(cfg: Cfg, r: Request) -> Resp {
 
 const LOGO: str = include_str!("../web/assets/rok.svg");
 
-/// Card `name` of docs version `ver` (out/docs/<ver>/og.rokon), drawn by
+/// Card `name` of docs version `ver` (out/docs/<ver>/og.rokon; `.` for
+/// rok-lang.org's out/www/og.rokon), drawn by
 /// og/card.typ into data/og/<card version>.png the first time it is asked
 /// for; none without such a card or when typst fails.
 fn og_card(cfg: Cfg, root: str, ver: str, name: str) -> str | none {
-    if ver.is_empty() || ver.contains("..") || name.contains("/") || name.contains("..") { return none; }
+    if ver.is_empty() || ver.contains("/") || ver.contains("..") || name.contains("/") || name.contains("..") { return none; }
     let text = try fs::read_to_str(f"{root}/{ver}/og.rokon") catch _ { return none; };
     let all: pkg::layout::Cards = try rokon::from_str(text) catch _ { return none; };
     for c in all.cards {

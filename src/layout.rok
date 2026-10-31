@@ -619,6 +619,23 @@ pub fn card(f: Frag) -> Card {
     Card { name: og_name(f.out), section: sec, title: rest, lead: first_sentence(lead_text(f.body)), lang: if ko { "ko" } else { "en" } }
 }
 
+/// rok-lang.org page `out`'s `<meta name="description">`.
+pub fn www_desc(site: Site, out: str) -> str {
+    if out == "download.html" {
+        f"Download Rok {site.release} for macOS, Linux and Windows: the install script, or an archive with its SHA-256."
+    } else if out == "roadmap.html" {
+        "The Rok roadmap: what the current release ships and where the language is headed next."
+    } else {
+        site.description
+    }
+}
+
+/// The card of rok-lang.org page `out`: no section, its title and its
+/// description.
+pub fn www_card(site: Site, out: str, title: str) -> Card {
+    Card { name: og_name(out), section: "", title: title, lead: www_desc(site, out), lang: "en" }
+}
+
 /// Names what card `c` looks like: its text and the template.
 pub fn card_version(c: Card) -> str {
     let all = [CARD_TYPST, c.section, c.title, c.lead, c.lang].join("\n");
@@ -893,11 +910,17 @@ pub fn www_page(site: Site, out: str, title: str, body: str) -> str {
     let full = if out == "index.html" { site.title + " - " + site.tagline } else { short + " - " + site.title };
     let url = if out == "404.html" { "" } else if out == "index.html" { site.base_url + "/" } else { site.base_url + "/" + url::canon(out) };
     let kind = if out == "index.html" { "landing" } else { "plain" };
-    let desc = esc(if out == "download.html" { f"Download rok {site.release} for macOS, Linux and Windows: the install script, or an archive with its SHA-256." } else if out == "roadmap.html" { "The rok roadmap: what the current release ships and where the language is headed next." } else { site.description });
+    let desc = esc(www_desc(site, out));
     let main = if out == "index.html" { body } else { f"<div class=\"frame page\"><article class=\"prose\">\n{body}</article></div>\n" };
     let install = if out == "download.html" { " aria-current=\"page\"" } else { "" };
     let links = Links { home: root + "index.html", docs: latest(site, "index.html"), learn: latest(site, "learn/index.html"), examples: latest(site, "examples/index.html"), errors: if site.no_errors { "" } else { latest(site, "errors/index.html") }, spec: latest(site, "spec/refs-lang/index.html"), api: latest(site, "std/index.html"), tools: latest(site, "spec/refs-lang/009-tools/index.html"), publishing: latest(site, "learn/18-features-and-stones.html#publishing-a-stone"), roadmap: root + "roadmap.html" };
-    let img = site.base_url + "/og.png" + (if site.og.is_empty() { "" } else { "?v=" + site.og });
+    // The landing page has the site's card; the others their own.
+    let img = if out == "download.html" || out == "roadmap.html" {
+        let c = www_card(site, out, title);
+        f"{site.base_url}/og/{c.name}?v={card_version(c)}"
+    } else {
+        site.base_url + "/og.png" + (if site.og.is_empty() { "" } else { "?v=" + site.og })
+    };
     let hero = if out == "index.html" { f"<script src=\"{asset(site, root, "hero.js")}\" defer></script>\n" } else { "" };
     f"<!doctype html>
 <html class=\"rk lt\" lang=\"en\">
