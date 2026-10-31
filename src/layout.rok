@@ -7,6 +7,8 @@ use pkg::Site;
 use web::chrome;
 use web::url;
 use markdown::{Doc, Heading, Options, esc, strip_tags};
+use rok::core::crypto::HashAlgorithm;
+use rok::core::encoding;
 
 /// Markdown as HTML: `link` maps hrefs, ```rok / ```rokon highlighted,
 /// ```output as `<pre class="output">`; Korean callout titles if `ko`
@@ -567,33 +569,67 @@ pub fn own(site: Site, href: str) -> str {
     href
 }
 
-/// The file name of the link preview card of docs page `out` under
-/// static/og/: `learn/05-sum-types.html` -> `learn-05-sum-types.png`.
+/// The file name of docs page `out`'s link preview card under its
+/// version's og/: `learn/05-sum-types.html` -> `learn-05-sum-types.png`.
 pub fn og_name(out: str) -> str { out.replace(".html", "").replace("/", "-") + ".png" }
 
-/// The pages that have a card of their own: each section's index and
-/// each guide chapter, in both languages.
-pub fn has_card(out: str) -> bool {
-    let at = out.strip_prefix("ko/") ?? out;
-    if at.starts_with("learn/") { return true; }
-    for (_, _, _, index) in SECTIONS {
-        if at == index { return true; }
-    }
-    at == "spec/refs-standard-libraries/index.html"
+/// og/card.typ, which serve renders the cards with.
+pub const CARD_TYPST: str = include_str!("../og/card.typ");
+
+/// What a docs page's card shows: the line beside the mark, the title
+/// and the page's first sentence.
+#[derive(Rokon)]
+pub struct Card {
+    pub name: str;
+    pub section: str;
+    pub title: str;
+    pub lead: str;
+    pub lang: str;
 }
 
-/// The og:image of docs page `out`: its own card, else its section's,
-/// else the site's.
-pub fn og_image(site: Site, out: str) -> str {
-    let ko = out.starts_with("ko/");
-    let at = if ko { out["ko/".len():] } else { out };
-    let (_, _, _, index) = section(at);
-    for k in [out, if index.is_empty() { "" } else { in_lang(index, ko) }] {
-        if k.is_empty() { continue; }
-        let name = og_name(k);
-        if let v: str = site.og_cards.get(name) { return latest(site, "og/" + name) + "?v=" + v; }
-    }
-    latest(site, "og.png") + (if site.og.is_empty() { "" } else { "?v=" + site.og })
+/// The first sentence of `s`.
+pub fn first_sentence(s: str) -> str {
+    let k = s.find(". ") ?? s.len();
+    if k < s.len() { s[:k + 1] } else { s }
+}
+
+/// A version's cards, og.rokon in its directory.
+#[derive(Rokon)]
+pub struct Cards {
+    pub cards: List<Card>;
+}
+
+pub fn cards(pages: List<Frag>) -> Cards {
+    let cs: List<Card> = List::new();
+    for f in pages { cs.push(card(f)); }
+    Cards { cards: cs }
+}
+
+pub fn card(f: Frag) -> Card {
+    let ko = f.out.starts_with("ko/");
+    let at = if ko { f.out["ko/".len():] } else { f.out };
+    let (key, en, kr, index) = section(at);
+    let (no, rest) = split_no(f.title);
+    // A section's own index says "Docs"; its pages say the section.
+    let sec = if at == "index.html" || at == index || en.is_empty() {
+        tr(ko, "Docs", "문서")
+    } else {
+        tr(ko, en, kr) + if no.is_empty() || key != "guide" { "" } else { tr(ko, " / Chapter " + no, " / " + no + "장") }
+    };
+    Card { name: og_name(f.out), section: sec, title: rest, lead: first_sentence(lead_text(f.body)), lang: if ko { "ko" } else { "en" } }
+}
+
+/// Names what card `c` looks like: its text and the template.
+pub fn card_version(c: Card) -> str {
+    let all = [CARD_TYPST, c.section, c.title, c.lead, c.lang].join("\n");
+    encoding::hex_encode(HashAlgorithm::Sha256.digest(all))[:10]
+}
+
+/// The og:image of docs page `f`: its card under this version's og/,
+/// which serve draws the first time it is asked for.
+pub fn og_image(site: Site, f: Frag) -> str {
+    let c = card(f);
+    f"{site.docs_url}/{site.version}/og/{c.name}?v={card_version(c)}"
 }
 
 const ICON_SEARCH: str = "<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"M20 20l-4-4\"/></svg>";
@@ -806,7 +842,7 @@ fn frame(site: Site, root: str, f: Frag, banner: str) -> str {
         ("Skip to content", "Menu", "Sections", "Search docs", "Search results", "Docs version")
     };
     let note = if at.starts_with("spec/") { tr(ko, "<span>Spec text © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a></span>", "<span>사양 본문 © Han Damin, <a href=\"https://creativecommons.org/licenses/by/4.0/\">CC BY 4.0</a></span>") } else { "" };
-    let img = og_image(site, out);
+    let img = og_image(site, f);
     let alt = if img.contains("/og/") { f.title + " - " + name } else { f"{site.title}: {site.tagline}" };
     f"<!doctype html>
 <html class=\"rk lt\" lang=\"{lang}\">

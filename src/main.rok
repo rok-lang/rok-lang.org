@@ -96,9 +96,6 @@ pub struct Site {
     pub og: str = "";
     pub og_w: i64 = 0i64;
     pub og_h: i64 = 0i64;
-    /// The docs pages' own link preview cards (static/og/<name>.png, see
-    /// layout::og_name), each with its `?v=` version.
-    pub og_cards: Dict<str, str> = Dict::new();
     /// The docs being wrapped have no error code pages (releases before
     /// they were written): no Error codes section in the chrome.
     pub no_errors: bool = false;
@@ -725,13 +722,6 @@ fn load_site() throws -> Site {
     site.og_h = h;
     for f in kit::files(kit::Mark::Rok) { site.assets.insert(f.name, encoding::hex_encode(HashAlgorithm::Sha256.digest(f.data))[:10]); }
     for name in ["style.css", "search.js", "hero.js"] { site.assets.insert(name, try og_version("static/" + name)); }
-    if fs::exists("static/og") {
-        for entry in try fs::read_dir("static/og") {
-            let e = try entry.get();
-            let name = e.file_name();
-            if name.ends_with(".png") { site.og_cards.insert(name, try og_version("static/og/" + name)); }
-        }
-    }
     site
 }
 
@@ -909,38 +899,6 @@ pub fn os_attrs(triple: str) -> str {
     let arch = (triple.split_once("-") ?? (triple, "")).0;
     let libc = if triple.ends_with("-musl") { "musl" } else if triple.ends_with("-gnu") { "gnu" } else { "" };
     f" data-os=\"{os}\" data-arch=\"{arch}\" data-libc=\"{libc}\""
-}
-
-/// The first sentence of `s`.
-fn first_sentence(s: str) -> str {
-    let k = s.find(". ") ?? s.len();
-    if k < s.len() { s[:k + 1] } else { s }
-}
-
-/// The cards of the pages that have one (layout::has_card), as JSON for
-/// og/cards.mjs: file, section, title, first sentence, language.
-fn og_manifest(frags: Dict<str, Frag>) -> str {
-    let outs: List<str> = List::new();
-    for o in frags.keys() {
-        if layout::has_card(o) && !frags[o].noindex { outs.push(o); }
-    }
-    outs.sort();
-    let b = StrBuf::new();
-    b.push_str("[\n");
-    for k in 0..outs.len() {
-        let f = frags[outs[k]];
-        let ko = f.out.starts_with("ko/");
-        let at = if ko { f.out["ko/".len():] } else { f.out };
-        let (_, en, kr, _) = layout::section(at);
-        let (no, rest) = layout::split_no(f.title);
-        let index = f.out.ends_with("/index.html");
-        let sec = if index { layout::tr(ko, "Docs", "문서") } else { layout::tr(ko, en, kr) + if no.is_empty() { "" } else { layout::tr(ko, " / Chapter " + no, " / " + no + "장") } };
-        let sentence = first_sentence(layout::lead_text(f.body));
-        let comma = if k + 1 < outs.len() { "," } else { "" };
-        b.push_str(f"{{\"file\": {json_str(layout::og_name(f.out))}, \"section\": {json_str(sec)}, \"title\": {json_str(rest)}, \"sentence\": {json_str(sentence)}, \"lang\": \"{if ko { "ko" } else { "en" }}\"}}{comma}\n");
-    }
-    b.push_str("]\n");
-    b.to_str()
 }
 
 /// hreflang links between a page's English and Korean editions.
@@ -1398,16 +1356,6 @@ fn main() throws {
         }
     }
 
-    // The link preview cards these pages want (og/cards.mjs renders them
-    // into static/og/); a note when the rendered ones are out of date.
-    // Not when archiving: the server's working directory is read-only.
-    if archive_out.is_empty() {
-        let cards = og_manifest(frags);
-        try write(out_root, "og-cards.json", cards);
-        let rendered = try fs::read_to_str("static/og/cards.json") catch _ { "" };
-        if rendered != cards { eprintln(f"note: the docs' link preview cards are out of date: cd og && node cards.mjs ../{out_root}/og-cards.json ../static/og"); }
-    }
-
     // This version's pages, with the current chrome.
     site.no_errors = !frags.contains_key("errors/index.html");
     let files: Dict<str, str> = Dict::new();
@@ -1464,6 +1412,9 @@ fn main() throws {
     let www_dir = out_root + "/www";
     if fs::exists(www_dir) { try fs::remove_dir_all(www_dir); }
     let statics = try write_version(site, docs_root, version, files, idx, idx_ko);
+    let fl: List<Frag> = List::new();
+    for o in frags.keys() { fl.push(frags[o]); }
+    try write(docs_root + "/" + version, "og.rokon", rokon::to_string(layout::cards(fl)));
     for out in www.keys() { try write(www_dir, out, site_hrefs(site, www[out], "", out)); }
     let www_statics = try copy_static(www_dir);
     // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
@@ -1495,6 +1446,7 @@ fn main() throws {
             let vfiles: Dict<str, str> = Dict::new();
             for f in b.pages { vfiles.insert(f.out, wrap(site, f, latest_outs)); }
             let vstatics = try write_version(site, docs_root, v, vfiles, b.search, b.search_ko);
+            try write(docs_root + "/" + v, "og.rokon", rokon::to_string(layout::cards(b.pages)));
             for bd in check(vfiles, vstatics) { arch_bad.push(f"[{v}] {bd}"); }
             if v == newest {
                 latest_pages = vfiles;

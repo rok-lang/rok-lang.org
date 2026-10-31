@@ -11,6 +11,8 @@
 //   ROK_WEB_ROK_GIT   rok repository
 //   ROK_WEB_RELOAD_KEY  HMAC-SHA256 key for reload
 //   ROK_WEB_DOCS_HOST   docs host name
+//   ROK_WEB_TYPST       typst, which draws the docs' link preview cards
+//   ROK_WEB_OG_FONTS    the fonts og/card.typ asks for (Geist, Pretendard)
 //
 // Environment first, then .env in the working directory.
 
@@ -31,6 +33,7 @@ use web::url;
 
 static STALE: Atomic<i32> = Atomic::new(1);
 static ACTIVE: Atomic<i32> = Atomic::new(0);
+static DRAWN: Atomic<i32> = Atomic::new(0);
 const MAX_CONNS: i32 = 256;
 
 pub struct Cfg {
@@ -40,6 +43,8 @@ pub struct Cfg {
     pub rok_git: str;
     pub reload_key: str;
     pub docs_host: str;
+    pub typst: str;
+    pub og_fonts: str;
 }
 
 #[derive(Rokon)]
@@ -82,6 +87,8 @@ pub fn load_cfg(path: str) throws -> Cfg {
         rok_git: setting(f, "ROK_WEB_ROK_GIT", "https://github.com/rok-lang/rok.git"),
         reload_key: setting(f, "ROK_WEB_RELOAD_KEY", ""),
         docs_host: setting(f, "ROK_WEB_DOCS_HOST", "docs.rok-lang.org"),
+        typst: setting(f, "ROK_WEB_TYPST", "/opt/rok-og/typst"),
+        og_fonts: setting(f, "ROK_WEB_OG_FONTS", "/opt/rok-og/fonts"),
     };
     for (k, v) in [("ROK_WEB_DATA", cfg.data), ("ROK_WEB_CONTENT", cfg.content)] {
         if v.is_empty() { throw ValueError { msg: f"{k} is not set (environment or .env)" }; }
@@ -387,6 +394,19 @@ fn route(cfg: Cfg, r: Request) -> Resp {
             if let v: str = newest_of(root, first) { p = "/" + v + p[1 + first.len():]; }
         }
     }
+    // A docs page's card, /<version>/og/<page>.png: drawn when first
+    // asked for, else the site's.
+    if docs && p.ends_with(".png") {
+        let (ver, rest) = p[1:].split_once("/") ?? ("", "");
+        if let name: str = rest.strip_prefix("og/") {
+            if let png: str = og_card(cfg, root, ver, name) {
+                let keep = if query_v(r.query).is_empty() { "public, max-age=86400" } else { FOREVER };
+                return Resp { status: 200, headers: ["Content-Type: image/png", "Cache-Control: " + keep], body: "", file: png };
+            }
+            let site = cfg.data + "/out/www/og.png";
+            if fs::exists(site) { return Resp { status: 200, headers: ["Content-Type: image/png", "Cache-Control: public, max-age=3600"], body: "", file: site }; }
+        }
+    }
     // A page is <path>.html or <path>/index.html; anything else by its name.
     if let f: str = http::page_file(root, p) { return page(f, r.path, r.query, docs); }
     // A missing docs page under a version gets that version's 404 page.
@@ -399,6 +419,43 @@ fn route(cfg: Cfg, r: Request) -> Resp {
     }
     if fs::exists(nf) { return Resp { status: 404, headers: ["Content-Type: text/html; charset=utf-8", "Cache-Control: no-store"], body: "", file: nf }; }
     text(404, "not found")
+}
+
+const LOGO: str = include_str!("../web/assets/rok.svg");
+
+/// Card `name` of docs version `ver` (out/docs/<ver>/og.rokon), drawn by
+/// og/card.typ into data/og/<card version>.png the first time it is asked
+/// for; none without such a card or when typst fails.
+fn og_card(cfg: Cfg, root: str, ver: str, name: str) -> str | none {
+    if ver.is_empty() || ver.contains("..") || name.contains("/") || name.contains("..") { return none; }
+    let text = try fs::read_to_str(f"{root}/{ver}/og.rokon") catch _ { return none; };
+    let all: pkg::layout::Cards = try rokon::from_str(text) catch _ { return none; };
+    for c in all.cards {
+        if c.name != name { continue; }
+        let png = f"{cfg.data}/og/{pkg::layout::card_version(c)}.png";
+        if fs::exists(png) { return png; }
+        try draw(cfg, c, png) catch e {
+            eprintln(f"og {ver}/{name}: {e}");
+            return none;
+        };
+        return png;
+    }
+    none
+}
+
+fn draw(cfg: Cfg, c: pkg::layout::Card, png: str) throws {
+    let dir = cfg.data + "/og";
+    try fs::create_dir_all(dir);
+    // The template and the mark beside it, as this build has them.
+    let tpl = dir + "/card.typ";
+    if !fs::exists(tpl) || (try fs::read_to_str(tpl)) != pkg::layout::CARD_TYPST { try fs::write(tpl, pkg::layout::CARD_TYPST); }
+    if !fs::exists(dir + "/logo.svg") { try fs::write(dir + "/logo.svg", LOGO); }
+    // Into a name of its own, so two requests for one card do not clash.
+    let tmp = f"{png[:png.len() - 4]}.{DRAWN.fetch_add(1)}.tmp.png";
+    let out = try Command::new(cfg.typst).args(["compile", "--ignore-system-fonts", "--font-path", cfg.og_fonts, "--format", "png", "--ppi", "72",
+        "--input", "section=" + c.section, "--input", "title=" + c.title, "--input", "lead=" + c.lead, "--input", "lang=" + c.lang, tpl, tmp]).stdin(Stdio::Null).output();
+    if !out.status.success() { throw ValueError { msg: f"typst: {(try? str::from_utf8(out.stderr)) ?? ""}" }; }
+    try fs::rename(tmp, png);
 }
 
 fn handle(s: TcpStream, cfg: Cfg) {
