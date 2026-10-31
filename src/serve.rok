@@ -51,12 +51,6 @@ pub struct Bundle {
     pub files: Dict<str, str>;
 }
 
-/// docs versions.rokon, newest first.
-#[derive(Rokon)]
-pub struct Versions {
-    pub releases: List<str>;
-}
-
 pub fn parse_env(text: str) -> Dict<str, str> {
     let out: Dict<str, str> = Dict::new();
     for raw in text.split("\n") {
@@ -172,6 +166,33 @@ fn sync_library(cfg: Cfg, rev: str) throws -> bool {
     true
 }
 
+/// The releases, newest first: x.y.z with a vx.y.z branch in both docs
+/// and spec. bundle-content.sh lists each repo's in <repo>/branches.
+fn releases(cfg: Cfg) throws -> List<str> {
+    let spec: Set<str> = Set::new();
+    for b in (try fetch(cfg, "spec/branches")).lines() { spec.insert(b.trim()); }
+    let out: List<str> = List::new();
+    for line in (try fetch(cfg, "docs/branches")).lines() {
+        let b = line.trim();
+        if b.starts_with("v") && spec.contains(b) && release_rank(b[1:]) >= 0 { out.push(b[1:]); }
+    }
+    out.sort_by(|x, y| release_rank(y).cmp(release_rank(x)));
+    out
+}
+
+/// "0.1.12" -> 1000012, so newer is larger; -1 unless it is x.y.z.
+fn release_rank(v: str) -> i64 {
+    let r = 0i64;
+    let n = 0;
+    for p in v.split(".") {
+        let x = try p.parse::<i64>() catch _ { return -1; };
+        if x < 0 || x >= 1000000 { return -1; }
+        r = r * 1000000 + x;
+        n += 1;
+    }
+    if n == 3 { r } else { -1 }
+}
+
 /// "0.1.4" -> "0.1".
 fn minor_of(v: str) -> str { before_last(v, ".") ?? v }
 
@@ -201,16 +222,16 @@ fn round(cfg: Cfg, exe: str, build: str) throws {
         if try sync_bundle(cfg, repo, branch) { changed.insert(f"{repo}/{branch}"); }
     }
     if try sync_library(cfg, "main") { changed.insert("rok/main"); }
-    let rel: Versions = try rokon::from_str(try fs::read_to_str(cfg.data + "/src/docs/main/versions.rokon"));
+    let rel = try releases(cfg);
 
     let vl = StrBuf::new();
-    for v in rel.releases { vl.push_str(f"\"{v}\", "); }
+    for v in rel { vl.push_str(f"\"{v}\", "); }
     let versions = cfg.data + "/versions.rokon";
     try fs::write(versions, f"Versions {{ released: [{vl.to_str()}] }}\n");
 
     // Archive each release whose inputs changed.
     let archive = cfg.data + "/archive";
-    for v in rel.releases {
+    for v in rel {
         let tag = "v" + v;
         let any = false;
         if try sync_bundle(cfg, "docs", tag) { any = true; }
@@ -220,7 +241,7 @@ fn round(cfg: Cfg, exe: str, build: str) throws {
         // Same-minor releases, oldest first, for "Added in".
         let hist = StrBuf::new();
         let older: List<str> = List::new();
-        for w in rel.releases {
+        for w in rel {
             if w != v && minor_of(w) == minor_of(v) && !older.contains(w) { older.push(w); }
         }
         older.reverse();
@@ -450,6 +471,8 @@ fn signatures_and_versions() {
     // RFC 4231 test case 2.
     assert(signature("Jefe", "what do ya want for nothing?") == "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843", "hmac");
     assert(minor_of("0.1.4") == "0.1" && minor_of("1.2.3") == "1.2", "minor");
+    assert(release_rank("0.1.10") > release_rank("0.1.9") && release_rank("1.0.0") > release_rank("0.9.99"), "rank");
+    assert(release_rank("0.1") == -1 && release_rank("0.1.x") == -1 && release_rank("v0.1.0") == -1, "not a release");
     let e = parse_env("# c\nA=1\nexport B = \"x y\"\n");
     assert(e["A"] == "1" && e["B"] == "x y", "env");
 }

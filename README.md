@@ -58,7 +58,7 @@ python3 -m http.server -d public/docs 8403   # docs.rok-lang.org
 
 ## Serve
 
-`rok_lang_org serve` runs both sites from content bundles (one ROKON file per branch of docs, www and spec, built by `rok-content bundle` in [rok-lang/web](https://github.com/rok-lang/web)). It archives each release in `versions.rokon` once, from the `vX.Y.Z` branches of docs and spec and the release tag of rok, wraps every archive in the current chrome, and rebuilds when a bundle changes. `serve.rok` lists its environment.
+`rok_lang_org serve` runs both sites from content bundles (one ROKON file per branch of docs, www and spec, built by `rok-content bundle` in [rok-lang/web](https://github.com/rok-lang/web)). A release is a `vX.Y.Z` branch in both docs and spec (nothing lists them by hand; the newest is `latest/` and the release the home and download pages offer). It archives each release once, from those branches and the release tag of rok, wraps every archive in the current chrome, and rebuilds when a bundle changes. `serve.rok` lists its environment.
 
 Deployment itself lives in a private repository.
 
@@ -68,7 +68,7 @@ og:image and twitter:image are `og.png?v=<first 10 hex digits of its SHA-256>`, 
 
 ## Configuration
 
-Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: `title`, `tagline`, `description`, `base_url`, `docs_url`, `docs`, `www`, `spec` / `spec_ko`, `packages`, `library`, `out`. `versions.rokon` lists released docs versions, newest first.
+Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: `title`, `tagline`, `description`, `base_url`, `docs_url`, `docs`, `www`, `spec` / `spec_ko`, `packages`, `library`, `out`. `versions.rokon` lists released docs versions, newest first, for local builds; the server works them out from the branches.
 
 ## Layout
 
