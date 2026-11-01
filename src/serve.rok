@@ -460,6 +460,11 @@ fn draw(cfg: Cfg, c: pkg::layout::Card, png: str) throws {
     try fs::rename(tmp, png);
 }
 
+// Pages run only their own files, plus the analytics beacon Cloudflare
+// injects; style attributes carry the API pages' tints. The 404 page's
+// search on rok-lang.org submits to docs.
+const CSP: str = "Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; form-action 'self' https://docs.rok-lang.org; frame-ancestors 'none'";
+
 fn handle(s: TcpStream, cfg: Cfg) {
     let t0 = Instant::now();
     let r = try http::read_request(s, http::MAX_BODY, Duration::secs(30)) catch e {
@@ -468,6 +473,7 @@ fn handle(s: TcpStream, cfg: Cfg) {
         return;
     };
     let resp = route(cfg, r);
+    if resp.headers.contains("Content-Type: text/html; charset=utf-8") { resp.headers.push(CSP); }
     let head = r.method == "HEAD";
     let status = resp.status;
     if !resp.file.is_empty() {
