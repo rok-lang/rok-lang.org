@@ -113,12 +113,18 @@ fn fetch(cfg: Cfg, key: str) throws -> str {
     }
 }
 
-/// Unpack `repo`@`branch` under data/src; true if the sha changed.
+/// What a bundle holds; a new one is fetched again for every sha once.
+/// 2: updated.rokon, each page's last commit date.
+const BUNDLE_FORMAT: str = "2";
+
+/// Unpack `repo`@`branch` under data/src; true if the sha (or the bundle
+/// format) changed.
 fn sync_bundle(cfg: Cfg, repo: str, branch: str) throws -> bool {
     let key = f"{repo}/{branch}";
     let sha = (try fetch(cfg, key + "/current")).trim();
     let mark = f"{cfg.data}/src/{key}.sha";
-    if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == sha { return false; }
+    let seen = sha + " " + BUNDLE_FORMAT;
+    if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == seen { return false; }
     let b: Bundle = try rokon::from_str(try fetch(cfg, f"{key}/{sha}.rokon"));
     let dir = f"{cfg.data}/src/{key}";
     let tmp = dir + ".new";
@@ -130,7 +136,7 @@ fn sync_bundle(cfg: Cfg, repo: str, branch: str) throws -> bool {
     }
     if fs::exists(dir) { try fs::remove_dir_all(dir); }
     try fs::rename(tmp, dir);
-    try fs::write(mark, sha + "\n");
+    try fs::write(mark, seen + "\n");
     eprintln(f"content {key} @ {short(sha)}");
     true
 }
@@ -340,15 +346,17 @@ const FOREVER: str = "public, max-age=31536000, immutable";
 /// version (`?v=`, layout::asset and the og images) never changes: cache
 /// it for good. Pages of a released version (`/0.1.2/...`) and the fonts
 /// (the kit's, unversioned names) keep a day; pages of latest/, dev/ and
-/// rok-lang.org five minutes, as do the search indexes. Every file also
-/// carries an ETag (handle), so a stale copy revalidates for free.
+/// rok-lang.org five minutes, as do the search indexes. A page or font
+/// past its time is still shown once while it is fetched again
+/// (stale-while-revalidate). Every file also carries an ETag (handle), so
+/// a stale copy revalidates for free.
 pub fn cache_for(f: str, path: str, query: str, docs: bool) -> str {
     if f.ends_with(".html") {
         let first = (path[1:].split_once("/") ?? (path[1:], "")).0;
         let released = docs && first.split(".").count() == 3;
-        return if released { "public, max-age=86400" } else { "public, max-age=300" };
+        return if released { "public, max-age=86400, stale-while-revalidate=604800" } else { "public, max-age=300, stale-while-revalidate=86400" };
     }
-    if f.contains("/fonts/") { return "public, max-age=86400"; }
+    if f.contains("/fonts/") { return "public, max-age=86400, stale-while-revalidate=2592000"; }
     let v = query_v(query);
     if !v.is_empty() && v == (try pkg::og_version(f) catch _ { "" }) { return FOREVER; }
     if f.ends_with(".json") { "public, max-age=300" } else { "public, max-age=3600" }
@@ -379,7 +387,15 @@ fn route(cfg: Cfg, r: Request) -> Resp {
         STALE.store(1);
         return text(202, "reloading");
     }
+    if r.path == http::REPORT_PATH {
+        if r.method != "POST" { return text(405, "POST only"); }
+        if let line: str = http::csp_report(r.body) { eprintln(line); }
+        return Resp { status: 204, headers: ["Cache-Control: no-store"], body: "", file: "" };
+    }
     if r.method != "GET" && r.method != "HEAD" { return text(405, "GET only"); }
+    if r.path == http::SPECULATION_PATH {
+        return Resp { status: 200, headers: [http::SPECULATION_TYPE, "Cache-Control: public, max-age=3600"], body: http::SPECULATION_RULES, file: "" };
+    }
     let host = (r.header("host").split_once(":") ?? (r.header("host"), "")).0;
     let docs = host == cfg.docs_host || host.starts_with("docs.");
     let root = cfg.data + "/out/" + if docs { "docs" } else { "www" };
@@ -463,7 +479,9 @@ fn draw(cfg: Cfg, c: pkg::layout::Card, png: str) throws {
 // Pages run only their own files, plus the analytics beacon Cloudflare
 // injects; style attributes carry the API pages' tints. The 404 page's
 // search on rok-lang.org submits to docs.
-const CSP: str = "Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; style-src-attr 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; form-action 'self' https://docs.rok-lang.org; frame-ancestors 'none'";
+// No 'unsafe-inline' anywhere: no style="" in a page either (the kit's
+// chrome::align_classes, apidoc's indent classes).
+const CSP: str = "Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'none'; form-action 'self' https://docs.rok-lang.org; frame-ancestors 'none'" + http::REPORT_TO;
 
 fn handle(s: TcpStream, cfg: Cfg) {
     let t0 = Instant::now();
@@ -473,7 +491,11 @@ fn handle(s: TcpStream, cfg: Cfg) {
         return;
     };
     let resp = route(cfg, r);
-    if resp.headers.contains("Content-Type: text/html; charset=utf-8") { resp.headers.push(CSP); }
+    if resp.headers.contains("Content-Type: text/html; charset=utf-8") {
+        resp.headers.push(CSP);
+        resp.headers.push(http::REPORTING);
+        resp.headers.push(http::SPECULATION);
+    }
     let head = r.method == "HEAD";
     let status = resp.status;
     if !resp.file.is_empty() {
@@ -556,11 +578,11 @@ fn redirects() {
     assert(query_v("v=abc") == "abc" && query_v("x=1&v=d") == "d" && query_v("vv=1") == "", "query v");
     assert(cache_for("out/www/rok.css", "/rok.css", "v=1", false) == "public, max-age=3600", "stale version");
     assert(cache_for("out/www/og.png", "/og.png", "", false) == "public, max-age=3600", "bare og");
-    assert(cache_for("out/docs/latest/learn.html", "/latest/learn", "", true) == "public, max-age=300", "latest");
-    assert(cache_for("out/docs/dev/learn.html", "/dev/learn", "", true) == "public, max-age=300", "dev");
-    assert(cache_for("out/docs/0.1.2/learn.html", "/0.1.2/learn", "", true) == "public, max-age=86400", "release");
-    assert(cache_for("out/www/download.html", "/download", "", false) == "public, max-age=300", "home");
-    assert(cache_for("out/www/fonts/Geist-Variable.woff2", "/fonts/Geist-Variable.woff2", "", false) == "public, max-age=86400", "fonts");
+    assert(cache_for("out/docs/latest/learn.html", "/latest/learn", "", true) == "public, max-age=300, stale-while-revalidate=86400", "latest");
+    assert(cache_for("out/docs/dev/learn.html", "/dev/learn", "", true) == "public, max-age=300, stale-while-revalidate=86400", "dev");
+    assert(cache_for("out/docs/0.1.2/learn.html", "/0.1.2/learn", "", true) == "public, max-age=86400, stale-while-revalidate=604800", "release");
+    assert(cache_for("out/www/download.html", "/download", "", false) == "public, max-age=300, stale-while-revalidate=86400", "home");
+    assert(cache_for("out/www/fonts/Geist-Variable.woff2", "/fonts/Geist-Variable.woff2", "", false) == "public, max-age=86400, stale-while-revalidate=2592000", "fonts");
     assert(cache_for("out/docs/latest/search-index.json", "/latest/search-index.json", "", true) == "public, max-age=300", "index");
     assert(to("//evil.example/", false) == "/evil.example" && to("/\\evil.example/", false) == "-", "off-site");
 }

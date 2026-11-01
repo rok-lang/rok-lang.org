@@ -18,6 +18,7 @@ pub fn md(src: str, link: fn(str) -> str, ko: bool) -> Doc {
     let fix = |h: str| tidy_ref(link(h));
     let o = if ko { Options { link: fix, code: code_html, callout: callout_ko } } else { Options { link: fix, code: code_html } };
     let d = markdown::render(src, o);
+    d.html = chrome::align_classes(d.html);
     d.html = d.html.replace("<pre><code class=\"language-output\">", "<pre class=\"output\"><code class=\"language-output\">");
     // The heading permalinks are links in their own right: named, focusable.
     d.html = d.html.replace(" aria-hidden=\"true\">#</a>", f" aria-label=\"{anchor_label(ko)}\">#</a>");
@@ -237,10 +238,25 @@ fn callout_ko(kind: str) -> str {
     }
 }
 
-/// The end of a page whose source is at `url`.
-pub fn edit_link(url: str, ko: bool) -> str {
+/// The end of a page whose source is at `url`, last changed on `date`
+/// (`2026-10-31`, or `""` when the content bundle has no dates).
+pub fn edit_link(url: str, date: str, ko: bool) -> str {
     let (ask, label) = if ko { ("잘못된 곳이 있나요?", "GitHub에서 이 페이지 고치기") } else { ("Found a mistake?", "Edit this page on GitHub") };
-    f"<p class=\"edit\">{ask} <a href=\"{esc(url)}\">{label}</a>.</p>\n"
+    let when = if date.is_empty() { "" } else if ko { f" <span class=\"upd\">마지막 수정 <time datetime=\"{esc(date)}\">{long_date(date, true)}</time></span>" } else { f" <span class=\"upd\">Last updated <time datetime=\"{esc(date)}\">{long_date(date, false)}</time></span>" };
+    f"<p class=\"edit\">{ask} <a href=\"{esc(url)}\">{label}</a>.{when}</p>\n"
+}
+
+const MONTHS: [str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+/// "2026-10-29" -> "29 October 2026", or "2026년 10월 29일" if `ko`.
+pub fn long_date(d: str, ko: bool) -> str {
+    let p: List<str> = List::new();
+    for x in d.split("-") { p.push(x); }
+    if p.len() != 3 { return d; }
+    let m = try p[1].parse::<usize>() catch _ { return d; };
+    let day = try p[2].parse::<usize>() catch _ { return d; };
+    if m < 1 || m > 12 { return d; }
+    if ko { f"{p[0]}년 {m}월 {day}일" } else { f"{day} {MONTHS[m - 1]} {p[0]}" }
 }
 
 /// `../` once per directory level of `out`, back to the site root.

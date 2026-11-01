@@ -1,0 +1,98 @@
+// llms.txt and llms-full.txt (https://llmstxt.org) for one docs version:
+// a Markdown map of the pages for language models, and the guide,
+// examples and error pages' own Markdown in one file. Links are written
+// against `{base}`, which write_version fills with the version's address.
+
+use rok::std::fs;
+use web::apidoc::Module;
+use web::url;
+use pkg::Page;
+use pkg::Site;
+use pkg::layout;
+
+pub const BASE: str = "{base}";
+
+/// The page at output path `out` under `{base}`.
+fn link(out: str) -> str {
+    let c = url::canon(out);
+    if c.is_empty() { BASE } else { BASE + "/" + c }
+}
+
+/// Text from HTML that strip_tags left with its entities.
+fn plain(s: str) -> str {
+    s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&#39;", "'").replace("&amp;", "&")
+}
+
+/// `s` cut to about `n` characters at a space, with an ellipsis.
+fn clip(s: str, n: usize) -> str {
+    if s.chars().count() <= n { return s; }
+    let out = StrBuf::new();
+    for c in s.chars() {
+        if out.len() >= n && c == ' ' { break; }
+        out.push(c);
+    }
+    out.to_str() + "…"
+}
+
+fn item(out: StrBuf, title: str, href: str, note: str) {
+    out.push_str(f"- [{title}]({href})");
+    if !note.is_empty() { out.push_str(": " + note); }
+    out.push('\n');
+}
+
+/// The docs' own pages in one directory (`learn`, `examples`, `errors`).
+fn section(out: StrBuf, heading: str, own: List<Page>, dir: str) {
+    let any = false;
+    for p in own {
+        if p.dir != dir { continue; }
+        if !any {
+            out.push_str(f"\n## {heading}\n\n");
+            any = true;
+        }
+        item(out, p.title, link(p.out), clip(layout::first_sentence(plain(layout::lead_text(p.html))), 160));
+    }
+}
+
+/// llms.txt of version `version`: every guide, example and error page with
+/// its first sentence, the spec's pages, the library's modules.
+pub fn index(site: Site, version: str, own: List<Page>, spec: List<Page>, mods: List<Module>) -> str {
+    let out = StrBuf::new();
+    out.push_str(f"# {site.title}\n\n> {site.description}\n\n");
+    out.push_str(f"These are the docs of Rok {version}. Code that compiles with this release follows them; the language reference (spec) is the final word on what a program means. ");
+    out.push_str(f"The guide, examples and error pages are also in one Markdown file: [llms-full.txt]({BASE}/llms-full.txt).\n");
+    section(out, "Guide", own, "learn");
+    section(out, "Examples", own, "examples");
+    section(out, "Error codes", own, "errors");
+    out.push_str("\n## Language reference\n\n");
+    for p in spec { item(out, p.title, link(p.out), ""); }
+    out.push_str("\n## Standard library API\n\n");
+    item(out, "Standard library API", link("std/index.html"), "every module of the bare, core and std tiers");
+    for m in mods { item(out, m.path, link(m.out), ""); }
+    out.push_str(f"\n## Optional\n\n");
+    item(out, "Install", site.base_url + "/download", "the installer and the release archives");
+    item(out, "Playground", site.playground, "run a program in the browser");
+    item(out, "Packages", site.packages, "rokstones.io, the package registry");
+    out.to_str()
+}
+
+/// llms-full.txt: the Markdown of every guide, example and error page,
+/// each under its title and address.
+pub fn full(site: Site, version: str, own: List<Page>) throws -> str {
+    let out = StrBuf::new();
+    out.push_str(f"# {site.title} {version}: guide, examples and error codes\n\n> {site.description}\n");
+    for dir in ["learn", "examples", "errors"] {
+        for p in own {
+            if p.dir != dir { continue; }
+            let text = try fs::read_to_str(site.docs + "/" + p.src.replace("README.md", "index.md"));
+            out.push_str(f"\n---\n\nSource: {link(p.out)}\n\n{text.trim()}\n");
+        }
+    }
+    out.to_str()
+}
+
+#[test]
+fn links() {
+    assert(link("index.html") == "{base}" && link("learn/index.html") == "{base}/learn" && link("learn/03-sums.html") == "{base}/learn/03-sums", "links");
+    assert(clip("one two three", 5) == "one two…" && clip("short", 10) == "short", "clip");
+    assert(plain("a &lt;b&gt; &amp;amp;") == "a <b> &amp;", "entities");
+}

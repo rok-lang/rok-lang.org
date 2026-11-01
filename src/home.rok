@@ -22,19 +22,6 @@ struct News {
 /// Shown first, in this order, when the docs have them.
 const PICKS: [str; 8] = ["sudoku", "game-of-life", "interpreter", "tcp-echo", "text-adventure", "csv-report", "word-count", "json-parser"];
 
-const MONTHS: [str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-/// "2026-10-29" -> "29 October 2026".
-fn long_date(d: str) -> str {
-    let p: List<str> = List::new();
-    for x in d.split("-") { p.push(x); }
-    if p.len() != 3 { return d; }
-    let m = try p[1].parse::<usize>() catch _ { return d; };
-    let day = try p[2].parse::<usize>() catch _ { return d; };
-    if m < 1 || m > 12 { return d; }
-    f"{day} {MONTHS[m - 1]} {p[0]}"
-}
-
 /// The `## <release> (<date>)` section of CHANGELOG.md, one entry per
 /// top-level bullet.
 fn news(path: str, release: str) -> News | none {
@@ -193,7 +180,7 @@ pub fn body(site: Site, examples: List<Example>, sizes: Dict<str, i64>) -> str {
 
     // Error codes link to their pages when latest/ has them.
     let to = |p: str| if p.starts_with("errors/") && site.no_errors { "" } else { layout::latest(site, p) };
-    let came = if let x: News = n { f"Rok {r} came out on {long_date(x.date)}" } else { f"Rok {r} is out" };
+    let came = if let x: News = n { f"Rok {r} came out on {layout::long_date(x.date, false)}" } else { f"Rok {r} is out" };
     out.push_str(f"<section class=\"hero\"><div class=\"frame\">
 <div class=\"hero-t\">
 <a class=\"t-ui news-link\" href=\"{rel_url}\">{came} →</a>
@@ -268,7 +255,7 @@ nix profile install github:rok-lang/rok</code></pre></div>
 
     if let x: News = n {
         out.push_str(f"<section class=\"new\"><div class=\"frame\">
-<div><h2 class=\"t-h2\">New in {esc(r)}</h2><p class=\"t-small\">{long_date(x.date)}</p><a class=\"t-ui\" href=\"https://github.com/rok-lang/rok/blob/v{r}/CHANGELOG.md\">Full changelog</a></div>
+<div><h2 class=\"t-h2\">New in {esc(r)}</h2><p class=\"t-small\">{layout::long_date(x.date, false)}</p><a class=\"t-ui\" href=\"https://github.com/rok-lang/rok/blob/v{r}/CHANGELOG.md\">Full changelog</a></div>
 <ul>");
         for k in 0..x.items.len() {
             if k >= 6 { break; }

@@ -11,11 +11,11 @@
   // Interface strings; Korean pages get Korean ones.
   const ko = document.documentElement.lang === "ko";
   const T = ko
-    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", down: "검색할 수 없습니다. 잠시 후 다시 시도하세요.", copiedLink: "링크 복사됨", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요`, version: "문서 버전", found: (n, all) => (all > n ? `결과 ${all}개 중 ${n}개 표시` : `결과 ${n}개`),
+    ? { run: "실행", runLabel: "플레이그라운드에서 실행", copy: "복사", copyLabel: "코드 복사", copied: "복사됨", collapse: "접기", none: "결과 없음", inLatest: "최신 문서에서 찾기 →", down: "검색할 수 없습니다. 잠시 후 다시 시도하세요.", copiedLink: "링크 복사됨", linkInBar: "주소창에 링크가 있습니다", press: (k) => `${k}를 누르세요`, version: "문서 버전", found: (n, all) => (all > n ? `결과 ${all}개 중 ${n}개 표시` : `결과 ${n}개`),
         legend: [["↑ ↓", "이동"], ["↵", "열기"], ["esc", "닫기"]], missing: (v) => `${v}에는 그 페이지가 없어서 가장 가까운 페이지를 열었습니다.`,
         help: "키보드 단축키", rows: { search: "문서 검색", pager: "이전 / 다음 페이지", filter: "메서드 거르기", help: "이 도움말", esc: "닫기 / 검색 지우기" },
         filter: "메서드 거르기", shown: (n) => `메서드 ${n}개`, here: "(지금 쓰는 시스템)" }
-    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", down: "Search is unavailable right now.", copiedLink: "Link copied", linkInBar: "link in the address bar", press: (k) => `Press ${k}`, version: "Docs version", found: (n, all) => (all > n ? `${n} of ${all} results shown` : n === 1 ? "1 result" : `${n} results`),
+    : { run: "Run", runLabel: "Run in the playground", copy: "Copy", copyLabel: "Copy code", copied: "Copied", collapse: "Collapse", none: "No results", inLatest: "Search the latest docs →", down: "Search is unavailable right now.", copiedLink: "Link copied", linkInBar: "link in the address bar", press: (k) => `Press ${k}`, version: "Docs version", found: (n, all) => (all > n ? `${n} of ${all} results shown` : n === 1 ? "1 result" : `${n} results`),
         legend: [["↑ ↓", "to move"], ["↵", "to open"], ["esc", "to close"]], missing: (v) => `That page is not in ${v}, so this is the closest one.`,
         help: "Keyboard shortcuts", rows: { search: "Search the docs", pager: "Previous / next page", filter: "Filter methods", help: "This help", esc: "Close / clear search" },
         filter: "Filter methods", shown: (n) => (n === 1 ? "1 method" : `${n} methods`), here: "(your system)" };
@@ -612,6 +612,17 @@
   const KIND_ORDER = { struct: 0, enum: 0, trait: 0, type: 1, fn: 2, const: 3, static: 3, impl: 4, method: 5 };
   const MAIN_TYPES = ["list", "str", "strbuf", "dict", "set"];
   const esc = (w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // A Hangul syllable says about as much as two Latin letters, so a
+  // two-syllable query is long enough to look into the excerpts.
+  const weight = (s) => [...s].reduce((n, c) => n + (/[\u3131-\ud7a3]/.test(c) ? 2 : 1), 0);
+  // A Korean word of three syllables or more without its particle
+  // ("타입을" -> "타입"): each term matches as typed or bare.
+  const PARTICLE = /(으로|에서|에게|까지|부터|이나|은|는|이|가|을|를|의|에|로|와|과|도|만)$/;
+  const forms = (w) => {
+    const bare = /^[\uac00-\ud7a3]{3,}$/.test(w) ? w.replace(PARTICLE, "") : w;
+    return bare === w ? [w] : [w, bare];
+  };
+  const has = (hay, alts) => alts.some((w) => hay.includes(w));
   const score = (e, query, terms, short) => {
     const t = e.t.toLowerCase();
     if (e.k) {
@@ -623,9 +634,9 @@
     if (t.startsWith(query)) return 2;
     if (word.test(t)) return 2.2;
     if (short) return -1;
-    if (terms.every((w) => t.includes(w))) return 2.5;
+    if (terms.every((w) => has(t, w))) return 2.5;
     const hay = t + " " + (e.x + " " + e.p).toLowerCase();
-    if (terms.every((w) => hay.includes(w))) return 4;
+    if (terms.every((w) => has(hay, w))) return 4;
     return -1;
   };
 
@@ -648,10 +659,11 @@
       mark(-1);
       return;
     }
-    const short = query.length < 4;
+    const short = weight(query) < 4;
+    const alts = terms.map(forms);
     const hits = [];
     for (const e of data) {
-      const s = score(e, query, terms, short);
+      const s = score(e, query, alts, short);
       if (s < 0) continue;
       const owner = e.k === "method" ? e.t.toLowerCase().split("::")[0] : "";
       hits.push([s, e.k ? (KIND_ORDER[e.k] ?? 6) : (e.p ? 7 : 6), MAIN_TYPES.includes(owner) ? 0 : 1, e.t.length, e]);
@@ -675,7 +687,7 @@
         a.append(tag);
         const title = document.createElement("span");
         title.className = "hit-t";
-        title.append(...marked(e.t, terms));
+        title.append(...marked(e.t, alts.flat()));
         a.append(title);
         if (e.p) {
           const s = document.createElement("small");
@@ -698,6 +710,20 @@
         li.className = "empty";
         li.textContent = T.none;
         box.append(li);
+        // Another version may have it: an older one lacks newer pages.
+        if (/^\/\d+\.\d+(\.\d+)?\/$|^\/dev\/$/.test(root)) {
+          const li = document.createElement("li");
+          li.setAttribute("role", "none");
+          const a = document.createElement("a");
+          a.id = "hit-0";
+          a.setAttribute("role", "option");
+          a.tabIndex = -1;
+          a.className = "elsewhere";
+          a.href = "/latest" + (ko ? "/ko" : "") + "?q=" + encodeURIComponent(q.value.trim());
+          a.textContent = T.inLatest;
+          li.append(a);
+          box.append(li);
+        }
       }
       const legend = document.createElement("li");
       legend.setAttribute("role", "none");
@@ -714,7 +740,7 @@
     if (box.hidden) fill(); else resize(box, fill);
     show(true);
     status.textContent = !hits.length ? T.none : T.found(Math.min(hits.length, 40), hits.length);
-    mark(hits.length ? 0 : -1);
+    mark(links().length ? 0 : -1);
   };
 
   if (!q) return;

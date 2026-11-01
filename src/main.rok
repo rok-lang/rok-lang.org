@@ -29,6 +29,7 @@ mod apidoc;
 mod check;
 mod home;
 mod layout;
+mod llms;
 mod serve;
 
 use rok::std::env;
@@ -170,6 +171,9 @@ pub struct Bundle {
     pub search: str;
     /// The Korean pages' search index.
     pub search_ko: str = "";
+    /// llms.txt and llms-full.txt, links against llms::BASE.
+    pub llms: str = "";
+    pub llms_full: str = "";
 }
 
 /// Final HTML of a doc page: the current chrome around `f`'s content.
@@ -316,14 +320,32 @@ fn edit_url(site: Site, repo: str, branch: str, path: str) -> str {
 }
 
 /// The edit link of spec page `p` of the edition in `spec`.
-fn spec_edit(site: Site, spec: str, p: Page) -> str {
-    layout::edit_link(edit_url(site, site.spec_repo, site.spec_branch, f"{last_seg(spec)}/{p.src}"), p.out.starts_with("ko/"))
+fn spec_edit(site: Site, spec: str, p: Page, upd: Dict<str, str>) -> str {
+    let path = f"{last_seg(spec)}/{p.src}";
+    layout::edit_link(edit_url(site, site.spec_repo, site.spec_branch, path), upd.get(path) ?? "", p.out.starts_with("ko/"))
 }
 
 /// The edit link of docs page `p` (docs/), whose source is under `dir`
 /// (`""`, or `ko/` for a Korean page).
-fn docs_edit(site: Site, p: Page, dir: str) -> str {
-    layout::edit_link(edit_url(site, site.repo, docs_branch(site), dir + p.src.replace("README.md", "index.md")), dir == "ko/")
+fn docs_edit(site: Site, p: Page, dir: str, upd: Dict<str, str>) -> str {
+    let path = dir + p.src.replace("README.md", "index.md");
+    layout::edit_link(edit_url(site, site.repo, docs_branch(site), path), upd.get(path) ?? "", dir == "ko/")
+}
+
+/// updated.rokon of a content checkout (`root`): each Markdown file's last
+/// commit date, written by the content bundler; empty without one.
+#[derive(Rokon)]
+pub struct Updated {
+    pub pages: Dict<str, str>;
+}
+
+fn updated(root: str) -> Dict<str, str> {
+    let text = try fs::read_to_str(root + "/updated.rokon") catch _ { return Dict::new(); };
+    let u: Updated = try rokon::from_str(text) catch e {
+        eprintln(f"note: {root}/updated.rokon: {e}");
+        return Dict::new();
+    };
+    u.pages
 }
 
 fn spec_root(dir: str) -> str {
@@ -552,7 +574,7 @@ fn site_hrefs(site: Site, html: str, base: str, out: str) -> str {
 /// The pages of one version directory `dir` (`latest`, `0.1.0`, `dev`)
 /// under `docs_root`, linking within it, with its 404 page, search index
 /// and static files; the static names.
-fn write_version(site: Site, docs_root: str, dir: str, files: Dict<str, str>, search: str, search_ko: str) throws -> Set<str> {
+fn write_version(site: Site, docs_root: str, dir: str, files: Dict<str, str>, search: str, search_ko: str, llm: (str, str)) throws -> Set<str> {
     let vdir = docs_root + "/" + dir;
     if fs::exists(vdir) { try fs::remove_dir_all(vdir); }
     let base = "/" + dir;
@@ -562,6 +584,11 @@ fn write_version(site: Site, docs_root: str, dir: str, files: Dict<str, str>, se
     try write(vdir, "search-index.json", search);
     let statics = try copy_static(vdir);
     statics.insert("search-index.json");
+    if !llm.0.is_empty() {
+        let at = site.docs_url + "/" + dir;
+        try write(vdir, "llms.txt", llm.0.replace(llms::BASE, at));
+        try write(vdir, "llms-full.txt", llm.1.replace(llms::BASE, at));
+    }
     if !search_ko.is_empty() {
         try write(vdir, "ko/search-index.json", search_ko);
         statics.insert("ko/search-index.json");
@@ -1204,13 +1231,15 @@ fn main() throws {
     // current chrome is applied in `wrap`, so a released version's archived
     // fragments re-wrap with it too.
     let frags: Dict<str, Frag> = Dict::new();
+    let spec_upd = updated(dir_of(spec_root(site.spec)));
+    let docs_upd = updated(site.docs);
     for (eds, others, spec, ko) in [(pages, ko_pages, site.spec, false), (ko_pages, pages, site.spec_ko, true)] {
         for k in 0..eds.len() {
             let p = eds[k];
             let (alt, sec) = twin(p, others);
             // Each spec page names its other edition for search engines.
             let head = if alt.is_empty() { "" } else { hreflang(site, if ko { alt } else { p.out }, if ko { p.out } else { alt }) };
-            frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(eds, k), toc: layout::toc(p), body: p.html + spec_edit(site, spec, p), pager: layout::pager(eds, k, ko), head: head, alt: alt, sec: sec, crumb: spec_crumb(eds, k) });
+            frags.insert(p.out, Frag { out: p.out, title: p.title, side: layout::sidebar(eds, k), toc: layout::toc(p), body: p.html + spec_edit(site, spec, p, spec_upd), pager: layout::pager(eds, k, ko), head: head, alt: alt, sec: sec, crumb: spec_crumb(eds, k) });
         }
     }
 
@@ -1250,7 +1279,7 @@ fn main() throws {
             let real = !ko || translated.contains(p.out);
             let alt_real = ko || translated.contains(alt);
             let head = if real && alt_real && !alt.is_empty() { hreflang(site, if ko { alt } else { p.out }, if ko { p.out } else { alt }) } else { "" };
-            let edit = docs_edit(site, p, if ko && real { "ko/" } else { "" });
+            let edit = docs_edit(site, p, if ko && real { "ko/" } else { "" }, docs_upd);
             if p.dir.is_empty() {
                 let side = if p.src == "README.md" { "" } else { layout::page_toc(p) };
                 let toc = if p.src == "README.md" { "" } else { layout::toc(p) };
@@ -1338,6 +1367,8 @@ fn main() throws {
     // and the API's items and members.
     let idx = search_index([own, pages, api]);
     let idx_ko = search_index([ko_own, ko_pages, api_ko]);
+    let shown = if site.built_from.is_empty() { version } else { site.built_from };
+    let llm = (llms::index(site, shown, own, pages, mods), try llms::full(site, shown, own));
 
     // The newest release's pages, for the banner's link on other versions.
     let archive = try env::var("ROK_DOCS_ARCHIVE") catch _ { "" };
@@ -1374,7 +1405,7 @@ fn main() throws {
         outs.sort();
         let fl: List<Frag> = List::new();
         for o in outs { fl.push(frags[o]); }
-        try write(archive_out, "bundle.rokon", rokon::to_string(Bundle { version: version, pages: fl, search: idx, search_ko: idx_ko }));
+        try write(archive_out, "bundle.rokon", rokon::to_string(Bundle { version: version, pages: fl, search: idx, search_ko: idx_ko, llms: llm.0, llms_full: llm.1 }));
         println(f"archived docs {version}: {fl.len()} pages → {archive_out}/bundle.rokon ({t0.elapsed():?})");
         return;
     }
@@ -1414,7 +1445,7 @@ fn main() throws {
     let docs_dir = docs_root + "/" + version;
     let www_dir = out_root + "/www";
     if fs::exists(www_dir) { try fs::remove_dir_all(www_dir); }
-    let statics = try write_version(site, docs_root, version, files, idx, idx_ko);
+    let statics = try write_version(site, docs_root, version, files, idx, idx_ko, llm);
     let fl: List<Frag> = List::new();
     for o in frags.keys() { fl.push(frags[o]); }
     try write(docs_root + "/" + version, "og.rokon", rokon::to_string(layout::cards(fl)));
@@ -1432,6 +1463,7 @@ fn main() throws {
     let latest_pages: Dict<str, str> = if version == newest { files } else { Dict::new() };
     let latest_search = if version == newest { idx } else { "" };
     let latest_search_ko = if version == newest { idx_ko } else { "" };
+    let latest_llms = if version == newest { llm } else { ("", "") };
 
     // Released versions other than the one built now: re-wrap their
     // archived fragments with the current chrome, so a design change reaches
@@ -1451,13 +1483,14 @@ fn main() throws {
             }
             let vfiles: Dict<str, str> = Dict::new();
             for f in b.pages { vfiles.insert(f.out, wrap(site, f, latest_outs)); }
-            let vstatics = try write_version(site, docs_root, v, vfiles, b.search, b.search_ko);
+            let vstatics = try write_version(site, docs_root, v, vfiles, b.search, b.search_ko, (b.llms, b.llms_full));
             try write(docs_root + "/" + v, "og.rokon", rokon::to_string(layout::cards(b.pages)));
             for bd in check(vfiles, vstatics) { arch_bad.push(f"[{v}] {bd}"); }
             if v == newest {
                 latest_pages = vfiles;
                 latest_search = b.search;
                 latest_search_ko = b.search_ko;
+                latest_llms = (b.llms, b.llms_full);
             }
             println(f"docs {v}: {b.pages.len()} pages re-wrapped from archive → {docs_root}/{v}/");
         }
@@ -1497,7 +1530,17 @@ fn main() throws {
     // version directories, for the docs root.
     site.version = if newest.is_empty() { version } else { newest };
     let has_latest = !newest.is_empty() && latest_pages.len() > 0;
-    if has_latest { try write_version(site, docs_root, "latest", latest_pages, latest_search, latest_search_ko); }
+    if has_latest {
+        try write_version(site, docs_root, "latest", latest_pages, latest_search, latest_search_ko, latest_llms);
+        // Both hosts answer /llms.txt with latest/'s.
+        if !latest_llms.0.is_empty() {
+            let base = site.docs_url + "/latest";
+            for root in [docs_root, www_dir] {
+                try write(root, "llms.txt", latest_llms.0.replace(llms::BASE, base));
+                try write(root, "llms-full.txt", latest_llms.1.replace(llms::BASE, base));
+            }
+        }
+    }
     try write(docs_root, "404.html", site_hrefs(site, layout::not_found_page(site, "latest", false), "/latest", "404.html"));
     site.version = version;
 
