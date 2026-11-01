@@ -20,6 +20,27 @@
         help: "Keyboard shortcuts", rows: { search: "Search the docs", pager: "Previous / next page", filter: "Filter methods", help: "This help", esc: "Close / clear search" },
         filter: "Filter methods", shown: (n) => (n === 1 ? "1 method" : `${n} methods`), here: "(your system)" };
 
+  // Motion (rok.css tokens): only after a click or a key, never on load,
+  // and none with reduced motion.
+  const still = matchMedia("(prefers-reduced-motion: reduce)");
+  const moves = (el) => !still.matches && !!el.animate;
+  const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const ms = (name) => parseFloat(token(name)) || 0;
+  const resize = (el, change) => (window.rokResize ? window.rokResize(el, change) : change());
+  // Run change(), then slide el's height from what it was to what it is,
+  // clipped on the way (and past a max-height that change() set).
+  const slide = (el, change) => {
+    const h0 = el.offsetHeight;
+    if (el.slid) el.slid.cancel();
+    change();
+    const h1 = el.offsetHeight;
+    el.style.overflow = "";
+    if (h0 === h1 || !moves(el)) return;
+    el.style.overflow = "hidden";
+    el.slid = el.animate([{ height: h0 + "px", maxHeight: "none" }, { height: h1 + "px", maxHeight: "none" }], { duration: ms(h1 > h0 ? "--dur" : "--dur-out"), easing: token("--ease") });
+    el.slid.onfinish = () => { el.style.overflow = ""; el.slid = null; };
+  };
+
   // On wide screens the sidebar scrolls to the current page (the API
   // list is long).
   const aside = document.querySelector(".side");
@@ -56,7 +77,7 @@
   const sideBtn = document.querySelector(".side-toggle");
   if (aside && sideBtn) {
     const scrim = document.createElement("div");
-    scrim.className = "scrim";
+    scrim.className = "scrim appear";
     scrim.hidden = true;
     document.body.append(scrim);
     const header = document.querySelector(".hdr");
@@ -89,7 +110,16 @@
 
   // "On this page" under the title folds again once a section is chosen.
   const tocM = document.querySelector(".toc-m");
-  if (tocM) tocM.addEventListener("click", (e) => { if (e.target.closest("a")) tocM.open = false; });
+  // It shuts at once there: sliding, it would move the section away
+  // from where the link scrolls.
+  if (tocM) {
+    tocM.addEventListener("click", (e) => {
+      if (!e.target.closest("a")) return;
+      tocM.classList.remove("grow");
+      tocM.open = false;
+      requestAnimationFrame(() => tocM.classList.add("grow"));
+    });
+  }
 
   // Buttons with data-copy are copy.js's.
 
@@ -99,8 +129,14 @@
   const navToggle = document.querySelector(".nav-toggle");
   const nav = document.getElementById("nav");
   if (top && navToggle && nav) {
+    // nav-shut lets the panel fade out on a close; folding the nav on
+    // load or resize must not.
+    let shut = 0;
     const setNav = (open) => {
       if (open === top.classList.contains("nav-open")) return;
+      clearTimeout(shut);
+      top.classList.toggle("nav-shut", !open && top.classList.contains("nav-compact"));
+      if (!open) shut = setTimeout(() => top.classList.remove("nav-shut"), ms("--dur-out"));
       top.classList.toggle("nav-open", open);
       navToggle.setAttribute("aria-expanded", open ? "true" : "false");
       hold(open);
@@ -213,24 +249,29 @@
     b.textContent = T.copy;
     b.setAttribute("aria-label", T.copyLabel);
     b.addEventListener("click", async () => {
+      let say = T.copied;
       try {
         await navigator.clipboard.writeText(pre.innerText.replace(/\n$/, ""));
-        b.textContent = T.copied;
       } catch {
-        b.textContent = T.press(/Mac|iPhone|iPad/.test(navigator.platform) ? "\u2318C" : "Ctrl+C");
+        say = T.press(/Mac|iPhone|iPad/.test(navigator.platform) ? "\u2318C" : "Ctrl+C");
       }
+      resize(b, () => { b.textContent = say; });
       b.classList.add("done");
-      setTimeout(() => { b.textContent = T.copy; b.classList.remove("done"); }, 1600);
+      setTimeout(() => { resize(b, () => { b.textContent = T.copy; }); b.classList.remove("done"); }, 1600);
     });
     head.append(b);
     const ex = wrap.querySelector(".expand");
     if (ex) {
       const more = ex.textContent;
       ex.addEventListener("click", () => {
-        const open = wrap.classList.toggle("collapsed") === false;
-        ex.textContent = open ? T.collapse : more;
+        let open = false;
+        // Scrolled before the slide starts, to where the folded block ends up.
+        slide(pre, () => {
+          open = wrap.classList.toggle("collapsed") === false;
+          if (!open) wrap.scrollIntoView({ block: "nearest" });
+        });
+        resize(ex, () => { ex.textContent = open ? T.collapse : more; });
         ex.setAttribute("aria-expanded", open ? "true" : "false");
-        if (!open) wrap.scrollIntoView({ block: "nearest" });
       });
     }
   }
@@ -263,11 +304,11 @@
   // A heading's # copies the link to that section.
   const toast = (text) => {
     const t = document.createElement("div");
-    t.className = "toast";
+    t.className = "toast appear";
     t.setAttribute("role", "status");
     t.textContent = text;
     document.body.append(t);
-    setTimeout(() => t.remove(), 1400);
+    setTimeout(() => { t.hidden = true; setTimeout(() => t.remove(), ms("--dur-out")); }, 1400);
   };
   for (const a of document.querySelectorAll("article .anchor")) {
     a.addEventListener("click", async (ev) => {
@@ -485,9 +526,13 @@
     };
     const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
     if (/win/i.test(plat)) choose("windows");
+    // A click crossfades the command where the browser can; the
+    // detected system above shows at once.
     pick.addEventListener("click", (e) => {
       const b = e.target.closest("button[data-pick]");
-      if (b) choose(b.dataset.pick);
+      if (!b || b.getAttribute("aria-pressed") === "true") return;
+      if (document.startViewTransition && !still.matches) document.startViewTransition(() => choose(b.dataset.pick));
+      else choose(b.dataset.pick);
     });
   }
 
@@ -604,69 +649,90 @@
       hits.push([s, e.k ? (KIND_ORDER[e.k] ?? 6) : (e.p ? 7 : 6), MAIN_TYPES.includes(owner) ? 0 : 1, e.t.length, e]);
     }
     hits.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3]);
-    box.replaceChildren();
-    hits.slice(0, 40).forEach((h, k) => {
-      const e = h[4];
-      const li = document.createElement("li");
-      li.setAttribute("role", "none");
-      const a = document.createElement("a");
-      a.id = "hit-" + k;
-      a.setAttribute("role", "option");
-      a.tabIndex = -1;
-      a.href = root + e.u;
-      const tag = document.createElement("span");
-      tag.className = "src";
-      tag.textContent = e.k ? KIND[e.k] || e.k : where(e.u);
-      a.append(tag);
-      const title = document.createElement("span");
-      title.className = "hit-t";
-      title.append(...marked(e.t, terms));
-      a.append(title);
-      if (e.p) {
-        const s = document.createElement("small");
-        s.className = "hit-p";
-        s.textContent = e.p;
-        a.append(s);
+    // An open list eases to its new height; a closed one fades in (.appear).
+    const fill = () => {
+      box.replaceChildren();
+      hits.slice(0, 40).forEach((h, k) => {
+        const e = h[4];
+        const li = document.createElement("li");
+        li.setAttribute("role", "none");
+        const a = document.createElement("a");
+        a.id = "hit-" + k;
+        a.setAttribute("role", "option");
+        a.tabIndex = -1;
+        a.href = root + e.u;
+        const tag = document.createElement("span");
+        tag.className = "src";
+        tag.textContent = e.k ? KIND[e.k] || e.k : where(e.u);
+        a.append(tag);
+        const title = document.createElement("span");
+        title.className = "hit-t";
+        title.append(...marked(e.t, terms));
+        a.append(title);
+        if (e.p) {
+          const s = document.createElement("small");
+          s.className = "hit-p";
+          s.textContent = e.p;
+          a.append(s);
+        }
+        if (e.x) {
+          const s = document.createElement("small");
+          s.className = "hit-x";
+          s.textContent = e.x;
+          a.append(s);
+        }
+        li.append(a);
+        box.append(li);
+      });
+      if (!hits.length) {
+        const li = document.createElement("li");
+        li.setAttribute("role", "none");
+        li.className = "empty";
+        li.textContent = T.none;
+        box.append(li);
       }
-      if (e.x) {
-        const s = document.createElement("small");
-        s.className = "hit-x";
-        s.textContent = e.x;
-        a.append(s);
+      const legend = document.createElement("li");
+      legend.setAttribute("role", "none");
+      legend.setAttribute("aria-hidden", "true");
+      legend.className = "legend";
+      for (const [k, what] of T.legend) {
+        const span = document.createElement("span");
+        for (const key of k.split(" ")) { const b = document.createElement("kbd"); b.className = "kbd"; b.textContent = key; span.append(b); }
+        span.append(" " + what);
+        legend.append(span);
       }
-      li.append(a);
-      box.append(li);
-    });
-    if (!hits.length) {
-      const li = document.createElement("li");
-      li.setAttribute("role", "none");
-      li.className = "empty";
-      li.textContent = T.none;
-      box.append(li);
-    }
-    const legend = document.createElement("li");
-    legend.setAttribute("role", "none");
-    legend.setAttribute("aria-hidden", "true");
-    legend.className = "legend";
-    for (const [k, what] of T.legend) {
-      const span = document.createElement("span");
-      for (const key of k.split(" ")) { const b = document.createElement("kbd"); b.className = "kbd"; b.textContent = key; span.append(b); }
-      span.append(" " + what);
-      legend.append(span);
-    }
-    box.append(legend);
+      box.append(legend);
+    };
+    if (box.hidden) fill(); else resize(box, fill);
     show(true);
     status.textContent = !hits.length ? T.none : T.found(Math.min(hits.length, 40), hits.length);
     mark(hits.length ? 0 : -1);
   };
 
   if (!q) return;
-  // Folded header: the search icon opens the field.
+  // Folded header: the search icon opens the field over the row. It
+  // grows from where the icon sits and shrinks back there; .open places
+  // it, so the frames run from the icon's box to the open one.
   const sbox = q.closest(".search");
+  const grow = (open) => {
+    if (sbox.grew) { sbox.grew.cancel(); sbox.grew = null; }
+    if (open === sbox.classList.contains("open")) return;
+    if (!top || !top.classList.contains("nav-compact") || !moves(sbox)) { sbox.classList.toggle("open", open); return; }
+    sbox.classList.remove("open");
+    const icon = sbox.getBoundingClientRect();
+    sbox.classList.add("open");
+    const wide = sbox.getBoundingClientRect();
+    const cs = getComputedStyle(sbox);
+    const x = parseFloat(cs.left), y = parseFloat(cs.top);
+    const at = [{ left: x + icon.left - wide.left + "px", top: y + icon.top - wide.top + "px", width: icon.width + "px" }, { left: x + "px", top: y + "px", width: wide.width + "px" }];
+    if (!open) at.reverse();
+    sbox.grew = sbox.animate(at, { duration: ms(open ? "--dur" : "--dur-out"), easing: token("--ease") });
+    if (!open) sbox.grew.onfinish = () => { sbox.classList.remove("open"); sbox.grew = null; };
+  };
   sbox.addEventListener("click", () => {
-    if (top && top.classList.contains("nav-compact")) { sbox.classList.add("open"); q.focus(); }
+    if (top && top.classList.contains("nav-compact")) { grow(true); q.focus(); }
   });
-  q.addEventListener("blur", () => { if (!q.value) setTimeout(() => sbox.classList.remove("open"), 150); });
+  q.addEventListener("blur", () => { if (!q.value) setTimeout(() => { if (document.activeElement !== q) grow(false); }, 150); });
   q.addEventListener("focus", () => load().catch(() => {}), { once: true });
   q.addEventListener("input", search);
   q.addEventListener("keydown", (ev) => {
@@ -684,7 +750,7 @@
     if (document.querySelector(".api-filter")) rows.push(["f", T.rows.filter]);
     rows.push(["?", T.rows.help], ["Esc", T.rows.esc]);
     help = document.createElement("div");
-    help.className = "kbd-help";
+    help.className = "kbd-help appear";
     help.innerHTML =
       `<div class="kbd-card" role="dialog" aria-modal="true" aria-label="${T.help}">` +
       `<h2>${T.help}</h2><dl>` +
@@ -693,7 +759,13 @@
     help.addEventListener("click", (e) => { if (e.target === help) closeHelp(); });
     document.body.append(help);
   };
-  const closeHelp = () => { if (help) { help.remove(); help = null; } };
+  const closeHelp = () => {
+    if (!help) return;
+    const h = help;
+    help = null;
+    h.hidden = true;
+    setTimeout(() => h.remove(), ms("--dur-out"));
+  };
   const toggleHelp = () => { if (help) closeHelp(); else buildHelp(); };
 
   document.addEventListener("keydown", (ev) => {
@@ -711,6 +783,8 @@
     q.value = pre;
     sbox.classList.add("open");
     q.focus();
-    search();
+    // Shown with the page: no fade.
+    box.style.transition = "none";
+    search().then(() => requestAnimationFrame(() => { box.style.transition = ""; }));
   }
 })();
