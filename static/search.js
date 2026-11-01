@@ -165,6 +165,9 @@
       top.classList.remove("nav-measuring");
       if (overflow) top.classList.add("nav-compact");
       else setNav(false);
+      // the search icon is a button only while the field is folded
+      const so = top.querySelector(".s-open");
+      if (so) { so.tabIndex = overflow ? 0 : -1; so.toggleAttribute("aria-hidden", !overflow); }
     };
     fitNav();
     addEventListener("resize", fitNav);
@@ -265,6 +268,11 @@
       const more = ex.textContent;
       ex.addEventListener("click", () => {
         let open = false;
+        // the lines shown open below where the reader is: no scroll
+        // anchoring on the button while the block grows
+        const root = document.documentElement;
+        root.style.overflowAnchor = "none";
+        setTimeout(() => { root.style.overflowAnchor = ""; }, ms("--dur") + 100);
         // Scrolled before the slide starts, to where the folded block ends up.
         slide(pre, () => {
           open = wrap.classList.toggle("collapsed") === false;
@@ -727,7 +735,8 @@
     const at = [{ left: x + icon.left - wide.left + "px", top: y + icon.top - wide.top + "px", width: icon.width + "px" }, { left: x + "px", top: y + "px", width: wide.width + "px" }];
     if (!open) at.reverse();
     sbox.grew = sbox.animate(at, { duration: ms(open ? "--dur" : "--dur-out"), easing: token("--ease") });
-    if (!open) sbox.grew.onfinish = () => { sbox.classList.remove("open"); sbox.grew = null; };
+    // focus back in the field while it shrinks keeps it open
+    if (!open) sbox.grew.onfinish = () => { if (document.activeElement !== q) sbox.classList.remove("open"); sbox.grew = null; };
   };
   sbox.addEventListener("click", () => {
     if (top && top.classList.contains("nav-compact")) { grow(true); q.focus(); }
@@ -740,7 +749,13 @@
     if (ev.key === "ArrowDown" && n) { ev.preventDefault(); mark((sel + 1) % n); }
     else if (ev.key === "ArrowUp" && n) { ev.preventDefault(); mark((sel - 1 + n) % n); }
     else if (ev.key === "Enter" && links()[sel]) { location.href = links()[sel].href; }
-    else if (ev.key === "Escape") { show(false); q.blur(); }
+    else if (ev.key === "Escape") {
+      show(false);
+      // folded header: shut the field and give focus back to its icon
+      const so = sbox.querySelector(".s-open");
+      if (top && top.classList.contains("nav-compact") && so) { ev.preventDefault(); q.value = ""; grow(false); so.focus({ preventScroll: true }); }
+      else q.blur();
+    }
   });
   // A shortcuts help card, opened with ? (and closed with Escape).
   let help = null;
@@ -758,12 +773,18 @@
       "</dl></div>";
     help.addEventListener("click", (e) => { if (e.target === help) closeHelp(); });
     document.body.append(help);
+    // modal: focus moves into the card and comes back on close
+    help.back = document.activeElement;
+    const card = help.firstChild;
+    card.tabIndex = -1;
+    card.focus({ preventScroll: true });
   };
   const closeHelp = () => {
     if (!help) return;
     const h = help;
     help = null;
     h.hidden = true;
+    if (h.back && h.back.focus) h.back.focus({ preventScroll: true });
     setTimeout(() => h.remove(), ms("--dur-out"));
   };
   const toggleHelp = () => { if (help) closeHelp(); else buildHelp(); };
@@ -773,6 +794,7 @@
     // `/`, Ctrl+K and Cmd+K are keys.js's.
     if (ev.key === "?" && !typing) { ev.preventDefault(); toggleHelp(); }
     else if (ev.key === "Escape" && help) { closeHelp(); }
+    else if (ev.key === "Tab" && help) { ev.preventDefault(); }
   });
   document.addEventListener("click", (ev) => {
     if (!ev.target.closest(".search")) show(false);
@@ -785,6 +807,7 @@
     q.focus();
     // Shown with the page: no fade.
     box.style.transition = "none";
-    search().then(() => requestAnimationFrame(() => { box.style.transition = ""; }));
+    // styled once without it before it comes back
+    search().then(() => { getComputedStyle(box).opacity; box.style.transition = ""; });
   }
 })();
