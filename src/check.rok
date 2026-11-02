@@ -9,7 +9,7 @@ use rok::std::fs;
 use rok::std::process::{Command, ExitStatus, Stdio};
 use rok::std::thread;
 use rok::core::par;
-use rok::core::task::time::{Duration, Instant};
+use rok::core::time::{Duration, Instant};
 
 pub struct Snippet {
     /// Page source (`docs/learn/03-functions.md`).
@@ -91,17 +91,17 @@ fn run(rokc: str, args: List<str>, dir: str, name: str, limit: Duration) throws 
         .stdout(Stdio::File(try fs::File::create(f"{dir}/{name}.out")))
         .stderr(Stdio::File(try fs::File::create(f"{dir}/{name}.err")))
         .spawn() {
-        let t0 = Instant::now();
-        loop {
-            if let st: ExitStatus = try child.try_wait() { return st.success(); }
-            if t0.elapsed() > limit {
-                try child.kill();
-                try child.wait();
-                return none;
+            let t0 = Instant::now();
+            loop {
+                if let st: ExitStatus = try child.try_wait() { return st.success(); }
+                if t0.elapsed() > limit {
+                    try child.kill();
+                    _ = try child.wait();
+                    return none;
+                }
+                thread::sleep(Duration::ms(20));
             }
-            thread::sleep(Duration::ms(20));
         }
-    }
 }
 
 fn first_lines(s: str, n: usize) -> str {
