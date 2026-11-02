@@ -23,10 +23,10 @@ use rok::std::net::TcpStream;
 use rok::std::process::{Command, Stdio};
 use rok::std::rokon;
 use rok::std::thread;
-use rok::std::time::Duration;
+use rok::core::time::Duration;
 use rok::core::crypto::{Hmac, HashAlgorithm, constant_time_eq};
 use rok::core::encoding;
-use rok::core::task::time::Instant;
+use rok::core::time::Instant;
 use web::http;
 use web::http::Request;
 use web::url;
@@ -91,14 +91,14 @@ pub fn load_cfg(path: str) throws -> Cfg {
         og_fonts: setting(f, "ROK_WEB_OG_FONTS", "/opt/rok-og/fonts"),
     };
     for (k, v) in [("ROK_WEB_DATA", cfg.data), ("ROK_WEB_CONTENT", cfg.content)] {
-        if v.is_empty() { throw ValueError { msg: f"{k} is not set (environment or .env)" }; }
+        if v.is_empty() { throw ValueError::new(f"{k} is not set (environment or .env)"); }
     }
     cfg
 }
 
 fn sh(script: str) throws -> str {
     let out = try Command::new("sh").args(["-c", script]).stdin(Stdio::Null).output();
-    if !out.status.success() { throw ValueError { msg: f"`{script}` failed: {(try? str::from_utf8(out.stderr)) ?? ""}" }; }
+    if !out.status.success() { throw ValueError::new(f"`{script}` failed: {(try? str::from_utf8(out.stderr)) ?? ""}"); }
     (try? str::from_utf8(out.stdout)) ?? ""
 }
 
@@ -129,8 +129,8 @@ fn sync_bundle(cfg: Cfg, repo: str, branch: str) throws -> bool {
     let dir = f"{cfg.data}/src/{key}";
     let tmp = dir + ".new";
     if fs::exists(tmp) { try fs::remove_dir_all(tmp); }
-    for (path, text) in b.files.entries() {
-        if path.contains("..") { throw ValueError { msg: f"{key}: bad path {path}" }; }
+    for (path, text) in b.files.iter() {
+        if path.contains("..") { throw ValueError::new(f"{key}: bad path {path}"); }
         try fs::create_dir_all(dir_of(tmp + "/" + path));
         try fs::write(tmp + "/" + path, text);
     }
@@ -158,22 +158,22 @@ fn dir_of(p: str) -> str { before_last(p, "/") ?? "." }
 /// data/src/rok/<rev>; true if they changed.
 fn sync_library(cfg: Cfg, rev: str) throws -> bool {
     let git = cfg.data + "/rok.git";
-    if !fs::exists(git) { try sh(f"git clone -q --bare --filter=blob:none {q(cfg.rok_git)} {q(git)}"); }
+    if !fs::exists(git) { _ = try sh(f"git clone -q --bare --filter=blob:none {q(cfg.rok_git)} {q(git)}"); }
     let dir = f"{cfg.data}/src/rok/{rev}";
     let mark = dir + ".sha";
     let is_tag = rev != "main";
     if is_tag && fs::exists(mark) { return false; }
     if is_tag {
-        try sh(f"git -C {q(git)} fetch -q origin {q("refs/tags/" + rev + ":refs/tags/" + rev)}");
+        _ = try sh(f"git -C {q(git)} fetch -q origin {q("refs/tags/" + rev + ":refs/tags/" + rev)}");
     } else {
-        try sh(f"git -C {q(git)} fetch -q origin +refs/heads/main:refs/heads/main");
+        _ = try sh(f"git -C {q(git)} fetch -q origin +refs/heads/main:refs/heads/main");
     }
     let sha = (try sh(f"git -C {q(git)} rev-parse {q(rev + "^{commit}")}")).trim();
     if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == sha { return false; }
     if fs::exists(dir) { try fs::remove_dir_all(dir); }
     try fs::create_dir_all(dir);
     let extra = if is_tag { "" } else { " CHANGELOG.md" };
-    try sh(f"git -C {q(git)} archive {q(sha)} library install.sh install.ps1{extra} | tar -x -C {q(dir)}");
+    _ = try sh(f"git -C {q(git)} archive {q(sha)} library install.sh install.ps1{extra} | tar -x -C {q(dir)}");
     try fs::write(mark, sha + "\n");
     eprintln(f"library {rev} @ {short(sha)}");
     true
@@ -211,7 +211,7 @@ fn minor_of(v: str) -> str { before_last(v, ".") ?? v }
 
 fn run_self(exe: str, args: List<str>, envs: List<(str, str)>) throws {
     let st = try Command::new(exe).args(args).envs(envs).status();
-    if !st.success() { throw ValueError { msg: f"build {args.join(" ")}: {st}" }; }
+    if !st.success() { throw ValueError::new(f"build {args.join(" ")}: {st}"); }
 }
 
 fn site_local(cfg: Cfg, docs: str, spec: str, library: str, extra: str) -> str {
@@ -259,7 +259,7 @@ fn round(cfg: Cfg, exe: str, build: str) throws {
         }
         older.reverse();
         for w in older {
-            try sync_library(cfg, "v" + w);
+            _ = try sync_library(cfg, "v" + w);
             hist.push_str(f"{{ release: \"{w}\", library: \"{cfg.data}/src/rok/v{w}/library\" }}, ");
         }
         let local = f"{cfg.data}/site.{v}.rokon";
@@ -308,14 +308,14 @@ fn rebuild_loop(cfg: Cfg) {
 }
 
 pub fn signature(key: str, body: str) -> str {
-    encoding::hex_encode(Hmac::mac(HashAlgorithm::Sha256, key, body))
+    encoding::hex::encode(Hmac::mac(HashAlgorithm::Sha256, key, body))
 }
 
 /// Newest built release of minor `m`, or none.
 fn newest_of(docs: str, m: str) -> str | none {
     let best: str | none = none;
     let best_patch = -1;
-    for entry in try fs::read_dir(docs) catch _ { return none; } {
+    for entry in (try fs::read_dir(docs) catch _ { return none; }).results() {
         let e = try entry.get() catch _ { continue; };
         let name = e.file_name();
         if !name.starts_with(m + ".") { continue; }
@@ -472,7 +472,7 @@ fn draw(cfg: Cfg, c: pkg::layout::Card, png: str) throws {
     let tmp = f"{png[:png.len() - 4]}.{DRAWN.fetch_add(1)}.tmp.png";
     let out = try Command::new(cfg.typst).args(["compile", "--ignore-system-fonts", "--font-path", cfg.og_fonts, "--format", "png", "--ppi", "72",
         "--input", "section=" + c.section, "--input", "title=" + c.title, "--input", "lead=" + c.lead, "--input", "lang=" + c.lang, tpl, tmp]).stdin(Stdio::Null).output();
-    if !out.status.success() { throw ValueError { msg: f"typst: {(try? str::from_utf8(out.stderr)) ?? ""}" }; }
+    if !out.status.success() { throw ValueError::new(f"typst: {(try? str::from_utf8(out.stderr)) ?? ""}"); }
     try fs::rename(tmp, png);
 }
 
@@ -487,7 +487,7 @@ fn handle(s: TcpStream, cfg: Cfg) {
     let t0 = Instant::now();
     let r = try http::read_request(s, http::MAX_BODY, Duration::secs(30)) catch e {
         try http::send(s, e.status, ["Content-Type: text/plain; charset=utf-8"], e.msg + "\n", false) catch _ {};
-        s.close();
+        try s.close() catch _ {};
         return;
     };
     let resp = route(cfg, r);
@@ -518,7 +518,7 @@ fn handle(s: TcpStream, cfg: Cfg) {
     } else {
         try http::send(s, resp.status, resp.headers, resp.body, head) catch _ {};
     }
-    s.close();
+    try s.close() catch _ {};
     eprintln(f"{r.method} {r.header("host")}{r.path} {status} {t0.elapsed().as_ms()}ms");
 }
 
@@ -532,7 +532,7 @@ pub fn run() throws {
             0
         });
         bg.detach();
-        for c in l.incoming() {
+        for c in l.incoming().results() {
             let s = try c.get() catch e {
                 eprintln(f"accept: {e}");
                 continue;
@@ -540,7 +540,7 @@ pub fn run() throws {
             if ACTIVE.fetch_add(1) >= MAX_CONNS {
                 ACTIVE.fetch_sub(1);
                 try http::send(s, 503, ["Content-Type: text/plain; charset=utf-8"], "busy\n", false) catch _ {};
-                s.close();
+                try s.close() catch _ {};
                 continue;
             }
             let t = thread::spawn(|| {
