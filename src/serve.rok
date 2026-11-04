@@ -164,9 +164,11 @@ fn sync_library(cfg: Cfg, rev: str) throws -> bool {
     let is_tag = rev != "main";
     if is_tag && fs::exists(mark) { return false; }
     if is_tag {
-        _ = try sh(f"git -C {q(git)} fetch -q origin {q("refs/tags/" + rev + ":refs/tags/" + rev)}");
+        // `+`: a tag moved before its release took the remote's place.
+        _ = try sh(f"git -C {q(git)} fetch -q origin {q("+refs/tags/" + rev + ":refs/tags/" + rev)}");
     } else {
-        _ = try sh(f"git -C {q(git)} fetch -q origin +refs/heads/main:refs/heads/main");
+        // No tags: a tag that follows main here could be stale.
+        _ = try sh(f"git -C {q(git)} fetch -q --no-tags origin +refs/heads/main:refs/heads/main");
     }
     let sha = (try sh(f"git -C {q(git)} rev-parse {q(rev + "^{commit}")}")).trim();
     if fs::exists(mark) && (try fs::read_to_str(mark)).trim() == sha { return false; }
