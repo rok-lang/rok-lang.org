@@ -3,7 +3,7 @@
 // Bundles are <repo>/<branch>/<sha>.rokon, <repo>/<branch>/current names
 // the sha. Each release is archived once; dev and home are rebuilt around
 // the archives. A signed POST /_admin/reload starts a round, so does a
-// five-minute timer.
+// five-minute timer. GET /healthz reports what is served.
 //
 //   ROK_WEB_ADDR      listen address (127.0.0.1:8080)
 //   ROK_WEB_DATA      state: sources, archives, output
@@ -34,6 +34,8 @@ use web::url;
 static STALE: Atomic<i32> = Atomic::new(1);
 static ACTIVE: Atomic<i32> = Atomic::new(0);
 static DRAWN: Atomic<i32> = Atomic::new(0);
+static FAILED: Atomic<i32> = Atomic::new(0);
+const MAX_FAILED: i32 = 3;
 const MAX_CONNS: i32 = 256;
 
 pub struct Cfg {
@@ -154,17 +156,36 @@ fn before_last(s: str, sep: str) -> str | none {
 
 fn dir_of(p: str) -> str { before_last(p, "/") ?? "." }
 
-/// library/, install scripts and CHANGELOG.md of rok at `rev`, under
-/// data/src/rok/<rev>; true if they changed.
-fn sync_library(cfg: Cfg, rev: str) throws -> bool {
+fn rok_git(cfg: Cfg) throws -> str {
     let git = cfg.data + "/rok.git";
     if !fs::exists(git) { _ = try sh(f"git clone -q --bare --filter=blob:none {q(cfg.rok_git)} {q(git)}"); }
+    git
+}
+
+/// rok's v* tags on the remote, tag -> commit.
+fn rok_tags(cfg: Cfg) throws -> Dict<str, str> {
+    let git = try rok_git(cfg);
+    let out: Dict<str, str> = Dict::new();
+    for line in (try sh(f"git -C {q(git)} ls-remote --tags origin 'refs/tags/v*'")).lines() {
+        let (sha, r) = line.trim().split_once("\t") ?? { continue; };
+        let name = r.strip_prefix("refs/tags/") ?? { continue; };
+        // An annotated tag's peeled line names the commit.
+        out.insert(name.strip_suffix("^{}") ?? name, sha);
+    }
+    out
+}
+
+/// library/, install scripts and CHANGELOG.md of rok at `rev`, under
+/// data/src/rok/<rev>; true if they changed. `want` is the tag's commit
+/// on the remote, so a moved tag is read again.
+fn sync_library(cfg: Cfg, rev: str, want: str) throws -> bool {
+    let git = try rok_git(cfg);
     let dir = f"{cfg.data}/src/rok/{rev}";
     let mark = dir + ".sha";
     let is_tag = rev != "main";
-    if is_tag && fs::exists(mark) { return false; }
+    if is_tag && fs::exists(mark) && (try fs::read_to_str(mark)).trim() == want { return false; }
     if is_tag {
-        // `+`: a tag moved before its release took the remote's place.
+        // `+`: a moved tag replaces the one fetched before.
         _ = try sh(f"git -C {q(git)} fetch -q origin {q("+refs/tags/" + rev + ":refs/tags/" + rev)}");
     } else {
         // No tags: a tag that follows main here could be stale.
@@ -236,8 +257,14 @@ fn round(cfg: Cfg, exe: str, build: str) throws {
     for (repo, branch) in [("docs", "main"), ("www", "main"), ("spec", "main")] {
         if try sync_bundle(cfg, repo, branch) { changed.insert(f"{repo}/{branch}"); }
     }
-    if try sync_library(cfg, "main") { changed.insert("rok/main"); }
-    let rel = try releases(cfg);
+    if try sync_library(cfg, "main", "") { changed.insert("rok/main"); }
+    // A docs and spec branch can come before its rok tag: leave that
+    // release out until the tag is there.
+    let tags = try rok_tags(cfg);
+    let rel: List<str> = List::new();
+    for v in try releases(cfg) {
+        if tags.contains_key("v" + v) { rel.push(v); } else { eprintln(f"round: {v} has no rok tag v{v} yet, skipped"); }
+    }
 
     let vl = StrBuf::new();
     for v in rel { vl.push_str(f"\"{v}\", "); }
@@ -251,7 +278,7 @@ fn round(cfg: Cfg, exe: str, build: str) throws {
         let any = false;
         if try sync_bundle(cfg, "docs", tag) { any = true; }
         if try sync_bundle(cfg, "spec", tag) { any = true; }
-        if try sync_library(cfg, tag) { any = true; }
+        if try sync_library(cfg, tag, tags["v" + v]) { any = true; }
         if !any && fs::exists(f"{archive}/{v}/bundle.rokon") { continue; }
         // Same-minor releases, oldest first, for "Added in".
         let hist = StrBuf::new();
@@ -261,7 +288,7 @@ fn round(cfg: Cfg, exe: str, build: str) throws {
         }
         older.reverse();
         for w in older {
-            _ = try sync_library(cfg, "v" + w);
+            _ = try sync_library(cfg, "v" + w, tags["v" + w]);
             hist.push_str(f"{{ release: \"{w}\", library: \"{cfg.data}/src/rok/v{w}/library\" }}, ");
         }
         let local = f"{cfg.data}/site.{v}.rokon";
@@ -302,7 +329,13 @@ fn rebuild_loop(cfg: Cfg) {
     loop {
         if STALE.swap(0) == 1 || idle >= 300 {
             idle = 0;
-            try round(cfg, exe.as_str(), build.trim()) catch e { eprintln(f"round: {e}"); };
+            try {
+                round(cfg, exe.as_str(), build.trim());
+                FAILED.store(0);
+            } catch e {
+                eprintln(f"round: {e}");
+                FAILED.fetch_add(1);
+            };
         }
         thread::sleep(Duration::secs(1));
         idle += 1;
@@ -395,6 +428,7 @@ fn route(cfg: Cfg, r: Request) -> Resp {
         return Resp { status: 204, headers: ["Cache-Control: no-store"], body: "", file: "" };
     }
     if r.method != "GET" && r.method != "HEAD" { return text(405, "GET only"); }
+    if r.path == "/healthz" { return health(cfg); }
     if r.path == http::SPECULATION_PATH {
         return Resp { status: 200, headers: [http::SPECULATION_TYPE, "Cache-Control: public, max-age=3600"], body: http::SPECULATION_RULES, file: "" };
     }
@@ -438,6 +472,24 @@ fn route(cfg: Cfg, r: Request) -> Resp {
     }
     if fs::exists(nf) { return Resp { status: 404, headers: ["Content-Type: text/html; charset=utf-8", "Cache-Control: no-store"], body: "", file: nf }; }
     text(404, "not found")
+}
+
+/// The toolchain this was built with (./toolchain, written by the
+/// deploy), the release docs/latest serves and the failed rounds in a
+/// row; 503 once rounds keep failing or nothing is built yet.
+fn health(cfg: Cfg) -> Resp {
+    let tc = (try fs::read_to_str("toolchain") catch _ { "unknown" }).trim();
+    let latest = latest_of(try fs::read_to_str(cfg.data + "/out/docs/versions.json") catch _ { "" }) ?? "none";
+    let failed = FAILED.load();
+    let ok = failed < MAX_FAILED && fs::exists(cfg.data + "/out");
+    text(if ok { 200 } else { 503 }, f"{if ok { "ok" } else { "failing" }}\ntoolchain {tc}\nlatest {latest}\nfailed_rounds {failed}")
+}
+
+/// `latest` of versions.json.
+pub fn latest_of(json: str) -> str | none {
+    let (_, rest) = json.split_once("\"latest\":\"") ?? { return none; };
+    let (v, _) = rest.split_once("\"") ?? { return none; };
+    v
 }
 
 const LOGO: str = include_str!("../web/assets/rok.svg");
@@ -564,6 +616,12 @@ fn signatures_and_versions() {
     assert(release_rank("0.1") == -1 && release_rank("0.1.x") == -1 && release_rank("v0.1.0") == -1, "not a release");
     let e = parse_env("# c\nA=1\nexport B = \"x y\"\n");
     assert(e["A"] == "1" && e["B"] == "x y", "env");
+}
+
+#[test]
+fn latest_release() {
+    assert(latest_of("{\"latest\":\"0.2.0\",\"released\":[\"0.2.0\"]}") == "0.2.0", "latest");
+    assert(latest_of("") is none && latest_of("{\"released\":[]}") is none, "none");
 }
 
 #[test]
