@@ -736,6 +736,7 @@ pub fn in_lang(p: str, ko: bool) -> str { if ko { "ko/" + p } else { p } }
 
 /// The note over the docs of any version but the newest release, linking
 /// to this page in latest/ if it is there (`in_latest`), else to latest/.
+/// Only the newest series is supported, so an older one says it is not.
 /// `root` leads from the page to its version's directory.
 pub fn ver_banner(site: Site, root: str, out: str, in_latest: bool) -> str {
     if site.version == site.newest || site.newest.is_empty() { return ""; }
@@ -744,9 +745,9 @@ pub fn ver_banner(site: Site, root: str, out: str, in_latest: bool) -> str {
     let to = up + "latest/" + if in_latest && !out.ends_with("404.html") { out } else { in_lang("index.html", ko) };
     let rel = "v" + if site.newest_release.is_empty() { site.newest } else { site.newest_release };
     let (what, go) = if ko {
-        (if site.version == "dev" { "아직 릴리스하지 않은 다음 버전의 문서입니다." } else { f"v{site.version} 문서를 보고 있습니다." }, f"최신 릴리스: {rel} →")
+        (if site.version == "dev" { "아직 릴리스하지 않은 다음 버전의 문서입니다." } else { f"v{site.version} 문서를 보고 있습니다. 이 버전은 더 이상 지원하지 않습니다." }, f"최신 릴리스: {rel} →")
     } else {
-        (if site.version == "dev" { "Unreleased docs for the next version." } else { f"You are reading the docs for v{site.version}." }, f"Latest release: {rel} →")
+        (if site.version == "dev" { "Unreleased docs for the next version." } else { f"You are reading the docs for v{site.version}. Rok {site.version} is no longer supported." }, f"Latest release: {rel} →")
     };
     f"<p class=\"ver-banner\">{what} <a href=\"{to}\">{go}</a></p>\n"
 }
@@ -793,7 +794,8 @@ fn vers_items(site: Site, root: str, out: str, lost: bool) -> str {
     };
     for r in site.released {
         let patch = site.patches.get(r) ?? "";
-        let note = if r == site.newest { if patch.is_empty() { "latest" } else { patch + " · latest" } } else { patch };
+        let old = tr(ko, "unsupported", "지원 종료");
+        let note = if r == site.newest { if patch.is_empty() { "latest" } else { patch + " · latest" } } else if patch.is_empty() { old } else { patch + " · " + old };
         item(r, "v" + r, note);
     }
     item("dev", "dev", tr(ko, "main branch", "main 브랜치"));
