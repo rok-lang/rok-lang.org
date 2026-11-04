@@ -11,7 +11,7 @@ Every docs page is in English and Korean: `/<version>/<path>` and `/<version>/ko
 
 ## Build
 
-Needs the Rok toolchain (`rok`, `rokc`), the [web kit](https://github.com/rok-lang/web) submodule at `web/` (clone with `git clone --recurse-submodules`, or run `git submodule update --init` in an existing clone), plus checkouts of [rok-lang/docs](https://github.com/rok-lang/docs), [rok-lang/www](https://github.com/rok-lang/www), [rok-lang/rok](https://github.com/rok-lang/rok), [rok-lang/spec](https://github.com/rok-lang/spec), and the `markdown` / `rok-syntax` stones, laid out beside this repo (see `rok.rokon`):
+Needs the Rok toolchain (`rok`, `rokc`), the [web kit](https://github.com/rok-lang/web) submodule at `web/` (clone with `git clone --recurse-submodules`, or run `git submodule update --init` in an existing clone), plus checkouts of [rok-lang/docs](https://github.com/rok-lang/docs), [rok-lang/www](https://github.com/rok-lang/www), [rok-lang/rok](https://github.com/rok-lang/rok), and [rok-lang/spec](https://github.com/rok-lang/spec), laid out beside this repo:
 
 ```
 ./
@@ -19,8 +19,6 @@ Needs the Rok toolchain (`rok`, `rokc`), the [web kit](https://github.com/rok-la
 |-- www/                # home, download, roadmap
 |-- rok/                # toolchain; rok/library is the standard library
 |-- spec/               # spec/en/ + spec/ko/
-|-- stones/markdown/    # markdown renderer stone
-|-- stones/rok-syntax/  # rok / ROKON highlighter stone
 `-- rok-lang.org/       # this repository
 ```
 
@@ -85,4 +83,4 @@ Edit `site.rokon` (ROKON); `site.local.rokon` overrides its fields. Key fields: 
 | `web/`           | the web kit (submodule): `rok.css`, `theme.js`, `keys.js`, marks and icons, and the `web` library (HTTP, addresses, footer markup) |
 | `og/`            | `og.png` source: `cd og && npm ci && node render.mjs card.html ../static/og.png`; `card.typ`, the docs' cards |
 
-Markdown and ` ```rok ` / ` ```rokon ` highlighting come from the [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) stones (path dependencies until switched to their rokstones.io versions).
+Markdown and ` ```rok ` / ` ```rokon ` highlighting come from the [`markdown`](https://github.com/rok-lang/markdown) and [`rok-syntax`](https://github.com/rok-lang/rok-syntax) stones, fetched from rokstones.io.
