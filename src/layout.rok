@@ -508,7 +508,7 @@ fn clip(s: str, n: usize) -> str {
 }
 
 /// The site's description in Korean (site.description in English).
-pub const DESC_KO: str = "Rok은 무엇을 써야 하는지 알려 주는 컴파일 언어입니다. 닫힌 합 타입, AOT 컴파일, 풍부한 라이브러리, 패키지 레지스트리, REPL, Jupyter를 갖추고 있습니다.";
+pub const DESC_KO: str = "Rok은 컴파일러와 싸우지 않는, 안전한 컴파일 언어입니다. 닫힌 합 타입, AOT 컴파일, 풍부한 라이브러리, 패키지 레지스트리, REPL, Jupyter를 갖추고 있습니다.";
 
 /// The page's summary for `<meta name="description">`: its first paragraph.
 fn describe(site: Site, out: str, body: str) -> str {
@@ -655,7 +655,7 @@ pub fn www_card(site: Site, out: str, title: str) -> Card {
 /// Names what card `c` looks like: its text and the template.
 pub fn card_version(c: Card) -> str {
     let all = [CARD_TYPST, c.section, c.title, c.lead, c.lang].join("\n");
-    encoding::hex_encode(HashAlgorithm::Sha256.digest(all))[:10]
+    encoding::hex::encode(HashAlgorithm::Sha256.digest(all))[:10]
 }
 
 /// The og:image of docs page `f`: its card under this version's og/,
@@ -693,7 +693,7 @@ fn footer(site: Site, l: Links, note: str, logo: str, ko: bool, on: str) -> str 
     chrome::footer(chrome::Footer {
         home: l.home,
         logo: logo,
-        tagline: tr(ko, site.tagline + ".", "무엇을 써야 하는지 알려 주는 컴파일 언어."),
+        tagline: tr(ko, site.tagline + ".", "컴파일러와 싸우지 않는, 안전한 컴파일 언어."),
         cols: [
             (tr(ko, "Docs", "문서"), a(l.learn, tr(ko, "Guide", "가이드")) + a(l.examples, tr(ko, "Examples", "예제")) + (if l.errors.is_empty() { "" } else { a(l.errors, tr(ko, "Error codes", "에러 코드")) })),
             (tr(ko, "Reference", "참조"), a(l.spec, tr(ko, "Language spec", "언어 사양")) + a(l.api, tr(ko, "Std library", "표준 라이브러리")) + a(l.tools, tr(ko, "Tools", "도구"))),
@@ -736,6 +736,7 @@ pub fn in_lang(p: str, ko: bool) -> str { if ko { "ko/" + p } else { p } }
 
 /// The note over the docs of any version but the newest release, linking
 /// to this page in latest/ if it is there (`in_latest`), else to latest/.
+/// Only the newest series is supported, so an older one says it is not.
 /// `root` leads from the page to its version's directory.
 pub fn ver_banner(site: Site, root: str, out: str, in_latest: bool) -> str {
     if site.version == site.newest || site.newest.is_empty() { return ""; }
@@ -744,9 +745,9 @@ pub fn ver_banner(site: Site, root: str, out: str, in_latest: bool) -> str {
     let to = up + "latest/" + if in_latest && !out.ends_with("404.html") { out } else { in_lang("index.html", ko) };
     let rel = "v" + if site.newest_release.is_empty() { site.newest } else { site.newest_release };
     let (what, go) = if ko {
-        (if site.version == "dev" { "아직 릴리스하지 않은 다음 버전의 문서입니다." } else { f"v{site.version} 문서를 보고 있습니다." }, f"최신 릴리스: {rel} →")
+        (if site.version == "dev" { "아직 릴리스하지 않은 다음 버전의 문서입니다." } else { f"v{site.version} 문서를 보고 있습니다. 이 버전은 더 이상 지원하지 않습니다." }, f"최신 릴리스: {rel} →")
     } else {
-        (if site.version == "dev" { "Unreleased docs for the next version." } else { f"You are reading the docs for v{site.version}." }, f"Latest release: {rel} →")
+        (if site.version == "dev" { "Unreleased docs for the next version." } else { f"You are reading the docs for v{site.version}. Rok {site.version} is no longer supported." }, f"Latest release: {rel} →")
     };
     f"<p class=\"ver-banner\">{what} <a href=\"{to}\">{go}</a></p>\n"
 }
@@ -793,7 +794,8 @@ fn vers_items(site: Site, root: str, out: str, lost: bool) -> str {
     };
     for r in site.released {
         let patch = site.patches.get(r) ?? "";
-        let note = if r == site.newest { if patch.is_empty() { "latest" } else { patch + " · latest" } } else { patch };
+        let old = tr(ko, "unsupported", "지원 종료");
+        let note = if r == site.newest { if patch.is_empty() { "latest" } else { patch + " · latest" } } else if patch.is_empty() { old } else { patch + " · " + old };
         item(r, "v" + r, note);
     }
     item("dev", "dev", tr(ko, "main branch", "main 브랜치"));

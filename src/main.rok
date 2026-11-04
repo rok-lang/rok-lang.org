@@ -39,7 +39,7 @@ use rok::std::process::{Command, Stdio};
 use rok::std::rokon;
 use rok::core::crypto::HashAlgorithm;
 use rok::core::encoding;
-use rok::core::task::time::Instant;
+use rok::core::time::Instant;
 use markdown::Heading;
 use layout::{dir_of, rel};
 use web::chrome;
@@ -98,8 +98,8 @@ pub struct Site {
     pub og: str = "";
     pub og_w: i64 = 0i64;
     pub og_h: i64 = 0i64;
-    /// The docs being wrapped have no error code pages (releases before
-    /// they were written): no Error codes section in the chrome.
+    /// The docs being wrapped have no error code pages: no Error codes
+    /// section in the chrome.
     pub no_errors: bool = false;
     /// The static files' versions (layout::asset), by name, set on load.
     pub assets: Dict<str, str> = Dict::new();
@@ -383,8 +383,7 @@ fn spec_crumb(pages: List<Page>, k: usize) -> str {
 /// The spec edition in `spec`, rendered under `prefix` (`""`, `"ko/"`).
 fn spec_pages(site: Site, spec: str, prefix: str, ko: bool) throws -> List<Page> {
     let srcs: List<str> = List::new();
-    for entry in fs::walk(spec) {
-        let e = try entry.get();
+    try for e in fs::walk(spec) {
         let p = e.path().as_str();
         if e.is_file() && p.ends_with(".md") { srcs.push(p[spec.len() + 1:]); }
     }
@@ -522,9 +521,9 @@ fn chars_of(s: str) -> List<char> {
 /// `""` for a site root) with every internal `href`, `src` and `data-root`
 /// as its canonical root-relative address (web::url), and absolute links
 /// into either site canonical too (markdown autolinks bypass the link
-/// mappers). Pages are generated
-/// with relative links, so the link check and the archives stay
-/// independent of where a version is served; this is the last step.
+/// mappers). Pages are generated with relative links, so the link check
+/// and the archives stay independent of where a version is served; this
+/// is the last step.
 fn site_hrefs(site: Site, html: str, base: str, out: str) -> str {
     let d = dir_of(out);
     let dir = if d.is_empty() { base } else { base + "/" + d };
@@ -638,8 +637,7 @@ fn check(files: Dict<str, str>, statics: Set<str>) -> List<str> {
 /// under `root` (after site_hrefs, so the served HTML).
 fn relative_assets(root: str) throws -> List<str> {
     let bad: List<str> = List::new();
-    for entry in fs::walk(root) {
-        let e = try entry.get();
+    try for e in fs::walk(root) {
         let p = e.path().as_str();
         if !e.is_file() || !p.ends_with(".html") { continue; }
         let html = try fs::read_to_str(p);
@@ -663,8 +661,7 @@ fn relative_assets(root: str) throws -> List<str> {
 /// repository's own files are not pages.
 fn page_sources(root: str) throws -> List<str> {
     let srcs: List<str> = List::new();
-    for entry in fs::walk(root) {
-        let e = try entry.get();
+    try for e in fs::walk(root) {
         let p = e.path().as_str()[root.len() + 1:];
         if !e.is_file() || !p.ends_with(".md") || p.starts_with(".") || p.starts_with("ko/") { continue; }
         if p == "README.md" || p == "CODE_OF_CONDUCT.md" || p == "SECURITY.md" || p == "CONTRIBUTING.md" { continue; }
@@ -739,16 +736,16 @@ fn load_site() throws -> Site {
         let local = try rokon::parse(try fs::read_to_str(local_path));
         if let rokon::Value::Struct { name: _, fields } = base {
             if let rokon::Value::Struct { name: _, fields: over } = local {
-                for (k, v) in over.entries() { fields.insert(k, v); }
+                for (k, v) in over.iter() { fields.insert(k, v); }
             }
         }
     }
-    let site: Site = try rokon::decode(base, "site.rokon");
+    let site: Site = try rokon::from_value(base) catch e { throw ValueError::new(f"site.rokon: {e}"); };
     site.og = try og_version("static/og.png");
     let (w, h) = try png_size("static/og.png");
     site.og_w = w;
     site.og_h = h;
-    for f in kit::files(kit::Mark::Rok) { site.assets.insert(f.name, encoding::hex_encode(HashAlgorithm::Sha256.digest(f.data))[:10]); }
+    for f in kit::files(kit::Mark::Rok) { site.assets.insert(f.name, encoding::hex::encode(HashAlgorithm::Sha256.digest(f.data))[:10]); }
     for name in ["style.css", "search.js", "hero.js"] { site.assets.insert(name, try og_version("static/" + name)); }
     site
 }
@@ -756,14 +753,14 @@ fn load_site() throws -> Site {
 /// Width and height from a PNG's IHDR chunk.
 fn png_size(path: str) throws -> (i64, i64) {
     let b = try fs::read(path);
-    if b.len() < 24 { throw ValueError { msg: f"{path}: not a PNG" }; }
+    if b.len() < 24 { throw ValueError::new(f"{path}: not a PNG"); }
     let be = |k: usize| ((b[k] as i64) << 24) | ((b[k + 1] as i64) << 16) | ((b[k + 2] as i64) << 8) | (b[k + 3] as i64);
     (be(16), be(20))
 }
 
 /// The first 10 hex digits of the SHA-256 of the file at `path`.
 pub fn og_version(path: str) throws -> str {
-    encoding::hex_encode(HashAlgorithm::Sha256.digest(try fs::read(path)))[:10]
+    encoding::hex::encode(HashAlgorithm::Sha256.digest(try fs::read(path)))[:10]
 }
 
 fn sitemap(urls: List<str>) -> str {
@@ -803,7 +800,7 @@ fn docs_branch(site: Site) -> str {
 /// versions.rokon, or the file $ROK_VERSIONS names (the server's builds).
 fn load_versions() throws -> Versions {
     let path = try env::var("ROK_VERSIONS") catch _ { "versions.rokon" };
-    try rokon::decode(try rokon::parse(try fs::read_to_str(path)), path)
+    try rokon::from_str(try fs::read_to_str(path)) catch e { throw ValueError::new(f"{path}: {e}"); }
 }
 
 /// The names under static/, of the kit's files and of its fonts, without
@@ -811,13 +808,11 @@ fn load_versions() throws -> Versions {
 fn static_names() throws -> Set<str> {
     let names: Set<str> = Set::new();
     for f in kit::files(kit::Mark::Rok) { names.insert(f.name); }
-    for entry in fs::walk(kit::FONTS_DIR) {
-        let e = try entry.get();
+    try for e in fs::walk(kit::FONTS_DIR) {
         let name = e.path().as_str()[kit::FONTS_DIR.len() + 1:].replace("\\", "/");
         if e.is_file() && !name.ends_with(".md") { names.insert("fonts/" + name); }
     }
-    for entry in fs::walk("static") {
-        let e = try entry.get();
+    try for e in fs::walk("static") {
         if e.is_file() { names.insert(e.path().as_str()["static/".len():]); }
     }
     names
@@ -833,8 +828,7 @@ fn copy_static(dir: str) throws -> Set<str> {
         names.insert(f.name);
     }
     for name in try kit::copy_fonts(kit::FONTS_DIR, dir + "/fonts") { names.insert("fonts/" + name); }
-    for entry in fs::walk("static") {
-        let e = try entry.get();
+    try for e in fs::walk("static") {
         if !e.is_file() { continue; }
         let name = e.path().as_str()["static/".len():];
         try fs::create_dir_all(dir_of(dir + "/" + name));
@@ -899,7 +893,7 @@ pub fn mb(n: i64) -> str { f"{(n + 500000i64) / 1000000i64} MB" }
 /// for search.js.
 fn download_page(html: str, sizes: Dict<str, i64>) -> str {
     let h = html;
-    for (name, n) in sizes.entries() {
+    for (name, n) in sizes.iter() {
         if name.ends_with(".sha256") { continue; }
         let pat = f"/{name}\">";
         let k = h.find(pat) ?? continue;
@@ -1179,7 +1173,7 @@ fn main() throws {
         return;
     }
     if args.len() > 1 && args[1] == "home" {
-        try home_check(true);
+        _ = try home_check(true);
         return;
     }
     if args.len() > 1 && args[1] == "code" {
@@ -1381,7 +1375,7 @@ fn main() throws {
         }
     } else if !archive.is_empty() && fs::exists(f"{archive}/{newest}/bundle.rokon") {
         let bpath = f"{archive}/{newest}/bundle.rokon";
-        let b: Bundle = try rokon::decode(try rokon::parse(try fs::read_to_str(bpath)), bpath);
+        let b: Bundle = try rokon::from_str(try fs::read_to_str(bpath)) catch e { throw ValueError::new(f"{bpath}: {e}"); };
         for f in b.pages {
             latest_outs.insert(f.out);
             if f.noindex { latest_hidden.insert(f.out); }
@@ -1405,7 +1399,7 @@ fn main() throws {
         outs.sort();
         let fl: List<Frag> = List::new();
         for o in outs { fl.push(frags[o]); }
-        try write(archive_out, "bundle.rokon", rokon::to_string(Bundle { version: version, pages: fl, search: idx, search_ko: idx_ko, llms: llm.0, llms_full: llm.1 }));
+        try write(archive_out, "bundle.rokon", try rokon::to_str(Bundle { version: version, pages: fl, search: idx, search_ko: idx_ko, llms: llm.0, llms_full: llm.1 }));
         println(f"archived docs {version}: {fl.len()} pages → {archive_out}/bundle.rokon ({t0.elapsed():?})");
         return;
     }
@@ -1448,13 +1442,13 @@ fn main() throws {
     let statics = try write_version(site, docs_root, version, files, idx, idx_ko, llm);
     let fl: List<Frag> = List::new();
     for o in frags.keys() { fl.push(frags[o]); }
-    try write(docs_root + "/" + version, "og.rokon", rokon::to_string(layout::cards(fl)));
+    try write(docs_root + "/" + version, "og.rokon", try rokon::to_str(layout::cards(fl)));
     for out in www.keys() { try write(www_dir, out, site_hrefs(site, www[out], "", out)); }
     let www_statics = try copy_static(www_dir);
     let wcards: List<layout::Card> = List::new();
     for (out, title) in www_cards { wcards.push(layout::www_card(site, out, title)); }
-    try write(www_dir, "og.rokon", rokon::to_string(layout::Cards { cards: wcards }));
-    // The installers, served at /install.sh and /install.ps1, come from the toolchain checkout.
+    try write(www_dir, "og.rokon", try rokon::to_str(layout::Cards { cards: wcards }));
+    // The installers (/install.sh, /install.ps1), from the toolchain checkout.
     for f in ["install.sh", "install.ps1"] {
         try fs::copy(site.library + "/../" + f, www_dir + "/" + f);
         www_statics.insert(f);
@@ -1475,7 +1469,7 @@ fn main() throws {
             if v == version { continue; }
             let bpath = f"{archive}/{v}/bundle.rokon";
             if !fs::exists(bpath) { continue; }
-            let b: Bundle = try rokon::decode(try rokon::parse(try fs::read_to_str(bpath)), bpath);
+            let b: Bundle = try rokon::from_str(try fs::read_to_str(bpath)) catch e { throw ValueError::new(f"{bpath}: {e}"); };
             site.version = v;
             site.no_errors = true;
             for f in b.pages {
@@ -1484,7 +1478,7 @@ fn main() throws {
             let vfiles: Dict<str, str> = Dict::new();
             for f in b.pages { vfiles.insert(f.out, wrap(site, f, latest_outs)); }
             let vstatics = try write_version(site, docs_root, v, vfiles, b.search, b.search_ko, (b.llms, b.llms_full));
-            try write(docs_root + "/" + v, "og.rokon", rokon::to_string(layout::cards(b.pages)));
+            try write(docs_root + "/" + v, "og.rokon", try rokon::to_str(layout::cards(b.pages)));
             for bd in check(vfiles, vstatics) { arch_bad.push(f"[{v}] {bd}"); }
             if v == newest {
                 latest_pages = vfiles;
@@ -1531,7 +1525,7 @@ fn main() throws {
     site.version = if newest.is_empty() { version } else { newest };
     let has_latest = !newest.is_empty() && latest_pages.len() > 0;
     if has_latest {
-        try write_version(site, docs_root, "latest", latest_pages, latest_search, latest_search_ko, latest_llms);
+        _ = try write_version(site, docs_root, "latest", latest_pages, latest_search, latest_search_ko, latest_llms);
         // Both hosts answer /llms.txt with latest/'s.
         if !latest_llms.0.is_empty() {
             let base = site.docs_url + "/latest";
